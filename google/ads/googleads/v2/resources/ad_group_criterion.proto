@@ -1,0 +1,240 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/common/criteria.proto";
+import "google/ads/googleads/v2/common/custom_parameter.proto";
+import "google/ads/googleads/v2/enums/ad_group_criterion_approval_status.proto";
+import "google/ads/googleads/v2/enums/ad_group_criterion_status.proto";
+import "google/ads/googleads/v2/enums/bidding_source.proto";
+import "google/ads/googleads/v2/enums/criterion_system_serving_status.proto";
+import "google/ads/googleads/v2/enums/criterion_type.proto";
+import "google/ads/googleads/v2/enums/quality_score_bucket.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "AdGroupCriterionProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the ad group criterion resource.
+
+// An ad group criterion.
+message AdGroupCriterion {
+  // A container for ad group criterion quality information.
+  message QualityInfo {
+    // The quality score.
+    //
+    // This field may not be populated if Google does not have enough
+    // information to determine a value.
+    google.protobuf.Int32Value quality_score = 1;
+
+    // The performance of the ad compared to other advertisers.
+    google.ads.googleads.v2.enums.QualityScoreBucketEnum.QualityScoreBucket creative_quality_score = 2;
+
+    // The quality score of the landing page.
+    google.ads.googleads.v2.enums.QualityScoreBucketEnum.QualityScoreBucket post_click_quality_score = 3;
+
+    // The click-through rate compared to that of other advertisers.
+    google.ads.googleads.v2.enums.QualityScoreBucketEnum.QualityScoreBucket search_predicted_ctr = 4;
+  }
+
+  // Estimates for criterion bids at various positions.
+  message PositionEstimates {
+    // The estimate of the CPC bid required for ad to be shown on first
+    // page of search results.
+    google.protobuf.Int64Value first_page_cpc_micros = 1;
+
+    // The estimate of the CPC bid required for ad to be displayed in first
+    // position, at the top of the first page of search results.
+    google.protobuf.Int64Value first_position_cpc_micros = 2;
+
+    // The estimate of the CPC bid required for ad to be displayed at the top
+    // of the first page of search results.
+    google.protobuf.Int64Value top_of_page_cpc_micros = 3;
+
+    // Estimate of how many clicks per week you might get by changing your
+    // keyword bid to the value in first_position_cpc_micros.
+    google.protobuf.Int64Value estimated_add_clicks_at_first_position_cpc = 4;
+
+    // Estimate of how your cost per week might change when changing your
+    // keyword bid to the value in first_position_cpc_micros.
+    google.protobuf.Int64Value estimated_add_cost_at_first_position_cpc = 5;
+  }
+
+  // The resource name of the ad group criterion.
+  // Ad group criterion resource names have the form:
+  //
+  // `customers/{customer_id}/adGroupCriteria/{ad_group_id}~{criterion_id}`
+  string resource_name = 1;
+
+  // The ID of the criterion.
+  //
+  // This field is ignored for mutates.
+  google.protobuf.Int64Value criterion_id = 26;
+
+  // The status of the criterion.
+  google.ads.googleads.v2.enums.AdGroupCriterionStatusEnum.AdGroupCriterionStatus status = 3;
+
+  // Information regarding the quality of the criterion.
+  QualityInfo quality_info = 4;
+
+  // The ad group to which the criterion belongs.
+  google.protobuf.StringValue ad_group = 5;
+
+  // The type of the criterion.
+  google.ads.googleads.v2.enums.CriterionTypeEnum.CriterionType type = 25;
+
+  // Whether to target (`false`) or exclude (`true`) the criterion.
+  //
+  // This field is immutable. To switch a criterion from positive to negative,
+  // remove then re-add it.
+  google.protobuf.BoolValue negative = 31;
+
+  // Serving status of the criterion.
+  google.ads.googleads.v2.enums.CriterionSystemServingStatusEnum.CriterionSystemServingStatus system_serving_status = 52;
+
+  // Approval status of the criterion.
+  google.ads.googleads.v2.enums.AdGroupCriterionApprovalStatusEnum.AdGroupCriterionApprovalStatus approval_status = 53;
+
+  // The modifier for the bid when the criterion matches. The modifier must be
+  // in the range: 0.1 - 10.0. Most targetable criteria types support modifiers.
+  google.protobuf.DoubleValue bid_modifier = 44;
+
+  // The CPC (cost-per-click) bid.
+  google.protobuf.Int64Value cpc_bid_micros = 16;
+
+  // The CPM (cost-per-thousand viewable impressions) bid.
+  google.protobuf.Int64Value cpm_bid_micros = 17;
+
+  // The CPV (cost-per-view) bid.
+  google.protobuf.Int64Value cpv_bid_micros = 24;
+
+  // The CPC bid amount, expressed as a fraction of the advertised price
+  // for some good or service. The valid range for the fraction is [0,1) and the
+  // value stored here is 1,000,000 * [fraction].
+  google.protobuf.Int64Value percent_cpc_bid_micros = 33;
+
+  // The effective CPC (cost-per-click) bid.
+  google.protobuf.Int64Value effective_cpc_bid_micros = 18;
+
+  // The effective CPM (cost-per-thousand viewable impressions) bid.
+  google.protobuf.Int64Value effective_cpm_bid_micros = 19;
+
+  // The effective CPV (cost-per-view) bid.
+  google.protobuf.Int64Value effective_cpv_bid_micros = 20;
+
+  // The effective Percent CPC bid amount.
+  google.protobuf.Int64Value effective_percent_cpc_bid_micros = 34;
+
+  // Source of the effective CPC bid.
+  google.ads.googleads.v2.enums.BiddingSourceEnum.BiddingSource effective_cpc_bid_source = 21;
+
+  // Source of the effective CPM bid.
+  google.ads.googleads.v2.enums.BiddingSourceEnum.BiddingSource effective_cpm_bid_source = 22;
+
+  // Source of the effective CPV bid.
+  google.ads.googleads.v2.enums.BiddingSourceEnum.BiddingSource effective_cpv_bid_source = 23;
+
+  // Source of the effective Percent CPC bid.
+  google.ads.googleads.v2.enums.BiddingSourceEnum.BiddingSource effective_percent_cpc_bid_source = 35;
+
+  // Estimates for criterion bids at various positions.
+  PositionEstimates position_estimates = 10;
+
+  // The list of possible final URLs after all cross-domain redirects for the
+  // ad.
+  repeated google.protobuf.StringValue final_urls = 11;
+
+  // The list of possible final mobile URLs after all cross-domain redirects.
+  repeated google.protobuf.StringValue final_mobile_urls = 51;
+
+  // URL template for appending params to final URL.
+  google.protobuf.StringValue final_url_suffix = 50;
+
+  // The URL template for constructing a tracking URL.
+  google.protobuf.StringValue tracking_url_template = 13;
+
+  // The list of mappings used to substitute custom parameter tags in a
+  // `tracking_url_template`, `final_urls`, or `mobile_final_urls`.
+  repeated google.ads.googleads.v2.common.CustomParameter url_custom_parameters = 14;
+
+  // The ad group criterion.
+  //
+  // Exactly one must be set.
+  oneof criterion {
+    // Keyword.
+    google.ads.googleads.v2.common.KeywordInfo keyword = 27;
+
+    // Placement.
+    google.ads.googleads.v2.common.PlacementInfo placement = 28;
+
+    // Mobile app category.
+    google.ads.googleads.v2.common.MobileAppCategoryInfo mobile_app_category = 29;
+
+    // Mobile application.
+    google.ads.googleads.v2.common.MobileApplicationInfo mobile_application = 30;
+
+    // Listing group.
+    google.ads.googleads.v2.common.ListingGroupInfo listing_group = 32;
+
+    // Age range.
+    google.ads.googleads.v2.common.AgeRangeInfo age_range = 36;
+
+    // Gender.
+    google.ads.googleads.v2.common.GenderInfo gender = 37;
+
+    // Income range.
+    google.ads.googleads.v2.common.IncomeRangeInfo income_range = 38;
+
+    // Parental status.
+    google.ads.googleads.v2.common.ParentalStatusInfo parental_status = 39;
+
+    // User List.
+    google.ads.googleads.v2.common.UserListInfo user_list = 42;
+
+    // YouTube Video.
+    google.ads.googleads.v2.common.YouTubeVideoInfo youtube_video = 40;
+
+    // YouTube Channel.
+    google.ads.googleads.v2.common.YouTubeChannelInfo youtube_channel = 41;
+
+    // Topic.
+    google.ads.googleads.v2.common.TopicInfo topic = 43;
+
+    // User Interest.
+    google.ads.googleads.v2.common.UserInterestInfo user_interest = 45;
+
+    // Webpage
+    google.ads.googleads.v2.common.WebpageInfo webpage = 46;
+
+    // App Payment Model.
+    google.ads.googleads.v2.common.AppPaymentModelInfo app_payment_model = 47;
+
+    // Custom Affinity.
+    google.ads.googleads.v2.common.CustomAffinityInfo custom_affinity = 48;
+
+    // Custom Intent.
+    google.ads.googleads.v2.common.CustomIntentInfo custom_intent = 49;
+  }
+}

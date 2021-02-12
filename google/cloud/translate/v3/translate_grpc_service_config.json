@@ -1,0 +1,55 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.translation.v3.TranslationService",
+          "method": "GetSupportedLanguages"
+        },
+        {
+          "service": "google.cloud.translation.v3.TranslationService",
+          "method": "ListGlossaries"
+        },
+        {
+          "service": "google.cloud.translation.v3.TranslationService",
+          "method": "GetGlossary"
+        },
+        {
+          "service": "google.cloud.translation.v3.TranslationService",
+          "method": "DeleteGlossary"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.translation.v3.TranslationService",
+          "method": "TranslateText"
+        },
+        {
+          "service": "google.cloud.translation.v3.TranslationService",
+          "method": "DetectLanguage"
+        },
+        {
+          "service": "google.cloud.translation.v3.TranslationService",
+          "method": "BatchTranslateText"
+        },
+        {
+          "service": "google.cloud.translation.v3.TranslationService",
+          "method": "CreateGlossary"
+        }
+      ],
+      "timeout": "600s"
+    }
+  ]
+}

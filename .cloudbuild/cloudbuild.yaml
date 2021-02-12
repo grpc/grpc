@@ -1,0 +1,20 @@
+steps:
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['build', '-f', '.cloudbuild/Dockerfile.bazel-gapic', '-t', 'bazel-gapic', '.']
+- name: 'bazel-gapic'
+  args: ['build', '--remote_http_cache=https://storage.googleapis.com/$PROJECT_ID-cloud-build-artifacts/$REPO_NAME/bazel-remote-cache', '--google_default_credentials', '//:gapic-cloud-build']
+- name: 'ubuntu'
+  args: ['mkdir', 'gapic-cloud-build']
+- name: 'ubuntu'
+  args: ['tar', '-xf', 'bazel-bin/gapic-cloud-build.tar', '-C', 'gapic-cloud-build']
+- name: 'gcr.io/cloud-builders/gsutil'
+  args: ['-m', 'cp', '-r', 'gapic-cloud-build', 'gs://$PROJECT_ID-cloud-build-artifacts/$REPO_NAME/$COMMIT_SHA/gapic-cloud-build']
+- name: 'ubuntu'
+  args: ['bash', './.cloudbuild/write-latest.sh', '$COMMIT_SHA']
+artifacts:
+  objects:
+    location: 'gs://$PROJECT_ID-cloud-build-artifacts/$REPO_NAME/'
+    paths:
+    - 'cloud_build_latest'
+options:
+  machineType: 'N1_HIGHCPU_32'

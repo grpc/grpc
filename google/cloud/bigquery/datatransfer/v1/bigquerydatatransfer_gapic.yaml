@@ -1,0 +1,424 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.bigquery.datatransfer.v1
+  python:
+    package_name: google.cloud.bigquery_datatransfer_v1.gapic
+  go:
+    package_name: cloud.google.com/go/bigquery/datatransfer/apiv1
+  csharp:
+    package_name: Google.Cloud.BigQuery.DataTransfer.V1
+  ruby:
+    package_name: Google::Cloud::Bigquery::DataTransfer::V1
+    release_level: BETA
+  php:
+    package_name: Google\Cloud\BigQuery\DataTransfer\V1
+  nodejs:
+    package_name: bigquery-data-transfer.v1
+    domain_layer_location: google-cloud
+collection_oneofs:
+- oneof_name: parent_oneof
+  collection_names:
+  - project
+  - location
+- oneof_name: data_source_oneof
+  collection_names:
+  - project_data_source
+  - location_data_source
+- oneof_name: transfer_config_oneof
+  collection_names:
+  - project_transfer_config
+  - location_transfer_config
+- oneof_name: run_oneof
+  collection_names:
+  - project_run
+  - location_run
+collections:
+- name_pattern: projects/{project}
+  entity_name: project
+  language_overrides:
+  - language: csharp
+    common_resource_name: Google.Api.Gax.ResourceNames.ProjectName
+- name_pattern: projects/{project}/locations/{location}
+  entity_name: location
+- name_pattern: projects/{project}/dataSources/{data_source}
+  entity_name: project_data_source
+- name_pattern: projects/{project}/locations/{location}/dataSources/{data_source}
+  entity_name: location_data_source
+- name_pattern: projects/{project}/transferConfigs/{transfer_config}
+  entity_name: project_transfer_config
+- name_pattern: projects/{project}/locations/{location}/transferConfigs/{transfer_config}
+  entity_name: location_transfer_config
+- name_pattern: projects/{project}/transferConfigs/{transfer_config}/runs/{run}
+  entity_name: project_run
+- name_pattern: projects/{project}/locations/{location}/transferConfigs/{transfer_config}/runs/{run}
+  entity_name: location_run
+# A list of API interface configurations.
+interfaces:
+  # The fully qualified name of the API interface.
+- name: google.cloud.bigquery.datatransfer.v1.DataTransferService
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections:
+  - name_pattern: projects/{project}/locations/{location}
+    entity_name: location
+  # Definition for smoke test.
+  smoke_test:
+    method: ListDataSources
+    init_fields:
+    - parent%project=$PROJECT_ID
+    - parent%location="us-central1"
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #   name - The simple name of the method.
+  #   flattening - Specifies the configuration for parameter flattening.
+  #       Describes the parameter groups for which a generator should produce
+  #       method overloads which allow a client to directly pass request message
+  #       fields as method parameters. This information may or may not be used,
+  #       depending on the target language.
+  #       Consists of groups, which each represent a list of parameters to be
+  #       flattened. Each parameter listed must be a field of the request
+  #       message.
+  #   required_fields - Fields that are always required for a request to be
+  #       valid.
+  #
+  #   resource_name_treatment - An enum that specifies how to treat the
+  #       resource name formats defined in the field_name_patterns
+  #       and response_field_name_patterns fields.
+  #       UNSET: default value
+  #       NONE: the collection configs will not be used by the generated code.
+  #       VALIDATE: string fields will be validated by the client against the
+  #           specified resource name formats.
+  #       STATIC_TYPES: the client will use generated types for resource names.
+  #   page_streaming - Specifies the configuration for paging.
+  #       Describes information for generating a method which transforms a
+  #       paging list RPC into a stream of resources.
+  #       Consists of a request and a response.
+  #       The request specifies request information of the list method. It
+  #       defines which fields match the paging pattern in the request. The
+  #       request consists of a page_size_field and a token_field. The
+  #       page_size_field is the name of the optional field specifying the
+  #       maximum number of elements to be returned in the response. The
+  #       token_field is the name of the field in the request containing the
+  #       page token.
+  #       The response specifies response information of the list method. It
+  #       defines which fields match the paging pattern in the response. The
+  #       response consists of a token_field and a resources_field. The
+  #       token_field is the name of the field in the response containing the
+  #       next page token. The resources_field is the name of the field in the
+  #       response containing the list of resources belonging to the page.
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #       name must be defined in interfaces.retry_codes_def.
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #       parameters. The name must be defined in interfaces.retry_params_def.
+  #   field_name_patterns - Maps the field name of the request type to
+  #       entity_name of interfaces.collections.
+  #       Specifies the string pattern that the field must follow.
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #       the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: GetDataSource
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: data_source_oneof
+    timeout_millis: 20000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - name
+  - name: ListDataSources
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: data_sources
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: parent_oneof
+    timeout_millis: 20000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - parent
+  - name: CreateTransferConfig
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - transfer_config
+    required_fields:
+    - parent
+    - transfer_config
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: parent_oneof
+    timeout_millis: 30000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - parent
+  - name: UpdateTransferConfig
+    flattening:
+      groups:
+      - parameters:
+        - transfer_config
+        - update_mask
+    required_fields:
+    - transfer_config
+    - update_mask
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      transfer_config.name: transfer_config_oneof
+    timeout_millis: 30000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - transfer_config.name
+  - name: DeleteTransferConfig
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: transfer_config_oneof
+    timeout_millis: 30000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - name
+  - name: GetTransferConfig
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: transfer_config_oneof
+    timeout_millis: 30000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - name
+  - name: ListTransferConfigs
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: transfer_configs
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: parent_oneof
+    timeout_millis: 30000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - parent
+  - name: ScheduleTransferRuns
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - start_time
+        - end_time
+    required_fields:
+    - parent
+    - start_time
+    - end_time
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: transfer_config_oneof
+    timeout_millis: 30000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - parent
+  - name: GetTransferRun
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: run_oneof
+    timeout_millis: 30000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - name
+  - name: DeleteTransferRun
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: run_oneof
+    timeout_millis: 30000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - name
+  - name: ListTransferRuns
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: transfer_runs
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: transfer_config_oneof
+    timeout_millis: 30000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - parent
+  - name: ListTransferLogs
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: transfer_messages
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: run_oneof
+    timeout_millis: 30000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - parent
+  - name: CheckValidCreds
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: data_source_oneof
+    timeout_millis: 30000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - name
+resource_name_generation:
+- message_name: GetDataSourceRequest
+  field_entity_map:
+    name: data_source_oneof
+- message_name: ListDataSourcesRequest
+  field_entity_map:
+    parent: parent_oneof
+- message_name: CreateTransferConfigRequest
+  field_entity_map:
+    parent: parent_oneof
+- message_name: GetTransferConfigRequest
+  field_entity_map:
+    name: transfer_config_oneof
+- message_name: DeleteTransferConfigRequest
+  field_entity_map:
+    name: transfer_config_oneof
+- message_name: GetTransferRunRequest
+  field_entity_map:
+    name: run_oneof
+- message_name: DeleteTransferRunRequest
+  field_entity_map:
+    name: run_oneof
+- message_name: ListTransferConfigsRequest
+  field_entity_map:
+    parent: parent_oneof
+- message_name: ListTransferRunsRequest
+  field_entity_map:
+    parent: transfer_config_oneof
+- message_name: ListTransferLogsRequest
+  field_entity_map:
+    parent: run_oneof
+- message_name: CheckValidCredsRequest
+  field_entity_map:
+    name: data_source_oneof
+- message_name: ScheduleTransferRunsRequest
+  field_entity_map:
+    parent: transfer_config_oneof
+- message_name: DataSource
+  field_entity_map:
+    name: data_source_oneof
+- message_name: TransferConfig
+  field_entity_map:
+    name: transfer_config_oneof
+- message_name: TransferRun
+  field_entity_map:
+    name: run_oneof

@@ -1,0 +1,280 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.remoteworkers.v1test2;
+
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/rpc/status.proto";
+
+option csharp_namespace = "Google.DevTools.RemoteWorkers.V1Test2";
+option go_package = "google.golang.org/genproto/googleapis/devtools/remoteworkers/v1test2;remoteworkers";
+option java_multiple_files = true;
+option java_outer_classname = "RemoteWorkersCommands";
+option java_package = "com.google.devtools.remoteworkers.v1test2";
+option objc_class_prefix = "RW";
+
+// Describes a shell-style task to execute, suitable for providing as the Bots
+// interface's `Lease.payload` field.
+message CommandTask {
+  // Describes the inputs to a shell-style task.
+  message Inputs {
+    // An environment variable required by this task.
+    message EnvironmentVariable {
+      // The envvar name.
+      string name = 1;
+
+      // The envvar value.
+      string value = 2;
+    }
+
+    // The command itself to run (e.g., argv).
+    //
+    // This field should be passed directly to the underlying operating system,
+    // and so it must be sensible to that operating system. For example, on
+    // Windows, the first argument might be "C:\Windows\System32\ping.exe" -
+    // that is, using drive letters and backslashes. A command for a *nix
+    // system, on the other hand, would use forward slashes.
+    //
+    // All other fields in the RWAPI must consistently use forward slashes,
+    // since those fields may be interpretted by both the service and the bot.
+    repeated string arguments = 1;
+
+    // The input filesystem to be set up prior to the task beginning. The
+    // contents should be a repeated set of FileMetadata messages though other
+    // formats are allowed if better for the implementation (eg, a LUCI-style
+    // .isolated file).
+    //
+    // This field is repeated since implementations might want to cache the
+    // metadata, in which case it may be useful to break up portions of the
+    // filesystem that change frequently (eg, specific input files) from those
+    // that don't (eg, standard header files).
+    repeated Digest files = 2;
+
+    // Inline contents for blobs expected to be needed by the bot to execute the
+    // task. For example, contents of entries in `files` or blobs that are
+    // indirectly referenced by an entry there.
+    //
+    // The bot should check against this list before downloading required task
+    // inputs to reduce the number of communications between itself and the
+    // remote CAS server.
+    repeated Blob inline_blobs = 4;
+
+    // All environment variables required by the task.
+    repeated EnvironmentVariable environment_variables = 3;
+
+    // Directory from which a command is executed. It is a relative directory
+    // with respect to the bot's working directory (i.e., "./"). If it is
+    // non-empty, then it must exist under "./". Otherwise, "./" will be used.
+    string working_directory = 5;
+  }
+
+  // Describes the expected outputs of the command.
+  message Outputs {
+    // A list of expected files, relative to the execution root. All paths
+    // MUST be delimited by forward slashes.
+    repeated string files = 1;
+
+    // A list of expected directories, relative to the execution root. All paths
+    // MUST be delimited by forward slashes.
+    repeated string directories = 2;
+
+    // The destination to which any stdout should be sent. The method by which
+    // the bot should send the stream contents to that destination is not
+    // defined in this API. As examples, the destination could be a file
+    // referenced in the `files` field in this message, or it could be a URI
+    // that must be written via the ByteStream API.
+    string stdout_destination = 3;
+
+    // The destination to which any stderr should be sent. The method by which
+    // the bot should send the stream contents to that destination is not
+    // defined in this API. As examples, the destination could be a file
+    // referenced in the `files` field in this message, or it could be a URI
+    // that must be written via the ByteStream API.
+    string stderr_destination = 4;
+  }
+
+  // Describes the timeouts associated with this task.
+  message Timeouts {
+    // This specifies the maximum time that the task can run, excluding the
+    // time required to download inputs or upload outputs. That is, the worker
+    // will terminate the task if it runs longer than this.
+    google.protobuf.Duration execution = 1;
+
+    // This specifies the maximum amount of time the task can be idle - that is,
+    // go without generating some output in either stdout or stderr. If the
+    // process is silent for more than the specified time, the worker will
+    // terminate the task.
+    google.protobuf.Duration idle = 2;
+
+    // If the execution or IO timeouts are exceeded, the worker will try to
+    // gracefully terminate the task and return any existing logs. However,
+    // tasks may be hard-frozen in which case this process will fail. This
+    // timeout specifies how long to wait for a terminated task to shut down
+    // gracefully (e.g. via SIGTERM) before we bring down the hammer (e.g.
+    // SIGKILL on *nix, CTRL_BREAK_EVENT on Windows).
+    google.protobuf.Duration shutdown = 3;
+  }
+
+  // The inputs to the task.
+  Inputs inputs = 1;
+
+  // The expected outputs from the task.
+  Outputs expected_outputs = 4;
+
+  // The timeouts of this task.
+  Timeouts timeouts = 5;
+}
+
+// DEPRECATED - use CommandResult instead.
+// Describes the actual outputs from the task.
+message CommandOutputs {
+  // exit_code is only fully reliable if the status' code is OK. If the task
+  // exceeded its deadline or was cancelled, the process may still produce an
+  // exit code as it is cancelled, and this will be populated, but a successful
+  // (zero) is unlikely to be correct unless the status code is OK.
+  int32 exit_code = 1;
+
+  // The output files. The blob referenced by the digest should contain
+  // one of the following (implementation-dependent):
+  //    * A marshalled DirectoryMetadata of the returned filesystem
+  //    * A LUCI-style .isolated file
+  Digest outputs = 2;
+}
+
+// DEPRECATED - use CommandResult instead.
+// Can be used as part of CompleteRequest.metadata, or are part of a more
+// sophisticated message.
+message CommandOverhead {
+  // The elapsed time between calling Accept and Complete. The server will also
+  // have its own idea of what this should be, but this excludes the overhead of
+  // the RPCs and the bot response time.
+  google.protobuf.Duration duration = 1;
+
+  // The amount of time *not* spent executing the command (ie
+  // uploading/downloading files).
+  google.protobuf.Duration overhead = 2;
+}
+
+// All information about the execution of a command, suitable for providing as
+// the Bots interface's `Lease.result` field.
+message CommandResult {
+  // An overall status for the command. For example, if the command timed out,
+  // this might have a code of DEADLINE_EXCEEDED; if it was killed by the OS for
+  // memory exhaustion, it might have a code of RESOURCE_EXHAUSTED.
+  google.rpc.Status status = 1;
+
+  // The exit code of the process. An exit code of "0" should only be trusted if
+  // `status` has a code of OK (otherwise it may simply be unset).
+  int32 exit_code = 2;
+
+  // The output files. The blob referenced by the digest should contain
+  // one of the following (implementation-dependent):
+  //    * A marshalled DirectoryMetadata of the returned filesystem
+  //    * A LUCI-style .isolated file
+  Digest outputs = 3;
+
+  // The elapsed time between calling Accept and Complete. The server will also
+  // have its own idea of what this should be, but this excludes the overhead of
+  // the RPCs and the bot response time.
+  google.protobuf.Duration duration = 4 [deprecated = true];
+
+  // The amount of time *not* spent executing the command (ie
+  // uploading/downloading files).
+  google.protobuf.Duration overhead = 5 [deprecated = true];
+
+  // Implementation-dependent metadata about the task. Both servers and bots
+  // may define messages which can be encoded here; bots are free to provide
+  // metadata in multiple formats, and servers are free to choose one or more
+  // of the values to process and ignore others. In particular, it is *not*
+  // considered an error for the bot to provide the server with a field that it
+  // doesn't know about.
+  repeated google.protobuf.Any metadata = 6;
+}
+
+// The metadata for a file. Similar to the equivalent message in the Remote
+// Execution API.
+message FileMetadata {
+  // The path of this file. If this message is part of the
+  // CommandOutputs.outputs fields, the path is relative to the execution root
+  // and must correspond to an entry in CommandTask.outputs.files. If this
+  // message is part of a Directory message, then the path is relative to the
+  // root of that directory. All paths MUST be delimited by forward slashes.
+  string path = 1;
+
+  // A pointer to the contents of the file. The method by which a client
+  // retrieves the contents from a CAS system is not defined here.
+  Digest digest = 2;
+
+  // If the file is small enough, its contents may also or alternatively be
+  // listed here.
+  bytes contents = 3;
+
+  // Properties of the file
+  bool is_executable = 4;
+}
+
+// The metadata for a directory. Similar to the equivalent message in the Remote
+// Execution API.
+message DirectoryMetadata {
+  // The path of the directory, as in [FileMetadata.path][google.devtools.remoteworkers.v1test2.FileMetadata.path].
+  string path = 1;
+
+  // A pointer to the contents of the directory, in the form of a marshalled
+  // Directory message.
+  Digest digest = 2;
+}
+
+// The CommandTask and CommandResult messages assume the existence of a service
+// that can serve blobs of content, identified by a hash and size known as a
+// "digest." The method by which these blobs may be retrieved is not specified
+// here, but a model implementation is in the Remote Execution API's
+// "ContentAddressibleStorage" interface.
+//
+// In the context of the RWAPI, a Digest will virtually always refer to the
+// contents of a file or a directory. The latter is represented by the
+// byte-encoded Directory message.
+message Digest {
+  // A string-encoded hash (eg "1a2b3c", not the byte array [0x1a, 0x2b, 0x3c])
+  // using an implementation-defined hash algorithm (eg SHA-256).
+  string hash = 1;
+
+  // The size of the contents. While this is not strictly required as part of an
+  // identifier (after all, any given hash will have exactly one canonical
+  // size), it's useful in almost all cases when one might want to send or
+  // retrieve blobs of content and is included here for this reason.
+  int64 size_bytes = 2;
+}
+
+// Describes a blob of binary content with its digest.
+message Blob {
+  // The digest of the blob. This should be verified by the receiver.
+  Digest digest = 1;
+
+  // The contents of the blob.
+  bytes contents = 2;
+}
+
+// The contents of a directory. Similar to the equivalent message in the Remote
+// Execution API.
+message Directory {
+  // The files in this directory
+  repeated FileMetadata files = 1;
+
+  // Any subdirectories
+  repeated DirectoryMetadata directories = 2;
+}

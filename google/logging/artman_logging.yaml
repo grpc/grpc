@@ -1,0 +1,35 @@
+common:
+  api_name: logging
+  api_version: v2
+  organization_name: google-cloud
+  proto_deps:
+  - name: google-common-protos
+  src_proto_paths:
+  - type
+  - v2
+  service_yaml: v2/logging.yaml
+  gapic_yaml: v2/logging_gapic.yaml
+artifacts:
+- name: gapic_config
+  type: GAPIC_CONFIG
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: php_gapic
+  type: GAPIC
+  language: PHP
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP

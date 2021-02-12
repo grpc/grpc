@@ -1,0 +1,107 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/enums/google_ads_field_category.proto";
+import "google/ads/googleads/v2/enums/google_ads_field_data_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "GoogleAdsFieldProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the Google Ads Field resource.
+
+// A field or resource (artifact) used by GoogleAdsService.
+message GoogleAdsField {
+  // The resource name of the artifact.
+  // Artifact resource names have the form:
+  //
+  // `googleAdsFields/{name}`
+  string resource_name = 1;
+
+  // The name of the artifact.
+  google.protobuf.StringValue name = 2;
+
+  // The category of the artifact.
+  google.ads.googleads.v2.enums.GoogleAdsFieldCategoryEnum.GoogleAdsFieldCategory category = 3;
+
+  // Whether the artifact can be used in a SELECT clause in search
+  // queries.
+  google.protobuf.BoolValue selectable = 4;
+
+  // Whether the artifact can be used in a WHERE clause in search
+  // queries.
+  google.protobuf.BoolValue filterable = 5;
+
+  // Whether the artifact can be used in a ORDER BY clause in search
+  // queries.
+  google.protobuf.BoolValue sortable = 6;
+
+  // The names of all resources, segments, and metrics that are selectable with
+  // the described artifact.
+  repeated google.protobuf.StringValue selectable_with = 7;
+
+  // The names of all resources that are selectable with the described
+  // artifact. Fields from these resources do not segment metrics when included
+  // in search queries.
+  //
+  // This field is only set for artifacts whose category is RESOURCE.
+  repeated google.protobuf.StringValue attribute_resources = 8;
+
+  // At and beyond version V1 this field lists the names of all metrics that are
+  // selectable with the described artifact when it is used in the FROM clause.
+  // It is only set for artifacts whose category is RESOURCE.
+  //
+  // Before version V1 this field lists the names of all metrics that are
+  // selectable with the described artifact. It is only set for artifacts whose
+  // category is either RESOURCE or SEGMENT
+  repeated google.protobuf.StringValue metrics = 9;
+
+  // At and beyond version V1 this field lists the names of all artifacts,
+  // whether a segment or another resource, that segment metrics when included
+  // in search queries and when the described artifact is used in the FROM
+  // clause. It is only set for artifacts whose category is RESOURCE.
+  //
+  // Before version V1 this field lists the names of all artifacts, whether a
+  // segment or another resource, that segment metrics when included in search
+  // queries. It is only set for artifacts of category RESOURCE, SEGMENT or
+  // METRIC.
+  repeated google.protobuf.StringValue segments = 10;
+
+  // Values the artifact can assume if it is a field of type ENUM.
+  //
+  // This field is only set for artifacts of category SEGMENT or ATTRIBUTE.
+  repeated google.protobuf.StringValue enum_values = 11;
+
+  // This field determines the operators that can be used with the artifact
+  // in WHERE clauses.
+  google.ads.googleads.v2.enums.GoogleAdsFieldDataTypeEnum.GoogleAdsFieldDataType data_type = 12;
+
+  // The URL of proto describing the artifact's data type.
+  google.protobuf.StringValue type_url = 13;
+
+  // Whether the field artifact is repeated.
+  google.protobuf.BoolValue is_repeated = 14;
+}

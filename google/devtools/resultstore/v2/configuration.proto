@@ -1,0 +1,70 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.resultstore.v2;
+
+import "google/devtools/resultstore/v2/common.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/resultstore/v2;resultstore";
+option java_multiple_files = true;
+option java_package = "com.google.devtools.resultstore.v2";
+
+// Represents a configuration within an Invocation associated with one or more
+// ConfiguredTargets. It captures the environment and other settings that
+// were used.
+message Configuration {
+  // The resource ID components that identify the Configuration.
+  message Id {
+    // The Invocation ID.
+    string invocation_id = 1;
+
+    // The Configuration ID.
+    string configuration_id = 2;
+  }
+
+  // The format of this Configuration resource name must be:
+  // invocations/${INVOCATION_ID}/configs/${url_encode(CONFIG_ID)}
+  // The configuration ID of "default" should be preferred for the default
+  // configuration in a single-config invocation.
+  string name = 1;
+
+  // The resource ID components that identify the Configuration. They must match
+  // the resource name after proper encoding.
+  Id id = 2;
+
+  // The aggregate status for this configuration.
+  StatusAttributes status_attributes = 3;
+
+  // Attributes that apply only to this configuration.
+  ConfigurationAttributes configuration_attributes = 5;
+
+  // Arbitrary name-value pairs.
+  // This is implemented as a multi-map. Multiple properties are allowed with
+  // the same key. Properties will be returned in lexicographical order by key.
+  repeated Property properties = 6;
+
+  // A human-readable name for Configuration.
+  // It is recommended that this name be unique.
+  // If omitted, the configuration_id should be used as display_name instead.
+  string display_name = 8;
+}
+
+// Attributes that apply only to the configuration.
+message ConfigurationAttributes {
+  // The type of cpu. (e.g. "x86", "powerpc")
+  string cpu = 1;
+}

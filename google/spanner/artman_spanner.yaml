@@ -1,0 +1,35 @@
+common:
+  api_name: spanner
+  api_version: v1
+  organization_name: google-cloud
+  service_yaml: v1/spanner.yaml
+  gapic_yaml: v1/spanner_gapic.yaml
+  proto_package: google.spanner.v1
+  src_proto_paths:
+  - v1
+  proto_deps:
+  - name: google-common-protos
+artifacts:
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+  release_level: GA
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+  release_level: GA
+- name: go_gapic
+  type: GAPIC
+  language: GO
+  release_level: GA
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP
+  release_level: GA
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+  release_level: GA
+- name: gapic_config
+  type: GAPIC_CONFIG
+  release_level: GA

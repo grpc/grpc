@@ -1,0 +1,167 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1beta1;
+
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1beta1;automl";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.automl.v1beta1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1beta1";
+option ruby_package = "Google::Cloud::AutoML::V1beta1";
+
+// The data statistics of a series of values that share the same DataType.
+message DataStats {
+  // The data statistics specific to a DataType.
+  oneof stats {
+    // The statistics for FLOAT64 DataType.
+    Float64Stats float64_stats = 3;
+
+    // The statistics for STRING DataType.
+    StringStats string_stats = 4;
+
+    // The statistics for TIMESTAMP DataType.
+    TimestampStats timestamp_stats = 5;
+
+    // The statistics for ARRAY DataType.
+    ArrayStats array_stats = 6;
+
+    // The statistics for STRUCT DataType.
+    StructStats struct_stats = 7;
+
+    // The statistics for CATEGORY DataType.
+    CategoryStats category_stats = 8;
+  }
+
+  // The number of distinct values.
+  int64 distinct_value_count = 1;
+
+  // The number of values that are null.
+  int64 null_value_count = 2;
+
+  // The number of values that are valid.
+  int64 valid_value_count = 9;
+}
+
+// The data statistics of a series of FLOAT64 values.
+message Float64Stats {
+  // A bucket of a histogram.
+  message HistogramBucket {
+    // The minimum value of the bucket, inclusive.
+    double min = 1;
+
+    // The maximum value of the bucket, exclusive unless max = `"Infinity"`, in
+    // which case it's inclusive.
+    double max = 2;
+
+    // The number of data values that are in the bucket, i.e. are between
+    // min and max values.
+    int64 count = 3;
+  }
+
+  // The mean of the series.
+  double mean = 1;
+
+  // The standard deviation of the series.
+  double standard_deviation = 2;
+
+  // Ordered from 0 to k k-quantile values of the data series of n values.
+  // The value at index i is, approximately, the i*n/k-th smallest value in the
+  // series; for i = 0 and i = k these are, respectively, the min and max
+  // values.
+  repeated double quantiles = 3;
+
+  // Histogram buckets of the data series. Sorted by the min value of the
+  // bucket, ascendingly, and the number of the buckets is dynamically
+  // generated. The buckets are non-overlapping and completely cover whole
+  // FLOAT64 range with min of first bucket being `"-Infinity"`, and max of
+  // the last one being `"Infinity"`.
+  repeated HistogramBucket histogram_buckets = 4;
+}
+
+// The data statistics of a series of STRING values.
+message StringStats {
+  // The statistics of a unigram.
+  message UnigramStats {
+    // The unigram.
+    string value = 1;
+
+    // The number of occurrences of this unigram in the series.
+    int64 count = 2;
+  }
+
+  // The statistics of the top 20 unigrams, ordered by
+  // [count][google.cloud.automl.v1beta1.StringStats.UnigramStats.count].
+  repeated UnigramStats top_unigram_stats = 1;
+}
+
+// The data statistics of a series of TIMESTAMP values.
+message TimestampStats {
+  // Stats split by a defined in context granularity.
+  message GranularStats {
+    // A map from granularity key to example count for that key.
+    // E.g. for hour_of_day `13` means 1pm, or for month_of_year `5` means May).
+    map<int32, int64> buckets = 1;
+  }
+
+  // The string key is the pre-defined granularity. Currently supported:
+  // hour_of_day, day_of_week, month_of_year.
+  // Granularities finer that the granularity of timestamp data are not
+  // populated (e.g. if timestamps are at day granularity, then hour_of_day
+  // is not populated).
+  map<string, GranularStats> granular_stats = 1;
+}
+
+// The data statistics of a series of ARRAY values.
+message ArrayStats {
+  // Stats of all the values of all arrays, as if they were a single long
+  // series of data. The type depends on the element type of the array.
+  DataStats member_stats = 2;
+}
+
+// The data statistics of a series of STRUCT values.
+message StructStats {
+  // Map from a field name of the struct to data stats aggregated over series
+  // of all data in that field across all the structs.
+  map<string, DataStats> field_stats = 1;
+}
+
+// The data statistics of a series of CATEGORY values.
+message CategoryStats {
+  // The statistics of a single CATEGORY value.
+  message SingleCategoryStats {
+    // The CATEGORY value.
+    string value = 1;
+
+    // The number of occurrences of this value in the series.
+    int64 count = 2;
+  }
+
+  // The statistics of the top 20 CATEGORY values, ordered by
+  //
+  // [count][google.cloud.automl.v1beta1.CategoryStats.SingleCategoryStats.count].
+  repeated SingleCategoryStats top_category_stats = 1;
+}
+
+// A correlation statistics between two series of DataType values. The series
+// may have differing DataType-s, but within a single series the DataType must
+// be the same.
+message CorrelationStats {
+  // The correlation value using the Cramer's V measure.
+  double cramers_v = 1;
+}

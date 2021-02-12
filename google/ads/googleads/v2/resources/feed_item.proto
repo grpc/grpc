@@ -1,0 +1,199 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/common/custom_parameter.proto";
+import "google/ads/googleads/v2/common/feed_common.proto";
+import "google/ads/googleads/v2/common/policy.proto";
+import "google/ads/googleads/v2/enums/feed_item_quality_approval_status.proto";
+import "google/ads/googleads/v2/enums/feed_item_quality_disapproval_reason.proto";
+import "google/ads/googleads/v2/enums/feed_item_status.proto";
+import "google/ads/googleads/v2/enums/feed_item_validation_status.proto";
+import "google/ads/googleads/v2/enums/geo_targeting_restriction.proto";
+import "google/ads/googleads/v2/enums/placeholder_type.proto";
+import "google/ads/googleads/v2/enums/policy_approval_status.proto";
+import "google/ads/googleads/v2/enums/policy_review_status.proto";
+import "google/ads/googleads/v2/errors/feed_item_validation_error.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "FeedItemProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the FeedItem resource.
+
+// A feed item.
+message FeedItem {
+  // The resource name of the feed item.
+  // Feed item resource names have the form:
+  //
+  // `customers/{customer_id}/feedItems/{feed_id}~{feed_item_id}`
+  string resource_name = 1;
+
+  // The feed to which this feed item belongs.
+  google.protobuf.StringValue feed = 2;
+
+  // The ID of this feed item.
+  google.protobuf.Int64Value id = 3;
+
+  // Start time in which this feed item is effective and can begin serving. The
+  // time is in the customer's time zone.
+  // The format is "YYYY-MM-DD HH:MM:SS".
+  // Examples: "2018-03-05 09:15:00" or "2018-02-01 14:34:30"
+  google.protobuf.StringValue start_date_time = 4;
+
+  // End time in which this feed item is no longer effective and will stop
+  // serving. The time is in the customer's time zone.
+  // The format is "YYYY-MM-DD HH:MM:SS".
+  // Examples: "2018-03-05 09:15:00" or "2018-02-01 14:34:30"
+  google.protobuf.StringValue end_date_time = 5;
+
+  // The feed item's attribute values.
+  repeated FeedItemAttributeValue attribute_values = 6;
+
+  // Geo targeting restriction specifies the type of location that can be used
+  // for targeting.
+  google.ads.googleads.v2.enums.GeoTargetingRestrictionEnum.GeoTargetingRestriction geo_targeting_restriction = 7;
+
+  // The list of mappings used to substitute custom parameter tags in a
+  // `tracking_url_template`, `final_urls`, or `mobile_final_urls`.
+  repeated google.ads.googleads.v2.common.CustomParameter url_custom_parameters = 8;
+
+  // Status of the feed item.
+  // This field is read-only.
+  google.ads.googleads.v2.enums.FeedItemStatusEnum.FeedItemStatus status = 9;
+
+  // List of info about a feed item's validation and approval state for active
+  // feed mappings. There will be an entry in the list for each type of feed
+  // mapping associated with the feed, e.g. a feed with a sitelink and a call
+  // feed mapping would cause every feed item associated with that feed to have
+  // an entry in this list for both sitelink and call.
+  // This field is read-only.
+  repeated FeedItemPlaceholderPolicyInfo policy_infos = 10;
+}
+
+// A feed item attribute value.
+message FeedItemAttributeValue {
+  // Id of the feed attribute for which the value is associated with.
+  google.protobuf.Int64Value feed_attribute_id = 1;
+
+  // Int64 value. Should be set if feed_attribute_id refers to a feed attribute
+  // of type INT64.
+  google.protobuf.Int64Value integer_value = 2;
+
+  // Bool value. Should be set if feed_attribute_id refers to a feed attribute
+  // of type BOOLEAN.
+  google.protobuf.BoolValue boolean_value = 3;
+
+  // String value. Should be set if feed_attribute_id refers to a feed attribute
+  // of type STRING, URL or DATE_TIME.
+  // For STRING the maximum length is 1500 characters. For URL the maximum
+  // length is 2076 characters. For DATE_TIME the format of the string must
+  // be the same as start and end time for the feed item.
+  google.protobuf.StringValue string_value = 4;
+
+  // Double value. Should be set if feed_attribute_id refers to a feed attribute
+  // of type DOUBLE.
+  google.protobuf.DoubleValue double_value = 5;
+
+  // Price value. Should be set if feed_attribute_id refers to a feed attribute
+  // of type PRICE.
+  google.ads.googleads.v2.common.Money price_value = 6;
+
+  // Repeated int64 value. Should be set if feed_attribute_id refers to a feed
+  // attribute of type INT64_LIST.
+  repeated google.protobuf.Int64Value integer_values = 7;
+
+  // Repeated bool value. Should be set if feed_attribute_id refers to a feed
+  // attribute of type BOOLEAN_LIST.
+  repeated google.protobuf.BoolValue boolean_values = 8;
+
+  // Repeated string value. Should be set if feed_attribute_id refers to a feed
+  // attribute of type STRING_LIST, URL_LIST or DATE_TIME_LIST.
+  // For STRING_LIST and URL_LIST the total size of the list in bytes may not
+  // exceed 3000. For DATE_TIME_LIST the number of elements may not exceed 200.
+  //
+  // For STRING_LIST the maximum length of each string element is 1500
+  // characters. For URL_LIST the maximum length is 2076 characters. For
+  // DATE_TIME the format of the string must be the same as start and end time
+  // for the feed item.
+  repeated google.protobuf.StringValue string_values = 9;
+
+  // Repeated double value. Should be set if feed_attribute_id refers to a feed
+  // attribute of type DOUBLE_LIST.
+  repeated google.protobuf.DoubleValue double_values = 10;
+}
+
+// Policy, validation, and quality approval info for a feed item for the
+// specified placeholder type.
+message FeedItemPlaceholderPolicyInfo {
+  // The placeholder type.
+  google.ads.googleads.v2.enums.PlaceholderTypeEnum.PlaceholderType placeholder_type_enum = 10;
+
+  // The FeedMapping that contains the placeholder type.
+  google.protobuf.StringValue feed_mapping_resource_name = 2;
+
+  // Where the placeholder type is in the review process.
+  google.ads.googleads.v2.enums.PolicyReviewStatusEnum.PolicyReviewStatus review_status = 3;
+
+  // The overall approval status of the placeholder type, calculated based on
+  // the status of its individual policy topic entries.
+  google.ads.googleads.v2.enums.PolicyApprovalStatusEnum.PolicyApprovalStatus approval_status = 4;
+
+  // The list of policy findings for the placeholder type.
+  repeated google.ads.googleads.v2.common.PolicyTopicEntry policy_topic_entries = 5;
+
+  // The validation status of the palceholder type.
+  google.ads.googleads.v2.enums.FeedItemValidationStatusEnum.FeedItemValidationStatus validation_status = 6;
+
+  // List of placeholder type validation errors.
+  repeated FeedItemValidationError validation_errors = 7;
+
+  // Placeholder type quality evaluation approval status.
+  google.ads.googleads.v2.enums.FeedItemQualityApprovalStatusEnum.FeedItemQualityApprovalStatus quality_approval_status = 8;
+
+  // List of placeholder type quality evaluation disapproval reasons.
+  repeated google.ads.googleads.v2.enums.FeedItemQualityDisapprovalReasonEnum.FeedItemQualityDisapprovalReason quality_disapproval_reasons = 9;
+}
+
+// Stores a validation error and the set of offending feed attributes which
+// together are responsible for causing a feed item validation error.
+message FeedItemValidationError {
+  // Error code indicating what validation error was triggered. The description
+  // of the error can be found in the 'description' field.
+  google.ads.googleads.v2.errors.FeedItemValidationErrorEnum.FeedItemValidationError validation_error = 1;
+
+  // The description of the validation error.
+  google.protobuf.StringValue description = 2;
+
+  // Set of feed attributes in the feed item flagged during validation. If
+  // empty, no specific feed attributes can be associated with the error
+  // (e.g. error across the entire feed item).
+  repeated google.protobuf.Int64Value feed_attribute_ids = 3;
+
+  // Any extra information related to this error which is not captured by
+  // validation_error and feed_attribute_id (e.g. placeholder field IDs when
+  // feed_attribute_id is not mapped). Note that extra_info is not localized.
+  google.protobuf.StringValue extra_info = 5;
+}

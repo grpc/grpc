@@ -1,0 +1,220 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.common;
+
+import "google/ads/googleads/v1/enums/policy_topic_entry_type.proto";
+import "google/ads/googleads/v1/enums/policy_topic_evidence_destination_mismatch_url_type.proto";
+import "google/ads/googleads/v1/enums/policy_topic_evidence_destination_not_working_device.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "PolicyProto";
+option java_package = "com.google.ads.googleads.v1.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V1::Common";
+
+// Proto file describing policy information.
+
+// Key of the violation. The key is used for referring to a violation
+// when filing an exemption request.
+message PolicyViolationKey {
+  // Unique ID of the violated policy.
+  google.protobuf.StringValue policy_name = 1;
+
+  // The text that violates the policy if specified.
+  // Otherwise, refers to the policy in general
+  // (e.g., when requesting to be exempt from the whole policy).
+  // If not specified for criterion exemptions, the whole policy is implied.
+  // Must be specified for ad exemptions.
+  google.protobuf.StringValue violating_text = 2;
+}
+
+// Parameter for controlling how policy exemption is done. Ignorable policy
+// topics are only usable with expanded text ads and responsive search ads. All
+// other ad types must use policy violation keys.
+message PolicyValidationParameter {
+  // The list of policy topics that should not cause a PolicyFindingError to
+  // be reported. This field is currently only compatible with Enhanced Text Ad.
+  // It corresponds to the PolicyTopicEntry.topic field.
+  //
+  // Resources violating these policies will be saved, but will not be eligible
+  // to serve. They may begin serving at a later time due to a change in
+  // policies, re-review of the resource, or a change in advertiser
+  // certificates.
+  repeated google.protobuf.StringValue ignorable_policy_topics = 1;
+
+  // The list of policy violation keys that should not cause a
+  // PolicyViolationError to be reported. Not all policy violations are
+  // exemptable, please refer to the is_exemptible field in the returned
+  // PolicyViolationError.
+  //
+  // Resources violating these polices will be saved, but will not be eligible
+  // to serve. They may begin serving at a later time due to a change in
+  // policies, re-review of the resource, or a change in advertiser
+  // certificates.
+  repeated PolicyViolationKey exempt_policy_violation_keys = 2;
+}
+
+// Policy finding attached to a resource (e.g. alcohol policy associated with
+// a site that sells alcohol).
+//
+// Each PolicyTopicEntry has a topic that indicates the specific ads policy
+// the entry is about and a type to indicate the effect that the entry will have
+// on serving. It may optionally have one or more evidences that indicate the
+// reason for the finding. It may also optionally have one or more constraints
+// that provide details about how serving may be restricted.
+message PolicyTopicEntry {
+  // Policy topic this finding refers to. For example, "ALCOHOL",
+  // "TRADEMARKS_IN_AD_TEXT", or "DESTINATION_NOT_WORKING". The set of possible
+  // policy topics is not fixed for a particular API version and may change
+  // at any time.
+  google.protobuf.StringValue topic = 1;
+
+  // Describes the negative or positive effect this policy will have on serving.
+  google.ads.googleads.v1.enums.PolicyTopicEntryTypeEnum.PolicyTopicEntryType
+      type = 2;
+
+  // Additional information that explains policy finding
+  // (e.g. the brand name for a trademark finding).
+  repeated PolicyTopicEvidence evidences = 3;
+
+  // Indicates how serving of this resource may be affected (e.g. not serving
+  // in a country).
+  repeated PolicyTopicConstraint constraints = 4;
+}
+
+// Additional information that explains a policy finding.
+message PolicyTopicEvidence {
+  // A list of fragments of text that violated a policy.
+  message TextList {
+    // The fragments of text from the resource that caused the policy finding.
+    repeated google.protobuf.StringValue texts = 1;
+  }
+
+  // A list of websites that caused a policy finding. Used for
+  // ONE_WEBSITE_PER_AD_GROUP policy topic, for example. In case there are more
+  // than five websites, only the top five (those that appear in resources the
+  // most) will be listed here.
+  message WebsiteList {
+    // Websites that caused the policy finding.
+    repeated google.protobuf.StringValue websites = 1;
+  }
+
+  // A list of strings found in a destination page that caused a policy
+  // finding.
+  message DestinationTextList {
+    // List of text found in the resource's destination page.
+    repeated google.protobuf.StringValue destination_texts = 1;
+  }
+
+  // Evidence of mismatches between the URLs of a resource.
+  message DestinationMismatch {
+    // The set of URLs that did not match each other.
+    repeated google.ads.googleads.v1.enums
+        .PolicyTopicEvidenceDestinationMismatchUrlTypeEnum
+        .PolicyTopicEvidenceDestinationMismatchUrlType url_types = 1;
+  }
+
+  // Evidence details when the destination is returning an HTTP error
+  // code or isn't functional in all locations for commonly used devices.
+  message DestinationNotWorking {
+    // The full URL that didn't work.
+    google.protobuf.StringValue expanded_url = 3;
+
+    // The type of device that failed to load the URL.
+    google.ads.googleads.v1.enums
+        .PolicyTopicEvidenceDestinationNotWorkingDeviceEnum
+        .PolicyTopicEvidenceDestinationNotWorkingDevice device = 4;
+
+    // The time the URL was last checked.
+    // The format is "YYYY-MM-DD HH:MM:SS".
+    // Examples: "2018-03-05 09:15:00" or "2018-02-01 14:34:30"
+    google.protobuf.StringValue last_checked_date_time = 5;
+  }
+
+  // Specific evidence information depending on the evidence type.
+  oneof value {
+    // HTTP code returned when the final URL was crawled.
+    google.protobuf.Int32Value http_code = 2;
+
+    // List of websites linked with this resource.
+    WebsiteList website_list = 3;
+
+    // List of evidence found in the text of a resource.
+    TextList text_list = 4;
+
+    // The language the resource was detected to be written in.
+    // This is an IETF language tag such as "en-US".
+    google.protobuf.StringValue language_code = 5;
+
+    // The text in the destination of the resource that is causing a policy
+    // finding.
+    DestinationTextList destination_text_list = 6;
+
+    // Mismatch between the destinations of a resource's URLs.
+    DestinationMismatch destination_mismatch = 7;
+
+    // Details when the destination is returning an HTTP error code or isn't
+    // functional in all locations for commonly used devices.
+    DestinationNotWorking destination_not_working = 8;
+  }
+}
+
+// Describes the effect on serving that a policy topic entry will have.
+message PolicyTopicConstraint {
+  // A list of countries where a resource's serving is constrained.
+  message CountryConstraintList {
+    // Total number of countries targeted by the resource.
+    google.protobuf.Int32Value total_targeted_countries = 1;
+
+    // Countries in which serving is restricted.
+    repeated CountryConstraint countries = 2;
+  }
+
+  // Indicates that a policy topic was constrained due to disapproval of the
+  // website for reseller purposes.
+  message ResellerConstraint {}
+
+  // Indicates that a resource's ability to serve in a particular country is
+  // constrained.
+  message CountryConstraint {
+    // Geo target constant resource name of the country in which serving is
+    // constrained.
+    google.protobuf.StringValue country_criterion = 1;
+  }
+
+  // Specific information about the constraint.
+  oneof value {
+    // Countries where the resource cannot serve.
+    CountryConstraintList country_constraint_list = 1;
+
+    // Reseller constraint.
+    ResellerConstraint reseller_constraint = 2;
+
+    // Countries where a certificate is required for serving.
+    CountryConstraintList certificate_missing_in_country_list = 3;
+
+    // Countries where the resource's domain is not covered by the
+    // certificates associated with it.
+    CountryConstraintList certificate_domain_mismatch_in_country_list = 4;
+  }
+}

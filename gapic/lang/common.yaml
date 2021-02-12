@@ -1,0 +1,33 @@
+# THIS FILE IS DEPRECATED
+# Artman will no longer use this file as of version 0.11.0. It is only being
+# kept around for users of older versions of Artman, and it will eventually
+# be deleted.
+common:
+  toolkit_path: ${TOOLKIT}
+  # common gRPC package generation parameters
+  package_dependencies_yaml: ${GOOGLEAPIS}/gapic/packaging/dependencies.yaml
+  package_defaults_yaml: ${GOOGLEAPIS}/gapic/packaging/api_defaults.yaml
+  common_protos_yaml: ${GOOGLEAPIS}/gapic/packaging/common_protos.yaml
+java:
+  gapic_language_yaml:
+    - ${GOOGLEAPIS}/gapic/lang/java_gapic.yaml
+  discogapic_language_yaml:
+    - ${GOOGLEAPIS}/gapic/lang/java_discogapic.yam
+python:
+  gapic_language_yaml:
+    - ${GOOGLEAPIS}/gapic/lang/python_gapic.yaml
+go:
+  gapic_language_yaml:
+    - ${GOOGLEAPIS}/gapic/lang/go_gapic.yaml
+csharp:
+  gapic_language_yaml:
+    - ${GOOGLEAPIS}/gapic/lang/csharp_gapic.yaml
+php:
+  gapic_language_yaml:
+    - ${GOOGLEAPIS}/gapic/lang/php_gapic.yaml
+ruby:
+  gapic_language_yaml:
+    - ${GOOGLEAPIS}/gapic/lang/ruby_gapic.yaml
+nodejs:
+  gapic_language_yaml:
+    - ${GOOGLEAPIS}/gapic/lang/nodejs_gapic.yaml

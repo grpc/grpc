@@ -1,0 +1,63 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "HotelRateTypeProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Proto file describing hotel rate types.
+
+// Container for enum describing possible hotel rate types.
+message HotelRateTypeEnum {
+  // Enum describing possible hotel rate types.
+  enum HotelRateType {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // The value is unknown in this version.
+    UNKNOWN = 1;
+
+    // Rate type information is unavailable.
+    UNAVAILABLE = 2;
+
+    // Rates available to everyone.
+    PUBLIC_RATE = 3;
+
+    // A membership program rate is available and satisfies basic requirements
+    // like having a public rate available. UI treatment will strikethrough the
+    // public rate and indicate that a discount is available to the user. For
+    // more on Qualified Rates, visit
+    // https://developers.google.com/hotels/hotel-ads/dev-guide/qualified-rates
+    QUALIFIED_RATE = 4;
+
+    // Rates available to users that satisfy some eligibility criteria. e.g.
+    // all signed-in users, 20% of mobile users, all mobile users in Canada,
+    // etc.
+    PRIVATE_RATE = 5;
+  }
+
+
+}

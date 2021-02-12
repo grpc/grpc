@@ -1,0 +1,155 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "ImageErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing image errors.
+
+// Container for enum describing possible image errors.
+message ImageErrorEnum {
+  // Enum describing possible image errors.
+  enum ImageError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // The image is not valid.
+    INVALID_IMAGE = 2;
+
+    // The image could not be stored.
+    STORAGE_ERROR = 3;
+
+    // There was a problem with the request.
+    BAD_REQUEST = 4;
+
+    // The image is not of legal dimensions.
+    UNEXPECTED_SIZE = 5;
+
+    // Animated image are not permitted.
+    ANIMATED_NOT_ALLOWED = 6;
+
+    // Animation is too long.
+    ANIMATION_TOO_LONG = 7;
+
+    // There was an error on the server.
+    SERVER_ERROR = 8;
+
+    // Image cannot be in CMYK color format.
+    CMYK_JPEG_NOT_ALLOWED = 9;
+
+    // Flash images are not permitted.
+    FLASH_NOT_ALLOWED = 10;
+
+    // Flash images must support clickTag.
+    FLASH_WITHOUT_CLICKTAG = 11;
+
+    // A flash error has occurred after fixing the click tag.
+    FLASH_ERROR_AFTER_FIXING_CLICK_TAG = 12;
+
+    // Unacceptable visual effects.
+    ANIMATED_VISUAL_EFFECT = 13;
+
+    // There was a problem with the flash image.
+    FLASH_ERROR = 14;
+
+    // Incorrect image layout.
+    LAYOUT_PROBLEM = 15;
+
+    // There was a problem reading the image file.
+    PROBLEM_READING_IMAGE_FILE = 16;
+
+    // There was an error storing the image.
+    ERROR_STORING_IMAGE = 17;
+
+    // The aspect ratio of the image is not allowed.
+    ASPECT_RATIO_NOT_ALLOWED = 18;
+
+    // Flash cannot have network objects.
+    FLASH_HAS_NETWORK_OBJECTS = 19;
+
+    // Flash cannot have network methods.
+    FLASH_HAS_NETWORK_METHODS = 20;
+
+    // Flash cannot have a Url.
+    FLASH_HAS_URL = 21;
+
+    // Flash cannot use mouse tracking.
+    FLASH_HAS_MOUSE_TRACKING = 22;
+
+    // Flash cannot have a random number.
+    FLASH_HAS_RANDOM_NUM = 23;
+
+    // Ad click target cannot be '_self'.
+    FLASH_SELF_TARGETS = 24;
+
+    // GetUrl method should only use '_blank'.
+    FLASH_BAD_GETURL_TARGET = 25;
+
+    // Flash version is not supported.
+    FLASH_VERSION_NOT_SUPPORTED = 26;
+
+    // Flash movies need to have hard coded click URL or clickTAG
+    FLASH_WITHOUT_HARD_CODED_CLICK_URL = 27;
+
+    // Uploaded flash file is corrupted.
+    INVALID_FLASH_FILE = 28;
+
+    // Uploaded flash file can be parsed, but the click tag can not be fixed
+    // properly.
+    FAILED_TO_FIX_CLICK_TAG_IN_FLASH = 29;
+
+    // Flash movie accesses network resources
+    FLASH_ACCESSES_NETWORK_RESOURCES = 30;
+
+    // Flash movie attempts to call external javascript code
+    FLASH_EXTERNAL_JS_CALL = 31;
+
+    // Flash movie attempts to call flash system commands
+    FLASH_EXTERNAL_FS_CALL = 32;
+
+    // Image file is too large.
+    FILE_TOO_LARGE = 33;
+
+    // Image data is too large.
+    IMAGE_DATA_TOO_LARGE = 34;
+
+    // Error while processing the image.
+    IMAGE_PROCESSING_ERROR = 35;
+
+    // Image is too small.
+    IMAGE_TOO_SMALL = 36;
+
+    // Input was invalid.
+    INVALID_INPUT = 37;
+
+    // There was a problem reading the image file.
+    PROBLEM_READING_FILE = 38;
+  }
+}

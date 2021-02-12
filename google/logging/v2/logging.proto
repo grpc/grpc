@@ -1,0 +1,357 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.logging.v2;
+
+import "google/api/monitored_resource.proto";
+import "google/logging/v2/log_entry.proto";
+import "google/logging/v2/logging_config.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.Logging.V2";
+option go_package = "google.golang.org/genproto/googleapis/logging/v2;logging";
+option java_multiple_files = true;
+option java_outer_classname = "LoggingProto";
+option java_package = "com.google.logging.v2";
+option php_namespace = "Google\\Cloud\\Logging\\V2";
+
+// Service for ingesting and querying logs.
+service LoggingServiceV2 {
+  option (google.api.default_host) = "logging.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/cloud-platform.read-only,"
+      "https://www.googleapis.com/auth/logging.admin,"
+      "https://www.googleapis.com/auth/logging.read,"
+      "https://www.googleapis.com/auth/logging.write";
+
+  // Deletes all the log entries in a log.
+  // The log reappears if it receives new entries.
+  // Log entries written shortly before the delete operation might not be
+  // deleted.
+  rpc DeleteLog(DeleteLogRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v2/{log_name=projects/*/logs/*}"
+      additional_bindings {
+        delete: "/v2/{log_name=*/*/logs/*}"
+      }
+      additional_bindings {
+        delete: "/v2/{log_name=organizations/*/logs/*}"
+      }
+      additional_bindings {
+        delete: "/v2/{log_name=folders/*/logs/*}"
+      }
+      additional_bindings {
+        delete: "/v2/{log_name=billingAccounts/*/logs/*}"
+      }
+    };
+  }
+
+  // Writes log entries to Logging. This API method is the
+  // only way to send log entries to Logging. This method
+  // is used, directly or indirectly, by the Logging agent
+  // (fluentd) and all logging libraries configured to use Logging.
+  // A single request may contain log entries for a maximum of 1000
+  // different resources (projects, organizations, billing accounts or
+  // folders)
+  rpc WriteLogEntries(WriteLogEntriesRequest) returns (WriteLogEntriesResponse) {
+    option (google.api.http) = {
+      post: "/v2/entries:write"
+      body: "*"
+    };
+  }
+
+  // Lists log entries.  Use this method to retrieve log entries that originated
+  // from a project/folder/organization/billing account.  For ways to export log
+  // entries, see [Exporting Logs](/logging/docs/export).
+  rpc ListLogEntries(ListLogEntriesRequest) returns (ListLogEntriesResponse) {
+    option (google.api.http) = {
+      post: "/v2/entries:list"
+      body: "*"
+    };
+  }
+
+  // Lists the descriptors for monitored resource types used by Logging.
+  rpc ListMonitoredResourceDescriptors(ListMonitoredResourceDescriptorsRequest) returns (ListMonitoredResourceDescriptorsResponse) {
+    option (google.api.http) = {
+      get: "/v2/monitoredResourceDescriptors"
+    };
+  }
+
+  // Lists the logs in projects, organizations, folders, or billing accounts.
+  // Only logs that have entries are listed.
+  rpc ListLogs(ListLogsRequest) returns (ListLogsResponse) {
+    option (google.api.http) = {
+      get: "/v2/{parent=*/*}/logs"
+      additional_bindings {
+        get: "/v2/{parent=projects/*}/logs"
+      }
+      additional_bindings {
+        get: "/v2/{parent=organizations/*}/logs"
+      }
+      additional_bindings {
+        get: "/v2/{parent=folders/*}/logs"
+      }
+      additional_bindings {
+        get: "/v2/{parent=billingAccounts/*}/logs"
+      }
+    };
+  }
+}
+
+// The parameters to DeleteLog.
+message DeleteLogRequest {
+  // Required. The resource name of the log to delete:
+  //
+  //     "projects/[PROJECT_ID]/logs/[LOG_ID]"
+  //     "organizations/[ORGANIZATION_ID]/logs/[LOG_ID]"
+  //     "billingAccounts/[BILLING_ACCOUNT_ID]/logs/[LOG_ID]"
+  //     "folders/[FOLDER_ID]/logs/[LOG_ID]"
+  //
+  // `[LOG_ID]` must be URL-encoded. For example,
+  // `"projects/my-project-id/logs/syslog"`,
+  // `"organizations/1234567890/logs/cloudresourcemanager.googleapis.com%2Factivity"`.
+  // For more information about log names, see
+  // [LogEntry][google.logging.v2.LogEntry].
+  string log_name = 1;
+}
+
+// The parameters to WriteLogEntries.
+message WriteLogEntriesRequest {
+  // Optional. A default log resource name that is assigned to all log entries
+  // in `entries` that do not specify a value for `log_name`:
+  //
+  //     "projects/[PROJECT_ID]/logs/[LOG_ID]"
+  //     "organizations/[ORGANIZATION_ID]/logs/[LOG_ID]"
+  //     "billingAccounts/[BILLING_ACCOUNT_ID]/logs/[LOG_ID]"
+  //     "folders/[FOLDER_ID]/logs/[LOG_ID]"
+  //
+  // `[LOG_ID]` must be URL-encoded. For example:
+  //
+  //     "projects/my-project-id/logs/syslog"
+  //     "organizations/1234567890/logs/cloudresourcemanager.googleapis.com%2Factivity"
+  //
+  // The permission <code>logging.logEntries.create</code> is needed on each
+  // project, organization, billing account, or folder that is receiving
+  // new log entries, whether the resource is specified in
+  // <code>logName</code> or in an individual log entry.
+  string log_name = 1;
+
+  // Optional. A default monitored resource object that is assigned to all log
+  // entries in `entries` that do not specify a value for `resource`. Example:
+  //
+  //     { "type": "gce_instance",
+  //       "labels": {
+  //         "zone": "us-central1-a", "instance_id": "00000000000000000000" }}
+  //
+  // See [LogEntry][google.logging.v2.LogEntry].
+  google.api.MonitoredResource resource = 2;
+
+  // Optional. Default labels that are added to the `labels` field of all log
+  // entries in `entries`. If a log entry already has a label with the same key
+  // as a label in this parameter, then the log entry's label is not changed.
+  // See [LogEntry][google.logging.v2.LogEntry].
+  map<string, string> labels = 3;
+
+  // Required. The log entries to send to Logging. The order of log
+  // entries in this list does not matter. Values supplied in this method's
+  // `log_name`, `resource`, and `labels` fields are copied into those log
+  // entries in this list that do not include values for their corresponding
+  // fields. For more information, see the
+  // [LogEntry][google.logging.v2.LogEntry] type.
+  //
+  // If the `timestamp` or `insert_id` fields are missing in log entries, then
+  // this method supplies the current time or a unique identifier, respectively.
+  // The supplied values are chosen so that, among the log entries that did not
+  // supply their own values, the entries earlier in the list will sort before
+  // the entries later in the list. See the `entries.list` method.
+  //
+  // Log entries with timestamps that are more than the
+  // [logs retention period](/logging/quota-policy) in the past or more than
+  // 24 hours in the future will not be available when calling `entries.list`.
+  // However, those log entries can still be
+  // [exported with LogSinks](/logging/docs/api/tasks/exporting-logs).
+  //
+  // To improve throughput and to avoid exceeding the
+  // [quota limit](/logging/quota-policy) for calls to `entries.write`,
+  // you should try to include several log entries in this list,
+  // rather than calling this method for each individual log entry.
+  repeated LogEntry entries = 4;
+
+  // Optional. Whether valid entries should be written even if some other
+  // entries fail due to INVALID_ARGUMENT or PERMISSION_DENIED errors. If any
+  // entry is not written, then the response status is the error associated
+  // with one of the failed entries and the response includes error details
+  // keyed by the entries' zero-based index in the `entries.write` method.
+  bool partial_success = 5;
+
+  // Optional. If true, the request should expect normal response, but the
+  // entries won't be persisted nor exported. Useful for checking whether the
+  // logging API endpoints are working properly before sending valuable data.
+  bool dry_run = 6;
+}
+
+// Result returned from WriteLogEntries.
+// empty
+message WriteLogEntriesResponse {
+
+}
+
+// Error details for WriteLogEntries with partial success.
+message WriteLogEntriesPartialErrors {
+  // When `WriteLogEntriesRequest.partial_success` is true, records the error
+  // status for entries that were not written due to a permanent error, keyed
+  // by the entry's zero-based index in `WriteLogEntriesRequest.entries`.
+  //
+  // Failed requests for which no entries are written will not include
+  // per-entry errors.
+  map<int32, google.rpc.Status> log_entry_errors = 1;
+}
+
+// The parameters to `ListLogEntries`.
+message ListLogEntriesRequest {
+  // Deprecated. Use `resource_names` instead.  One or more project identifiers
+  // or project numbers from which to retrieve log entries.  Example:
+  // `"my-project-1A"`.
+  repeated string project_ids = 1 [deprecated = true];
+
+  // Required. Names of one or more parent resources from which to
+  // retrieve log entries:
+  //
+  //     "projects/[PROJECT_ID]"
+  //     "organizations/[ORGANIZATION_ID]"
+  //     "billingAccounts/[BILLING_ACCOUNT_ID]"
+  //     "folders/[FOLDER_ID]"
+  //
+  //
+  // Projects listed in the `project_ids` field are added to this list.
+  repeated string resource_names = 8;
+
+  // Optional. A filter that chooses which log entries to return.  See [Advanced
+  // Logs Filters](/logging/docs/view/advanced_filters).  Only log entries that
+  // match the filter are returned.  An empty filter matches all log entries in
+  // the resources listed in `resource_names`. Referencing a parent resource
+  // that is not listed in `resource_names` will cause the filter to return no
+  // results.
+  // The maximum length of the filter is 20000 characters.
+  string filter = 2;
+
+  // Optional. How the results should be sorted.  Presently, the only permitted
+  // values are `"timestamp asc"` (default) and `"timestamp desc"`. The first
+  // option returns entries in order of increasing values of
+  // `LogEntry.timestamp` (oldest first), and the second option returns entries
+  // in order of decreasing timestamps (newest first).  Entries with equal
+  // timestamps are returned in order of their `insert_id` values.
+  string order_by = 3;
+
+  // Optional. The maximum number of results to return from this request.
+  // Non-positive values are ignored.  The presence of `next_page_token` in the
+  // response indicates that more results might be available.
+  int32 page_size = 4;
+
+  // Optional. If present, then retrieve the next batch of results from the
+  // preceding call to this method.  `page_token` must be the value of
+  // `next_page_token` from the previous response.  The values of other method
+  // parameters should be identical to those in the previous call.
+  string page_token = 5;
+}
+
+// Result returned from `ListLogEntries`.
+message ListLogEntriesResponse {
+  // A list of log entries.  If `entries` is empty, `nextPageToken` may still be
+  // returned, indicating that more entries may exist.  See `nextPageToken` for
+  // more information.
+  repeated LogEntry entries = 1;
+
+  // If there might be more results than those appearing in this response, then
+  // `nextPageToken` is included.  To get the next set of results, call this
+  // method again using the value of `nextPageToken` as `pageToken`.
+  //
+  // If a value for `next_page_token` appears and the `entries` field is empty,
+  // it means that the search found no log entries so far but it did not have
+  // time to search all the possible log entries.  Retry the method with this
+  // value for `page_token` to continue the search.  Alternatively, consider
+  // speeding up the search by changing your filter to specify a single log name
+  // or resource type, or to narrow the time range of the search.
+  string next_page_token = 2;
+}
+
+// The parameters to ListMonitoredResourceDescriptors
+message ListMonitoredResourceDescriptorsRequest {
+  // Optional. The maximum number of results to return from this request.
+  // Non-positive values are ignored.  The presence of `nextPageToken` in the
+  // response indicates that more results might be available.
+  int32 page_size = 1;
+
+  // Optional. If present, then retrieve the next batch of results from the
+  // preceding call to this method.  `pageToken` must be the value of
+  // `nextPageToken` from the previous response.  The values of other method
+  // parameters should be identical to those in the previous call.
+  string page_token = 2;
+}
+
+// Result returned from ListMonitoredResourceDescriptors.
+message ListMonitoredResourceDescriptorsResponse {
+  // A list of resource descriptors.
+  repeated google.api.MonitoredResourceDescriptor resource_descriptors = 1;
+
+  // If there might be more results than those appearing in this response, then
+  // `nextPageToken` is included.  To get the next set of results, call this
+  // method again using the value of `nextPageToken` as `pageToken`.
+  string next_page_token = 2;
+}
+
+// The parameters to ListLogs.
+message ListLogsRequest {
+  // Required. The resource name that owns the logs:
+  //
+  //     "projects/[PROJECT_ID]"
+  //     "organizations/[ORGANIZATION_ID]"
+  //     "billingAccounts/[BILLING_ACCOUNT_ID]"
+  //     "folders/[FOLDER_ID]"
+  string parent = 1;
+
+  // Optional. The maximum number of results to return from this request.
+  // Non-positive values are ignored.  The presence of `nextPageToken` in the
+  // response indicates that more results might be available.
+  int32 page_size = 2;
+
+  // Optional. If present, then retrieve the next batch of results from the
+  // preceding call to this method.  `pageToken` must be the value of
+  // `nextPageToken` from the previous response.  The values of other method
+  // parameters should be identical to those in the previous call.
+  string page_token = 3;
+}
+
+// Result returned from ListLogs.
+message ListLogsResponse {
+  // A list of log names. For example,
+  // `"projects/my-project/logs/syslog"` or
+  // `"organizations/123/logs/cloudresourcemanager.googleapis.com%2Factivity"`.
+  repeated string log_names = 3;
+
+  // If there might be more results than those appearing in this response, then
+  // `nextPageToken` is included.  To get the next set of results, call this
+  // method again using the value of `nextPageToken` as `pageToken`.
+  string next_page_token = 2;
+}

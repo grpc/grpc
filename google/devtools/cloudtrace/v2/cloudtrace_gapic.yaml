@@ -1,0 +1,27 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.trace.v2
+  python:
+    package_name: google.cloud.trace_v2.gapic
+  ruby:
+    package_name: Google::Cloud::Trace::V2
+    release_level: BETA
+  php:
+    package_name: Google\Cloud\Trace\V2
+  nodejs:
+    package_name: trace.v2
+    domain_layer_location: google-cloud
+  go:
+    package_name: cloud.google.com/go/trace/apiv2
+  csharp:
+    package_name: Google.Cloud.Trace.V2
+# A list of API interface configurations.
+interfaces:
+- name: google.devtools.cloudtrace.v2.TraceService
+  smoke_test:
+    method: BatchWriteSpans
+    init_fields:
+    - name%project=$PROJECT_ID

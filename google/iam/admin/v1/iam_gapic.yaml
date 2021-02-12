@@ -1,0 +1,249 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.iam.admin.v1
+  python:
+    package_name: google.cloud.iam_admin_v1.gapic
+  go:
+    package_name: cloud.google.com/go/iam/admin/apiv1
+  csharp:
+    package_name: Google.Iam.Admin.V1
+  ruby:
+    package_name: Google::Cloud::Iam::Admin::V1
+  php:
+    package_name: Google\Cloud\Iam\Admin\V1
+  nodejs:
+    package_name: iam.v1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.iam.admin.v1.IAM
+  collections:
+  - name_pattern: projects/{project}
+    entity_name: project
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Api.Gax.ResourceNames.ProjectName
+  - name_pattern: projects/{project}/serviceAccounts/{service_account}
+    entity_name: service_account
+  - name_pattern: projects/{project}/serviceAccounts/{service_account}/keys/{key}
+    entity_name: key
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  methods:
+  - name: ListServiceAccounts
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: accounts
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: project
+    timeout_millis: 60000
+  - name: GetServiceAccount
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: service_account
+    timeout_millis: 60000
+  - name: CreateServiceAccount
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - account_id
+        - service_account
+    required_fields:
+    - name
+    - account_id
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: project
+    timeout_millis: 60000
+  - name: UpdateServiceAccount
+    required_fields:
+      - etag
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: service_account
+    timeout_millis: 60000
+  - name: DeleteServiceAccount
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: service_account
+    timeout_millis: 60000
+  - name: ListServiceAccountKeys
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - key_types
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: service_account
+    timeout_millis: 60000
+  - name: GetServiceAccountKey
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - public_key_type
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: key
+    timeout_millis: 60000
+  - name: CreateServiceAccountKey
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - private_key_type
+        - key_algorithm
+    required_fields:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: service_account
+    timeout_millis: 60000
+  - name: DeleteServiceAccountKey
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: key
+    timeout_millis: 60000
+  - name: SignBlob
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - bytes_to_sign
+    required_fields:
+    - name
+    - bytes_to_sign
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: service_account
+    timeout_millis: 60000
+  - name: GetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+    required_fields:
+    - resource
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: service_account
+    timeout_millis: 60000
+    surface_treatments:
+    - include_languages:
+      - go
+      visibility: PRIVATE
+  - name: SetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - policy
+    required_fields:
+    - resource
+    - policy
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: service_account
+    timeout_millis: 60000
+    surface_treatments:
+    - include_languages:
+      - go
+      visibility: PRIVATE
+  - name: TestIamPermissions
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - permissions
+    required_fields:
+    - resource
+    - permissions
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: service_account
+    timeout_millis: 60000
+  - name: QueryGrantableRoles
+    flattening:
+      groups:
+      - parameters:
+        - full_resource_name
+    required_fields:
+    - full_resource_name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: SignJwt
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - payload
+    required_fields:
+    - name
+    - payload
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000

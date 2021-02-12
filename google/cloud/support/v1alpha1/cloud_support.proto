@@ -1,0 +1,222 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.cloud.support.v1alpha1;
+
+import "google/api/annotations.proto";
+import "google/cloud/support/common.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/support/v1alpha1;support";
+option java_outer_classname = "CloudSupportProto";
+option java_package = "com.google.cloud.support.v1alpha1";
+
+// Retrieves the list of Google Cloud Platform Support accounts and manages
+// support cases associated with them.
+service CloudSupport {
+  // Retrieves the support account details given an account identifier.
+  // The authenticated user calling this method must be the account owner.
+  rpc GetSupportAccount(GetSupportAccountRequest)
+      returns (google.cloud.support.common.SupportAccount) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{name=supportAccounts/*}"
+    };
+  }
+
+  // Retrieves the list of accounts the current authenticated user has access
+  // to.
+  rpc ListSupportAccounts(ListSupportAccountsRequest)
+      returns (ListSupportAccountsResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha1/supportAccounts"
+    };
+  }
+
+  // Retrieves the details for a support case. The current authenticated user
+  // calling this method must have permissions to view this case.
+  rpc GetCase(GetCaseRequest) returns (google.cloud.support.common.Case) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{name=supportAccounts/*/cases/*}"
+    };
+  }
+
+  // Retrieves the list of support cases associated with an account. The current
+  // authenticated user must have the permission to list and view these cases.
+  rpc ListCases(ListCasesRequest) returns (ListCasesResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{name=supportAccounts/*}/cases"
+    };
+  }
+
+  // Lists all comments from a case.
+  rpc ListComments(ListCommentsRequest) returns (ListCommentsResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{name=supportAccounts/*/cases/*}/comments"
+    };
+  }
+
+  // Creates a case and associates it with a
+  // [SupportAccount][google.cloud.support.v1alpha2.SupportAcccount]. The
+  // authenticated user attempting this action must have permissions to create a
+  // `Case` under that [SupportAccount].
+  rpc CreateCase(CreateCaseRequest) returns (google.cloud.support.common.Case) {
+    option (google.api.http) = {
+      post: "/v1alpha1/{parent=supportAccounts/*}/cases"
+      body: "case"
+    };
+  }
+
+  // Updates a support case. Only a small set of details (priority, subject and
+  // cc_address) can be update after a case is created.
+  rpc UpdateCase(UpdateCaseRequest) returns (google.cloud.support.common.Case) {
+    option (google.api.http) = {
+      patch: "/v1alpha1/{case.name=supportAccounts/*/cases/*}"
+      body: "case"
+    };
+  }
+
+  // Adds a new comment to a case.
+  rpc CreateComment(CreateCommentRequest)
+      returns (google.cloud.support.common.Comment) {
+    option (google.api.http) = {
+      post: "/v1alpha1/{name=supportAccounts/*/cases/*}/comments"
+      body: "comment"
+    };
+  }
+
+  // Retrieves the taxonomy of product categories and components to be used
+  // while creating a support case.
+  rpc GetIssueTaxonomy(GetIssueTaxonomyRequest)
+      returns (google.cloud.support.common.IssueTaxonomy) {
+    option (google.api.http) = {
+      get: "/v1alpha1:getIssueTaxonomy"
+    };
+  }
+}
+
+// The request message for `GetSupportAccount`.
+message GetSupportAccountRequest {
+  // The resource name of the support accounts. For example:
+  // `supportAccounts/accountA`.
+  string name = 1;
+}
+
+// The request message for `ListSupportAccount`.
+message ListSupportAccountsRequest {
+  // The filter applied to search results. It only supports filtering a support
+  // account list by a cloud_resource. For example, to filter results by support
+  // accounts associated with an Organization, its value should be:
+  // "cloud_resource:organizations/<organization_id>"
+  string filter = 1;
+
+  // Maximum number of accounts fetched with each request.
+  int64 page_size = 2;
+
+  // A token identifying the page of results to return. If unspecified, the
+  // first page is retrieved.
+  string page_token = 3;
+}
+
+// The response message for `ListSupportAccount`.
+message ListSupportAccountsResponse {
+  // A list of support accounts.
+  repeated google.cloud.support.common.SupportAccount accounts = 1;
+
+  // A token to retrieve the next page of results. This should be passed on in
+  // `page_token` field of `ListSupportAccountRequest` for next request. If
+  // unspecified, there are no more results to retrieve.
+  string next_page_token = 2;
+}
+
+// The request message for `GetCase` method.
+message GetCaseRequest {
+  // Name of case resource requested.
+  // For example: "supportAccounts/accountA/cases/123"
+  string name = 1;
+}
+
+// The request message for `ListCase` method.
+message ListCasesRequest {
+  // Name of the account resource for which cases are requested. For example:
+  // "supportAccounts/accountA"
+  string name = 1;
+
+  // The filter applied to the search results. Currently it only accepts "OPEN"
+  // or "CLOSED" strings, filtering out cases that are open or resolved.
+  string filter = 2;
+
+  // Maximum number of cases fetched with each request.
+  int64 page_size = 3;
+
+  // A token identifying the page of results to return. If unspecified, the
+  // first page is retrieved.
+  string page_token = 4;
+}
+
+// The response message for `ListCase` method.
+message ListCasesResponse {
+  // A list of cases.
+  repeated google.cloud.support.common.Case cases = 1;
+
+  // A token to retrieve the next page of results. This should be passed on in
+  // `page_token` field of `ListCaseRequest` for next request. If unspecified,
+  // there are no more results to retrieve.
+  string next_page_token = 2;
+}
+
+// The request message for `ListComments` method.
+message ListCommentsRequest {
+  // The resource name of case for which comments should be listed.
+  string name = 1;
+}
+
+// The response message for `ListComments` method.
+message ListCommentsResponse {
+  // A list of comments.
+  repeated google.cloud.support.common.Comment comments = 1;
+}
+
+// The request message for `CreateCase` method.
+message CreateCaseRequest {
+  // The resource name for `SupportAccount` under which this case is created.
+  string parent = 1;
+
+  // The case resource to create.
+  google.cloud.support.common.Case case = 2;
+}
+
+// The request message for `UpdateCase` method.
+message UpdateCaseRequest {
+  // The case resource to update.
+  google.cloud.support.common.Case case = 1;
+
+  // A field that represents attributes of a Case object that should be updated
+  // as part of this request.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// The request message for `CreateComment` method.
+message CreateCommentRequest {
+  // The resource name of case to which this comment should be added.
+  string name = 1;
+
+  // The `Comment` to be added to this case.
+  google.cloud.support.common.Comment comment = 2;
+}
+
+// The request message for `GetIssueTaxonomy` method.
+message GetIssueTaxonomyRequest {}

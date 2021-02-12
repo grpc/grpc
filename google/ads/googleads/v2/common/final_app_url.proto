@@ -1,0 +1,48 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.common;
+
+import "google/ads/googleads/v2/enums/app_url_operating_system_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "FinalAppUrlProto";
+option java_package = "com.google.ads.googleads.v2.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V2::Common";
+
+// Proto file FinalAppUrl type.
+
+// A URL for deep linking into an app for the given operating system.
+message FinalAppUrl {
+  // The operating system targeted by this URL. Required.
+  google.ads.googleads.v2.enums.AppUrlOperatingSystemTypeEnum.AppUrlOperatingSystemType os_type = 1;
+
+  // The app deep link URL. Deep links specify a location in an app that
+  // corresponds to the content you'd like to show, and should be of the form
+  // {scheme}://{host_path}
+  // The scheme identifies which app to open. For your app, you can use a custom
+  // scheme that starts with the app's name. The host and path specify the
+  // unique location in the app where your content exists.
+  // Example: "exampleapp://productid_1234". Required.
+  google.protobuf.StringValue url = 2;
+}

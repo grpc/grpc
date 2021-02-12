@@ -1,0 +1,104 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "FeedErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing feed errors.
+
+// Container for enum describing possible feed errors.
+message FeedErrorEnum {
+  // Enum describing possible feed errors.
+  enum FeedError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // The names of the FeedAttributes must be unique.
+    ATTRIBUTE_NAMES_NOT_UNIQUE = 2;
+
+    // The attribute list must be an exact copy of the existing list if the
+    // attribute ID's are present.
+    ATTRIBUTES_DO_NOT_MATCH_EXISTING_ATTRIBUTES = 3;
+
+    // Cannot specify USER origin for a system generated feed.
+    CANNOT_SPECIFY_USER_ORIGIN_FOR_SYSTEM_FEED = 4;
+
+    // Cannot specify GOOGLE origin for a non-system generated feed.
+    CANNOT_SPECIFY_GOOGLE_ORIGIN_FOR_NON_SYSTEM_FEED = 5;
+
+    // Cannot specify feed attributes for system feed.
+    CANNOT_SPECIFY_FEED_ATTRIBUTES_FOR_SYSTEM_FEED = 6;
+
+    // Cannot update FeedAttributes on feed with origin GOOGLE.
+    CANNOT_UPDATE_FEED_ATTRIBUTES_WITH_ORIGIN_GOOGLE = 7;
+
+    // The given ID refers to a removed Feed. Removed Feeds are immutable.
+    FEED_REMOVED = 8;
+
+    // The origin of the feed is not valid for the client.
+    INVALID_ORIGIN_VALUE = 9;
+
+    // A user can only create and modify feeds with USER origin.
+    FEED_ORIGIN_IS_NOT_USER = 10;
+
+    // Invalid auth token for the given email.
+    INVALID_AUTH_TOKEN_FOR_EMAIL = 11;
+
+    // Invalid email specified.
+    INVALID_EMAIL = 12;
+
+    // Feed name matches that of another active Feed.
+    DUPLICATE_FEED_NAME = 13;
+
+    // Name of feed is not allowed.
+    INVALID_FEED_NAME = 14;
+
+    // Missing OAuthInfo.
+    MISSING_OAUTH_INFO = 15;
+
+    // New FeedAttributes must not affect the unique key.
+    NEW_ATTRIBUTE_CANNOT_BE_PART_OF_UNIQUE_KEY = 16;
+
+    // Too many FeedAttributes for a Feed.
+    TOO_MANY_ATTRIBUTES = 17;
+
+    // The business account is not valid.
+    INVALID_BUSINESS_ACCOUNT = 18;
+
+    // Business account cannot access Google My Business account.
+    BUSINESS_ACCOUNT_CANNOT_ACCESS_LOCATION_ACCOUNT = 19;
+
+    // Invalid chain ID provided for affiliate location feed.
+    INVALID_AFFILIATE_CHAIN_ID = 20;
+
+    // There is already a feed with the given system feed generation data.
+    DUPLICATE_SYSTEM_FEED = 21;
+  }
+}

@@ -1,0 +1,106 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.resultstore.v2;
+
+import "google/protobuf/wrappers.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/resultstore/v2;resultstore";
+option java_multiple_files = true;
+option java_package = "com.google.devtools.resultstore.v2";
+
+// The metadata for a file or an archive file entry.
+message File {
+  // If known, the hash function used to compute this digest.
+  enum HashType {
+    // Unknown
+    HASH_TYPE_UNSPECIFIED = 0;
+
+    // MD5
+    MD5 = 1;
+
+    // SHA-1
+    SHA1 = 2;
+
+    // SHA-256
+    SHA256 = 3;
+  }
+
+  // The identifier of the file or archive entry.
+  // User-provided, must be unique for the repeated field it is in. When an
+  // Append RPC is called with a Files field populated, if a File already exists
+  // with this ID, that File will be overwritten with the new File proto.
+  string uid = 1;
+
+  // The URI of a file.
+  // This could also be the URI of an entire archive.
+  // Most log data doesn't need to be stored forever, so a ttl is suggested.
+  // Note that if you ever move or delete the file at this URI, the link from
+  // the server will be broken.
+  string uri = 2;
+
+  // (Optional) The length of the file in bytes.  Allows the filesize to be
+  // shown in the UI.  Omit if file is still being written or length is
+  // not known.  This could also be the length of an entire archive.
+  google.protobuf.Int64Value length = 3;
+
+  // (Optional) The content-type (aka MIME-type) of the file.  This is sent to
+  // the web browser so it knows how to handle the file. (e.g. text/plain,
+  // image/jpeg, text/html, etc). For zip archives, use "application/zip".
+  string content_type = 4;
+
+  // (Optional) If the above path, length, and content_type are referring to an
+  // archive, and you wish to refer to a particular entry within that archive,
+  // put the particular archive entry data here.
+  ArchiveEntry archive_entry = 5;
+
+  // (Optional) A url to a content display app/site for this file or archive
+  // entry.
+  string content_viewer = 6;
+
+  // (Optional) Whether to hide this file or archive entry in the UI.  Defaults
+  // to false. A checkbox lets users see hidden files, but they're hidden by
+  // default.
+  bool hidden = 7;
+
+  // (Optional) A short description of what this file or archive entry
+  // contains. This description should help someone viewing the list of these
+  // files to understand the purpose of this file and what they would want to
+  // view it for.
+  string description = 8;
+
+  // (Optional) digest of this file in hexadecimal-like string if known.
+  string digest = 9;
+
+  // (Optional) The algorithm corresponding to the digest if known.
+  HashType hash_type = 10;
+}
+
+// Information specific to an entry in an archive.
+message ArchiveEntry {
+  // The relative path of the entry within the archive.
+  string path = 1;
+
+  // (Optional) The uncompressed length of the archive entry in bytes.  Allows
+  // the entry size to be shown in the UI.  Omit if the length is not known.
+  google.protobuf.Int64Value length = 2;
+
+  // (Optional) The content-type (aka MIME-type) of the archive entry. (e.g.
+  // text/plain, image/jpeg, text/html, etc). This is sent to the web browser
+  // so it knows how to handle the entry.
+  string content_type = 3;
+}

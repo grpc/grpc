@@ -1,0 +1,151 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.datalabeling.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/datalabeling/v1beta1/dataset.proto";
+import "google/cloud/datalabeling/v1beta1/evaluation.proto";
+import "google/cloud/datalabeling/v1beta1/human_annotation_config.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/datalabeling/v1beta1;datalabeling";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.datalabeling.v1beta1";
+
+// Defines an evaluation job that is triggered periodically to generate
+// evaluations.
+message EvaluationJob {
+  // State of the job.
+  enum State {
+    STATE_UNSPECIFIED = 0;
+
+    SCHEDULED = 1;
+
+    RUNNING = 2;
+
+    PAUSED = 3;
+
+    STOPPED = 4;
+  }
+
+  // Format: 'projects/{project_id}/evaluationJobs/{evaluation_job_id}'
+  string name = 1;
+
+  // Description of the job. The description can be up to
+  // 25000 characters long.
+  string description = 2;
+
+  State state = 3;
+
+  // Describes the schedule on which the job will be executed. Minimum schedule
+  // unit is 1 day.
+  //
+  // The schedule can be either of the following types:
+  // * [Crontab](http://en.wikipedia.org/wiki/Cron#Overview)
+  // * English-like
+  //
+  // [schedule](https:
+  // //cloud.google.com/scheduler/docs/configuring/cron-job-schedules)
+  string schedule = 4;
+
+  // The versioned model that is being evaluated here.
+  // Only one job is allowed for each model name.
+  // Format: 'projects/*/models/*/versions/*'
+  string model_version = 5;
+
+  // Detailed config for running this eval job.
+  EvaluationJobConfig evaluation_job_config = 6;
+
+  // Name of the AnnotationSpecSet.
+  string annotation_spec_set = 7;
+
+  // If a human annotation should be requested when some data don't have ground
+  // truth.
+  bool label_missing_ground_truth = 8;
+
+  // Output only. Any attempts with errors happening in evaluation job runs each
+  // time will be recorded here incrementally.
+  repeated Attempt attempts = 9;
+
+  // Timestamp when this evaluation job was created.
+  google.protobuf.Timestamp create_time = 10;
+}
+
+message EvaluationJobConfig {
+  // config specific to different supported human annotation use cases.
+  oneof human_annotation_request_config {
+    ImageClassificationConfig image_classification_config = 4;
+
+    BoundingPolyConfig bounding_poly_config = 5;
+
+    VideoClassificationConfig video_classification_config = 6;
+
+    ObjectDetectionConfig object_detection_config = 7;
+
+    TextClassificationConfig text_classification_config = 8;
+
+    ObjectTrackingConfig object_tracking_config = 12;
+  }
+
+  // Input config for data, gcs_source in the config will be the root path for
+  // data. Data should be organzied chronically under that path.
+  InputConfig input_config = 1;
+
+  // Config used to create evaluation.
+  EvaluationConfig evaluation_config = 2;
+
+  HumanAnnotationConfig human_annotation_config = 3;
+
+  // Mappings between reserved keys for bigquery import and customized tensor
+  // names. Key is the reserved key, value is tensor name in the bigquery table.
+  // Different annotation type has different required key mapping. See user
+  // manual for more details:
+  //
+  // https:
+  // //docs.google.com/document/d/1bg1meMIBGY
+  // // 9I5QEoFoHSX6u9LsZQYBSmPt6E9SxqHZc/edit#heading=h.tfyjhxhvsqem
+  map<string, string> bigquery_import_keys = 9;
+
+  // Max number of examples to collect in each period.
+  int32 example_count = 10;
+
+  // Percentage of examples to collect in each period. 0.1 means 10% of total
+  // examples will be collected, and 0.0 means no collection.
+  double example_sample_percentage = 11;
+
+  // Alert config for the evaluation job. The alert will be triggered when its
+  // criteria is met.
+  EvaluationJobAlertConfig evaluation_job_alert_config = 13;
+}
+
+message EvaluationJobAlertConfig {
+  // Required. Email of the user who will be receiving the alert.
+  string email = 1;
+
+  // If a single evaluation run's aggregate mean average precision is
+  // lower than this threshold, the alert will be triggered.
+  double min_acceptable_mean_average_precision = 2;
+}
+
+// Records a failed attempt.
+message Attempt {
+  google.protobuf.Timestamp attempt_time = 1;
+
+  repeated google.rpc.Status partial_failures = 2;
+}

@@ -1,0 +1,9 @@
+# THIS FILE IS DEPRECATED
+# Artman will no longer use this file as of version 0.11.0. It is only being
+# kept around for users of older versions of Artman, and it will eventually
+# be deleted.
+type: com.google.api.codegen.ConfigProto
+language: csharp
+generator:
+  factory: com.google.api.codegen.gapic.MainGapicProviderFactory
+  id: csharp

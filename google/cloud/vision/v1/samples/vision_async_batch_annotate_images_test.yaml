@@ -1,0 +1,18 @@
+test:
+  suites:
+  - name: Vision V1 Sample Tests
+    cases:
+    - name: vision_async_batch_annotate_images
+      spec:
+      - env:
+          name: GCS_BUCKET
+          variable: gcs_bucket
+      - call:
+          sample: vision_async_batch_annotate_images
+          params:
+            input_image_uri:
+              literal: gs://cloud-samples-data/vision/label/wakeupcat.jpg
+            output_uri:
+              variable: gcs_bucket
+      - assert_contains:
+        - variable: gcs_bucket

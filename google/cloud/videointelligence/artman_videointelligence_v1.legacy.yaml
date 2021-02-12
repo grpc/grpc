@@ -1,0 +1,15 @@
+common:
+  api_name: video-intelligence
+  api_version: v1
+  organization_name: google-cloud
+  service_yaml: v1/videointelligence_v1.yaml
+  gapic_yaml: v1/videointelligence_gapic.legacy.yaml
+  proto_package: google.cloud.videointelligence.v1
+  src_proto_paths:
+  - v1
+  proto_deps:
+  - name: google-common-protos
+artifacts:
+- name: php_gapic
+  type: GAPIC
+  language: PHP

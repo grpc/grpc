@@ -1,0 +1,83 @@
+// Copyright 2019 The Grafeas Authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grafeas.v1;
+
+option go_package = "google.golang.org/genproto/googleapis/grafeas/v1;grafeas";
+option java_multiple_files = true;
+option java_package = "io.grafeas.v1";
+option objc_class_prefix = "GRA";
+
+// Layer holds metadata specific to a layer of a Docker image.
+message Layer {
+  // Required. The recovered Dockerfile directive used to construct this layer.
+  // See https://docs.docker.com/engine/reference/builder/ for more information.
+  string directive = 1;
+
+  // The recovered arguments to the Dockerfile directive.
+  string arguments = 2;
+}
+
+// A set of properties that uniquely identify a given Docker image.
+message Fingerprint {
+  // Required. The layer ID of the final layer in the Docker image's v1
+  // representation.
+  string v1_name = 1;
+
+  // Required. The ordered list of v2 blobs that represent a given image.
+  repeated string v2_blob = 2;
+
+  // Output only. The name of the image's v2 blobs computed via:
+  //   [bottom] := v2_blob[bottom]
+  //   [N] := sha256(v2_blob[N] + " " + v2_name[N+1])
+  // Only the name of the final blob is kept.
+  string v2_name = 3;
+}
+
+// Basis describes the base image portion (Note) of the DockerImage
+// relationship. Linked occurrences are derived from this or an equivalent image
+// via:
+//   FROM <Basis.resource_url>
+// Or an equivalent reference, e.g., a tag of the resource_url.
+message ImageNote {
+  // Required. Immutable. The resource_url for the resource representing the
+  // basis of associated occurrence images.
+  string resource_url = 1;
+
+  // Required. Immutable. The fingerprint of the base image.
+  Fingerprint fingerprint = 2;
+}
+
+// Details of the derived image portion of the DockerImage relationship. This
+// image would be produced from a Dockerfile with FROM <DockerImage.Basis in
+// attached Note>.
+message ImageOccurrence {
+  // Required. The fingerprint of the derived image.
+  Fingerprint fingerprint = 1;
+
+  // Output only. The number of layers by which this image differs from the
+  // associated image basis.
+  int32 distance = 2;
+
+  // This contains layer-specific metadata, if populated it has length
+  // "distance" and is ordered with [distance] being the layer immediately
+  // following the base image and [1] being the final layer.
+  repeated Layer layer_info = 3;
+
+  // Output only. This contains the base image URL for the derived image
+  // occurrence.
+  string base_resource_url = 4;
+}

@@ -1,0 +1,43 @@
+type: com.google.api.codegen.samplegen.v1p2.SampleConfigProto
+schema_version: 1.2.0
+samples:
+- region_tag: speech_transcribe_multichannel
+  title: Multi-Channel Audio Transcription (Local File)
+  description: Transcribe a short audio file with multiple channels
+  rpc: Recognize
+  service: google.cloud.speech.v1.Speech
+  request:
+  - field: audio.content
+    value: "resources/multi.wav"
+    input_parameter: local_file_path
+    comment: Path to local audio file, e.g. /path/audio.wav
+    value_is_file: true
+  - field: config.audio_channel_count
+    value: 2
+    comment: The number of channels in the input audio file (optional)
+  - field: config.enable_separate_recognition_per_channel
+    value: true
+    comment: |
+      When set to true, each audio channel will be recognized separately.
+      The recognition result will contain a channel_tag field to state which
+      channel that result belongs to
+  - field: config.language_code
+    value: "en-US"
+    comment: The language of the supplied audio
+  response:
+  - loop:
+      variable: result
+      collection: $resp.results
+      body:
+      - comment:
+        - "%s to recognize which audio channel this result is for"
+        - channel_tag
+      - print:
+        - "Channel tag: %s"
+        - result.channel_tag
+      - comment:
+        - First alternative is the most probable result
+      - define: alternative = result.alternatives[0]
+      - print:
+        - "Transcript: %s"
+        - alternative.transcript

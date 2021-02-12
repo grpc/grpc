@@ -1,0 +1,33 @@
+type: google.api.Service
+config_version: 3
+name: language.googleapis.com
+title: Google Cloud Natural Language API
+
+apis:
+- name: google.cloud.language.v1.LanguageService
+- name: google.cloud.language.v1beta1.LanguageService
+- name: google.cloud.language.v1beta2.LanguageService
+
+types:
+- name: google.protobuf.Timestamp
+- name: google.rpc.Status
+
+enums:
+- name: google.rpc.Code
+
+documentation:
+  summary: |-
+    Provides natural language understanding technologies to developers. Examples
+    include sentiment analysis, entity recognition, entity sentiment analysis,
+    and text annotations.
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-language,
+        https://www.googleapis.com/auth/cloud-platform
+
+legacy:
+  taxonomy_id: taxonomies/teamsproduct/nodes/8953562382  # http://teams/product/8953562382

@@ -1,0 +1,127 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/common/criteria.proto";
+import "google/ads/googleads/v1/common/extensions.proto";
+import "google/ads/googleads/v1/enums/extension_type.proto";
+import "google/ads/googleads/v1/enums/feed_item_status.proto";
+import "google/ads/googleads/v1/enums/feed_item_target_device.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "ExtensionFeedItemProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the ExtensionFeedItem resource.
+
+// An extension feed item.
+message ExtensionFeedItem {
+  // The resource name of the extension feed item.
+  // Extension feed item resource names have the form:
+  //
+  // `customers/{customer_id}/extensionFeedItems/{feed_item_id}`
+  string resource_name = 1;
+
+  // The extension type of the extension feed item.
+  // This field is read-only.
+  google.ads.googleads.v1.enums.ExtensionTypeEnum.ExtensionType extension_type =
+      13;
+
+  // Start time in which this feed item is effective and can begin serving.
+  // The format is "YYYY-MM-DD HH:MM:SS".
+  // Examples: "2018-03-05 09:15:00" or "2018-02-01 14:34:30"
+  google.protobuf.StringValue start_date_time = 5;
+
+  // End time in which this feed item is no longer effective and will stop
+  // serving.
+  // The format is "YYYY-MM-DD HH:MM:SS".
+  // Examples: "2018-03-05 09:15:00" or "2018-02-01 14:34:30"
+  google.protobuf.StringValue end_date_time = 6;
+
+  // List of non-overlapping schedules specifying all time intervals
+  // for which the feed item may serve. There can be a maximum of 6 schedules
+  // per day.
+  repeated google.ads.googleads.v1.common.AdScheduleInfo ad_schedules = 16;
+
+  // The targeted device.
+  google.ads.googleads.v1.enums.FeedItemTargetDeviceEnum.FeedItemTargetDevice
+      device = 17;
+
+  // The targeted geo target constant.
+  google.protobuf.StringValue targeted_geo_target_constant = 20;
+
+  // Status of the feed item.
+  // This field is read-only.
+  google.ads.googleads.v1.enums.FeedItemStatusEnum.FeedItemStatus status = 4;
+
+  // Extension type.
+  oneof extension {
+    // Sitelink extension.
+    google.ads.googleads.v1.common.SitelinkFeedItem sitelink_feed_item = 2;
+
+    // Structured snippet extension.
+    google.ads.googleads.v1.common.StructuredSnippetFeedItem
+        structured_snippet_feed_item = 3;
+
+    // App extension.
+    google.ads.googleads.v1.common.AppFeedItem app_feed_item = 7;
+
+    // Call extension.
+    google.ads.googleads.v1.common.CallFeedItem call_feed_item = 8;
+
+    // Callout extension.
+    google.ads.googleads.v1.common.CalloutFeedItem callout_feed_item = 9;
+
+    // Text message extension.
+    google.ads.googleads.v1.common.TextMessageFeedItem text_message_feed_item =
+        10;
+
+    // Price extension.
+    google.ads.googleads.v1.common.PriceFeedItem price_feed_item = 11;
+
+    // Promotion extension.
+    google.ads.googleads.v1.common.PromotionFeedItem promotion_feed_item = 12;
+
+    // Location extension. Locations are synced from a GMB account into a feed.
+    // This field is read-only.
+    google.ads.googleads.v1.common.LocationFeedItem location_feed_item = 14;
+
+    // Affiliate location extension. Feed locations are populated by Google Ads
+    // based on a chain ID.
+    // This field is read-only.
+    google.ads.googleads.v1.common.AffiliateLocationFeedItem
+        affiliate_location_feed_item = 15;
+  }
+
+  // Targeting at either the campaign or ad group level. Feed items that target
+  // a campaign or ad group will only serve with that resource.
+  oneof serving_resource_targeting {
+    // The targeted campaign.
+    google.protobuf.StringValue targeted_campaign = 18;
+
+    // The targeted ad group.
+    google.protobuf.StringValue targeted_ad_group = 19;
+  }
+}

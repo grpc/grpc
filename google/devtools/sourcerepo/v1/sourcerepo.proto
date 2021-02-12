@@ -1,0 +1,184 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.devtools.sourcerepo.v1;
+
+import "google/api/annotations.proto";
+import "google/iam/v1/iam_policy.proto";
+import "google/iam/v1/policy.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/sourcerepo/v1;sourcerepo";
+option java_multiple_files = true;
+option java_outer_classname = "SourceRepoProto";
+option java_package = "com.google.devtools.sourcerepo.v1";
+
+// The Source Repo API service.
+service SourceRepo {
+  // Returns all repos belonging to a project. The sizes of the repos are
+  // not set by ListRepos.  To get the size of a repo, use GetRepo.
+  rpc ListRepos(ListReposRequest) returns (ListReposResponse) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*}/repos"
+    };
+  }
+
+  // Returns information about a repo.
+  rpc GetRepo(GetRepoRequest) returns (Repo) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/repos/**}"
+    };
+  }
+
+  // Creates a repo in the given project with the given name.
+  //
+  // If the named repository already exists, `CreateRepo` returns
+  // `ALREADY_EXISTS`.
+  rpc CreateRepo(CreateRepoRequest) returns (Repo) {
+    option (google.api.http) = {
+      post: "/v1/{parent=projects/*}/repos"
+      body: "repo"
+    };
+  }
+
+  // Deletes a repo.
+  rpc DeleteRepo(DeleteRepoRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/{name=projects/*/repos/**}"
+    };
+  }
+
+  // Sets the access control policy on the specified resource. Replaces any
+  // existing policy.
+  rpc SetIamPolicy(google.iam.v1.SetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1/{resource=projects/*/repos/**}:setIamPolicy"
+      body: "*"
+    };
+  }
+
+  // Gets the access control policy for a resource.
+  // Returns an empty policy if the resource exists and does not have a policy
+  // set.
+  rpc GetIamPolicy(google.iam.v1.GetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      get: "/v1/{resource=projects/*/repos/**}:getIamPolicy"
+    };
+  }
+
+  // Returns permissions that a caller has on the specified resource.
+  // If the resource does not exist, this will return an empty set of
+  // permissions, not a NOT_FOUND error.
+  rpc TestIamPermissions(google.iam.v1.TestIamPermissionsRequest)
+      returns (google.iam.v1.TestIamPermissionsResponse) {
+    option (google.api.http) = {
+      post: "/v1/{resource=projects/*/repos/**}:testIamPermissions"
+      body: "*"
+    };
+  }
+}
+
+// A repository (or repo) is a Git repository storing versioned source content.
+message Repo {
+  // Resource name of the repository, of the form
+  // `projects/<project>/repos/<repo>`.  The repo name may contain slashes.
+  // eg, `projects/myproject/repos/name/with/slash`
+  string name = 1;
+
+  // The disk usage of the repo, in bytes. Read-only field. Size is only
+  // returned by GetRepo.
+  int64 size = 2;
+
+  // URL to clone the repository from Google Cloud Source Repositories.
+  // Read-only field.
+  string url = 3;
+
+  // How this repository mirrors a repository managed by another service.
+  // Read-only field.
+  MirrorConfig mirror_config = 4;
+}
+
+// Configuration to automatically mirror a repository from another
+// hosting service, for example GitHub or BitBucket.
+message MirrorConfig {
+  // URL of the main repository at the other hosting service.
+  string url = 1;
+
+  // ID of the webhook listening to updates to trigger mirroring.
+  // Removing this webhook from the other hosting service will stop
+  // Google Cloud Source Repositories from receiving notifications,
+  // and thereby disabling mirroring.
+  string webhook_id = 2;
+
+  // ID of the SSH deploy key at the other hosting service.
+  // Removing this key from the other service would deauthorize
+  // Google Cloud Source Repositories from mirroring.
+  string deploy_key_id = 3;
+}
+
+// Request for GetRepo.
+message GetRepoRequest {
+  // The name of the requested repository. Values are of the form
+  // `projects/<project>/repos/<repo>`.
+  string name = 1;
+}
+
+// Request for ListRepos.
+message ListReposRequest {
+  // The project ID whose repos should be listed. Values are of the form
+  // `projects/<project>`.
+  string name = 1;
+
+  // Maximum number of repositories to return; between 1 and 500.
+  // If not set or zero, defaults to 100 at the server.
+  int32 page_size = 2;
+
+  // Resume listing repositories where a prior ListReposResponse
+  // left off. This is an opaque token that must be obtained from
+  // a recent, prior ListReposResponse's next_page_token field.
+  string page_token = 3;
+}
+
+// Response for ListRepos.  The size is not set in the returned repositories.
+message ListReposResponse {
+  // The listed repos.
+  repeated Repo repos = 1;
+
+  // If non-empty, additional repositories exist within the project. These
+  // can be retrieved by including this value in the next ListReposRequest's
+  // page_token field.
+  string next_page_token = 2;
+}
+
+// Request for CreateRepo
+message CreateRepoRequest {
+  // The project in which to create the repo. Values are of the form
+  // `projects/<project>`.
+  string parent = 1;
+
+  // The repo to create.  Only name should be set; setting other fields
+  // is an error.  The project in the name should match the parent field.
+  Repo repo = 2;
+}
+
+// Request for DeleteRepo.
+message DeleteRepoRequest {
+  // The name of the repo to delete. Values are of the form
+  // `projects/<project>/repos/<repo>`.
+  string name = 1;
+}

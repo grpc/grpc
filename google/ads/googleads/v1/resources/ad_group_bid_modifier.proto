@@ -1,0 +1,91 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/common/criteria.proto";
+import "google/ads/googleads/v1/enums/bid_modifier_source.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "AdGroupBidModifierProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the ad group bid modifier resource.
+
+// Represents an ad group bid modifier.
+message AdGroupBidModifier {
+  // The resource name of the ad group bid modifier.
+  // Ad group bid modifier resource names have the form:
+  //
+  // `customers/{customer_id}/adGroupBidModifiers/{ad_group_id}~{criterion_id}`
+  string resource_name = 1;
+
+  // The ad group to which this criterion belongs.
+  google.protobuf.StringValue ad_group = 2;
+
+  // The ID of the criterion to bid modify.
+  //
+  // This field is ignored for mutates.
+  google.protobuf.Int64Value criterion_id = 3;
+
+  // The modifier for the bid when the criterion matches. The modifier must be
+  // in the range: 0.1 - 10.0. The range is 1.0 - 6.0 for PreferredContent.
+  // Use 0 to opt out of a Device type.
+  google.protobuf.DoubleValue bid_modifier = 4;
+
+  // The base ad group from which this draft/trial adgroup bid modifier was
+  // created. If ad_group is a base ad group then this field will be equal to
+  // ad_group. If the ad group was created in the draft or trial and has no
+  // corresponding base ad group, then this field will be null.
+  // This field is readonly.
+  google.protobuf.StringValue base_ad_group = 9;
+
+  // Bid modifier source.
+  google.ads.googleads.v1.enums.BidModifierSourceEnum.BidModifierSource
+      bid_modifier_source = 10;
+
+  // The criterion of this ad group bid modifier.
+  oneof criterion {
+    // Criterion for hotel date selection (default dates vs. user selected).
+    google.ads.googleads.v1.common.HotelDateSelectionTypeInfo
+        hotel_date_selection_type = 5;
+
+    // Criterion for number of days prior to the stay the booking is being made.
+    google.ads.googleads.v1.common.HotelAdvanceBookingWindowInfo
+        hotel_advance_booking_window = 6;
+
+    // Criterion for length of hotel stay in nights.
+    google.ads.googleads.v1.common.HotelLengthOfStayInfo hotel_length_of_stay =
+        7;
+
+    // Criterion for day of the week the booking is for.
+    google.ads.googleads.v1.common.HotelCheckInDayInfo hotel_check_in_day = 8;
+
+    // A device criterion.
+    google.ads.googleads.v1.common.DeviceInfo device = 11;
+
+    // A preferred content criterion.
+    google.ads.googleads.v1.common.PreferredContentInfo preferred_content = 12;
+  }
+}

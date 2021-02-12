@@ -1,0 +1,259 @@
+// Copyright 2018 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.cloud.vision.v1p3beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/vision/v1p3beta1/geometry.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/cloud/vision/v1p3beta1;vision";
+option java_multiple_files = true;
+option java_outer_classname = "TextAnnotationProto";
+option java_package = "com.google.cloud.vision.v1p3beta1";
+
+// TextAnnotation contains a structured representation of OCR extracted text.
+// The hierarchy of an OCR extracted text structure is like this:
+//     TextAnnotation -> Page -> Block -> Paragraph -> Word -> Symbol
+// Each structural component, starting from Page, may further have their own
+// properties. Properties describe detected languages, breaks etc.. Please refer
+// to the
+// [TextAnnotation.TextProperty][google.cloud.vision.v1p3beta1.TextAnnotation.TextProperty]
+// message definition below for more detail.
+message TextAnnotation {
+  // Detected language for a structural component.
+  message DetectedLanguage {
+    // The BCP-47 language code, such as "en-US" or "sr-Latn". For more
+    // information, see
+    // http://www.unicode.org/reports/tr35/#Unicode_locale_identifier.
+    string language_code = 1;
+
+    // Confidence of detected language. Range [0, 1].
+    float confidence = 2;
+  }
+
+  // Detected start or end of a structural component.
+  message DetectedBreak {
+    // Enum to denote the type of break found. New line, space etc.
+    enum BreakType {
+      // Unknown break label type.
+      UNKNOWN = 0;
+
+      // Regular space.
+      SPACE = 1;
+
+      // Sure space (very wide).
+      SURE_SPACE = 2;
+
+      // Line-wrapping break.
+      EOL_SURE_SPACE = 3;
+
+      // End-line hyphen that is not present in text; does not co-occur with
+      // `SPACE`, `LEADER_SPACE`, or `LINE_BREAK`.
+      HYPHEN = 4;
+
+      // Line break that ends a paragraph.
+      LINE_BREAK = 5;
+    }
+
+    // Detected break type.
+    BreakType type = 1;
+
+    // True if break prepends the element.
+    bool is_prefix = 2;
+  }
+
+  // Additional information detected on the structural component.
+  message TextProperty {
+    // A list of detected languages together with confidence.
+    repeated DetectedLanguage detected_languages = 1;
+
+    // Detected start or end of a text segment.
+    DetectedBreak detected_break = 2;
+  }
+
+  // List of pages detected by OCR.
+  repeated Page pages = 1;
+
+  // UTF-8 text detected on the pages.
+  string text = 2;
+}
+
+// Detected page from OCR.
+message Page {
+  // Additional information detected on the page.
+  TextAnnotation.TextProperty property = 1;
+
+  // Page width. For PDFs the unit is points. For images (including
+  // TIFFs) the unit is pixels.
+  int32 width = 2;
+
+  // Page height. For PDFs the unit is points. For images (including
+  // TIFFs) the unit is pixels.
+  int32 height = 3;
+
+  // List of blocks of text, images etc on this page.
+  repeated Block blocks = 4;
+
+  // Confidence of the OCR results on the page. Range [0, 1].
+  float confidence = 5;
+}
+
+// Logical element on the page.
+message Block {
+  // Type of a block (text, image etc) as identified by OCR.
+  enum BlockType {
+    // Unknown block type.
+    UNKNOWN = 0;
+
+    // Regular text block.
+    TEXT = 1;
+
+    // Table block.
+    TABLE = 2;
+
+    // Image block.
+    PICTURE = 3;
+
+    // Horizontal/vertical line box.
+    RULER = 4;
+
+    // Barcode block.
+    BARCODE = 5;
+  }
+
+  // Additional information detected for the block.
+  TextAnnotation.TextProperty property = 1;
+
+  // The bounding box for the block.
+  // The vertices are in the order of top-left, top-right, bottom-right,
+  // bottom-left. When a rotation of the bounding box is detected the rotation
+  // is represented as around the top-left corner as defined when the text is
+  // read in the 'natural' orientation.
+  // For example:
+  //
+  // * when the text is horizontal it might look like:
+  //
+  //         0----1
+  //         |    |
+  //         3----2
+  //
+  // * when it's rotated 180 degrees around the top-left corner it becomes:
+  //
+  //         2----3
+  //         |    |
+  //         1----0
+  //
+  //   and the vertice order will still be (0, 1, 2, 3).
+  BoundingPoly bounding_box = 2;
+
+  // List of paragraphs in this block (if this blocks is of type text).
+  repeated Paragraph paragraphs = 3;
+
+  // Detected block type (text, image etc) for this block.
+  BlockType block_type = 4;
+
+  // Confidence of the OCR results on the block. Range [0, 1].
+  float confidence = 5;
+}
+
+// Structural unit of text representing a number of words in certain order.
+message Paragraph {
+  // Additional information detected for the paragraph.
+  TextAnnotation.TextProperty property = 1;
+
+  // The bounding box for the paragraph.
+  // The vertices are in the order of top-left, top-right, bottom-right,
+  // bottom-left. When a rotation of the bounding box is detected the rotation
+  // is represented as around the top-left corner as defined when the text is
+  // read in the 'natural' orientation.
+  // For example:
+  //   * when the text is horizontal it might look like:
+  //      0----1
+  //      |    |
+  //      3----2
+  //   * when it's rotated 180 degrees around the top-left corner it becomes:
+  //      2----3
+  //      |    |
+  //      1----0
+  //   and the vertice order will still be (0, 1, 2, 3).
+  BoundingPoly bounding_box = 2;
+
+  // List of words in this paragraph.
+  repeated Word words = 3;
+
+  // Confidence of the OCR results for the paragraph. Range [0, 1].
+  float confidence = 4;
+}
+
+// A word representation.
+message Word {
+  // Additional information detected for the word.
+  TextAnnotation.TextProperty property = 1;
+
+  // The bounding box for the word.
+  // The vertices are in the order of top-left, top-right, bottom-right,
+  // bottom-left. When a rotation of the bounding box is detected the rotation
+  // is represented as around the top-left corner as defined when the text is
+  // read in the 'natural' orientation.
+  // For example:
+  //   * when the text is horizontal it might look like:
+  //      0----1
+  //      |    |
+  //      3----2
+  //   * when it's rotated 180 degrees around the top-left corner it becomes:
+  //      2----3
+  //      |    |
+  //      1----0
+  //   and the vertice order will still be (0, 1, 2, 3).
+  BoundingPoly bounding_box = 2;
+
+  // List of symbols in the word.
+  // The order of the symbols follows the natural reading order.
+  repeated Symbol symbols = 3;
+
+  // Confidence of the OCR results for the word. Range [0, 1].
+  float confidence = 4;
+}
+
+// A single symbol representation.
+message Symbol {
+  // Additional information detected for the symbol.
+  TextAnnotation.TextProperty property = 1;
+
+  // The bounding box for the symbol.
+  // The vertices are in the order of top-left, top-right, bottom-right,
+  // bottom-left. When a rotation of the bounding box is detected the rotation
+  // is represented as around the top-left corner as defined when the text is
+  // read in the 'natural' orientation.
+  // For example:
+  //   * when the text is horizontal it might look like:
+  //      0----1
+  //      |    |
+  //      3----2
+  //   * when it's rotated 180 degrees around the top-left corner it becomes:
+  //      2----3
+  //      |    |
+  //      1----0
+  //   and the vertice order will still be (0, 1, 2, 3).
+  BoundingPoly bounding_box = 2;
+
+  // The actual UTF-8 representation of the symbol.
+  string text = 3;
+
+  // Confidence of the OCR results for the symbol. Range [0, 1].
+  float confidence = 4;
+}

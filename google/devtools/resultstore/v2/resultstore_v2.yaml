@@ -1,0 +1,32 @@
+type: google.api.Service
+config_version: 3
+name: resultstore.googleapis.com
+title: Result Store API
+
+apis:
+- name: google.devtools.resultstore.v2.ResultStoreDownload
+- name: google.devtools.resultstore.v2.ResultStoreFileDownload
+- name: google.devtools.resultstore.v2.ResultStoreUpload
+
+documentation:
+  summary: The Result Store API v2.
+  overview: An API for reading Invocation results from previous runs.
+
+authentication:
+  rules:
+  - selector: 'google.devtools.resultstore.v2.ResultStoreDownload.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: google.devtools.resultstore.v2.ResultStoreFileDownload.GetFile
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: google.devtools.resultstore.v2.ResultStoreFileDownload.GetFileTail
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.devtools.resultstore.v2.ResultStoreUpload.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

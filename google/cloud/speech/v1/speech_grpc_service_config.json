@@ -1,0 +1,35 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.speech.v1.Speech",
+          "method": "Recognize"
+        },
+        {
+          "service": "google.cloud.speech.v1.Speech",
+          "method": "StreamingRecognize"
+        }
+      ],
+      "timeout": "5000s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.speech.v1.Speech",
+          "method": "LongRunningRecognize"
+        }
+      ],
+      "timeout": "5000s"
+    }
+  ]
+}

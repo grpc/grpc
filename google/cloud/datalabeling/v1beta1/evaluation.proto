@@ -1,0 +1,167 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.datalabeling.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/datalabeling/v1beta1/annotation.proto";
+import "google/cloud/datalabeling/v1beta1/annotation_spec_set.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/datalabeling/v1beta1;datalabeling";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.datalabeling.v1beta1";
+
+// Describes an evaluation between 2 annotated datasets. Created by an
+// evaluation plan.
+message Evaluation {
+  // Resource name of an evaluation.
+  // Format:
+  // 'projects/{project_id}/datasets/{dataset_id}/evaluations/{evaluation_id}'
+  string name = 1;
+
+  // Options used in evaluation plan for creating the evaluation.
+  EvaluationConfig config = 2;
+
+  // Output only. Timestamp when the evaluation plan triggered this evaluation
+  // flow.
+  google.protobuf.Timestamp evaluation_job_run_time = 3;
+
+  // Output only. Timestamp when this model evaluation was created.
+  google.protobuf.Timestamp create_time = 4;
+
+  // Output only. Metrics of the evaluation.
+  EvaluationMetrics evaluation_metrics = 5;
+
+  // Type of the annotation to compute metrics for in the groundtruth and
+  // annotation labeled dataset. Required for creation.
+  AnnotationType annotation_type = 6;
+
+  // Output only. Count of items in groundtruth dataset included in this
+  // evaluation. Will be unset if annotation type is not applicable.
+  int64 evaluated_item_count = 7;
+}
+
+message EvaluationConfig {
+  // Vertical specific options for general metrics.
+  oneof vertical_option {
+    BoundingBoxEvaluationOptions bounding_box_evaluation_options = 1;
+  }
+}
+
+// Options regarding evaluation between bounding boxes.
+message BoundingBoxEvaluationOptions {
+  // Minimize IoU required to consider 2 bounding boxes are matched.
+  float iou_threshold = 1;
+}
+
+message EvaluationMetrics {
+  // Common metrics covering most genernal cases.
+  oneof metrics {
+    ClassificationMetrics classification_metrics = 1;
+
+    ObjectDetectionMetrics object_detection_metrics = 2;
+  }
+}
+
+message ClassificationMetrics {
+  // Precision-recall curve.
+  PrCurve pr_curve = 1;
+
+  ConfusionMatrix confusion_matrix = 2;
+}
+
+message ObjectDetectionMetrics {
+  // Precision-recall curve.
+  PrCurve pr_curve = 1;
+}
+
+message PrCurve {
+  message ConfidenceMetricsEntry {
+    // Threshold used for this entry, for example, IoU threshold for bounding
+    // box problem, or detection threshold for classification.
+    float confidence_threshold = 1;
+
+    // Recall value.
+    float recall = 2;
+
+    // Precision value.
+    float precision = 3;
+
+    // Harmonic mean of recall and precision.
+    float f1_score = 4;
+
+    // Recall value for entries with label that has highest score.
+    float recall_at1 = 5;
+
+    // Precision value for entries with label that has highest score.
+    float precision_at1 = 6;
+
+    // The harmonic mean of
+    // [recall_at1][google.cloud.datalabeling.v1beta1.PrCurve.ConfidenceMetricsEntry.recall_at1]
+    // and
+    // [precision_at1][google.cloud.datalabeling.v1beta1.PrCurve.ConfidenceMetricsEntry.precision_at1].
+    float f1_score_at1 = 7;
+
+    // Recall value for entries with label that has highest 5 scores.
+    float recall_at5 = 8;
+
+    // Precision value for entries with label that has highest 5 scores.
+    float precision_at5 = 9;
+
+    // The harmonic mean of
+    // [recall_at5][google.cloud.datalabeling.v1beta1.PrCurve.ConfidenceMetricsEntry.recall_at5]
+    // and
+    // [precision_at5][google.cloud.datalabeling.v1beta1.PrCurve.ConfidenceMetricsEntry.precision_at5].
+    float f1_score_at5 = 10;
+  }
+
+  // PR curve against which annotation spec. Could be empty.
+  AnnotationSpec annotation_spec = 1;
+
+  // Area under precision recall curve.
+  float area_under_curve = 2;
+
+  // entries to draw PR graph.
+  repeated ConfidenceMetricsEntry confidence_metrics_entries = 3;
+
+  // mean average prcision of this curve.
+  float mean_average_precision = 4;
+}
+
+// Confusion matrix of the model running the classification. Not applicable
+// when label filtering is specified in evaluation option.
+message ConfusionMatrix {
+  message ConfusionMatrixEntry {
+    // The predicted annotation spec.
+    AnnotationSpec annotation_spec = 1;
+
+    // Number of items being predicted as this label.
+    int32 item_count = 2;
+  }
+
+  // A row in the confusion matrix.
+  message Row {
+    // the original annotation spec of this row.
+    AnnotationSpec annotation_spec = 1;
+
+    // Info describing predicted label distribution.
+    repeated ConfusionMatrixEntry entries = 2;
+  }
+
+  repeated Row row = 1;
+}

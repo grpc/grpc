@@ -1,0 +1,718 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.kms.v1;
+
+import "google/api/annotations.proto";
+import "google/cloud/kms/v1/resources.proto";
+import "google/protobuf/field_mask.proto";
+import "google/api/client.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.Kms.V1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/kms/v1;kms";
+option java_multiple_files = true;
+option java_outer_classname = "KmsProto";
+option java_package = "com.google.cloud.kms.v1";
+option php_namespace = "Google\\Cloud\\Kms\\V1";
+
+// Google Cloud Key Management Service
+//
+// Manages cryptographic keys and operations using those keys. Implements a REST
+// model with the following objects:
+//
+// * [KeyRing][google.cloud.kms.v1.KeyRing]
+// * [CryptoKey][google.cloud.kms.v1.CryptoKey]
+// * [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion]
+//
+// If you are using manual gRPC libraries, see
+// [Using gRPC with Cloud KMS](https://cloud.google.com/kms/docs/grpc).
+service KeyManagementService {
+  option (google.api.default_host) = "cloudkms.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/cloudkms";
+
+  // Lists [KeyRings][google.cloud.kms.v1.KeyRing].
+  rpc ListKeyRings(ListKeyRingsRequest) returns (ListKeyRingsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=projects/*/locations/*}/keyRings"
+    };
+  }
+
+  // Lists [CryptoKeys][google.cloud.kms.v1.CryptoKey].
+  rpc ListCryptoKeys(ListCryptoKeysRequest) returns (ListCryptoKeysResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=projects/*/locations/*/keyRings/*}/cryptoKeys"
+    };
+  }
+
+  // Lists [CryptoKeyVersions][google.cloud.kms.v1.CryptoKeyVersion].
+  rpc ListCryptoKeyVersions(ListCryptoKeyVersionsRequest) returns (ListCryptoKeyVersionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=projects/*/locations/*/keyRings/*/cryptoKeys/*}/cryptoKeyVersions"
+    };
+  }
+
+  // Lists [ImportJobs][google.cloud.kms.v1.ImportJob].
+  rpc ListImportJobs(ListImportJobsRequest) returns (ListImportJobsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=projects/*/locations/*/keyRings/*}/importJobs"
+    };
+  }
+
+  // Returns metadata for a given [KeyRing][google.cloud.kms.v1.KeyRing].
+  rpc GetKeyRing(GetKeyRingRequest) returns (KeyRing) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/locations/*/keyRings/*}"
+    };
+  }
+
+  // Returns metadata for a given [CryptoKey][google.cloud.kms.v1.CryptoKey], as well as its
+  // [primary][google.cloud.kms.v1.CryptoKey.primary] [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion].
+  rpc GetCryptoKey(GetCryptoKeyRequest) returns (CryptoKey) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/locations/*/keyRings/*/cryptoKeys/*}"
+    };
+  }
+
+  // Returns metadata for a given [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion].
+  rpc GetCryptoKeyVersion(GetCryptoKeyVersionRequest) returns (CryptoKeyVersion) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/locations/*/keyRings/*/cryptoKeys/*/cryptoKeyVersions/*}"
+    };
+  }
+
+  // Returns the public key for the given [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion]. The
+  // [CryptoKey.purpose][google.cloud.kms.v1.CryptoKey.purpose] must be
+  // [ASYMMETRIC_SIGN][google.cloud.kms.v1.CryptoKey.CryptoKeyPurpose.ASYMMETRIC_SIGN] or
+  // [ASYMMETRIC_DECRYPT][google.cloud.kms.v1.CryptoKey.CryptoKeyPurpose.ASYMMETRIC_DECRYPT].
+  rpc GetPublicKey(GetPublicKeyRequest) returns (PublicKey) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/locations/*/keyRings/*/cryptoKeys/*/cryptoKeyVersions/*}/publicKey"
+    };
+  }
+
+  // Returns metadata for a given [ImportJob][google.cloud.kms.v1.ImportJob].
+  rpc GetImportJob(GetImportJobRequest) returns (ImportJob) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/locations/*/keyRings/*/importJobs/*}"
+    };
+  }
+
+  // Create a new [KeyRing][google.cloud.kms.v1.KeyRing] in a given Project and Location.
+  rpc CreateKeyRing(CreateKeyRingRequest) returns (KeyRing) {
+    option (google.api.http) = {
+      post: "/v1/{parent=projects/*/locations/*}/keyRings"
+      body: "key_ring"
+    };
+  }
+
+  // Create a new [CryptoKey][google.cloud.kms.v1.CryptoKey] within a [KeyRing][google.cloud.kms.v1.KeyRing].
+  //
+  // [CryptoKey.purpose][google.cloud.kms.v1.CryptoKey.purpose] and
+  // [CryptoKey.version_template.algorithm][google.cloud.kms.v1.CryptoKeyVersionTemplate.algorithm]
+  // are required.
+  rpc CreateCryptoKey(CreateCryptoKeyRequest) returns (CryptoKey) {
+    option (google.api.http) = {
+      post: "/v1/{parent=projects/*/locations/*/keyRings/*}/cryptoKeys"
+      body: "crypto_key"
+    };
+  }
+
+  // Create a new [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] in a [CryptoKey][google.cloud.kms.v1.CryptoKey].
+  //
+  // The server will assign the next sequential id. If unset,
+  // [state][google.cloud.kms.v1.CryptoKeyVersion.state] will be set to
+  // [ENABLED][google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionState.ENABLED].
+  rpc CreateCryptoKeyVersion(CreateCryptoKeyVersionRequest) returns (CryptoKeyVersion) {
+    option (google.api.http) = {
+      post: "/v1/{parent=projects/*/locations/*/keyRings/*/cryptoKeys/*}/cryptoKeyVersions"
+      body: "crypto_key_version"
+    };
+  }
+
+  // Imports a new [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] into an existing [CryptoKey][google.cloud.kms.v1.CryptoKey] using the
+  // wrapped key material provided in the request.
+  //
+  // The version ID will be assigned the next sequential id within the
+  // [CryptoKey][google.cloud.kms.v1.CryptoKey].
+  rpc ImportCryptoKeyVersion(ImportCryptoKeyVersionRequest) returns (CryptoKeyVersion) {
+    option (google.api.http) = {
+      post: "/v1/{parent=projects/*/locations/*/keyRings/*/cryptoKeys/*}/cryptoKeyVersions:import"
+      body: "*"
+    };
+  }
+
+  // Create a new [ImportJob][google.cloud.kms.v1.ImportJob] within a [KeyRing][google.cloud.kms.v1.KeyRing].
+  //
+  // [ImportJob.import_method][google.cloud.kms.v1.ImportJob.import_method] is required.
+  rpc CreateImportJob(CreateImportJobRequest) returns (ImportJob) {
+    option (google.api.http) = {
+      post: "/v1/{parent=projects/*/locations/*/keyRings/*}/importJobs"
+      body: "import_job"
+    };
+  }
+
+  // Update a [CryptoKey][google.cloud.kms.v1.CryptoKey].
+  rpc UpdateCryptoKey(UpdateCryptoKeyRequest) returns (CryptoKey) {
+    option (google.api.http) = {
+      patch: "/v1/{crypto_key.name=projects/*/locations/*/keyRings/*/cryptoKeys/*}"
+      body: "crypto_key"
+    };
+  }
+
+  // Update a [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion]'s metadata.
+  //
+  // [state][google.cloud.kms.v1.CryptoKeyVersion.state] may be changed between
+  // [ENABLED][google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionState.ENABLED] and
+  // [DISABLED][google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionState.DISABLED] using this
+  // method. See [DestroyCryptoKeyVersion][google.cloud.kms.v1.KeyManagementService.DestroyCryptoKeyVersion] and [RestoreCryptoKeyVersion][google.cloud.kms.v1.KeyManagementService.RestoreCryptoKeyVersion] to
+  // move between other states.
+  rpc UpdateCryptoKeyVersion(UpdateCryptoKeyVersionRequest) returns (CryptoKeyVersion) {
+    option (google.api.http) = {
+      patch: "/v1/{crypto_key_version.name=projects/*/locations/*/keyRings/*/cryptoKeys/*/cryptoKeyVersions/*}"
+      body: "crypto_key_version"
+    };
+  }
+
+  // Encrypts data, so that it can only be recovered by a call to [Decrypt][google.cloud.kms.v1.KeyManagementService.Decrypt].
+  // The [CryptoKey.purpose][google.cloud.kms.v1.CryptoKey.purpose] must be
+  // [ENCRYPT_DECRYPT][google.cloud.kms.v1.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT].
+  rpc Encrypt(EncryptRequest) returns (EncryptResponse) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/keyRings/*/cryptoKeys/**}:encrypt"
+      body: "*"
+    };
+  }
+
+  // Decrypts data that was protected by [Encrypt][google.cloud.kms.v1.KeyManagementService.Encrypt]. The [CryptoKey.purpose][google.cloud.kms.v1.CryptoKey.purpose]
+  // must be [ENCRYPT_DECRYPT][google.cloud.kms.v1.CryptoKey.CryptoKeyPurpose.ENCRYPT_DECRYPT].
+  rpc Decrypt(DecryptRequest) returns (DecryptResponse) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/keyRings/*/cryptoKeys/*}:decrypt"
+      body: "*"
+    };
+  }
+
+  // Signs data using a [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] with [CryptoKey.purpose][google.cloud.kms.v1.CryptoKey.purpose]
+  // ASYMMETRIC_SIGN, producing a signature that can be verified with the public
+  // key retrieved from [GetPublicKey][google.cloud.kms.v1.KeyManagementService.GetPublicKey].
+  rpc AsymmetricSign(AsymmetricSignRequest) returns (AsymmetricSignResponse) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/keyRings/*/cryptoKeys/*/cryptoKeyVersions/*}:asymmetricSign"
+      body: "*"
+    };
+  }
+
+  // Decrypts data that was encrypted with a public key retrieved from
+  // [GetPublicKey][google.cloud.kms.v1.KeyManagementService.GetPublicKey] corresponding to a [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] with
+  // [CryptoKey.purpose][google.cloud.kms.v1.CryptoKey.purpose] ASYMMETRIC_DECRYPT.
+  rpc AsymmetricDecrypt(AsymmetricDecryptRequest) returns (AsymmetricDecryptResponse) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/keyRings/*/cryptoKeys/*/cryptoKeyVersions/*}:asymmetricDecrypt"
+      body: "*"
+    };
+  }
+
+  // Update the version of a [CryptoKey][google.cloud.kms.v1.CryptoKey] that will be used in [Encrypt][google.cloud.kms.v1.KeyManagementService.Encrypt].
+  //
+  // Returns an error if called on an asymmetric key.
+  rpc UpdateCryptoKeyPrimaryVersion(UpdateCryptoKeyPrimaryVersionRequest) returns (CryptoKey) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/keyRings/*/cryptoKeys/*}:updatePrimaryVersion"
+      body: "*"
+    };
+  }
+
+  // Schedule a [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] for destruction.
+  //
+  // Upon calling this method, [CryptoKeyVersion.state][google.cloud.kms.v1.CryptoKeyVersion.state] will be set to
+  // [DESTROY_SCHEDULED][google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionState.DESTROY_SCHEDULED]
+  // and [destroy_time][google.cloud.kms.v1.CryptoKeyVersion.destroy_time] will be set to a time 24
+  // hours in the future, at which point the [state][google.cloud.kms.v1.CryptoKeyVersion.state]
+  // will be changed to
+  // [DESTROYED][google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionState.DESTROYED], and the key
+  // material will be irrevocably destroyed.
+  //
+  // Before the [destroy_time][google.cloud.kms.v1.CryptoKeyVersion.destroy_time] is reached,
+  // [RestoreCryptoKeyVersion][google.cloud.kms.v1.KeyManagementService.RestoreCryptoKeyVersion] may be called to reverse the process.
+  rpc DestroyCryptoKeyVersion(DestroyCryptoKeyVersionRequest) returns (CryptoKeyVersion) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/keyRings/*/cryptoKeys/*/cryptoKeyVersions/*}:destroy"
+      body: "*"
+    };
+  }
+
+  // Restore a [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] in the
+  // [DESTROY_SCHEDULED][google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionState.DESTROY_SCHEDULED]
+  // state.
+  //
+  // Upon restoration of the CryptoKeyVersion, [state][google.cloud.kms.v1.CryptoKeyVersion.state]
+  // will be set to [DISABLED][google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionState.DISABLED],
+  // and [destroy_time][google.cloud.kms.v1.CryptoKeyVersion.destroy_time] will be cleared.
+  rpc RestoreCryptoKeyVersion(RestoreCryptoKeyVersionRequest) returns (CryptoKeyVersion) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/keyRings/*/cryptoKeys/*/cryptoKeyVersions/*}:restore"
+      body: "*"
+    };
+  }
+}
+
+// Request message for [KeyManagementService.ListKeyRings][google.cloud.kms.v1.KeyManagementService.ListKeyRings].
+message ListKeyRingsRequest {
+  // Required. The resource name of the location associated with the
+  // [KeyRings][google.cloud.kms.v1.KeyRing], in the format `projects/*/locations/*`.
+  string parent = 1;
+
+  // Optional limit on the number of [KeyRings][google.cloud.kms.v1.KeyRing] to include in the
+  // response.  Further [KeyRings][google.cloud.kms.v1.KeyRing] can subsequently be obtained by
+  // including the [ListKeyRingsResponse.next_page_token][google.cloud.kms.v1.ListKeyRingsResponse.next_page_token] in a subsequent
+  // request.  If unspecified, the server will pick an appropriate default.
+  int32 page_size = 2;
+
+  // Optional pagination token, returned earlier via
+  // [ListKeyRingsResponse.next_page_token][google.cloud.kms.v1.ListKeyRingsResponse.next_page_token].
+  string page_token = 3;
+
+  // Optional. Only include resources that match the filter in the response.
+  string filter = 4;
+
+  // Optional. Specify how the results should be sorted. If not specified, the
+  // results will be sorted in the default order.
+  string order_by = 5;
+}
+
+// Request message for [KeyManagementService.ListCryptoKeys][google.cloud.kms.v1.KeyManagementService.ListCryptoKeys].
+message ListCryptoKeysRequest {
+  // Required. The resource name of the [KeyRing][google.cloud.kms.v1.KeyRing] to list, in the format
+  // `projects/*/locations/*/keyRings/*`.
+  string parent = 1;
+
+  // Optional limit on the number of [CryptoKeys][google.cloud.kms.v1.CryptoKey] to include in the
+  // response.  Further [CryptoKeys][google.cloud.kms.v1.CryptoKey] can subsequently be obtained by
+  // including the [ListCryptoKeysResponse.next_page_token][google.cloud.kms.v1.ListCryptoKeysResponse.next_page_token] in a subsequent
+  // request.  If unspecified, the server will pick an appropriate default.
+  int32 page_size = 2;
+
+  // Optional pagination token, returned earlier via
+  // [ListCryptoKeysResponse.next_page_token][google.cloud.kms.v1.ListCryptoKeysResponse.next_page_token].
+  string page_token = 3;
+
+  // The fields of the primary version to include in the response.
+  CryptoKeyVersion.CryptoKeyVersionView version_view = 4;
+
+  // Optional. Only include resources that match the filter in the response.
+  string filter = 5;
+
+  // Optional. Specify how the results should be sorted. If not specified, the
+  // results will be sorted in the default order.
+  string order_by = 6;
+}
+
+// Request message for [KeyManagementService.ListCryptoKeyVersions][google.cloud.kms.v1.KeyManagementService.ListCryptoKeyVersions].
+message ListCryptoKeyVersionsRequest {
+  // Required. The resource name of the [CryptoKey][google.cloud.kms.v1.CryptoKey] to list, in the format
+  // `projects/*/locations/*/keyRings/*/cryptoKeys/*`.
+  string parent = 1;
+
+  // Optional limit on the number of [CryptoKeyVersions][google.cloud.kms.v1.CryptoKeyVersion] to
+  // include in the response. Further [CryptoKeyVersions][google.cloud.kms.v1.CryptoKeyVersion] can
+  // subsequently be obtained by including the
+  // [ListCryptoKeyVersionsResponse.next_page_token][google.cloud.kms.v1.ListCryptoKeyVersionsResponse.next_page_token] in a subsequent request.
+  // If unspecified, the server will pick an appropriate default.
+  int32 page_size = 2;
+
+  // Optional pagination token, returned earlier via
+  // [ListCryptoKeyVersionsResponse.next_page_token][google.cloud.kms.v1.ListCryptoKeyVersionsResponse.next_page_token].
+  string page_token = 3;
+
+  // The fields to include in the response.
+  CryptoKeyVersion.CryptoKeyVersionView view = 4;
+
+  // Optional. Only include resources that match the filter in the response.
+  string filter = 5;
+
+  // Optional. Specify how the results should be sorted. If not specified, the
+  // results will be sorted in the default order.
+  string order_by = 6;
+}
+
+// Request message for [KeyManagementService.ListImportJobs][google.cloud.kms.v1.KeyManagementService.ListImportJobs].
+message ListImportJobsRequest {
+  // Required. The resource name of the [KeyRing][google.cloud.kms.v1.KeyRing] to list, in the format
+  // `projects/*/locations/*/keyRings/*`.
+  string parent = 1;
+
+  // Optional limit on the number of [ImportJobs][google.cloud.kms.v1.ImportJob] to include in the
+  // response. Further [ImportJobs][google.cloud.kms.v1.ImportJob] can subsequently be obtained by
+  // including the [ListImportJobsResponse.next_page_token][google.cloud.kms.v1.ListImportJobsResponse.next_page_token] in a subsequent
+  // request. If unspecified, the server will pick an appropriate default.
+  int32 page_size = 2;
+
+  // Optional pagination token, returned earlier via
+  // [ListImportJobsResponse.next_page_token][google.cloud.kms.v1.ListImportJobsResponse.next_page_token].
+  string page_token = 3;
+
+  // Optional. Only include resources that match the filter in the response.
+  string filter = 4;
+
+  // Optional. Specify how the results should be sorted. If not specified, the
+  // results will be sorted in the default order.
+  string order_by = 5;
+}
+
+// Response message for [KeyManagementService.ListKeyRings][google.cloud.kms.v1.KeyManagementService.ListKeyRings].
+message ListKeyRingsResponse {
+  // The list of [KeyRings][google.cloud.kms.v1.KeyRing].
+  repeated KeyRing key_rings = 1;
+
+  // A token to retrieve next page of results. Pass this value in
+  // [ListKeyRingsRequest.page_token][google.cloud.kms.v1.ListKeyRingsRequest.page_token] to retrieve the next page of results.
+  string next_page_token = 2;
+
+  // The total number of [KeyRings][google.cloud.kms.v1.KeyRing] that matched the query.
+  int32 total_size = 3;
+}
+
+// Response message for [KeyManagementService.ListCryptoKeys][google.cloud.kms.v1.KeyManagementService.ListCryptoKeys].
+message ListCryptoKeysResponse {
+  // The list of [CryptoKeys][google.cloud.kms.v1.CryptoKey].
+  repeated CryptoKey crypto_keys = 1;
+
+  // A token to retrieve next page of results. Pass this value in
+  // [ListCryptoKeysRequest.page_token][google.cloud.kms.v1.ListCryptoKeysRequest.page_token] to retrieve the next page of results.
+  string next_page_token = 2;
+
+  // The total number of [CryptoKeys][google.cloud.kms.v1.CryptoKey] that matched the query.
+  int32 total_size = 3;
+}
+
+// Response message for [KeyManagementService.ListCryptoKeyVersions][google.cloud.kms.v1.KeyManagementService.ListCryptoKeyVersions].
+message ListCryptoKeyVersionsResponse {
+  // The list of [CryptoKeyVersions][google.cloud.kms.v1.CryptoKeyVersion].
+  repeated CryptoKeyVersion crypto_key_versions = 1;
+
+  // A token to retrieve next page of results. Pass this value in
+  // [ListCryptoKeyVersionsRequest.page_token][google.cloud.kms.v1.ListCryptoKeyVersionsRequest.page_token] to retrieve the next page of
+  // results.
+  string next_page_token = 2;
+
+  // The total number of [CryptoKeyVersions][google.cloud.kms.v1.CryptoKeyVersion] that matched the
+  // query.
+  int32 total_size = 3;
+}
+
+// Response message for [KeyManagementService.ListImportJobs][google.cloud.kms.v1.KeyManagementService.ListImportJobs].
+message ListImportJobsResponse {
+  // The list of [ImportJobs][google.cloud.kms.v1.ImportJob].
+  repeated ImportJob import_jobs = 1;
+
+  // A token to retrieve next page of results. Pass this value in
+  // [ListImportJobsRequest.page_token][google.cloud.kms.v1.ListImportJobsRequest.page_token] to retrieve the next page of results.
+  string next_page_token = 2;
+
+  // The total number of [ImportJobs][google.cloud.kms.v1.ImportJob] that matched the query.
+  int32 total_size = 3;
+}
+
+// Request message for [KeyManagementService.GetKeyRing][google.cloud.kms.v1.KeyManagementService.GetKeyRing].
+message GetKeyRingRequest {
+  // The [name][google.cloud.kms.v1.KeyRing.name] of the [KeyRing][google.cloud.kms.v1.KeyRing] to get.
+  string name = 1;
+}
+
+// Request message for [KeyManagementService.GetCryptoKey][google.cloud.kms.v1.KeyManagementService.GetCryptoKey].
+message GetCryptoKeyRequest {
+  // The [name][google.cloud.kms.v1.CryptoKey.name] of the [CryptoKey][google.cloud.kms.v1.CryptoKey] to get.
+  string name = 1;
+}
+
+// Request message for [KeyManagementService.GetCryptoKeyVersion][google.cloud.kms.v1.KeyManagementService.GetCryptoKeyVersion].
+message GetCryptoKeyVersionRequest {
+  // The [name][google.cloud.kms.v1.CryptoKeyVersion.name] of the [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] to get.
+  string name = 1;
+}
+
+// Request message for [KeyManagementService.GetPublicKey][google.cloud.kms.v1.KeyManagementService.GetPublicKey].
+message GetPublicKeyRequest {
+  // The [name][google.cloud.kms.v1.CryptoKeyVersion.name] of the [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] public key to
+  // get.
+  string name = 1;
+}
+
+// Request message for [KeyManagementService.GetImportJob][google.cloud.kms.v1.KeyManagementService.GetImportJob].
+message GetImportJobRequest {
+  // The [name][google.cloud.kms.v1.ImportJob.name] of the [ImportJob][google.cloud.kms.v1.ImportJob] to get.
+  string name = 1;
+}
+
+// Request message for [KeyManagementService.CreateKeyRing][google.cloud.kms.v1.KeyManagementService.CreateKeyRing].
+message CreateKeyRingRequest {
+  // Required. The resource name of the location associated with the
+  // [KeyRings][google.cloud.kms.v1.KeyRing], in the format `projects/*/locations/*`.
+  string parent = 1;
+
+  // Required. It must be unique within a location and match the regular
+  // expression `[a-zA-Z0-9_-]{1,63}`
+  string key_ring_id = 2;
+
+  // A [KeyRing][google.cloud.kms.v1.KeyRing] with initial field values.
+  KeyRing key_ring = 3;
+}
+
+// Request message for [KeyManagementService.CreateCryptoKey][google.cloud.kms.v1.KeyManagementService.CreateCryptoKey].
+message CreateCryptoKeyRequest {
+  // Required. The [name][google.cloud.kms.v1.KeyRing.name] of the KeyRing associated with the
+  // [CryptoKeys][google.cloud.kms.v1.CryptoKey].
+  string parent = 1;
+
+  // Required. It must be unique within a KeyRing and match the regular
+  // expression `[a-zA-Z0-9_-]{1,63}`
+  string crypto_key_id = 2;
+
+  // A [CryptoKey][google.cloud.kms.v1.CryptoKey] with initial field values.
+  CryptoKey crypto_key = 3;
+
+  // If set to true, the request will create a [CryptoKey][google.cloud.kms.v1.CryptoKey] without any
+  // [CryptoKeyVersions][google.cloud.kms.v1.CryptoKeyVersion]. You must manually call
+  // [CreateCryptoKeyVersion][google.cloud.kms.v1.KeyManagementService.CreateCryptoKeyVersion] or
+  // [ImportCryptoKeyVersion][google.cloud.kms.v1.KeyManagementService.ImportCryptoKeyVersion]
+  // before you can use this [CryptoKey][google.cloud.kms.v1.CryptoKey].
+  bool skip_initial_version_creation = 5;
+}
+
+// Request message for [KeyManagementService.CreateCryptoKeyVersion][google.cloud.kms.v1.KeyManagementService.CreateCryptoKeyVersion].
+message CreateCryptoKeyVersionRequest {
+  // Required. The [name][google.cloud.kms.v1.CryptoKey.name] of the [CryptoKey][google.cloud.kms.v1.CryptoKey] associated with
+  // the [CryptoKeyVersions][google.cloud.kms.v1.CryptoKeyVersion].
+  string parent = 1;
+
+  // A [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] with initial field values.
+  CryptoKeyVersion crypto_key_version = 2;
+}
+
+// Request message for [KeyManagementService.ImportCryptoKeyVersion][google.cloud.kms.v1.KeyManagementService.ImportCryptoKeyVersion].
+message ImportCryptoKeyVersionRequest {
+  // Required. The [name][google.cloud.kms.v1.CryptoKey.name] of the [CryptoKey][google.cloud.kms.v1.CryptoKey] to
+  // be imported into.
+  string parent = 1;
+
+  // Required. The [algorithm][google.cloud.kms.v1.CryptoKeyVersion.CryptoKeyVersionAlgorithm] of
+  // the key being imported. This does not need to match the
+  // [version_template][google.cloud.kms.v1.CryptoKey.version_template] of the [CryptoKey][google.cloud.kms.v1.CryptoKey] this
+  // version imports into.
+  CryptoKeyVersion.CryptoKeyVersionAlgorithm algorithm = 2;
+
+  // Required. The [name][google.cloud.kms.v1.ImportJob.name] of the [ImportJob][google.cloud.kms.v1.ImportJob] that was used to
+  // wrap this key material.
+  string import_job = 4;
+
+  // Required. The incoming wrapped key material that is to be imported.
+  oneof wrapped_key_material {
+    // Wrapped key material produced with
+    // [RSA_OAEP_3072_SHA1_AES_256][google.cloud.kms.v1.ImportJob.ImportMethod.RSA_OAEP_3072_SHA1_AES_256]
+    // or
+    // [RSA_OAEP_4096_SHA1_AES_256][google.cloud.kms.v1.ImportJob.ImportMethod.RSA_OAEP_4096_SHA1_AES_256].
+    //
+    // This field contains the concatenation of two wrapped keys:
+    // <ol>
+    //   <li>An ephemeral AES-256 wrapping key wrapped with the
+    //       [public_key][google.cloud.kms.v1.ImportJob.public_key] using RSAES-OAEP with SHA-1,
+    //       MGF1 with SHA-1, and an empty label.
+    //   </li>
+    //   <li>The key to be imported, wrapped with the ephemeral AES-256 key
+    //       using AES-KWP (RFC 5649).
+    //   </li>
+    // </ol>
+    //
+    // This format is the same as the format produced by PKCS#11 mechanism
+    // CKM_RSA_AES_KEY_WRAP.
+    bytes rsa_aes_wrapped_key = 5;
+  }
+}
+
+// Request message for [KeyManagementService.CreateImportJob][google.cloud.kms.v1.KeyManagementService.CreateImportJob].
+message CreateImportJobRequest {
+  // Required. The [name][google.cloud.kms.v1.KeyRing.name] of the [KeyRing][google.cloud.kms.v1.KeyRing] associated with the
+  // [ImportJobs][google.cloud.kms.v1.ImportJob].
+  string parent = 1;
+
+  // Required. It must be unique within a KeyRing and match the regular
+  // expression `[a-zA-Z0-9_-]{1,63}`
+  string import_job_id = 2;
+
+  // Required. An [ImportJob][google.cloud.kms.v1.ImportJob] with initial field values.
+  ImportJob import_job = 3;
+}
+
+// Request message for [KeyManagementService.UpdateCryptoKey][google.cloud.kms.v1.KeyManagementService.UpdateCryptoKey].
+message UpdateCryptoKeyRequest {
+  // [CryptoKey][google.cloud.kms.v1.CryptoKey] with updated values.
+  CryptoKey crypto_key = 1;
+
+  // Required list of fields to be updated in this request.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for [KeyManagementService.UpdateCryptoKeyVersion][google.cloud.kms.v1.KeyManagementService.UpdateCryptoKeyVersion].
+message UpdateCryptoKeyVersionRequest {
+  // [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] with updated values.
+  CryptoKeyVersion crypto_key_version = 1;
+
+  // Required list of fields to be updated in this request.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for [KeyManagementService.Encrypt][google.cloud.kms.v1.KeyManagementService.Encrypt].
+message EncryptRequest {
+  // Required. The resource name of the [CryptoKey][google.cloud.kms.v1.CryptoKey] or [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion]
+  // to use for encryption.
+  //
+  // If a [CryptoKey][google.cloud.kms.v1.CryptoKey] is specified, the server will use its
+  // [primary version][google.cloud.kms.v1.CryptoKey.primary].
+  string name = 1;
+
+  // Required. The data to encrypt. Must be no larger than 64KiB.
+  //
+  // The maximum size depends on the key version's
+  // [protection_level][google.cloud.kms.v1.CryptoKeyVersionTemplate.protection_level]. For
+  // [SOFTWARE][google.cloud.kms.v1.ProtectionLevel.SOFTWARE] keys, the plaintext must be no larger
+  // than 64KiB. For [HSM][google.cloud.kms.v1.ProtectionLevel.HSM] keys, the combined length of the
+  // plaintext and additional_authenticated_data fields must be no larger than
+  // 8KiB.
+  bytes plaintext = 2;
+
+  // Optional data that, if specified, must also be provided during decryption
+  // through [DecryptRequest.additional_authenticated_data][google.cloud.kms.v1.DecryptRequest.additional_authenticated_data].
+  //
+  // The maximum size depends on the key version's
+  // [protection_level][google.cloud.kms.v1.CryptoKeyVersionTemplate.protection_level]. For
+  // [SOFTWARE][google.cloud.kms.v1.ProtectionLevel.SOFTWARE] keys, the AAD must be no larger than
+  // 64KiB. For [HSM][google.cloud.kms.v1.ProtectionLevel.HSM] keys, the combined length of the
+  // plaintext and additional_authenticated_data fields must be no larger than
+  // 8KiB.
+  bytes additional_authenticated_data = 3;
+}
+
+// Request message for [KeyManagementService.Decrypt][google.cloud.kms.v1.KeyManagementService.Decrypt].
+message DecryptRequest {
+  // Required. The resource name of the [CryptoKey][google.cloud.kms.v1.CryptoKey] to use for decryption.
+  // The server will choose the appropriate version.
+  string name = 1;
+
+  // Required. The encrypted data originally returned in
+  // [EncryptResponse.ciphertext][google.cloud.kms.v1.EncryptResponse.ciphertext].
+  bytes ciphertext = 2;
+
+  // Optional data that must match the data originally supplied in
+  // [EncryptRequest.additional_authenticated_data][google.cloud.kms.v1.EncryptRequest.additional_authenticated_data].
+  bytes additional_authenticated_data = 3;
+}
+
+// Request message for [KeyManagementService.AsymmetricSign][google.cloud.kms.v1.KeyManagementService.AsymmetricSign].
+message AsymmetricSignRequest {
+  // Required. The resource name of the [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] to use for signing.
+  string name = 1;
+
+  // Required. The digest of the data to sign. The digest must be produced with
+  // the same digest algorithm as specified by the key version's
+  // [algorithm][google.cloud.kms.v1.CryptoKeyVersion.algorithm].
+  Digest digest = 3;
+}
+
+// Request message for [KeyManagementService.AsymmetricDecrypt][google.cloud.kms.v1.KeyManagementService.AsymmetricDecrypt].
+message AsymmetricDecryptRequest {
+  // Required. The resource name of the [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] to use for
+  // decryption.
+  string name = 1;
+
+  // Required. The data encrypted with the named [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion]'s public
+  // key using OAEP.
+  bytes ciphertext = 3;
+}
+
+// Response message for [KeyManagementService.Decrypt][google.cloud.kms.v1.KeyManagementService.Decrypt].
+message DecryptResponse {
+  // The decrypted data originally supplied in [EncryptRequest.plaintext][google.cloud.kms.v1.EncryptRequest.plaintext].
+  bytes plaintext = 1;
+}
+
+// Response message for [KeyManagementService.Encrypt][google.cloud.kms.v1.KeyManagementService.Encrypt].
+message EncryptResponse {
+  // The resource name of the [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] used in encryption.
+  string name = 1;
+
+  // The encrypted data.
+  bytes ciphertext = 2;
+}
+
+// Response message for [KeyManagementService.AsymmetricSign][google.cloud.kms.v1.KeyManagementService.AsymmetricSign].
+message AsymmetricSignResponse {
+  // The created signature.
+  bytes signature = 1;
+}
+
+// Response message for [KeyManagementService.AsymmetricDecrypt][google.cloud.kms.v1.KeyManagementService.AsymmetricDecrypt].
+message AsymmetricDecryptResponse {
+  // The decrypted data originally encrypted with the matching public key.
+  bytes plaintext = 1;
+}
+
+// Request message for [KeyManagementService.UpdateCryptoKeyPrimaryVersion][google.cloud.kms.v1.KeyManagementService.UpdateCryptoKeyPrimaryVersion].
+message UpdateCryptoKeyPrimaryVersionRequest {
+  // The resource name of the [CryptoKey][google.cloud.kms.v1.CryptoKey] to update.
+  string name = 1;
+
+  // The id of the child [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] to use as primary.
+  string crypto_key_version_id = 2;
+}
+
+// Request message for [KeyManagementService.DestroyCryptoKeyVersion][google.cloud.kms.v1.KeyManagementService.DestroyCryptoKeyVersion].
+message DestroyCryptoKeyVersionRequest {
+  // The resource name of the [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] to destroy.
+  string name = 1;
+}
+
+// Request message for [KeyManagementService.RestoreCryptoKeyVersion][google.cloud.kms.v1.KeyManagementService.RestoreCryptoKeyVersion].
+message RestoreCryptoKeyVersionRequest {
+  // The resource name of the [CryptoKeyVersion][google.cloud.kms.v1.CryptoKeyVersion] to restore.
+  string name = 1;
+}
+
+// A [Digest][google.cloud.kms.v1.Digest] holds a cryptographic message digest.
+message Digest {
+  // Required. The message digest.
+  oneof digest {
+    // A message digest produced with the SHA-256 algorithm.
+    bytes sha256 = 1;
+
+    // A message digest produced with the SHA-384 algorithm.
+    bytes sha384 = 2;
+
+    // A message digest produced with the SHA-512 algorithm.
+    bytes sha512 = 3;
+  }
+}
+
+// Cloud KMS metadata for the given [google.cloud.location.Location][google.cloud.location.Location].
+message LocationMetadata {
+  // Indicates whether [CryptoKeys][google.cloud.kms.v1.CryptoKey] with
+  // [protection_level][google.cloud.kms.v1.CryptoKeyVersionTemplate.protection_level]
+  // [HSM][google.cloud.kms.v1.ProtectionLevel.HSM] can be created in this location.
+  bool hsm_available = 1;
+}

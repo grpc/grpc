@@ -1,0 +1,67 @@
+type: com.google.api.codegen.samplegen.v1p2.SampleConfigProto
+schema_version: 1.2.0
+samples:
+- region_tag: language_entities_gcs
+  title: Analyzing Entities (GCS)
+  description: Analyzing Entities in text file stored in Cloud Storage
+  service: google.cloud.language.v1.LanguageService
+  rpc: AnalyzeEntities
+  request:
+  - field: document.gcs_content_uri
+    value: gs://cloud-samples-data/language/entity.txt
+    comment: |
+      Google Cloud Storage URI where the file content is located.
+      e.g. gs://[Your Bucket]/[Path to File]
+    input_parameter: gcs_content_uri
+  - field: document.type
+    value: PLAIN_TEXT
+    comment: "Available types: PLAIN_TEXT, HTML"
+  - field: document.language
+    value: en
+    comment: |
+      Optional. If not specified, the language is automatically detected.
+      For list of supported languages:
+        https://cloud.google.com/natural-language/docs/languages
+  - field: encoding_type
+    value: UTF8
+    comment: "Available values: NONE, UTF8, UTF16, UTF32"
+  response:
+  - comment: ["Loop through entitites returned from the API"]
+  - loop:
+      collection: $resp.entities
+      variable: entity
+      body:
+      - print: ["Representative name for the entity: %s", entity.name]
+      - comment: ["Get entity type, e.g. PERSON, LOCATION, ADDRESS, NUMBER, et al"]
+      - print: ["Entity type: %s", entity.type]
+      - comment: ["Get the salience score associated with the entity in the [0, 1.0] range"]
+      - print: ["Salience score: %s", entity.salience]
+      - comment:
+        - |
+            Loop over the metadata associated with entity. For many known entities,
+            the metadata is a Wikipedia URL (wikipedia_url) and Knowledge Graph MID (mid).
+            Some entity types may have additional metadata, e.g. ADDRESS entities
+            may have metadata for the address street_name, postal_code, et al.
+      - loop:
+          map: entity.metadata
+          key: metadata_name
+          value: metadata_value
+          body:
+          - print: ["%s: %s", metadata_name, metadata_value]
+      - comment:
+        - |
+            Loop over the mentions of this entity in the input document.
+            The API currently supports proper noun mentions.
+      - loop:
+          collection: entity.mentions
+          variable: mention
+          body:
+          - print: ["Mention text: %s", mention.text.content]
+          - comment: ["Get the mention type, e.g. PROPER for proper noun"]
+          - print: ["Mention type: %s", mention.type]
+  - comment:
+    - |
+        Get the language of the text, which will be the same as
+        the language specified in the request or, if not specified,
+        the automatically-detected language.
+  - print: ["Language of the text: %s", $resp.language]

@@ -1,0 +1,166 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.cloud.oslogin.v1alpha;
+
+import "google/api/annotations.proto";
+import "google/cloud/oslogin/common/common.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+option csharp_namespace = "Google.Cloud.OsLogin.V1Alpha";
+option go_package = "google.golang.org/genproto/googleapis/cloud/oslogin/v1alpha;oslogin";
+option java_multiple_files = true;
+option java_outer_classname = "OsLoginProto";
+option java_package = "com.google.cloud.oslogin.v1alpha";
+option php_namespace = "Google\\Cloud\\OsLogin\\V1alpha";
+
+// Cloud OS Login API
+//
+// The Cloud OS Login API allows you to manage users and their associated SSH
+// public keys for logging into virtual machines on Google Cloud Platform.
+service OsLoginService {
+  // Deletes a POSIX account.
+  rpc DeletePosixAccount(DeletePosixAccountRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1alpha/{name=users/*/projects/*}"
+    };
+  }
+
+  // Deletes an SSH public key.
+  rpc DeleteSshPublicKey(DeleteSshPublicKeyRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1alpha/{name=users/*/sshPublicKeys/*}"
+    };
+  }
+
+  // Retrieves the profile information used for logging in to a virtual machine
+  // on Google Compute Engine.
+  rpc GetLoginProfile(GetLoginProfileRequest) returns (LoginProfile) {
+    option (google.api.http) = {
+      get: "/v1alpha/{name=users/*}/loginProfile"
+    };
+  }
+
+  // Retrieves an SSH public key.
+  rpc GetSshPublicKey(GetSshPublicKeyRequest)
+      returns (google.cloud.oslogin.common.SshPublicKey) {
+    option (google.api.http) = {
+      get: "/v1alpha/{name=users/*/sshPublicKeys/*}"
+    };
+  }
+
+  // Adds an SSH public key and returns the profile information. Default POSIX
+  // account information is set when no username and UID exist as part of the
+  // login profile.
+  rpc ImportSshPublicKey(ImportSshPublicKeyRequest)
+      returns (ImportSshPublicKeyResponse) {
+    option (google.api.http) = {
+      post: "/v1alpha/{parent=users/*}:importSshPublicKey"
+      body: "ssh_public_key"
+    };
+  }
+
+  // Updates an SSH public key and returns the profile information. This method
+  // supports patch semantics.
+  rpc UpdateSshPublicKey(UpdateSshPublicKeyRequest)
+      returns (google.cloud.oslogin.common.SshPublicKey) {
+    option (google.api.http) = {
+      patch: "/v1alpha/{name=users/*/sshPublicKeys/*}"
+      body: "ssh_public_key"
+    };
+  }
+}
+
+// The user profile information used for logging in to a virtual machine on
+// Google Compute Engine.
+message LoginProfile {
+  // A unique user ID for identifying the user.
+  string name = 1;
+
+  // The list of POSIX accounts associated with the Directory API user.
+  repeated google.cloud.oslogin.common.PosixAccount posix_accounts = 2;
+
+  // A map from SSH public key fingerprint to the associated key object.
+  map<string, google.cloud.oslogin.common.SshPublicKey> ssh_public_keys = 3;
+
+  // Indicates if the user is suspended.
+  bool suspended = 4;
+}
+
+// A request message for deleting a POSIX account entry.
+message DeletePosixAccountRequest {
+  // A reference to the POSIX account to update. POSIX accounts are identified
+  // by the project ID they are associated with. A reference to the POSIX
+  // account is in format `users/{user}/projects/{project}`.
+  string name = 1;
+}
+
+// A request message for deleting an SSH public key.
+message DeleteSshPublicKeyRequest {
+  // The fingerprint of the public key to update. Public keys are identified by
+  // their SHA-256 fingerprint. The fingerprint of the public key is in format
+  // `users/{user}/sshPublicKeys/{fingerprint}`.
+  string name = 1;
+}
+
+// A request message for retrieving the login profile information for a user.
+message GetLoginProfileRequest {
+  // The unique ID for the user in format `users/{user}`.
+  string name = 1;
+}
+
+// A request message for retrieving an SSH public key.
+message GetSshPublicKeyRequest {
+  // The fingerprint of the public key to retrieve. Public keys are identified
+  // by their SHA-256 fingerprint. The fingerprint of the public key is in
+  // format `users/{user}/sshPublicKeys/{fingerprint}`.
+  string name = 1;
+}
+
+// A request message for importing an SSH public key.
+message ImportSshPublicKeyRequest {
+  // The unique ID for the user in format `users/{user}`.
+  string parent = 1;
+
+  // The SSH public key and expiration time.
+  google.cloud.oslogin.common.SshPublicKey ssh_public_key = 2;
+
+  // The project ID of the Google Cloud Platform project.
+  string project_id = 3;
+}
+
+// A response message for importing an SSH public key.
+message ImportSshPublicKeyResponse {
+  // The login profile information for the user.
+  LoginProfile login_profile = 1;
+}
+
+// A request message for updating an SSH public key.
+message UpdateSshPublicKeyRequest {
+  // The fingerprint of the public key to update. Public keys are identified by
+  // their SHA-256 fingerprint. The fingerprint of the public key is in format
+  // `users/{user}/sshPublicKeys/{fingerprint}`.
+  string name = 1;
+
+  // The SSH public key and expiration time.
+  google.cloud.oslogin.common.SshPublicKey ssh_public_key = 2;
+
+  // Mask to control which fields get updated. Updates all if not present.
+  google.protobuf.FieldMask update_mask = 3;
+}

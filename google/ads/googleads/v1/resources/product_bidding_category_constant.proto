@@ -1,0 +1,70 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/enums/product_bidding_category_level.proto";
+import "google/ads/googleads/v1/enums/product_bidding_category_status.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "ProductBiddingCategoryConstantProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the ProductBiddingCategoryConstant resource.
+
+// A Product Bidding Category.
+message ProductBiddingCategoryConstant {
+  // The resource name of the product bidding category.
+  // Product bidding category resource names have the form:
+  //
+  // `productBiddingCategoryConstants/{country_code}~{level}~{id}`
+  string resource_name = 1;
+
+  // ID of the product bidding category.
+  //
+  // This ID is equivalent to the google_product_category ID as described in
+  // this article: https://support.google.com/merchants/answer/6324436.
+  google.protobuf.Int64Value id = 2;
+
+  // Two-letter upper-case country code of the product bidding category.
+  google.protobuf.StringValue country_code = 3;
+
+  // Resource name of the parent product bidding category.
+  google.protobuf.StringValue product_bidding_category_constant_parent = 4;
+
+  // Level of the product bidding category.
+  google.ads.googleads.v1.enums.ProductBiddingCategoryLevelEnum
+      .ProductBiddingCategoryLevel level = 5;
+
+  // Status of the product bidding category.
+  google.ads.googleads.v1.enums.ProductBiddingCategoryStatusEnum
+      .ProductBiddingCategoryStatus status = 6;
+
+  // Language code of the product bidding category.
+  google.protobuf.StringValue language_code = 7;
+
+  // Display value of the product bidding category localized according to
+  // language_code.
+  google.protobuf.StringValue localized_name = 8;
+}

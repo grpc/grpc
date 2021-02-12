@@ -1,0 +1,872 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.bigtable.admin.v2
+    interface_names:
+      google.bigtable.admin.v2.BigtableInstanceAdmin: BaseBigtableInstanceAdmin
+      google.bigtable.admin.v2.BigtableTableAdmin: BaseBigtableTableAdmin
+  python:
+    package_name: google.cloud.bigtable_admin_v2.gapic
+  go:
+    package_name: cloud.google.com/go/bigtable/admin/apiv2
+  csharp:
+    package_name: Google.Cloud.Bigtable.Admin.V2
+  ruby:
+    package_name: Google::Cloud::Bigtable::Admin::V2
+    release_level: BETA
+  php:
+    package_name: Google\Cloud\Bigtable\Admin\V2
+  nodejs:
+    package_name: admin.v2
+interfaces:
+- name: google.bigtable.admin.v2.BigtableInstanceAdmin
+  collections:
+  - name_pattern: projects/{project}
+    entity_name: project
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Api.Gax.ResourceNames.ProjectName
+  - name_pattern: projects/{project}/instances/{instance}
+    entity_name: instance
+  - name_pattern: projects/{project}/instances/{instance}/appProfiles/{app_profile}
+    entity_name: app_profile
+  - name_pattern: projects/{project}/instances/{instance}/clusters/{cluster}
+    entity_name: cluster
+  - name_pattern: projects/{project}/locations/{location}
+    entity_name: location
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: idempotent_params
+    initial_retry_delay_millis: 1000
+    retry_delay_multiplier: 2
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  - name: non_idempotent_params
+    initial_retry_delay_millis: 0
+    retry_delay_multiplier: 1
+    max_retry_delay_millis: 0
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 60000
+  - name: non_idempotent_heavy_params
+    initial_retry_delay_millis: 0
+    retry_delay_multiplier: 1
+    max_retry_delay_millis: 0
+    initial_rpc_timeout_millis: 300000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 300000
+    total_timeout_millis: 300000
+  methods:
+  - name: CreateInstance
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - instance_id
+        - instance
+        - clusters
+    required_fields:
+    - parent
+    - instance_id
+    - instance
+    - clusters
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_heavy_params
+    field_name_patterns:
+      parent: project
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 300000
+    long_running:
+      return_type: google.bigtable.admin.v2.Instance
+      metadata_type: google.bigtable.admin.v2.CreateInstanceMetadata
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 600000
+    header_request_params:
+    - parent
+  - name: GetInstance
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      name: instance
+    timeout_millis: 60000
+    header_request_params:
+    - name
+  - name: ListInstances
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      parent: project
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - parent
+  - name: UpdateInstance
+    required_fields:
+    - name
+    - display_name
+    - type
+    - labels
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      name: instance
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    # Should use PartialUpdateInstance instead
+    surface_treatments:
+    - include_languages: [java, csharp]
+      visibility: DISABLED
+    header_request_params:
+    - name
+  - name: PartialUpdateInstance
+    flattening:
+      groups:
+      - parameters:
+        - instance
+        - update_mask
+    required_fields:
+    - instance
+    - update_mask
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      instance.name: instance
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    long_running:
+      return_type: google.bigtable.admin.v2.Instance
+      metadata_type: google.bigtable.admin.v2.UpdateInstanceMetadata
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 600000
+    header_request_params:
+    - instance.name
+  - name: DeleteInstance
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      name: instance
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - name
+  - name: CreateCluster
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - cluster_id
+        - cluster
+    required_fields:
+    - parent
+    - cluster_id
+    - cluster
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      parent: instance
+    resource_name_treatment: STATIC_TYPES
+    long_running:
+      return_type: google.bigtable.admin.v2.Cluster
+      metadata_type: google.bigtable.admin.v2.CreateClusterMetadata
+      initial_poll_delay_millis: 5000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 60000
+      total_poll_timeout_millis: 21600000
+    timeout_millis: 60000
+    header_request_params:
+    - parent
+  - name: GetCluster
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      name: cluster
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - name
+  - name: ListClusters
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      parent: instance
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - parent
+  - name: UpdateCluster
+    required_fields:
+    - name
+    - serve_nodes
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      name: cluster
+    resource_name_treatment: STATIC_TYPES
+    long_running:
+      return_type: google.bigtable.admin.v2.Cluster
+      metadata_type: google.bigtable.admin.v2.UpdateClusterMetadata
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 600000
+    timeout_millis: 60000
+    header_request_params:
+    - name
+  - name: DeleteCluster
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      name: cluster
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - name
+  - name: CreateAppProfile
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - app_profile_id
+        - app_profile
+    required_fields:
+    - parent
+    - app_profile_id
+    - app_profile
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      parent: instance
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - parent
+  - name: GetAppProfile
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      name: app_profile
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - name
+  - name: ListAppProfiles
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: app_profiles
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      parent: instance
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - parent
+  - name: UpdateAppProfile
+    flattening:
+      groups:
+      - parameters:
+        - app_profile
+        - update_mask
+    required_fields:
+    - app_profile
+    - update_mask
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      app_profile.name: app_profile
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    long_running:
+      return_type: google.bigtable.admin.v2.AppProfile
+      metadata_type: google.bigtable.admin.v2.UpdateAppProfileMetadata
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 600000
+    header_request_params:
+    - app_profile.name
+  - name: DeleteAppProfile
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    - ignore_warnings
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      name: app_profile
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - name
+  - name: GetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+    required_fields:
+    - resource
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      resource: instance
+    timeout_millis: 60000
+    header_request_params:
+    - resource
+  - name: SetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - policy
+    required_fields:
+    - resource
+    - policy
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      resource: instance
+    timeout_millis: 60000
+    header_request_params:
+    - resource
+  - name: TestIamPermissions
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - permissions
+    required_fields:
+    - resource
+    - permissions
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      resource: instance
+    timeout_millis: 60000
+    header_request_params:
+    - resource
+- name: google.bigtable.admin.v2.BigtableTableAdmin
+  collections:
+  - name_pattern: projects/{project}/instances/{instance}
+    entity_name: instance
+  - name_pattern: projects/{project}/instances/{instance}/clusters/{cluster}
+    entity_name: cluster
+  - name_pattern: projects/{project}/instances/{instance}/clusters/{cluster}/snapshots/{snapshot}
+    entity_name: snapshot
+  - name_pattern: projects/{project}/instances/{instance}/tables/{table}
+    entity_name: table
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Cloud.Bigtable.Common.V2.TableName
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: idempotent_params
+    initial_retry_delay_millis: 1000
+    retry_delay_multiplier: 2
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  - name: non_idempotent_params
+    initial_retry_delay_millis: 0
+    retry_delay_multiplier: 1
+    max_retry_delay_millis: 0
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 60000
+  - name: non_idempotent_heavy_params
+    initial_retry_delay_millis: 0
+    retry_delay_multiplier: 1
+    max_retry_delay_millis: 0
+    initial_rpc_timeout_millis: 300000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 300000
+    total_timeout_millis: 300000
+  - name: drop_row_range_params
+    initial_retry_delay_millis: 0
+    retry_delay_multiplier: 1
+    max_retry_delay_millis: 0
+    initial_rpc_timeout_millis: 3600000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 3600000
+    total_timeout_millis: 3600000
+
+  methods:
+  - name: CreateTable
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - table_id
+        - table
+    required_fields:
+    - parent
+    - table_id
+    - table
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_heavy_params
+    field_name_patterns:
+      parent: instance
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 300000
+    header_request_params:
+    - parent
+  - name: CreateTableFromSnapshot
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - table_id
+        - source_snapshot
+    required_fields:
+    - parent
+    - table_id
+    - source_snapshot
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      parent: instance
+    resource_name_treatment: STATIC_TYPES
+    long_running:
+      return_type: google.bigtable.admin.v2.Table
+      metadata_type: google.bigtable.admin.v2.CreateTableFromSnapshotMetadata
+      initial_poll_delay_millis: 5000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 60000
+      total_poll_timeout_millis: 3600000
+    timeout_millis: 60000
+    # Snapshots are Alpha-only and not supported in C#
+    surface_treatments:
+    - include_languages: [csharp]
+      visibility: DISABLED
+    header_request_params:
+    - parent
+  - name: ListTables
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: tables
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      parent: instance
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - parent
+  - name: GetTable
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      name: table
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - name
+  - name: DeleteTable
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      name: table
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - name
+  - name: ModifyColumnFamilies
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - modifications
+    required_fields:
+    - name
+    - modifications
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_heavy_params
+    field_name_patterns:
+      name: table
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 300000
+    header_request_params:
+    - name
+  - name: DropRowRange
+    required_fields:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: drop_row_range_params
+    field_name_patterns:
+      name: table
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - name
+  - name: GenerateConsistencyToken
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      name: table
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - name
+  - name: CheckConsistency
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - consistency_token
+    required_fields:
+    - name
+    - consistency_token
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      name: table
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - name
+  - name: GetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+    required_fields:
+    - resource
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      resource: table
+    timeout_millis: 60000
+    header_request_params:
+    - resource
+  - name: SetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - policy
+    required_fields:
+    - resource
+    - policy
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      resource: table
+    timeout_millis: 60000
+    header_request_params:
+    - resource
+  - name: TestIamPermissions
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - permissions
+    required_fields:
+    - resource
+    - permissions
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      resource: table
+    timeout_millis: 60000
+    header_request_params:
+    - resource
+  - name: SnapshotTable
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - cluster
+        - snapshot_id
+        - description
+    required_fields:
+    - name
+    - cluster
+    - snapshot_id
+    - description
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      name: table
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    long_running:
+      return_type: google.bigtable.admin.v2.Snapshot
+      metadata_type: google.bigtable.admin.v2.SnapshotTableMetadata
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 600000
+    # Snapshots are Alpha-only and not supported in C#
+    surface_treatments:
+    - include_languages: [csharp]
+      visibility: DISABLED
+    header_request_params:
+    - name
+  - name: GetSnapshot
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      name: snapshot
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    # Snapshots are Alpha-only and not supported in C#
+    surface_treatments:
+    - include_languages: [csharp]
+      visibility: DISABLED
+    header_request_params:
+    - name
+  - name: ListSnapshots
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: snapshots
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      parent: cluster
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    # Snapshots are Alpha-only and not supported in C#
+    surface_treatments:
+    - include_languages: [csharp]
+      visibility: DISABLED
+    header_request_params:
+    - parent
+  - name: DeleteSnapshot
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      name: snapshot
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    # Snapshots are Alpha-only and not supported in C#
+    surface_treatments:
+    - include_languages: [csharp]
+      visibility: DISABLED
+    header_request_params:
+    - name
+
+resource_name_generation:
+- message_name: CreateInstanceRequest
+  field_entity_map:
+    parent: project
+- message_name: GetInstanceRequest
+  field_entity_map:
+    name: instance
+- message_name: ListInstancesRequest
+  field_entity_map:
+    parent: project
+- message_name: UpdateInstanceRequest
+  field_entity_map:
+    name: instance
+- message_name: DeleteInstanceRequest
+  field_entity_map:
+    name: instance
+- message_name: CreateClusterRequest
+  field_entity_map:
+    parent: instance
+- message_name: GetClusterRequest
+  field_entity_map:
+    name: cluster
+- message_name: ListClustersRequest
+  field_entity_map:
+    parent: instance
+- message_name: UpdateClusterRequest
+  field_entity_map:
+    name: cluster
+- message_name: DeleteClusterRequest
+  field_entity_map:
+    name: cluster
+- message_name: CreateAppProfileRequest
+  field_entity_map:
+    parent: instance
+- message_name: GetAppProfileRequest
+  field_entity_map:
+    name: app_profile
+- message_name: ListAppProfilesRequest
+  field_entity_map:
+    parent: instance
+- message_name: DeleteAppProfileRequest
+  field_entity_map:
+    name: app_profile
+- message_name: CreateTableRequest
+  field_entity_map:
+    parent: instance
+- message_name: CreateTableFromSnapshotRequest
+  field_entity_map:
+    parent: instance
+    source_snapshot: snapshot
+- message_name: ListTablesRequest
+  field_entity_map:
+    parent: instance
+- message_name: GetTableRequest
+  field_entity_map:
+    name: table
+- message_name: DeleteTableRequest
+  field_entity_map:
+    name: table
+- message_name: ModifyColumnFamiliesRequest
+  field_entity_map:
+    name: table
+- message_name: DropRowRangeRequest
+  field_entity_map:
+    name: table
+- message_name: GenerateConsistencyTokenRequest
+  field_entity_map:
+    name: table
+- message_name: CheckConsistencyRequest
+  field_entity_map:
+    name: table
+- message_name: SnapshotTableRequest
+  field_entity_map:
+    name: table
+    cluster: cluster
+    snapshot_id: snapshot
+- message_name: GetSnapshotRequest
+  field_entity_map:
+    name: snapshot
+- message_name: ListSnapshotsRequest
+  field_entity_map:
+    parent: cluster
+- message_name: DeleteSnapshotRequest
+  field_entity_map:
+    name: snapshot
+- message_name: Instance
+  field_entity_map:
+    name: instance
+- message_name: Cluster
+  field_entity_map:
+    name: cluster
+    location: location
+- message_name: Table
+  field_entity_map:
+    name: table
+- message_name: Snapshot
+  field_entity_map:
+    name: snapshot

@@ -1,0 +1,49 @@
+type: google.api.Service
+config_version: 3
+name: runtimeconfig.googleapis.com
+title: Google Cloud RuntimeConfig API
+
+apis:
+- name: google.longrunning.Operations
+- name: google.cloud.runtimeconfig.v1beta1.RuntimeConfigManager
+- name: google.iam.v1.IAMPolicy
+
+# Documentation section
+documentation:
+  summary:
+    Provides capabilities for dynamic configuration and coordination for applications running on Google Cloud Platform.
+
+
+http:
+  rules:
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v1beta1/{name=projects/*/configs/*/operations/**}'
+
+  - selector: google.iam.v1.IAMPolicy.SetIamPolicy
+    post: '/v1beta1/{resource=projects/*/configs/*}:setIamPolicy'
+    body: '*'
+
+  - selector: google.iam.v1.IAMPolicy.GetIamPolicy
+    get: '/v1beta1/{resource=projects/*/configs/*}:getIamPolicy'
+
+  - selector: google.iam.v1.IAMPolicy.TestIamPermissions
+    post: '/v1beta1/{resource=projects/*/configs/*}:testIamPermissions'
+    body: '*'
+    additional_bindings:
+    - post: '/v1beta1/{resource=projects/*/configs/*/waiters/*}:testIamPermissions'
+      body: '*'
+
+    - post: '/v1beta1/{resource=projects/*/configs/*/variables/**}:testIamPermissions'
+      body: '*'
+
+    - post: '/v1beta1/{resource=projects/*/configs/*/operations/**}:testIamPermissions'
+      body: '*'
+
+
+# Auth section
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: https://www.googleapis.com/auth/cloud-platform,
+                        https://www.googleapis.com/auth/cloudruntimeconfig

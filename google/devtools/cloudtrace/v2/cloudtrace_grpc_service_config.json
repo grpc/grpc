@@ -1,0 +1,31 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.devtools.cloudtrace.v2.TraceService",
+          "method": "BatchWriteSpans"
+        }
+      ],
+      "timeout": "120s"
+    },
+    {
+      "name": [
+        {
+          "service": "google.devtools.cloudtrace.v2.TraceService",
+          "method": "CreateSpan"
+        }
+      ],
+      "timeout": "120s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "1s",
+        "backoffMultiplier": 1.2,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    }
+  ]
+}

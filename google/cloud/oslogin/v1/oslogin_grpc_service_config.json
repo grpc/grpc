@@ -1,0 +1,42 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.oslogin.v1.OsLoginService",
+          "method": "DeletePosixAccount"
+        },
+        {
+          "service": "google.cloud.oslogin.v1.OsLoginService",
+          "method": "DeleteSshPublicKey"
+        },
+        {
+          "service": "google.cloud.oslogin.v1.OsLoginService",
+          "method": "GetLoginProfile"
+        },
+        {
+          "service": "google.cloud.oslogin.v1.OsLoginService",
+          "method": "GetSshPublicKey"
+        },
+        {
+          "service": "google.cloud.oslogin.v1.OsLoginService",
+          "method": "ImportSshPublicKey"
+        },
+        {
+          "service": "google.cloud.oslogin.v1.OsLoginService",
+          "method": "UpdateSshPublicKey"
+        }
+      ],
+      "timeout": "10s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    }
+  ]
+}

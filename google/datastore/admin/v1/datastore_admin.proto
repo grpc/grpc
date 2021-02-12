@@ -1,0 +1,424 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.datastore.admin.v1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/datastore/admin/v1/index.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Google.Cloud.Datastore.Admin.V1";
+option go_package = "google.golang.org/genproto/googleapis/datastore/admin/v1;admin";
+option java_multiple_files = true;
+option java_outer_classname = "DatastoreAdminProto";
+option java_package = "com.google.datastore.admin.v1";
+
+// Google Cloud Datastore Admin API
+//
+//
+// The Datastore Admin API provides several admin services for Cloud Datastore.
+//
+// -----------------------------------------------------------------------------
+// ## Concepts
+//
+// Project, namespace, kind, and entity as defined in the Google Cloud Datastore
+// API.
+//
+// Operation: An Operation represents work being performed in the background.
+//
+// EntityFilter: Allows specifying a subset of entities in a project. This is
+// specified as a combination of kinds and namespaces (either or both of which
+// may be all).
+//
+// -----------------------------------------------------------------------------
+// ## Services
+//
+// # Export/Import
+//
+// The Export/Import service provides the ability to copy all or a subset of
+// entities to/from Google Cloud Storage.
+//
+// Exported data may be imported into Cloud Datastore for any Google Cloud
+// Platform project. It is not restricted to the export source project. It is
+// possible to export from one project and then import into another.
+//
+// Exported data can also be loaded into Google BigQuery for analysis.
+//
+// Exports and imports are performed asynchronously. An Operation resource is
+// created for each export/import. The state (including any errors encountered)
+// of the export/import may be queried via the Operation resource.
+//
+// # Index
+//
+// The index service manages Cloud Datastore composite indexes.
+//
+// Index creation and deletion are performed asynchronously.
+// An Operation resource is created for each such asynchronous operation.
+// The state of the operation (including any errors encountered)
+// may be queried via the Operation resource.
+//
+// # Operation
+//
+// The Operations collection provides a record of actions performed for the
+// specified project (including any operations in progress). Operations are not
+// created directly but through calls on other collections or resources.
+//
+// An operation that is not yet done may be cancelled. The request to cancel is
+// asynchronous and the operation may continue to run for some time after the
+// request to cancel is made.
+//
+// An operation that is done may be deleted so that it is no longer listed as
+// part of the Operation collection.
+//
+// ListOperations returns all pending operations, but not completed operations.
+//
+// Operations are created by service DatastoreAdmin,
+// but are accessed via service google.longrunning.Operations.
+service DatastoreAdmin {
+  option (google.api.default_host) = "datastore.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/datastore";
+
+  // Exports a copy of all or a subset of entities from Google Cloud Datastore
+  // to another storage system, such as Google Cloud Storage. Recent updates to
+  // entities may not be reflected in the export. The export occurs in the
+  // background and its progress can be monitored and managed via the
+  // Operation resource that is created. The output of an export may only be
+  // used once the associated operation is done. If an export operation is
+  // cancelled before completion it may leave partial data behind in Google
+  // Cloud Storage.
+  rpc ExportEntities(ExportEntitiesRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/projects/{project_id}:export"
+      body: "*"
+    };
+    option (google.api.method_signature) = "project_id,labels,entity_filter,output_url_prefix";
+    option (google.longrunning.operation_info) = {
+      response_type: "ExportEntitiesResponse"
+      metadata_type: "ExportEntitiesMetadata"
+    };
+  }
+
+  // Imports entities into Google Cloud Datastore. Existing entities with the
+  // same key are overwritten. The import occurs in the background and its
+  // progress can be monitored and managed via the Operation resource that is
+  // created. If an ImportEntities operation is cancelled, it is possible
+  // that a subset of the data has already been imported to Cloud Datastore.
+  rpc ImportEntities(ImportEntitiesRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/projects/{project_id}:import"
+      body: "*"
+    };
+    option (google.api.method_signature) = "project_id,labels,input_url,entity_filter";
+    option (google.longrunning.operation_info) = {
+      response_type: "google.protobuf.Empty"
+      metadata_type: "ImportEntitiesMetadata"
+    };
+  }
+
+  // Gets an index.
+  rpc GetIndex(GetIndexRequest) returns (Index) {
+    option (google.api.http) = {
+      get: "/v1/projects/{project_id}/indexes/{index_id}"
+    };
+  }
+
+  // Lists the indexes that match the specified filters.  Datastore uses an
+  // eventually consistent query to fetch the list of indexes and may
+  // occasionally return stale results.
+  rpc ListIndexes(ListIndexesRequest) returns (ListIndexesResponse) {
+    option (google.api.http) = {
+      get: "/v1/projects/{project_id}/indexes"
+    };
+  }
+}
+
+// Metadata common to all Datastore Admin operations.
+message CommonMetadata {
+  // The various possible states for an ongoing Operation.
+  enum State {
+    // Unspecified.
+    STATE_UNSPECIFIED = 0;
+
+    // Request is being prepared for processing.
+    INITIALIZING = 1;
+
+    // Request is actively being processed.
+    PROCESSING = 2;
+
+    // Request is in the process of being cancelled after user called
+    // google.longrunning.Operations.CancelOperation on the operation.
+    CANCELLING = 3;
+
+    // Request has been processed and is in its finalization stage.
+    FINALIZING = 4;
+
+    // Request has completed successfully.
+    SUCCESSFUL = 5;
+
+    // Request has finished being processed, but encountered an error.
+    FAILED = 6;
+
+    // Request has finished being cancelled after user called
+    // google.longrunning.Operations.CancelOperation.
+    CANCELLED = 7;
+  }
+
+  // The time that work began on the operation.
+  google.protobuf.Timestamp start_time = 1;
+
+  // The time the operation ended, either successfully or otherwise.
+  google.protobuf.Timestamp end_time = 2;
+
+  // The type of the operation. Can be used as a filter in
+  // ListOperationsRequest.
+  OperationType operation_type = 3;
+
+  // The client-assigned labels which were provided when the operation was
+  // created. May also include additional labels.
+  map<string, string> labels = 4;
+
+  // The current state of the Operation.
+  State state = 5;
+}
+
+// Operation types.
+enum OperationType {
+  // Unspecified.
+  OPERATION_TYPE_UNSPECIFIED = 0;
+
+  // ExportEntities.
+  EXPORT_ENTITIES = 1;
+
+  // ImportEntities.
+  IMPORT_ENTITIES = 2;
+
+  // CreateIndex.
+  CREATE_INDEX = 3;
+
+  // DeleteIndex.
+  DELETE_INDEX = 4;
+}
+
+// Measures the progress of a particular metric.
+message Progress {
+  // The amount of work that has been completed. Note that this may be greater
+  // than work_estimated.
+  int64 work_completed = 1;
+
+  // An estimate of how much work needs to be performed. May be zero if the
+  // work estimate is unavailable.
+  int64 work_estimated = 2;
+}
+
+// The request for
+// [google.datastore.admin.v1.DatastoreAdmin.ExportEntities][google.datastore.admin.v1.DatastoreAdmin.ExportEntities].
+message ExportEntitiesRequest {
+  // Required. Project ID against which to make the request.
+  string project_id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Client-assigned labels.
+  map<string, string> labels = 2;
+
+  // Description of what data from the project is included in the export.
+  EntityFilter entity_filter = 3;
+
+  // Required. Location for the export metadata and data files.
+  //
+  // The full resource URL of the external storage location. Currently, only
+  // Google Cloud Storage is supported. So output_url_prefix should be of the
+  // form: `gs://BUCKET_NAME[/NAMESPACE_PATH]`, where `BUCKET_NAME` is the
+  // name of the Cloud Storage bucket and `NAMESPACE_PATH` is an optional Cloud
+  // Storage namespace path (this is not a Cloud Datastore namespace). For more
+  // information about Cloud Storage namespace paths, see
+  // [Object name
+  // considerations](https://cloud.google.com/storage/docs/naming#object-considerations).
+  //
+  // The resulting files will be nested deeper than the specified URL prefix.
+  // The final output URL will be provided in the
+  // [google.datastore.admin.v1.ExportEntitiesResponse.output_url][google.datastore.admin.v1.ExportEntitiesResponse.output_url] field. That
+  // value should be used for subsequent ImportEntities operations.
+  //
+  // By nesting the data files deeper, the same Cloud Storage bucket can be used
+  // in multiple ExportEntities operations without conflict.
+  string output_url_prefix = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The request for
+// [google.datastore.admin.v1.DatastoreAdmin.ImportEntities][google.datastore.admin.v1.DatastoreAdmin.ImportEntities].
+message ImportEntitiesRequest {
+  // Required. Project ID against which to make the request.
+  string project_id = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Client-assigned labels.
+  map<string, string> labels = 2;
+
+  // Required. The full resource URL of the external storage location. Currently, only
+  // Google Cloud Storage is supported. So input_url should be of the form:
+  // `gs://BUCKET_NAME[/NAMESPACE_PATH]/OVERALL_EXPORT_METADATA_FILE`, where
+  // `BUCKET_NAME` is the name of the Cloud Storage bucket, `NAMESPACE_PATH` is
+  // an optional Cloud Storage namespace path (this is not a Cloud Datastore
+  // namespace), and `OVERALL_EXPORT_METADATA_FILE` is the metadata file written
+  // by the ExportEntities operation. For more information about Cloud Storage
+  // namespace paths, see
+  // [Object name
+  // considerations](https://cloud.google.com/storage/docs/naming#object-considerations).
+  //
+  // For more information, see
+  // [google.datastore.admin.v1.ExportEntitiesResponse.output_url][google.datastore.admin.v1.ExportEntitiesResponse.output_url].
+  string input_url = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Optionally specify which kinds/namespaces are to be imported. If provided,
+  // the list must be a subset of the EntityFilter used in creating the export,
+  // otherwise a FAILED_PRECONDITION error will be returned. If no filter is
+  // specified then all entities from the export are imported.
+  EntityFilter entity_filter = 4;
+}
+
+// The response for
+// [google.datastore.admin.v1.DatastoreAdmin.ExportEntities][google.datastore.admin.v1.DatastoreAdmin.ExportEntities].
+message ExportEntitiesResponse {
+  // Location of the output metadata file. This can be used to begin an import
+  // into Cloud Datastore (this project or another project). See
+  // [google.datastore.admin.v1.ImportEntitiesRequest.input_url][google.datastore.admin.v1.ImportEntitiesRequest.input_url].
+  // Only present if the operation completed successfully.
+  string output_url = 1;
+}
+
+// Metadata for ExportEntities operations.
+message ExportEntitiesMetadata {
+  // Metadata common to all Datastore Admin operations.
+  CommonMetadata common = 1;
+
+  // An estimate of the number of entities processed.
+  Progress progress_entities = 2;
+
+  // An estimate of the number of bytes processed.
+  Progress progress_bytes = 3;
+
+  // Description of which entities are being exported.
+  EntityFilter entity_filter = 4;
+
+  // Location for the export metadata and data files. This will be the same
+  // value as the
+  // [google.datastore.admin.v1.ExportEntitiesRequest.output_url_prefix][google.datastore.admin.v1.ExportEntitiesRequest.output_url_prefix]
+  // field. The final output location is provided in
+  // [google.datastore.admin.v1.ExportEntitiesResponse.output_url][google.datastore.admin.v1.ExportEntitiesResponse.output_url].
+  string output_url_prefix = 5;
+}
+
+// Metadata for ImportEntities operations.
+message ImportEntitiesMetadata {
+  // Metadata common to all Datastore Admin operations.
+  CommonMetadata common = 1;
+
+  // An estimate of the number of entities processed.
+  Progress progress_entities = 2;
+
+  // An estimate of the number of bytes processed.
+  Progress progress_bytes = 3;
+
+  // Description of which entities are being imported.
+  EntityFilter entity_filter = 4;
+
+  // The location of the import metadata file. This will be the same value as
+  // the [google.datastore.admin.v1.ExportEntitiesResponse.output_url][google.datastore.admin.v1.ExportEntitiesResponse.output_url] field.
+  string input_url = 5;
+}
+
+// Identifies a subset of entities in a project. This is specified as
+// combinations of kinds and namespaces (either or both of which may be all, as
+// described in the following examples).
+// Example usage:
+//
+// Entire project:
+//   kinds=[], namespace_ids=[]
+//
+// Kinds Foo and Bar in all namespaces:
+//   kinds=['Foo', 'Bar'], namespace_ids=[]
+//
+// Kinds Foo and Bar only in the default namespace:
+//   kinds=['Foo', 'Bar'], namespace_ids=['']
+//
+// Kinds Foo and Bar in both the default and Baz namespaces:
+//   kinds=['Foo', 'Bar'], namespace_ids=['', 'Baz']
+//
+// The entire Baz namespace:
+//   kinds=[], namespace_ids=['Baz']
+message EntityFilter {
+  // If empty, then this represents all kinds.
+  repeated string kinds = 1;
+
+  // An empty list represents all namespaces. This is the preferred
+  // usage for projects that don't use namespaces.
+  //
+  // An empty string element represents the default namespace. This should be
+  // used if the project has data in non-default namespaces, but doesn't want to
+  // include them.
+  // Each namespace in this list must be unique.
+  repeated string namespace_ids = 2;
+}
+
+// The request for [google.datastore.admin.v1.DatastoreAdmin.GetIndex][google.datastore.admin.v1.DatastoreAdmin.GetIndex].
+message GetIndexRequest {
+  // Project ID against which to make the request.
+  string project_id = 1;
+
+  // The resource ID of the index to get.
+  string index_id = 3;
+}
+
+// The request for
+// [google.datastore.admin.v1.DatastoreAdmin.ListIndexes][google.datastore.admin.v1.DatastoreAdmin.ListIndexes].
+message ListIndexesRequest {
+  // Project ID against which to make the request.
+  string project_id = 1;
+
+  string filter = 3;
+
+  // The maximum number of items to return.  If zero, then all results will be
+  // returned.
+  int32 page_size = 4;
+
+  // The next_page_token value returned from a previous List request, if any.
+  string page_token = 5;
+}
+
+// The response for
+// [google.datastore.admin.v1.DatastoreAdmin.ListIndexes][google.datastore.admin.v1.DatastoreAdmin.ListIndexes].
+message ListIndexesResponse {
+  // The indexes.
+  repeated Index indexes = 1;
+
+  // The standard List next-page token.
+  string next_page_token = 2;
+}
+
+// Metadata for Index operations.
+message IndexOperationMetadata {
+  // Metadata common to all Datastore Admin operations.
+  CommonMetadata common = 1;
+
+  // An estimate of the number of entities processed.
+  Progress progress_entities = 2;
+
+  // The index resource ID that this operation is acting on.
+  string index_id = 3;
+}

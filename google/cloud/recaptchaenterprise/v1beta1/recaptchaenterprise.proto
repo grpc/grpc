@@ -1,0 +1,441 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.recaptchaenterprise.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Google.Cloud.RecaptchaEnterprise.V1Beta1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/recaptchaenterprise/v1beta1;recaptchaenterprise";
+option java_multiple_files = true;
+option java_outer_classname = "RecaptchaEnterpriseProto";
+option java_package = "com.google.recaptchaenterprise.v1beta1";
+option objc_class_prefix = "GCRE";
+option php_namespace = "Google\\Cloud\\RecaptchaEnterprise\\V1beta1";
+
+// Service to determine the likelihood an event is legitimate.
+service RecaptchaEnterpriseServiceV1Beta1 {
+  option (google.api.default_host) = "recaptchaenterprise.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Creates an Assessment of the likelihood an event is legitimate.
+  rpc CreateAssessment(CreateAssessmentRequest) returns (Assessment) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*}/assessments"
+      body: "assessment"
+    };
+    option (google.api.method_signature) = "parent,assessment";
+  }
+
+  // Annotates a previously created Assessment to provide additional information
+  // on whether the event turned out to be authentic or fradulent.
+  rpc AnnotateAssessment(AnnotateAssessmentRequest) returns (AnnotateAssessmentResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/assessments/*}:annotate"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name,annotation";
+  }
+
+  // Creates a new reCAPTCHA Enterprise key.
+  rpc CreateKey(CreateKeyRequest) returns (Key) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*}/keys"
+      body: "key"
+    };
+  }
+
+  // Returns the list of all keys that belong to a project.
+  rpc ListKeys(ListKeysRequest) returns (ListKeysResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*}/keys"
+    };
+  }
+
+  // Returns the specified key.
+  rpc GetKey(GetKeyRequest) returns (Key) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/keys/*}"
+    };
+  }
+
+  // Updates the specified key.
+  rpc UpdateKey(UpdateKeyRequest) returns (Key) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{key.name=projects/*/keys/*}"
+      body: "key"
+    };
+  }
+
+  // Deletes the specified key.
+  rpc DeleteKey(DeleteKeyRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/keys/*}"
+    };
+  }
+}
+
+// The create assessment request message.
+message CreateAssessmentRequest {
+  // Required. The name of the project in which the assessment will be created,
+  // in the format "projects/{project_number}".
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudresourcemanager.googleapis.com/Project"
+    }
+  ];
+
+  // Required. The assessment details.
+  Assessment assessment = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The request message to annotate an Assessment.
+message AnnotateAssessmentRequest {
+  // Enum that reprensents the types of annotations.
+  enum Annotation {
+    // Default unspecified type.
+    ANNOTATION_UNSPECIFIED = 0;
+
+    // Provides information that the event turned out to be legitimate.
+    LEGITIMATE = 1;
+
+    // Provides information that the event turned out to be fraudulent.
+    FRAUDULENT = 2;
+  }
+
+  // Required. The resource name of the Assessment, in the format
+  // "projects/{project_number}/assessments/{assessment_id}".
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "recaptchaenterprise.googleapis.com/Assessment"
+    }
+  ];
+
+  // Required. The annotation that will be assigned to the Event.
+  Annotation annotation = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Empty response for AnnotateAssessment.
+message AnnotateAssessmentResponse {
+
+}
+
+// A recaptcha assessment resource.
+message Assessment {
+  option (google.api.resource) = {
+    type: "recaptchaenterprise.googleapis.com/Assessment"
+    pattern: "projects/{project}/assessments/{assessment}"
+  };
+
+  // LINT.IfChange(classification_reason)
+  // Reasons contributing to the risk analysis verdict.
+  enum ClassificationReason {
+    // Default unspecified type.
+    CLASSIFICATION_REASON_UNSPECIFIED = 0;
+
+    // Interactions matched the behavior of an automated agent.
+    AUTOMATION = 1;
+
+    // The event originated from an illegitimate environment.
+    UNEXPECTED_ENVIRONMENT = 2;
+
+    // Traffic volume from the event source is higher than normal.
+    TOO_MUCH_TRAFFIC = 3;
+
+    // Interactions with the site were significantly different than expected
+    // patterns.
+    UNEXPECTED_USAGE_PATTERNS = 4;
+
+    // Too little traffic has been received from this site thus far to generate
+    // quality risk analysis.
+    LOW_CONFIDENCE_SCORE = 5;
+  }
+
+  // Output only. The resource name for the Assessment in the format
+  // "projects/{project_number}/assessments/{assessment_id}".
+  string name = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The event being assessed.
+  Event event = 2;
+
+  // Output only. Legitimate event score from 0.0 to 1.0.
+  // (1.0 means very likely legitimate traffic while 0.0 means very likely
+  // non-legitimate traffic).
+  float score = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Properties of the provided event token.
+  TokenProperties token_properties = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Reasons contributing to the risk analysis verdict.
+  repeated ClassificationReason reasons = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+message Event {
+  // Optional. The user response token provided by the reCAPTCHA client-side integration
+  // on your site.
+  string token = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The site key that was used to invoke reCAPTCHA on your site and generate
+  // the token.
+  string site_key = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The user agent present in the request from the user's device related to
+  // this event.
+  string user_agent = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The IP address in the request from the user's device related to this event.
+  string user_ip_address = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The expected action for this type of event. This should be the same action
+  // provided at token generation time on client-side platforms already
+  // integrated with recaptcha enterprise.
+  string expected_action = 5 [(google.api.field_behavior) = OPTIONAL];
+}
+
+message TokenProperties {
+  // LINT.IfChange
+  // Enum that represents the types of invalid token reasons.
+  enum InvalidReason {
+    // Default unspecified type.
+    INVALID_REASON_UNSPECIFIED = 0;
+
+    // If the failure reason was not accounted for.
+    UNKNOWN_INVALID_REASON = 1;
+
+    // The provided user verification token was malformed.
+    MALFORMED = 2;
+
+    // The user verification token had expired.
+    EXPIRED = 3;
+
+    // The user verification had already been seen.
+    DUPE = 4;
+
+    // The user verification token did not match the provided site key.
+    // This may be a configuration error (e.g. development keys used in
+    // production) or end users trying to use verification tokens from other
+    // sites.
+    SITE_MISMATCH = 5;
+
+    // The user verification token was not present.  It is a required input.
+    MISSING = 6;
+  }
+
+  // Whether the provided user response token is valid.
+  bool valid = 1;
+
+  // Reason associated with the response when valid = false.
+  InvalidReason invalid_reason = 2;
+
+  // The timestamp corresponding to the generation of the token.
+  google.protobuf.Timestamp create_time = 3;
+
+  // The hostname of the page on which the token was generated.
+  string hostname = 4;
+
+  // Action name provided at token generation.
+  string action = 5;
+}
+
+// The create key request message.
+message CreateKeyRequest {
+  // Required. The name of the project in which the key will be created, in the
+  // format "projects/{project_number}".
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudresourcemanager.googleapis.com/Project"
+    }
+  ];
+
+  // Required. Information to create a reCAPTCHA Enterprise key.
+  Key key = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The list keys request message.
+message ListKeysRequest {
+  // Required. The name of the project that contains the keys that will be
+  // listed, in the format "projects/{project_number}".
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudresourcemanager.googleapis.com/Project"
+    }
+  ];
+
+  // Optional. The maximum number of keys to return. Default is 10. Max limit is
+  // 1000.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The next_page_token value returned from a previous.
+  // ListKeysRequest, if any.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Response to request to list keys in a project.
+message ListKeysResponse {
+  // Key details.
+  repeated Key keys = 1;
+
+  // Token to retrieve the next page of results. It is set to empty if no keys
+  // remain in results.
+  string next_page_token = 2;
+}
+
+// The get key request message.
+message GetKeyRequest {
+  // Required. The name of the requested key, in the format
+  // "projects/{project_number}/keys/{key_id}".
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "recaptchaenterprise.googleapis.com/Key"
+    }
+  ];
+}
+
+// The update key request message.
+message UpdateKeyRequest {
+  // Required. The key to update.
+  Key key = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. The mask to control which field of the key get updated. If the mask is not
+  // present, all fields will be updated.
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// The delete key request message.
+message DeleteKeyRequest {
+  // Required. The name of the key to be deleted, in the format
+  // "projects/{project_number}/keys/{key_id}".
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "recaptchaenterprise.googleapis.com/Key"
+    }
+  ];
+}
+
+// A key used to identify and configure applications (web and/or mobile) that
+// use reCAPTCHA Enterprise.
+message Key {
+  option (google.api.resource) = {
+    type: "recaptchaenterprise.googleapis.com/Key"
+    pattern: "projects/{project}/keys/{key}"
+  };
+
+  // The resource name for the Key in the format
+  // "projects/{project_number}/keys/{key_id}".
+  string name = 1;
+
+  // Human-readable display name of this key. Modifiable by user.
+  string display_name = 2;
+
+  // Platform specific settings for this key. The key can only be used on one
+  // platform, the one it has settings for.
+  oneof platform_settings {
+    // Settings for keys that can be used by websites.
+    WebKeySettings web_settings = 3;
+
+    // Settings for keys that can be used by Android apps.
+    AndroidKeySettings android_settings = 4;
+
+    // Settings for keys that can be used by iOS apps.
+    IOSKeySettings ios_settings = 5;
+  }
+}
+
+// Settings specific to keys that can be used by websites.
+message WebKeySettings {
+  // Enum that represents the integration types for web keys.
+  enum IntegrationType {
+    // Default type that indicates this enum hasn't been specified. This is not
+    // a valid IntegrationType, one of the other types must be specified
+    // instead.
+    INTEGRATION_TYPE_UNSPECIFIED = 0;
+
+    // Only used to produce scores. It doesn't display the "I'm not a robot"
+    // checkbox and never shows captcha challenges.
+    SCORE_ONLY = 1;
+
+    // Displays the "I'm not a robot" checkbox and may show captcha challenges
+    // after it is checked.
+    CHECKBOX_CHALLENGE = 2;
+
+    // Doesn't display the "I'm not a robot" checkbox, but may show captcha
+    // challenges after risk analysis.
+    INVISIBLE_CHALLENGE = 3;
+  }
+
+  // Enum that represents the possible challenge frequency and difficulty
+  // configurations for a web key.
+  enum ChallengeSecurityPreference {
+    // Default type that indicates this enum hasn't been specified.
+    CHALLENGE_SECURITY_PREFERENCE_UNSPECIFIED = 0;
+
+    // Key tends to show fewer and easier challenges.
+    USABILITY = 1;
+
+    // Key tends to show balanced (in amount and difficulty) challenges.
+    BALANCED = 2;
+
+    // Key tends to show more and harder challenges.
+    SECURITY = 3;
+  }
+
+  // Whether allowed_domains is enforced or not.
+  bool enforce_allowed_domains = 3;
+
+  // Domains or subdomains of websites allowed to use the key. All subdomains
+  // of an allowed domain are automatically allowed. A valid domain requires a
+  // host and must not include any path, port, query or fragment.
+  // Examples: 'example.com' or 'subdomain.example.com'
+  repeated string allowed_domains = 1;
+
+  // Whether this key can be used on AMP (Accelerated Mobile Pages) websites.
+  bool allow_amp_traffic = 2;
+
+  // Required. Describes how this key is integrated with the website.
+  IntegrationType integration_type = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Settings for the frequency and difficulty at which this key triggers
+  // captcha challenges. This should only be specified for IntegrationTypes
+  // CHECKBOX_CHALLENGE and INVISIBLE_CHALLENGE.
+  ChallengeSecurityPreference challenge_security_preference = 5;
+}
+
+// Settings specific to keys that can be used by Android apps.
+message AndroidKeySettings {
+  // Android package names of apps allowed to use the key.
+  // Example: 'com.companyname.appname'
+  repeated string allowed_package_names = 1;
+}
+
+// Settings specific to keys that can be used by iOS apps.
+message IOSKeySettings {
+  // iOS bundle ids of apps allowed to use the key.
+  // Example: 'com.companyname.productname.appname'
+  repeated string allowed_bundle_ids = 1;
+}

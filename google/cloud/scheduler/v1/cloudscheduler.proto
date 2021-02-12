@@ -1,0 +1,268 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.scheduler.v1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/cloud/scheduler/v1/job.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/scheduler/v1;scheduler";
+option java_multiple_files = true;
+option java_outer_classname = "SchedulerProto";
+option java_package = "com.google.cloud.scheduler.v1";
+option objc_class_prefix = "SCHEDULER";
+
+// The Cloud Scheduler API allows external entities to reliably
+// schedule asynchronous jobs.
+service CloudScheduler {
+  option (google.api.default_host) = "cloudscheduler.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Lists jobs.
+  rpc ListJobs(ListJobsRequest) returns (ListJobsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=projects/*/locations/*}/jobs"
+    };
+    option (google.api.method_signature) = "parent";
+  }
+
+  // Gets a job.
+  rpc GetJob(GetJobRequest) returns (Job) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/locations/*/jobs/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Creates a job.
+  rpc CreateJob(CreateJobRequest) returns (Job) {
+    option (google.api.http) = {
+      post: "/v1/{parent=projects/*/locations/*}/jobs"
+      body: "job"
+    };
+    option (google.api.method_signature) = "parent,job";
+  }
+
+  // Updates a job.
+  //
+  // If successful, the updated [Job][google.cloud.scheduler.v1.Job] is returned. If the job does
+  // not exist, `NOT_FOUND` is returned.
+  //
+  // If UpdateJob does not successfully return, it is possible for the
+  // job to be in an [Job.State.UPDATE_FAILED][google.cloud.scheduler.v1.Job.State.UPDATE_FAILED] state. A job in this state may
+  // not be executed. If this happens, retry the UpdateJob request
+  // until a successful response is received.
+  rpc UpdateJob(UpdateJobRequest) returns (Job) {
+    option (google.api.http) = {
+      patch: "/v1/{job.name=projects/*/locations/*/jobs/*}"
+      body: "job"
+    };
+    option (google.api.method_signature) = "job,update_mask";
+  }
+
+  // Deletes a job.
+  rpc DeleteJob(DeleteJobRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/{name=projects/*/locations/*/jobs/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Pauses a job.
+  //
+  // If a job is paused then the system will stop executing the job
+  // until it is re-enabled via [ResumeJob][google.cloud.scheduler.v1.CloudScheduler.ResumeJob]. The
+  // state of the job is stored in [state][google.cloud.scheduler.v1.Job.state]; if paused it
+  // will be set to [Job.State.PAUSED][google.cloud.scheduler.v1.Job.State.PAUSED]. A job must be in [Job.State.ENABLED][google.cloud.scheduler.v1.Job.State.ENABLED]
+  // to be paused.
+  rpc PauseJob(PauseJobRequest) returns (Job) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/jobs/*}:pause"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Resume a job.
+  //
+  // This method reenables a job after it has been [Job.State.PAUSED][google.cloud.scheduler.v1.Job.State.PAUSED]. The
+  // state of a job is stored in [Job.state][google.cloud.scheduler.v1.Job.state]; after calling this method it
+  // will be set to [Job.State.ENABLED][google.cloud.scheduler.v1.Job.State.ENABLED]. A job must be in
+  // [Job.State.PAUSED][google.cloud.scheduler.v1.Job.State.PAUSED] to be resumed.
+  rpc ResumeJob(ResumeJobRequest) returns (Job) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/jobs/*}:resume"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Forces a job to run now.
+  //
+  // When this method is called, Cloud Scheduler will dispatch the job, even
+  // if the job is already running.
+  rpc RunJob(RunJobRequest) returns (Job) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/jobs/*}:run"
+      body: "*"
+    };
+    option (google.api.method_signature) = "name";
+  }
+}
+
+// Request message for listing jobs using [ListJobs][google.cloud.scheduler.v1.CloudScheduler.ListJobs].
+message ListJobsRequest {
+  // Required. The location name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID`.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      child_type: "cloudscheduler.googleapis.com/Job"
+    }
+  ];
+
+  // Requested page size.
+  //
+  // The maximum page size is 500. If unspecified, the page size will
+  // be the maximum. Fewer jobs than requested might be returned,
+  // even if more jobs exist; use next_page_token to determine if more
+  // jobs exist.
+  int32 page_size = 5;
+
+  // A token identifying a page of results the server will return. To
+  // request the first page results, page_token must be empty. To
+  // request the next page of results, page_token must be the value of
+  // [next_page_token][google.cloud.scheduler.v1.ListJobsResponse.next_page_token] returned from
+  // the previous call to [ListJobs][google.cloud.scheduler.v1.CloudScheduler.ListJobs]. It is an error to
+  // switch the value of [filter][google.cloud.scheduler.v1.ListJobsRequest.filter] or
+  // [order_by][google.cloud.scheduler.v1.ListJobsRequest.order_by] while iterating through pages.
+  string page_token = 6;
+}
+
+// Response message for listing jobs using [ListJobs][google.cloud.scheduler.v1.CloudScheduler.ListJobs].
+message ListJobsResponse {
+  // The list of jobs.
+  repeated Job jobs = 1;
+
+  // A token to retrieve next page of results. Pass this value in the
+  // [page_token][google.cloud.scheduler.v1.ListJobsRequest.page_token] field in the subsequent call to
+  // [ListJobs][google.cloud.scheduler.v1.CloudScheduler.ListJobs] to retrieve the next page of results.
+  // If this is empty it indicates that there are no more results
+  // through which to paginate.
+  //
+  // The page token is valid for only 2 hours.
+  string next_page_token = 2;
+}
+
+// Request message for [GetJob][google.cloud.scheduler.v1.CloudScheduler.GetJob].
+message GetJobRequest {
+  // Required. The job name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/jobs/JOB_ID`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudscheduler.googleapis.com/Job"
+    }
+  ];
+}
+
+// Request message for [CreateJob][google.cloud.scheduler.v1.CloudScheduler.CreateJob].
+message CreateJobRequest {
+  // Required. The location name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID`.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      child_type: "cloudscheduler.googleapis.com/Job"
+    }
+  ];
+
+  // Required. The job to add. The user can optionally specify a name for the
+  // job in [name][google.cloud.scheduler.v1.Job.name]. [name][google.cloud.scheduler.v1.Job.name] cannot be the same as an
+  // existing job. If a name is not specified then the system will
+  // generate a random unique name that will be returned
+  // ([name][google.cloud.scheduler.v1.Job.name]) in the response.
+  Job job = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request message for [UpdateJob][google.cloud.scheduler.v1.CloudScheduler.UpdateJob].
+message UpdateJobRequest {
+  // Required. The new job properties. [name][google.cloud.scheduler.v1.Job.name] must be specified.
+  //
+  // Output only fields cannot be modified using UpdateJob.
+  // Any value specified for an output only field will be ignored.
+  Job job = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // A  mask used to specify which fields of the job are being updated.
+  google.protobuf.FieldMask update_mask = 2
+    [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request message for deleting a job using
+// [DeleteJob][google.cloud.scheduler.v1.CloudScheduler.DeleteJob].
+message DeleteJobRequest {
+  // Required. The job name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/jobs/JOB_ID`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudscheduler.googleapis.com/Job"
+    }
+  ];
+}
+
+// Request message for [PauseJob][google.cloud.scheduler.v1.CloudScheduler.PauseJob].
+message PauseJobRequest {
+  // Required. The job name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/jobs/JOB_ID`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudscheduler.googleapis.com/Job"
+    }
+  ];
+}
+
+// Request message for [ResumeJob][google.cloud.scheduler.v1.CloudScheduler.ResumeJob].
+message ResumeJobRequest {
+  // Required. The job name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/jobs/JOB_ID`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudscheduler.googleapis.com/Job"
+    }
+  ];
+}
+
+// Request message for forcing a job to run now using
+// [RunJob][google.cloud.scheduler.v1.CloudScheduler.RunJob].
+message RunJobRequest {
+  // Required. The job name. For example:
+  // `projects/PROJECT_ID/locations/LOCATION_ID/jobs/JOB_ID`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudscheduler.googleapis.com/Job"
+    }
+  ];
+}

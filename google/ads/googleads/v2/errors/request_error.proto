@@ -1,0 +1,113 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "RequestErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing request errors.
+
+// Container for enum describing possible request errors.
+message RequestErrorEnum {
+  // Enum describing possible request errors.
+  enum RequestError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Resource name is required for this request.
+    RESOURCE_NAME_MISSING = 3;
+
+    // Resource name provided is malformed.
+    RESOURCE_NAME_MALFORMED = 4;
+
+    // Resource name provided is malformed.
+    BAD_RESOURCE_ID = 17;
+
+    // Customer ID is invalid.
+    INVALID_CUSTOMER_ID = 16;
+
+    // Mutate operation should have either create, update, or remove specified.
+    OPERATION_REQUIRED = 5;
+
+    // Requested resource not found.
+    RESOURCE_NOT_FOUND = 6;
+
+    // Next page token specified in user request is invalid.
+    INVALID_PAGE_TOKEN = 7;
+
+    // Next page token specified in user request has expired.
+    EXPIRED_PAGE_TOKEN = 8;
+
+    // Page size specified in user request is invalid.
+    INVALID_PAGE_SIZE = 22;
+
+    // Required field is missing.
+    REQUIRED_FIELD_MISSING = 9;
+
+    // The field cannot be modified because it's immutable. It's also possible
+    // that the field can be modified using 'create' operation but not 'update'.
+    IMMUTABLE_FIELD = 11;
+
+    // Received too many entries in request.
+    TOO_MANY_MUTATE_OPERATIONS = 13;
+
+    // Request cannot be executed by a manager account.
+    CANNOT_BE_EXECUTED_BY_MANAGER_ACCOUNT = 14;
+
+    // Mutate request was attempting to modify a readonly field.
+    // For instance, Budget fields can be requested for Ad Group,
+    // but are read-only for adGroups:mutate.
+    CANNOT_MODIFY_FOREIGN_FIELD = 15;
+
+    // Enum value is not permitted.
+    INVALID_ENUM_VALUE = 18;
+
+    // The developer-token parameter is required for all requests.
+    DEVELOPER_TOKEN_PARAMETER_MISSING = 19;
+
+    // The login-customer-id parameter is required for this request.
+    LOGIN_CUSTOMER_ID_PARAMETER_MISSING = 20;
+
+    // page_token is set in the validate only request
+    VALIDATE_ONLY_REQUEST_HAS_PAGE_TOKEN = 21;
+
+    // return_summary_row cannot be enabled if request did not select any
+    // metrics field.
+    CANNOT_RETURN_SUMMARY_ROW_FOR_REQUEST_WITHOUT_METRICS = 29;
+
+    // return_summary_row should not be enabled for validate only requests.
+    CANNOT_RETURN_SUMMARY_ROW_FOR_VALIDATE_ONLY_REQUESTS = 30;
+
+    // return_summary_row parameter value should be the same between requests
+    // with page_token field set and their original request.
+    INCONSISTENT_RETURN_SUMMARY_ROW_VALUE = 31;
+  }
+
+
+}

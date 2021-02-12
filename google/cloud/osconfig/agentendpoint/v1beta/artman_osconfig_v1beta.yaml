@@ -1,0 +1,16 @@
+common:
+  api_name: osconfig
+  api_version: v1beta
+  organization_name: google-cloud
+  proto_deps:
+  - name: google-common-protos
+  src_proto_paths:
+  - .
+  service_yaml: osconfig_v1beta.yaml
+  gapic_yaml: osconfig_gapic.yaml
+artifacts:
+- name: gapic_config
+  type: GAPIC_CONFIG
+- name: go_gapic
+  type: GAPIC
+  language: GO

@@ -1,0 +1,77 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.appengine.v1;
+
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/appengine/v1;appengine";
+option java_multiple_files = true;
+option java_outer_classname = "DeployProto";
+option java_package = "com.google.appengine.v1";
+
+// Code and application artifacts used to deploy a version to App Engine.
+message Deployment {
+  // Manifest of the files stored in Google Cloud Storage that are included
+  // as part of this version. All files must be readable using the
+  // credentials supplied with this call.
+  map<string, FileInfo> files = 1;
+
+  // A Docker image that App Engine uses to run the version.
+  // Only applicable for instances in App Engine flexible environment.
+  ContainerInfo container = 2;
+
+  // The zip file for this deployment, if this is a zip deployment.
+  ZipInfo zip = 3;
+}
+
+// Single source file that is part of the version to be deployed. Each source
+// file that is deployed must be specified separately.
+message FileInfo {
+  // URL source to use to fetch this file. Must be a URL to a resource in
+  // Google Cloud Storage in the form
+  // 'http(s)://storage.googleapis.com/\<bucket\>/\<object\>'.
+  string source_url = 1;
+
+  // The SHA1 hash of the file, in hex.
+  string sha1_sum = 2;
+
+  // The MIME type of the file.
+  //
+  // Defaults to the value from Google Cloud Storage.
+  string mime_type = 3;
+}
+
+// Docker image that is used to start a VM container for the version you
+// deploy.
+message ContainerInfo {
+  // URI to the hosted container image in a Docker repository. The URI must be
+  // fully qualified and include a tag or digest.
+  // Examples: "gcr.io/my-project/image:tag" or "gcr.io/my-project/image@digest"
+  string image = 1;
+}
+
+message ZipInfo {
+  // URL of the zip file to deploy from. Must be a URL to a resource in
+  // Google Cloud Storage in the form
+  // 'http(s)://storage.googleapis.com/\<bucket\>/\<object\>'.
+  string source_url = 3;
+
+  // An estimate of the number of files in a zip for a zip deployment.
+  // If set, must be greater than or equal to the actual number of files.
+  // Used for optimizing performance; if not provided, deployment may be slow.
+  int32 files_count = 4;
+}

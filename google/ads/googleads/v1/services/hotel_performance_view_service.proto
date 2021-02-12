@@ -1,0 +1,50 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/resources/hotel_performance_view.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "HotelPerformanceViewServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the Hotel Performance View Service.
+
+// Service to manage Hotel Performance Views.
+service HotelPerformanceViewService {
+  // Returns the requested Hotel Performance View in full detail.
+  rpc GetHotelPerformanceView(GetHotelPerformanceViewRequest)
+      returns (google.ads.googleads.v1.resources.HotelPerformanceView) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/hotelPerformanceView}"
+    };
+  }
+}
+
+// Request message for
+// [HotelPerformanceViewService.GetHotelPerformanceView][google.ads.googleads.v1.services.HotelPerformanceViewService.GetHotelPerformanceView].
+message GetHotelPerformanceViewRequest {
+  // Resource name of the Hotel Performance View to fetch.
+  string resource_name = 1;
+}

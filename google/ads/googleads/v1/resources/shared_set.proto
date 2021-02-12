@@ -1,0 +1,67 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/enums/shared_set_status.proto";
+import "google/ads/googleads/v1/enums/shared_set_type.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "SharedSetProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the SharedSet resource.
+
+// SharedSets are used for sharing criterion exclusions across multiple
+// campaigns.
+message SharedSet {
+  // The resource name of the shared set.
+  // Shared set resource names have the form:
+  //
+  // `customers/{customer_id}/sharedSets/{shared_set_id}`
+  string resource_name = 1;
+
+  // The ID of this shared set. Read only.
+  google.protobuf.Int64Value id = 2;
+
+  // The type of this shared set: each shared set holds only a single kind
+  // of resource. Required. Immutable.
+  google.ads.googleads.v1.enums.SharedSetTypeEnum.SharedSetType type = 3;
+
+  // The name of this shared set. Required.
+  // Shared Sets must have names that are unique among active shared sets of
+  // the same type.
+  // The length of this string should be between 1 and 255 UTF-8 bytes,
+  // inclusive.
+  google.protobuf.StringValue name = 4;
+
+  // The status of this shared set. Read only.
+  google.ads.googleads.v1.enums.SharedSetStatusEnum.SharedSetStatus status = 5;
+
+  // The number of shared criteria within this shared set. Read only.
+  google.protobuf.Int64Value member_count = 6;
+
+  // The number of campaigns associated with this shared set. Read only.
+  google.protobuf.Int64Value reference_count = 7;
+}

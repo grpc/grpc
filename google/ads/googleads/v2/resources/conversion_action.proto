@@ -1,0 +1,133 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/common/tag_snippet.proto";
+import "google/ads/googleads/v2/enums/attribution_model.proto";
+import "google/ads/googleads/v2/enums/conversion_action_category.proto";
+import "google/ads/googleads/v2/enums/conversion_action_counting_type.proto";
+import "google/ads/googleads/v2/enums/conversion_action_status.proto";
+import "google/ads/googleads/v2/enums/conversion_action_type.proto";
+import "google/ads/googleads/v2/enums/data_driven_model_status.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "ConversionActionProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the Conversion Action resource.
+
+// A conversion action.
+message ConversionAction {
+  // Settings related to this conversion action's attribution model.
+  message AttributionModelSettings {
+    // The attribution model type of this conversion action.
+    google.ads.googleads.v2.enums.AttributionModelEnum.AttributionModel attribution_model = 1;
+
+    // The status of the data-driven attribution model for the conversion
+    // action.
+    google.ads.googleads.v2.enums.DataDrivenModelStatusEnum.DataDrivenModelStatus data_driven_model_status = 2;
+  }
+
+  // Settings related to the value for conversion events associated with this
+  // conversion action.
+  message ValueSettings {
+    // The value to use when conversion events for this conversion action are
+    // sent with an invalid, disallowed or missing value, or when
+    // this conversion action is configured to always use the default value.
+    google.protobuf.DoubleValue default_value = 1;
+
+    // The currency code to use when conversion events for this conversion
+    // action are sent with an invalid or missing currency code, or when this
+    // conversion action is configured to always use the default value.
+    google.protobuf.StringValue default_currency_code = 2;
+
+    // Controls whether the default value and default currency code are used in
+    // place of the value and currency code specified in conversion events for
+    // this conversion action.
+    google.protobuf.BoolValue always_use_default_value = 3;
+  }
+
+  // The resource name of the conversion action.
+  // Conversion action resource names have the form:
+  //
+  // `customers/{customer_id}/conversionActions/{conversion_action_id}`
+  string resource_name = 1;
+
+  // The ID of the conversion action.
+  google.protobuf.Int64Value id = 2;
+
+  // The name of the conversion action.
+  //
+  // This field is required and should not be empty when creating new
+  // conversion actions.
+  google.protobuf.StringValue name = 3;
+
+  // The status of this conversion action for conversion event accrual.
+  google.ads.googleads.v2.enums.ConversionActionStatusEnum.ConversionActionStatus status = 4;
+
+  // The type of this conversion action.
+  google.ads.googleads.v2.enums.ConversionActionTypeEnum.ConversionActionType type = 5;
+
+  // The category of conversions reported for this conversion action.
+  google.ads.googleads.v2.enums.ConversionActionCategoryEnum.ConversionActionCategory category = 6;
+
+  // The resource name of the conversion action owner customer, or null if this
+  // is a system-defined conversion action.
+  google.protobuf.StringValue owner_customer = 7;
+
+  // Whether this conversion action should be included in the "conversions"
+  // metric.
+  google.protobuf.BoolValue include_in_conversions_metric = 8;
+
+  // The maximum number of days that may elapse between an interaction
+  // (e.g., a click) and a conversion event.
+  google.protobuf.Int64Value click_through_lookback_window_days = 9;
+
+  // The maximum number of days which may elapse between an impression and a
+  // conversion without an interaction.
+  google.protobuf.Int64Value view_through_lookback_window_days = 10;
+
+  // Settings related to the value for conversion events associated with this
+  // conversion action.
+  ValueSettings value_settings = 11;
+
+  // How to count conversion events for the conversion action.
+  google.ads.googleads.v2.enums.ConversionActionCountingTypeEnum.ConversionActionCountingType counting_type = 12;
+
+  // Settings related to this conversion action's attribution model.
+  AttributionModelSettings attribution_model_settings = 13;
+
+  // The snippets used for tracking conversions.
+  repeated google.ads.googleads.v2.common.TagSnippet tag_snippets = 14;
+
+  // The phone call duration in seconds after which a conversion should be
+  // reported for this conversion action.
+  //
+  // The value must be between 0 and 10000, inclusive.
+  google.protobuf.Int64Value phone_call_duration_seconds = 15;
+
+  // App ID for an app conversion action.
+  google.protobuf.StringValue app_id = 16;
+}

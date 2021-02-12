@@ -1,0 +1,23 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.tasks.v2
+  python:
+    package_name: google.cloud.tasks_v2.gapic
+    release_level: GA
+  go:
+    package_name: cloud.google.com/go/cloudtasks/apiv2
+    release_level: GA
+  csharp:
+    package_name: Google.Cloud.Tasks.V2
+    release_level: GA
+  ruby:
+    package_name: Google::Cloud::Tasks::V2
+    release_level: GA
+  php:
+    package_name: Google\Cloud\Tasks\V2
+    release_level: GA
+  nodejs:
+    package_name: tasks.v2

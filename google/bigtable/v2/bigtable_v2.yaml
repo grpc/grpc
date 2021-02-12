@@ -1,0 +1,39 @@
+type: google.api.Service
+config_version: 1
+name: bigtable.googleapis.com
+title: Cloud Bigtable API
+
+apis:
+- name: google.bigtable.v2.Bigtable
+
+documentation:
+  summary: |-
+    API for reading and writing the contents of Bigtables associated with a
+    cloud project.
+
+authentication:
+  rules:
+  - selector: 'google.bigtable.v2.Bigtable.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigtable.data,
+        https://www.googleapis.com/auth/cloud-bigtable.data,
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: google.bigtable.v2.Bigtable.ReadRows
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigtable.data,
+        https://www.googleapis.com/auth/bigtable.data.readonly,
+        https://www.googleapis.com/auth/cloud-bigtable.data,
+        https://www.googleapis.com/auth/cloud-bigtable.data.readonly,
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only
+  - selector: google.bigtable.v2.Bigtable.SampleRowKeys
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigtable.data,
+        https://www.googleapis.com/auth/bigtable.data.readonly,
+        https://www.googleapis.com/auth/cloud-bigtable.data,
+        https://www.googleapis.com/auth/cloud-bigtable.data.readonly,
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only

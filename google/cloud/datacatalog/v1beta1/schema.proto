@@ -1,0 +1,53 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.datacatalog.v1beta1;
+
+import "google/api/field_behavior.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/cloud/datacatalog/v1beta1;datacatalog";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.datacatalog.v1beta1";
+
+// Represents a schema (e.g. BigQuery, GoogleSQL, Avro schema).
+message Schema {
+  // Required. Schema of columns. A maximum of 10,000 columns and sub-columns can be
+  // specified.
+  repeated ColumnSchema columns = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Representation of a column within a schema. Columns could be nested inside
+// other columns.
+message ColumnSchema {
+  // Required. Name of the column.
+  string column = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Type of the column.
+  string type = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. Description of the column. Default value is an empty string.
+  string description = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. A column's mode indicates whether the values in this column are required,
+  // nullable, etc. Only `NULLABLE`, `REQUIRED` and `REPEATED` are supported.
+  // Default mode is `NULLABLE`.
+  string mode = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Schema of sub-columns. A column can have zero or more sub-columns.
+  repeated ColumnSchema subcolumns = 7 [(google.api.field_behavior) = OPTIONAL];
+}

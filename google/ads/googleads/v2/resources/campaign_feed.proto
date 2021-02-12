@@ -1,0 +1,63 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/common/matching_function.proto";
+import "google/ads/googleads/v2/enums/feed_link_status.proto";
+import "google/ads/googleads/v2/enums/placeholder_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "CampaignFeedProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the CampaignFeed resource.
+
+// A campaign feed.
+message CampaignFeed {
+  // The resource name of the campaign feed.
+  // Campaign feed resource names have the form:
+  //
+  // `customers/{customer_id}/campaignFeeds/{campaign_id}~{feed_id}
+  string resource_name = 1;
+
+  // The feed to which the CampaignFeed belongs.
+  google.protobuf.StringValue feed = 2;
+
+  // The campaign to which the CampaignFeed belongs.
+  google.protobuf.StringValue campaign = 3;
+
+  // Indicates which placeholder types the feed may populate under the connected
+  // campaign. Required.
+  repeated google.ads.googleads.v2.enums.PlaceholderTypeEnum.PlaceholderType placeholder_types = 4;
+
+  // Matching function associated with the CampaignFeed.
+  // The matching function is used to filter the set of feed items selected.
+  // Required.
+  google.ads.googleads.v2.common.MatchingFunction matching_function = 5;
+
+  // Status of the campaign feed.
+  // This field is read-only.
+  google.ads.googleads.v2.enums.FeedLinkStatusEnum.FeedLinkStatus status = 6;
+}

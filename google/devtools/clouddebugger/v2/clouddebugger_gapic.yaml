@@ -1,0 +1,30 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.debugger.v2
+  python:
+    package_name: google.cloud.debugger_v2.gapic
+  go:
+    package_name: cloud.google.com/go/debugger/apiv2
+    domain_layer_location: cloud.google.com/go/cmd/go-cloud-debug-agent
+  csharp:
+    package_name: Google.Cloud.Debugger.V2
+  ruby:
+    package_name: Google::Cloud::Debugger::V2
+  php:
+    package_name: Google\Cloud\Debugger\V2
+  nodejs:
+    package_name: debugger.v2
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.devtools.clouddebugger.v2.Debugger2
+  methods:
+  - name: DeleteBreakpoint
+    retry_codes_name: idempotent
+    retry_params_name: default
+- name: google.devtools.clouddebugger.v2.Controller2
+  methods:
+  - name: UpdateActiveBreakpoint
+    retry_codes_name: idempotent
+    retry_params_name: default

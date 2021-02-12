@@ -1,0 +1,302 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.webrisk.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Google.Cloud.WebRisk.V1Beta1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/webrisk/v1beta1;webrisk";
+option java_multiple_files = true;
+option java_outer_classname = "WebRiskProto";
+option java_package = "com.google.webrisk.v1beta1";
+option objc_class_prefix = "GCWR";
+option php_namespace = "Google\\Cloud\\WebRisk\\V1beta1";
+
+// Web Risk v1beta1 API defines an interface to detect malicious URLs on your
+// website and in client applications.
+service WebRiskServiceV1Beta1 {
+  option (google.api.default_host) = "webrisk.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Gets the most recent threat list diffs.
+  rpc ComputeThreatListDiff(ComputeThreatListDiffRequest) returns (ComputeThreatListDiffResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/threatLists:computeDiff"
+    };
+    option (google.api.method_signature) = "threat_type,version_token,constraints";
+  }
+
+  // This method is used to check whether a URI is on a given threatList.
+  rpc SearchUris(SearchUrisRequest) returns (SearchUrisResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/uris:search"
+    };
+    option (google.api.method_signature) = "uri,threat_types";
+  }
+
+  // Gets the full hashes that match the requested hash prefix.
+  // This is used after a hash prefix is looked up in a threatList
+  // and there is a match. The client side threatList only holds partial hashes
+  // so the client must query this method to determine if there is a full
+  // hash match of a threat.
+  rpc SearchHashes(SearchHashesRequest) returns (SearchHashesResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/hashes:search"
+    };
+    option (google.api.method_signature) = "hash_prefix,threat_types";
+  }
+}
+
+// Describes an API diff request.
+message ComputeThreatListDiffRequest {
+  // The constraints for this diff.
+  message Constraints {
+    // The maximum size in number of entries. The diff will not contain more
+    // entries than this value.  This should be a power of 2 between 2**10 and
+    // 2**20.  If zero, no diff size limit is set.
+    int32 max_diff_entries = 1;
+
+    // Sets the maximum number of entries that the client is willing to have
+    // in the local database. This should be a power of 2 between 2**10 and
+    // 2**20. If zero, no database size limit is set.
+    int32 max_database_entries = 2;
+
+    // The compression types supported by the client.
+    repeated CompressionType supported_compressions = 3;
+  }
+
+  // The ThreatList to update.
+  ThreatType threat_type = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // The current version token of the client for the requested list (the
+  // client version that was received from the last successful diff).
+  bytes version_token = 2;
+
+  // Required. The constraints associated with this request.
+  Constraints constraints = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+message ComputeThreatListDiffResponse {
+  // The expected state of a client's local database.
+  message Checksum {
+    // The SHA256 hash of the client state; that is, of the sorted list of all
+    // hashes present in the database.
+    bytes sha256 = 1;
+  }
+
+  // The type of response sent to the client.
+  enum ResponseType {
+    // Unknown.
+    RESPONSE_TYPE_UNSPECIFIED = 0;
+
+    // Partial updates are applied to the client's existing local database.
+    DIFF = 1;
+
+    // Full updates resets the client's entire local database. This means
+    // that either the client had no state, was seriously out-of-date,
+    // or the client is believed to be corrupt.
+    RESET = 2;
+  }
+
+  // The type of response. This may indicate that an action must be taken by the
+  // client when the response is received.
+  ResponseType response_type = 4;
+
+  // A set of entries to add to a local threat type's list.
+  ThreatEntryAdditions additions = 5;
+
+  // A set of entries to remove from a local threat type's list.
+  // This field may be empty.
+  ThreatEntryRemovals removals = 6;
+
+  // The new opaque client version token.
+  bytes new_version_token = 7;
+
+  // The expected SHA256 hash of the client state; that is, of the sorted list
+  // of all hashes present in the database after applying the provided diff.
+  // If the client state doesn't match the expected state, the client must
+  // disregard this diff and retry later.
+  Checksum checksum = 8;
+
+  // The soonest the client should wait before issuing any diff
+  // request. Querying sooner is unlikely to produce a meaningful diff.
+  // Waiting longer is acceptable considering the use case.
+  // If this field is not set clients may update as soon as they want.
+  google.protobuf.Timestamp recommended_next_diff = 2;
+}
+
+// Request to check URI entries against threatLists.
+message SearchUrisRequest {
+  // Required. The URI to be checked for matches.
+  string uri = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The ThreatLists to search in.
+  repeated ThreatType threat_types = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message SearchUrisResponse {
+  // Contains threat information on a matching uri.
+  message ThreatUri {
+    // The ThreatList this threat belongs to.
+    repeated ThreatType threat_types = 1;
+
+    // The cache lifetime for the returned match. Clients must not cache this
+    // response past this timestamp to avoid false positives.
+    google.protobuf.Timestamp expire_time = 2;
+  }
+
+  // The threat list matches. This may be empty if the URI is on no list.
+  ThreatUri threat = 1;
+}
+
+// Request to return full hashes matched by the provided hash prefixes.
+message SearchHashesRequest {
+  // A hash prefix, consisting of the most significant 4-32 bytes of a SHA256
+  // hash. For JSON requests, this field is base64-encoded.
+  bytes hash_prefix = 1;
+
+  // Required. The ThreatLists to search in.
+  repeated ThreatType threat_types = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+message SearchHashesResponse {
+  // Contains threat information on a matching hash.
+  message ThreatHash {
+    // The ThreatList this threat belongs to.
+    // This must contain at least one entry.
+    repeated ThreatType threat_types = 1;
+
+    // A 32 byte SHA256 hash. This field is in binary format. For JSON
+    // requests, hashes are base64-encoded.
+    bytes hash = 2;
+
+    // The cache lifetime for the returned match. Clients must not cache this
+    // response past this timestamp to avoid false positives.
+    google.protobuf.Timestamp expire_time = 3;
+  }
+
+  // The full hashes that matched the requested prefixes.
+  // The hash will be populated in the key.
+  repeated ThreatHash threats = 1;
+
+  // For requested entities that did not match the threat list, how long to
+  // cache the response until.
+  google.protobuf.Timestamp negative_expire_time = 2;
+}
+
+// Contains the set of entries to add to a local database.
+// May contain a combination of compressed and raw data in a single response.
+message ThreatEntryAdditions {
+  // The raw SHA256-formatted entries.
+  // Repeated to allow returning sets of hashes with different prefix sizes.
+  repeated RawHashes raw_hashes = 1;
+
+  // The encoded 4-byte prefixes of SHA256-formatted entries, using a
+  // Golomb-Rice encoding. The hashes are converted to uint32, sorted in
+  // ascending order, then delta encoded and stored as encoded_data.
+  RiceDeltaEncoding rice_hashes = 2;
+}
+
+// Contains the set of entries to remove from a local database.
+message ThreatEntryRemovals {
+  // The raw removal indices for a local list.
+  RawIndices raw_indices = 1;
+
+  // The encoded local, lexicographically-sorted list indices, using a
+  // Golomb-Rice encoding. Used for sending compressed removal indices. The
+  // removal indices (uint32) are sorted in ascending order, then delta encoded
+  // and stored as encoded_data.
+  RiceDeltaEncoding rice_indices = 2;
+}
+
+// The type of threat. This maps dirrectly to the threat list a threat may
+// belong to.
+enum ThreatType {
+  // Unknown.
+  THREAT_TYPE_UNSPECIFIED = 0;
+
+  // Malware targeting any platform.
+  MALWARE = 1;
+
+  // Social engineering targeting any platform.
+  SOCIAL_ENGINEERING = 2;
+
+  // Unwanted software targeting any platform.
+  UNWANTED_SOFTWARE = 3;
+}
+
+// The ways in which threat entry sets can be compressed.
+enum CompressionType {
+  // Unknown.
+  COMPRESSION_TYPE_UNSPECIFIED = 0;
+
+  // Raw, uncompressed data.
+  RAW = 1;
+
+  // Rice-Golomb encoded data.
+  RICE = 2;
+}
+
+// A set of raw indices to remove from a local list.
+message RawIndices {
+  // The indices to remove from a lexicographically-sorted local list.
+  repeated int32 indices = 1;
+}
+
+// The uncompressed threat entries in hash format.
+// Hashes can be anywhere from 4 to 32 bytes in size. A large majority are 4
+// bytes, but some hashes are lengthened if they collide with the hash of a
+// popular URI.
+//
+// Used for sending ThreatEntryAdditons to clients that do not support
+// compression, or when sending non-4-byte hashes to clients that do support
+// compression.
+message RawHashes {
+  // The number of bytes for each prefix encoded below.  This field can be
+  // anywhere from 4 (shortest prefix) to 32 (full SHA256 hash).
+  int32 prefix_size = 1;
+
+  // The hashes, in binary format, concatenated into one long string. Hashes are
+  // sorted in lexicographic order. For JSON API users, hashes are
+  // base64-encoded.
+  bytes raw_hashes = 2;
+}
+
+// The Rice-Golomb encoded data. Used for sending compressed 4-byte hashes or
+// compressed removal indices.
+message RiceDeltaEncoding {
+  // The offset of the first entry in the encoded data, or, if only a single
+  // integer was encoded, that single integer's value. If the field is empty or
+  // missing, assume zero.
+  int64 first_value = 1;
+
+  // The Golomb-Rice parameter, which is a number between 2 and 28. This field
+  // is missing (that is, zero) if `num_entries` is zero.
+  int32 rice_parameter = 2;
+
+  // The number of entries that are delta encoded in the encoded data. If only a
+  // single integer was encoded, this will be zero and the single value will be
+  // stored in `first_value`.
+  int32 entry_count = 3;
+
+  // The encoded deltas that are encoded using the Golomb-Rice coder.
+  bytes encoded_data = 4;
+}

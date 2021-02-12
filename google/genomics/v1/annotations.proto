@@ -1,0 +1,705 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.genomics.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
+import "google/rpc/status.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/genomics/v1;genomics";
+option java_multiple_files = true;
+option java_outer_classname = "AnnotationsProto";
+option java_package = "com.google.genomics.v1";
+
+// This service provides storage and positional retrieval of genomic
+// reference annotations, including variant annotations.
+service AnnotationServiceV1 {
+  // Creates a new annotation set. Caller must have WRITE permission for the
+  // associated dataset.
+  //
+  // The following fields are required:
+  //
+  //   * [datasetId][google.genomics.v1.AnnotationSet.dataset_id]
+  //   * [referenceSetId][google.genomics.v1.AnnotationSet.reference_set_id]
+  //
+  // All other fields may be optionally specified, unless documented as being
+  // server-generated (for example, the `id` field).
+  rpc CreateAnnotationSet(CreateAnnotationSetRequest) returns (AnnotationSet) {
+    option (google.api.http) = {
+      post: "/v1/annotationsets"
+      body: "annotation_set"
+    };
+  }
+
+  // Gets an annotation set. Caller must have READ permission for
+  // the associated dataset.
+  rpc GetAnnotationSet(GetAnnotationSetRequest) returns (AnnotationSet) {
+    option (google.api.http) = {
+      get: "/v1/annotationsets/{annotation_set_id}"
+    };
+  }
+
+  // Updates an annotation set. The update must respect all mutability
+  // restrictions and other invariants described on the annotation set resource.
+  // Caller must have WRITE permission for the associated dataset.
+  rpc UpdateAnnotationSet(UpdateAnnotationSetRequest) returns (AnnotationSet) {
+    option (google.api.http) = {
+      put: "/v1/annotationsets/{annotation_set_id}"
+      body: "annotation_set"
+    };
+  }
+
+  // Deletes an annotation set. Caller must have WRITE permission
+  // for the associated annotation set.
+  rpc DeleteAnnotationSet(DeleteAnnotationSetRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/annotationsets/{annotation_set_id}"
+    };
+  }
+
+  // Searches for annotation sets that match the given criteria. Annotation sets
+  // are returned in an unspecified order. This order is consistent, such that
+  // two queries for the same content (regardless of page size) yield annotation
+  // sets in the same order across their respective streams of paginated
+  // responses. Caller must have READ permission for the queried datasets.
+  rpc SearchAnnotationSets(SearchAnnotationSetsRequest)
+      returns (SearchAnnotationSetsResponse) {
+    option (google.api.http) = {
+      post: "/v1/annotationsets/search"
+      body: "*"
+    };
+  }
+
+  // Creates a new annotation. Caller must have WRITE permission
+  // for the associated annotation set.
+  //
+  // The following fields are required:
+  //
+  // * [annotationSetId][google.genomics.v1.Annotation.annotation_set_id]
+  // * [referenceName][google.genomics.v1.Annotation.reference_name] or
+  //   [referenceId][google.genomics.v1.Annotation.reference_id]
+  //
+  // ### Transcripts
+  //
+  // For annotations of type TRANSCRIPT, the following fields of
+  // [transcript][google.genomics.v1.Annotation.transcript] must be provided:
+  //
+  // * [exons.start][google.genomics.v1.Transcript.Exon.start]
+  // * [exons.end][google.genomics.v1.Transcript.Exon.end]
+  //
+  // All other fields may be optionally specified, unless documented as being
+  // server-generated (for example, the `id` field). The annotated
+  // range must be no longer than 100Mbp (mega base pairs). See the
+  // [Annotation resource][google.genomics.v1.Annotation]
+  // for additional restrictions on each field.
+  rpc CreateAnnotation(CreateAnnotationRequest) returns (Annotation) {
+    option (google.api.http) = {
+      post: "/v1/annotations"
+      body: "annotation"
+    };
+  }
+
+  // Creates one or more new annotations atomically. All annotations must
+  // belong to the same annotation set. Caller must have WRITE
+  // permission for this annotation set. For optimal performance, batch
+  // positionally adjacent annotations together.
+  //
+  // If the request has a systemic issue, such as an attempt to write to
+  // an inaccessible annotation set, the entire RPC will fail accordingly. For
+  // lesser data issues, when possible an error will be isolated to the
+  // corresponding batch entry in the response; the remaining well formed
+  // annotations will be created normally.
+  //
+  // For details on the requirements for each individual annotation resource,
+  // see
+  // [CreateAnnotation][google.genomics.v1.AnnotationServiceV1.CreateAnnotation].
+  rpc BatchCreateAnnotations(BatchCreateAnnotationsRequest)
+      returns (BatchCreateAnnotationsResponse) {
+    option (google.api.http) = {
+      post: "/v1/annotations:batchCreate"
+      body: "*"
+    };
+  }
+
+  // Gets an annotation. Caller must have READ permission
+  // for the associated annotation set.
+  rpc GetAnnotation(GetAnnotationRequest) returns (Annotation) {
+    option (google.api.http) = {
+      get: "/v1/annotations/{annotation_id}"
+    };
+  }
+
+  // Updates an annotation. Caller must have
+  // WRITE permission for the associated dataset.
+  rpc UpdateAnnotation(UpdateAnnotationRequest) returns (Annotation) {
+    option (google.api.http) = {
+      put: "/v1/annotations/{annotation_id}"
+      body: "annotation"
+    };
+  }
+
+  // Deletes an annotation. Caller must have WRITE permission for
+  // the associated annotation set.
+  rpc DeleteAnnotation(DeleteAnnotationRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/annotations/{annotation_id}"
+    };
+  }
+
+  // Searches for annotations that match the given criteria. Results are
+  // ordered by genomic coordinate (by reference sequence, then position).
+  // Annotations with equivalent genomic coordinates are returned in an
+  // unspecified order. This order is consistent, such that two queries for the
+  // same content (regardless of page size) yield annotations in the same order
+  // across their respective streams of paginated responses. Caller must have
+  // READ permission for the queried annotation sets.
+  rpc SearchAnnotations(SearchAnnotationsRequest)
+      returns (SearchAnnotationsResponse) {
+    option (google.api.http) = {
+      post: "/v1/annotations/search"
+      body: "*"
+    };
+  }
+}
+
+// An annotation set is a logical grouping of annotations that share consistent
+// type information and provenance. Examples of annotation sets include 'all
+// genes from refseq', and 'all variant annotations from ClinVar'.
+message AnnotationSet {
+  // The server-generated annotation set ID, unique across all annotation sets.
+  string id = 1;
+
+  // The dataset to which this annotation set belongs.
+  string dataset_id = 2;
+
+  // The ID of the reference set that defines the coordinate space for this
+  // set's annotations.
+  string reference_set_id = 3;
+
+  // The display name for this annotation set.
+  string name = 4;
+
+  // The source URI describing the file from which this annotation set was
+  // generated, if any.
+  string source_uri = 5;
+
+  // The type of annotations contained within this set.
+  AnnotationType type = 6;
+
+  // A map of additional read alignment information. This must be of the form
+  // map<string, string[]> (string key mapping to a list of string values).
+  map<string, google.protobuf.ListValue> info = 17;
+}
+
+// An annotation describes a region of reference genome. The value of an
+// annotation may be one of several canonical types, supplemented by arbitrary
+// info tags. An annotation is not inherently associated with a specific
+// sample or individual (though a client could choose to use annotations in
+// this way). Example canonical annotation types are `GENE` and
+// `VARIANT`.
+message Annotation {
+  // The server-generated annotation ID, unique across all annotations.
+  string id = 1;
+
+  // The annotation set to which this annotation belongs.
+  string annotation_set_id = 2;
+
+  // The display name of this annotation.
+  string name = 3;
+
+  // The ID of the Google Genomics reference associated with this range.
+  string reference_id = 4;
+
+  // The display name corresponding to the reference specified by
+  // `referenceId`, for example `chr1`, `1`, or `chrX`.
+  string reference_name = 5;
+
+  // The start position of the range on the reference, 0-based inclusive.
+  int64 start = 6;
+
+  // The end position of the range on the reference, 0-based exclusive.
+  int64 end = 7;
+
+  // Whether this range refers to the reverse strand, as opposed to the forward
+  // strand. Note that regardless of this field, the start/end position of the
+  // range always refer to the forward strand.
+  bool reverse_strand = 8;
+
+  // The data type for this annotation. Must match the containing annotation
+  // set's type.
+  AnnotationType type = 9;
+
+  oneof value {
+    // A variant annotation, which describes the effect of a variant on the
+    // genome, the coding sequence, and/or higher level consequences at the
+    // organism level e.g. pathogenicity. This field is only set for annotations
+    // of type `VARIANT`.
+    VariantAnnotation variant = 10;
+
+    // A transcript value represents the assertion that a particular region of
+    // the reference genome may be transcribed as RNA. An alternative splicing
+    // pattern would be represented as a separate transcript object. This field
+    // is only set for annotations of type `TRANSCRIPT`.
+    Transcript transcript = 11;
+  }
+
+  // A map of additional read alignment information. This must be of the form
+  // map<string, string[]> (string key mapping to a list of string values).
+  map<string, google.protobuf.ListValue> info = 12;
+}
+
+message VariantAnnotation {
+  message ClinicalCondition {
+    // A set of names for the condition.
+    repeated string names = 1;
+
+    // The set of external IDs for this condition.
+    repeated ExternalId external_ids = 2;
+
+    // The MedGen concept id associated with this gene.
+    // Search for these IDs at http://www.ncbi.nlm.nih.gov/medgen/
+    string concept_id = 3;
+
+    // The OMIM id for this condition.
+    // Search for these IDs at http://omim.org/
+    string omim_id = 4;
+  }
+
+  enum Type {
+    TYPE_UNSPECIFIED = 0;
+
+    // `TYPE_OTHER` should be used when no other Type will suffice.
+    // Further explanation of the variant type may be included in the
+    // [info][google.genomics.v1.Annotation.info] field.
+    TYPE_OTHER = 1;
+
+    // `INSERTION` indicates an insertion.
+    INSERTION = 2;
+
+    // `DELETION` indicates a deletion.
+    DELETION = 3;
+
+    // `SUBSTITUTION` indicates a block substitution of
+    // two or more nucleotides.
+    SUBSTITUTION = 4;
+
+    // `SNP` indicates a single nucleotide polymorphism.
+    SNP = 5;
+
+    // `STRUCTURAL` indicates a large structural variant,
+    // including chromosomal fusions, inversions, etc.
+    STRUCTURAL = 6;
+
+    // `CNV` indicates a variation in copy number.
+    CNV = 7;
+  }
+
+  enum Effect {
+    EFFECT_UNSPECIFIED = 0;
+
+    // `EFFECT_OTHER` should be used when no other Effect
+    // will suffice.
+    EFFECT_OTHER = 1;
+
+    // `FRAMESHIFT` indicates a mutation in which the insertion or
+    // deletion of nucleotides resulted in a frameshift change.
+    FRAMESHIFT = 2;
+
+    // `FRAME_PRESERVING_INDEL` indicates a mutation in which a
+    // multiple of three nucleotides has been inserted or deleted, resulting
+    // in no change to the reading frame of the coding sequence.
+    FRAME_PRESERVING_INDEL = 3;
+
+    // `SYNONYMOUS_SNP` indicates a single nucleotide polymorphism
+    // mutation that results in no amino acid change.
+    SYNONYMOUS_SNP = 4;
+
+    // `NONSYNONYMOUS_SNP` indicates a single nucleotide
+    // polymorphism mutation that results in an amino acid change.
+    NONSYNONYMOUS_SNP = 5;
+
+    // `STOP_GAIN` indicates a mutation that leads to the creation
+    // of a stop codon at the variant site. Frameshift mutations creating
+    // downstream stop codons do not count as `STOP_GAIN`.
+    STOP_GAIN = 6;
+
+    // `STOP_LOSS` indicates a mutation that eliminates a
+    // stop codon at the variant site.
+    STOP_LOSS = 7;
+
+    // `SPLICE_SITE_DISRUPTION` indicates that this variant is
+    // found in a splice site for the associated transcript, and alters the
+    // normal splicing pattern.
+    SPLICE_SITE_DISRUPTION = 8;
+  }
+
+  enum ClinicalSignificance {
+    CLINICAL_SIGNIFICANCE_UNSPECIFIED = 0;
+
+    // `OTHER` should be used when no other clinical significance
+    // value will suffice.
+    CLINICAL_SIGNIFICANCE_OTHER = 1;
+
+    UNCERTAIN = 2;
+
+    BENIGN = 3;
+
+    LIKELY_BENIGN = 4;
+
+    LIKELY_PATHOGENIC = 5;
+
+    PATHOGENIC = 6;
+
+    DRUG_RESPONSE = 7;
+
+    HISTOCOMPATIBILITY = 8;
+
+    CONFERS_SENSITIVITY = 9;
+
+    RISK_FACTOR = 10;
+
+    ASSOCIATION = 11;
+
+    PROTECTIVE = 12;
+
+    // `MULTIPLE_REPORTED` should be used when multiple clinical
+    // signficances are reported for a variant. The original clinical
+    // significance values may be provided in the `info` field.
+    MULTIPLE_REPORTED = 13;
+  }
+
+  // Type has been adapted from ClinVar's list of variant types.
+  Type type = 1;
+
+  // Effect of the variant on the coding sequence.
+  Effect effect = 2;
+
+  // The alternate allele for this variant. If multiple alternate alleles
+  // exist at this location, create a separate variant for each one, as they
+  // may represent distinct conditions.
+  string alternate_bases = 3;
+
+  // Google annotation ID of the gene affected by this variant. This should
+  // be provided when the variant is created.
+  string gene_id = 4;
+
+  // Google annotation IDs of the transcripts affected by this variant. These
+  // should be provided when the variant is created.
+  repeated string transcript_ids = 5;
+
+  // The set of conditions associated with this variant.
+  // A condition describes the way a variant influences human health.
+  repeated ClinicalCondition conditions = 6;
+
+  // Describes the clinical significance of a variant.
+  // It is adapted from the ClinVar controlled vocabulary for clinical
+  // significance described at:
+  // http://www.ncbi.nlm.nih.gov/clinvar/docs/clinsig/
+  ClinicalSignificance clinical_significance = 7;
+}
+
+// A transcript represents the assertion that a particular region of the
+// reference genome may be transcribed as RNA.
+message Transcript {
+  message Exon {
+    // The start position of the exon on this annotation's reference sequence,
+    // 0-based inclusive. Note that this is relative to the reference start, and
+    // **not** the containing annotation start.
+    int64 start = 1;
+
+    // The end position of the exon on this annotation's reference sequence,
+    // 0-based exclusive. Note that this is relative to the reference start, and
+    // *not* the containing annotation start.
+    int64 end = 2;
+
+    // The frame of this exon. Contains a value of 0, 1, or 2, which indicates
+    // the offset of the first coding base of the exon within the reading frame
+    // of the coding DNA sequence, if any. This field is dependent on the
+    // strandedness of this annotation (see
+    // [Annotation.reverse_strand][google.genomics.v1.Annotation.reverse_strand]).
+    // For forward stranded annotations, this offset is relative to the
+    // [exon.start][google.genomics.v1.Transcript.Exon.start]. For reverse
+    // strand annotations, this offset is relative to the
+    // [exon.end][google.genomics.v1.Transcript.Exon.end] `- 1`.
+    //
+    // Unset if this exon does not intersect the coding sequence. Upon creation
+    // of a transcript, the frame must be populated for all or none of the
+    // coding exons.
+    google.protobuf.Int32Value frame = 3;
+  }
+
+  message CodingSequence {
+    // The start of the coding sequence on this annotation's reference sequence,
+    // 0-based inclusive. Note that this position is relative to the reference
+    // start, and *not* the containing annotation start.
+    int64 start = 1;
+
+    // The end of the coding sequence on this annotation's reference sequence,
+    // 0-based exclusive. Note that this position is relative to the reference
+    // start, and *not* the containing annotation start.
+    int64 end = 2;
+  }
+
+  // The annotation ID of the gene from which this transcript is transcribed.
+  string gene_id = 1;
+
+  // The <a href="http://en.wikipedia.org/wiki/Exon">exons</a> that compose
+  // this transcript. This field should be unset for genomes where transcript
+  // splicing does not occur, for example prokaryotes.
+  //
+  // Introns are regions of the transcript that are not included in the
+  // spliced RNA product. Though not explicitly modeled here, intron ranges can
+  // be deduced; all regions of this transcript that are not exons are introns.
+  //
+  // Exonic sequences do not necessarily code for a translational product
+  // (amino acids). Only the regions of exons bounded by the
+  // [codingSequence][google.genomics.v1.Transcript.coding_sequence] correspond
+  // to coding DNA sequence.
+  //
+  // Exons are ordered by start position and may not overlap.
+  repeated Exon exons = 2;
+
+  // The range of the coding sequence for this transcript, if any. To determine
+  // the exact ranges of coding sequence, intersect this range with those of the
+  // [exons][google.genomics.v1.Transcript.exons], if any. If there are any
+  // [exons][google.genomics.v1.Transcript.exons], the
+  // [codingSequence][google.genomics.v1.Transcript.coding_sequence] must start
+  // and end within them.
+  //
+  // Note that in some cases, the reference genome will not exactly match the
+  // observed mRNA transcript e.g. due to variance in the source genome from
+  // reference. In these cases,
+  // [exon.frame][google.genomics.v1.Transcript.Exon.frame] will not necessarily
+  // match the expected reference reading frame and coding exon reference bases
+  // cannot necessarily be concatenated to produce the original transcript mRNA.
+  CodingSequence coding_sequence = 3;
+}
+
+message ExternalId {
+  // The name of the source of this data.
+  string source_name = 1;
+
+  // The id used by the source of this data.
+  string id = 2;
+}
+
+message CreateAnnotationSetRequest {
+  // The annotation set to create.
+  AnnotationSet annotation_set = 1;
+}
+
+message GetAnnotationSetRequest {
+  // The ID of the annotation set to be retrieved.
+  string annotation_set_id = 1;
+}
+
+message UpdateAnnotationSetRequest {
+  // The ID of the annotation set to be updated.
+  string annotation_set_id = 1;
+
+  // The new annotation set.
+  AnnotationSet annotation_set = 2;
+
+  // An optional mask specifying which fields to update. Mutable fields are
+  // [name][google.genomics.v1.AnnotationSet.name],
+  // [source_uri][google.genomics.v1.AnnotationSet.source_uri], and
+  // [info][google.genomics.v1.AnnotationSet.info]. If unspecified, all
+  // mutable fields will be updated.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message DeleteAnnotationSetRequest {
+  // The ID of the annotation set to be deleted.
+  string annotation_set_id = 1;
+}
+
+message SearchAnnotationSetsRequest {
+  // Required. The dataset IDs to search within. Caller must have `READ` access
+  // to these datasets.
+  repeated string dataset_ids = 1;
+
+  // If specified, only annotation sets associated with the given reference set
+  // are returned.
+  string reference_set_id = 2;
+
+  // Only return annotations sets for which a substring of the name matches this
+  // string (case insensitive).
+  string name = 3;
+
+  // If specified, only annotation sets that have any of these types are
+  // returned.
+  repeated AnnotationType types = 4;
+
+  // The continuation token, which is used to page through large result sets.
+  // To get the next page of results, set this parameter to the value of
+  // `nextPageToken` from the previous response.
+  string page_token = 5;
+
+  // The maximum number of results to return in a single page. If unspecified,
+  // defaults to 128. The maximum value is 1024.
+  int32 page_size = 6;
+}
+
+message SearchAnnotationSetsResponse {
+  // The matching annotation sets.
+  repeated AnnotationSet annotation_sets = 1;
+
+  // The continuation token, which is used to page through large result sets.
+  // Provide this value in a subsequent request to return the next page of
+  // results. This field will be empty if there aren't any additional results.
+  string next_page_token = 2;
+}
+
+message CreateAnnotationRequest {
+  // The annotation to be created.
+  Annotation annotation = 1;
+}
+
+message BatchCreateAnnotationsRequest {
+  // The annotations to be created. At most 4096 can be specified in a single
+  // request.
+  repeated Annotation annotations = 1;
+
+  // A unique request ID which enables the server to detect duplicated requests.
+  // If provided, duplicated requests will result in the same response; if not
+  // provided, duplicated requests may result in duplicated data. For a given
+  // annotation set, callers should not reuse `request_id`s when writing
+  // different batches of annotations - behavior in this case is undefined.
+  // A common approach is to use a UUID. For batch jobs where worker crashes are
+  // a possibility, consider using some unique variant of a worker or run ID.
+  string request_id = 2;
+}
+
+message BatchCreateAnnotationsResponse {
+  message Entry {
+    // The creation status.
+    google.rpc.Status status = 1;
+
+    // The created annotation, if creation was successful.
+    Annotation annotation = 2;
+  }
+
+  // The resulting per-annotation entries, ordered consistently with the
+  // original request.
+  repeated Entry entries = 1;
+}
+
+message GetAnnotationRequest {
+  // The ID of the annotation to be retrieved.
+  string annotation_id = 1;
+}
+
+message UpdateAnnotationRequest {
+  // The ID of the annotation to be updated.
+  string annotation_id = 1;
+
+  // The new annotation.
+  Annotation annotation = 2;
+
+  // An optional mask specifying which fields to update. Mutable fields are
+  // [name][google.genomics.v1.Annotation.name],
+  // [variant][google.genomics.v1.Annotation.variant],
+  // [transcript][google.genomics.v1.Annotation.transcript], and
+  // [info][google.genomics.v1.Annotation.info]. If unspecified, all mutable
+  // fields will be updated.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message DeleteAnnotationRequest {
+  // The ID of the annotation to be deleted.
+  string annotation_id = 1;
+}
+
+message SearchAnnotationsRequest {
+  // Required. The annotation sets to search within. The caller must have
+  // `READ` access to these annotation sets.
+  // All queried annotation sets must have the same type.
+  repeated string annotation_set_ids = 1;
+
+  // Required. `reference_id` or `reference_name` must be set.
+  oneof reference {
+    // The ID of the reference to query.
+    string reference_id = 2;
+
+    // The name of the reference to query, within the reference set associated
+    // with this query.
+    string reference_name = 3;
+  }
+
+  // The start position of the range on the reference, 0-based inclusive. If
+  // specified,
+  // [referenceId][google.genomics.v1.SearchAnnotationsRequest.reference_id] or
+  // [referenceName][google.genomics.v1.SearchAnnotationsRequest.reference_name]
+  // must be specified. Defaults to 0.
+  int64 start = 4;
+
+  // The end position of the range on the reference, 0-based exclusive. If
+  // [referenceId][google.genomics.v1.SearchAnnotationsRequest.reference_id] or
+  // [referenceName][google.genomics.v1.SearchAnnotationsRequest.reference_name]
+  // must be specified, Defaults to the length of the reference.
+  int64 end = 5;
+
+  // The continuation token, which is used to page through large result sets.
+  // To get the next page of results, set this parameter to the value of
+  // `nextPageToken` from the previous response.
+  string page_token = 6;
+
+  // The maximum number of results to return in a single page. If unspecified,
+  // defaults to 256. The maximum value is 2048.
+  int32 page_size = 7;
+}
+
+message SearchAnnotationsResponse {
+  // The matching annotations.
+  repeated Annotation annotations = 1;
+
+  // The continuation token, which is used to page through large result sets.
+  // Provide this value in a subsequent request to return the next page of
+  // results. This field will be empty if there aren't any additional results.
+  string next_page_token = 2;
+}
+
+// When an [Annotation][google.genomics.v1.Annotation] or
+// [AnnotationSet][google.genomics.v1.AnnotationSet] is created, if `type` is
+// not specified it will be set to `GENERIC`.
+enum AnnotationType {
+  ANNOTATION_TYPE_UNSPECIFIED = 0;
+
+  // A `GENERIC` annotation type should be used when no other annotation
+  // type will suffice. This represents an untyped annotation of the reference
+  // genome.
+  GENERIC = 1;
+
+  // A `VARIANT` annotation type.
+  VARIANT = 2;
+
+  // A `GENE` annotation type represents the existence of a gene at the
+  // associated reference coordinates. The start coordinate is typically the
+  // gene's transcription start site and the end is typically the end of the
+  // gene's last exon.
+  GENE = 3;
+
+  // A `TRANSCRIPT` annotation type represents the assertion that a
+  // particular region of the reference genome may be transcribed as RNA.
+  TRANSCRIPT = 4;
+}

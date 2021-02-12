@@ -1,0 +1,62 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "ConversionActionCategoryProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Container for enum describing the category of conversions that are associated
+// with a ConversionAction.
+message ConversionActionCategoryEnum {
+  // The category of conversions that are associated with a ConversionAction.
+  enum ConversionActionCategory {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Default category.
+    DEFAULT = 2;
+
+    // User visiting a page.
+    PAGE_VIEW = 3;
+
+    // Purchase, sales, or "order placed" event.
+    PURCHASE = 4;
+
+    // Signup user action.
+    SIGNUP = 5;
+
+    // Lead-generating action.
+    LEAD = 6;
+
+    // Software download action (as for an app).
+    DOWNLOAD = 7;
+  }
+
+
+}

@@ -1,0 +1,60 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+# This is an API workspace, having public visibility by default makes perfect sense.
+package(default_visibility = ["//visibility:public"])
+
+##############################################################################
+# Common
+##############################################################################
+load("@com_google_googleapis_imports//:imports.bzl", "proto_library_with_info")
+
+proto_library(
+    name = "provenance_proto",
+    srcs = [
+        "provenance.proto",
+    ],
+    deps = [
+        "//google/devtools/containeranalysis/v1beta1/source:source_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+proto_library_with_info(
+    name = "provenance_proto_with_info",
+    deps = [":provenance_proto"],
+)
+
+##############################################################################
+# Java
+##############################################################################
+load(
+    "@com_google_googleapis_imports//:imports.bzl",
+    "java_grpc_library",
+    "java_proto_library",
+)
+
+java_proto_library(
+    name = "provenance_java_proto",
+    deps = [":provenance_proto"],
+)
+
+java_grpc_library(
+    name = "provenance_java_grpc",
+    srcs = [":provenance_proto"],
+    deps = [":provenance_java_proto"],
+)
+
+##############################################################################
+# Go
+##############################################################################
+load("@com_google_googleapis_imports//:imports.bzl", "go_proto_library")
+
+go_proto_library(
+    name = "provenance_go_proto",
+    compilers = ["@io_bazel_rules_go//proto:go_grpc"],
+    importpath = "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/provenance",
+    protos = [":provenance_proto"],
+    deps = [
+        "//google/devtools/containeranalysis/v1beta1/source:source_go_proto",
+    ],
+)

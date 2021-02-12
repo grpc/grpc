@@ -1,0 +1,306 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.common;
+
+import "google/ads/googleads/v1/enums/customer_match_upload_key_type.proto";
+import "google/ads/googleads/v1/enums/user_list_combined_rule_operator.proto";
+import "google/ads/googleads/v1/enums/user_list_crm_data_source_type.proto";
+import "google/ads/googleads/v1/enums/user_list_date_rule_item_operator.proto";
+import "google/ads/googleads/v1/enums/user_list_logical_rule_operator.proto";
+import "google/ads/googleads/v1/enums/user_list_number_rule_item_operator.proto";
+import "google/ads/googleads/v1/enums/user_list_prepopulation_status.proto";
+import "google/ads/googleads/v1/enums/user_list_rule_type.proto";
+import "google/ads/googleads/v1/enums/user_list_string_rule_item_operator.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "UserListsProto";
+option java_package = "com.google.ads.googleads.v1.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V1::Common";
+
+// Proto file describing user list types.
+
+// SimilarUserList is a list of users which are similar to users from another
+// UserList. These lists are read-only and automatically created by Google.
+message SimilarUserListInfo {
+  // Seed UserList from which this list is derived.
+  google.protobuf.StringValue seed_user_list = 1;
+}
+
+// UserList of CRM users provided by the advertiser.
+message CrmBasedUserListInfo {
+  // A string that uniquely identifies a mobile application from which the data
+  // was collected to the Google Ads API.
+  // For iOS, the ID string is the 9 digit string that appears at the end of an
+  // App Store URL (e.g., "476943146" for "Flood-It! 2" whose App Store link is
+  // http://itunes.apple.com/us/app/flood-it!-2/id476943146).
+  // For Android, the ID string is the application's package name
+  // (e.g., "com.labpixies.colordrips" for "Color Drips" given Google Play link
+  // https://play.google.com/store/apps/details?id=com.labpixies.colordrips).
+  // Required when creating CrmBasedUserList for uploading mobile advertising
+  // IDs.
+  google.protobuf.StringValue app_id = 1;
+
+  // Matching key type of the list.
+  // Mixed data types are not allowed on the same list.
+  // This field is required for an ADD operation.
+  google.ads.googleads.v1.enums.CustomerMatchUploadKeyTypeEnum
+      .CustomerMatchUploadKeyType upload_key_type = 2;
+
+  // Data source of the list. Default value is FIRST_PARTY.
+  // Only whitelisted customers can create third-party sourced CRM lists.
+  google.ads.googleads.v1.enums.UserListCrmDataSourceTypeEnum
+      .UserListCrmDataSourceType data_source_type = 3;
+}
+
+// A client defined rule based on custom parameters sent by web sites or
+// uploaded by the advertiser.
+message UserListRuleInfo {
+  // Rule type is used to determine how to group rule items.
+  //
+  // The default is OR of ANDs (disjunctive normal form).
+  // That is, rule items will be ANDed together within rule item groups and the
+  // groups themselves will be ORed together.
+  //
+  // Currently AND of ORs (conjunctive normal form) is only supported for
+  // ExpressionRuleUserList.
+  google.ads.googleads.v1.enums.UserListRuleTypeEnum.UserListRuleType
+      rule_type = 1;
+
+  // List of rule item groups that defines this rule.
+  // Rule item groups are grouped together based on rule_type.
+  repeated UserListRuleItemGroupInfo rule_item_groups = 2;
+}
+
+// A group of rule items.
+message UserListRuleItemGroupInfo {
+  // Rule items that will be grouped together based on rule_type.
+  repeated UserListRuleItemInfo rule_items = 1;
+}
+
+// An atomic rule fragment.
+message UserListRuleItemInfo {
+  // Rule variable name. It should match the corresponding key name fired
+  // by the pixel.
+  // A name must begin with US-ascii letters or underscore or UTF8 code that is
+  // greater than 127 and consist of US-ascii letters or digits or underscore or
+  // UTF8 code that is greater than 127.
+  // For websites, there are two built-in variable URL (name = 'url__') and
+  // referrer URL (name = 'ref_url__').
+  // This field must be populated when creating a new rule item.
+  google.protobuf.StringValue name = 1;
+
+  // An atomic rule fragment.
+  oneof rule_item {
+    // An atomic rule fragment composed of a number operation.
+    UserListNumberRuleItemInfo number_rule_item = 2;
+
+    // An atomic rule fragment composed of a string operation.
+    UserListStringRuleItemInfo string_rule_item = 3;
+
+    // An atomic rule fragment composed of a date operation.
+    UserListDateRuleItemInfo date_rule_item = 4;
+  }
+}
+
+// A rule item composed of date operation.
+message UserListDateRuleItemInfo {
+  // Date comparison operator.
+  // This field is required and must be populated when creating new date
+  // rule item.
+  google.ads.googleads.v1.enums.UserListDateRuleItemOperatorEnum
+      .UserListDateRuleItemOperator
+      operator = 1;
+
+  // String representing date value to be compared with the rule variable.
+  // Supported date format is YYYY-MM-DD.
+  // Times are reported in the customer's time zone.
+  google.protobuf.StringValue value = 2;
+
+  // The relative date value of the right hand side denoted by number of days
+  // offset from now. The value field will override this field when both are
+  // present.
+  google.protobuf.Int64Value offset_in_days = 3;
+}
+
+// A rule item composed of number operation.
+message UserListNumberRuleItemInfo {
+  // Number comparison operator.
+  // This field is required and must be populated when creating a new number
+  // rule item.
+  google.ads.googleads.v1.enums.UserListNumberRuleItemOperatorEnum
+      .UserListNumberRuleItemOperator
+      operator = 1;
+
+  // Number value to be compared with the variable.
+  // This field is required and must be populated when creating a new number
+  // rule item.
+  google.protobuf.DoubleValue value = 2;
+}
+
+// A rule item fragment composed of date operation.
+message UserListStringRuleItemInfo {
+  // String comparison operator.
+  // This field is required and must be populated when creating a new string
+  // rule item.
+  google.ads.googleads.v1.enums.UserListStringRuleItemOperatorEnum
+      .UserListStringRuleItemOperator
+      operator = 1;
+
+  // The right hand side of the string rule item. For URLs or referrer URLs,
+  // the value can not contain illegal URL chars such as newlines, quotes,
+  // tabs, or parentheses. This field is required and must be populated when
+  // creating a new string rule item.
+  google.protobuf.StringValue value = 2;
+}
+
+// User lists defined by combining two rules, left operand and right operand.
+// There are two operators: AND where left operand and right operand have to be
+// true; AND_NOT where left operand is true but right operand is false.
+message CombinedRuleUserListInfo {
+  // Left operand of the combined rule.
+  // This field is required and must be populated when creating new combined
+  // rule based user list.
+  UserListRuleInfo left_operand = 1;
+
+  // Right operand of the combined rule.
+  // This field is required and must be populated when creating new combined
+  // rule based user list.
+  UserListRuleInfo right_operand = 2;
+
+  // Operator to connect the two operands.
+  //
+  // Required for creating a combined rule user list.
+  google.ads.googleads.v1.enums.UserListCombinedRuleOperatorEnum
+      .UserListCombinedRuleOperator rule_operator = 3;
+}
+
+// Visitors of a page during specific dates.
+message DateSpecificRuleUserListInfo {
+  // Boolean rule that defines visitor of a page.
+  //
+  // Required for creating a date specific rule user list.
+  UserListRuleInfo rule = 1;
+
+  // Start date of users visit. If set to 2000-01-01, then the list includes all
+  // users before end_date. The date's format should be YYYY-MM-DD.
+  //
+  // Required for creating a data specific rule user list.
+  google.protobuf.StringValue start_date = 2;
+
+  // End date of users visit. If set to 2037-12-30, then the list includes all
+  // users after start_date. The date's format should be YYYY-MM-DD.
+  //
+  // Required for creating a data specific rule user list.
+  google.protobuf.StringValue end_date = 3;
+}
+
+// Visitors of a page. The page visit is defined by one boolean rule expression.
+message ExpressionRuleUserListInfo {
+  // Boolean rule that defines this user list. The rule consists of a list of
+  // rule item groups and each rule item group consists of a list of rule items.
+  // All the rule item groups are ORed or ANDed together for evaluation based on
+  // rule.rule_type.
+  //
+  // Required for creating an expression rule user list.
+  UserListRuleInfo rule = 1;
+}
+
+// Representation of a userlist that is generated by a rule.
+message RuleBasedUserListInfo {
+  // The status of pre-population. The field is default to NONE if not set which
+  // means the previous users will not be considered. If set to REQUESTED, past
+  // site visitors or app users who match the list definition will be included
+  // in the list (works on the Display Network only). This will only
+  // add past users from within the last 30 days, depending on the
+  // list's membership duration and the date when the remarketing tag is added.
+  // The status will be updated to FINISHED once request is processed, or FAILED
+  // if the request fails.
+  google.ads.googleads.v1.enums.UserListPrepopulationStatusEnum
+      .UserListPrepopulationStatus prepopulation_status = 1;
+
+  // Subtypes of rule based user lists.
+  oneof rule_based_user_list {
+    // User lists defined by combining two rules.
+    // There are two operators: AND, where the left and right operands have to
+    // be true; AND_NOT where left operand is true but right operand is false.
+    CombinedRuleUserListInfo combined_rule_user_list = 2;
+
+    // Visitors of a page during specific dates. The visiting periods are
+    // defined as follows:
+    // Between start_date (inclusive) and end_date (inclusive);
+    // Before end_date (exclusive) with start_date = 2000-01-01;
+    // After start_date (exclusive) with end_date = 2037-12-30.
+    DateSpecificRuleUserListInfo date_specific_rule_user_list = 3;
+
+    // Visitors of a page. The page visit is defined by one boolean rule
+    // expression.
+    ExpressionRuleUserListInfo expression_rule_user_list = 4;
+  }
+}
+
+// Represents a user list that is a custom combination of user lists.
+message LogicalUserListInfo {
+  // Logical list rules that define this user list. The rules are defined as a
+  // logical operator (ALL/ANY/NONE) and a list of user lists. All the rules are
+  // ANDed when they are evaluated.
+  //
+  // Required for creating a logical user list.
+  repeated UserListLogicalRuleInfo rules = 1;
+}
+
+// A user list logical rule. A rule has a logical operator (and/or/not) and a
+// list of user lists as operands.
+message UserListLogicalRuleInfo {
+  // The logical operator of the rule.
+  google.ads.googleads.v1.enums.UserListLogicalRuleOperatorEnum
+      .UserListLogicalRuleOperator
+      operator = 1;
+
+  // The list of operands of the rule.
+  repeated LogicalUserListOperandInfo rule_operands = 2;
+}
+
+// Operand of logical user list that consists of a user list.
+message LogicalUserListOperandInfo {
+  // Resource name of a user list as an operand.
+  google.protobuf.StringValue user_list = 1;
+}
+
+// User list targeting as a collection of conversions or remarketing actions.
+message BasicUserListInfo {
+  // Actions associated with this user list.
+  repeated UserListActionInfo actions = 1;
+}
+
+// Represents an action type used for building remarketing user lists.
+message UserListActionInfo {
+  // Subtypes of user list action.
+  oneof user_list_action {
+    // A conversion action that's not generated from remarketing.
+    google.protobuf.StringValue conversion_action = 1;
+
+    // A remarketing action.
+    google.protobuf.StringValue remarketing_action = 2;
+  }
+}

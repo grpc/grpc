@@ -1,0 +1,18 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.websecurityscanner.v1beta
+  python:
+    package_name: google.cloud.websecurityscanner_v1beta.gapic
+  go:
+    package_name: cloud.google.com/go/websecurityscanner/apiv1beta
+  csharp:
+    package_name: Google.Cloud.Websecurityscanner.V1beta
+  ruby:
+    package_name: Google::Cloud::Websecurityscanner::V1beta
+  php:
+    package_name: Google\Cloud\WebSecurityScanner\V1beta
+  nodejs:
+    package_name: websecurityscanner.v1beta

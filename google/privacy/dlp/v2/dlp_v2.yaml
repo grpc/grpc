@@ -1,0 +1,25 @@
+type: google.api.Service
+config_version: 3
+name: dlp.googleapis.com
+title: Cloud Data Loss Prevention (DLP) API
+
+apis:
+- name: google.privacy.dlp.v2.DlpService
+
+documentation:
+  summary: |-
+    Provides methods for detection, risk analysis, and de-identification of
+    privacy-sensitive fragments in text, images, and Google Cloud Platform
+    storage repositories.
+
+backend:
+  rules:
+  - selector: 'google.privacy.dlp.v2.DlpService.*'
+    deadline: 300.0
+
+authentication:
+  rules:
+  - selector: 'google.privacy.dlp.v2.DlpService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

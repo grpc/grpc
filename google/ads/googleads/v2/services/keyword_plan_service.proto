@@ -1,0 +1,239 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/common/keyword_plan_common.proto";
+import "google/ads/googleads/v2/resources/keyword_plan.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/wrappers.proto";
+import "google/rpc/status.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "KeywordPlanServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Proto file describing the keyword plan service.
+
+// Service to manage keyword plans.
+service KeywordPlanService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns the requested plan in full detail.
+  rpc GetKeywordPlan(GetKeywordPlanRequest) returns (google.ads.googleads.v2.resources.KeywordPlan) {
+    option (google.api.http) = {
+      get: "/v2/{resource_name=customers/*/keywordPlans/*}"
+    };
+  }
+
+  // Creates, updates, or removes keyword plans. Operation statuses are
+  // returned.
+  rpc MutateKeywordPlans(MutateKeywordPlansRequest) returns (MutateKeywordPlansResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}/keywordPlans:mutate"
+      body: "*"
+    };
+  }
+
+  // Returns the requested Keyword Plan forecasts.
+  rpc GenerateForecastMetrics(GenerateForecastMetricsRequest) returns (GenerateForecastMetricsResponse) {
+    option (google.api.http) = {
+      post: "/v2/{keyword_plan=customers/*/keywordPlans/*}:generateForecastMetrics"
+      body: "*"
+    };
+  }
+
+  // Returns the requested Keyword Plan historical metrics.
+  rpc GenerateHistoricalMetrics(GenerateHistoricalMetricsRequest) returns (GenerateHistoricalMetricsResponse) {
+    option (google.api.http) = {
+      post: "/v2/{keyword_plan=customers/*/keywordPlans/*}:generateHistoricalMetrics"
+      body: "*"
+    };
+  }
+}
+
+// Request message for [KeywordPlanService.GetKeywordPlan][google.ads.googleads.v2.services.KeywordPlanService.GetKeywordPlan].
+message GetKeywordPlanRequest {
+  // The resource name of the plan to fetch.
+  string resource_name = 1;
+}
+
+// Request message for [KeywordPlanService.MutateKeywordPlans][google.ads.googleads.v2.services.KeywordPlanService.MutateKeywordPlans].
+message MutateKeywordPlansRequest {
+  // The ID of the customer whose keyword plans are being modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual keyword plans.
+  repeated KeywordPlanOperation operations = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried
+  // out in one transaction if and only if they are all valid.
+  // Default is false.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// A single operation (create, update, remove) on a keyword plan.
+message KeywordPlanOperation {
+  // The FieldMask that determines which resource fields are modified in an
+  // update.
+  google.protobuf.FieldMask update_mask = 4;
+
+  // The mutate operation.
+  oneof operation {
+    // Create operation: No resource name is expected for the new keyword plan.
+    google.ads.googleads.v2.resources.KeywordPlan create = 1;
+
+    // Update operation: The keyword plan is expected to have a valid resource
+    // name.
+    google.ads.googleads.v2.resources.KeywordPlan update = 2;
+
+    // Remove operation: A resource name for the removed keyword plan is
+    // expected in this format:
+    //
+    // `customers/{customer_id}/keywordPlans/{keyword_plan_id}`
+    string remove = 3;
+  }
+}
+
+// Response message for a keyword plan mutate.
+message MutateKeywordPlansResponse {
+  // Errors that pertain to operation failures in the partial failure mode.
+  // Returned only when partial_failure = true and all errors occur inside the
+  // operations. If any errors occur outside the operations (e.g. auth errors),
+  // we return an RPC level error.
+  google.rpc.Status partial_failure_error = 3;
+
+  // All results for the mutate.
+  repeated MutateKeywordPlansResult results = 2;
+}
+
+// The result for the keyword plan mutate.
+message MutateKeywordPlansResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}
+
+// Request message for [KeywordPlanService.GenerateForecastMetrics][google.ads.googleads.v2.services.KeywordPlanService.GenerateForecastMetrics].
+message GenerateForecastMetricsRequest {
+  // The resource name of the keyword plan to be forecasted.
+  string keyword_plan = 1;
+}
+
+// Response message for [KeywordPlanService.GenerateForecastMetrics][google.ads.googleads.v2.services.KeywordPlanService.GenerateForecastMetrics].
+message GenerateForecastMetricsResponse {
+  // List of campaign forecasts.
+  // One maximum.
+  repeated KeywordPlanCampaignForecast campaign_forecasts = 1;
+
+  // List of ad group forecasts.
+  repeated KeywordPlanAdGroupForecast ad_group_forecasts = 2;
+
+  // List of keyword forecasts.
+  repeated KeywordPlanKeywordForecast keyword_forecasts = 3;
+}
+
+// A campaign forecast.
+message KeywordPlanCampaignForecast {
+  // The resource name of the Keyword Plan campaign related to the forecast.
+  //
+  // `customers/{customer_id}/keywordPlanCampaigns/{keyword+plan_campaign_id}`
+  google.protobuf.StringValue keyword_plan_campaign = 1;
+
+  // The forecast for the Keyword Plan campaign.
+  ForecastMetrics campaign_forecast = 2;
+}
+
+// An ad group forecast.
+message KeywordPlanAdGroupForecast {
+  // The resource name of the Keyword Plan ad group related to the forecast.
+  //
+  // `customers/{customer_id}/keywordPlanAdGroups/{keyword_plan_ad_group_id}`
+  google.protobuf.StringValue keyword_plan_ad_group = 1;
+
+  // The forecast for the Keyword Plan ad group.
+  ForecastMetrics ad_group_forecast = 2;
+}
+
+// A keyword forecast.
+message KeywordPlanKeywordForecast {
+  // The resource name of the Keyword Plan keyword related to the forecast.
+  //
+  // `customers/{customer_id}/keywordPlanAdGroupKeywords/{keyword_plan_ad_group_keyword_id}`
+  google.protobuf.StringValue keyword_plan_ad_group_keyword = 1;
+
+  // The forecast for the Keyword Plan keyword.
+  ForecastMetrics keyword_forecast = 2;
+}
+
+// Forecast metrics.
+message ForecastMetrics {
+  // Impressions
+  google.protobuf.DoubleValue impressions = 1;
+
+  // Ctr
+  google.protobuf.DoubleValue ctr = 2;
+
+  // AVG cpc
+  google.protobuf.Int64Value average_cpc = 3;
+
+  // Clicks
+  google.protobuf.DoubleValue clicks = 5;
+
+  // Cost
+  google.protobuf.Int64Value cost_micros = 6;
+}
+
+// Request message for [KeywordPlanService.GenerateHistoricalMetrics][google.ads.googleads.v2.services.KeywordPlanService.GenerateHistoricalMetrics].
+message GenerateHistoricalMetricsRequest {
+  // The resource name of the keyword plan of which historical metrics are
+  // requested.
+  string keyword_plan = 1;
+}
+
+// Response message for [KeywordPlanService.GenerateHistoricalMetrics][google.ads.googleads.v2.services.KeywordPlanService.GenerateHistoricalMetrics].
+message GenerateHistoricalMetricsResponse {
+  // List of keyword historical metrics.
+  repeated KeywordPlanKeywordHistoricalMetrics metrics = 1;
+}
+
+// A keyword historical metrics.
+message KeywordPlanKeywordHistoricalMetrics {
+  // The text of the query associated with one or more ad_group_keywords in the
+  // plan.
+  //
+  // Note that we de-dupe your keywords list, eliminating close variants before
+  // returning the plan's keywords as text. For example, if your plan originally
+  // contained the keywords 'car' and 'cars', the returned search query will
+  // only contain 'car'.
+  google.protobuf.StringValue search_query = 1;
+
+  // The historical metrics for the query associated with one or more
+  // ad_group_keywords in the plan.
+  google.ads.googleads.v2.common.KeywordPlanHistoricalMetrics keyword_metrics = 2;
+}

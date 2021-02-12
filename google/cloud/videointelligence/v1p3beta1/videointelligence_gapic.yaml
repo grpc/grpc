@@ -1,0 +1,237 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.videointelligence.v1p3beta1
+  python:
+    package_name: google.cloud.videointelligence_v1p3beta1.gapic
+  go:
+    package_name: cloud.google.com/go/videointelligence/apiv1p3beta1
+  csharp:
+    package_name: Google.Cloud.VideoIntelligence.V1P3Beta1
+  ruby:
+    package_name: Google::Cloud::VideoIntelligence::V1p3beta1
+    release_level: BETA
+  php:
+    package_name: Google\Cloud\VideoIntelligence\V1p3beta1
+  nodejs:
+    package_name: video-intelligence.v1p3beta1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.cloud.videointelligence.v1p3beta1.VideoIntelligenceService
+  smoke_test:
+    method: AnnotateVideo
+    init_fields:
+    - input_uri=gs://cloud-samples-data/video/cat.mp4
+    - features[0]=LABEL_DETECTION
+  collections: []
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 1000
+    retry_delay_multiplier: 2.5
+    max_retry_delay_millis: 120000
+    initial_rpc_timeout_millis: 120000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 120000
+    total_timeout_millis: 600000
+  methods:
+  - name: AnnotateVideo
+    flattening:
+      groups:
+      - parameters:
+        - input_uri
+        - features
+    long_running:
+      return_type: google.cloud.videointelligence.v1p3beta1.AnnotateVideoResponse
+      metadata_type: google.cloud.videointelligence.v1p3beta1.AnnotateVideoProgress
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    sample_code_init_fields:
+    - input_uri=gs://cloud-samples-data/video/cat.mp4
+    - features[0]=LABEL_DETECTION
+    samples:
+      standalone:
+      - region_tag: video_detect_logo_beta
+        value_sets: [video_detect_logo_beta]
+      - region_tag: video_detect_logo_gcs_beta
+        value_sets: [video_detect_logo_gcs_beta]
+    sample_value_sets:
+    - id: video_detect_logo_beta
+      description: "Performs asynchronous video annotation for logo recognition from inline video content."
+      parameters:
+        defaults:
+        - input_content="resources/googlework_short.mp4"
+        - features[0]=LOGO_RECOGNITION
+        attributes:
+        - parameter: input_content
+          sample_argument_name: local_file_path
+          read_file: true
+          description: Path to local video file, e.g. /path/video.mp4
+      on_success:
+      - comment: ["Get the first response, since we sent only one video."]
+      - define: annotation_result=$resp.annotation_results[0]
+      - comment: ["Annotations for list of logos detected, tracked and recognized in video."]
+      - loop:
+          collection: annotation_result.logo_recognition_annotations
+          variable: logo_recognition_annotation
+          body:
+          - define: entity=logo_recognition_annotation.entity
+          - comment: ["Opaque entity ID. Some IDs may be available in [Google Knowledge Graph Search API](https://developers.google.com/knowledge-graph/)."]
+          - print: ["Entity Id : %s", entity.entity_id]
+          - comment: ["Textual description, e.g. `Google`."]
+          - print: ["Description : %s", entity.description]
+          - comment: ["All logo tracks where the recognized logo appears. Each track corresponds to one logo instance appearing in consecutive frames."]
+          - loop:
+              collection: logo_recognition_annotation.tracks
+              variable: track
+              body:
+              - comment: ["Video segment of a track."]
+              - define: segment=track.segment
+              - define: segment_start_time_offset=segment.start_time_offset
+              - print: ["\n\tStart Time Offset : %s.%s", segment_start_time_offset.seconds, segment_start_time_offset.nanos]
+              - define: segment_end_time_offset=segment.end_time_offset
+              - print: ["\tEnd Time Offset : %s.%s", segment_end_time_offset.seconds, segment_end_time_offset.nanos]
+              - print: ["\tConfidence : %s", track.confidence]
+              - comment: ["The object with timestamp and attributes per frame in the track."]
+              - loop:
+                  collection: track.timestamped_objects
+                  variable: timestamped_object
+                  body:
+                  - comment: ["Normalized Bounding box in a frame, where the object is located."]
+                  - define: normalized_bounding_box=timestamped_object.normalized_bounding_box
+                  - print: ["\n\t\tLeft : %s", normalized_bounding_box.left]
+                  - print: ["\t\tTop : %s", normalized_bounding_box.top]
+                  - print: ["\t\tRight : %s", normalized_bounding_box.right]
+                  - print: ["\t\tBottom : %s", normalized_bounding_box.bottom]
+                  - comment: ["Optional. The attributes of the object in the bounding box."]
+                  - loop:
+                      collection: timestamped_object.attributes
+                      variable: attribute
+                      body:
+                      - print: ["\n\t\t\tName : %s", attribute.name]
+                      - print: ["\t\t\tConfidence : %s", attribute.confidence]
+                      - print: ["\t\t\tValue : %s", attribute.value]
+              - comment: ["Optional. Attributes in the track level."]
+              - loop:
+                  collection: track.attributes
+                  variable: track_attribute
+                  body:
+                  - print: ["\n\t\tName : %s", track_attribute.name]
+                  - print: ["\t\tConfidence : %s", track_attribute.confidence]
+                  - print: ["\t\tValue : %s", track_attribute.value]
+          - comment: ["All video segments where the recognized logo appears. There might be multiple instances of the same logo class appearing in one VideoSegment."]
+          - loop:
+              collection: logo_recognition_annotation.segments
+              variable: logo_recognition_annotation_segment
+              body:
+              - define: logo_recognition_annotation_segment_start_time_offset=logo_recognition_annotation_segment.start_time_offset
+              - print: ["\n\tStart Time Offset : %s.%s", logo_recognition_annotation_segment_start_time_offset.seconds, logo_recognition_annotation_segment_start_time_offset.nanos]
+              - define: logo_recognition_annotation_segment_end_time_offset=logo_recognition_annotation_segment.end_time_offset
+              - print: ["\tEnd Time Offset : %s.%s", logo_recognition_annotation_segment_end_time_offset.seconds, logo_recognition_annotation_segment_end_time_offset.nanos]
+    - id: video_detect_logo_gcs_beta
+      description: "Performs asynchronous video annotation for logo recognition on a file hosted in GCS."
+      parameters:
+        defaults:
+        - input_uri=gs://cloud-samples-data/video/googlework_short.mp4
+        - features[0]=LOGO_RECOGNITION
+      on_success:
+      - comment: ["Get the first response, since we sent only one video."]
+      - define: annotation_result=$resp.annotation_results[0]
+      - comment: ["Annotations for list of logos detected, tracked and recognized in video."]
+      - loop:
+          collection: annotation_result.logo_recognition_annotations
+          variable: logo_recognition_annotation
+          body:
+          - define: entity=logo_recognition_annotation.entity
+          - comment: ["Opaque entity ID. Some IDs may be available in [Google Knowledge Graph Search API](https://developers.google.com/knowledge-graph/)."]
+          - print: ["Entity Id : %s", entity.entity_id]
+          - comment: ["Textual description, e.g. `Google`."]
+          - print: ["Description : %s", entity.description]
+          - comment: ["All logo tracks where the recognized logo appears. Each track corresponds to one logo instance appearing in consecutive frames."]
+          - loop:
+              collection: logo_recognition_annotation.tracks
+              variable: track
+              body:
+              - comment: ["Video segment of a track."]
+              - define: segment=track.segment
+              - define: segment_start_time_offset=segment.start_time_offset
+              - print: ["\n\tStart Time Offset : %s.%s", segment_start_time_offset.seconds, segment_start_time_offset.nanos]
+              - define: segment_end_time_offset=segment.end_time_offset
+              - print: ["\tEnd Time Offset : %s.%s", segment_end_time_offset.seconds, segment_end_time_offset.nanos]
+              - print: ["\tConfidence : %s", track.confidence]
+              - comment: ["The object with timestamp and attributes per frame in the track."]
+              - loop:
+                  collection: track.timestamped_objects
+                  variable: timestamped_object
+                  body:
+                  - comment: ["Normalized Bounding box in a frame, where the object is located."]
+                  - define: normalized_bounding_box=timestamped_object.normalized_bounding_box
+                  - print: ["\n\t\tLeft : %s", normalized_bounding_box.left]
+                  - print: ["\t\tTop : %s", normalized_bounding_box.top]
+                  - print: ["\t\tRight : %s", normalized_bounding_box.right]
+                  - print: ["\t\tBottom : %s", normalized_bounding_box.bottom]
+                  - comment: ["Optional. The attributes of the object in the bounding box."]
+                  - loop:
+                      collection: timestamped_object.attributes
+                      variable: attribute
+                      body:
+                      - print: ["\n\t\t\tName : %s", attribute.name]
+                      - print: ["\t\t\tConfidence : %s", attribute.confidence]
+                      - print: ["\t\t\tValue : %s", attribute.value]
+              - comment: ["Optional. Attributes in the track level."]
+              - loop:
+                  collection: track.attributes
+                  variable: track_attribute
+                  body:
+                  - print: ["\n\t\tName : %s", track_attribute.name]
+                  - print: ["\t\tConfidence : %s", track_attribute.confidence]
+                  - print: ["\t\tValue : %s", track_attribute.value]
+          - comment: ["All video segments where the recognized logo appears. There might be multiple instances of the same logo class appearing in one VideoSegment."]
+          - loop:
+              collection: logo_recognition_annotation.segments
+              variable: logo_recognition_annotation_segment
+              body:
+              - define: logo_recognition_annotation_segment_start_time_offset=logo_recognition_annotation_segment.start_time_offset
+              - print: ["\n\tStart Time Offset : %s.%s", logo_recognition_annotation_segment_start_time_offset.seconds, logo_recognition_annotation_segment_start_time_offset.nanos]
+              - define: logo_recognition_annotation_segment_end_time_offset=logo_recognition_annotation_segment.end_time_offset
+              - print: ["\tEnd Time Offset : %s.%s", logo_recognition_annotation_segment_end_time_offset.seconds, logo_recognition_annotation_segment_end_time_offset.nanos]
+# TODO: This config is currently broken:
+#     https://github.com/googleapis/gapic-generator/issues/1057
+#     https://github.com/googleapis/gapic-generator/issues/1149
+- name: google.cloud.videointelligence.v1p3beta1.StreamingVideoIntelligenceService
+  collections: []
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 10800000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 10800000
+    total_timeout_millis: 10800000
+  methods:
+  - name: StreamingAnnotateVideo
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 10800000

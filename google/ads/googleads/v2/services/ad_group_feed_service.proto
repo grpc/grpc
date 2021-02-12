@@ -1,0 +1,121 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/resources/ad_group_feed.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/rpc/status.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "AdGroupFeedServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Proto file describing the AdGroupFeed service.
+
+// Service to manage ad group feeds.
+service AdGroupFeedService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns the requested ad group feed in full detail.
+  rpc GetAdGroupFeed(GetAdGroupFeedRequest) returns (google.ads.googleads.v2.resources.AdGroupFeed) {
+    option (google.api.http) = {
+      get: "/v2/{resource_name=customers/*/adGroupFeeds/*}"
+    };
+  }
+
+  // Creates, updates, or removes ad group feeds. Operation statuses are
+  // returned.
+  rpc MutateAdGroupFeeds(MutateAdGroupFeedsRequest) returns (MutateAdGroupFeedsResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}/adGroupFeeds:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for [AdGroupFeedService.GetAdGroupFeed][google.ads.googleads.v2.services.AdGroupFeedService.GetAdGroupFeed].
+message GetAdGroupFeedRequest {
+  // The resource name of the ad group feed to fetch.
+  string resource_name = 1;
+}
+
+// Request message for [AdGroupFeedService.MutateAdGroupFeeds][google.ads.googleads.v2.services.AdGroupFeedService.MutateAdGroupFeeds].
+message MutateAdGroupFeedsRequest {
+  // The ID of the customer whose ad group feeds are being modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual ad group feeds.
+  repeated AdGroupFeedOperation operations = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried
+  // out in one transaction if and only if they are all valid.
+  // Default is false.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// A single operation (create, update, remove) on an ad group feed.
+message AdGroupFeedOperation {
+  // FieldMask that determines which resource fields are modified in an update.
+  google.protobuf.FieldMask update_mask = 4;
+
+  // The mutate operation.
+  oneof operation {
+    // Create operation: No resource name is expected for the new ad group feed.
+    google.ads.googleads.v2.resources.AdGroupFeed create = 1;
+
+    // Update operation: The ad group feed is expected to have a valid resource
+    // name.
+    google.ads.googleads.v2.resources.AdGroupFeed update = 2;
+
+    // Remove operation: A resource name for the removed ad group feed is
+    // expected, in this format:
+    //
+    // `customers/{customer_id}/adGroupFeeds/{ad_group_id}~{feed_id}`
+    string remove = 3;
+  }
+}
+
+// Response message for an ad group feed mutate.
+message MutateAdGroupFeedsResponse {
+  // Errors that pertain to operation failures in the partial failure mode.
+  // Returned only when partial_failure = true and all errors occur inside the
+  // operations. If any errors occur outside the operations (e.g. auth errors),
+  // we return an RPC level error.
+  google.rpc.Status partial_failure_error = 3;
+
+  // All results for the mutate.
+  repeated MutateAdGroupFeedResult results = 2;
+}
+
+// The result for the ad group feed mutate.
+message MutateAdGroupFeedResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}

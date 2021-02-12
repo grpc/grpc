@@ -1,0 +1,75 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "GetDataSource"
+        },
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "ListDataSources"
+        },
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "DeleteTransferConfig"
+        },
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "GetTransferConfig"
+        },
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "ListTransferConfigs"
+        },
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "GetTransferRun"
+        },
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "DeleteTransferRun"
+        },
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "ListTransferRuns"
+        },
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "ListTransferLogs"
+        },
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "CheckValidCreds"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "CreateTransferConfig"
+        },
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "UpdateTransferConfig"
+        },
+        {
+          "service": "google.cloud.bigquery.datatransfer.v1.DataTransferService",
+          "method": "ScheduleTransferRuns"
+        }
+      ],
+      "timeout": "600s"
+    }
+  ]
+}

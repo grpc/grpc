@@ -1,0 +1,58 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.datalabeling.v1beta1;
+
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/datalabeling/v1beta1;datalabeling";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.datalabeling.v1beta1";
+
+// AnnotationSpecSet is a collection of label definitions. For example, in
+// image classification tasks, we define a set of labels, this set is called
+// AnnotationSpecSet. AnnotationSpecSet is immutable upon creation.
+message AnnotationSpecSet {
+  // Output only. AnnotationSpecSet resource name, format:
+  // projects/{project_id}/annotationSpecSets/{annotation_spec_set_id}
+  string name = 1;
+
+  // Required. The display name for AnnotationSpecSet defined by user.
+  // Maximum of 64 characters.
+  string display_name = 2;
+
+  // Optional. User-provided description of the annotation specification set.
+  // The description can be up to 10000 characters long.
+  string description = 3;
+
+  // Required. The actual spec set defined by the users.
+  repeated AnnotationSpec annotation_specs = 4;
+
+  // Output only. The names of any related resources that are blocking changes
+  // to the annotation spec set.
+  repeated string blocking_resources = 5;
+}
+
+// Container of information related to one annotation spec.
+message AnnotationSpec {
+  // Required. The display name of the AnnotationSpec. Maximum of 64 characters.
+  string display_name = 1;
+
+  // Optional. User-provided description of the annotation specification.
+  // The description can be up to 10000 characters long.
+  string description = 2;
+}

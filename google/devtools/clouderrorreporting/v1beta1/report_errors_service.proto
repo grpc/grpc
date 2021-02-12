@@ -1,0 +1,120 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.clouderrorreporting.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/devtools/clouderrorreporting/v1beta1/common.proto";
+import "google/protobuf/timestamp.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.ErrorReporting.V1Beta1";
+option go_package = "google.golang.org/genproto/googleapis/devtools/clouderrorreporting/v1beta1;clouderrorreporting";
+option java_multiple_files = true;
+option java_outer_classname = "ReportErrorsServiceProto";
+option java_package = "com.google.devtools.clouderrorreporting.v1beta1";
+option php_namespace = "Google\\Cloud\\ErrorReporting\\V1beta1";
+
+// An API for reporting error events.
+service ReportErrorsService {
+  option (google.api.default_host) = "clouderrorreporting.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Report an individual error event.
+  //
+  // This endpoint accepts **either** an OAuth token,
+  // **or** an [API key](https://support.google.com/cloud/answer/6158862)
+  // for authentication. To use an API key, append it to the URL as the value of
+  // a `key` parameter. For example:
+  //
+  // `POST
+  // https://clouderrorreporting.googleapis.com/v1beta1/projects/example-project/events:report?key=123ABC456`
+  rpc ReportErrorEvent(ReportErrorEventRequest) returns (ReportErrorEventResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{project_name=projects/*}/events:report"
+      body: "event"
+    };
+    option (google.api.method_signature) = "project_name,event";
+  }
+}
+
+// A request for reporting an individual error event.
+message ReportErrorEventRequest {
+  // Required. The resource name of the Google Cloud Platform project. Written
+  // as `projects/` plus the
+  // [Google Cloud Platform project
+  // ID](https://support.google.com/cloud/answer/6158840). Example:
+  // `projects/my-project-123`.
+  string project_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudresourcemanager.googleapis.com/Project"
+    }
+  ];
+
+  // Required. The error event to be reported.
+  ReportedErrorEvent event = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response for reporting an individual error event.
+// Data may be added to this message in the future.
+message ReportErrorEventResponse {
+
+}
+
+// An error event which is reported to the Error Reporting system.
+message ReportedErrorEvent {
+  // Optional. Time when the event occurred.
+  // If not provided, the time when the event was received by the
+  // Error Reporting system will be used.
+  google.protobuf.Timestamp event_time = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Required. The service context in which this error has occurred.
+  ServiceContext service_context = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The error message.
+  // If no `context.reportLocation` is provided, the message must contain a
+  // header (typically consisting of the exception type name and an error
+  // message) and an exception stack trace in one of the supported programming
+  // languages and formats.
+  // Supported languages are Java, Python, JavaScript, Ruby, C#, PHP, and Go.
+  // Supported stack trace formats are:
+  //
+  // * **Java**: Must be the return value of
+  // [`Throwable.printStackTrace()`](https://docs.oracle.com/javase/7/docs/api/java/lang/Throwable.html#printStackTrace%28%29).
+  // * **Python**: Must be the return value of
+  // [`traceback.format_exc()`](https://docs.python.org/2/library/traceback.html#traceback.format_exc).
+  // * **JavaScript**: Must be the value of
+  // [`error.stack`](https://github.com/v8/v8/wiki/Stack-Trace-API) as returned
+  // by V8.
+  // * **Ruby**: Must contain frames returned by
+  // [`Exception.backtrace`](https://ruby-doc.org/core-2.2.0/Exception.html#method-i-backtrace).
+  // * **C#**: Must be the return value of
+  // [`Exception.ToString()`](https://msdn.microsoft.com/en-us/library/system.exception.tostring.aspx).
+  // * **PHP**: Must start with `PHP (Notice|Parse error|Fatal error|Warning)`
+  // and contain the result of
+  // [`(string)$exception`](http://php.net/manual/en/exception.tostring.php).
+  // * **Go**: Must be the return value of
+  // [`runtime.Stack()`](https://golang.org/pkg/runtime/debug/#Stack).
+  string message = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. A description of the context in which the error occurred.
+  ErrorContext context = 4 [(google.api.field_behavior) = OPTIONAL];
+}

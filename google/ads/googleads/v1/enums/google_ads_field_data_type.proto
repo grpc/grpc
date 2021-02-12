@@ -1,0 +1,101 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "GoogleAdsFieldDataTypeProto";
+option java_package = "com.google.ads.googleads.v1.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V1::Enums";
+
+// Proto file describing GoogleAdsField data types
+
+// Container holding the various data types.
+message GoogleAdsFieldDataTypeEnum {
+  // These are the various types a GoogleAdsService artifact may take on.
+  enum GoogleAdsFieldDataType {
+    // Unspecified
+    UNSPECIFIED = 0;
+
+    // Unknown
+    UNKNOWN = 1;
+
+    // Maps to google.protobuf.BoolValue
+    //
+    // Applicable operators:  =, !=
+    BOOLEAN = 2;
+
+    // Maps to google.protobuf.StringValue. It can be compared using the set of
+    // operators specific to dates however.
+    //
+    // Applicable operators:  =, <, >, <=, >=, BETWEEN, DURING, and IN
+    DATE = 3;
+
+    // Maps to google.protobuf.DoubleValue
+    //
+    // Applicable operators:  =, !=, <, >, IN, NOT IN
+    DOUBLE = 4;
+
+    // Maps to an enum. It's specific definition can be found at type_url.
+    //
+    // Applicable operators:  =, !=, IN, NOT IN
+    ENUM = 5;
+
+    // Maps to google.protobuf.FloatValue
+    //
+    // Applicable operators:  =, !=, <, >, IN, NOT IN
+    FLOAT = 6;
+
+    // Maps to google.protobuf.Int32Value
+    //
+    // Applicable operators:  =, !=, <, >, <=, >=, BETWEEN, IN, NOT IN
+    INT32 = 7;
+
+    // Maps to google.protobuf.Int64Value
+    //
+    // Applicable operators:  =, !=, <, >, <=, >=, BETWEEN, IN, NOT IN
+    INT64 = 8;
+
+    // Maps to a protocol buffer message type. The data type's details can be
+    // found in type_url.
+    //
+    // No operators work with MESSAGE fields.
+    MESSAGE = 9;
+
+    // Maps to google.protobuf.StringValue. Represents the resource name
+    // (unique id) of a resource or one of its foreign keys.
+    //
+    // No operators work with RESOURCE_NAME fields.
+    RESOURCE_NAME = 10;
+
+    // Maps to google.protobuf.StringValue.
+    //
+    // Applicable operators:  =, !=, LIKE, NOT LIKE, IN, NOT IN
+    STRING = 11;
+
+    // Maps to google.protobuf.UInt64Value
+    //
+    // Applicable operators:  =, !=, <, >, <=, >=, BETWEEN, IN, NOT IN
+    UINT64 = 12;
+  }
+}

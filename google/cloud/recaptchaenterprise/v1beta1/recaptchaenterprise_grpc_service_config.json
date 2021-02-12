@@ -1,0 +1,37 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.recaptchaenterprise.v1beta1.RecaptchaEnterpriseServiceV1Beta1",
+          "method": "CreateAssessment"
+        },
+        {
+          "service": "google.cloud.recaptchaenterprise.v1beta1.RecaptchaEnterpriseServiceV1Beta1",
+          "method": "AnnotateAssessment"
+        },
+        {
+          "service": "google.cloud.recaptchaenterprise.v1beta1.RecaptchaEnterpriseServiceV1Beta1",
+          "method": "CreateKey"
+        },
+        {
+          "service": "google.cloud.recaptchaenterprise.v1beta1.RecaptchaEnterpriseServiceV1Beta1",
+          "method": "ListKeys"
+        },
+        {
+          "service": "google.cloud.recaptchaenterprise.v1beta1.RecaptchaEnterpriseServiceV1Beta1",
+          "method": "GetKey"
+        },
+        {
+          "service": "google.cloud.recaptchaenterprise.v1beta1.RecaptchaEnterpriseServiceV1Beta1",
+          "method": "DeleteKey"
+        },
+        {
+          "service": "google.cloud.recaptchaenterprise.v1beta1.RecaptchaEnterpriseServiceV1Beta1",
+          "method": "UpdateKey"
+        }
+      ],
+      "timeout": "600s"
+    }
+  ]
+}

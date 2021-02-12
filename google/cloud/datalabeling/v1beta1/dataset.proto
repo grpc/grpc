@@ -1,0 +1,304 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.datalabeling.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/datalabeling/v1beta1/annotation.proto";
+import "google/cloud/datalabeling/v1beta1/data_payloads.proto";
+import "google/cloud/datalabeling/v1beta1/human_annotation_config.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/datalabeling/v1beta1;datalabeling";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.datalabeling.v1beta1";
+
+enum DataType {
+  DATA_TYPE_UNSPECIFIED = 0;
+
+  IMAGE = 1;
+
+  VIDEO = 2;
+
+  TEXT = 4;
+
+  GENERAL_DATA = 6;
+}
+
+// Dataset is the resource to hold your data. You can request multiple labeling
+// tasks for a dataset while each one will generate an AnnotatedDataset.
+message Dataset {
+  // Output only. Dataset resource name, format is:
+  // projects/{project_id}/datasets/{dataset_id}
+  string name = 1;
+
+  // Required. The display name of the dataset. Maximum of 64 characters.
+  string display_name = 2;
+
+  // Optional. User-provided description of the annotation specification set.
+  // The description can be up to 10000 characters long.
+  string description = 3;
+
+  // Output only. Time the dataset is created.
+  google.protobuf.Timestamp create_time = 4;
+
+  // Output only. This is populated with the original input configs
+  // where ImportData is called. It is available only after the clients
+  // import data to this dataset.
+  repeated InputConfig input_configs = 5;
+
+  // Output only. The names of any related resources that are blocking changes
+  // to the dataset.
+  repeated string blocking_resources = 6;
+
+  // Output only. The number of data items in the dataset.
+  int64 data_item_count = 7;
+}
+
+// The configuration of input data, including data type, location, etc.
+message InputConfig {
+  // Optional. The metadata associated with each data type.
+  oneof data_type_metadata {
+    // Required for text import, as language code must be specified.
+    TextMetadata text_metadata = 6;
+  }
+
+  // Required. Where the data is from.
+  oneof source {
+    // Source located in Cloud Storage.
+    GcsSource gcs_source = 2;
+
+    BigQuerySource bigquery_source = 5;
+  }
+
+  // Required. Data type must be specifed when user tries to import data.
+  DataType data_type = 1;
+
+  // Optional. If input contains annotation, user needs to specify the
+  // type and metadata of the annotation when creating it as an annotated
+  // dataset.
+  AnnotationType annotation_type = 3;
+
+  // Optional. Metadata about annotations in the input. Each annotation type may
+  // have different metadata.
+  // Metadata for classification problem.
+  ClassificationMetadata classification_metadata = 4;
+}
+
+// Metadata for the text.
+message TextMetadata {
+  // The language of this text, as a
+  // [BCP-47](https://www.rfc-editor.org/rfc/bcp/bcp47.txt).
+  // Default value is en-US.
+  string language_code = 1;
+}
+
+// Metadata for classification annotations.
+message ClassificationMetadata {
+  // Whether the classification task is multi-label or not.
+  bool is_multi_label = 1;
+}
+
+// Source of the Cloud Storage file to be imported.
+message GcsSource {
+  // Required. The input URI of source file. This must be a Cloud Storage path
+  // (`gs://...`).
+  string input_uri = 1;
+
+  // Required. The format of the source file. Only "text/csv" is supported.
+  string mime_type = 2;
+}
+
+// The BigQuery location for the input content.
+message BigQuerySource {
+  // Required. BigQuery URI to a table, up to 2000 characters long.
+  // Accepted forms: BigQuery gs path e.g. bq://projectId.bqDatasetId.bqTableId
+  string input_uri = 1;
+}
+
+// The configuration of output data.
+message OutputConfig {
+  // Required. Location to output data to.
+  oneof destination {
+    // Output to a file in Cloud Storage. Should be used for labeling output
+    // other than image segmentation.
+    GcsDestination gcs_destination = 1;
+
+    // Output to a folder in Cloud Storage. Should be used for image
+    // segmentation labeling output.
+    GcsFolderDestination gcs_folder_destination = 2;
+  }
+}
+
+// Export destination of the data.Only gcs path is allowed in
+// output_uri.
+message GcsDestination {
+  // Required. The output uri of destination file.
+  string output_uri = 1;
+
+  // Required. The format of the gcs destination. Only "text/csv" and
+  // "application/json"
+  // are supported.
+  string mime_type = 2;
+}
+
+// Export folder destination of the data.
+message GcsFolderDestination {
+  // Required. Cloud Storage directory to export data to.
+  string output_folder_uri = 1;
+}
+
+// DataItem is a piece of data, without annotation. For example, an image.
+message DataItem {
+  // Output only.
+  oneof payload {
+    // The image payload, a container of the image bytes/uri.
+    ImagePayload image_payload = 2;
+
+    // The text payload, a container of text content.
+    TextPayload text_payload = 3;
+
+    // The video payload, a container of the video uri.
+    VideoPayload video_payload = 4;
+  }
+
+  // Output only. Name of the data item, in format of:
+  // projects/{project_id}/datasets/{dataset_id}/dataItems/{data_item_id}
+  string name = 1;
+}
+
+// AnnotatedDataset is a set holding annotations for data in a Dataset. Each
+// labeling task will generate an AnnotatedDataset under the Dataset that the
+// task is requested for.
+message AnnotatedDataset {
+  // Output only. AnnotatedDataset resource name in format of:
+  // projects/{project_id}/datasets/{dataset_id}/annotatedDatasets/
+  // {annotated_dataset_id}
+  string name = 1;
+
+  // Output only. The display name of the AnnotatedDataset. It is specified in
+  // HumanAnnotationConfig when user starts a labeling task. Maximum of 64
+  // characters.
+  string display_name = 2;
+
+  // Output only. The description of the AnnotatedDataset. It is specified in
+  // HumanAnnotationConfig when user starts a labeling task. Maximum of 10000
+  // characters.
+  string description = 9;
+
+  // Output only. Source of the annotation.
+  AnnotationSource annotation_source = 3;
+
+  // Output only. Type of the annotation. It is specified when starting labeling
+  // task.
+  AnnotationType annotation_type = 8;
+
+  // Output only. Number of examples in the annotated dataset.
+  int64 example_count = 4;
+
+  // Output only. Number of examples that have annotation in the annotated
+  // dataset.
+  int64 completed_example_count = 5;
+
+  // Output only. Per label statistics.
+  LabelStats label_stats = 6;
+
+  // Output only. Time the AnnotatedDataset was created.
+  google.protobuf.Timestamp create_time = 7;
+
+  // Output only. Additional information about AnnotatedDataset.
+  AnnotatedDatasetMetadata metadata = 10;
+
+  // Output only. The names of any related resources that are blocking changes
+  // to the annotated dataset.
+  repeated string blocking_resources = 11;
+}
+
+// Statistics about annotation specs.
+message LabelStats {
+  // Map of each annotation spec's example count. Key is the annotation spec
+  // name and value is the number of examples for that annotation spec.
+  // If the annotated dataset does not have annotation spec, the map will return
+  // a pair where the key is empty string and value is the total number of
+  // annotations.
+  map<string, int64> example_count = 1;
+}
+
+// Metadata on AnnotatedDataset.
+message AnnotatedDatasetMetadata {
+  // Specific request configuration used when requesting the labeling task.
+  oneof annotation_request_config {
+    // Configuration for image classification task.
+    ImageClassificationConfig image_classification_config = 2;
+
+    // Configuration for image bounding box and bounding poly task.
+    BoundingPolyConfig bounding_poly_config = 3;
+
+    // Configuration for image polyline task.
+    PolylineConfig polyline_config = 4;
+
+    // Configuration for image segmentation task.
+    SegmentationConfig segmentation_config = 5;
+
+    // Configuration for video classification task.
+    VideoClassificationConfig video_classification_config = 6;
+
+    // Configuration for video object detection task.
+    ObjectDetectionConfig object_detection_config = 7;
+
+    // Configuration for video object tracking task.
+    ObjectTrackingConfig object_tracking_config = 8;
+
+    // Configuration for video event labeling task.
+    EventConfig event_config = 9;
+
+    // Configuration for text classification task.
+    TextClassificationConfig text_classification_config = 10;
+
+    // Configuration for text entity extraction task.
+    TextEntityExtractionConfig text_entity_extraction_config = 11;
+  }
+
+  // HumanAnnotationConfig used when requesting the human labeling task for this
+  // AnnotatedDataset.
+  HumanAnnotationConfig human_annotation_config = 1;
+}
+
+// An Example is a piece of data and its annotation. For example, an image with
+// label "house".
+message Example {
+  // Output only. The data part of Example.
+  oneof payload {
+    // The image payload, a container of the image bytes/uri.
+    ImagePayload image_payload = 2;
+
+    // The text payload, a container of the text content.
+    TextPayload text_payload = 6;
+
+    // The video payload, a container of the video uri.
+    VideoPayload video_payload = 7;
+  }
+
+  // Output only. Name of the example, in format of:
+  // projects/{project_id}/datasets/{dataset_id}/annotatedDatasets/
+  // {annotated_dataset_id}/examples/{example_id}
+  string name = 1;
+
+  // Output only. Annotations for the piece of data in Example.
+  // One piece of data can have multiple annotations.
+  repeated Annotation annotations = 5;
+}

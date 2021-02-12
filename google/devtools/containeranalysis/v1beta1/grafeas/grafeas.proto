@@ -1,0 +1,502 @@
+// Copyright 2018 The Grafeas Authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grafeas.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/devtools/containeranalysis/v1beta1/attestation/attestation.proto";
+import "google/devtools/containeranalysis/v1beta1/build/build.proto";
+import "google/devtools/containeranalysis/v1beta1/common/common.proto";
+import "google/devtools/containeranalysis/v1beta1/deployment/deployment.proto";
+import "google/devtools/containeranalysis/v1beta1/discovery/discovery.proto";
+import "google/devtools/containeranalysis/v1beta1/image/image.proto";
+import "google/devtools/containeranalysis/v1beta1/package/package.proto";
+import "google/devtools/containeranalysis/v1beta1/provenance/provenance.proto";
+import "google/devtools/containeranalysis/v1beta1/vulnerability/vulnerability.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/grafeas;grafeas";
+option java_multiple_files = true;
+option java_package = "io.grafeas.v1beta1";
+option objc_class_prefix = "GRA";
+
+// [Grafeas](grafeas.io) API.
+//
+// Retrieves analysis results of Cloud components such as Docker container
+// images.
+//
+// Analysis results are stored as a series of occurrences. An `Occurrence`
+// contains information about a specific analysis instance on a resource. An
+// occurrence refers to a `Note`. A note contains details describing the
+// analysis and is generally stored in a separate project, called a `Provider`.
+// Multiple occurrences can refer to the same note.
+//
+// For example, an SSL vulnerability could affect multiple images. In this case,
+// there would be one note for the vulnerability and an occurrence for each
+// image with the vulnerability referring to that note.
+service GrafeasV1Beta1 {
+  // Gets the specified occurrence.
+  rpc GetOccurrence(GetOccurrenceRequest) returns (Occurrence) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/occurrences/*}"
+    };
+  }
+
+  // Lists occurrences for the specified project.
+  rpc ListOccurrences(ListOccurrencesRequest)
+      returns (ListOccurrencesResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*}/occurrences"
+    };
+  }
+
+  // Deletes the specified occurrence. For example, use this method to delete an
+  // occurrence when the occurrence is no longer applicable for the given
+  // resource.
+  rpc DeleteOccurrence(DeleteOccurrenceRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/occurrences/*}"
+    };
+  }
+
+  // Creates a new occurrence.
+  rpc CreateOccurrence(CreateOccurrenceRequest) returns (Occurrence) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*}/occurrences"
+      body: "occurrence"
+    };
+  }
+
+  // Creates new occurrences in batch.
+  rpc BatchCreateOccurrences(BatchCreateOccurrencesRequest)
+      returns (BatchCreateOccurrencesResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*}/occurrences:batchCreate"
+      body: "*"
+    };
+  }
+
+  // Updates the specified occurrence.
+  rpc UpdateOccurrence(UpdateOccurrenceRequest) returns (Occurrence) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{name=projects/*/occurrences/*}"
+      body: "occurrence"
+    };
+  }
+
+  // Gets the note attached to the specified occurrence. Consumer projects can
+  // use this method to get a note that belongs to a provider project.
+  rpc GetOccurrenceNote(GetOccurrenceNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/occurrences/*}/notes"
+    };
+  }
+
+  // Gets the specified note.
+  rpc GetNote(GetNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/notes/*}"
+    };
+  }
+
+  // Lists notes for the specified project.
+  rpc ListNotes(ListNotesRequest) returns (ListNotesResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*}/notes"
+    };
+  }
+
+  // Deletes the specified note.
+  rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/notes/*}"
+    };
+  }
+
+  // Creates a new note.
+  rpc CreateNote(CreateNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*}/notes"
+      body: "note"
+    };
+  }
+
+  // Creates new notes in batch.
+  rpc BatchCreateNotes(BatchCreateNotesRequest)
+      returns (BatchCreateNotesResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*}/notes:batchCreate"
+      body: "*"
+    };
+  }
+
+  // Updates the specified note.
+  rpc UpdateNote(UpdateNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{name=projects/*/notes/*}"
+      body: "note"
+    };
+  }
+
+  // Lists occurrences referencing the specified note. Provider projects can use
+  // this method to get all occurrences across consumer projects referencing the
+  // specified note.
+  rpc ListNoteOccurrences(ListNoteOccurrencesRequest)
+      returns (ListNoteOccurrencesResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/notes/*}/occurrences"
+    };
+  }
+
+  // Gets a summary of the number and severity of occurrences.
+  rpc GetVulnerabilityOccurrencesSummary(
+      GetVulnerabilityOccurrencesSummaryRequest)
+      returns (VulnerabilityOccurrencesSummary) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*}/occurrences:vulnerabilitySummary"
+    };
+  }
+}
+
+// An instance of an analysis type that has been found on a resource.
+message Occurrence {
+  // Output only. The name of the occurrence in the form of
+  // `projects/[PROJECT_ID]/occurrences/[OCCURRENCE_ID]`.
+  string name = 1;
+
+  // Required. Immutable. The resource for which the occurrence applies.
+  Resource resource = 2;
+
+  // Required. Immutable. The analysis note associated with this occurrence, in
+  // the form of `projects[PROVIDER_ID]/notes/[NOTE_ID]`. This field can be used
+  // as a filter in list requests.
+  string note_name = 3;
+
+  // Output only. This explicitly denotes which of the occurrence details are
+  // specified. This field can be used as a filter in list requests.
+  grafeas.v1beta1.NoteKind kind = 4;
+
+  // A description of actions that can be taken to remedy the note.
+  string remediation = 5;
+
+  // Output only. The time this occurrence was created.
+  google.protobuf.Timestamp create_time = 6;
+
+  // Output only. The time this occurrence was last updated.
+  google.protobuf.Timestamp update_time = 7;
+
+  // Required. Immutable. Describes the details of the note kind found on this
+  // resource.
+  oneof details {
+    // Describes a security vulnerability.
+    grafeas.v1beta1.vulnerability.Details vulnerability = 8;
+    // Describes a verifiable build.
+    grafeas.v1beta1.build.Details build = 9;
+    // Describes how this resource derives from the basis in the associated
+    // note.
+    grafeas.v1beta1.image.Details derived_image = 10;
+    // Describes the installation of a package on the linked resource.
+    grafeas.v1beta1.package.Details installation = 11;
+    // Describes the deployment of an artifact on a runtime.
+    grafeas.v1beta1.deployment.Details deployment = 12;
+    // Describes when a resource was discovered.
+    grafeas.v1beta1.discovery.Details discovered = 13;
+    // Describes an attestation of an artifact.
+    grafeas.v1beta1.attestation.Details attestation = 14;
+  }
+
+  // next_id = 15;
+}
+
+// An entity that can have metadata. For example, a Docker image.
+message Resource {
+  // The name of the resource. For example, the name of a Docker image -
+  // "Debian".
+  string name = 1;
+  // The unique URI of the resource. For example,
+  // `https://gcr.io/project/image@sha256:foo` for a Docker image.
+  string uri = 2;
+  // The hash of the resource content. For example, the Docker digest.
+  grafeas.v1beta1.provenance.Hash content_hash = 3;
+
+  // next_id = 4;
+}
+
+// A type of analysis that can be done for a resource.
+message Note {
+  // Output only. The name of the note in the form of
+  // `projects/[PROVIDER_ID]/notes/[NOTE_ID]`.
+  string name = 1;
+
+  // A one sentence description of this note.
+  string short_description = 2;
+
+  // A detailed description of this note.
+  string long_description = 3;
+
+  // Output only. The type of analysis. This field can be used as a filter in
+  // list requests.
+  grafeas.v1beta1.NoteKind kind = 4;
+
+  // URLs associated with this note.
+  repeated grafeas.v1beta1.RelatedUrl related_url = 5;
+
+  // Time of expiration for this note. Empty if note does not expire.
+  google.protobuf.Timestamp expiration_time = 6;
+
+  // Output only. The time this note was created. This field can be used as a
+  // filter in list requests.
+  google.protobuf.Timestamp create_time = 7;
+
+  // Output only. The time this note was last updated. This field can be used as
+  // a filter in list requests.
+  google.protobuf.Timestamp update_time = 8;
+
+  // Other notes related to this note.
+  repeated string related_note_names = 9;
+
+  // Required. Immutable. The type of analysis this note represents.
+  oneof type {
+    // A note describing a package vulnerability.
+    grafeas.v1beta1.vulnerability.Vulnerability vulnerability = 10;
+    // A note describing build provenance for a verifiable build.
+    grafeas.v1beta1.build.Build build = 11;
+    // A note describing a base image.
+    grafeas.v1beta1.image.Basis base_image = 12;
+    // A note describing a package hosted by various package managers.
+    grafeas.v1beta1.package.Package package = 13;
+    // A note describing something that can be deployed.
+    grafeas.v1beta1.deployment.Deployable deployable = 14;
+    // A note describing the initial analysis of a resource.
+    grafeas.v1beta1.discovery.Discovery discovery = 15;
+    // A note describing an attestation role.
+    grafeas.v1beta1.attestation.Authority attestation_authority = 16;
+  }
+
+  // next_id = 17;
+}
+
+// Request to get an occurrence.
+message GetOccurrenceRequest {
+  // The name of the occurrence in the form of
+  // `projects/[PROJECT_ID]/occurrences/[OCCURRENCE_ID]`.
+  string name = 1;
+}
+
+// Request to list occurrences.
+message ListOccurrencesRequest {
+  // The name of the project to list occurrences for in the form of
+  // `projects/[PROJECT_ID]`.
+  string parent = 1;
+
+  // The filter expression.
+  string filter = 2;
+
+  // Number of occurrences to return in the list.
+  int32 page_size = 3;
+
+  // Token to provide to skip to a particular spot in the list.
+  string page_token = 4;
+
+  // next_id = 7;
+}
+
+// Response for listing occurrences.
+message ListOccurrencesResponse {
+  // The occurrences requested.
+  repeated Occurrence occurrences = 1;
+  // The next pagination token in the list response. It should be used as
+  // `page_token` for the following request. An empty value means no more
+  // results.
+  string next_page_token = 2;
+}
+
+// Request to delete a occurrence.
+message DeleteOccurrenceRequest {
+  // The name of the occurrence in the form of
+  // `projects/[PROJECT_ID]/occurrences/[OCCURRENCE_ID]`.
+  string name = 1;
+}
+
+// Request to create a new occurrence.
+message CreateOccurrenceRequest {
+  // The name of the project in the form of `projects/[PROJECT_ID]`, under which
+  // the occurrence is to be created.
+  string parent = 1;
+  // The occurrence to create.
+  Occurrence occurrence = 2;
+}
+
+// Request to update an occurrence.
+message UpdateOccurrenceRequest {
+  // The name of the occurrence in the form of
+  // `projects/[PROJECT_ID]/occurrences/[OCCURRENCE_ID]`.
+  string name = 1;
+  // The updated occurrence.
+  Occurrence occurrence = 2;
+  // The fields to update.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// Request to get a note.
+message GetNoteRequest {
+  // The name of the note in the form of
+  // `projects/[PROVIDER_ID]/notes/[NOTE_ID]`.
+  string name = 1;
+}
+
+// Request to get the note to which the specified occurrence is attached.
+message GetOccurrenceNoteRequest {
+  // The name of the occurrence in the form of
+  // `projects/[PROJECT_ID]/occurrences/[OCCURRENCE_ID]`.
+  string name = 1;
+}
+
+// Request to list notes.
+message ListNotesRequest {
+  // The name of the project to list notes for in the form of
+  // `projects/[PROJECT_ID]`.
+  string parent = 1;
+  // The filter expression.
+  string filter = 2;
+  // Number of notes to return in the list.
+  int32 page_size = 3;
+  // Token to provide to skip to a particular spot in the list.
+  string page_token = 4;
+}
+
+// Response for listing notes.
+message ListNotesResponse {
+  // The notes requested.
+  repeated Note notes = 1;
+  // The next pagination token in the list response. It should be used as
+  // `page_token` for the following request. An empty value means no more
+  // results.
+  string next_page_token = 2;
+}
+
+// Request to delete a note.
+message DeleteNoteRequest {
+  // The name of the note in the form of
+  // `projects/[PROVIDER_ID]/notes/[NOTE_ID]`.
+  string name = 1;
+}
+
+// Request to create a new note.
+message CreateNoteRequest {
+  // The name of the project in the form of `projects/[PROJECT_ID]`, under which
+  // the note is to be created.
+  string parent = 1;
+  // The ID to use for this note.
+  string note_id = 2;
+  // The note to create.
+  Note note = 3;
+}
+
+// Request to update a note.
+message UpdateNoteRequest {
+  // The name of the note in the form of
+  // `projects/[PROVIDER_ID]/notes/[NOTE_ID]`.
+  string name = 1;
+  // The updated note.
+  Note note = 2;
+  // The fields to update.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// Request to list occurrences for a note.
+message ListNoteOccurrencesRequest {
+  // The name of the note to list occurrences for in the form of
+  // `projects/[PROVIDER_ID]/notes/[NOTE_ID]`.
+  string name = 1;
+  // The filter expression.
+  string filter = 2;
+  // Number of occurrences to return in the list.
+  int32 page_size = 3;
+  // Token to provide to skip to a particular spot in the list.
+  string page_token = 4;
+}
+
+// Response for listing occurrences for a note.
+message ListNoteOccurrencesResponse {
+  // The occurrences attached to the specified note.
+  repeated Occurrence occurrences = 1;
+  // Token to provide to skip to a particular spot in the list.
+  string next_page_token = 2;
+}
+
+// Request to create notes in batch.
+message BatchCreateNotesRequest {
+  // The name of the project in the form of `projects/[PROJECT_ID]`, under which
+  // the notes are to be created.
+  string parent = 1;
+
+  // The notes to create.
+  map<string, Note> notes = 2;
+}
+
+// Response for creating notes in batch.
+message BatchCreateNotesResponse {
+  // The notes that were created.
+  repeated Note notes = 1;
+}
+
+// Request to create occurrences in batch.
+message BatchCreateOccurrencesRequest {
+  // The name of the project in the form of `projects/[PROJECT_ID]`, under which
+  // the occurrences are to be created.
+  string parent = 1;
+  // The occurrences to create.
+  repeated Occurrence occurrences = 2;
+}
+
+// Response for creating occurrences in batch.
+message BatchCreateOccurrencesResponse {
+  // The occurrences that were created.
+  repeated Occurrence occurrences = 1;
+}
+
+// Request to get a vulnerability summary for some set of occurrences.
+message GetVulnerabilityOccurrencesSummaryRequest {
+  // The name of the project to get a vulnerability summary for in the form of
+  // `projects/[PROJECT_ID]`.
+  string parent = 1;
+  // The filter expression.
+  string filter = 2;
+}
+
+// A summary of how many vulnerability occurrences there are per resource and
+// severity type.
+message VulnerabilityOccurrencesSummary {
+  // A listing by resource of the number of fixable and total vulnerabilities.
+  repeated FixableTotalByDigest counts = 1;
+
+  // Per resource and severity counts of fixable and total vulnerabilites.
+  message FixableTotalByDigest {
+    // The affected resource.
+    Resource resource = 1;
+    // The severity for this count. SEVERITY_UNSPECIFIED indicates total across
+    // all severities.
+    grafeas.v1beta1.vulnerability.Severity severity = 2;
+    // The number of fixable vulnerabilities associated with this resource.
+    int64 fixable_count = 3;
+    // The total number of vulnerabilities associated with this resource.
+    int64 total_count = 4;
+  }
+}

@@ -1,0 +1,57 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/enums/mobile_device_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "MobileDeviceConstantProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the mobile device constant resource.
+
+// A mobile device constant.
+message MobileDeviceConstant {
+  // The resource name of the mobile device constant.
+  // Mobile device constant resource names have the form:
+  //
+  // `mobileDeviceConstants/{criterion_id}`
+  string resource_name = 1;
+
+  // The ID of the mobile device constant.
+  google.protobuf.Int64Value id = 2;
+
+  // The name of the mobile device.
+  google.protobuf.StringValue name = 3;
+
+  // The manufacturer of the mobile device.
+  google.protobuf.StringValue manufacturer_name = 4;
+
+  // The operating system of the mobile device.
+  google.protobuf.StringValue operating_system_name = 5;
+
+  // The type of mobile device.
+  google.ads.googleads.v2.enums.MobileDeviceTypeEnum.MobileDeviceType type = 6;
+}

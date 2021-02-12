@@ -1,0 +1,19 @@
+type: google.api.Service
+config_version: 3
+name: bigquerydatatransfer.googleapis.com
+title: BigQuery Data Transfer API
+
+apis:
+- name: google.cloud.bigquery.datatransfer.v1.DataTransferService
+
+documentation:
+  summary: |-
+    Schedule queries or transfer external data from SaaS applications to Google
+    BigQuery on a regular basis.
+
+authentication:
+  rules:
+  - selector: 'google.cloud.bigquery.datatransfer.v1.DataTransferService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

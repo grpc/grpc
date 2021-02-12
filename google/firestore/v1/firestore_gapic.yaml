@@ -1,0 +1,232 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.firestore.v1
+    release_level: GA
+  python:
+    package_name: google.cloud.firestore_v1.gapic
+    release_level: BETA
+  go:
+    package_name: cloud.google.com/go/firestore/apiv1
+    domain_layer_location: cloud.google.com/go/firestore
+    release_level: GA
+  csharp:
+    package_name: Google.Cloud.Firestore.V1
+    release_level: GA
+  ruby:
+    package_name: Google::Cloud::Firestore::V1
+    release_level: GA
+  php:
+    package_name: Google\Cloud\Firestore\V1
+    release_level: GA
+  nodejs:
+    package_name: firestore.v1
+    domain_layer_location: google-cloud
+    release_level: GA
+interfaces:
+- name: google.firestore.v1.Firestore
+  collections:
+  - name_pattern: projects/{project}/databases/{database}
+    entity_name: database_root
+  - name_pattern: projects/{project}/databases/{database}/documents
+    entity_name: document_root
+  - name_pattern: projects/{project}/databases/{database}/documents/{document_path=**}
+    entity_name: document_path
+  - name_pattern: projects/{project}/databases/{database}/documents/{document}/{any_path=**}
+    entity_name: any_path
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - INTERNAL
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  - name: streaming
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: GetDocument
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: any_path
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: ListDocuments
+    required_fields:
+    - parent
+    - collection_id
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: documents
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: document_root
+      parent: any_path
+    timeout_millis: 60000
+  - name: CreateDocument
+    required_fields:
+    - parent
+    - collection_id
+    - document_id
+    - document
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: document_root
+      parent: any_path
+    timeout_millis: 60000
+  - name: UpdateDocument
+    flattening:
+      groups:
+      - parameters:
+        - document
+        - update_mask
+    required_fields:
+    - document
+    - update_mask
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      document.name: any_path
+    timeout_millis: 60000
+  - name: DeleteDocument
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: any_path
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: BatchGetDocuments
+    required_fields:
+    - database
+    - documents
+    retry_codes_name: idempotent
+    retry_params_name: streaming
+    field_name_patterns:
+      database: database_root
+    # Five minutes
+    timeout_millis: 300000
+  - name: BeginTransaction
+    flattening:
+      groups:
+      - parameters:
+        - database
+    required_fields:
+    - database
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      database: database_root
+    timeout_millis: 60000
+  - name: Commit
+    flattening:
+      groups:
+      - parameters:
+        - database
+        - writes
+    required_fields:
+    - database
+    - writes
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      database: database_root
+    timeout_millis: 60000
+  - name: Rollback
+    flattening:
+      groups:
+      - parameters:
+        - database
+        - transaction
+    required_fields:
+    - database
+    - transaction
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      database: database_root
+    timeout_millis: 60000
+  - name: RunQuery
+    required_fields:
+    - parent
+    retry_codes_name: idempotent
+    retry_params_name: streaming
+    field_name_patterns:
+      parent: document_root
+      parent: any_path
+    timeout_millis: 60000
+  - name: Write
+    required_fields:
+    - database
+    retry_codes_name: non_idempotent
+    retry_params_name: streaming
+    field_name_patterns:
+      database: database_root
+    # One day
+    timeout_millis: 86400000
+  - name: Listen
+    required_fields:
+    - database
+    retry_codes_name: idempotent
+    retry_params_name: streaming
+    field_name_patterns:
+      database: database_root
+    # One day
+    timeout_millis: 86400000
+  - name: ListCollectionIds
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: collection_ids
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: document_root
+      parent: any_path
+    timeout_millis: 60000
+resource_name_generation:
+- message_name: GetDocumentRequest
+  field_entity_map:
+    name: any_path
+- message_name: DeleteDocumentRequest
+  field_entity_map:
+    name: any_path

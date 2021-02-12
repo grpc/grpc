@@ -1,0 +1,31 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Multi-Channel Audio Transcription (Local File)
+    cases:
+
+    # This sample should default to using multi.wav (2 channels)
+    - name: speech_transcribe_multichannel (no arguments)
+      spec:
+      - call:
+          sample: speech_transcribe_multichannel
+      - assert_contains:
+        - literal: "Channel tag: 1"
+        - literal: "Channel tag: 2"
+        - literal: "how are you doing"
+
+    # Confirm that another file can be transcribed (use another 2 channel .wav file)
+    - name: speech_transcribe_multichannel (--local_file_path)
+      spec:
+      - call:
+          sample: speech_transcribe_multichannel
+          params:
+            local_file_path:
+              literal: "resources/brooklyn_bridge.wav"
+      - assert_contains:
+        # Only one channel of data is present in brooklyn_bridge.wav
+        - literal: "Channel tag:"
+        - literal: "how old is the Brooklyn Bridge"
+      - assert_not_contains:
+        - literal: "how are you doing"

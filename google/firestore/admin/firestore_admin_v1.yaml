@@ -1,0 +1,48 @@
+type: google.api.Service
+config_version: 3
+name: firestore.googleapis.com
+title: Google Cloud Firestore Admin API
+
+documentation:
+  summary:  >
+    Accesses the NoSQL document database built for automatic scaling,
+    high performance, and ease of application development.
+  overview: |
+    (== suppress_warning control-presence ==)
+    (== suppress_warning quota-presence ==)
+    (== suppress_warning http-rest ==)
+    (== suppress_warning versioning-http-version-prefix ==)
+
+apis:
+- name: google.firestore.admin.v1.FirestoreAdmin
+
+types:
+- name: google.firestore.admin.v1.IndexOperationMetadata
+- name: google.firestore.admin.v1.LocationMetadata
+- name: google.firestore.admin.v1.ExportDocumentsMetadata
+- name: google.firestore.admin.v1.ImportDocumentsMetadata
+- name: google.firestore.admin.v1.ExportDocumentsResponse
+- name: google.firestore.admin.v1.FieldOperationMetadata
+
+http:
+  rules:
+  - selector: google.longrunning.Operations.ListOperations
+    get: '/v1/{name=projects/*/databases/*}/operations'
+
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v1/{name=projects/*/databases/*/operations/*}'
+
+  - selector: google.longrunning.Operations.DeleteOperation
+    delete: '/v1/{name=projects/*/databases/*/operations/*}'
+
+  - selector: google.longrunning.Operations.CancelOperation
+    post: '/v1/{name=projects/*/databases/*/operations/*}:cancel'
+    body: '*'
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/datastore

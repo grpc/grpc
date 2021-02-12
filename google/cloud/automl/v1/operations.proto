@@ -1,0 +1,168 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1;
+
+import "google/cloud/automl/v1/dataset.proto";
+import "google/cloud/automl/v1/io.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Cloud.AutoML.V1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1;automl";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.automl.v1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1";
+option ruby_package = "Google::Cloud::AutoML::V1";
+
+// Metadata used across all long running operations returned by AutoML API.
+message OperationMetadata {
+  // Ouptut only. Details of specific operation. Even if this field is empty,
+  // the presence allows to distinguish different types of operations.
+  oneof details {
+    // Details of a Delete operation.
+    DeleteOperationMetadata delete_details = 8;
+
+    // Details of a DeployModel operation.
+    DeployModelOperationMetadata deploy_model_details = 24;
+
+    // Details of an UndeployModel operation.
+    UndeployModelOperationMetadata undeploy_model_details = 25;
+
+    // Details of CreateModel operation.
+    CreateModelOperationMetadata create_model_details = 10;
+
+    // Details of CreateDataset operation.
+    CreateDatasetOperationMetadata create_dataset_details = 30;
+
+    // Details of ImportData operation.
+    ImportDataOperationMetadata import_data_details = 15;
+
+    // Details of BatchPredict operation.
+    BatchPredictOperationMetadata batch_predict_details = 16;
+
+    // Details of ExportData operation.
+    ExportDataOperationMetadata export_data_details = 21;
+
+    // Details of ExportModel operation.
+    ExportModelOperationMetadata export_model_details = 22;
+  }
+
+  // Output only. Progress of operation. Range: [0, 100].
+  // Not used currently.
+  int32 progress_percent = 13;
+
+  // Output only. Partial failures encountered.
+  // E.g. single files that couldn't be read.
+  // This field should never exceed 20 entries.
+  // Status details field will contain standard GCP error details.
+  repeated google.rpc.Status partial_failures = 2;
+
+  // Output only. Time when the operation was created.
+  google.protobuf.Timestamp create_time = 3;
+
+  // Output only. Time when the operation was updated for the last time.
+  google.protobuf.Timestamp update_time = 4;
+}
+
+// Details of operations that perform deletes of any entities.
+message DeleteOperationMetadata {
+
+}
+
+// Details of DeployModel operation.
+message DeployModelOperationMetadata {
+
+}
+
+// Details of UndeployModel operation.
+message UndeployModelOperationMetadata {
+
+}
+
+// Details of CreateDataset operation.
+message CreateDatasetOperationMetadata {
+
+}
+
+// Details of CreateModel operation.
+message CreateModelOperationMetadata {
+
+}
+
+// Details of ImportData operation.
+message ImportDataOperationMetadata {
+
+}
+
+// Details of ExportData operation.
+message ExportDataOperationMetadata {
+  // Further describes this export data's output.
+  // Supplements
+  // [OutputConfig][google.cloud.automl.v1.OutputConfig].
+  message ExportDataOutputInfo {
+    // The output location to which the exported data is written.
+    oneof output_location {
+      // The full path of the Google Cloud Storage directory created, into which
+      // the exported data is written.
+      string gcs_output_directory = 1;
+    }
+  }
+
+  // Output only. Information further describing this export data's output.
+  ExportDataOutputInfo output_info = 1;
+}
+
+// Details of BatchPredict operation.
+message BatchPredictOperationMetadata {
+  // Further describes this batch predict's output.
+  // Supplements
+  //
+  // [BatchPredictOutputConfig][google.cloud.automl.v1.BatchPredictOutputConfig].
+  message BatchPredictOutputInfo {
+    // The output location into which prediction output is written.
+    oneof output_location {
+      // The full path of the Google Cloud Storage directory created, into which
+      // the prediction output is written.
+      string gcs_output_directory = 1;
+    }
+  }
+
+  // Output only. The input config that was given upon starting this
+  // batch predict operation.
+  BatchPredictInputConfig input_config = 1;
+
+  // Output only. Information further describing this batch predict's output.
+  BatchPredictOutputInfo output_info = 2;
+}
+
+// Details of ExportModel operation.
+message ExportModelOperationMetadata {
+  // Further describes the output of model export.
+  // Supplements
+  // [ModelExportOutputConfig][google.cloud.automl.v1.ModelExportOutputConfig].
+  message ExportModelOutputInfo {
+    // The full path of the Google Cloud Storage directory created, into which
+    // the model will be exported.
+    string gcs_output_directory = 1;
+  }
+
+  // Output only. Information further describing the output of this model
+  // export.
+  ExportModelOutputInfo output_info = 2;
+}

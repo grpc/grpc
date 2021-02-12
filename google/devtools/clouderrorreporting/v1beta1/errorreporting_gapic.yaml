@@ -1,0 +1,30 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.errorreporting.v1beta1
+  python:
+    package_name: google.cloud.errorreporting_v1beta1.gapic
+  go:
+    package_name: cloud.google.com/go/errorreporting/apiv1beta1
+    domain_layer_location: cloud.google.com/go/errorreporting
+  csharp:
+    package_name: Google.Cloud.ErrorReporting.V1Beta1
+  ruby:
+    package_name: Google::Cloud::ErrorReporting::V1beta1
+  php:
+    package_name: Google\Cloud\ErrorReporting\V1beta1
+  nodejs:
+    package_name: errorreporting.v1beta1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.devtools.clouderrorreporting.v1beta1.ReportErrorsService
+  smoke_test:
+    method: ReportErrorEvent
+    init_fields:
+    - project_name%project=$PROJECT_ID
+    - event.message="[MESSAGE]"
+    - event.service_context.service="[SERVICE]"
+    - event.context.report_location.file_path="path/to/file.lang"
+    - event.context.report_location.line_number=42
+    - event.context.report_location.function_name="meaningOfLife"

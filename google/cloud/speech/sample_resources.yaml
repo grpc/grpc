@@ -1,0 +1,29 @@
+# Canonical GCS paths to resource files used by samples and sample system tests
+sample_resources:
+- uri: gs://cloud-samples-data/speech/brooklyn_bridge.mp3
+  description: |
+    44100 Hz, 2 channels, English, "How old is the Brooklyn Bridge?"
+- uri: gs://cloud-samples-data/speech/brooklyn_bridge.raw
+  description: |
+    16000 Hz, 1 channel, English, "How old is the Brooklyn Bridge?"
+- uri: gs://cloud-samples-data/speech/brooklyn_bridge.flac
+  description: |
+    44100 Hz, 1 channel, English, "How old is the Brooklyn Bridge?"
+- uri: gs://cloud-samples-data/speech/brooklyn_bridge.wav
+  description: |
+    16000 Hz, 2 channels (only first contains audio data), English, "How old is the Brooklyn Bridge?"
+- uri: gs://cloud-samples-data/speech/hello.raw
+  description: |
+    16000 Hz, 1 channel, English, "Hello"
+- uri: gs://cloud-samples-data/speech/hello.wav
+  description: |
+    16000 Hz, 1 channel, English, "Hello"
+- uri: gs://cloud-samples-data/speech/multi.flac
+  description: |
+    44100 Hz, 1 channel, 2 speakers, English and Spanish, "How are you doing? Estoy bien, y tu?"
+- uri: gs://cloud-samples-data/speech/multi.wav
+  description: |
+    44100 Hz, 2 channels, 2 speakers, English and Spanish, "How are you doing? Estoy bien, y tu?"
+- uri: gs://cloud-samples-data/speech/commercial_mono.wav
+  description: |
+    8000 Hz, 1 channel, 2 speakers, English, Exerpt "I'd like to buy a Chromecast"

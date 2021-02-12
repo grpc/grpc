@@ -1,0 +1,84 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/enums/mutate_job_status.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "MutateJobProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the mutate job resource.
+
+// A list of mutates being processed asynchronously. The mutates are uploaded
+// by the user. The mutates themselves aren’t readable and the results of the
+// job can only be read using MutateJobService.ListMutateJobResults.
+message MutateJob {
+  // Additional information about the mutate job. This message is also used as
+  // metadata returned in mutate job Long Running Operations.
+  message MutateJobMetadata {
+    // The time when this mutate job was created.
+    // Formatted as yyyy-mm-dd hh:mm:ss. Example: "2018-03-05 09:15:00"
+    google.protobuf.StringValue creation_date_time = 1;
+
+    // The time when this mutate job was completed.
+    // Formatted as yyyy-MM-dd HH:mm:ss. Example: "2018-03-05 09:16:00"
+    google.protobuf.StringValue completion_date_time = 2;
+
+    // The fraction (between 0.0 and 1.0) of mutates that have been processed.
+    // This is empty if the job hasn't started running yet.
+    google.protobuf.DoubleValue estimated_completion_ratio = 3;
+
+    // The number of mutate operations in the mutate job.
+    google.protobuf.Int64Value operation_count = 4;
+
+    // The number of mutate operations executed by the mutate job.
+    // Present only if the job has started running.
+    google.protobuf.Int64Value executed_operation_count = 5;
+  }
+
+  // The resource name of the mutate job.
+  // Mutate job resource names have the form:
+  //
+  // `customers/{customer_id}/mutateJobs/{mutate_job_id}`
+  string resource_name = 1;
+
+  // ID of this mutate job.
+  google.protobuf.Int64Value id = 2;
+
+  // The next sequence token to use when adding operations. Only set when the
+  // mutate job status is PENDING.
+  google.protobuf.StringValue next_add_sequence_token = 3;
+
+  // Contains additional information about this mutate job.
+  MutateJobMetadata metadata = 4;
+
+  // Status of this mutate job.
+  google.ads.googleads.v1.enums.MutateJobStatusEnum.MutateJobStatus status = 5;
+
+  // The resource name of the long-running operation that can be used to poll
+  // for completion. Only set when the mutate job status is RUNNING or DONE.
+  google.protobuf.StringValue long_running_operation = 6;
+}

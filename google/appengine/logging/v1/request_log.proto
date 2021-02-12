@@ -1,0 +1,189 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.appengine.logging.v1;
+
+import "google/logging/type/log_severity.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/appengine/logging/v1;logging";
+option java_multiple_files = true;
+option java_outer_classname = "RequestLogProto";
+option java_package = "com.google.appengine.logging.v1";
+
+// Application log line emitted while processing a request.
+message LogLine {
+  // Approximate time when this log entry was made.
+  google.protobuf.Timestamp time = 1;
+
+  // Severity of this log entry.
+  google.logging.type.LogSeverity severity = 2;
+
+  // App-provided log message.
+  string log_message = 3;
+
+  // Where in the source code this log message was written.
+  SourceLocation source_location = 4;
+}
+
+// Specifies a location in a source code file.
+message SourceLocation {
+  // Source file name. Depending on the runtime environment, this might be a
+  // simple name or a fully-qualified name.
+  string file = 1;
+
+  // Line within the source file.
+  int64 line = 2;
+
+  // Human-readable name of the function or method being invoked, with optional
+  // context such as the class or package name. This information is used in
+  // contexts such as the logs viewer, where a file and line number are less
+  // meaningful. The format can vary by language. For example:
+  // `qual.if.ied.Class.method` (Java), `dir/package.func` (Go), `function`
+  // (Python).
+  string function_name = 3;
+}
+
+// A reference to a particular snapshot of the source tree used to build and
+// deploy an application.
+message SourceReference {
+  // Optional. A URI string identifying the repository.
+  // Example: "https://github.com/GoogleCloudPlatform/kubernetes.git"
+  string repository = 1;
+
+  // The canonical and persistent identifier of the deployed revision.
+  // Example (git): "0035781c50ec7aa23385dc841529ce8a4b70db1b"
+  string revision_id = 2;
+}
+
+// Complete log information about a single HTTP request to an App Engine
+// application.
+message RequestLog {
+  // Application that handled this request.
+  string app_id = 1;
+
+  // Module of the application that handled this request.
+  string module_id = 37;
+
+  // Version of the application that handled this request.
+  string version_id = 2;
+
+  // Globally unique identifier for a request, which is based on the request
+  // start time.  Request IDs for requests which started later will compare
+  // greater as strings than those for requests which started earlier.
+  string request_id = 3;
+
+  // Origin IP address.
+  string ip = 4;
+
+  // Time when the request started.
+  google.protobuf.Timestamp start_time = 6;
+
+  // Time when the request finished.
+  google.protobuf.Timestamp end_time = 7;
+
+  // Latency of the request.
+  google.protobuf.Duration latency = 8;
+
+  // Number of CPU megacycles used to process request.
+  int64 mega_cycles = 9;
+
+  // Request method. Example: `"GET"`, `"HEAD"`, `"PUT"`, `"POST"`, `"DELETE"`.
+  string method = 10;
+
+  // Contains the path and query portion of the URL that was requested. For
+  // example, if the URL was "http://example.com/app?name=val", the resource
+  // would be "/app?name=val".  The fragment identifier, which is identified by
+  // the `#` character, is not included.
+  string resource = 11;
+
+  // HTTP version of request. Example: `"HTTP/1.1"`.
+  string http_version = 12;
+
+  // HTTP response status code. Example: 200, 404.
+  int32 status = 13;
+
+  // Size in bytes sent back to client by request.
+  int64 response_size = 14;
+
+  // Referrer URL of request.
+  string referrer = 15;
+
+  // User agent that made the request.
+  string user_agent = 16;
+
+  // The logged-in user who made the request.
+  //
+  // Most likely, this is the part of the user's email before the `@` sign.  The
+  // field value is the same for different requests from the same user, but
+  // different users can have similar names.  This information is also
+  // available to the application via the App Engine Users API.
+  //
+  // This field will be populated starting with App Engine 1.9.21.
+  string nickname = 40;
+
+  // File or class that handled the request.
+  string url_map_entry = 17;
+
+  // Internet host and port number of the resource being requested.
+  string host = 20;
+
+  // An indication of the relative cost of serving this request.
+  double cost = 21;
+
+  // Queue name of the request, in the case of an offline request.
+  string task_queue_name = 22;
+
+  // Task name of the request, in the case of an offline request.
+  string task_name = 23;
+
+  // Whether this was a loading request for the instance.
+  bool was_loading_request = 24;
+
+  // Time this request spent in the pending request queue.
+  google.protobuf.Duration pending_time = 25;
+
+  // If the instance processing this request belongs to a manually scaled
+  // module, then this is the 0-based index of the instance. Otherwise, this
+  // value is -1.
+  int32 instance_index = 26;
+
+  // Whether this request is finished or active.
+  bool finished = 27;
+
+  // Whether this is the first `RequestLog` entry for this request.  If an
+  // active request has several `RequestLog` entries written to Stackdriver
+  // Logging, then this field will be set for one of them.
+  bool first = 42;
+
+  // An identifier for the instance that handled the request.
+  string instance_id = 28;
+
+  // A list of log lines emitted by the application while serving this request.
+  repeated LogLine line = 29;
+
+  // App Engine release version.
+  string app_engine_release = 38;
+
+  // Stackdriver Trace identifier for this request.
+  string trace_id = 39;
+
+  // Source code for the application that handled this request. There can be
+  // more than one source reference per deployed application if source code is
+  // distributed among multiple repositories.
+  repeated SourceReference source_reference = 41;
+}

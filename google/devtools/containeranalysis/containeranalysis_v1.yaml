@@ -1,0 +1,27 @@
+type: google.api.Service
+config_version: 3
+name: containeranalysis.googleapis.com
+title: Container Analysis API
+
+apis:
+- name: google.devtools.containeranalysis.v1.ContainerAnalysis
+
+documentation:
+  summary: |-
+    An implementation of the Grafeas API, which stores, and enables querying
+    and retrieval of critical metadata about all of your software artifacts.
+  overview: |-
+    The Container Analysis API allows you to store and retrieve metadata for a
+    container resource.
+
+backend:
+  rules:
+  - selector: 'google.devtools.containeranalysis.v1.ContainerAnalysis.*'
+    deadline: 30.0
+
+authentication:
+  rules:
+  - selector: 'google.devtools.containeranalysis.v1.ContainerAnalysis.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

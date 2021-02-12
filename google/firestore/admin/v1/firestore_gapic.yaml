@@ -1,0 +1,199 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.firestore.v1
+  python:
+    package_name: google.cloud.firestore_admin_v1.gapic
+  go:
+    package_name: cloud.google.com/go/firestore/apiv1/admin
+  csharp:
+    package_name: Google.Cloud.Firestore.Admin.V1
+  ruby:
+    package_name: Google::Cloud::Firestore::Admin::V1
+  php:
+    package_name: Google\Cloud\Firestore\Admin\V1
+  nodejs:
+    package_name: firestore.v1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.firestore.admin.v1.FirestoreAdmin
+  collections:
+  - name_pattern: projects/{project}/databases/{database}
+    entity_name: database
+  - name_pattern: projects/{project}/databases/{database}/collectionGroups/{collection_id}
+    entity_name: parent
+  - name_pattern: projects/{project}/databases/{database}/collectionGroups/{collection_id}/indexes/{index_id}
+    entity_name: index
+  - name_pattern: projects/{project}/databases/{database}/collectionGroups/{collection_id}/fields/{field_id}
+    entity_name: field
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - INTERNAL
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: CreateIndex
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - index
+    required_fields:
+    - parent
+    - index
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: parent
+    timeout_millis: 60000
+  - name: ListIndexes
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: indexes
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: parent
+    timeout_millis: 60000
+  - name: GetIndex
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: index
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: DeleteIndex
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: index
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: ImportDocuments
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: database
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: ExportDocuments
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: database
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: GetField
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: field
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: ListFields
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: fields
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: parent
+    timeout_millis: 60000
+  - name: UpdateField
+    flattening:
+      groups:
+      - parameters:
+        - field
+    required_fields:
+    - field
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+resource_name_generation:
+- message_name: CreateIndexRequest
+  field_entity_map:
+    parent: parent
+- message_name: GetIndexRequest
+  field_entity_map:
+    name: index
+- message_name: DeleteIndexRequest
+  field_entity_map:
+    name: index
+- message_name: ImportDocumentsRequest
+  field_entity_map:
+    name: database
+- message_name: ExportDocumentsRequest
+  field_entity_map:
+    name: database
+- message_name: GetFieldRequest
+  field_entity_map:
+    name: field
+- message_name: ListFieldsRequest
+  field_entity_map:
+    parent: parent
+- message_name: ListIndexesRequest
+  field_entity_map:
+    parent: parent

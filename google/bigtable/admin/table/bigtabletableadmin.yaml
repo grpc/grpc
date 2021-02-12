@@ -1,0 +1,27 @@
+type: google.api.Service
+config_version: 1
+name: bigtabletableadmin.googleapis.com
+title: Google Cloud Bigtable Table Admin API
+
+apis:
+- name: google.bigtable.admin.table.v1.BigtableTableService
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: >-
+        https://www.googleapis.com/auth/bigtable.admin,
+        https://www.googleapis.com/auth/bigtable.admin.table,
+        https://www.googleapis.com/auth/cloud-bigtable.admin,
+        https://www.googleapis.com/auth/cloud-bigtable.admin.table,
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: google.bigtable.admin.table.v1.BigtableTableService.GetTable
+    oauth:
+      canonical_scopes: >-
+        https://www.googleapis.com/auth/bigtable.admin,
+        https://www.googleapis.com/auth/bigtable.admin.table,
+        https://www.googleapis.com/auth/cloud-bigtable.admin,
+        https://www.googleapis.com/auth/cloud-bigtable.admin.table,
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only

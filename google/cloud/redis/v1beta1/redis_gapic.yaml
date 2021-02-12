@@ -1,0 +1,91 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.redis.v1beta1
+  python:
+    package_name: google.cloud.redis_v1beta1.gapic
+  go:
+    package_name: cloud.google.com/go/redis/apiv1beta1
+  csharp:
+    package_name: Google.Cloud.Redis.V1Beta1
+  ruby:
+    package_name: Google::Cloud::Redis::V1beta1
+  php:
+    package_name: Google\Cloud\Redis\V1beta1
+  nodejs:
+    package_name: redis.v1beta1
+# A list of API interface configurations.
+interfaces:
+# The fully qualified name of the API interface.
+- name: google.cloud.redis.v1beta1.CloudRedis
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - DEADLINE_EXCEEDED
+    - UNAVAILABLE
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  methods:
+  - name: ListInstances
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+  - name: GetInstance
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+  - name: CreateInstance
+    sample_code_init_fields:
+    - instance_id="test_instance"
+    - instance.tier="BASIC"
+    - instance.memory_size_gb=1
+    long_running:
+      initial_poll_delay_millis: 60000  # 1 minutes
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 360000  # 6 minutes
+      total_poll_timeout_millis: 1200000  # 20 minutes
+  - name: UpdateInstance
+    sample_code_init_fields:
+    - update_mask.paths[0]="display_name"
+    - update_mask.paths[1]="memory_size_gb"
+    - instance.display_name="UpdatedDisplayName"
+    - instance.memory_size_gb=4
+    long_running:
+      initial_poll_delay_millis: 60000  # 1 minutes
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 360000  # 6 minutes
+      total_poll_timeout_millis: 7200000  # 120 minutes
+  - name: ImportInstance
+    long_running:
+      initial_poll_delay_millis: 60000  # 1 minutes
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 360000  # 6 minutes
+      total_poll_timeout_millis: 18000000  # 300 minutes
+  - name: ExportInstance
+    long_running:
+      initial_poll_delay_millis: 60000  # 1 minutes
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 360000  # 6 minutes
+      total_poll_timeout_millis: 18000000  # 300 minutes
+  - name: FailoverInstance
+    long_running:
+      initial_poll_delay_millis: 60000  # 1 minutes
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 360000  # 6 minutes
+      total_poll_timeout_millis: 1200000  # 20 minutes
+  - name: DeleteInstance
+    long_running:
+      initial_poll_delay_millis: 60000  # 1 minutes
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 360000  # 6 minutes
+      total_poll_timeout_millis: 1200000  # 20 minutes

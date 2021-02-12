@@ -1,0 +1,93 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/resources/asset.proto";
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "AssetServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Proto file describing the Asset service.
+
+// Service to manage assets. Asset types can be created with AssetService are
+// YoutubeVideoAsset, MediaBundleAsset and ImageAsset. TextAsset should be
+// created with Ad inline.
+service AssetService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns the requested asset in full detail.
+  rpc GetAsset(GetAssetRequest) returns (google.ads.googleads.v2.resources.Asset) {
+    option (google.api.http) = {
+      get: "/v2/{resource_name=customers/*/assets/*}"
+    };
+  }
+
+  // Creates assets. Operation statuses are returned.
+  rpc MutateAssets(MutateAssetsRequest) returns (MutateAssetsResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}/assets:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for [AssetService.GetAsset][google.ads.googleads.v2.services.AssetService.GetAsset]
+message GetAssetRequest {
+  // The resource name of the asset to fetch.
+  string resource_name = 1;
+}
+
+// Request message for [AssetService.MutateAssets][google.ads.googleads.v2.services.AssetService.MutateAssets]
+message MutateAssetsRequest {
+  // The ID of the customer whose assets are being modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual assets.
+  repeated AssetOperation operations = 2;
+}
+
+// A single operation to create an asset. Supported asset types are
+// YoutubeVideoAsset, MediaBundleAsset and ImageAsset. TextAsset should be
+// created with Ad inline.
+message AssetOperation {
+  // The mutate operation.
+  oneof operation {
+    // Create operation: No resource name is expected for the new asset.
+    google.ads.googleads.v2.resources.Asset create = 1;
+  }
+}
+
+// Response message for an asset mutate.
+message MutateAssetsResponse {
+  // All results for the mutate.
+  repeated MutateAssetResult results = 2;
+}
+
+// The result for the asset mutate.
+message MutateAssetResult {
+  // The resource name returned for successful operations.
+  string resource_name = 1;
+}

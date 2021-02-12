@@ -1,0 +1,107 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.vision.v1p4beta1;
+
+import "google/api/annotations.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/cloud/vision/v1p4beta1;vision";
+option java_multiple_files = true;
+option java_outer_classname = "WebDetectionProto";
+option java_package = "com.google.cloud.vision.v1p4beta1";
+option objc_class_prefix = "GCVN";
+
+// Relevant information for the image from the Internet.
+message WebDetection {
+  // Entity deduced from similar images on the Internet.
+  message WebEntity {
+    // Opaque entity ID.
+    string entity_id = 1;
+
+    // Overall relevancy score for the entity.
+    // Not normalized and not comparable across different image queries.
+    float score = 2;
+
+    // Canonical description of the entity, in English.
+    string description = 3;
+  }
+
+  // Metadata for online images.
+  message WebImage {
+    // The result image URL.
+    string url = 1;
+
+    // (Deprecated) Overall relevancy score for the image.
+    float score = 2;
+  }
+
+  // Metadata for web pages.
+  message WebPage {
+    // The result web page URL.
+    string url = 1;
+
+    // (Deprecated) Overall relevancy score for the web page.
+    float score = 2;
+
+    // Title for the web page, may contain HTML markups.
+    string page_title = 3;
+
+    // Fully matching images on the page.
+    // Can include resized copies of the query image.
+    repeated WebImage full_matching_images = 4;
+
+    // Partial matching images on the page.
+    // Those images are similar enough to share some key-point features. For
+    // example an original image will likely have partial matching for its
+    // crops.
+    repeated WebImage partial_matching_images = 5;
+  }
+
+  // Label to provide extra metadata for the web detection.
+  message WebLabel {
+    // Label for extra metadata.
+    string label = 1;
+
+    // The BCP-47 language code for `label`, such as "en-US" or "sr-Latn".
+    // For more information, see
+    // http://www.unicode.org/reports/tr35/#Unicode_locale_identifier.
+    string language_code = 2;
+  }
+
+  // Deduced entities from similar images on the Internet.
+  repeated WebEntity web_entities = 1;
+
+  // Fully matching images from the Internet.
+  // Can include resized copies of the query image.
+  repeated WebImage full_matching_images = 2;
+
+  // Partial matching images from the Internet.
+  // Those images are similar enough to share some key-point features. For
+  // example an original image will likely have partial matching for its crops.
+  repeated WebImage partial_matching_images = 3;
+
+  // Web pages containing the matching images from the Internet.
+  repeated WebPage pages_with_matching_images = 4;
+
+  // The visually similar image results.
+  repeated WebImage visually_similar_images = 6;
+
+  // The service's best guess as to the topic of the request image.
+  // Inferred from similar images on the open web.
+  repeated WebLabel best_guess_labels = 8;
+}

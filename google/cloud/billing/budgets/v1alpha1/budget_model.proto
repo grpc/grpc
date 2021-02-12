@@ -1,0 +1,179 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.billing.budgets.v1alpha1;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/type/money.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/billing/budgets/v1alpha1;budgets";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.billing.budgets.v1alpha1";
+
+// A budget is a plan that describes what you expect to spend on Cloud
+// projects, plus the rules to execute as spend is tracked against that plan,
+// (for example, send an alert when 90% of the target spend is met).
+// Currently all plans are monthly budgets so the usage period(s) tracked are
+// implied (calendar months of usage back-to-back).
+message Budget {
+  option (google.api.resource) = {
+    type: "billingbudgets.googleapis.com/Budget"
+    pattern: "billingAccounts/{billing_account}/budgets/{budget}"
+  };
+
+  // Output only. Resource name of the budget.
+  // The resource name implies the scope of a budget. Values are of the form
+  // `billingAccounts/{billingAccountId}/budgets/{budgetId}`.
+  string name = 1 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // User data for display name in UI.
+  // Validation: <= 60 chars.
+  string display_name = 2;
+
+  // Optional. Filters that define which resources are used to compute
+  // the actual spend against the budget.
+  Filter budget_filter = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Required. Budgeted amount.
+  BudgetAmount amount = 4 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Rules that trigger alerts (notifications of thresholds
+  // being crossed) when spend exceeds the specified percentages of the budget.
+  repeated ThresholdRule threshold_rules = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. Rules to apply to all updates to the actual spend, regardless
+  // of the thresholds set in `threshold_rules`.
+  AllUpdatesRule all_updates_rule = 6 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Etag to validate that the object is unchanged for a
+  // read-modify-write operation.
+  // An empty etag will cause an update to overwrite other changes.
+  string etag = 7 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// The budgeted amount for each usage period.
+message BudgetAmount {
+  // Specification for what amount to use as the budget.
+  oneof budget_amount {
+    // A specified amount to use as the budget.
+    // `currency_code` is optional. If specified, it must match the
+    // currency of the billing account. The `currency_code` is provided on
+    // output.
+    google.type.Money specified_amount = 1;
+
+    // Use the last period's actual spend as the budget for the present period.
+    LastPeriodAmount last_period_amount = 2;
+  }
+}
+
+// Describes a budget amount targeted to last period's spend.
+// At this time, the amount is automatically 100% of last period's spend;
+// that is, there are no other options yet.
+// Future configuration will be described here (for example, configuring a
+// percentage of last period's spend).
+message LastPeriodAmount {
+
+}
+
+// ThresholdRule contains a definition of a threshold which triggers
+// an alert (a notification of a threshold being crossed) to be sent when
+// spend goes above the specified amount.
+// Alerts are automatically e-mailed to the billing users who have
+// access to the billing account. The thresholds here have no effect on
+// notifications sent to anything configured under `Budget.all_updates_rule`.
+message ThresholdRule {
+  // The type of basis used to determine if spend has passed the threshold.
+  enum Basis {
+    // Unspecified threshold basis.
+    BASIS_UNSPECIFIED = 0;
+
+    // Use current spend as the basis for comparison against the threshold.
+    CURRENT_SPEND = 1;
+
+    // Use forecasted spend for the period as the basis for comparison against
+    // the threshold.
+    FORECASTED_SPEND = 2;
+  }
+
+  // Required. Send an alert when this threshold is exceeded.
+  // This is a 1.0-based percentage, so 0.5 = 50%.
+  // Validation: non-negative number.
+  double threshold_percent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. The type of basis used to determine if spend has passed the
+  // threshold. Behavior defaults to CURRENT_SPEND if not set.
+  Basis spend_basis = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// AllUpdatesRule defines notifications that are sent on every update to the
+// billing account's spend, regardless of the thresholds defined using
+// threshold rules.
+message AllUpdatesRule {
+  // Required. The name of the Cloud Pub/Sub topic where budget related messages will be
+  // published, in the form `projects/{project_id}/topics/{topic_id}`. Updates
+  // are sent at regular intervals to the topic.
+  // The topic needs to be created before the budget is created; see
+  // https://cloud.google.com/billing/docs/how-to/budgets#manage-notifications
+  // for more details.
+  // Caller is expected to have
+  // `pubsub.topics.setIamPolicy` permission on the topic when it's set for a
+  // budget, otherwise, the API call will fail with PERMISSION_DENIED. See
+  // https://cloud.google.com/pubsub/docs/access-control for more details on
+  // Pub/Sub roles and permissions.
+  string pubsub_topic = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The schema version of the notification.
+  // Only "1.0" is accepted. It represents the JSON schema as defined in
+  // https://cloud.google.com/billing/docs/how-to/budgets#notification_format
+  string schema_version = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// A filter for a budget, limiting the scope of the cost to calculate.
+message Filter {
+  // Specifies how credits should be treated when determining spend for
+  // threshold calculations.
+  enum CreditTypesTreatment {
+    CREDIT_TYPES_TREATMENT_UNSPECIFIED = 0;
+
+    // All types of credit are subtracted from the gross cost to determine the
+    // spend for threshold calculations.
+    INCLUDE_ALL_CREDITS = 1;
+
+    // All types of credit are added to the net cost to determine the spend for
+    // threshold calculations.
+    EXCLUDE_ALL_CREDITS = 2;
+  }
+
+  // Optional. A set of projects of the form `projects/{project_id}`,
+  // specifying that usage from only this set of projects should be
+  // included in the budget. If omitted, the report will include all usage for
+  // the billing account, regardless of which project the usage occurred on.
+  // Only zero or one project can be specified currently.
+  repeated string projects = 1 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. If not set, default behavior is `INCLUDE_ALL_CREDITS`.
+  CreditTypesTreatment credit_types_treatment = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. A set of services of the form `services/{service_id}`,
+  // specifying that usage from only this set of services should be
+  // included in the budget. If omitted, the report will include usage for
+  // all the services.
+  // The service names are available through the Catalog API:
+  // https://cloud.google.com/billing/v1/how-tos/catalog-api.
+  repeated string services = 3 [(google.api.field_behavior) = OPTIONAL];
+}

@@ -1,0 +1,34 @@
+common:
+  api_name: servicemanagement
+  api_version: v1
+  organization_name: google-cloud
+  proto_deps:
+    - name: google-common-protos
+  src_proto_paths:
+  - v1
+  service_yaml: servicemanagement_v1.yaml
+  gapic_yaml: v1/servicemanagement_gapic.yaml
+artifacts:
+- name: gapic_config
+  type: GAPIC_CONFIG
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: php_gapic
+  type: GAPIC
+  language: PHP
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP

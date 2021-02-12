@@ -1,0 +1,65 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.resultstore.v2;
+
+import "google/devtools/resultstore/v2/common.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/resultstore/v2;resultstore";
+option java_multiple_files = true;
+option java_package = "com.google.devtools.resultstore.v2";
+
+// Summary of line coverage
+message LineCoverageSummary {
+  // Number of lines instrumented for coverage.
+  int32 instrumented_line_count = 1;
+
+  // Number of instrumented lines that were executed by the test.
+  int32 executed_line_count = 2;
+}
+
+// Summary of branch coverage
+// A branch may be:
+//  * not executed.  Counted only in total.
+//  * executed but not taken.  Appears in total and executed.
+//  * executed and taken.  Appears in all three fields.
+message BranchCoverageSummary {
+  // The number of branches present in the file.
+  int32 total_branch_count = 1;
+
+  // The number of branches executed out of the total branches present.
+  // A branch is executed when its condition is evaluated.
+  // This is <= total_branch_count as not all branches are executed.
+  int32 executed_branch_count = 2;
+
+  // The number of branches taken out of the total branches executed.
+  // A branch is taken when its condition is satisfied.
+  // This is <= executed_branch_count as not all executed branches are taken.
+  int32 taken_branch_count = 3;
+}
+
+// Summary of coverage in each language
+message LanguageCoverageSummary {
+  // This summary is for all files written in this programming language.
+  Language language = 1;
+
+  // Summary of lines covered vs instrumented.
+  LineCoverageSummary line_summary = 2;
+
+  // Summary of branch coverage.
+  BranchCoverageSummary branch_summary = 3;
+}

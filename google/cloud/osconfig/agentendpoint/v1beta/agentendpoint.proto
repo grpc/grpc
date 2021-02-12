@@ -1,0 +1,151 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.osconfig.agentendpoint.v1beta;
+
+import "google/api/field_behavior.proto";
+import "google/cloud/osconfig/agentendpoint/v1beta/tasks.proto";
+import "google/api/client.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/osconfig/agentendpoint/v1beta;agentendpoint";
+option java_multiple_files = true;
+option java_outer_classname = "AgentEndpointProto";
+option java_package = "com.google.cloud.osconfig.agentendpoint.v1beta";
+
+// OS Config agent endpoint API.
+service AgentEndpointService {
+  option (google.api.default_host) = "osconfig.googleapis.com";
+
+  // Stream established by client to receive Task notifications.
+  rpc ReceiveTaskNotification(ReceiveTaskNotificationRequest) returns (stream ReceiveTaskNotificationResponse) {
+  }
+
+  // Signals the start of a task execution and returns the task info.
+  rpc StartNextTask(StartNextTaskRequest) returns (StartNextTaskResponse) {
+  }
+
+  // Signals an intermediary progress checkpoint in task execution.
+  rpc ReportTaskProgress(ReportTaskProgressRequest) returns (ReportTaskProgressResponse) {
+  }
+
+  // Signals that the task execution is complete and optionally returns the next
+  // task.
+  rpc ReportTaskComplete(ReportTaskCompleteRequest) returns (ReportTaskCompleteResponse) {
+  }
+}
+
+// A request message to receive task notifications.
+message ReceiveTaskNotificationRequest {
+  // Required. This is the GCE instance identity token described in
+  // https://cloud.google.com/compute/docs/instances/verifying-instance-identity
+  // where the audience is 'osconfig.googleapis.com' and the format is 'full'.
+  string instance_id_token = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The version of the agent making the request.
+  string agent_version = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The streaming rpc message that notifies the agent when it has a task
+// that it needs to perform on the VM instance.
+message ReceiveTaskNotificationResponse {
+
+}
+
+// A request message for signaling the start of a task execution.
+message StartNextTaskRequest {
+  // Required. This is the GCE instance identity token described in
+  // https://cloud.google.com/compute/docs/instances/verifying-instance-identity
+  // where the audience is 'osconfig.googleapis.com' and the format is 'full'.
+  string instance_id_token = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// A response message that contains the details of the task to work on.
+message StartNextTaskResponse {
+  // The details of the task that should be worked on.  Can be empty if there
+  // is no new task to work on.
+  Task task = 1;
+}
+
+// A request message for reporting the progress of current task.
+message ReportTaskProgressRequest {
+  // Required. This is the GCE instance identity token described in
+  // https://cloud.google.com/compute/docs/instances/verifying-instance-identity
+  // where the audience is 'osconfig.googleapis.com' and the format is 'full'.
+  string instance_id_token = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Unique identifier of the task this applies to.
+  string task_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The type of task to report progress on.
+  //
+  // Progress must include the appropriate message based on this enum as
+  // specified below:
+  // APPLY_PATCHES = ApplyPatchesTaskProgress
+  // EXEC_STEP = Progress not supported for this type.
+  TaskType task_type = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Intermediate progress of the current task.
+  oneof progress {
+    // Details about the progress of the apply patches task.
+    ApplyPatchesTaskProgress apply_patches_task_progress = 4;
+
+    // Details about the progress of the exec step task.
+    ExecStepTaskProgress exec_step_task_progress = 5;
+  }
+}
+
+// The response message after the agent reported the current task progress.
+message ReportTaskProgressResponse {
+  // Instructs agent to continue or not.
+  TaskDirective task_directive = 1;
+}
+
+// A request message for signaling the completion of a task execution.
+message ReportTaskCompleteRequest {
+  // Required. This is the GCE instance identity token described in
+  // https://cloud.google.com/compute/docs/instances/verifying-instance-identity
+  // where the audience is 'osconfig.googleapis.com' and the format is 'full'.
+  string instance_id_token = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Unique identifier of the task this applies to.
+  string task_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The type of task to report completed.
+  //
+  // The output must include the appropriate message based on the following
+  // enum values:
+  // APPLY_PATCHES = ApplyPatchesTaskOutput
+  // EXEC_STEP = ExecStepTaskOutput
+  TaskType task_type = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Descriptive error message if the task execution ended in error.
+  string error_message = 4;
+
+  // Final output details of the current task.
+  oneof output {
+    // Final output details of the apply patches task;
+    ApplyPatchesTaskOutput apply_patches_task_output = 5;
+
+    // Final output details of the exec step task;
+    ExecStepTaskOutput exec_step_task_output = 6;
+  }
+}
+
+// The response message after the agent signaled the current task complete.
+message ReportTaskCompleteResponse {
+
+}

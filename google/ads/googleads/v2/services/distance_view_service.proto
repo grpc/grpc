@@ -1,0 +1,51 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/resources/distance_view.proto";
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "DistanceViewServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Proto file describing the Distance View service.
+
+// Service to fetch distance views.
+service DistanceViewService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns the attributes of the requested distance view.
+  rpc GetDistanceView(GetDistanceViewRequest) returns (google.ads.googleads.v2.resources.DistanceView) {
+    option (google.api.http) = {
+      get: "/v2/{resource_name=customers/*/distanceViews/*}"
+    };
+  }
+}
+
+// Request message for [DistanceViewService.GetDistanceView][google.ads.googleads.v2.services.DistanceViewService.GetDistanceView].
+message GetDistanceViewRequest {
+  // The resource name of the distance view to fetch.
+  string resource_name = 1;
+}

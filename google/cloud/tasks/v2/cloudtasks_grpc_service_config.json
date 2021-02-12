@@ -1,0 +1,87 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "ListQueues"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "GetQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "DeleteQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "GetIamPolicy"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "TestIamPermissions"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "ListTasks"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "GetTask"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "DeleteTask"
+        }
+      ],
+      "timeout": "25s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "10s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "CreateQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "UpdateQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "PurgeQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "PauseQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "ResumeQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "SetIamPolicy"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "CreateTask"
+        },
+        {
+          "service": "google.cloud.tasks.v2.CloudTasks",
+          "method": "RunTask"
+        }
+      ],
+      "timeout": "25s"
+    }
+  ]
+}

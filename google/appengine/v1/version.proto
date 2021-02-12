@@ -1,0 +1,379 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.appengine.v1;
+
+import "google/api/annotations.proto";
+import "google/appengine/v1/app_yaml.proto";
+import "google/appengine/v1/deploy.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/appengine/v1;appengine";
+option java_multiple_files = true;
+option java_outer_classname = "VersionProto";
+option java_package = "com.google.appengine.v1";
+
+// A Version resource is a specific set of source code and configuration files
+// that are deployed into a service.
+message Version {
+  // Full path to the Version resource in the API.  Example:
+  // `apps/myapp/services/default/versions/v1`.
+  //
+  // @OutputOnly
+  string name = 1;
+
+  // Relative name of the version within the service.  Example: `v1`.
+  // Version names can contain only lowercase letters, numbers, or hyphens.
+  // Reserved names: "default", "latest", and any name with the prefix "ah-".
+  string id = 2;
+
+  // Controls how instances are created.
+  //
+  // Defaults to `AutomaticScaling`.
+  oneof scaling {
+    // Automatic scaling is based on request rate, response latencies, and other
+    // application metrics.
+    AutomaticScaling automatic_scaling = 3;
+
+    // A service with basic scaling will create an instance when the application
+    // receives a request. The instance will be turned down when the app becomes
+    // idle. Basic scaling is ideal for work that is intermittent or driven by
+    // user activity.
+    BasicScaling basic_scaling = 4;
+
+    // A service with manual scaling runs continuously, allowing you to perform
+    // complex initialization and rely on the state of its memory over time.
+    ManualScaling manual_scaling = 5;
+  }
+
+  // Before an application can receive email or XMPP messages, the application
+  // must be configured to enable the service.
+  repeated InboundServiceType inbound_services = 6;
+
+  // Instance class that is used to run this version. Valid values are:
+  // * AutomaticScaling: `F1`, `F2`, `F4`, `F4_1G`
+  // * ManualScaling or BasicScaling: `B1`, `B2`, `B4`, `B8`, `B4_1G`
+  //
+  // Defaults to `F1` for AutomaticScaling and `B1` for ManualScaling or
+  // BasicScaling.
+  string instance_class = 7;
+
+  // Extra network settings. Only applicable for VM runtimes.
+  Network network = 8;
+
+  // Machine resources for this version. Only applicable for VM runtimes.
+  Resources resources = 9;
+
+  // Desired runtime. Example: `python27`.
+  string runtime = 10;
+
+  // Whether multiple requests can be dispatched to this version at once.
+  bool threadsafe = 11;
+
+  // Whether to deploy this version in a container on a virtual machine.
+  bool vm = 12;
+
+  // Metadata settings that are supplied to this version to enable
+  // beta runtime features.
+  map<string, string> beta_settings = 13;
+
+  // App Engine execution environment for this version.
+  //
+  // Defaults to `standard`.
+  string env = 14;
+
+  // Current serving status of this version. Only the versions with a
+  // `SERVING` status create instances and can be billed.
+  //
+  // `SERVING_STATUS_UNSPECIFIED` is an invalid value. Defaults to `SERVING`.
+  ServingStatus serving_status = 15;
+
+  // Email address of the user who created this version.
+  //
+  // @OutputOnly
+  string created_by = 16;
+
+  // Time that this version was created.
+  //
+  // @OutputOnly
+  google.protobuf.Timestamp create_time = 17;
+
+  // Total size in bytes of all the files that are included in this version
+  // and curerntly hosted on the App Engine disk.
+  //
+  // @OutputOnly
+  int64 disk_usage_bytes = 18;
+
+  // An ordered list of URL-matching patterns that should be applied to incoming
+  // requests. The first matching URL handles the request and other request
+  // handlers are not attempted.
+  //
+  // Only returned in `GET` requests if `view=FULL` is set.
+  repeated UrlMap handlers = 100;
+
+  // Custom static error pages. Limited to 10KB per page.
+  //
+  // Only returned in `GET` requests if `view=FULL` is set.
+  repeated ErrorHandler error_handlers = 101;
+
+  // Configuration for third-party Python runtime libraries that are required
+  // by the application.
+  //
+  // Only returned in `GET` requests if `view=FULL` is set.
+  repeated Library libraries = 102;
+
+  // Serving configuration for
+  // [Google Cloud
+  // Endpoints](https://cloud.google.com/appengine/docs/python/endpoints/).
+  //
+  // Only returned in `GET` requests if `view=FULL` is set.
+  ApiConfigHandler api_config = 103;
+
+  // Environment variables available to the application.
+  //
+  // Only returned in `GET` requests if `view=FULL` is set.
+  map<string, string> env_variables = 104;
+
+  // Duration that static files should be cached by web proxies and browsers.
+  // Only applicable if the corresponding
+  // [StaticFilesHandler](https://cloud.google.com/appengine/docs/admin-api/reference/rest/v1/apps.services.versions#staticfileshandler)
+  // does not specify its own expiration time.
+  //
+  // Only returned in `GET` requests if `view=FULL` is set.
+  google.protobuf.Duration default_expiration = 105;
+
+  // Configures health checking for VM instances. Unhealthy instances are
+  // stopped and replaced with new instances. Only applicable for VM
+  // runtimes.
+  //
+  // Only returned in `GET` requests if `view=FULL` is set.
+  HealthCheck health_check = 106;
+
+  // Files that match this pattern will not be built into this version.
+  // Only applicable for Go runtimes.
+  //
+  // Only returned in `GET` requests if `view=FULL` is set.
+  string nobuild_files_regex = 107;
+
+  // Code and application artifacts that make up this version.
+  //
+  // Only returned in `GET` requests if `view=FULL` is set.
+  Deployment deployment = 108;
+
+  // Serving URL for this version. Example:
+  // "https://myversion-dot-myservice-dot-myapp.appspot.com"
+  //
+  // @OutputOnly
+  string version_url = 109;
+}
+
+// Automatic scaling is based on request rate, response latencies, and other
+// application metrics.
+message AutomaticScaling {
+  // Amount of time that the
+  // [Autoscaler](https://cloud.google.com/compute/docs/autoscaler/)
+  // should wait between changes to the number of virtual machines.
+  // Only applicable for VM runtimes.
+  google.protobuf.Duration cool_down_period = 1;
+
+  // Target scaling by CPU usage.
+  CpuUtilization cpu_utilization = 2;
+
+  // Number of concurrent requests an automatic scaling instance can accept
+  // before the scheduler spawns a new instance.
+  //
+  // Defaults to a runtime-specific value.
+  int32 max_concurrent_requests = 3;
+
+  // Maximum number of idle instances that should be maintained for this
+  // version.
+  int32 max_idle_instances = 4;
+
+  // Maximum number of instances that should be started to handle requests.
+  int32 max_total_instances = 5;
+
+  // Maximum amount of time that a request should wait in the pending queue
+  // before starting a new instance to handle it.
+  google.protobuf.Duration max_pending_latency = 6;
+
+  // Minimum number of idle instances that should be maintained for
+  // this version. Only applicable for the default version of a service.
+  int32 min_idle_instances = 7;
+
+  // Minimum number of instances that should be maintained for this version.
+  int32 min_total_instances = 8;
+
+  // Minimum amount of time a request should wait in the pending queue before
+  // starting a new instance to handle it.
+  google.protobuf.Duration min_pending_latency = 9;
+
+  // Target scaling by request utilization.
+  RequestUtilization request_utilization = 10;
+
+  // Target scaling by disk usage.
+  DiskUtilization disk_utilization = 11;
+
+  // Target scaling by network usage.
+  NetworkUtilization network_utilization = 12;
+}
+
+// A service with basic scaling will create an instance when the application
+// receives a request. The instance will be turned down when the app becomes
+// idle. Basic scaling is ideal for work that is intermittent or driven by
+// user activity.
+message BasicScaling {
+  // Duration of time after the last request that an instance must wait before
+  // the instance is shut down.
+  google.protobuf.Duration idle_timeout = 1;
+
+  // Maximum number of instances to create for this version.
+  int32 max_instances = 2;
+}
+
+// A service with manual scaling runs continuously, allowing you to perform
+// complex initialization and rely on the state of its memory over time.
+message ManualScaling {
+  // Number of instances to assign to the service at the start. This number
+  // can later be altered by using the
+  // [Modules
+  // API](https://cloud.google.com/appengine/docs/python/modules/functions)
+  // `set_num_instances()` function.
+  int32 instances = 1;
+}
+
+// Target scaling by CPU usage.
+message CpuUtilization {
+  // Period of time over which CPU utilization is calculated.
+  google.protobuf.Duration aggregation_window_length = 1;
+
+  // Target CPU utilization ratio to maintain when scaling. Must be between 0
+  // and 1.
+  double target_utilization = 2;
+}
+
+// Target scaling by request utilization. Only applicable for VM runtimes.
+message RequestUtilization {
+  // Target requests per second.
+  int32 target_request_count_per_second = 1;
+
+  // Target number of concurrent requests.
+  int32 target_concurrent_requests = 2;
+}
+
+// Target scaling by disk usage. Only applicable for VM runtimes.
+message DiskUtilization {
+  // Target bytes written per second.
+  int32 target_write_bytes_per_second = 14;
+
+  // Target ops written per second.
+  int32 target_write_ops_per_second = 15;
+
+  // Target bytes read per second.
+  int32 target_read_bytes_per_second = 16;
+
+  // Target ops read per seconds.
+  int32 target_read_ops_per_second = 17;
+}
+
+// Target scaling by network usage. Only applicable for VM runtimes.
+message NetworkUtilization {
+  // Target bytes sent per second.
+  int32 target_sent_bytes_per_second = 1;
+
+  // Target packets sent per second.
+  int32 target_sent_packets_per_second = 11;
+
+  // Target bytes received per second.
+  int32 target_received_bytes_per_second = 12;
+
+  // Target packets received per second.
+  int32 target_received_packets_per_second = 13;
+}
+
+// Extra network settings. Only applicable for VM runtimes.
+message Network {
+  // List of ports, or port pairs, to forward from the virtual machine to the
+  // application container.
+  repeated string forwarded_ports = 1;
+
+  // Tag to apply to the VM instance during creation.
+  string instance_tag = 2;
+
+  // Google Cloud Platform network where the virtual machines are created.
+  // Specify the short name, not the resource path.
+  //
+  // Defaults to `default`.
+  string name = 3;
+}
+
+// Machine resources for a version.
+message Resources {
+  // Number of CPU cores needed.
+  double cpu = 1;
+
+  // Disk size (GB) needed.
+  double disk_gb = 2;
+
+  // Memory (GB) needed.
+  double memory_gb = 3;
+}
+
+// Available inbound services.
+enum InboundServiceType {
+  // Not specified.
+  INBOUND_SERVICE_UNSPECIFIED = 0;
+
+  // Allows an application to receive mail.
+  INBOUND_SERVICE_MAIL = 1;
+
+  // Allows an application to receive email-bound notifications.
+  INBOUND_SERVICE_MAIL_BOUNCE = 2;
+
+  // Allows an application to receive error stanzas.
+  INBOUND_SERVICE_XMPP_ERROR = 3;
+
+  // Allows an application to receive instant messages.
+  INBOUND_SERVICE_XMPP_MESSAGE = 4;
+
+  // Allows an application to receive user subscription POSTs.
+  INBOUND_SERVICE_XMPP_SUBSCRIBE = 5;
+
+  // Allows an application to receive a user's chat presence.
+  INBOUND_SERVICE_XMPP_PRESENCE = 6;
+
+  // Registers an application for notifications when a client connects or
+  // disconnects from a channel.
+  INBOUND_SERVICE_CHANNEL_PRESENCE = 7;
+
+  // Enables warmup requests.
+  INBOUND_SERVICE_WARMUP = 9;
+}
+
+// Run states of a version.
+enum ServingStatus {
+  // Not specified.
+  SERVING_STATUS_UNSPECIFIED = 0;
+
+  // Currently serving. Instances are created according to the
+  // scaling settings of the version.
+  SERVING = 1;
+
+  // Disabled. No instances will be created and the scaling
+  // settings are ignored until the state of the version changes
+  // to `SERVING`.
+  STOPPED = 2;
+}

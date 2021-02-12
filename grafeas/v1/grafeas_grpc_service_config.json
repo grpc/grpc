@@ -1,0 +1,80 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "GetOccurrence"
+        },
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "ListOccurrences"
+        },
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "DeleteOccurrence"
+        },
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "GetOccurrenceNote"
+        },
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "GetNote"
+        },
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "ListNotes"
+        },
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "DeleteNote"
+        },
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "ListNoteOccurrences"
+        }
+      ],
+      "timeout": "30s",
+      "retryPolicy": {
+        "maxAttempts": 5,
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "CreateOccurrence"
+        },
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "BatchCreateOccurrences"
+        },
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "UpdateOccurrence"
+        },
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "CreateNote"
+        },
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "BatchCreateNotes"
+        },
+        {
+          "service": "grafeas.v1.Grafeas",
+          "method": "UpdateNote"
+        }
+      ],
+      "timeout": "30s"
+    }
+  ]
+}

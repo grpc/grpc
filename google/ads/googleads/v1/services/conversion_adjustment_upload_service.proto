@@ -1,0 +1,166 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/enums/conversion_adjustment_type.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+import "google/rpc/status.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "ConversionAdjustmentUploadServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Service to upload conversion adjustments.
+service ConversionAdjustmentUploadService {
+  // Processes the given conversion adjustments.
+  rpc UploadConversionAdjustments(UploadConversionAdjustmentsRequest)
+      returns (UploadConversionAdjustmentsResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}:uploadConversionAdjustments"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [ConversionAdjustmentUploadService.UploadConversionAdjustments][google.ads.googleads.v1.services.ConversionAdjustmentUploadService.UploadConversionAdjustments].
+message UploadConversionAdjustmentsRequest {
+  // The ID of the customer performing the upload.
+  string customer_id = 1;
+
+  // The conversion adjustments that are being uploaded.
+  repeated ConversionAdjustment conversion_adjustments = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried out
+  // in one transaction if and only if they are all valid. This should always be
+  // set to true.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// Response message for
+// [ConversionAdjustmentUploadService.UploadConversionAdjustments][google.ads.googleads.v1.services.ConversionAdjustmentUploadService.UploadConversionAdjustments].
+message UploadConversionAdjustmentsResponse {
+  // Errors that pertain to conversion adjustment failures in the partial
+  // failure mode. Returned when all errors occur inside the adjustments. If any
+  // errors occur outside the adjustments (e.g. auth errors), we return an RPC
+  // level error.
+  google.rpc.Status partial_failure_error = 1;
+
+  // Returned for successfully processed conversion adjustments. Proto will be
+  // empty for rows that received an error. Results are not returned when
+  // validate_only is true.
+  repeated ConversionAdjustmentResult results = 2;
+}
+
+// A conversion adjustment.
+message ConversionAdjustment {
+  // Resource name of the conversion action associated with this conversion
+  // adjustment. Note: Although this resource name consists of a customer id and
+  // a conversion action id, validation will ignore the customer id and use the
+  // conversion action id as the sole identifier of the conversion action.
+  google.protobuf.StringValue conversion_action = 3;
+
+  // The date time at which the adjustment occurred. Must be after the
+  // conversion_date_time. The timezone must be specified. The format is
+  // "yyyy-mm-dd hh:mm:ss+|-hh:mm", e.g. "2019-01-01 12:32:45-08:00".
+  google.protobuf.StringValue adjustment_date_time = 4;
+
+  // The adjustment type.
+  google.ads.googleads.v1.enums.ConversionAdjustmentTypeEnum
+      .ConversionAdjustmentType adjustment_type = 5;
+
+  // Information needed to restate the conversion's value.
+  // Required for restatements. Should not be supplied for retractions. An error
+  // will be returned if provided for a retraction.
+  RestatementValue restatement_value = 6;
+
+  // Identifies the conversion to be adjusted.
+  oneof conversion_identifier {
+    // Uniquely identifies a conversion that was reported without an order ID
+    // specified.
+    GclidDateTimePair gclid_date_time_pair = 1;
+
+    // The order ID of the conversion to be adjusted. If the conversion was
+    // reported with an order ID specified, that order ID must be used as the
+    // identifier here.
+    google.protobuf.StringValue order_id = 2;
+  }
+}
+
+// Contains information needed to restate a conversion's value.
+message RestatementValue {
+  // The restated conversion value. This is the value of the conversion after
+  // restatement. For example, to change the value of a conversion from 100 to
+  // 70, an adjusted value of 70 should be reported.
+  google.protobuf.DoubleValue adjusted_value = 1;
+
+  // The currency of the restated value. If not provided, then the default
+  // currency from the conversion action is used, and if that is not set then
+  // the account currency is used. This is the ISO 4217 3-character currency
+  // code e.g. USD or EUR.
+  google.protobuf.StringValue currency_code = 2;
+}
+
+// Uniquely identifies a conversion that was reported without an order ID
+// specified.
+message GclidDateTimePair {
+  // Google click ID (gclid) associated with the original conversion for this
+  // adjustment.
+  google.protobuf.StringValue gclid = 1;
+
+  // The date time at which the original conversion for this adjustment
+  // occurred. The timezone must be specified. The format is "yyyy-mm-dd
+  // hh:mm:ss+|-hh:mm", e.g. "2019-01-01 12:32:45-08:00".
+  google.protobuf.StringValue conversion_date_time = 2;
+}
+
+// Information identifying a successfully processed ConversionAdjustment.
+message ConversionAdjustmentResult {
+  // Resource name of the conversion action associated with this conversion
+  // adjustment.
+  google.protobuf.StringValue conversion_action = 3;
+
+  // The date time at which the adjustment occurred. The format is
+  // "yyyy-mm-dd hh:mm:ss+|-hh:mm", e.g. "2019-01-01 12:32:45-08:00".
+  google.protobuf.StringValue adjustment_date_time = 4;
+
+  // The adjustment type.
+  google.ads.googleads.v1.enums.ConversionAdjustmentTypeEnum
+      .ConversionAdjustmentType adjustment_type = 5;
+
+  // Identifies the conversion that was adjusted.
+  oneof conversion_identifier {
+    // Uniquely identifies a conversion that was reported without an order ID
+    // specified.
+    GclidDateTimePair gclid_date_time_pair = 1;
+
+    // The order ID of the conversion that was adjusted.
+    google.protobuf.StringValue order_id = 2;
+  }
+}

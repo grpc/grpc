@@ -1,0 +1,69 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.spanner.admin.database.v1
+  python:
+    package_name: google.cloud.spanner_admin_database_v1.gapic
+  go:
+    package_name: cloud.google.com/go/spanner/admin/database/apiv1
+  csharp:
+    package_name: Google.Cloud.Spanner.Admin.Database.V1
+  ruby:
+    package_name: Google::Cloud::Spanner::Admin::Database::V1
+  php:
+    package_name: Google\Cloud\Spanner\Admin\Database\V1
+  nodejs:
+    package_name: spanner.v1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.spanner.admin.database.v1.DatabaseAdmin
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 1000
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 32000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: CreateDatabase
+    long_running:
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+    timeout_millis: 3600000
+  - name: GetDatabase
+    timeout_millis: 30000
+  - name: UpdateDatabaseDdl
+    retry_codes_name: idempotent
+    retry_params_name: default
+    long_running:
+      initial_poll_delay_millis: 20000
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 45000
+      total_poll_timeout_millis: 86400000
+    timeout_millis: 3600000
+  - name: DropDatabase
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 3600000
+  - name: GetDatabaseDdl
+    timeout_millis: 30000
+  - name: SetIamPolicy
+    timeout_millis: 30000
+  - name: GetIamPolicy
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 30000
+  - name: TestIamPermissions
+    timeout_millis: 30000

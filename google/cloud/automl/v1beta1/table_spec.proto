@@ -1,0 +1,73 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1beta1;
+
+import "google/cloud/automl/v1beta1/io.proto";
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1beta1;automl";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.automl.v1beta1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1beta1";
+option ruby_package = "Google::Cloud::AutoML::V1beta1";
+
+// A specification of a relational table.
+// The table's schema is represented via its child column specs. It is
+// pre-populated as part of ImportData by schema inference algorithm, the
+// version of which is a required parameter of ImportData InputConfig.
+// Note: While working with a table, at times the schema may be
+// inconsistent with the data in the table (e.g. string in a FLOAT64 column).
+// The consistency validation is done upon creation of a model.
+// Used by:
+//   *   Tables
+message TableSpec {
+  // Output only. The resource name of the table spec.
+  // Form:
+  //
+  // `projects/{project_id}/locations/{location_id}/datasets/{dataset_id}/tableSpecs/{table_spec_id}`
+  string name = 1;
+
+  // column_spec_id of the time column. Only used if the parent dataset's
+  // ml_use_column_spec_id is not set. Used to split rows into TRAIN, VALIDATE
+  // and TEST sets such that oldest rows go to TRAIN set, newest to TEST, and
+  // those in between to VALIDATE.
+  // Required type: TIMESTAMP.
+  // If both this column and ml_use_column are not set, then ML use of all rows
+  // will be assigned by AutoML. NOTE: Updates of this field will instantly
+  // affect any other users concurrently working with the dataset.
+  string time_column_spec_id = 2;
+
+  // Output only. The number of rows (i.e. examples) in the table.
+  int64 row_count = 3;
+
+  // Output only. The number of valid rows (i.e. without values that don't match
+  // DataType-s of their columns).
+  int64 valid_row_count = 4;
+
+  // Output only. The number of columns of the table. That is, the number of
+  // child ColumnSpec-s.
+  int64 column_count = 7;
+
+  // Output only. Input configs via which data currently residing in the table
+  // had been imported.
+  repeated InputConfig input_configs = 5;
+
+  // Used to perform consistent read-modify-write updates. If not set, a blind
+  // "overwrite" update happens.
+  string etag = 6;
+}

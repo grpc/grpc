@@ -1,0 +1,123 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/common/policy.proto";
+import "google/ads/googleads/v2/resources/ad_group_ad.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/rpc/status.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "AdGroupAdServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Proto file describing the Ad Group Ad service.
+
+// Service to manage ads in an ad group.
+service AdGroupAdService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns the requested ad in full detail.
+  rpc GetAdGroupAd(GetAdGroupAdRequest) returns (google.ads.googleads.v2.resources.AdGroupAd) {
+    option (google.api.http) = {
+      get: "/v2/{resource_name=customers/*/adGroupAds/*}"
+    };
+  }
+
+  // Creates, updates, or removes ads. Operation statuses are returned.
+  rpc MutateAdGroupAds(MutateAdGroupAdsRequest) returns (MutateAdGroupAdsResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}/adGroupAds:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for [AdGroupAdService.GetAdGroupAd][google.ads.googleads.v2.services.AdGroupAdService.GetAdGroupAd].
+message GetAdGroupAdRequest {
+  // The resource name of the ad to fetch.
+  string resource_name = 1;
+}
+
+// Request message for [AdGroupAdService.MutateAdGroupAds][google.ads.googleads.v2.services.AdGroupAdService.MutateAdGroupAds].
+message MutateAdGroupAdsRequest {
+  // The ID of the customer whose ads are being modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual ads.
+  repeated AdGroupAdOperation operations = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried
+  // out in one transaction if and only if they are all valid.
+  // Default is false.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// A single operation (create, update, remove) on an ad group ad.
+message AdGroupAdOperation {
+  // FieldMask that determines which resource fields are modified in an update.
+  google.protobuf.FieldMask update_mask = 4;
+
+  // Configuration for how policies are validated.
+  google.ads.googleads.v2.common.PolicyValidationParameter policy_validation_parameter = 5;
+
+  // The mutate operation.
+  oneof operation {
+    // Create operation: No resource name is expected for the new ad.
+    google.ads.googleads.v2.resources.AdGroupAd create = 1;
+
+    // Update operation: The ad is expected to have a valid resource name.
+    google.ads.googleads.v2.resources.AdGroupAd update = 2;
+
+    // Remove operation: A resource name for the removed ad is expected,
+    // in this format:
+    //
+    // `customers/{customer_id}/adGroupAds/{ad_group_id}~{ad_id}`
+    string remove = 3;
+  }
+}
+
+// Response message for an ad group ad mutate.
+message MutateAdGroupAdsResponse {
+  // Errors that pertain to operation failures in the partial failure mode.
+  // Returned only when partial_failure = true and all errors occur inside the
+  // operations. If any errors occur outside the operations (e.g. auth errors),
+  // we return an RPC level error.
+  google.rpc.Status partial_failure_error = 3;
+
+  // All results for the mutate.
+  repeated MutateAdGroupAdResult results = 2;
+}
+
+// The result for the ad mutate.
+message MutateAdGroupAdResult {
+  // The resource name returned for successful operations.
+  string resource_name = 1;
+}

@@ -1,0 +1,40 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.speech.v1p1beta1
+  python:
+    package_name: google.cloud.speech_v1p1beta1.gapic
+  go:
+    package_name: cloud.google.com/go/speech/apiv1p1beta1
+  csharp:
+    package_name: Google.Cloud.Speech.V1P1Beta1
+  ruby:
+    package_name: Google::Cloud::Speech::V1p1beta1
+  php:
+    package_name: Google\Cloud\Speech\V1p1beta1
+  nodejs:
+    package_name: speech.v1p1beta1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.cloud.speech.v1p1beta1.Speech
+  smoke_test:
+    method: Recognize
+    init_fields:
+    - config.language_code="en-US"
+    - config.sample_rate_hertz=44100
+    - config.encoding=FLAC
+    - audio.uri="gs://cloud-samples-data/speech/brooklyn_bridge.flac"
+  methods:
+  - name: Recognize
+    sample_code_init_fields:
+    - config.encoding=FLAC
+    - config.sample_rate_hertz=44100
+    - config.language_code="en-US"
+    - audio.uri=gs://bucket_name/file_name.flac
+  - name: LongRunningRecognize
+    sample_code_init_fields:
+    - config.encoding=FLAC
+    - config.sample_rate_hertz=44100
+    - config.language_code="en-US"
+    - audio.uri=gs://bucket_name/file_name.flac

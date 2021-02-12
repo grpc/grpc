@@ -1,0 +1,262 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.bigquery.connection.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/iam/v1/iam_policy.proto";
+import "google/iam/v1/policy.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/client.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/bigquery/connection/v1beta1;connection";
+option java_outer_classname = "ConnectionProto";
+option java_package = "com.google.cloud.bigquery.connection.v1beta1";
+
+// Manages external data source connections and credentials.
+service ConnectionService {
+  option (google.api.default_host) = "bigqueryconnection.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/bigquery,"
+      "https://www.googleapis.com/auth/cloud-platform";
+
+  // Creates a new connection.
+  rpc CreateConnection(CreateConnectionRequest) returns (Connection) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*/locations/*}/connections"
+      body: "connection"
+    };
+  }
+
+  // Returns specified connection.
+  rpc GetConnection(GetConnectionRequest) returns (Connection) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/locations/*/connections/*}"
+    };
+  }
+
+  // Returns a list of connections in the given project.
+  rpc ListConnections(ListConnectionsRequest) returns (ListConnectionsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*/locations/*}/connections"
+    };
+  }
+
+  // Updates the specified connection. For security reasons, also resets
+  // credential if connection properties are in the update field mask.
+  rpc UpdateConnection(UpdateConnectionRequest) returns (Connection) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{name=projects/*/locations/*/connections/*}"
+      body: "connection"
+    };
+  }
+
+  // Sets the credential for the specified connection.
+  rpc UpdateConnectionCredential(UpdateConnectionCredentialRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{name=projects/*/locations/*/connections/*/credential}"
+      body: "credential"
+    };
+  }
+
+  // Deletes connection and associated credential.
+  rpc DeleteConnection(DeleteConnectionRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/locations/*/connections/*}"
+    };
+  }
+
+  // Gets the access control policy for a resource.
+  // Returns an empty policy if the resource exists and does not have a policy
+  // set.
+  rpc GetIamPolicy(google.iam.v1.GetIamPolicyRequest) returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1beta1/{resource=projects/*/locations/*/connections/*}:getIamPolicy"
+      body: "*"
+    };
+  }
+
+  // Sets the access control policy on the specified resource. Replaces any
+  // existing policy.
+  //
+  // Can return Public Errors: NOT_FOUND, INVALID_ARGUMENT and PERMISSION_DENIED
+  rpc SetIamPolicy(google.iam.v1.SetIamPolicyRequest) returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1beta1/{resource=projects/*/locations/*/connections/*}:setIamPolicy"
+      body: "*"
+    };
+  }
+
+  // Returns permissions that a caller has on the specified resource.
+  // If the resource does not exist, this will return an empty set of
+  // permissions, not a NOT_FOUND error.
+  //
+  // Note: This operation is designed to be used for building permission-aware
+  // UIs and command-line tools, not for authorization checking. This operation
+  // may "fail open" without warning.
+  rpc TestIamPermissions(google.iam.v1.TestIamPermissionsRequest) returns (google.iam.v1.TestIamPermissionsResponse) {
+    option (google.api.http) = {
+      post: "/v1beta1/{resource=projects/*/locations/*/connections/*}:testIamPermissions"
+      body: "*"
+    };
+  }
+}
+
+// The request for [ConnectionService.CreateConnection][google.cloud.bigquery.connection.v1beta1.ConnectionService.CreateConnection].
+message CreateConnectionRequest {
+  // Parent resource name.
+  // Must be in the format `projects/{project_id}/locations/{location_id}`
+  string parent = 1;
+
+  // Optional connection id that should be assigned to the created connection.
+  string connection_id = 2;
+
+  // Connection to create.
+  Connection connection = 3;
+}
+
+// The request for [ConnectionService.GetConnection][google.cloud.bigquery.connection.v1beta1.ConnectionService.GetConnection].
+message GetConnectionRequest {
+  // Name of the requested connection, for example:
+  // `projects/{project_id}/locations/{location_id}/connections/{connection_id}`
+  string name = 1;
+}
+
+// The request for [ConnectionService.ListConnections][google.cloud.bigquery.connection.v1beta1.ConnectionService.ListConnections].
+message ListConnectionsRequest {
+  // Parent resource name.
+  // Must be in the form: `projects/{project_id}/locations/{location_id}`
+  string parent = 1;
+
+  // Maximum number of results per page.
+  google.protobuf.UInt32Value max_results = 2;
+
+  // Page token.
+  string page_token = 3;
+}
+
+// The response for [ConnectionService.ListConnections][google.cloud.bigquery.connection.v1beta1.ConnectionService.ListConnections].
+message ListConnectionsResponse {
+  // Next page token.
+  string next_page_token = 1;
+
+  // List of connections.
+  repeated Connection connections = 2;
+}
+
+// The request for [ConnectionService.UpdateConnection][google.cloud.bigquery.connection.v1beta1.ConnectionService.UpdateConnection].
+message UpdateConnectionRequest {
+  // Name of the connection to update, for example:
+  // `projects/{project_id}/locations/{location_id}/connections/{connection_id}`
+  string name = 1;
+
+  // Connection containing the updated fields.
+  Connection connection = 2;
+
+  // Update mask for the connection fields to be updated.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// The request for [ConnectionService.UpdateConnectionCredential][google.cloud.bigquery.connection.v1beta1.ConnectionService.UpdateConnectionCredential].
+message UpdateConnectionCredentialRequest {
+  // Name of the connection, for example:
+  // `projects/{project_id}/locations/{location_id}/connections/{connection_id}/credential`
+  string name = 1;
+
+  // Credential to use with the connection.
+  ConnectionCredential credential = 2;
+}
+
+// The request for [ConnectionService.DeleteConnectionRequest][].
+message DeleteConnectionRequest {
+  // Name of the deleted connection, for example:
+  // `projects/{project_id}/locations/{location_id}/connections/{connection_id}`
+  string name = 1;
+}
+
+// Configuration parameters to establish connection with an external data
+// source, except the credential attributes.
+message Connection {
+  // The resource name of the connection in the form of:
+  // `projects/{project_id}/locations/{location_id}/connections/{connection_id}`
+  string name = 1;
+
+  // User provided display name for the connection.
+  string friendly_name = 2;
+
+  // User provided description.
+  string description = 3;
+
+  // Properties specific to the underlying data source.
+  oneof properties {
+    // Cloud SQL properties.
+    CloudSqlProperties cloud_sql = 4;
+  }
+
+  // Output only. The creation timestamp of the connection.
+  int64 creation_time = 5;
+
+  // Output only. The last update timestamp of the connection.
+  int64 last_modified_time = 6;
+
+  // Output only. True, if credential is configured for this connection.
+  bool has_credential = 7;
+}
+
+// Credential to use with a connection.
+message ConnectionCredential {
+  // Credential specific to the underlying data source.
+  oneof credential {
+    // Credential for Cloud SQL database.
+    CloudSqlCredential cloud_sql = 1;
+  }
+}
+
+// Connection properties specific to the Cloud SQL.
+message CloudSqlProperties {
+  // Supported Cloud SQL database types.
+  enum DatabaseType {
+    // Unspecified database type.
+    DATABASE_TYPE_UNSPECIFIED = 0;
+
+    // Cloud SQL for PostgreSQL.
+    POSTGRES = 1;
+
+    // Cloud SQL for MySQL.
+    MYSQL = 2;
+  }
+
+  // Cloud SQL instance ID in the form `project:location:instance`.
+  string instance_id = 1;
+
+  // Database name.
+  string database = 2;
+
+  // Type of the Cloud SQL database.
+  DatabaseType type = 3;
+}
+
+// Credential info for the Cloud SQL.
+message CloudSqlCredential {
+  // The username for the credential.
+  string username = 1;
+
+  // The password for the credential.
+  string password = 2;
+}

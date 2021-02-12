@@ -1,0 +1,63 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.spanner.admin.instance.v1.InstanceAdmin",
+          "method": "ListInstanceConfigs"
+        },
+        {
+          "service": "google.spanner.admin.instance.v1.InstanceAdmin",
+          "method": "GetInstanceConfig"
+        },
+        {
+          "service": "google.spanner.admin.instance.v1.InstanceAdmin",
+          "method": "ListInstances"
+        },
+        {
+          "service": "google.spanner.admin.instance.v1.InstanceAdmin",
+          "method": "GetInstance"
+        },
+        {
+          "service": "google.spanner.admin.instance.v1.InstanceAdmin",
+          "method": "DeleteInstance"
+        },
+        {
+          "service": "google.spanner.admin.instance.v1.InstanceAdmin",
+          "method": "GetIamPolicy"
+        }
+      ],
+      "timeout": "3600s",
+      "retryPolicy": {
+        "initialBackoff": "1s",
+        "maxBackoff": "32s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.spanner.admin.instance.v1.InstanceAdmin",
+          "method": "CreateInstance"
+        },
+        {
+          "service": "google.spanner.admin.instance.v1.InstanceAdmin",
+          "method": "UpdateInstance"
+        },
+        {
+          "service": "google.spanner.admin.instance.v1.InstanceAdmin",
+          "method": "SetIamPolicy"
+        },
+        {
+          "service": "google.spanner.admin.instance.v1.InstanceAdmin",
+          "method": "TestIamPermissions"
+        }
+      ],
+      "timeout": "3600s"
+    }
+  ]
+}

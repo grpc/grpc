@@ -1,0 +1,70 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.cloud.ml.v1;
+
+import "google/api/annotations.proto";
+import "google/cloud/ml/v1/model_service.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/ml/v1;ml";
+option java_multiple_files = true;
+option java_outer_classname = "OperationMetadataProto";
+option java_package = "com.google.cloud.ml.api.v1";
+
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Proto file for the Google Cloud Machine Learning Engine.
+// Describes the metadata for longrunning operations.
+
+// Represents the metadata of the long-running operation.
+message OperationMetadata {
+  // The operation type.
+  enum OperationType {
+    // Unspecified operation type.
+    OPERATION_TYPE_UNSPECIFIED = 0;
+
+    // An operation to create a new version.
+    CREATE_VERSION = 1;
+
+    // An operation to delete an existing version.
+    DELETE_VERSION = 2;
+
+    // An operation to delete an existing model.
+    DELETE_MODEL = 3;
+  }
+
+  // The time the operation was submitted.
+  google.protobuf.Timestamp create_time = 1;
+
+  // The time operation processing started.
+  google.protobuf.Timestamp start_time = 2;
+
+  // The time operation processing completed.
+  google.protobuf.Timestamp end_time = 3;
+
+  // Indicates whether a request to cancel this operation has been made.
+  bool is_cancellation_requested = 4;
+
+  // The operation type.
+  OperationType operation_type = 5;
+
+  // Contains the name of the model associated with the operation.
+  string model_name = 6;
+
+  // Contains the version associated with the operation.
+  Version version = 7;
+}

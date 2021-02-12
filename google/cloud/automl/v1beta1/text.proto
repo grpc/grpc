@@ -1,0 +1,59 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/automl/v1beta1/classification.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1beta1;automl";
+option java_multiple_files = true;
+option java_outer_classname = "TextProto";
+option java_package = "com.google.cloud.automl.v1beta1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1beta1";
+option ruby_package = "Google::Cloud::AutoML::V1beta1";
+
+// Dataset metadata for classification.
+message TextClassificationDatasetMetadata {
+  // Required. Type of the classification problem.
+  ClassificationType classification_type = 1;
+}
+
+// Model metadata that is specific to text classification.
+message TextClassificationModelMetadata {
+  // Output only. Classification type of the dataset used to train this model.
+  ClassificationType classification_type = 3;
+}
+
+// Dataset metadata that is specific to text extraction
+message TextExtractionDatasetMetadata {}
+
+// Model metadata that is specific to text extraction.
+message TextExtractionModelMetadata {}
+
+// Dataset metadata for text sentiment.
+message TextSentimentDatasetMetadata {
+  // Required. A sentiment is expressed as an integer ordinal, where higher
+  // value means a more positive sentiment. The range of sentiments that will be
+  // used is between 0 and sentiment_max (inclusive on both ends), and all the
+  // values in the range must be represented in the dataset before a model can
+  // be created. sentiment_max value must be between 1 and 10 (inclusive).
+  int32 sentiment_max = 1;
+}
+
+// Model metadata that is specific to text sentiment.
+message TextSentimentModelMetadata {}

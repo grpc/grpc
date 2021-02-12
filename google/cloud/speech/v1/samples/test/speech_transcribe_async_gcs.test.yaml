@@ -1,0 +1,28 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Transcript Audio File using Long Running Operation (Cloud Storage) (LRO)
+    cases:
+
+    # This sample should default to using gs://cloud-samples-data/brooklyn_bridge.raw
+    # with explicitly configured sample_rate_hertz and encoding
+    - name: speech_transcribe_async_gcs (no arguments)
+      spec:
+      - call:
+          sample: speech_transcribe_async_gcs
+      - assert_contains:
+        - literal: "how old is the Brooklyn Bridge"
+
+    # Confirm that another file can be transcribed (use another .raw PCM file)
+    - name: speech_transcribe_async_gcs (--storage_uri)
+      spec:
+      - call:
+          sample: speech_transcribe_async_gcs
+          params:
+            storage_uri:
+              literal: "gs://cloud-samples-data/speech/hello.raw"
+      - assert_contains:
+        - literal: "hello"
+      - assert_not_contains:
+        - literal: "how old is the Brooklyn Bridge"

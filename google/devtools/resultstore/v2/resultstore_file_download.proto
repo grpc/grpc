@@ -1,0 +1,119 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.resultstore.v2;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/resultstore/v2;resultstore";
+option java_multiple_files = true;
+option java_package = "com.google.devtools.resultstore.v2";
+
+// This API allows download of File messages referenced in
+// ResultStore resources.
+service ResultStoreFileDownload {
+  option (google.api.default_host) = "resultstore.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Retrieves the File with the given uri.
+  // returns a stream of bytes to be stitched together in order.
+  //
+  // An error will be reported in the following cases:
+  // - If the File is not found.
+  // - If the given File uri is badly formatted.
+  rpc GetFile(GetFileRequest) returns (stream GetFileResponse) {
+    option (google.api.http) = {
+      get: "/v2/{uri=file/*}"
+    };
+  }
+
+  // Retrieves the tail of a File with the given uri.
+  //
+  // An error will be reported in the following cases:
+  // - If the File is not found.
+  // - If the given File uri is badly formatted.
+  rpc GetFileTail(GetFileTailRequest) returns (GetFileTailResponse) {
+    option (google.api.http) = {
+      get: "/v2/{uri=file/tail/*}"
+    };
+  }
+}
+
+// Request object for GetFile
+message GetFileRequest {
+  // This corresponds to the uri field in the File message.
+  string uri = 1;
+
+  // The offset for the first byte to return in the read, relative to the start
+  // of the resource.
+  //
+  // A `read_offset` that is negative or greater than the size of the resource
+  // will cause an `OUT_OF_RANGE` error.
+  int64 read_offset = 2;
+
+  // The maximum number of `data` bytes the server is allowed to return in the
+  // sum of all `ReadResponse` messages. A `read_limit` of zero indicates that
+  // there is no limit, and a negative `read_limit` will cause an error.
+  //
+  // If the stream returns fewer bytes than allowed by the `read_limit` and no
+  // error occurred, the stream includes all data from the `read_offset` to the
+  // end of the resource.
+  int64 read_limit = 3;
+
+  // Only applies if the referenced file is a known archive type (ar, jar, zip)
+  // The above read_offset and read_limit fields are applied to this entry.
+  // If this file is not an archive, INVALID_ARGUMENT is thrown.
+  string archive_entry = 4;
+}
+
+// Response object for GetFile
+message GetFileResponse {
+  // The file data.
+  bytes data = 1;
+}
+
+// Request object for GetFileTail
+message GetFileTailRequest {
+  // This corresponds to the uri field in the File message.
+  string uri = 1;
+
+  // The offset for the first byte to return in the read, relative to the end
+  // of the resource.
+  //
+  // A `read_offset` that is negative or greater than the size of the resource
+  // will cause an `OUT_OF_RANGE` error.
+  int64 read_offset = 2;
+
+  // The maximum number of `data` bytes the server is allowed to return. The
+  // server will return bytes starting from the tail of the file.
+  //
+  // A `read_limit` of zero indicates that there is no limit, and a negative
+  // `read_limit` will cause an error.
+  int64 read_limit = 3;
+
+  // Only applies if the referenced file is a known archive type (ar, jar, zip)
+  // The above read_offset and read_limit fields are applied to this entry.
+  // If this file is not an archive, INVALID_ARGUMENT is thrown.
+  string archive_entry = 4;
+}
+
+// Response object for GetFileTail
+message GetFileTailResponse {
+  // The file data, encoded with UTF-8.
+  bytes data = 1;
+}

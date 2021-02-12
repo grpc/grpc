@@ -1,0 +1,67 @@
+type: google.api.Service
+config_version: 3
+name: pubsub.googleapis.com
+title: Google Cloud Pub/Sub API
+
+apis:
+- name: google.pubsub.v1.Publisher
+- name: google.pubsub.v1.Subscriber
+
+documentation:
+  summary: |-
+    Provides reliable, many-to-many, asynchronous messaging between
+    applications.
+  rules:
+    - selector: >
+        google.pubsub.v1.Topic.name,
+      description: |
+          The name of the topic. It must have the format
+          `"projects/{project}/topics/{topic}"`. `{topic}` must start with a letter,
+          and contain only letters (`[A-Za-z]`), numbers (`[0-9]`), dashes (`-`),
+          underscores (`_`), periods (`.`), tildes (`~`), plus (`+`) or percent
+          signs (`%`). It must be between 3 and 255 characters in length, and it
+          must not start with `"goog"`.
+    - selector: >
+        google.pubsub.v1.Subscription.name,
+      description: |
+          The name of the subscription. It must have the format
+          `"projects/{project}/subscriptions/{subscription}"`. `{subscription}` must
+          start with a letter, and contain only letters (`[A-Za-z]`), numbers
+          (`[0-9]`), dashes (`-`), underscores (`_`), periods (`.`), tildes (`~`),
+          plus (`+`) or percent signs (`%`). It must be between 3 and 255 characters
+          in length, and it must not start with `"goog"`
+
+http:
+  rules:
+  - selector: google.iam.v1.IAMPolicy.SetIamPolicy
+    post: '/v1/{resource=projects/*/topics/*}:setIamPolicy'
+    body: '*'
+    additional_bindings:
+    - post: '/v1/{resource=projects/*/subscriptions/*}:setIamPolicy'
+      body: '*'
+    - post: '/v1/{resource=projects/*/snapshots/*}:setIamPolicy'
+      body: '*'
+
+  - selector: google.iam.v1.IAMPolicy.GetIamPolicy
+    get: '/v1/{resource=projects/*/topics/*}:getIamPolicy'
+    additional_bindings:
+    - get: '/v1/{resource=projects/*/subscriptions/*}:getIamPolicy'
+    - get: '/v1/{resource=projects/*/snapshots/*}:getIamPolicy'
+
+  - selector: google.iam.v1.IAMPolicy.TestIamPermissions
+    post: '/v1/{resource=projects/*/subscriptions/*}:testIamPermissions'
+    body: '*'
+    additional_bindings:
+    - post: '/v1/{resource=projects/*/topics/*}:testIamPermissions'
+      body: '*'
+    - post: '/v1/{resource=projects/*/snapshots/*}:testIamPermissions'
+      body: '*'
+
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/pubsub

@@ -1,0 +1,41 @@
+test:
+  suites:
+  - name: Vision V1 Sample Tests
+    cases:
+    - name: vision_batch_annotate_files_gcs
+      spec:
+      - call:
+          sample: vision_batch_annotate_files_gcs
+          params:
+            storage_uri:
+              literal: gs://cloud-samples-data/vision/document_understanding/kafka.pdf
+      # Page 1
+      - assert_contains_any:
+        - literal: "Gregor Samsa woke"
+        - literal: "he found himself transformed in his bed"
+        - literal: "What’s happened to me?"
+        - literal: "Gregor then turned to look out the window"
+        - literal: "Drops of rain could be heard "
+
+      # Page 2
+      - assert_contains_any:
+        - literal: "Getting up early"
+        - literal: "He must have tried it a hundred times"
+        - literal: "look at the floundering legs"
+        - literal: "travelling salesmen live a life"
+        - literal: "the best thing for me"
+
+      # The pages not included in the API request should not
+      # be included in the results (Page 3 texts)
+      - assert_not_contains:
+        - literal: "the boss is hard of hearing"
+        - literal: "even if he did catch the train"
+        - literal: "fifteen years of service"
+
+      # Page 9 (The last page, -1)
+      - assert_contains_any:
+        - literal: "There was a loud thump"
+        - literal: "Gregor tried to imagine"
+        - literal: "please open up this door"
+        - literal: "The lad only ever thinks about the business"
+        - literal: "Good morning, Mr. Samsa"

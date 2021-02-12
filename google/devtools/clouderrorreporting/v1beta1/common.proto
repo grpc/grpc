@@ -1,0 +1,170 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.devtools.clouderrorreporting.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.ErrorReporting.V1Beta1";
+option go_package = "google.golang.org/genproto/googleapis/devtools/clouderrorreporting/v1beta1;clouderrorreporting";
+option java_multiple_files = true;
+option java_outer_classname = "CommonProto";
+option java_package = "com.google.devtools.clouderrorreporting.v1beta1";
+option php_namespace = "Google\\Cloud\\ErrorReporting\\V1beta1";
+
+// Description of a group of similar error events.
+message ErrorGroup {
+  option (google.api.resource) = {
+    type: "clouderrorreporting.googleapis.com/ErrorGroup"
+    pattern: "projects/{project}/groups/{group}"
+  };
+
+  // The group resource name.
+  // Example: <code>projects/my-project-123/groups/my-groupid</code>
+  string name = 1;
+
+  // Group IDs are unique for a given project. If the same kind of error
+  // occurs in different service contexts, it will receive the same group ID.
+  string group_id = 2;
+
+  // Associated tracking issues.
+  repeated TrackingIssue tracking_issues = 3;
+}
+
+// Information related to tracking the progress on resolving the error.
+message TrackingIssue {
+  // A URL pointing to a related entry in an issue tracking system.
+  // Example: https://github.com/user/project/issues/4
+  string url = 1;
+}
+
+// An error event which is returned by the Error Reporting system.
+message ErrorEvent {
+  // Time when the event occurred as provided in the error report.
+  // If the report did not contain a timestamp, the time the error was received
+  // by the Error Reporting system is used.
+  google.protobuf.Timestamp event_time = 1;
+
+  // The `ServiceContext` for which this error was reported.
+  ServiceContext service_context = 2;
+
+  // The stack trace that was reported or logged by the service.
+  string message = 3;
+
+  // Data about the context in which the error occurred.
+  ErrorContext context = 5;
+}
+
+// Describes a running service that sends errors.
+// Its version changes over time and multiple versions can run in parallel.
+message ServiceContext {
+  // An identifier of the service, such as the name of the
+  // executable, job, or Google App Engine service name. This field is expected
+  // to have a low number of values that are relatively stable over time, as
+  // opposed to `version`, which can be changed whenever new code is deployed.
+  //
+  // Contains the service name for error reports extracted from Google
+  // App Engine logs or `default` if the App Engine default service is used.
+  string service = 2;
+
+  // Represents the source code version that the developer provided,
+  // which could represent a version label or a Git SHA-1 hash, for example.
+  // For App Engine standard environment, the version is set to the version of
+  // the app.
+  string version = 3;
+
+  // Type of the MonitoredResource. List of possible values:
+  // https://cloud.google.com/monitoring/api/resources
+  //
+  // Value is set automatically for incoming errors and must not be set when
+  // reporting errors.
+  string resource_type = 4;
+}
+
+// A description of the context in which an error occurred.
+// This data should be provided by the application when reporting an error,
+// unless the
+// error report has been generated automatically from Google App Engine logs.
+message ErrorContext {
+  // The HTTP request which was processed when the error was
+  // triggered.
+  HttpRequestContext http_request = 1;
+
+  // The user who caused or was affected by the crash.
+  // This can be a user ID, an email address, or an arbitrary token that
+  // uniquely identifies the user.
+  // When sending an error report, leave this field empty if the user was not
+  // logged in. In this case the
+  // Error Reporting system will use other data, such as remote IP address, to
+  // distinguish affected users. See `affected_users_count` in
+  // `ErrorGroupStats`.
+  string user = 2;
+
+  // The location in the source code where the decision was made to
+  // report the error, usually the place where it was logged.
+  // For a logged exception this would be the source line where the
+  // exception is logged, usually close to the place where it was
+  // caught.
+  SourceLocation report_location = 3;
+}
+
+// HTTP request data that is related to a reported error.
+// This data should be provided by the application when reporting an error,
+// unless the
+// error report has been generated automatically from Google App Engine logs.
+message HttpRequestContext {
+  // The type of HTTP request, such as `GET`, `POST`, etc.
+  string method = 1;
+
+  // The URL of the request.
+  string url = 2;
+
+  // The user agent information that is provided with the request.
+  string user_agent = 3;
+
+  // The referrer information that is provided with the request.
+  string referrer = 4;
+
+  // The HTTP response status code for the request.
+  int32 response_status_code = 5;
+
+  // The IP address from which the request originated.
+  // This can be IPv4, IPv6, or a token which is derived from the
+  // IP address, depending on the data that has been provided
+  // in the error report.
+  string remote_ip = 6;
+}
+
+// Indicates a location in the source code of the service for which errors are
+// reported. `functionName` must be provided by the application when reporting
+// an error, unless the error report contains a `message` with a supported
+// exception stack trace. All fields are optional for the later case.
+message SourceLocation {
+  // The source code filename, which can include a truncated relative
+  // path, or a full path from a production machine.
+  string file_path = 1;
+
+  // 1-based. 0 indicates that the line number is unknown.
+  int32 line_number = 2;
+
+  // Human-readable name of a function or method.
+  // The value can include optional context like the class or package name.
+  // For example, `my.package.MyClass.method` in case of Java.
+  string function_name = 4;
+}

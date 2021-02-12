@@ -1,0 +1,22 @@
+{
+  "methodConfig": [{
+    "name": [{ "service": "google.cloud.osconfig.agentendpoint.v1beta.AgentEndpointService" }],
+    "timeout": "60s",
+    "retryPolicy": {
+      "maxAttempts": 5,
+      "initialBackoff": "1s",
+      "maxBackoff": "60s",
+      "backoffMultiplier": 1.3,
+      "retryableStatusCodes": ["UNAVAILABLE", "DEADLINE_EXCEEDED"]
+    }
+  },
+  {
+    "name": [
+      { "service": "google.cloud.osconfig.agentendpoint.v1beta.AgentEndpointService", "method": "ReceiveTaskNotification" },
+      { "service": "google.cloud.osconfig.agentendpoint.v1beta.AgentEndpointService", "method": "StartNextTask" },
+      { "service": "google.cloud.osconfig.agentendpoint.v1beta.AgentEndpointService", "method": "ReportTaskProgress" },
+      { "service": "google.cloud.osconfig.agentendpoint.v1beta.AgentEndpointService", "method": "ReportTaskComplete" }
+    ],
+    "timeout": "60s"
+  }]
+}

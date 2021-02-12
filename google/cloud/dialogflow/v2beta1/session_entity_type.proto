@@ -1,0 +1,296 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.dialogflow.v2beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/dialogflow/v2beta1/entity_type.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/api/client.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.Dialogflow.V2beta1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/dialogflow/v2beta1;dialogflow";
+option java_multiple_files = true;
+option java_outer_classname = "SessionEntityTypeProto";
+option java_package = "com.google.cloud.dialogflow.v2beta1";
+option objc_class_prefix = "DF";
+
+// Entities are extracted from user input and represent parameters that are
+// meaningful to your application. For example, a date range, a proper name
+// such as a geographic location or landmark, and so on. Entities represent
+// actionable data for your application.
+//
+// Session entity types are referred to as **User** entity types and are
+// entities that are built for an individual user such as
+// favorites, preferences, playlists, and so on. You can redefine a session
+// entity type at the session level.
+//
+// Session entity methods do not work with Google Assistant integration.
+// Contact Dialogflow support if you need to use session entities
+// with Google Assistant integration.
+//
+// For more information about entity types, see the
+// [Dialogflow
+// documentation](https://cloud.google.com/dialogflow/docs/entities-overview).
+service SessionEntityTypes {
+  option (google.api.default_host) = "dialogflow.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/dialogflow";
+
+  // Returns the list of all session entity types in the specified session.
+  //
+  // This method doesn't work with Google Assistant integration.
+  // Contact Dialogflow support if you need to use session entities
+  // with Google Assistant integration.
+  rpc ListSessionEntityTypes(ListSessionEntityTypesRequest) returns (ListSessionEntityTypesResponse) {
+    option (google.api.http) = {
+      get: "/v2beta1/{parent=projects/*/agent/sessions/*}/entityTypes"
+      additional_bindings {
+        get: "/v2beta1/{parent=projects/*/agent/environments/*/users/*/sessions/*}/entityTypes"
+      }
+      additional_bindings {
+        get: "/v2beta1/{parent=projects/*/locations/*/agent/sessions/*}/entityTypes"
+      }
+      additional_bindings {
+        get: "/v2beta1/{parent=projects/*/locations/*/agent/environments/*/users/*/sessions/*}/entityTypes"
+      }
+    };
+  }
+
+  // Retrieves the specified session entity type.
+  //
+  // This method doesn't work with Google Assistant integration.
+  // Contact Dialogflow support if you need to use session entities
+  // with Google Assistant integration.
+  rpc GetSessionEntityType(GetSessionEntityTypeRequest) returns (SessionEntityType) {
+    option (google.api.http) = {
+      get: "/v2beta1/{name=projects/*/agent/sessions/*/entityTypes/*}"
+      additional_bindings {
+        get: "/v2beta1/{name=projects/*/agent/environments/*/users/*/sessions/*/entityTypes/*}"
+      }
+      additional_bindings {
+        get: "/v2beta1/{name=projects/*/locations/*/agent/sessions/*/entityTypes/*}"
+      }
+      additional_bindings {
+        get: "/v2beta1/{name=projects/*/locations/*/agent/environments/*/users/*/sessions/*/entityTypes/*}"
+      }
+    };
+  }
+
+  // Creates a session entity type.
+  //
+  // If the specified session entity type already exists, overrides the
+  // session entity type.
+  //
+  // This method doesn't work with Google Assistant integration.
+  // Contact Dialogflow support if you need to use session entities
+  // with Google Assistant integration.
+  rpc CreateSessionEntityType(CreateSessionEntityTypeRequest) returns (SessionEntityType) {
+    option (google.api.http) = {
+      post: "/v2beta1/{parent=projects/*/agent/sessions/*}/entityTypes"
+      body: "session_entity_type"
+      additional_bindings {
+        post: "/v2beta1/{parent=projects/*/agent/environments/*/users/*/sessions/*}/entityTypes"
+        body: "session_entity_type"
+      }
+      additional_bindings {
+        post: "/v2beta1/{parent=projects/*/locations/*/agent/sessions/*}/entityTypes"
+        body: "session_entity_type"
+      }
+      additional_bindings {
+        post: "/v2beta1/{parent=projects/*/locations/*/agent/environments/*/users/*/sessions/*}/entityTypes"
+        body: "session_entity_type"
+      }
+    };
+  }
+
+  // Updates the specified session entity type.
+  //
+  // This method doesn't work with Google Assistant integration.
+  // Contact Dialogflow support if you need to use session entities
+  // with Google Assistant integration.
+  rpc UpdateSessionEntityType(UpdateSessionEntityTypeRequest) returns (SessionEntityType) {
+    option (google.api.http) = {
+      patch: "/v2beta1/{session_entity_type.name=projects/*/agent/sessions/*/entityTypes/*}"
+      body: "session_entity_type"
+      additional_bindings {
+        patch: "/v2beta1/{session_entity_type.name=projects/*/agent/environments/*/users/*/sessions/*/entityTypes/*}"
+        body: "session_entity_type"
+      }
+      additional_bindings {
+        patch: "/v2beta1/{session_entity_type.name=projects/*/locations/*/agent/sessions/*/entityTypes/*}"
+        body: "session_entity_type"
+      }
+      additional_bindings {
+        patch: "/v2beta1/{session_entity_type.name=projects/*/locations/*/agent/environments/*/users/*/sessions/*/entityTypes/*}"
+        body: "session_entity_type"
+      }
+    };
+  }
+
+  // Deletes the specified session entity type.
+  //
+  // This method doesn't work with Google Assistant integration.
+  // Contact Dialogflow support if you need to use session entities
+  // with Google Assistant integration.
+  rpc DeleteSessionEntityType(DeleteSessionEntityTypeRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v2beta1/{name=projects/*/agent/sessions/*/entityTypes/*}"
+      additional_bindings {
+        delete: "/v2beta1/{name=projects/*/agent/environments/*/users/*/sessions/*/entityTypes/*}"
+      }
+      additional_bindings {
+        delete: "/v2beta1/{name=projects/*/locations/*/agent/sessions/*/entityTypes/*}"
+      }
+      additional_bindings {
+        delete: "/v2beta1/{name=projects/*/locations/*/agent/environments/*/users/*/sessions/*/entityTypes/*}"
+      }
+    };
+  }
+}
+
+// Represents a session entity type.
+//
+// Extends or replaces a developer entity type at the user session level (we
+// refer to the entity types defined at the agent level as "developer entity
+// types").
+//
+// Note: session entity types apply to all queries, regardless of the language.
+message SessionEntityType {
+  // The types of modifications for a session entity type.
+  enum EntityOverrideMode {
+    // Not specified. This value should be never used.
+    ENTITY_OVERRIDE_MODE_UNSPECIFIED = 0;
+
+    // The collection of session entities overrides the collection of entities
+    // in the corresponding developer entity type.
+    ENTITY_OVERRIDE_MODE_OVERRIDE = 1;
+
+    // The collection of session entities extends the collection of entities in
+    // the corresponding developer entity type.
+    //
+    // Note: Even in this override mode calls to `ListSessionEntityTypes`,
+    // `GetSessionEntityType`, `CreateSessionEntityType` and
+    // `UpdateSessionEntityType` only return the additional entities added in
+    // this session entity type. If you want to get the supplemented list,
+    // please call [EntityTypes.GetEntityType][google.cloud.dialogflow.v2beta1.EntityTypes.GetEntityType] on the developer entity type
+    // and merge.
+    ENTITY_OVERRIDE_MODE_SUPPLEMENT = 2;
+  }
+
+  // Required. The unique identifier of this session entity type. Format:
+  // `projects/<Project ID>/agent/sessions/<Session ID>/entityTypes/<Entity Type
+  // Display Name>`, or
+  // `projects/<Project ID>/agent/environments/<Environment ID>/users/<User
+  // ID>/sessions/<Session ID>/entityTypes/<Entity Type Display Name>`.
+  // If `Environment ID` is not specified, we assume default 'draft'
+  // environment. If `User ID` is not specified, we assume default '-' user.
+  //
+  // `<Entity Type Display Name>` must be the display name of an existing entity
+  // type in the same agent that will be overridden or supplemented.
+  string name = 1;
+
+  // Required. Indicates whether the additional data should override or
+  // supplement the developer entity type definition.
+  EntityOverrideMode entity_override_mode = 2;
+
+  // Required. The collection of entities associated with this session entity
+  // type.
+  repeated EntityType.Entity entities = 3;
+}
+
+// The request message for [SessionEntityTypes.ListSessionEntityTypes][google.cloud.dialogflow.v2beta1.SessionEntityTypes.ListSessionEntityTypes].
+message ListSessionEntityTypesRequest {
+  // Required. The session to list all session entity types from.
+  // Format: `projects/<Project ID>/agent/sessions/<Session ID>` or
+  // `projects/<Project ID>/agent/environments/<Environment ID>/users/<User ID>/
+  // sessions/<Session ID>`.
+  // If `Environment ID` is not specified, we assume default 'draft'
+  // environment. If `User ID` is not specified, we assume default '-' user.
+  string parent = 1;
+
+  // Optional. The maximum number of items to return in a single page. By
+  // default 100 and at most 1000.
+  int32 page_size = 2;
+
+  // Optional. The next_page_token value returned from a previous list request.
+  string page_token = 3;
+}
+
+// The response message for [SessionEntityTypes.ListSessionEntityTypes][google.cloud.dialogflow.v2beta1.SessionEntityTypes.ListSessionEntityTypes].
+message ListSessionEntityTypesResponse {
+  // The list of session entity types. There will be a maximum number of items
+  // returned based on the page_size field in the request.
+  repeated SessionEntityType session_entity_types = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no
+  // more results in the list.
+  string next_page_token = 2;
+}
+
+// The request message for [SessionEntityTypes.GetSessionEntityType][google.cloud.dialogflow.v2beta1.SessionEntityTypes.GetSessionEntityType].
+message GetSessionEntityTypeRequest {
+  // Required. The name of the session entity type. Format:
+  // `projects/<Project ID>/agent/sessions/<Session ID>/entityTypes/<Entity Type
+  // Display Name>` or `projects/<Project ID>/agent/environments/<Environment
+  // ID>/users/<User ID>/sessions/<Session ID>/entityTypes/<Entity Type Display
+  // Name>`. If `Environment ID` is not specified, we assume default 'draft'
+  // environment. If `User ID` is not specified, we assume default '-' user.
+  string name = 1;
+}
+
+// The request message for [SessionEntityTypes.CreateSessionEntityType][google.cloud.dialogflow.v2beta1.SessionEntityTypes.CreateSessionEntityType].
+message CreateSessionEntityTypeRequest {
+  // Required. The session to create a session entity type for.
+  // Format: `projects/<Project ID>/agent/sessions/<Session ID>` or
+  // `projects/<Project ID>/agent/environments/<Environment ID>/users/<User ID>/
+  // sessions/<Session ID>`. If `Environment ID` is not specified, we assume
+  // default 'draft' environment. If `User ID` is not specified, we assume
+  // default '-' user.
+  string parent = 1;
+
+  // Required. The session entity type to create.
+  SessionEntityType session_entity_type = 2;
+}
+
+// The request message for [SessionEntityTypes.UpdateSessionEntityType][google.cloud.dialogflow.v2beta1.SessionEntityTypes.UpdateSessionEntityType].
+message UpdateSessionEntityTypeRequest {
+  // Required. The entity type to update. Format:
+  // `projects/<Project ID>/agent/sessions/<Session ID>/entityTypes/<Entity Type
+  // Display Name>` or `projects/<Project ID>/agent/environments/<Environment
+  // ID>/users/<User ID>/sessions/<Session ID>/entityTypes/<Entity Type Display
+  // Name>`. If `Environment ID` is not specified, we assume default 'draft'
+  // environment. If `User ID` is not specified, we assume default '-' user.
+  SessionEntityType session_entity_type = 1;
+
+  // Optional. The mask to control which fields get updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// The request message for [SessionEntityTypes.DeleteSessionEntityType][google.cloud.dialogflow.v2beta1.SessionEntityTypes.DeleteSessionEntityType].
+message DeleteSessionEntityTypeRequest {
+  // Required. The name of the entity type to delete. Format:
+  // `projects/<Project ID>/agent/sessions/<Session ID>/entityTypes/<Entity Type
+  // Display Name>` or `projects/<Project ID>/agent/environments/<Environment
+  // ID>/users/<User ID>/sessions/<Session ID>/entityTypes/<Entity Type Display
+  // Name>`. If `Environment ID` is not specified, we assume default 'draft'
+  // environment. If `User ID` is not specified, we assume default '-' user.
+  string name = 1;
+}

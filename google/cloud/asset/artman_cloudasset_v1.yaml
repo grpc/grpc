@@ -1,0 +1,36 @@
+common:
+  # Keep the api_name asset, otherwise Java code gen will be broken.
+  api_name: asset
+  api_version: v1
+  organization_name: google-cloud
+  proto_deps:
+  - name: google-common-protos
+  src_proto_paths:
+  - v1
+  service_yaml: v1/cloudasset_v1.yaml
+  gapic_yaml: v1/cloudasset_gapic.yaml
+  proto_package: google.cloud.asset.v1
+artifacts:
+- name: gapic_config
+  type: GAPIC_CONFIG
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: php_gapic
+  type: GAPIC
+  language: PHP
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP

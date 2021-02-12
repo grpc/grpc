@@ -1,0 +1,75 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "DateErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing date errors.
+
+// Container for enum describing possible date errors.
+message DateErrorEnum {
+  // Enum describing possible date errors.
+  enum DateError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Given field values do not correspond to a valid date.
+    INVALID_FIELD_VALUES_IN_DATE = 2;
+
+    // Given field values do not correspond to a valid date time.
+    INVALID_FIELD_VALUES_IN_DATE_TIME = 3;
+
+    // The string date's format should be yyyy-mm-dd.
+    INVALID_STRING_DATE = 4;
+
+    // The string date time's format should be yyyy-mm-dd hh:mm:ss.ssssss.
+    INVALID_STRING_DATE_TIME_MICROS = 6;
+
+    // The string date time's format should be yyyy-mm-dd hh:mm:ss.
+    INVALID_STRING_DATE_TIME_SECONDS = 11;
+
+    // The string date time's format should be yyyy-mm-dd hh:mm:ss+|-hh:mm.
+    INVALID_STRING_DATE_TIME_SECONDS_WITH_OFFSET = 12;
+
+    // Date is before allowed minimum.
+    EARLIER_THAN_MINIMUM_DATE = 7;
+
+    // Date is after allowed maximum.
+    LATER_THAN_MAXIMUM_DATE = 8;
+
+    // Date range bounds are not in order.
+    DATE_RANGE_MINIMUM_DATE_LATER_THAN_MAXIMUM_DATE = 9;
+
+    // Both dates in range are null.
+    DATE_RANGE_MINIMUM_AND_MAXIMUM_DATES_BOTH_NULL = 10;
+  }
+
+
+}

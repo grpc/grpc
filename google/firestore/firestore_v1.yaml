@@ -1,0 +1,15 @@
+type: google.api.Service
+config_version: 3
+name: firestore.googleapis.com
+title: Google Cloud Firestore API
+
+apis:
+- name: google.firestore.v1.Firestore
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/datastore

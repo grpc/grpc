@@ -1,0 +1,47 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.functions.v1beta2.CloudFunctionsService",
+          "method": "ListFunctions"
+        },
+        {
+          "service": "google.cloud.functions.v1beta2.CloudFunctionsService",
+          "method": "GetFunction"
+        },
+        {
+          "service": "google.cloud.functions.v1beta2.CloudFunctionsService",
+          "method": "UpdateFunction"
+        },
+        {
+          "service": "google.cloud.functions.v1beta2.CloudFunctionsService",
+          "method": "DeleteFunction"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.functions.v1beta2.CloudFunctionsService",
+          "method": "CreateFunction"
+        },
+        {
+          "service": "google.cloud.functions.v1beta2.CloudFunctionsService",
+          "method": "CallFunction"
+        }
+      ],
+      "timeout": "600s"
+    }
+  ]
+}

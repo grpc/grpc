@@ -1,0 +1,11 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Speech-to-Text Sample Tests For Quickstart
+    cases:
+    - name: speech_quickstart_beta
+      spec:
+      - call: {sample: speech_quickstart_beta}
+      - assert_contains:
+        - literal: "how old is the Brooklyn Bridge"

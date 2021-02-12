@@ -1,0 +1,542 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.bigquery.datatransfer.v1;
+
+import "google/api/annotations.proto";
+import "google/cloud/bigquery/datatransfer/v1/datatransfer.proto";
+import "google/cloud/bigquery/datatransfer/v1/transfer.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Cloud.BigQuery.DataTransfer.V1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/bigquery/datatransfer/v1;datatransfer";
+option java_multiple_files = true;
+option java_outer_classname = "DataSourceProto";
+option java_package = "com.google.cloud.bigquery.datatransfer.v1";
+option php_namespace = "Google\\Cloud\\BigQuery\\DataTransfer\\V1";
+
+// The Google BigQuery Data Transfer API allows BigQuery users to
+// configure transfer of their data from other Google Products into BigQuery.
+// This service exposes methods that should be used by data source backend.
+service DataSourceService {
+  option (google.api.default_host) = "bigquerydatatransfer.googleapis.com";
+
+  // Update a transfer run. If successful, resets
+  // data_source.update_deadline_seconds timer.
+  rpc UpdateTransferRun(UpdateTransferRunRequest) returns (TransferRun) {
+    option (google.api.http) = {
+      patch: "/v1/{transfer_run.name=projects/*/locations/*/transferConfigs/*/runs/*}"
+      body: "transfer_run"
+    };
+  }
+
+  // Log messages for a transfer run. If successful (at least 1 message), resets
+  // data_source.update_deadline_seconds timer.
+  rpc LogTransferRunMessages(LogTransferRunMessagesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/transferConfigs/*/runs/*}:logMessages"
+      body: "*"
+    };
+  }
+
+  // Notify the Data Transfer Service that data is ready for loading.
+  // The Data Transfer Service will start and monitor multiple BigQuery Load
+  // jobs for a transfer run. Monitored jobs will be automatically retried
+  // and produce log messages when starting and finishing a job.
+  // Can be called multiple times for the same transfer run.
+  rpc StartBigQueryJobs(StartBigQueryJobsRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/transferConfigs/*/runs/*}:startBigQueryJobs"
+      body: "*"
+    };
+  }
+
+  // Notify the Data Transfer Service that the data source is done processing
+  // the run. No more status updates or requests to start/monitor jobs will be
+  // accepted. The run will be finalized by the Data Transfer Service when all
+  // monitored jobs are completed.
+  // Does not need to be called if the run is set to FAILED.
+  rpc FinishRun(FinishRunRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/locations/*/transferConfigs/*/runs/*}:finishRun"
+      body: "*"
+    };
+  }
+
+  // Creates a data source definition.  Calling this method will automatically
+  // use your credentials to create the following Google Cloud resources in
+  // YOUR Google Cloud project.
+  // 1. OAuth client
+  // 2. Pub/Sub Topics and Subscriptions in each supported_location_ids. e.g.,
+  // projects/{project_id}/{topics|subscriptions}/bigquerydatatransfer.{data_source_id}.{location_id}.run
+  // The field data_source.client_id should be left empty in the input request,
+  // as the API will create a new OAuth client on behalf of the caller. On the
+  // other hand data_source.scopes usually need to be set when there are OAuth
+  // scopes that need to be granted by end users.
+  // 3. We need a longer deadline due to the 60 seconds SLO from Pub/Sub admin
+  // Operations. This also applies to update and delete data source definition.
+  rpc CreateDataSourceDefinition(CreateDataSourceDefinitionRequest) returns (DataSourceDefinition) {
+    option (google.api.http) = {
+      post: "/v1/{parent=projects/*/locations/*}/dataSourceDefinitions"
+      body: "data_source_definition"
+    };
+  }
+
+  // Updates an existing data source definition. If changing
+  // supported_location_ids, triggers same effects as mentioned in "Create a
+  // data source definition."
+  rpc UpdateDataSourceDefinition(UpdateDataSourceDefinitionRequest) returns (DataSourceDefinition) {
+    option (google.api.http) = {
+      patch: "/v1/{data_source_definition.name=projects/*/locations/*/dataSourceDefinitions/*}"
+      body: "data_source_definition"
+    };
+  }
+
+  // Deletes a data source definition, all of the transfer configs associated
+  // with this data source definition (if any) must be deleted first by the user
+  // in ALL regions, in order to delete the data source definition.
+  // This method is primarily meant for deleting data sources created during
+  // testing stage.
+  // If the data source is referenced by transfer configs in the region
+  // specified in the request URL, the method will fail immediately. If in the
+  // current region (e.g., US) it's not used by any transfer configs, but in
+  // another region (e.g., EU) it is, then although the method will succeed in
+  // region US, but it will fail when the deletion operation is replicated to
+  // region EU. And eventually, the system will replicate the data source
+  // definition back from EU to US, in order to bring all regions to
+  // consistency. The final effect is that the data source appears to be
+  // 'undeleted' in the US region.
+  rpc DeleteDataSourceDefinition(DeleteDataSourceDefinitionRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/{name=projects/*/locations/*/dataSourceDefinitions/*}"
+    };
+  }
+
+  // Retrieves an existing data source definition.
+  rpc GetDataSourceDefinition(GetDataSourceDefinitionRequest) returns (DataSourceDefinition) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/locations/*/dataSourceDefinitions/*}"
+    };
+  }
+
+  // Lists supported data source definitions.
+  rpc ListDataSourceDefinitions(ListDataSourceDefinitionsRequest) returns (ListDataSourceDefinitionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=projects/*/locations/*}/dataSourceDefinitions"
+    };
+  }
+}
+
+// Describes data which should be imported.
+message ImportedDataInfo {
+  // Defines schema of a field in the imported data.
+  message FieldSchema {
+    // LINT.IfChange
+    // Field type.
+    enum Type {
+      // Illegal value.
+      TYPE_UNSPECIFIED = 0;
+
+      // 64K, UTF8.
+      STRING = 1;
+
+      // 64-bit signed.
+      INTEGER = 2;
+
+      // 64-bit IEEE floating point.
+      FLOAT = 3;
+
+      // Aggregate type.
+      RECORD = 4;
+
+      // 64K, Binary.
+      BYTES = 5;
+
+      // 2-valued.
+      BOOLEAN = 6;
+
+      // 64-bit signed usec since UTC epoch.
+      TIMESTAMP = 7;
+
+      // Civil date - Year, Month, Day.
+      DATE = 8;
+
+      // Civil time - Hour, Minute, Second, Microseconds.
+      TIME = 9;
+
+      // Combination of civil date and civil time.
+      DATETIME = 10;
+
+      // Numeric type with 38 decimal digits of precision and 9 decimal digits
+      // of scale.
+      NUMERIC = 11;
+
+      // Geography object (go/googlesql_geography).
+      GEOGRAPHY = 12;
+    }
+
+    // Field name. Matches: [A-Za-z_][A-Za-z_0-9]{0,127}
+    string field_name = 1;
+
+    // Field type
+    Type type = 2;
+
+    // Is field repeated.
+    bool is_repeated = 3;
+
+    // Description for this field.
+    string description = 4;
+
+    // Present iff type == RECORD.
+    RecordSchema schema = 5;
+  }
+
+  // Describes schema of the data to be ingested.
+  message RecordSchema {
+    // One field per column in the record.
+    repeated FieldSchema fields = 1;
+  }
+
+  // External table definition. These tables can be referenced with 'name'
+  // in the query and can be read just like any other table.
+  message TableDefinition {
+    // CSV specific options.
+    message CsvOptions {
+      // The delimiter.  We currently restrict this to U+0001 to U+00FF and
+      // apply additional constraints during validation.
+      google.protobuf.StringValue field_delimiter = 1;
+
+      // Whether CSV files are allowed to have quoted newlines. If quoted
+      // newlines are allowed, we can't split CSV files.
+      google.protobuf.BoolValue allow_quoted_newlines = 2;
+
+      // The quote character.  We currently restrict this to U+0000 to U+00FF
+      // and apply additional constraints during validation. Set to '\0' to
+      // indicate no quote is used.
+      google.protobuf.StringValue quote_char = 3;
+
+      // Number of leading rows to skip.
+      google.protobuf.Int64Value skip_leading_rows = 4;
+
+      // Accept rows that are missing trailing optional columns.
+      google.protobuf.BoolValue allow_jagged_rows = 5;
+    }
+
+    // BigQuery table_id (required). This will be used to reference this
+    // table in the query.
+    string table_id = 1;
+
+    // URIs for the data to be imported. All URIs must be from the same storage
+    // system.
+    repeated string source_uris = 2;
+
+    // Describes the format of the data in source_uri.
+    Format format = 3;
+
+    // Specify the maximum number of bad records that can be ignored.
+    // If bad records exceed this threshold the query is aborted.
+    int32 max_bad_records = 4;
+
+    // Character encoding of the input when applicable (CSV, JSON).
+    // Defaults to UTF8.
+    Encoding encoding = 5;
+
+    // CSV specific options.
+    CsvOptions csv_options = 6;
+
+    // Optional schema for the data. When not specified for JSON and CSV formats
+    // we will try to detect it automatically.
+    RecordSchema schema = 7;
+
+    // Indicates if extra values that are not represented in the table schema is
+    // allowed.
+    google.protobuf.BoolValue ignore_unknown_values = 10;
+  }
+
+  // Data format.
+  enum Format {
+    // Unspecified format. In this case, we have to infer the format from the
+    // data source.
+    FORMAT_UNSPECIFIED = 0;
+
+    // CSV format.
+    CSV = 1;
+
+    // Newline-delimited JSON.
+    JSON = 2;
+
+    // Avro format. See http://avro.apache.org .
+    AVRO = 3;
+
+    // RecordIO.
+    RECORDIO = 4;
+
+    // ColumnIO.
+    COLUMNIO = 5;
+
+    // Capacitor.
+    CAPACITOR = 6;
+
+    // Parquet format. See https://parquet.apache.org .
+    PARQUET = 7;
+
+    // ORC format. See https://orc.apache.org .
+    ORC = 8;
+  }
+
+  // Encoding of input data in CSV/JSON format.
+  enum Encoding {
+    // Default encoding (UTF8).
+    ENCODING_UNSPECIFIED = 0;
+
+    // ISO_8859_1 encoding.
+    ISO_8859_1 = 1;
+
+    // UTF8 encoding.
+    UTF8 = 2;
+  }
+
+  // SQL query to run. When empty, API checks that there is only one
+  // table_def specified and loads this table. Only Standard SQL queries
+  // are accepted. Legacy SQL is not allowed.
+  string sql = 1;
+
+  // Table where results should be written.
+  string destination_table_id = 2;
+
+  // The description of a destination table. This can be several sentences
+  // or paragraphs describing the table contents in detail.
+  string destination_table_description = 10;
+
+  // When used WITHOUT the "sql" parameter, describes the schema of the
+  // destination table.
+  // When used WITH the "sql" parameter, describes tables with data stored
+  // outside of BigQuery.
+  repeated TableDefinition table_defs = 3;
+
+  // Inline code for User-defined function resources.
+  // Ignored when "sql" parameter is empty.
+  repeated string user_defined_functions = 4;
+
+  // Specifies the action if the destination table already exists.
+  WriteDisposition write_disposition = 6;
+}
+
+// A request to update a transfer run.
+message UpdateTransferRunRequest {
+  // Run name must be set and correspond to an already existing run. Only
+  // state, error_status, and data_version fields will be updated. All other
+  // fields will be ignored.
+  TransferRun transfer_run = 1;
+
+  // Required list of fields to be updated in this request.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// A request to add transfer status messages to the run.
+message LogTransferRunMessagesRequest {
+  // Name of the resource in the form:
+  // "projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}/runs/{run_id}"
+  string name = 1;
+
+  // Messages to append.
+  repeated TransferMessage transfer_messages = 2;
+}
+
+// A request to start and monitor a BigQuery load job.
+message StartBigQueryJobsRequest {
+  // Name of the resource in the form:
+  // "projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}/runs/{run_id}"
+  string name = 1;
+
+  // Import jobs which should be started and monitored.
+  repeated ImportedDataInfo imported_data = 2;
+
+  // User credentials which should be used to start/monitor
+  // BigQuery jobs. If not specified, then jobs
+  // are started using data source service account credentials.
+  // This may be OAuth token or JWT token.
+  bytes user_credentials = 3;
+
+  // The number of BQ Jobs that can run in parallel.
+  int32 max_parallelism = 8;
+}
+
+// A request to finish a run.
+message FinishRunRequest {
+  // Name of the resource in the form:
+  // "projects/{project_id}/locations/{location_id}/transferConfigs/{config_id}/runs/{run_id}"
+  string name = 1;
+}
+
+// Represents the request of the CreateDataSourceDefinition method.
+message CreateDataSourceDefinitionRequest {
+  // The BigQuery project id for which data source definition is associated.
+  // Must be in the form: `projects/{project_id}/locations/{location_id}`
+  string parent = 1;
+
+  // Data source definition.
+  DataSourceDefinition data_source_definition = 2;
+}
+
+// Represents the request of the UpdateDataSourceDefinition method.
+message UpdateDataSourceDefinitionRequest {
+  // Data source definition.
+  DataSourceDefinition data_source_definition = 1;
+
+  // Update field mask.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Represents the request of the DeleteDataSourceDefinition method. All transfer
+// configs associated with the data source must be deleted first, before the
+// data source can be deleted.
+message DeleteDataSourceDefinitionRequest {
+  // The field will contain name of the resource requested, for example:
+  // `projects/{project_id}/locations/{location_id}/dataSourceDefinitions/{data_source_id}`
+  string name = 1;
+}
+
+// Represents the request of the GetDataSourceDefinition method.
+message GetDataSourceDefinitionRequest {
+  // The field will contain name of the resource requested.
+  string name = 1;
+}
+
+// Options for writing to the table.
+// The WRITE_EMPTY option is intentionally excluded from the enum and is not
+// supported by the data transfer service.
+enum WriteDisposition {
+  // The default writeDispostion
+  WRITE_DISPOSITION_UNSPECIFIED = 0;
+
+  // overwrites the table data.
+  WRITE_TRUNCATE = 1;
+
+  // the data is appended to the table.
+  // Note duplication might happen if this mode is used.
+  WRITE_APPEND = 2;
+}
+
+// Represents the request of the ListDataSourceDefinitions method.
+message ListDataSourceDefinitionsRequest {
+  // The BigQuery project id for which data sources should be returned.
+  // Must be in the form: `projects/{project_id}/locations/{location_id}`
+  string parent = 1;
+
+  // Pagination token, which can be used to request a specific page
+  // of `ListDataSourceDefinitionsRequest` list results. For multiple-page
+  // results, `ListDataSourceDefinitionsResponse` outputs a `next_page` token,
+  // which can be used as the `page_token` value to request the next page of
+  // the list results.
+  string page_token = 2;
+
+  // Page size. The default page size is the maximum value of 1000 results.
+  int32 page_size = 3;
+}
+
+// Returns a list of supported data source definitions.
+message ListDataSourceDefinitionsResponse {
+  // List of supported data source definitions.
+  repeated DataSourceDefinition data_source_definitions = 1;
+
+  // Output only. The next-pagination token. For multiple-page list results,
+  // this token can be used as the
+  // `ListDataSourceDefinitionsRequest.page_token`
+  // to request the next page of the list results.
+  string next_page_token = 2;
+}
+
+// Represents the data source definition.
+message DataSourceDefinition {
+  // The resource name of the data source definition.
+  // Data source definition names have the form
+  // `projects/{project_id}/locations/{location}/dataSourceDefinitions/{data_source_id}`.
+  string name = 21;
+
+  // Data source metadata.
+  DataSource data_source = 1;
+
+  // The Pub/Sub topic to be used for broadcasting a message when a transfer run
+  // is created. Both this topic and transfer_config_pubsub_topic can be
+  // set to a custom topic. By default, both topics are auto-generated if none
+  // of them is provided when creating the definition. However, if one topic is
+  // manually set, the other topic has to be manually set as well. The only
+  // difference is that transfer_run_pubsub_topic must be a non-empty Pub/Sub
+  // topic, but transfer_config_pubsub_topic can be set to empty. The comments
+  // about "{location}" for transfer_config_pubsub_topic apply here too.
+  string transfer_run_pubsub_topic = 13;
+
+  // Duration which should be added to schedule_time to calculate
+  // run_time when job is scheduled. Only applicable for automatically
+  // scheduled transfer runs. Used to start a run early on a data source that
+  // supports continuous data refresh to compensate for unknown timezone
+  // offsets. Use a negative number to start a run late for data sources not
+  // supporting continuous data refresh.
+  google.protobuf.Duration run_time_offset = 16;
+
+  // Support e-mail address of the OAuth client's Brand, which contains the
+  // consent screen data.
+  string support_email = 22;
+
+  // When service account is specified, BigQuery will share created dataset
+  // with the given service account. Also, this service account will be
+  // eligible to perform status updates and message logging for data transfer
+  // runs for the corresponding data_source_id.
+  string service_account = 2;
+
+  // Is data source disabled? If true, data_source is not visible.
+  // API will also stop returning any data transfer configs and/or runs
+  // associated with the data source. This setting has higher priority
+  // than whitelisted_project_ids.
+  bool disabled = 5;
+
+  // The Pub/Sub topic to use for broadcasting a message for transfer config. If
+  // empty, a message will not be broadcasted. Both this topic and
+  // transfer_run_pubsub_topic are auto-generated if none of them is provided
+  // when creating the definition. It is recommended to provide
+  // transfer_config_pubsub_topic if a user-owned transfer_run_pubsub_topic is
+  // provided. Otherwise, it will be set to empty. If "{location}" is found in
+  // the value, then that means, data source wants to handle message separately
+  // for datasets in different regions. We will replace {location} with the
+  // actual dataset location, as the actual topic name. For example,
+  // projects/connector/topics/scheduler-{location} could become
+  // projects/connector/topics/scheduler-us. If "{location}" is not found, then
+  // we will use the input value as topic name.
+  string transfer_config_pubsub_topic = 12;
+
+  // Supported location_ids used for deciding in which locations Pub/Sub topics
+  // need to be created. If custom Pub/Sub topics are used and they contains
+  // '{location}', the location_ids will be used for validating the topics by
+  // replacing the '{location}' with the individual location in the list. The
+  // valid values are the "location_id" field of the response of `GET
+  // https://bigquerydatatransfer.googleapis.com/v1/{name=projects/*}/locations`
+  // In addition, if the data source needs to support all available regions,
+  // supported_location_ids can be set to "global" (a single string element).
+  // When "global" is specified:
+  // 1) the data source implementation is supposed to stage the data in proper
+  // region of the destination dataset;
+  // 2) Data source developer should be aware of the implications (e.g., network
+  // traffic latency, potential charge associated with cross-region traffic,
+  // etc.) of supporting the "global" region;
+  repeated string supported_location_ids = 23;
+}

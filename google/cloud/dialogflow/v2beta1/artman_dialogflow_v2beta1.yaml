@@ -1,0 +1,30 @@
+common:
+  api_name: dialogflow
+  api_version: v2beta1
+  proto_deps:
+    - name: google-common-protos
+  src_proto_paths:
+  - .
+  service_yaml: dialogflow_v2beta1.yaml
+  gapic_yaml: dialogflow_gapic.yaml
+artifacts:
+- name: gapic_config
+  type: GAPIC_CONFIG
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: php_gapic
+  type: GAPIC
+  language: PHP
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP

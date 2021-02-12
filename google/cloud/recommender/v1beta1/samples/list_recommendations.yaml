@@ -1,0 +1,18 @@
+type: com.google.api.codegen.samplegen.v1p2.SampleConfigProto
+schema_version: 1.2.0
+samples:
+- title: List Recommendations
+  service: google.cloud.recommender.v1beta1.Recommender
+  description: |
+    List recommendations for a specified project, location, and recommender.
+  rpc: ListRecommendations
+  request:
+  - field: parent
+    value: "projects/[PROJECT_NUMBER]/locations/[LOCATION]/recommenders/[RECOMMENDER]"
+  response:
+  - define: recommendation = $resp
+  - print: ["Recommendation name: %s", recommendation.name]
+  - print: ["- description: %s", recommendation.description]
+  - print: ["- primary_impact.category: %s", recommendation.primary_impact.category]
+  - print: ["- state_info.state: %s", recommendation.state_info.state]
+  - print: ["- last_refresh_time: %s", recommendation.last_refresh_time]

@@ -1,0 +1,281 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.assistant.embedded.v1alpha1;
+
+import "google/api/annotations.proto";
+import "google/rpc/status.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/assistant/embedded/v1alpha1;embedded";
+option java_multiple_files = true;
+option java_outer_classname = "AssistantProto";
+option java_package = "com.google.assistant.embedded.v1alpha1";
+
+// Service that implements Google Assistant API.
+service EmbeddedAssistant {
+  // Initiates or continues a conversation with the embedded assistant service.
+  // Each call performs one round-trip, sending an audio request to the service
+  // and receiving the audio response. Uses bidirectional streaming to receive
+  // results, such as the `END_OF_UTTERANCE` event, while sending audio.
+  //
+  // A conversation is one or more gRPC connections, each consisting of several
+  // streamed requests and responses.
+  // For example, the user says *Add to my shopping list* and the assistant
+  // responds *What do you want to add?*. The sequence of streamed requests and
+  // responses in the first gRPC message could be:
+  //
+  // *   ConverseRequest.config
+  // *   ConverseRequest.audio_in
+  // *   ConverseRequest.audio_in
+  // *   ConverseRequest.audio_in
+  // *   ConverseRequest.audio_in
+  // *   ConverseResponse.event_type.END_OF_UTTERANCE
+  // *   ConverseResponse.result.microphone_mode.DIALOG_FOLLOW_ON
+  // *   ConverseResponse.audio_out
+  // *   ConverseResponse.audio_out
+  // *   ConverseResponse.audio_out
+  //
+  // The user then says *bagels* and the assistant responds
+  // *OK, I've added bagels to your shopping list*. This is sent as another gRPC
+  // connection call to the `Converse` method, again with streamed requests and
+  // responses, such as:
+  //
+  // *   ConverseRequest.config
+  // *   ConverseRequest.audio_in
+  // *   ConverseRequest.audio_in
+  // *   ConverseRequest.audio_in
+  // *   ConverseResponse.event_type.END_OF_UTTERANCE
+  // *   ConverseResponse.result.microphone_mode.CLOSE_MICROPHONE
+  // *   ConverseResponse.audio_out
+  // *   ConverseResponse.audio_out
+  // *   ConverseResponse.audio_out
+  // *   ConverseResponse.audio_out
+  //
+  // Although the precise order of responses is not guaranteed, sequential
+  // ConverseResponse.audio_out messages will always contain sequential portions
+  // of audio.
+  rpc Converse(stream ConverseRequest) returns (stream ConverseResponse);
+}
+
+// Specifies how to process the `ConverseRequest` messages.
+message ConverseConfig {
+  // *Required* Specifies how to process the subsequent incoming audio.
+  AudioInConfig audio_in_config = 1;
+
+  // *Required* Specifies how to format the audio that will be returned.
+  AudioOutConfig audio_out_config = 2;
+
+  // *Required* Represents the current dialog state.
+  ConverseState converse_state = 3;
+}
+
+// Specifies how to process the `audio_in` data that will be provided in
+// subsequent requests. For recommended settings, see the Google Assistant SDK
+// [best
+// practices](https://developers.google.com/assistant/sdk/develop/grpc/best-practices/audio).
+message AudioInConfig {
+  // Audio encoding of the data sent in the audio message.
+  // Audio must be one-channel (mono). The only language supported is "en-US".
+  enum Encoding {
+    // Not specified. Will return result [google.rpc.Code.INVALID_ARGUMENT][].
+    ENCODING_UNSPECIFIED = 0;
+
+    // Uncompressed 16-bit signed little-endian samples (Linear PCM).
+    // This encoding includes no header, only the raw audio bytes.
+    LINEAR16 = 1;
+
+    // [`FLAC`](https://xiph.org/flac/documentation.html) (Free Lossless Audio
+    // Codec) is the recommended encoding because it is
+    // lossless--therefore recognition is not compromised--and
+    // requires only about half the bandwidth of `LINEAR16`. This encoding
+    // includes the `FLAC` stream header followed by audio data. It supports
+    // 16-bit and 24-bit samples, however, not all fields in `STREAMINFO` are
+    // supported.
+    FLAC = 2;
+  }
+
+  // *Required* Encoding of audio data sent in all `audio_in` messages.
+  Encoding encoding = 1;
+
+  // *Required* Sample rate (in Hertz) of the audio data sent in all `audio_in`
+  // messages. Valid values are from 16000-24000, but 16000 is optimal.
+  // For best results, set the sampling rate of the audio source to 16000 Hz.
+  // If that's not possible, use the native sample rate of the audio source
+  // (instead of re-sampling).
+  int32 sample_rate_hertz = 2;
+}
+
+// Specifies the desired format for the server to use when it returns
+// `audio_out` messages.
+message AudioOutConfig {
+  // Audio encoding of the data returned in the audio message. All encodings are
+  // raw audio bytes with no header, except as indicated below.
+  enum Encoding {
+    // Not specified. Will return result [google.rpc.Code.INVALID_ARGUMENT][].
+    ENCODING_UNSPECIFIED = 0;
+
+    // Uncompressed 16-bit signed little-endian samples (Linear PCM).
+    LINEAR16 = 1;
+
+    // MP3 audio encoding. The sample rate is encoded in the payload.
+    MP3 = 2;
+
+    // Opus-encoded audio wrapped in an ogg container. The result will be a
+    // file which can be played natively on Android and in some browsers (such
+    // as Chrome). The quality of the encoding is considerably higher than MP3
+    // while using the same bitrate. The sample rate is encoded in the payload.
+    OPUS_IN_OGG = 3;
+  }
+
+  // *Required* The encoding of audio data to be returned in all `audio_out`
+  // messages.
+  Encoding encoding = 1;
+
+  // *Required* The sample rate in Hertz of the audio data returned in
+  // `audio_out` messages. Valid values are: 16000-24000.
+  int32 sample_rate_hertz = 2;
+
+  // *Required* Current volume setting of the device's audio output.
+  // Valid values are 1 to 100 (corresponding to 1% to 100%).
+  int32 volume_percentage = 3;
+}
+
+// Provides information about the current dialog state.
+message ConverseState {
+  // *Required* The `conversation_state` value returned in the prior
+  // `ConverseResponse`. Omit (do not set the field) if there was no prior
+  // `ConverseResponse`. If there was a prior `ConverseResponse`, do not omit
+  // this field; doing so will end that conversation (and this new request will
+  // start a new conversation).
+  bytes conversation_state = 1;
+}
+
+// The audio containing the assistant's response to the query. Sequential chunks
+// of audio data are received in sequential `ConverseResponse` messages.
+message AudioOut {
+  // *Output-only* The audio data containing the assistant's response to the
+  // query. Sequential chunks of audio data are received in sequential
+  // `ConverseResponse` messages.
+  bytes audio_data = 1;
+}
+
+// The semantic result for the user's spoken query.
+message ConverseResult {
+  // Possible states of the microphone after a `Converse` RPC completes.
+  enum MicrophoneMode {
+    // No mode specified.
+    MICROPHONE_MODE_UNSPECIFIED = 0;
+
+    // The service is not expecting a follow-on question from the user.
+    // The microphone should remain off until the user re-activates it.
+    CLOSE_MICROPHONE = 1;
+
+    // The service is expecting a follow-on question from the user. The
+    // microphone should be re-opened when the `AudioOut` playback completes
+    // (by starting a new `Converse` RPC call to send the new audio).
+    DIALOG_FOLLOW_ON = 2;
+  }
+
+  // *Output-only* The recognized transcript of what the user said.
+  string spoken_request_text = 1;
+
+  // *Output-only* The text of the assistant's spoken response. This is only
+  // returned for an IFTTT action.
+  string spoken_response_text = 2;
+
+  // *Output-only* State information for subsequent `ConverseRequest`. This
+  // value should be saved in the client and returned in the
+  // `conversation_state` with the next `ConverseRequest`. (The client does not
+  // need to interpret or otherwise use this value.) There is no need to save
+  // this information across device restarts.
+  bytes conversation_state = 3;
+
+  // *Output-only* Specifies the mode of the microphone after this `Converse`
+  // RPC is processed.
+  MicrophoneMode microphone_mode = 4;
+
+  // *Output-only* Updated volume level. The value will be 0 or omitted
+  // (indicating no change) unless a voice command such as "Increase the volume"
+  // or "Set volume level 4" was recognized, in which case the value will be
+  // between 1 and 100 (corresponding to the new volume level of 1% to 100%).
+  // Typically, a client should use this volume level when playing the
+  // `audio_out` data, and retain this value as the current volume level and
+  // supply it in the `AudioOutConfig` of the next `ConverseRequest`. (Some
+  // clients may also implement other ways to allow the current volume level to
+  // be changed, for example, by providing a knob that the user can turn.)
+  int32 volume_percentage = 5;
+}
+
+// The top-level message sent by the client. Clients must send at least two, and
+// typically numerous `ConverseRequest` messages. The first message must
+// contain a `config` message and must not contain `audio_in` data. All
+// subsequent messages must contain `audio_in` data and must not contain a
+// `config` message.
+message ConverseRequest {
+  // Exactly one of these fields must be specified in each `ConverseRequest`.
+  oneof converse_request {
+    // The `config` message provides information to the recognizer that
+    // specifies how to process the request.
+    // The first `ConverseRequest` message must contain a `config` message.
+    ConverseConfig config = 1;
+
+    // The audio data to be recognized. Sequential chunks of audio data are sent
+    // in sequential `ConverseRequest` messages. The first `ConverseRequest`
+    // message must not contain `audio_in` data and all subsequent
+    // `ConverseRequest` messages must contain `audio_in` data. The audio bytes
+    // must be encoded as specified in `AudioInConfig`.
+    // Audio must be sent at approximately real-time (16000 samples per second).
+    // An error will be returned if audio is sent significantly faster or
+    // slower.
+    bytes audio_in = 2;
+  }
+}
+
+// The top-level message received by the client. A series of one or more
+// `ConverseResponse` messages are streamed back to the client.
+message ConverseResponse {
+  // Indicates the type of event.
+  enum EventType {
+    // No event specified.
+    EVENT_TYPE_UNSPECIFIED = 0;
+
+    // This event indicates that the server has detected the end of the user's
+    // speech utterance and expects no additional speech. Therefore, the server
+    // will not process additional audio (although it may subsequently return
+    // additional results). The client should stop sending additional audio
+    // data, half-close the gRPC connection, and wait for any additional results
+    // until the server closes the gRPC connection.
+    END_OF_UTTERANCE = 1;
+  }
+
+  // Exactly one of these fields will be populated in each `ConverseResponse`.
+  oneof converse_response {
+    // *Output-only* If set, returns a [google.rpc.Status][google.rpc.Status]
+    // message that specifies the error for the operation. If an error occurs
+    // during processing, this message will be set and there will be no further
+    // messages sent.
+    google.rpc.Status error = 1;
+
+    // *Output-only* Indicates the type of event.
+    EventType event_type = 2;
+
+    // *Output-only* The audio containing the assistant's response to the query.
+    AudioOut audio_out = 3;
+
+    // *Output-only* The semantic result for the user's spoken query.
+    ConverseResult result = 5;
+  }
+}

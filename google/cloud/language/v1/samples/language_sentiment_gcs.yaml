@@ -1,0 +1,45 @@
+type: com.google.api.codegen.samplegen.v1p2.SampleConfigProto
+schema_version: 1.2.0
+samples:
+- region_tag: language_sentiment_gcs
+  title: Analyzing Sentiment (GCS)
+  description: Analyzing Sentiment in text file stored in Cloud Storage
+  service: google.cloud.language.v1.LanguageService
+  rpc: AnalyzeSentiment
+  request:
+  - field: document.gcs_content_uri
+    value: gs://cloud-samples-data/language/sentiment-positive.txt
+    comment: |
+      Google Cloud Storage URI where the file content is located.
+      e.g. gs://[Your Bucket]/[Path to File]
+    input_parameter: gcs_content_uri
+  - field: document.type
+    value: PLAIN_TEXT
+    comment: "Available types: PLAIN_TEXT, HTML"
+  - field: document.language
+    value: en
+    comment: |
+      Optional. If not specified, the language is automatically detected.
+      For list of supported languages:
+        https://cloud.google.com/natural-language/docs/languages
+  - field: encoding_type
+    value: UTF8
+    comment: "Available values: NONE, UTF8, UTF16, UTF32"
+  response:
+  - comment: ["Get overall sentiment of the input document"]
+  - print: ["Document sentiment score: %s", $resp.document_sentiment.score]
+  - print: ["Document sentiment magnitude: %s", $resp.document_sentiment.magnitude]
+  - comment: ["Get sentiment for all sentences in the document"]
+  - loop:
+      collection: $resp.sentences
+      variable: sentence
+      body:
+      - print: ["Sentence text: %s", sentence.text.content]
+      - print: ["Sentence sentiment score: %s", sentence.sentiment.score]
+      - print: ["Sentence sentiment magnitude: %s", sentence.sentiment.magnitude]
+  - comment:
+    - |
+        Get the language of the text, which will be the same as
+        the language specified in the request or, if not specified,
+        the automatically-detected language.
+  - print: ["Language of the text: %s", $resp.language]

@@ -1,0 +1,40 @@
+type: google.api.Service
+config_version: 3
+name: oslogin.googleapis.com
+title: Google Cloud OS Login API
+
+apis:
+- name: google.cloud.oslogin.v1beta.OsLoginService
+
+documentation:
+  summary: Manages OS login configuration for Google account users.
+
+backend:
+  rules:
+  - selector: google.cloud.oslogin.v1beta.OsLoginService.DeletePosixAccount
+    deadline: 10.0
+  - selector: google.cloud.oslogin.v1beta.OsLoginService.DeleteSshPublicKey
+    deadline: 10.0
+  - selector: google.cloud.oslogin.v1beta.OsLoginService.GetLoginProfile
+    deadline: 10.0
+  - selector: google.cloud.oslogin.v1beta.OsLoginService.GetSshPublicKey
+    deadline: 10.0
+  - selector: google.cloud.oslogin.v1beta.OsLoginService.ImportSshPublicKey
+    deadline: 10.0
+  - selector: google.cloud.oslogin.v1beta.OsLoginService.UpdateSshPublicKey
+    deadline: 10.0
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/compute
+  - selector: google.cloud.oslogin.v1beta.OsLoginService.GetLoginProfile
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only,
+        https://www.googleapis.com/auth/compute,
+        https://www.googleapis.com/auth/compute.readonly

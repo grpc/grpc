@@ -1,0 +1,75 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "DomainCategoryProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the Domain Category resource.
+
+// A category generated automatically by crawling a domain. If a campaign uses
+// the DynamicSearchAdsSetting, then domain categories will be generated for
+// the domain. The categories can be targeted using WebpageConditionInfo.
+// See: https://support.google.com/google-ads/answer/2471185
+message DomainCategory {
+  // The resource name of the domain category.
+  // Domain category resource names have the form:
+  //
+  // `customers/{customer_id}/domainCategories/{campaign_id}~{category_base64}~{language_code}`
+  string resource_name = 1;
+
+  // The campaign this category is recommended for.
+  google.protobuf.StringValue campaign = 2;
+
+  // Recommended category for the website domain. e.g. if you have a website
+  // about electronics, the categories could be "cameras", "televisions", etc.
+  google.protobuf.StringValue category = 3;
+
+  // The language code specifying the language of the website. e.g. "en" for
+  // English. The language can be specified in the DynamicSearchAdsSetting
+  // required for dynamic search ads. This is the language of the pages from
+  // your website that you want Google Ads to find, create ads for,
+  // and match searches with.
+  google.protobuf.StringValue language_code = 4;
+
+  // The domain for the website. The domain can be specified in the
+  // DynamicSearchAdsSetting required for dynamic search ads.
+  google.protobuf.StringValue domain = 5;
+
+  // Fraction of pages on your site that this category matches.
+  google.protobuf.DoubleValue coverage_fraction = 6;
+
+  // The position of this category in the set of categories. Lower numbers
+  // indicate a better match for the domain. null indicates not recommended.
+  google.protobuf.Int64Value category_rank = 7;
+
+  // Indicates whether this category has sub-categories.
+  google.protobuf.BoolValue has_children = 8;
+
+  // The recommended cost per click for the category.
+  google.protobuf.Int64Value recommended_cpc_bid_micros = 9;
+}

@@ -1,0 +1,130 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "UserListErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing user list errors.
+
+// Container for enum describing possible user list errors.
+message UserListErrorEnum {
+  // Enum describing possible user list errors.
+  enum UserListError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Creating and updating external remarketing user lists is not supported.
+    EXTERNAL_REMARKETING_USER_LIST_MUTATE_NOT_SUPPORTED = 2;
+
+    // Concrete type of user list is required.
+    CONCRETE_TYPE_REQUIRED = 3;
+
+    // Creating/updating user list conversion types requires specifying the
+    // conversion type Id.
+    CONVERSION_TYPE_ID_REQUIRED = 4;
+
+    // Remarketing user list cannot have duplicate conversion types.
+    DUPLICATE_CONVERSION_TYPES = 5;
+
+    // Conversion type is invalid/unknown.
+    INVALID_CONVERSION_TYPE = 6;
+
+    // User list description is empty or invalid.
+    INVALID_DESCRIPTION = 7;
+
+    // User list name is empty or invalid.
+    INVALID_NAME = 8;
+
+    // Type of the UserList does not match.
+    INVALID_TYPE = 9;
+
+    // Embedded logical user lists are not allowed.
+    CAN_NOT_ADD_LOGICAL_LIST_AS_LOGICAL_LIST_OPERAND = 10;
+
+    // User list rule operand is invalid.
+    INVALID_USER_LIST_LOGICAL_RULE_OPERAND = 11;
+
+    // Name is already being used for another user list for the account.
+    NAME_ALREADY_USED = 12;
+
+    // Name is required when creating a new conversion type.
+    NEW_CONVERSION_TYPE_NAME_REQUIRED = 13;
+
+    // The given conversion type name has been used.
+    CONVERSION_TYPE_NAME_ALREADY_USED = 14;
+
+    // Only an owner account may edit a user list.
+    OWNERSHIP_REQUIRED_FOR_SET = 15;
+
+    // Creating user list without setting type in oneof user_list field, or
+    // creating/updating read-only user list types is not allowed.
+    USER_LIST_MUTATE_NOT_SUPPORTED = 16;
+
+    // Rule is invalid.
+    INVALID_RULE = 17;
+
+    // The specified date range is empty.
+    INVALID_DATE_RANGE = 27;
+
+    // A UserList which is privacy sensitive or legal rejected cannot be mutated
+    // by external users.
+    CAN_NOT_MUTATE_SENSITIVE_USERLIST = 28;
+
+    // Maximum number of rulebased user lists a customer can have.
+    MAX_NUM_RULEBASED_USERLISTS = 29;
+
+    // BasicUserList's billable record field cannot be modified once it is set.
+    CANNOT_MODIFY_BILLABLE_RECORD_COUNT = 30;
+
+    // crm_based_user_list.app_id field must be set when upload_key_type is
+    // MOBILE_ADVERTISING_ID.
+    APP_ID_NOT_SET = 31;
+
+    // Name of the user list is reserved for system generated lists and cannot
+    // be used.
+    USERLIST_NAME_IS_RESERVED_FOR_SYSTEM_LIST = 32;
+
+    // Advertiser needs to be whitelisted to use remarketing lists created from
+    // advertiser uploaded data (e.g., Customer Match lists).
+    ADVERTISER_NOT_WHITELISTED_FOR_USING_UPLOADED_DATA = 33;
+
+    // The provided rule_type is not supported for the user list.
+    RULE_TYPE_IS_NOT_SUPPORTED = 34;
+
+    // Similar user list cannot be used as a logical user list operand.
+    CAN_NOT_ADD_A_SIMILAR_USERLIST_AS_LOGICAL_LIST_OPERAND = 35;
+
+    // Logical user list should not have a mix of CRM based user list and other
+    // types of lists in its rules.
+    CAN_NOT_MIX_CRM_BASED_IN_LOGICAL_LIST_WITH_OTHER_LISTS = 36;
+  }
+
+
+}

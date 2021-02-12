@@ -1,0 +1,51 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.binaryauthorization.v1beta1.BinauthzManagementServiceV1Beta1",
+          "method": "GetPolicy"
+        },
+        {
+          "service": "google.cloud.binaryauthorization.v1beta1.BinauthzManagementServiceV1Beta1",
+          "method": "UpdatePolicy"
+        },
+        {
+          "service": "google.cloud.binaryauthorization.v1beta1.BinauthzManagementServiceV1Beta1",
+          "method": "GetAttestor"
+        },
+        {
+          "service": "google.cloud.binaryauthorization.v1beta1.BinauthzManagementServiceV1Beta1",
+          "method": "UpdateAttestor"
+        },
+        {
+          "service": "google.cloud.binaryauthorization.v1beta1.BinauthzManagementServiceV1Beta1",
+          "method": "ListAttestors"
+        },
+        {
+          "service": "google.cloud.binaryauthorization.v1beta1.BinauthzManagementServiceV1Beta1",
+          "method": "DeleteAttestor"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.binaryauthorization.v1beta1.BinauthzManagementServiceV1Beta1",
+          "method": "CreateAttestor"
+        }
+      ],
+      "timeout": "600s"
+    }
+  ]
+}

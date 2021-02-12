@@ -1,0 +1,17 @@
+type: google.api.Service
+config_version: 3
+name: fcmconnection.googleapis.com
+title: FCM Connection API
+
+apis:
+- name: google.firebase.fcm.connection.v1alpha1.ConnectionApi
+
+documentation:
+  summary: An API to connect clients to receive FCM messages.
+  overview: |-
+    The FCM Connection API allows developers’ client applications to create
+    long-lived bi-directional gRPC connections with FCM in order to receive &
+    send messages from/to their respective app servers. Historically,
+    developers could only send push notifications/messages to Android, iOS &
+    browsers. This API allows all gRPC supported client platforms to connect
+    to FCM.

@@ -1,0 +1,116 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/resources/ad_group_criterion_label.proto";
+import "google/api/annotations.proto";
+import "google/rpc/status.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "AdGroupCriterionLabelServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Proto file describing the Ad Group Criterion Label service.
+
+// Service to manage labels on ad group criteria.
+service AdGroupCriterionLabelService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns the requested ad group criterion label in full detail.
+  rpc GetAdGroupCriterionLabel(GetAdGroupCriterionLabelRequest) returns (google.ads.googleads.v2.resources.AdGroupCriterionLabel) {
+    option (google.api.http) = {
+      get: "/v2/{resource_name=customers/*/adGroupCriterionLabels/*}"
+    };
+  }
+
+  // Creates and removes ad group criterion labels.
+  // Operation statuses are returned.
+  rpc MutateAdGroupCriterionLabels(MutateAdGroupCriterionLabelsRequest) returns (MutateAdGroupCriterionLabelsResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}/adGroupCriterionLabels:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [AdGroupCriterionLabelService.GetAdGroupCriterionLabel][google.ads.googleads.v2.services.AdGroupCriterionLabelService.GetAdGroupCriterionLabel].
+message GetAdGroupCriterionLabelRequest {
+  // The resource name of the ad group criterion label to fetch.
+  string resource_name = 1;
+}
+
+// Request message for
+// [AdGroupCriterionLabelService.MutateAdGroupCriterionLabels][google.ads.googleads.v2.services.AdGroupCriterionLabelService.MutateAdGroupCriterionLabels].
+message MutateAdGroupCriterionLabelsRequest {
+  // ID of the customer whose ad group criterion labels are being modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on ad group criterion labels.
+  repeated AdGroupCriterionLabelOperation operations = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried
+  // out in one transaction if and only if they are all valid.
+  // Default is false.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// A single operation (create, remove) on an ad group criterion label.
+message AdGroupCriterionLabelOperation {
+  // The mutate operation.
+  oneof operation {
+    // Create operation: No resource name is expected for the new ad group
+    // label.
+    google.ads.googleads.v2.resources.AdGroupCriterionLabel create = 1;
+
+    // Remove operation: A resource name for the ad group criterion label
+    // being removed, in this format:
+    //
+    // `customers/{customer_id}/adGroupCriterionLabels/{ad_group_id}~{criterion_id}~{label_id}`
+    string remove = 2;
+  }
+}
+
+// Response message for an ad group criterion labels mutate.
+message MutateAdGroupCriterionLabelsResponse {
+  // Errors that pertain to operation failures in the partial failure mode.
+  // Returned only when partial_failure = true and all errors occur inside the
+  // operations. If any errors occur outside the operations (e.g. auth errors),
+  // we return an RPC level error.
+  google.rpc.Status partial_failure_error = 3;
+
+  // All results for the mutate.
+  repeated MutateAdGroupCriterionLabelResult results = 2;
+}
+
+// The result for an ad group criterion label mutate.
+message MutateAdGroupCriterionLabelResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}

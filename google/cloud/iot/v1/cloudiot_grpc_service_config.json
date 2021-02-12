@@ -1,0 +1,114 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "CreateDeviceRegistry"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "UpdateDeviceRegistry"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "CreateDevice"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "UpdateDevice"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "SetIamPolicy"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "GetIamPolicy"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "TestIamPermissions"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "BindDeviceToGateway"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "UnbindDeviceFromGateway"
+        }
+      ],
+      "timeout": "120s"
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "GetDeviceRegistry"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "DeleteDeviceRegistry"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "ListDeviceRegistries"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "GetDevice"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "DeleteDevice"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "ListDevices"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "ListDeviceConfigVersions"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "ListDeviceStates"
+        }
+      ],
+      "timeout": "120s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "ModifyCloudToDeviceConfig"
+        },
+        {
+          "service": "google.cloud.iot.v1.DeviceManager",
+          "method": "SendCommandToDevice"
+        }
+      ],
+      "timeout": "120s",
+      "retryPolicy": {
+        "initialBackoff": "1s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED",
+          "RESOURCE_EXHAUSTED"
+        ]
+      }
+    }
+  ]
+}

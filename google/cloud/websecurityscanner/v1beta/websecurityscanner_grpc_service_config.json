@@ -1,0 +1,75 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "CreateScanConfig"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "UpdateScanConfig"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "StartScanRun"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "StopScanRun"
+        }
+      ],
+      "timeout": "600s"
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "DeleteScanConfig"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "GetScanConfig"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "ListScanConfigs"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "GetScanRun"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "ListScanRuns"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "GetFinding"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "ListFindings"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "ListFindingTypeStats"
+        },
+        {
+          "service": "google.cloud.websecurityscanner.v1beta.WebSecurityScanner",
+          "method": "ListCrawledUrls"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    }
+  ]
+}

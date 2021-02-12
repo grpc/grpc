@@ -1,0 +1,111 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "MediaBundleErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing media bundle errors.
+
+// Container for enum describing possible media bundle errors.
+message MediaBundleErrorEnum {
+  // Enum describing possible media bundle errors.
+  enum MediaBundleError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // There was a problem with the request.
+    BAD_REQUEST = 3;
+
+    // HTML5 ads using DoubleClick Studio created ZIP files are not supported.
+    DOUBLECLICK_BUNDLE_NOT_ALLOWED = 4;
+
+    // Cannot reference URL external to the media bundle.
+    EXTERNAL_URL_NOT_ALLOWED = 5;
+
+    // Media bundle file is too large.
+    FILE_TOO_LARGE = 6;
+
+    // ZIP file from Google Web Designer is not published.
+    GOOGLE_WEB_DESIGNER_ZIP_FILE_NOT_PUBLISHED = 7;
+
+    // Input was invalid.
+    INVALID_INPUT = 8;
+
+    // There was a problem with the media bundle.
+    INVALID_MEDIA_BUNDLE = 9;
+
+    // There was a problem with one or more of the media bundle entries.
+    INVALID_MEDIA_BUNDLE_ENTRY = 10;
+
+    // The media bundle contains a file with an unknown mime type
+    INVALID_MIME_TYPE = 11;
+
+    // The media bundle contain an invalid asset path.
+    INVALID_PATH = 12;
+
+    // HTML5 ad is trying to reference an asset not in .ZIP file
+    INVALID_URL_REFERENCE = 13;
+
+    // Media data is too large.
+    MEDIA_DATA_TOO_LARGE = 14;
+
+    // The media bundle contains no primary entry.
+    MISSING_PRIMARY_MEDIA_BUNDLE_ENTRY = 15;
+
+    // There was an error on the server.
+    SERVER_ERROR = 16;
+
+    // The image could not be stored.
+    STORAGE_ERROR = 17;
+
+    // Media bundle created with the Swiffy tool is not allowed.
+    SWIFFY_BUNDLE_NOT_ALLOWED = 18;
+
+    // The media bundle contains too many files.
+    TOO_MANY_FILES = 19;
+
+    // The media bundle is not of legal dimensions.
+    UNEXPECTED_SIZE = 20;
+
+    // Google Web Designer not created for "Google Ads" environment.
+    UNSUPPORTED_GOOGLE_WEB_DESIGNER_ENVIRONMENT = 21;
+
+    // Unsupported HTML5 feature in HTML5 asset.
+    UNSUPPORTED_HTML5_FEATURE = 22;
+
+    // URL in HTML5 entry is not ssl compliant.
+    URL_IN_MEDIA_BUNDLE_NOT_SSL_COMPLIANT = 23;
+
+    // Custom exits not allowed in HTML5 entry.
+    CUSTOM_EXIT_NOT_ALLOWED = 24;
+  }
+
+
+}

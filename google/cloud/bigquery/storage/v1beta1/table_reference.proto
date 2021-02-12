@@ -1,0 +1,43 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.bigquery.storage.v1beta1;
+
+import "google/api/resource.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/bigquery/storage/v1beta1;storage";
+option java_outer_classname = "TableReferenceProto";
+option java_package = "com.google.cloud.bigquery.storage.v1beta1";
+
+// Table reference that includes just the 3 strings needed to identify a table.
+message TableReference {
+  // The assigned project ID of the project.
+  string project_id = 1;
+
+  // The ID of the dataset in the above project.
+  string dataset_id = 2;
+
+  // The ID of the table in the above dataset.
+  string table_id = 3;
+}
+
+// All fields in this message optional.
+message TableModifiers {
+  // The snapshot time of the table. If not set, interpreted as now.
+  google.protobuf.Timestamp snapshot_time = 1;
+}

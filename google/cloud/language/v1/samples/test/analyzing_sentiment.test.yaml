@@ -1,0 +1,74 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: "Analyzing Sentiment [code sample tests]"
+    cases:
+
+    - name: language_sentiment_text - Analyzing the sentiment of a text string (default value)
+      spec:
+      # Default value: "I am so happy and joyful."
+      - call: {sample: language_sentiment_text}
+      - assert_contains:
+        - {literal: "Document sentiment score: 0."}
+        - {literal: "Document sentiment magnitude: 0."}
+        - {literal: "Sentence text: I am so happy and joyful."}
+        - {literal: "Sentence sentiment score: 0."}
+        - {literal: "Sentence sentiment magnitude: 0."}
+        - {literal: "Language of the text: en"}
+      # There should be no negative sentiment scores for this value.
+      - assert_not_contains:
+        - {literal: "Document sentiment score: -0."}
+        - {literal: "Sentence sentiment score: -0."}
+
+    - name: language_sentiment_text - Analyzing the sentiment of a text string (*custom value*)
+      spec:
+      # Custom value: "I am very happy. I am angry and sad."
+      - call:
+          sample: language_sentiment_text
+          params:
+            text_content: {literal: "I am very happy. I am angry and sad."}
+      - assert_contains:
+        - {literal: "Sentence text: I am very happy"}
+        - {literal: "Sentence sentiment score: 0."}
+        - {literal: "Sentence text: I am angry and sad"}
+        - {literal: "Sentence sentiment score: -0."}
+        - {literal: "Language of the text: en"}
+
+    - name: language_sentiment_gcs - Analyzing the sentiment of text file in GCS (default value)
+      spec:
+      # Default value: gs://cloud-samples-data/language/sentiment-positive.txt
+      # => "I am so happy and joyful."
+      - call: {sample: language_sentiment_gcs}
+      - assert_contains:
+        - {literal: "Document sentiment score: 0."}
+        - {literal: "Document sentiment magnitude: 0."}
+        - {literal: "Sentence text: I am so happy and joyful."}
+        - {literal: "Sentence sentiment score: 0."}
+        - {literal: "Sentence sentiment magnitude: 0."}
+        - {literal: "Language of the text: en"}
+      # There should be no negative sentiment scores for this value.
+      - assert_not_contains:
+        - {literal: "Document sentiment score: -0."}
+        - {literal: "Sentence sentiment score: -0."}
+
+    - name: language_sentiment_gcs - Analyzing the sentiment of text file in GCS (*custom value*)
+      spec:
+      # Use different file: gs://cloud-samples-data/language/sentiment-negative.txt
+      # => "I am so sad and upset."
+      - call:
+          sample: language_sentiment_gcs
+          params:
+            gcs_content_uri:
+              literal: "gs://cloud-samples-data/language/sentiment-negative.txt"
+      - assert_contains:
+        - {literal: "Document sentiment score: -0."}
+        - {literal: "Document sentiment magnitude: 0."}
+        - {literal: "Sentence text: I am so sad and upset."}
+        - {literal: "Sentence sentiment score: -0."}
+        - {literal: "Sentence sentiment magnitude: 0."}
+        - {literal: "Language of the text: en"}
+      # There should be no positive sentiment scores for this value.
+      - assert_not_contains:
+        - {literal: "Document sentiment score: 0."}
+        - {literal: "Sentence sentiment score: 0."}

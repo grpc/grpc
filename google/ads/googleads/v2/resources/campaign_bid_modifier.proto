@@ -1,0 +1,59 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/common/criteria.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "CampaignBidModifierProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the Campaign Bid Modifier resource.
+
+// Represents a bid-modifiable only criterion at the campaign level.
+message CampaignBidModifier {
+  // The resource name of the campaign bid modifier.
+  // Campaign bid modifier resource names have the form:
+  //
+  // `customers/{customer_id}/campaignBidModifiers/{campaign_id}~{criterion_id}`
+  string resource_name = 1;
+
+  // The campaign to which this criterion belongs.
+  google.protobuf.StringValue campaign = 2;
+
+  // The ID of the criterion to bid modify.
+  //
+  // This field is ignored for mutates.
+  google.protobuf.Int64Value criterion_id = 3;
+
+  // The modifier for the bid when the criterion matches.
+  google.protobuf.DoubleValue bid_modifier = 4;
+
+  // The criterion of this campaign bid modifier.
+  oneof criterion {
+    // Criterion for interaction type. Only supported for search campaigns.
+    google.ads.googleads.v2.common.InteractionTypeInfo interaction_type = 5;
+  }
+}

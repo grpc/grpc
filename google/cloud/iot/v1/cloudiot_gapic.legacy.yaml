@@ -1,0 +1,513 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.iot.v1
+  python:
+    package_name: google.cloud.iot_v1.gapic
+  go:
+    package_name: cloud.google.com/go/iot/apiv1
+  csharp:
+    package_name: Google.Cloud.Iot.V1
+  ruby:
+    package_name: Google::Cloud::Iot::V1
+  php:
+    package_name: Google\Cloud\Iot\V1
+  nodejs:
+    package_name: iot.v1
+    domain_layer_location: google-cloud
+# A list of API interface configurations.
+interfaces:
+- name: google.cloud.iot.v1.DeviceManager
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections:
+  - name_pattern: projects/{project}/locations/{location}
+    entity_name: location
+  - name_pattern: projects/{project}/locations/{location}/registries/{registry}
+    entity_name: registry
+  - name_pattern: projects/{project}/locations/{location}/registries/{registry}/devices/{device}
+    entity_name: device
+  # Definition for smoke test.
+  smoke_test:
+    method: ListDeviceRegistries
+    init_fields:
+    - parent%project=$PROJECT_ID
+    - parent%location="us-central1"
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  - name: rate_limited_aware
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+    - RESOURCE_EXHAUSTED
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 120000
+  - name: rate_limited_aware
+    initial_retry_delay_millis: 1000
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 120000
+  # A list of method configurations.
+  # Common properties:
+  #
+  #   name - The simple name of the method.
+  #
+  #   flattening - Specifies the configuration for parameter flattening.
+  #   Describes the parameter groups for which a generator should produce method
+  #   overloads which allow a client to directly pass request message fields as
+  #   method parameters. This information may or may not be used, depending on
+  #   the target language.
+  #   Consists of groups, which each represent a list of parameters to be
+  #   flattened. Each parameter listed must be a field of the request message.
+  #
+  #   required_fields - Fields that are always required for a request to be
+  #   valid.
+  #
+  #   resource_name_treatment - An enum that specifies how to treat the resource
+  #   name formats defined in the field_name_patterns and
+  #   response_field_name_patterns fields.
+  #   UNSET: default value
+  #   NONE: the collection configs will not be used by the generated code.
+  #   VALIDATE: string fields will be validated by the client against the
+  #   specified resource name formats.
+  #   STATIC_TYPES: the client will use generated types for resource names.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #   Describes information for generating a method which transforms a paging
+  #   list RPC into a stream of resources.
+  #   Consists of a request and a response.
+  #   The request specifies request information of the list method. It defines
+  #   which fields match the paging pattern in the request. The request consists
+  #   of a page_size_field and a token_field. The page_size_field is the name of
+  #   the optional field specifying the maximum number of elements to be
+  #   returned in the response. The token_field is the name of the field in the
+  #   request containing the page token.
+  #   The response specifies response information of the list method. It defines
+  #   which fields match the paging pattern in the response. The response
+  #   consists of a token_field and a resources_field. The token_field is the
+  #   name of the field in the response containing the next page token. The
+  #   resources_field is the name of the field in the response containing the
+  #   list of resources belonging to the page.
+  #
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #   name must be defined in interfaces.retry_codes_def.
+  #
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #   parameters. The name must be defined in interfaces.retry_params_def.
+  #
+  #   field_name_patterns - Maps the field name of the request type to
+  #   entity_name of interfaces.collections.
+  #   Specifies the string pattern that the field must follow.
+  #
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #   the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: CreateDeviceRegistry
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - device_registry
+    required_fields:
+    - parent
+    - device_registry
+    header_request_params:
+    - parent
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: location
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: GetDeviceRegistry
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: registry
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: UpdateDeviceRegistry
+    flattening:
+      groups:
+      - parameters:
+        - device_registry
+        - update_mask
+    required_fields:
+    - device_registry
+    - update_mask
+    header_request_params:
+    - device_registry.name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      device_registry.name: registry
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: DeleteDeviceRegistry
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: registry
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: ListDeviceRegistries
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    header_request_params:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: device_registries
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: location
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: CreateDevice
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - device
+    required_fields:
+    - parent
+    - device
+    header_request_params:
+    - parent
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: registry
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: GetDevice
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: device
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: UpdateDevice
+    flattening:
+      groups:
+      - parameters:
+        - device
+        - update_mask
+    required_fields:
+    - device
+    - update_mask
+    header_request_params:
+    - device.name
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      device.name: device
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: DeleteDevice
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: device
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: ListDevices
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    header_request_params:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: devices
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: registry
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: ModifyCloudToDeviceConfig
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - binary_data
+    required_fields:
+    - name
+    - binary_data
+    header_request_params:
+    - name
+    retry_codes_name: rate_limited_aware
+    retry_params_name: rate_limited_aware
+    field_name_patterns:
+      name: device
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: ListDeviceConfigVersions
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: device
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: ListDeviceStates
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    header_request_params:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: device
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: SetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - policy
+    required_fields:
+    - resource
+    - policy
+    header_request_params:
+    - resource
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: registry
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: GetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+    required_fields:
+    - resource
+    header_request_params:
+    - resource
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: registry
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: TestIamPermissions
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - permissions
+    required_fields:
+    - resource
+    - permissions
+    header_request_params:
+    - resource
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: registry
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: SendCommandToDevice
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - binary_data
+        - subfolder
+    required_fields:
+    - name
+    - binary_data
+    header_request_params:
+    - name
+    retry_codes_name: rate_limited_aware
+    retry_params_name: rate_limited_aware
+    field_name_patterns:
+      name: device
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: BindDeviceToGateway
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - gateway_id
+        - device_id
+    required_fields:
+    - parent
+    - gateway_id
+    - device_id
+    header_request_params:
+    - parent
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: registry
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+  - name: UnbindDeviceFromGateway
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - gateway_id
+        - device_id
+    required_fields:
+    - parent
+    - gateway_id
+    - device_id
+    header_request_params:
+    - parent
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: registry
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+resource_name_generation:
+- message_name: google.iam.v1.SetIamPolicyRequest
+  field_entity_map:
+    resource: "*"
+- message_name: google.iam.v1.GetIamPolicyRequest
+  field_entity_map:
+    resource: "*"
+- message_name: google.iam.v1.TestIamPermissionsRequest
+  field_entity_map:
+    resource: "*"
+- message_name: CreateDeviceRegistryRequest
+  field_entity_map:
+    parent: location
+- message_name: GetDeviceRegistryRequest
+  field_entity_map:
+    name: registry
+- message_name: DeleteDeviceRegistryRequest
+  field_entity_map:
+    name: registry
+- message_name: ListDeviceRegistriesRequest
+  field_entity_map:
+    parent: location
+- message_name: CreateDeviceRequest
+  field_entity_map:
+    parent: registry
+- message_name: GetDeviceRequest
+  field_entity_map:
+    name: device
+- message_name: DeleteDeviceRequest
+  field_entity_map:
+    name: device
+- message_name: ListDevicesRequest
+  field_entity_map:
+    parent: registry
+- message_name: ModifyCloudToDeviceConfigRequest
+  field_entity_map:
+    name: device
+- message_name: ListDeviceConfigVersionsRequest
+  field_entity_map:
+    name: device
+- message_name: ListDeviceStatesRequest
+  field_entity_map:
+    name: device
+- message_name: SendCommandToDeviceRequest
+  field_entity_map:
+    name: device
+- message_name: BindDeviceToGatewayRequest
+  field_entity_map:
+    parent: registry
+- message_name: UnbindDeviceFromGatewayRequest
+  field_entity_map:
+    parent: registry
+- message_name: Device
+  field_entity_map:
+    name: device
+- message_name: DeviceRegistry
+  field_entity_map:
+    name: registry

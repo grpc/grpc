@@ -1,0 +1,392 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.cloud.ml.v1;
+
+import "google/api/annotations.proto";
+import "google/api/auth.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/ml/v1;ml";
+option java_multiple_files = true;
+option java_outer_classname = "ModelServiceProto";
+option java_package = "com.google.cloud.ml.api.v1";
+
+// Copyright 2017 Google Inc. All Rights Reserved.
+//
+// Proto file for the Google Cloud Machine Learning Engine.
+// Describes the 'models service' to work with the 'model' and 'version'
+// resources.
+
+// Provides methods that create and manage machine learning models and their
+// versions.
+//
+// A model in this context is a container for versions. The model can't provide
+// predictions without first having a version created for it.
+//
+// Each version is a trained machine learning model, and each is assumed to be
+// an iteration of the same machine learning problem as the other versions of
+// the same model.
+//
+// Your project can define multiple models, each with multiple versions.
+//
+// The basic life cycle of a model is:
+//
+// *   Create and train the machine learning model and save it to a
+//     Google Cloud Storage location.
+// *   Use
+//     [projects.models.create](/ml/reference/rest/v1/projects.models/create)
+//     to make a new model in your project.
+// *   Use
+//     [projects.models.versions.create](/ml/reference/rest/v1/projects.models.versions/create)
+//     to deploy your saved model.
+// *   Use [projects.predict](/ml/reference/rest/v1/projects/predict to
+//     request predictions of a version of your model, or use
+//     [projects.jobs.create](/ml/reference/rest/v1/projects.jobs/create)
+//     to start a batch prediction job.
+service ModelService {
+  // Creates a model which will later contain one or more versions.
+  //
+  // You must add at least one version before you can request predictions from
+  // the model. Add versions by calling
+  // [projects.models.versions.create](/ml/reference/rest/v1/projects.models.versions/create).
+  rpc CreateModel(CreateModelRequest) returns (Model) {
+    option (google.api.http) = {
+      post: "/v1/{parent=projects/*}/models"
+      body: "model"
+    };
+  }
+
+  // Lists the models in a project.
+  //
+  // Each project can contain multiple models, and each model can have multiple
+  // versions.
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=projects/*}/models"
+    };
+  }
+
+  // Gets information about a model, including its name, the description (if
+  // set), and the default version (if at least one version of the model has
+  // been deployed).
+  rpc GetModel(GetModelRequest) returns (Model) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/models/*}"
+    };
+  }
+
+  // Deletes a model.
+  //
+  // You can only delete a model if there are no versions in it. You can delete
+  // versions by calling
+  // [projects.models.versions.delete](/ml/reference/rest/v1/projects.models.versions/delete).
+  rpc DeleteModel(DeleteModelRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      delete: "/v1/{name=projects/*/models/*}"
+    };
+  }
+
+  // Creates a new version of a model from a trained TensorFlow model.
+  //
+  // If the version created in the cloud by this call is the first deployed
+  // version of the specified model, it will be made the default version of the
+  // model. When you add a version to a model that already has one or more
+  // versions, the default version does not automatically change. If you want a
+  // new version to be the default, you must call
+  // [projects.models.versions.setDefault](/ml/reference/rest/v1/projects.models.versions/setDefault).
+  rpc CreateVersion(CreateVersionRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1/{parent=projects/*/models/*}/versions"
+      body: "version"
+    };
+  }
+
+  // Gets basic information about all the versions of a model.
+  //
+  // If you expect that a model has a lot of versions, or if you need to handle
+  // only a limited number of results at a time, you can request that the list
+  // be retrieved in batches (called pages):
+  rpc ListVersions(ListVersionsRequest) returns (ListVersionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{parent=projects/*/models/*}/versions"
+    };
+  }
+
+  // Gets information about a model version.
+  //
+  // Models can have multiple versions. You can call
+  // [projects.models.versions.list](/ml/reference/rest/v1/projects.models.versions/list)
+  // to get the same information that this method returns for all of the
+  // versions of a model.
+  rpc GetVersion(GetVersionRequest) returns (Version) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/models/*/versions/*}"
+    };
+  }
+
+  // Deletes a model version.
+  //
+  // Each model can have multiple versions deployed and in use at any given
+  // time. Use this method to remove a single version.
+  //
+  // Note: You cannot delete the version that is set as the default version
+  // of the model unless it is the only remaining version.
+  rpc DeleteVersion(DeleteVersionRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      delete: "/v1/{name=projects/*/models/*/versions/*}"
+    };
+  }
+
+  // Designates a version to be the default for the model.
+  //
+  // The default version is used for prediction requests made against the model
+  // that don't specify a version.
+  //
+  // The first version to be created for a model is automatically set as the
+  // default. You must make any subsequent changes to the default version
+  // setting manually using this method.
+  rpc SetDefaultVersion(SetDefaultVersionRequest) returns (Version) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/models/*/versions/*}:setDefault"
+      body: "*"
+    };
+  }
+}
+
+// Represents a machine learning solution.
+//
+// A model can have multiple versions, each of which is a deployed, trained
+// model ready to receive prediction requests. The model itself is just a
+// container.
+message Model {
+  // Required. The name specified for the model when it was created.
+  //
+  // The model name must be unique within the project it is created in.
+  string name = 1;
+
+  // Optional. The description specified for the model when it was created.
+  string description = 2;
+
+  // Output only. The default version of the model. This version will be used to
+  // handle prediction requests that do not specify a version.
+  //
+  // You can change the default version by calling
+  // [projects.methods.versions.setDefault](/ml/reference/rest/v1/projects.models.versions/setDefault).
+  Version default_version = 3;
+
+  // Optional. The list of regions where the model is going to be deployed.
+  // Currently only one region per model is supported.
+  // Defaults to 'us-central1' if nothing is set.
+  repeated string regions = 4;
+
+  // Optional. If true, enables StackDriver Logging for online prediction.
+  // Default is false.
+  bool online_prediction_logging = 5;
+}
+
+// Represents a version of the model.
+//
+// Each version is a trained model deployed in the cloud, ready to handle
+// prediction requests. A model can have multiple versions. You can get
+// information about all of the versions of a given model by calling
+// [projects.models.versions.list](/ml/reference/rest/v1/projects.models.versions/list).
+message Version {
+  // Required.The name specified for the version when it was created.
+  //
+  // The version name must be unique within the model it is created in.
+  string name = 1;
+
+  // Optional. The description specified for the version when it was created.
+  string description = 2;
+
+  // Output only. If true, this version will be used to handle prediction
+  // requests that do not specify a version.
+  //
+  // You can change the default version by calling
+  // [projects.methods.versions.setDefault](/ml/reference/rest/v1/projects.models.versions/setDefault).
+  bool is_default = 3;
+
+  // Required. The Google Cloud Storage location of the trained model used to
+  // create the version. See the
+  // [overview of model deployment](/ml/docs/concepts/deployment-overview) for
+  // more informaiton.
+  //
+  // When passing Version to
+  // [projects.models.versions.create](/ml/reference/rest/v1/projects.models.versions/create)
+  // the model service uses the specified location as the source of the model.
+  // Once deployed, the model version is hosted by the prediction service, so
+  // this location is useful only as a historical record.
+  string deployment_uri = 4;
+
+  // Output only. The time the version was created.
+  google.protobuf.Timestamp create_time = 5;
+
+  // Output only. The time the version was last used for prediction.
+  google.protobuf.Timestamp last_use_time = 6;
+
+  // Optional. The Google Cloud ML runtime version to use for this deployment.
+  // If not set, Google Cloud ML will choose a version.
+  string runtime_version = 8;
+
+  // Optional. Manually select the number of nodes to use for serving the
+  // model. If unset (i.e., by default), the number of nodes used to serve
+  // the model automatically scales with traffic. However, care should be
+  // taken to ramp up traffic according to the model's ability to scale. If
+  // your model needs to handle bursts of traffic beyond it's ability to
+  // scale, it is recommended you set this field appropriately.
+  ManualScaling manual_scaling = 9;
+}
+
+// Options for manually scaling a model.
+message ManualScaling {
+  // The number of nodes to allocate for this model. These nodes are always up,
+  // starting from the time the model is deployed, so the cost of operating
+  // this model will be proportional to nodes * number of hours since
+  // deployment.
+  int32 nodes = 1;
+}
+
+// Request message for the CreateModel method.
+message CreateModelRequest {
+  // Required. The project name.
+  //
+  // Authorization: requires `Editor` role on the specified project.
+  string parent = 1;
+
+  // Required. The model to create.
+  Model model = 2;
+}
+
+// Request message for the ListModels method.
+message ListModelsRequest {
+  // Required. The name of the project whose models are to be listed.
+  //
+  // Authorization: requires `Viewer` role on the specified project.
+  string parent = 1;
+
+  // Optional. A page token to request the next page of results.
+  //
+  // You get the token from the `next_page_token` field of the response from
+  // the previous call.
+  string page_token = 4;
+
+  // Optional. The number of models to retrieve per "page" of results. If there
+  // are more remaining results than this number, the response message will
+  // contain a valid value in the `next_page_token` field.
+  //
+  // The default value is 20, and the maximum page size is 100.
+  int32 page_size = 5;
+}
+
+// Response message for the ListModels method.
+message ListModelsResponse {
+  // The list of models.
+  repeated Model models = 1;
+
+  // Optional. Pass this token as the `page_token` field of the request for a
+  // subsequent call.
+  string next_page_token = 2;
+}
+
+// Request message for the GetModel method.
+message GetModelRequest {
+  // Required. The name of the model.
+  //
+  // Authorization: requires `Viewer` role on the parent project.
+  string name = 1;
+}
+
+// Request message for the DeleteModel method.
+message DeleteModelRequest {
+  // Required. The name of the model.
+  //
+  // Authorization: requires `Editor` role on the parent project.
+  string name = 1;
+}
+
+// Uploads the provided trained model version to Cloud Machine Learning.
+message CreateVersionRequest {
+  // Required. The name of the model.
+  //
+  // Authorization: requires `Editor` role on the parent project.
+  string parent = 1;
+
+  // Required. The version details.
+  Version version = 2;
+}
+
+// Request message for the ListVersions method.
+message ListVersionsRequest {
+  // Required. The name of the model for which to list the version.
+  //
+  // Authorization: requires `Viewer` role on the parent project.
+  string parent = 1;
+
+  // Optional. A page token to request the next page of results.
+  //
+  // You get the token from the `next_page_token` field of the response from
+  // the previous call.
+  string page_token = 4;
+
+  // Optional. The number of versions to retrieve per "page" of results. If
+  // there are more remaining results than this number, the response message
+  // will contain a valid value in the `next_page_token` field.
+  //
+  // The default value is 20, and the maximum page size is 100.
+  int32 page_size = 5;
+}
+
+// Response message for the ListVersions method.
+message ListVersionsResponse {
+  // The list of versions.
+  repeated Version versions = 1;
+
+  // Optional. Pass this token as the `page_token` field of the request for a
+  // subsequent call.
+  string next_page_token = 2;
+}
+
+// Request message for the GetVersion method.
+message GetVersionRequest {
+  // Required. The name of the version.
+  //
+  // Authorization: requires `Viewer` role on the parent project.
+  string name = 1;
+}
+
+// Request message for the DeleteVerionRequest method.
+message DeleteVersionRequest {
+  // Required. The name of the version. You can get the names of all the
+  // versions of a model by calling
+  // [projects.models.versions.list](/ml/reference/rest/v1/projects.models.versions/list).
+  //
+  // Authorization: requires `Editor` role on the parent project.
+  string name = 1;
+}
+
+// Request message for the SetDefaultVersion request.
+message SetDefaultVersionRequest {
+  // Required. The name of the version to make the default for the model. You
+  // can get the names of all the versions of a model by calling
+  // [projects.models.versions.list](/ml/reference/rest/v1/projects.models.versions/list).
+  //
+  // Authorization: requires `Editor` role on the parent project.
+  string name = 1;
+}

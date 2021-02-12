@@ -1,0 +1,41 @@
+type: google.api.Service
+config_version: 3
+name: library-example.googleapis.com
+title: Example Library API
+
+apis:
+- name: google.example.library.v1.LibraryService
+
+documentation:
+  summary: A simple Google Example Library API.
+  overview: |-
+    # Introduction
+
+    This is a Google example service representing a simple digital library. It
+    manages a collection of shelf resources, and each shelf owns a collection of
+    book resources.
+
+backend:
+  rules:
+  - selector: google.example.library.v1.LibraryService.CreateShelf
+    deadline: 10.0
+  - selector: google.example.library.v1.LibraryService.GetShelf
+    deadline: 10.0
+  - selector: google.example.library.v1.LibraryService.ListShelves
+    deadline: 10.0
+  - selector: google.example.library.v1.LibraryService.DeleteShelf
+    deadline: 10.0
+  - selector: google.example.library.v1.LibraryService.MergeShelves
+    deadline: 10.0
+  - selector: google.example.library.v1.LibraryService.CreateBook
+    deadline: 10.0
+  - selector: google.example.library.v1.LibraryService.GetBook
+    deadline: 10.0
+  - selector: google.example.library.v1.LibraryService.ListBooks
+    deadline: 10.0
+  - selector: google.example.library.v1.LibraryService.DeleteBook
+    deadline: 10.0
+  - selector: google.example.library.v1.LibraryService.UpdateBook
+    deadline: 10.0
+  - selector: google.example.library.v1.LibraryService.MoveBook
+    deadline: 10.0

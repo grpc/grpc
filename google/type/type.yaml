@@ -1,0 +1,34 @@
+type: google.api.Service
+config_version: 1
+name: type.googleapis.com
+title: Common Types
+
+types:
+- name: google.type.Color
+- name: google.type.Date
+- name: google.type.Expr
+- name: google.type.Fraction
+- name: google.type.LatLng
+- name: google.type.Money
+- name: google.type.PostalAddress
+- name: google.type.Quaternion
+- name: google.type.TimeOfDay
+
+enums:
+- name: google.type.CalendarPeriod
+- name: google.type.DayOfWeek
+
+documentation:
+  summary: Defines common types for Google APIs.
+  overview: |-
+    # Google Common Types
+
+    This package contains definitions of common types for Google APIs.
+    All types defined in this package are suitable for different APIs to
+    exchange data, and will never break binary compatibility. They should
+    have design quality comparable to major programming languages like
+    Java and C#.
+
+    NOTE: Some common types are defined in the package `google.protobuf`
+    as they are directly supported by Protocol Buffers compiler and
+    runtime. Those types are called Well-Known Types.

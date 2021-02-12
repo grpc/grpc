@@ -1,0 +1,444 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.bigtable.v2;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/bigtable/v2/data.proto";
+import "google/protobuf/wrappers.proto";
+import "google/rpc/status.proto";
+
+option csharp_namespace = "Google.Cloud.Bigtable.V2";
+option go_package = "google.golang.org/genproto/googleapis/bigtable/v2;bigtable";
+option java_multiple_files = true;
+option java_outer_classname = "BigtableProto";
+option java_package = "com.google.bigtable.v2";
+option php_namespace = "Google\\Cloud\\Bigtable\\V2";
+option (google.api.resource_definition) = {
+  type: "bigtable.googleapis.com/Table"
+  pattern: "projects/{project}/instances/{instance}/tables/{table}"
+};
+
+// Service for reading from and writing to existing Bigtable tables.
+service Bigtable {
+  option (google.api.default_host) = "bigtable.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/bigtable.data,"
+      "https://www.googleapis.com/auth/bigtable.data.readonly,"
+      "https://www.googleapis.com/auth/cloud-bigtable.data,"
+      "https://www.googleapis.com/auth/cloud-bigtable.data.readonly,"
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/cloud-platform.read-only";
+
+  // Streams back the contents of all requested rows in key order, optionally
+  // applying the same Reader filter to each. Depending on their size,
+  // rows and cells may be broken up across multiple responses, but
+  // atomicity of each row will still be preserved. See the
+  // ReadRowsResponse documentation for details.
+  rpc ReadRows(ReadRowsRequest) returns (stream ReadRowsResponse) {
+    option (google.api.http) = {
+      post: "/v2/{table_name=projects/*/instances/*/tables/*}:readRows"
+      body: "*"
+    };
+    option (google.api.method_signature) = "table_name";
+    option (google.api.method_signature) = "table_name,app_profile_id";
+  }
+
+  // Returns a sample of row keys in the table. The returned row keys will
+  // delimit contiguous sections of the table of approximately equal size,
+  // which can be used to break up the data for distributed tasks like
+  // mapreduces.
+  rpc SampleRowKeys(SampleRowKeysRequest) returns (stream SampleRowKeysResponse) {
+    option (google.api.http) = {
+      get: "/v2/{table_name=projects/*/instances/*/tables/*}:sampleRowKeys"
+    };
+    option (google.api.method_signature) = "table_name";
+    option (google.api.method_signature) = "table_name,app_profile_id";
+  }
+
+  // Mutates a row atomically. Cells already present in the row are left
+  // unchanged unless explicitly changed by `mutation`.
+  rpc MutateRow(MutateRowRequest) returns (MutateRowResponse) {
+    option (google.api.http) = {
+      post: "/v2/{table_name=projects/*/instances/*/tables/*}:mutateRow"
+      body: "*"
+    };
+    option (google.api.method_signature) = "table_name,row_key,mutations";
+    option (google.api.method_signature) = "table_name,row_key,mutations,app_profile_id";
+  }
+
+  // Mutates multiple rows in a batch. Each individual row is mutated
+  // atomically as in MutateRow, but the entire batch is not executed
+  // atomically.
+  rpc MutateRows(MutateRowsRequest) returns (stream MutateRowsResponse) {
+    option (google.api.http) = {
+      post: "/v2/{table_name=projects/*/instances/*/tables/*}:mutateRows"
+      body: "*"
+    };
+    option (google.api.method_signature) = "table_name,entries";
+    option (google.api.method_signature) = "table_name,entries,app_profile_id";
+  }
+
+  // Mutates a row atomically based on the output of a predicate Reader filter.
+  rpc CheckAndMutateRow(CheckAndMutateRowRequest) returns (CheckAndMutateRowResponse) {
+    option (google.api.http) = {
+      post: "/v2/{table_name=projects/*/instances/*/tables/*}:checkAndMutateRow"
+      body: "*"
+    };
+    option (google.api.method_signature) = "table_name,row_key,predicate_filter,true_mutations,false_mutations";
+    option (google.api.method_signature) = "table_name,row_key,predicate_filter,true_mutations,false_mutations,app_profile_id";
+  }
+
+  // Modifies a row atomically on the server. The method reads the latest
+  // existing timestamp and value from the specified columns and writes a new
+  // entry based on pre-defined read/modify/write rules. The new value for the
+  // timestamp is the greater of the existing timestamp or the current server
+  // time. The method returns the new contents of all modified cells.
+  rpc ReadModifyWriteRow(ReadModifyWriteRowRequest) returns (ReadModifyWriteRowResponse) {
+    option (google.api.http) = {
+      post: "/v2/{table_name=projects/*/instances/*/tables/*}:readModifyWriteRow"
+      body: "*"
+    };
+    option (google.api.method_signature) = "table_name,row_key,rules";
+    option (google.api.method_signature) = "table_name,row_key,rules,app_profile_id";
+  }
+}
+
+// Request message for Bigtable.ReadRows.
+message ReadRowsRequest {
+  // Required. The unique name of the table from which to read.
+  // Values are of the form
+  // `projects/<project>/instances/<instance>/tables/<table>`.
+  string table_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "bigtable.googleapis.com/Table"
+    }
+  ];
+
+  // This value specifies routing for replication. If not specified, the
+  // "default" application profile will be used.
+  string app_profile_id = 5;
+
+  // The row keys and/or ranges to read. If not specified, reads from all rows.
+  RowSet rows = 2;
+
+  // The filter to apply to the contents of the specified row(s). If unset,
+  // reads the entirety of each row.
+  RowFilter filter = 3;
+
+  // The read will terminate after committing to N rows' worth of results. The
+  // default (zero) is to return all results.
+  int64 rows_limit = 4;
+}
+
+// Response message for Bigtable.ReadRows.
+message ReadRowsResponse {
+  // Specifies a piece of a row's contents returned as part of the read
+  // response stream.
+  message CellChunk {
+    // The row key for this chunk of data.  If the row key is empty,
+    // this CellChunk is a continuation of the same row as the previous
+    // CellChunk in the response stream, even if that CellChunk was in a
+    // previous ReadRowsResponse message.
+    //
+    // Classified as IDENTIFYING_ID to provide context around data accesses for
+    // auditing systems.
+    bytes row_key = 1;
+
+    // The column family name for this chunk of data.  If this message
+    // is not present this CellChunk is a continuation of the same column
+    // family as the previous CellChunk.  The empty string can occur as a
+    // column family name in a response so clients must check
+    // explicitly for the presence of this message, not just for
+    // `family_name.value` being non-empty.
+    google.protobuf.StringValue family_name = 2;
+
+    // The column qualifier for this chunk of data.  If this message
+    // is not present, this CellChunk is a continuation of the same column
+    // as the previous CellChunk.  Column qualifiers may be empty so
+    // clients must check for the presence of this message, not just
+    // for `qualifier.value` being non-empty.
+    google.protobuf.BytesValue qualifier = 3;
+
+    // The cell's stored timestamp, which also uniquely identifies it
+    // within its column.  Values are always expressed in
+    // microseconds, but individual tables may set a coarser
+    // granularity to further restrict the allowed values. For
+    // example, a table which specifies millisecond granularity will
+    // only allow values of `timestamp_micros` which are multiples of
+    // 1000.  Timestamps are only set in the first CellChunk per cell
+    // (for cells split into multiple chunks).
+    int64 timestamp_micros = 4;
+
+    // Labels applied to the cell by a
+    // [RowFilter][google.bigtable.v2.RowFilter].  Labels are only set
+    // on the first CellChunk per cell.
+    repeated string labels = 5;
+
+    // The value stored in the cell.  Cell values can be split across
+    // multiple CellChunks.  In that case only the value field will be
+    // set in CellChunks after the first: the timestamp and labels
+    // will only be present in the first CellChunk, even if the first
+    // CellChunk came in a previous ReadRowsResponse.
+    bytes value = 6;
+
+    // If this CellChunk is part of a chunked cell value and this is
+    // not the final chunk of that cell, value_size will be set to the
+    // total length of the cell value.  The client can use this size
+    // to pre-allocate memory to hold the full cell value.
+    int32 value_size = 7;
+
+    // Signals to the client concerning previous CellChunks received.
+    oneof row_status {
+      // Indicates that the client should drop all previous chunks for
+      // `row_key`, as it will be re-read from the beginning.
+      bool reset_row = 8;
+
+      // Indicates that the client can safely process all previous chunks for
+      // `row_key`, as its data has been fully read.
+      bool commit_row = 9;
+    }
+  }
+
+  // A collection of a row's contents as part of the read request.
+  repeated CellChunk chunks = 1;
+
+  // Optionally the server might return the row key of the last row it
+  // has scanned.  The client can use this to construct a more
+  // efficient retry request if needed: any row keys or portions of
+  // ranges less than this row key can be dropped from the request.
+  // This is primarily useful for cases where the server has read a
+  // lot of data that was filtered out since the last committed row
+  // key, allowing the client to skip that work on a retry.
+  bytes last_scanned_row_key = 2;
+}
+
+// Request message for Bigtable.SampleRowKeys.
+message SampleRowKeysRequest {
+  // Required. The unique name of the table from which to sample row keys.
+  // Values are of the form
+  // `projects/<project>/instances/<instance>/tables/<table>`.
+  string table_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "bigtable.googleapis.com/Table"
+    }
+  ];
+
+  // This value specifies routing for replication. If not specified, the
+  // "default" application profile will be used.
+  string app_profile_id = 2;
+}
+
+// Response message for Bigtable.SampleRowKeys.
+message SampleRowKeysResponse {
+  // Sorted streamed sequence of sample row keys in the table. The table might
+  // have contents before the first row key in the list and after the last one,
+  // but a key containing the empty string indicates "end of table" and will be
+  // the last response given, if present.
+  // Note that row keys in this list may not have ever been written to or read
+  // from, and users should therefore not make any assumptions about the row key
+  // structure that are specific to their use case.
+  //
+  // Classified as IDENTIFYING_ID to provide context around data accesses for
+  // auditing systems.
+  bytes row_key = 1;
+
+  // Approximate total storage space used by all rows in the table which precede
+  // `row_key`. Buffering the contents of all rows between two subsequent
+  // samples would require space roughly equal to the difference in their
+  // `offset_bytes` fields.
+  int64 offset_bytes = 2;
+}
+
+// Request message for Bigtable.MutateRow.
+message MutateRowRequest {
+  // Required. The unique name of the table to which the mutation should be applied.
+  // Values are of the form
+  // `projects/<project>/instances/<instance>/tables/<table>`.
+  string table_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "bigtable.googleapis.com/Table"
+    }
+  ];
+
+  // This value specifies routing for replication. If not specified, the
+  // "default" application profile will be used.
+  string app_profile_id = 4;
+
+  // Required. The key of the row to which the mutation should be applied.
+  //
+  // Classified as IDENTIFYING_ID to provide context around data accesses for
+  // auditing systems.
+  bytes row_key = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Changes to be atomically applied to the specified row. Entries are applied
+  // in order, meaning that earlier mutations can be masked by later ones.
+  // Must contain at least one entry and at most 100000.
+  repeated Mutation mutations = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for Bigtable.MutateRow.
+message MutateRowResponse {
+
+}
+
+// Request message for BigtableService.MutateRows.
+message MutateRowsRequest {
+  // A mutation for a given row.
+  message Entry {
+    // The key of the row to which the `mutations` should be applied.
+    //
+    // Classified as IDENTIFYING_ID to provide context around data accesses for
+    // auditing systems.
+    bytes row_key = 1;
+
+    // Required. Changes to be atomically applied to the specified row. Mutations are
+    // applied in order, meaning that earlier mutations can be masked by
+    // later ones.
+    // You must specify at least one mutation.
+    repeated Mutation mutations = 2 [(google.api.field_behavior) = REQUIRED];
+  }
+
+  // Required. The unique name of the table to which the mutations should be applied.
+  string table_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "bigtable.googleapis.com/Table"
+    }
+  ];
+
+  // This value specifies routing for replication. If not specified, the
+  // "default" application profile will be used.
+  string app_profile_id = 3;
+
+  // Required. The row keys and corresponding mutations to be applied in bulk.
+  // Each entry is applied as an atomic mutation, but the entries may be
+  // applied in arbitrary order (even between entries for the same row).
+  // At least one entry must be specified, and in total the entries can
+  // contain at most 100000 mutations.
+  repeated Entry entries = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for BigtableService.MutateRows.
+message MutateRowsResponse {
+  // The result of applying a passed mutation in the original request.
+  message Entry {
+    // The index into the original request's `entries` list of the Entry
+    // for which a result is being reported.
+    int64 index = 1;
+
+    // The result of the request Entry identified by `index`.
+    // Depending on how requests are batched during execution, it is possible
+    // for one Entry to fail due to an error with another Entry. In the event
+    // that this occurs, the same error will be reported for both entries.
+    google.rpc.Status status = 2;
+  }
+
+  // One or more results for Entries from the batch request.
+  repeated Entry entries = 1;
+}
+
+// Request message for Bigtable.CheckAndMutateRow.
+message CheckAndMutateRowRequest {
+  // Required. The unique name of the table to which the conditional mutation should be
+  // applied.
+  // Values are of the form
+  // `projects/<project>/instances/<instance>/tables/<table>`.
+  string table_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "bigtable.googleapis.com/Table"
+    }
+  ];
+
+  // This value specifies routing for replication. If not specified, the
+  // "default" application profile will be used.
+  string app_profile_id = 7;
+
+  // Required. The key of the row to which the conditional mutation should be applied.
+  //
+  // Classified as IDENTIFYING_ID to provide context around data accesses for
+  // auditing systems.
+  bytes row_key = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // The filter to be applied to the contents of the specified row. Depending
+  // on whether or not any results are yielded, either `true_mutations` or
+  // `false_mutations` will be executed. If unset, checks that the row contains
+  // any values at all.
+  RowFilter predicate_filter = 6;
+
+  // Changes to be atomically applied to the specified row if `predicate_filter`
+  // yields at least one cell when applied to `row_key`. Entries are applied in
+  // order, meaning that earlier mutations can be masked by later ones.
+  // Must contain at least one entry if `false_mutations` is empty, and at most
+  // 100000.
+  repeated Mutation true_mutations = 4;
+
+  // Changes to be atomically applied to the specified row if `predicate_filter`
+  // does not yield any cells when applied to `row_key`. Entries are applied in
+  // order, meaning that earlier mutations can be masked by later ones.
+  // Must contain at least one entry if `true_mutations` is empty, and at most
+  // 100000.
+  repeated Mutation false_mutations = 5;
+}
+
+// Response message for Bigtable.CheckAndMutateRow.
+message CheckAndMutateRowResponse {
+  // Whether or not the request's `predicate_filter` yielded any results for
+  // the specified row.
+  bool predicate_matched = 1;
+}
+
+// Request message for Bigtable.ReadModifyWriteRow.
+message ReadModifyWriteRowRequest {
+  // Required. The unique name of the table to which the read/modify/write rules should be
+  // applied.
+  // Values are of the form
+  // `projects/<project>/instances/<instance>/tables/<table>`.
+  string table_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "bigtable.googleapis.com/Table"
+    }
+  ];
+
+  // This value specifies routing for replication. If not specified, the
+  // "default" application profile will be used.
+  string app_profile_id = 4;
+
+  // Required. The key of the row to which the read/modify/write rules should be applied.
+  //
+  // Classified as IDENTIFYING_ID to provide context around data accesses for
+  // auditing systems.
+  bytes row_key = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. Rules specifying how the specified row's contents are to be transformed
+  // into writes. Entries are applied in order, meaning that earlier rules will
+  // affect the results of later ones.
+  repeated ReadModifyWriteRule rules = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Response message for Bigtable.ReadModifyWriteRow.
+message ReadModifyWriteRowResponse {
+  // A Row containing the new contents of all cells modified by the request.
+  Row row = 1;
+}

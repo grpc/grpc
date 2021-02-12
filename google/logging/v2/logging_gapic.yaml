@@ -1,0 +1,572 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.logging.v2
+    interface_names:
+      google.logging.v2.ConfigServiceV2: Config
+      google.logging.v2.LoggingServiceV2: Logging
+      google.logging.v2.MetricsServiceV2: Metrics
+  python:
+    package_name: google.cloud.logging_v2.gapic
+  go:
+    package_name: cloud.google.com/go/logging/apiv2
+    domain_layer_location: cloud.google.com/go/logging
+  csharp:
+    package_name: Google.Cloud.Logging.V2
+    release_level: GA
+  ruby:
+    package_name: Google::Cloud::Logging::V2
+  php:
+    package_name: Google\Cloud\Logging\V2
+  nodejs:
+    package_name: logging.v2
+    domain_layer_location: google-cloud
+collections:
+- name_pattern: projects/{project}
+  entity_name: project
+  # C#: Already GA, do not use common resource name for 'project'
+- name_pattern: "projects/{project}/logs/{log}"
+  entity_name: log
+  language_overrides:
+  - language: java
+    entity_name: project_log
+- name_pattern: "projects/{project}/sinks/{sink}"
+  entity_name: sink
+  language_overrides:
+  - language: java
+    entity_name: project_sink
+- name_pattern: projects/{project}/metrics/{metric}
+  entity_name: metric
+  language_overrides:
+  - language: java
+    entity_name: project_metric
+- name_pattern: "projects/{project}/exclusions/{exclusion}"
+  entity_name: exclusion
+  language_overrides:
+  - language: java
+    entity_name: project_exclusion
+- name_pattern: organizations/{organization}
+  entity_name: organization
+- name_pattern: organizations/{organization}/logs/{log}
+  entity_name: organization_log
+- name_pattern: organizations/{organization}/sinks/{sink}
+  entity_name: organization_sink
+- name_pattern: organizations/{organization}/exclusions/{exclusion}
+  entity_name: organization_exclusion
+- name_pattern: folders/{folder}
+  entity_name: folder
+- name_pattern: folders/{folder}/logs/{log}
+  entity_name: folder_log
+- name_pattern: folders/{folder}/sinks/{sink}
+  entity_name: folder_sink
+- name_pattern: folders/{folder}/exclusions/{exclusion}
+  entity_name: folder_exclusion
+- name_pattern: billingAccounts/{billing_account}
+  entity_name: billing
+- name_pattern: billingAccounts/{billing_account}/logs/{log}
+  entity_name: billing_log
+- name_pattern: billingAccounts/{billing_account}/sinks/{sink}
+  entity_name: billing_sink
+- name_pattern: billingAccounts/{billing_account}/exclusions/{exclusion}
+  entity_name: billing_exclusion
+collection_oneofs:
+- oneof_name: parent_oneof
+  collection_names:
+  - project
+  - organization
+  - folder
+  - billing
+- oneof_name: sink_oneof
+  collection_names:
+  - sink
+  - organization_sink
+  - folder_sink
+  - billing_sink
+- oneof_name: exclusion_oneof
+  collection_names:
+  - exclusion
+  - organization_exclusion
+  - folder_exclusion
+  - billing_exclusion
+- oneof_name: log_oneof
+  collection_names:
+  - log
+  - organization_log
+  - folder_log
+  - billing_log
+- oneof_name: metric_oneof
+  collection_names:
+  - metric
+interfaces:
+- name: google.logging.v2.ConfigServiceV2
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+    - INTERNAL
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  - name: write_sink
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  methods:
+  - name: ListSinks
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        token_field: page_token
+        page_size_field: page_size
+      response:
+        token_field: next_page_token
+        resources_field: sinks
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: parent_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: GetSink
+    flattening:
+      groups:
+      - parameters:
+        - sink_name
+    required_fields:
+    - sink_name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      sink_name: sink_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: CreateSink
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - sink
+    required_fields:
+    - parent
+    - sink
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 120000
+    field_name_patterns:
+      parent: parent_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: UpdateSink
+    flattening:
+      groups:
+      - parameters:
+        - sink_name
+        - sink
+        - update_mask
+      - parameters:
+        - sink_name
+        - sink
+    required_fields:
+    - sink_name
+    - sink
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 120000
+    field_name_patterns:
+      sink_name: sink_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: DeleteSink
+    flattening:
+      groups:
+      - parameters:
+        - sink_name
+    required_fields:
+    - sink_name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      sink_name: sink_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: ListExclusions
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        token_field: page_token
+        page_size_field: page_size
+      response:
+        token_field: next_page_token
+        resources_field: exclusions
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: parent_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: GetExclusion
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      name: exclusion_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: CreateExclusion
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - exclusion
+    required_fields:
+    - parent
+    - exclusion
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: parent_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: UpdateExclusion
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - exclusion
+        - update_mask
+    required_fields:
+    - name
+    - exclusion
+    - update_mask
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      name: exclusion_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: DeleteExclusion
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      name: exclusion_oneof
+    resource_name_treatment: STATIC_TYPES
+- name: google.logging.v2.MetricsServiceV2
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+    - INTERNAL
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  methods:
+  - name: ListLogMetrics
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        token_field: page_token
+        page_size_field: page_size
+      response:
+        token_field: next_page_token
+        resources_field: metrics
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: parent_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: GetLogMetric
+    flattening:
+      groups:
+      - parameters:
+        - metric_name
+    required_fields:
+    - metric_name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      metric_name: metric_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: CreateLogMetric
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - metric
+    required_fields:
+    - parent
+    - metric
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      parent: parent_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: UpdateLogMetric
+    flattening:
+      groups:
+      - parameters:
+        - metric_name
+        - metric
+    required_fields:
+    - metric_name
+    - metric
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      metric_name: metric_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: DeleteLogMetric
+    flattening:
+      groups:
+      - parameters:
+        - metric_name
+    required_fields:
+    - metric_name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      metric_name: metric_oneof
+    resource_name_treatment: STATIC_TYPES
+- name: google.logging.v2.LoggingServiceV2
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+    - INTERNAL
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  - name: list
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  methods:
+  - name: DeleteLog
+    flattening:
+      groups:
+      - parameters:
+        - log_name
+    required_fields:
+    - log_name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      log_name: log_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: WriteLogEntries
+    flattening:
+      groups:
+        - parameters:
+            - log_name
+            - resource
+            - labels
+            - entries
+    required_fields:
+    - entries
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    field_name_patterns:
+      log_name: log_oneof
+    resource_name_treatment: STATIC_TYPES
+    batching:
+      thresholds:
+        element_count_threshold: 1000
+        request_byte_threshold: 1048576 # 1 MiB
+        delay_threshold_millis: 50
+        flow_control_element_limit: 100000
+        flow_control_byte_limit: 10485760 # 10 MiB
+        flow_control_limit_exceeded_behavior: THROW_EXCEPTION
+      batch_descriptor:
+        batched_field: entries
+        discriminator_fields:
+        - log_name
+        - resource
+        - labels
+  - name: ListLogEntries
+    flattening:
+      groups:
+      - parameters:
+        - resource_names
+        - filter
+        - order_by
+    required_fields:
+    - resource_names
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: entries
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 10000
+    field_name_patterns:
+      resource_names: parent_oneof
+    resource_name_treatment: STATIC_TYPES
+  - name: ListMonitoredResourceDescriptors
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: resource_descriptors
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: ListLogs
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: log_names
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: parent_oneof
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+resource_name_generation:
+- message_name: LogMetric
+  field_entity_map:
+    name: metric_oneof
+- message_name: DeleteLogRequest
+  field_entity_map:
+    log_name: log_oneof
+- message_name: WriteLogEntriesRequest
+  field_entity_map:
+    log_name: log_oneof
+- message_name: ListLogEntriesRequest
+  field_entity_map:
+    resource_names: parent_oneof
+- message_name: LogEntry
+  field_entity_map:
+    log_name: log_oneof
+- message_name: LogSink
+  field_entity_map:
+    destination: "*"
+- message_name: ListSinksRequest
+  field_entity_map:
+    parent: parent_oneof
+- message_name: GetSinkRequest
+  field_entity_map:
+    sink_name: sink_oneof
+- message_name: CreateSinkRequest
+  field_entity_map:
+    parent: parent_oneof
+- message_name: UpdateSinkRequest
+  field_entity_map:
+    sink_name: sink_oneof
+- message_name: DeleteSinkRequest
+  field_entity_map:
+    sink_name: sink_oneof
+- message_name: ListLogMetricsRequest
+  field_entity_map:
+    parent: parent_oneof
+- message_name: GetLogMetricRequest
+  field_entity_map:
+    metric_name: metric_oneof
+- message_name: CreateLogMetricRequest
+  field_entity_map:
+    parent: parent_oneof
+- message_name: UpdateLogMetricRequest
+  field_entity_map:
+    metric_name: metric_oneof
+- message_name: DeleteLogMetricRequest
+  field_entity_map:
+    metric_name: metric_oneof
+- message_name: ListLogsRequest
+  field_entity_map:
+    parent: parent_oneof
+- message_name: ListExclusionsRequest
+  field_entity_map:
+    parent: parent_oneof
+- message_name: GetExclusionRequest
+  field_entity_map:
+    name: exclusion_oneof
+- message_name: CreateExclusionRequest
+  field_entity_map:
+    parent: parent_oneof
+- message_name: UpdateExclusionRequest
+  field_entity_map:
+    name: exclusion_oneof
+- message_name: DeleteExclusionRequest
+  field_entity_map:
+    name: exclusion_oneof

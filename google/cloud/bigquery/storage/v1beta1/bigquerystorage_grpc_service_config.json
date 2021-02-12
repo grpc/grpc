@@ -1,0 +1,65 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.bigquery.storage.v1beta1.BigQueryStorage",
+          "method": "CreateReadSession"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.bigquery.storage.v1beta1.BigQueryStorage",
+          "method": "ReadRows"
+        }
+      ],
+      "timeout": "86400s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.bigquery.storage.v1beta1.BigQueryStorage",
+          "method": "BatchCreateReadSessionStreams"
+        },
+        {
+          "service": "google.cloud.bigquery.storage.v1beta1.BigQueryStorage",
+          "method": "FinalizeStream"
+        },
+        {
+          "service": "google.cloud.bigquery.storage.v1beta1.BigQueryStorage",
+          "method": "SplitReadStream"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,202 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "ClickTypeProto";
+option java_package = "com.google.ads.googleads.v1.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V1::Enums";
+
+// Proto file describing click types.
+
+// Container for enumeration of Google Ads click types.
+message ClickTypeEnum {
+  // Enumerates Google Ads click types.
+  enum ClickType {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // The value is unknown in this version.
+    UNKNOWN = 1;
+
+    // App engagement ad deep link.
+    APP_DEEPLINK = 2;
+
+    // Breadcrumbs.
+    BREADCRUMBS = 3;
+
+    // Broadband Plan.
+    BROADBAND_PLAN = 4;
+
+    // Manually dialed phone calls.
+    CALL_TRACKING = 5;
+
+    // Phone calls.
+    CALLS = 6;
+
+    // Click on engagement ad.
+    CLICK_ON_ENGAGEMENT_AD = 7;
+
+    // Driving direction.
+    GET_DIRECTIONS = 8;
+
+    // Get location details.
+    LOCATION_EXPANSION = 9;
+
+    // Call.
+    LOCATION_FORMAT_CALL = 10;
+
+    // Directions.
+    LOCATION_FORMAT_DIRECTIONS = 11;
+
+    // Image(s).
+    LOCATION_FORMAT_IMAGE = 12;
+
+    // Go to landing page.
+    LOCATION_FORMAT_LANDING_PAGE = 13;
+
+    // Map.
+    LOCATION_FORMAT_MAP = 14;
+
+    // Go to store info.
+    LOCATION_FORMAT_STORE_INFO = 15;
+
+    // Text.
+    LOCATION_FORMAT_TEXT = 16;
+
+    // Mobile phone calls.
+    MOBILE_CALL_TRACKING = 17;
+
+    // Print offer.
+    OFFER_PRINTS = 18;
+
+    // Other.
+    OTHER = 19;
+
+    // Product plusbox offer.
+    PRODUCT_EXTENSION_CLICKS = 20;
+
+    // Shopping - Product - Online.
+    PRODUCT_LISTING_AD_CLICKS = 21;
+
+    // Sitelink.
+    SITELINKS = 22;
+
+    // Show nearby locations.
+    STORE_LOCATOR = 23;
+
+    // Headline.
+    URL_CLICKS = 25;
+
+    // App store.
+    VIDEO_APP_STORE_CLICKS = 26;
+
+    // Call-to-Action overlay.
+    VIDEO_CALL_TO_ACTION_CLICKS = 27;
+
+    // Cards.
+    VIDEO_CARD_ACTION_HEADLINE_CLICKS = 28;
+
+    // End cap.
+    VIDEO_END_CAP_CLICKS = 29;
+
+    // Website.
+    VIDEO_WEBSITE_CLICKS = 30;
+
+    // Visual Sitelinks.
+    VISUAL_SITELINKS = 31;
+
+    // Wireless Plan.
+    WIRELESS_PLAN = 32;
+
+    // Shopping - Product - Local.
+    PRODUCT_LISTING_AD_LOCAL = 33;
+
+    // Shopping - Product - MultiChannel Local.
+    PRODUCT_LISTING_AD_MULTICHANNEL_LOCAL = 34;
+
+    // Shopping - Product - MultiChannel Online.
+    PRODUCT_LISTING_AD_MULTICHANNEL_ONLINE = 35;
+
+    // Shopping - Product - Coupon.
+    PRODUCT_LISTING_ADS_COUPON = 36;
+
+    // Shopping - Product - Sell on Google.
+    PRODUCT_LISTING_AD_TRANSACTABLE = 37;
+
+    // Shopping - Product - App engagement ad deep link.
+    PRODUCT_AD_APP_DEEPLINK = 38;
+
+    // Shopping - Showcase - Category.
+    SHOWCASE_AD_CATEGORY_LINK = 39;
+
+    // Shopping - Showcase - Local storefront.
+    SHOWCASE_AD_LOCAL_STOREFRONT_LINK = 40;
+
+    // Shopping - Showcase - Online product.
+    SHOWCASE_AD_ONLINE_PRODUCT_LINK = 42;
+
+    // Shopping - Showcase - Local product.
+    SHOWCASE_AD_LOCAL_PRODUCT_LINK = 43;
+
+    // Promotion Extension.
+    PROMOTION_EXTENSION = 44;
+
+    // Ad Headline.
+    SWIPEABLE_GALLERY_AD_HEADLINE = 45;
+
+    // Swipes.
+    SWIPEABLE_GALLERY_AD_SWIPES = 46;
+
+    // See More.
+    SWIPEABLE_GALLERY_AD_SEE_MORE = 47;
+
+    // Sitelink 1.
+    SWIPEABLE_GALLERY_AD_SITELINK_ONE = 48;
+
+    // Sitelink 2.
+    SWIPEABLE_GALLERY_AD_SITELINK_TWO = 49;
+
+    // Sitelink 3.
+    SWIPEABLE_GALLERY_AD_SITELINK_THREE = 50;
+
+    // Sitelink 4.
+    SWIPEABLE_GALLERY_AD_SITELINK_FOUR = 51;
+
+    // Sitelink 5.
+    SWIPEABLE_GALLERY_AD_SITELINK_FIVE = 52;
+
+    // Hotel price.
+    HOTEL_PRICE = 53;
+
+    // Price Extension.
+    PRICE_EXTENSION = 54;
+
+    // Book on Google hotel room selection.
+    HOTEL_BOOK_ON_GOOGLE_ROOM_SELECTION = 55;
+
+    // Shopping - Comparison Listing.
+    SHOPPING_COMPARISON_LISTING = 56;
+  }
+}

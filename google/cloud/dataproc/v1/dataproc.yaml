@@ -1,0 +1,40 @@
+type: google.api.Service
+config_version: 2
+name: dataproc.googleapis.com
+title: Google Cloud Dataproc API
+
+apis:
+- name: google.cloud.dataproc.v1.ClusterController
+- name: google.cloud.dataproc.v1.JobController
+- name: google.cloud.dataproc.v1.WorkflowTemplateService
+
+types:
+- name: google.cloud.dataproc.v1.DiagnoseClusterResults
+- name: google.cloud.dataproc.v1.ClusterOperationMetadata
+- name: google.cloud.dataproc.v1.WorkflowMetadata
+
+documentation:
+  summary: 'Manages Hadoop-based clusters and jobs on Google Cloud Platform.'
+
+http:
+  rules:
+  - selector: google.longrunning.Operations.ListOperations
+    get: '/v1/{name=projects/*/regions/*/operations}'
+
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v1/{name=projects/*/regions/*/operations/*}'
+
+  - selector: google.longrunning.Operations.DeleteOperation
+    delete: '/v1/{name=projects/*/regions/*/operations/*}'
+
+  - selector: google.longrunning.Operations.CancelOperation
+    post: '/v1/{name=projects/*/regions/*/operations/*}:cancel'
+
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+

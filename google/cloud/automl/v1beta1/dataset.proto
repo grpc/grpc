@@ -1,0 +1,91 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1beta1;
+
+import "google/cloud/automl/v1beta1/image.proto";
+import "google/cloud/automl/v1beta1/tables.proto";
+import "google/cloud/automl/v1beta1/text.proto";
+import "google/cloud/automl/v1beta1/translation.proto";
+import "google/cloud/automl/v1beta1/video.proto";
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1beta1;automl";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.automl.v1beta1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1beta1";
+option ruby_package = "Google::Cloud::AutoML::V1beta1";
+
+// A workspace for solving a single, particular machine learning (ML) problem.
+// A workspace contains examples that may be annotated.
+message Dataset {
+  // Required.
+  // The dataset metadata that is specific to the problem type.
+  oneof dataset_metadata {
+    // Metadata for a dataset used for translation.
+    TranslationDatasetMetadata translation_dataset_metadata = 23;
+
+    // Metadata for a dataset used for image classification.
+    ImageClassificationDatasetMetadata image_classification_dataset_metadata = 24;
+
+    // Metadata for a dataset used for text classification.
+    TextClassificationDatasetMetadata text_classification_dataset_metadata = 25;
+
+    // Metadata for a dataset used for image object detection.
+    ImageObjectDetectionDatasetMetadata image_object_detection_dataset_metadata = 26;
+
+    // Metadata for a dataset used for video classification.
+    VideoClassificationDatasetMetadata video_classification_dataset_metadata = 31;
+
+    // Metadata for a dataset used for video object tracking.
+    VideoObjectTrackingDatasetMetadata video_object_tracking_dataset_metadata = 29;
+
+    // Metadata for a dataset used for text extraction.
+    TextExtractionDatasetMetadata text_extraction_dataset_metadata = 28;
+
+    // Metadata for a dataset used for text sentiment.
+    TextSentimentDatasetMetadata text_sentiment_dataset_metadata = 30;
+
+    // Metadata for a dataset used for Tables.
+    TablesDatasetMetadata tables_dataset_metadata = 33;
+  }
+
+  // Output only. The resource name of the dataset.
+  // Form: `projects/{project_id}/locations/{location_id}/datasets/{dataset_id}`
+  string name = 1;
+
+  // Required. The name of the dataset to show in the interface. The name can be
+  // up to 32 characters long and can consist only of ASCII Latin letters A-Z
+  // and a-z, underscores
+  // (_), and ASCII digits 0-9.
+  string display_name = 2;
+
+  // User-provided description of the dataset. The description can be up to
+  // 25000 characters long.
+  string description = 3;
+
+  // Output only. The number of examples in the dataset.
+  int32 example_count = 21;
+
+  // Output only. Timestamp when this dataset was created.
+  google.protobuf.Timestamp create_time = 14;
+
+  // Used to perform consistent read-modify-write updates. If not set, a blind
+  // "overwrite" update happens.
+  string etag = 17;
+}

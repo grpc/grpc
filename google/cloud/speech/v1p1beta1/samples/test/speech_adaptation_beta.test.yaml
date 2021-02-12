@@ -1,0 +1,11 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Speech-to-Text Sample Tests For Speech Adaptation
+    cases:
+    - name: speech_adaptation_beta
+      spec:
+      - call: {sample: speech_adaptation_beta}
+      - assert_contains:
+        - literal: "how old is the Brooklyn Bridge"

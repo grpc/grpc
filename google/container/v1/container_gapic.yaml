@@ -1,0 +1,28 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.container.v1
+  python:
+    package_name: google.cloud.container_v1.gapic
+  go:
+    package_name: cloud.google.com/go/container/apiv1
+  csharp:
+    package_name: Google.Cloud.Container.V1
+  ruby:
+    package_name: Google::Cloud::Container::V1
+    release_level: BETA
+  php:
+    package_name: Google\Cloud\Container\V1
+  nodejs:
+    package_name: container.v1
+    domain_layer_location: google-cloud
+# A list of API interface configurations.
+interfaces:
+- name: google.container.v1.ClusterManager
+  smoke_test:
+    method: ListClusters
+    init_fields:
+    - project_id=$PROJECT_ID
+    - zone="us-central1-a"

@@ -1,0 +1,671 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+# This is an API workspace, having public visibility by default makes perfect sense.
+package(default_visibility = ["//visibility:public"])
+
+##############################################################################
+# Common
+##############################################################################
+proto_library(
+    name = "annotations_proto",
+    srcs = ["annotations.proto"],
+    deps = [
+        ":http_proto",
+        "@com_google_protobuf//:descriptor_proto",
+    ],
+)
+
+proto_library(
+    name = "auth_proto",
+    srcs = ["auth.proto"],
+    deps = [":annotations_proto"],
+)
+
+proto_library(
+    name = "backend_proto",
+    srcs = ["backend.proto"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "billing_proto",
+    srcs = ["billing.proto"],
+    deps = [
+        ":annotations_proto",
+        ":metric_proto",
+    ],
+)
+
+proto_library(
+    name = "client_proto",
+    srcs = ["client.proto"],
+    deps = [
+        "@com_google_protobuf//:descriptor_proto",
+    ],
+)
+
+proto_library(
+    name = "config_change_proto",
+    srcs = ["config_change.proto"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "consumer_proto",
+    srcs = ["consumer.proto"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "context_proto",
+    srcs = ["context.proto"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "control_proto",
+    srcs = ["control.proto"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "distribution_proto",
+    srcs = ["distribution.proto"],
+    deps = [
+        ":annotations_proto",
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
+proto_library(
+    name = "documentation_proto",
+    srcs = ["documentation.proto"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "endpoint_proto",
+    srcs = ["endpoint.proto"],
+    deps = [":annotations_proto"],
+)
+
+proto_library(
+    name = "field_behavior_proto",
+    srcs = ["field_behavior.proto"],
+    deps = [
+        "@com_google_protobuf//:descriptor_proto",
+    ],
+)
+
+proto_library(
+    name = "http_proto",
+    srcs = ["http.proto"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "httpbody_proto",
+    srcs = ["httpbody.proto"],
+    deps = ["@com_google_protobuf//:any_proto"],
+)
+
+proto_library(
+    name = "label_proto",
+    srcs = ["label.proto"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "launch_stage_proto",
+    srcs = ["launch_stage.proto"],
+)
+
+proto_library(
+    name = "log_proto",
+    srcs = ["log.proto"],
+    deps = [":label_proto"],
+)
+
+proto_library(
+    name = "logging_proto",
+    srcs = ["logging.proto"],
+    deps = [
+        ":annotations_proto",
+        ":label_proto",
+    ],
+)
+
+proto_library(
+    name = "metric_proto",
+    srcs = ["metric.proto"],
+    deps = [
+        ":label_proto",
+        ":launch_stage_proto",
+        "@com_google_protobuf//:duration_proto",
+    ],
+)
+
+proto_library(
+    name = "monitored_resource_proto",
+    srcs = ["monitored_resource.proto"],
+    deps = [
+        ":label_proto",
+        ":launch_stage_proto",
+        "@com_google_protobuf//:struct_proto",
+    ],
+)
+
+proto_library(
+    name = "monitoring_proto",
+    srcs = ["monitoring.proto"],
+    deps = [":annotations_proto"],
+)
+
+proto_library(
+    name = "quota_proto",
+    srcs = ["quota.proto"],
+    deps = [":annotations_proto"],
+)
+
+proto_library(
+    name = "resource_proto",
+    srcs = ["resource.proto"],
+    deps = [
+        "@com_google_protobuf//:descriptor_proto",
+    ],
+)
+
+proto_library(
+    name = "service_proto",
+    srcs = ["service.proto"],
+    deps = [
+        ":annotations_proto",
+        ":auth_proto",
+        ":backend_proto",
+        ":billing_proto",
+        ":context_proto",
+        ":control_proto",
+        ":documentation_proto",
+        ":endpoint_proto",
+        ":http_proto",
+        ":label_proto",
+        ":log_proto",
+        ":logging_proto",
+        ":metric_proto",
+        ":monitored_resource_proto",
+        ":monitoring_proto",
+        ":quota_proto",
+        ":resource_proto",
+        ":source_info_proto",
+        ":system_parameter_proto",
+        ":usage_proto",
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:api_proto",
+        "@com_google_protobuf//:type_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
+)
+
+proto_library(
+    name = "source_info_proto",
+    srcs = ["source_info.proto"],
+    deps = ["@com_google_protobuf//:any_proto"],
+)
+
+proto_library(
+    name = "system_parameter_proto",
+    srcs = ["system_parameter.proto"],
+    visibility = ["//visibility:public"],
+)
+
+proto_library(
+    name = "usage_proto",
+    srcs = ["usage.proto"],
+    deps = [":annotations_proto"],
+)
+
+##############################################################################
+# Java
+##############################################################################
+load("@com_google_googleapis_imports//:imports.bzl", "java_proto_library")
+
+java_proto_library(
+    name = "api_java_proto",
+    deps = [
+        "annotations_proto",
+        "auth_proto",
+        "backend_proto",
+        "billing_proto",
+        "client_proto",
+        "config_change_proto",
+        "consumer_proto",
+        "context_proto",
+        "control_proto",
+        "distribution_proto",
+        "documentation_proto",
+        "endpoint_proto",
+        "field_behavior_proto",
+        "http_proto",
+        "httpbody_proto",
+        "label_proto",
+        "launch_stage_proto",
+        "log_proto",
+        "logging_proto",
+        "metric_proto",
+        "monitored_resource_proto",
+        "monitoring_proto",
+        "quota_proto",
+        "resource_proto",
+        "service_proto",
+        "source_info_proto",
+        "system_parameter_proto",
+        "usage_proto",
+    ],
+)
+
+##############################################################################
+# Go
+##############################################################################
+load("@com_google_googleapis_imports//:imports.bzl", "go_proto_library")
+
+go_proto_library(
+    name = "annotations_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/api/annotations",
+    protos = [
+        ":annotations_proto",
+        ":http_proto",
+    ],
+)
+
+go_proto_library(
+    name = "client_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/api/annotations;annotations",
+    protos = [":client_proto"],
+)
+
+go_proto_library(
+    name = "configchange_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/api/configchange",
+    protos = [":config_change_proto"],
+)
+
+go_proto_library(
+    name = "distribution_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/api/distribution",
+    protos = [":distribution_proto"],
+)
+
+go_proto_library(
+    name = "field_behavior_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/api/annotations;annotations",
+    protos = [":field_behavior_proto"],
+)
+
+go_proto_library(
+    name = "httpbody_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/api/httpbody",
+    protos = [":httpbody_proto"],
+)
+
+go_proto_library(
+    name = "label_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/api/label",
+    protos = [":label_proto"],
+)
+
+go_proto_library(
+    name = "api_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/api",
+    protos = [
+        ":launch_stage_proto",
+    ],
+    deps = [
+        ":annotations_go_proto",
+    ],
+)
+
+go_proto_library(
+    name = "metric_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/api/metric",
+    protos = [":metric_proto"],
+    deps = [
+        ":api_go_proto",
+        ":label_go_proto",
+    ],
+)
+
+go_proto_library(
+    name = "monitoredres_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/api/monitoredres",
+    protos = [":monitored_resource_proto"],
+    deps = [
+        ":api_go_proto",
+        ":label_go_proto",
+    ],
+)
+
+go_proto_library(
+    name = "resource_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/api/annotations;annotations",
+    protos = [":resource_proto"],
+)
+
+go_proto_library(
+    name = "serviceconfig_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/api/serviceconfig",
+    protos = [
+        ":auth_proto",
+        ":backend_proto",
+        ":billing_proto",
+        ":context_proto",
+        ":control_proto",
+        ":documentation_proto",
+        ":endpoint_proto",
+        ":log_proto",
+        ":logging_proto",
+        ":monitoring_proto",
+        ":quota_proto",
+        ":service_proto",
+        ":source_info_proto",
+        ":system_parameter_proto",
+        ":usage_proto",
+    ],
+    deps = [
+        ":annotations_go_proto",
+        ":api_go_proto",
+        ":label_go_proto",
+        ":metric_go_proto",
+        ":monitoredres_go_proto",
+    ],
+)
+
+##############################################################################
+#  C++
+##############################################################################
+load("@com_google_googleapis_imports//:imports.bzl", "cc_proto_library")
+
+cc_proto_library(
+    name = "annotations_cc_proto",
+    deps = [":annotations_proto"],
+)
+
+cc_proto_library(
+    name = "auth_cc_proto",
+    deps = [":auth_proto"],
+)
+
+cc_proto_library(
+    name = "backend_cc_proto",
+    deps = [":backend_proto"],
+)
+
+cc_proto_library(
+    name = "billing_cc_proto",
+    deps = [":billing_proto"],
+)
+
+cc_proto_library(
+    name = "client_cc_proto",
+    deps = [":client_proto"],
+)
+
+cc_proto_library(
+    name = "config_change_cc_proto",
+    deps = [":config_change_proto"],
+)
+
+cc_proto_library(
+    name = "consumer_cc_proto",
+    deps = [":consumer_proto"],
+)
+
+cc_proto_library(
+    name = "context_cc_proto",
+    deps = [":context_proto"],
+)
+
+cc_proto_library(
+    name = "control_cc_proto",
+    deps = [":control_proto"],
+)
+
+cc_proto_library(
+    name = "distribution_cc_proto",
+    deps = [":distribution_proto"],
+)
+
+cc_proto_library(
+    name = "documentation_cc_proto",
+    deps = [":documentation_proto"],
+)
+
+cc_proto_library(
+    name = "endpoint_cc_proto",
+    deps = [":endpoint_proto"],
+)
+
+cc_proto_library(
+    name = "field_behavior_cc_proto",
+    deps = [":field_behavior_proto"],
+)
+
+cc_proto_library(
+    name = "http_cc_proto",
+    deps = [":http_proto"],
+)
+
+cc_proto_library(
+    name = "httpbody_cc_proto",
+    deps = [":httpbody_proto"],
+)
+
+cc_proto_library(
+    name = "label_cc_proto",
+    deps = [":label_proto"],
+)
+
+cc_proto_library(
+    name = "launch_stage_cc_proto",
+    deps = [":launch_stage_proto"],
+)
+
+cc_proto_library(
+    name = "log_cc_proto",
+    deps = [":log_proto"],
+)
+
+cc_proto_library(
+    name = "logging_cc_proto",
+    deps = [":logging_proto"],
+)
+
+cc_proto_library(
+    name = "metric_cc_proto",
+    deps = [":metric_proto"],
+)
+
+cc_proto_library(
+    name = "monitored_resource_cc_proto",
+    deps = [":monitored_resource_proto"],
+)
+
+cc_proto_library(
+    name = "monitoring_cc_proto",
+    deps = ["monitoring_proto"],
+)
+
+cc_proto_library(
+    name = "quota_cc_proto",
+    deps = ["quota_proto"],
+)
+
+cc_proto_library(
+    name = "resource_cc_proto",
+    deps = [":resource_proto"],
+)
+
+cc_proto_library(
+    name = "service_cc_proto",
+    deps = [":service_proto"],
+)
+
+cc_proto_library(
+    name = "source_info_cc_proto",
+    deps = [":source_info_proto"],
+)
+
+cc_proto_library(
+    name = "system_parameter_cc_proto",
+    deps = [":system_parameter_proto"],
+)
+
+cc_proto_library(
+    name = "usage_cc_proto",
+    deps = [":usage_proto"],
+)
+
+##############################################################################
+# Python
+##############################################################################
+load("@com_google_googleapis_imports//:imports.bzl", "py_proto_library")
+
+py_proto_library(
+    name = "annotations_py_proto",
+    deps = [":annotations_proto"],
+)
+
+py_proto_library(
+    name = "auth_py_proto",
+    deps = [":auth_proto"],
+)
+
+py_proto_library(
+    name = "backend_py_proto",
+    deps = [":backend_proto"],
+)
+
+py_proto_library(
+    name = "billing_py_proto",
+    deps = [":billing_proto"],
+)
+
+py_proto_library(
+    name = "client_py_proto",
+    deps = [":client_proto"],
+)
+
+py_proto_library(
+    name = "config_change_py_proto",
+    deps = [":config_change_proto"],
+)
+
+py_proto_library(
+    name = "consumer_py_proto",
+    deps = [":consumer_proto"],
+)
+
+py_proto_library(
+    name = "context_py_proto",
+    deps = [":context_proto"],
+)
+
+py_proto_library(
+    name = "control_py_proto",
+    deps = [":control_proto"],
+)
+
+py_proto_library(
+    name = "distribution_py_proto",
+    deps = [":distribution_proto"],
+)
+
+py_proto_library(
+    name = "documentation_py_proto",
+    deps = [":documentation_proto"],
+)
+
+py_proto_library(
+    name = "endpoint_py_proto",
+    deps = [":endpoint_proto"],
+)
+
+py_proto_library(
+    name = "field_behavior_py_proto",
+    deps = [":field_behavior_proto"],
+)
+
+py_proto_library(
+    name = "http_py_proto",
+    deps = [":http_proto"],
+)
+
+py_proto_library(
+    name = "httpbody_py_proto",
+    deps = [":httpbody_proto"],
+)
+
+py_proto_library(
+    name = "label_py_proto",
+    deps = [":label_proto"],
+)
+
+py_proto_library(
+    name = "launch_stage_py_proto",
+    deps = [":launch_stage_proto"],
+)
+
+py_proto_library(
+    name = "log_py_proto",
+    deps = [":log_proto"],
+)
+
+py_proto_library(
+    name = "logging_py_proto",
+    deps = [":logging_proto"],
+)
+
+py_proto_library(
+    name = "metric_py_proto",
+    deps = [":metric_proto"],
+)
+
+py_proto_library(
+    name = "monitored_resource_py_proto",
+    deps = [":monitored_resource_proto"],
+)
+
+py_proto_library(
+    name = "monitoring_py_proto",
+    deps = ["monitoring_proto"],
+)
+
+py_proto_library(
+    name = "quota_py_proto",
+    deps = ["quota_proto"],
+)
+
+py_proto_library(
+    name = "resource_py_proto",
+    deps = [":resource_proto"],
+)
+
+py_proto_library(
+    name = "service_py_proto",
+    deps = [":service_proto"],
+)
+
+py_proto_library(
+    name = "source_info_py_proto",
+    deps = [":source_info_proto"],
+)
+
+py_proto_library(
+    name = "system_parameter_py_proto",
+    deps = [":system_parameter_proto"],
+)
+
+py_proto_library(
+    name = "usage_py_proto",
+    deps = [":usage_proto"],
+)

@@ -1,0 +1,20 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 2.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.translate.v3
+  python:
+    package_name: google.cloud.translate_v3.gapic
+  go:
+    package_name: cloud.google.com/go/translate/apiv3
+    release_level: GA
+  csharp:
+    package_name: Google.Cloud.Translate.V3
+  ruby:
+    package_name: Google::Cloud::Translate::V3
+  php:
+    package_name: Google\Cloud\Translate\V3
+  nodejs:
+    package_name: translate.v3
+    domain_layer_location: google-cloud

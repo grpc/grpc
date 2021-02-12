@@ -1,0 +1,238 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.genomics.v1;
+
+import "google/api/annotations.proto";
+import "google/iam/v1/iam_policy.proto";
+import "google/iam/v1/policy.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/genomics/v1;genomics";
+option java_multiple_files = true;
+option java_outer_classname = "DatasetsProto";
+option java_package = "com.google.genomics.v1";
+
+// This service manages datasets, which are collections of genomic data.
+service DatasetServiceV1 {
+  // Lists datasets within a project.
+  //
+  // For the definitions of datasets and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  rpc ListDatasets(ListDatasetsRequest) returns (ListDatasetsResponse) {
+    option (google.api.http) = {
+      get: "/v1/datasets"
+    };
+  }
+
+  // Creates a new dataset.
+  //
+  // For the definitions of datasets and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  rpc CreateDataset(CreateDatasetRequest) returns (Dataset) {
+    option (google.api.http) = {
+      post: "/v1/datasets"
+      body: "dataset"
+    };
+  }
+
+  // Gets a dataset by ID.
+  //
+  // For the definitions of datasets and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  rpc GetDataset(GetDatasetRequest) returns (Dataset) {
+    option (google.api.http) = {
+      get: "/v1/datasets/{dataset_id}"
+    };
+  }
+
+  // Updates a dataset.
+  //
+  // For the definitions of datasets and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  //
+  // This method supports patch semantics.
+  rpc UpdateDataset(UpdateDatasetRequest) returns (Dataset) {
+    option (google.api.http) = {
+      patch: "/v1/datasets/{dataset_id}"
+      body: "dataset"
+    };
+  }
+
+  // Deletes a dataset and all of its contents (all read group sets,
+  // reference sets, variant sets, call sets, annotation sets, etc.)
+  // This is reversible (up to one week after the deletion) via
+  // the
+  // [datasets.undelete][google.genomics.v1.DatasetServiceV1.UndeleteDataset]
+  // operation.
+  //
+  // For the definitions of datasets and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  rpc DeleteDataset(DeleteDatasetRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/datasets/{dataset_id}"
+    };
+  }
+
+  // Undeletes a dataset by restoring a dataset which was deleted via this API.
+  //
+  // For the definitions of datasets and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  //
+  // This operation is only possible for a week after the deletion occurred.
+  rpc UndeleteDataset(UndeleteDatasetRequest) returns (Dataset) {
+    option (google.api.http) = {
+      post: "/v1/datasets/{dataset_id}:undelete"
+      body: "*"
+    };
+  }
+
+  // Sets the access control policy on the specified dataset. Replaces any
+  // existing policy.
+  //
+  // For the definitions of datasets and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  //
+  // See <a href="/iam/docs/managing-policies#setting_a_policy">Setting a
+  // Policy</a> for more information.
+  rpc SetIamPolicy(google.iam.v1.SetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1/{resource=datasets/*}:setIamPolicy"
+      body: "*"
+    };
+  }
+
+  // Gets the access control policy for the dataset. This is empty if the
+  // policy or resource does not exist.
+  //
+  // See <a href="/iam/docs/managing-policies#getting_a_policy">Getting a
+  // Policy</a> for more information.
+  //
+  // For the definitions of datasets and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  rpc GetIamPolicy(google.iam.v1.GetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1/{resource=datasets/*}:getIamPolicy"
+      body: "*"
+    };
+  }
+
+  // Returns permissions that a caller has on the specified resource.
+  // See <a href="/iam/docs/managing-policies#testing_permissions">Testing
+  // Permissions</a> for more information.
+  //
+  // For the definitions of datasets and other genomics resources, see
+  // [Fundamentals of Google
+  // Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+  rpc TestIamPermissions(google.iam.v1.TestIamPermissionsRequest)
+      returns (google.iam.v1.TestIamPermissionsResponse) {
+    option (google.api.http) = {
+      post: "/v1/{resource=datasets/*}:testIamPermissions"
+      body: "*"
+    };
+  }
+}
+
+// A Dataset is a collection of genomic data.
+//
+// For more genomics resource definitions, see [Fundamentals of Google
+// Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+message Dataset {
+  // The server-generated dataset ID, unique across all datasets.
+  string id = 1;
+
+  // The Google Cloud project ID that this dataset belongs to.
+  string project_id = 2;
+
+  // The dataset name.
+  string name = 3;
+
+  // The time this dataset was created, in seconds from the epoch.
+  google.protobuf.Timestamp create_time = 4;
+}
+
+// The dataset list request.
+message ListDatasetsRequest {
+  // Required. The Google Cloud project ID to list datasets for.
+  string project_id = 1;
+
+  // The maximum number of results to return in a single page. If unspecified,
+  // defaults to 50. The maximum value is 1024.
+  int32 page_size = 2;
+
+  // The continuation token, which is used to page through large result sets.
+  // To get the next page of results, set this parameter to the value of
+  // `nextPageToken` from the previous response.
+  string page_token = 3;
+}
+
+// The dataset list response.
+message ListDatasetsResponse {
+  // The list of matching Datasets.
+  repeated Dataset datasets = 1;
+
+  // The continuation token, which is used to page through large result sets.
+  // Provide this value in a subsequent request to return the next page of
+  // results. This field will be empty if there aren't any additional results.
+  string next_page_token = 2;
+}
+
+message CreateDatasetRequest {
+  // The dataset to be created. Must contain projectId and name.
+  Dataset dataset = 1;
+}
+
+message UpdateDatasetRequest {
+  // The ID of the dataset to be updated.
+  string dataset_id = 1;
+
+  // The new dataset data.
+  Dataset dataset = 2;
+
+  // An optional mask specifying which fields to update. At this time, the only
+  // mutable field is [name][google.genomics.v1.Dataset.name]. The only
+  // acceptable value is "name". If unspecified, all mutable fields will be
+  // updated.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+message DeleteDatasetRequest {
+  // The ID of the dataset to be deleted.
+  string dataset_id = 1;
+}
+
+message UndeleteDatasetRequest {
+  // The ID of the dataset to be undeleted.
+  string dataset_id = 1;
+}
+
+message GetDatasetRequest {
+  // The ID of the dataset.
+  string dataset_id = 1;
+}

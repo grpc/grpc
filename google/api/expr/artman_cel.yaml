@@ -1,0 +1,37 @@
+# This file is auto-generated based on service config and could be
+# incorrect. The API producer can manually edit it. Remove all the FIXMEs
+# before sending this file out for review.
+common:
+  api_name: cel
+  api_version: v1alpha1
+  organization_name: google-cloud
+  proto_deps:
+    - name: google-common-protos
+  src_proto_paths:
+  - v1alpha1
+  service_yaml: cel.yaml
+  gapic_yaml: v1alpha1/cel_gapic.yaml
+artifacts:
+- name: gapic_config
+  type: GAPIC_CONFIG
+- name: java_gapic
+  type: GAPIC
+  language: JAVA
+- name: python_gapic
+  type: GAPIC
+  language: PYTHON
+- name: nodejs_gapic
+  type: GAPIC
+  language: NODEJS
+- name: php_gapic
+  type: GAPIC
+  language: PHP
+- name: go_gapic
+  type: GAPIC
+  language: GO
+- name: ruby_gapic
+  type: GAPIC
+  language: RUBY
+- name: csharp_gapic
+  type: GAPIC
+  language: CSHARP

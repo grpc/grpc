@@ -1,0 +1,49 @@
+type: com.google.api.codegen.samplegen.v1p2.SampleConfigProto
+schema_version: 1.2.0
+samples:
+- region_tag: speech_adaptation_beta
+  title: Speech Adaptation (Cloud Storage)
+  description: Transcribe a short audio file with speech adaptation.
+  rpc: Recognize
+  service: google.cloud.speech.v1p1beta1.Speech
+  request:
+  - field: audio.uri
+    value: "gs://cloud-samples-data/speech/brooklyn_bridge.mp3"
+    input_parameter: storage_uri
+    comment: URI for audio file in Cloud Storage, e.g. gs://[BUCKET]/[FILE]
+  - field: config.speech_contexts[0].phrases[0]
+    value: "Brooklyn Bridge"
+    input_parameter: phrase
+    comment: |
+      Phrase "hints" help recognize the specified phrases from your audio.
+  - field: config.speech_contexts[0].boost
+    value: 20.0
+    comment: |
+      Hint Boost. This value increases the probability that a specific
+      phrase will be recognized over other similar sounding phrases.
+      The higher the boost, the higher the chance of false positive
+      recognition as well. Can accept wide range of positive values.
+      Most use cases are best served with values between 0 and 20.
+      Using a binary search happroach may help you find the optimal value.
+  - field: config.sample_rate_hertz
+    value: 44100
+    comment: Sample rate in Hertz of the audio data sent
+  - field: config.language_code
+    value: "en-US"
+    comment: The language of the supplied audio
+  - field: config.encoding
+    value: MP3
+    comment: |
+      Encoding of audio data sent. This sample sets this explicitly.
+      This field is optional for FLAC and WAV audio formats.
+  response:
+  - loop:
+      variable: result
+      collection: $resp.results
+      body:
+      - comment:
+        - First alternative is the most probable result
+      - define: alternative = result.alternatives[0]
+      - print:
+        - "Transcript: %s"
+        - alternative.transcript

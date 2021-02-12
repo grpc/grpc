@@ -1,0 +1,198 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.bigtable.data.v2
+    interface_names:
+      google.bigtable.v2.Bigtable: BaseBigtableData
+  python:
+    package_name: google.cloud.bigtable_v2.gapic
+  go:
+    package_name: cloud.google.com/go/bigtable/apiv2
+  csharp:
+    package_name: Google.Cloud.Bigtable.V2
+    interface_names:
+      google.bigtable.v2.Bigtable: BigtableServiceApi
+  ruby:
+    package_name: Google::Cloud::Bigtable::V2
+    release_level: BETA
+  php:
+    package_name: Google\Cloud\Bigtable\V2
+  nodejs:
+    package_name: bigtable.v2
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.bigtable.v2.Bigtable
+  collections:
+  - name_pattern: projects/{project}/instances/{instance}/tables/{table}
+    entity_name: table
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Cloud.Bigtable.Common.V2.TableName
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: idempotent_params
+    initial_retry_delay_millis: 10
+    retry_delay_multiplier: 2
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  - name: non_idempotent_params
+    initial_retry_delay_millis: 10
+    retry_delay_multiplier: 2
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 20000
+  - name: read_rows_params
+    initial_retry_delay_millis: 10
+    retry_delay_multiplier: 2
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 300000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 300000
+    total_timeout_millis: 43200000
+  - name: mutate_rows_params
+    initial_retry_delay_millis: 10
+    retry_delay_multiplier: 2
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: ReadRows
+    flattening:
+      groups:
+      - parameters:
+        - table_name
+    required_fields:
+    - table_name
+    retry_codes_name: idempotent
+    retry_params_name: read_rows_params
+    field_name_patterns:
+      table_name: table
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 43200000
+    header_request_params:
+    - table_name
+  - name: SampleRowKeys
+    flattening:
+      groups:
+      - parameters:
+        - table_name
+    required_fields:
+    - table_name
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      table_name: table
+    timeout_millis: 20000
+    resource_name_treatment: STATIC_TYPES
+    header_request_params:
+    - table_name
+  - name: MutateRow
+    flattening:
+      groups:
+      - parameters:
+        - table_name
+        - row_key
+        - mutations
+    required_fields:
+    - table_name
+    - row_key
+    - mutations
+    retry_codes_name: idempotent
+    retry_params_name: idempotent_params
+    field_name_patterns:
+      table_name: table
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 20000
+    header_request_params:
+    - table_name
+  - name: MutateRows
+    flattening:
+      groups:
+      - parameters:
+        - table_name
+        - entries
+    required_fields:
+    - table_name
+    - entries
+    retry_codes_name: idempotent
+    retry_params_name: mutate_rows_params
+    field_name_patterns:
+      table_name: table
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 60000
+    header_request_params:
+    - table_name
+  - name: CheckAndMutateRow
+    flattening:
+      groups:
+      - parameters:
+        - table_name
+        - row_key
+        - predicate_filter
+        - true_mutations
+        - false_mutations
+    # Note that one of {true_mutations,false_mutations} must be specified, but
+    # since they are not both required, we leave them as optional params.
+    required_fields:
+    - table_name
+    - row_key
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      table_name: table
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 20000
+    header_request_params:
+    - table_name
+  - name: ReadModifyWriteRow
+    flattening:
+      groups:
+      - parameters:
+        - table_name
+        - row_key
+        - rules
+    required_fields:
+    - table_name
+    - row_key
+    - rules
+    retry_codes_name: non_idempotent
+    retry_params_name: non_idempotent_params
+    field_name_patterns:
+      table_name: table
+    resource_name_treatment: STATIC_TYPES
+    timeout_millis: 20000
+    header_request_params:
+    - table_name
+resource_name_generation:
+- message_name: ReadRowsRequest
+  field_entity_map:
+    table_name: table
+- message_name: SampleRowKeysRequest
+  field_entity_map:
+    table_name: table
+- message_name: MutateRowRequest
+  field_entity_map:
+    table_name: table
+- message_name: MutateRowsRequest
+  field_entity_map:
+    table_name: table
+- message_name: CheckAndMutateRowRequest
+  field_entity_map:
+    table_name: table
+- message_name: ReadModifyWriteRowRequest
+  field_entity_map:
+    table_name: table

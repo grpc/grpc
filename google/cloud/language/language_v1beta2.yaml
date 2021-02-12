@@ -1,0 +1,19 @@
+type: google.api.Service
+config_version: 2
+name: language.googleapis.com
+title: Google Cloud Natural Language API
+
+apis:
+- name: google.cloud.language.v1beta2.LanguageService
+
+documentation:
+  summary:
+    'Google Cloud Natural Language API provides natural language understanding
+    technologies to developers. Examples include sentiment analysis, entity
+    recognition, and text annotations.'
+
+authentication:
+  rules:
+    - selector: '*'
+      oauth:
+        canonical_scopes: https://www.googleapis.com/auth/cloud-platform

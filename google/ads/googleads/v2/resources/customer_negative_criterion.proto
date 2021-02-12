@@ -1,0 +1,72 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/common/criteria.proto";
+import "google/ads/googleads/v2/enums/criterion_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "CustomerNegativeCriterionProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the Customer Negative Criterion resource.
+
+// A negative criterion for exclusions at the customer level.
+message CustomerNegativeCriterion {
+  // The resource name of the customer negative criterion.
+  // Customer negative criterion resource names have the form:
+  //
+  // `customers/{customer_id}/customerNegativeCriteria/{criterion_id}`
+  string resource_name = 1;
+
+  // The ID of the criterion.
+  google.protobuf.Int64Value id = 2;
+
+  // The type of the criterion.
+  google.ads.googleads.v2.enums.CriterionTypeEnum.CriterionType type = 3;
+
+  // The customer negative criterion.
+  //
+  // Exactly one must be set.
+  oneof criterion {
+    // ContentLabel.
+    google.ads.googleads.v2.common.ContentLabelInfo content_label = 4;
+
+    // MobileApplication.
+    google.ads.googleads.v2.common.MobileApplicationInfo mobile_application = 5;
+
+    // MobileAppCategory.
+    google.ads.googleads.v2.common.MobileAppCategoryInfo mobile_app_category = 6;
+
+    // Placement.
+    google.ads.googleads.v2.common.PlacementInfo placement = 7;
+
+    // YouTube Video.
+    google.ads.googleads.v2.common.YouTubeVideoInfo youtube_video = 8;
+
+    // YouTube Channel.
+    google.ads.googleads.v2.common.YouTubeChannelInfo youtube_channel = 9;
+  }
+}

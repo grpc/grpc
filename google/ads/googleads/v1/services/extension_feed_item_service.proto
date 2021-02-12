@@ -1,0 +1,112 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/resources/extension_feed_item.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "ExtensionFeedItemServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the ExtensionFeedItem service.
+
+// Service to manage extension feed items.
+service ExtensionFeedItemService {
+  // Returns the requested extension feed item in full detail.
+  rpc GetExtensionFeedItem(GetExtensionFeedItemRequest)
+      returns (google.ads.googleads.v1.resources.ExtensionFeedItem) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/extensionFeedItems/*}"
+    };
+  }
+
+  // Creates, updates, or removes extension feed items. Operation
+  // statuses are returned.
+  rpc MutateExtensionFeedItems(MutateExtensionFeedItemsRequest)
+      returns (MutateExtensionFeedItemsResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}/extensionFeedItems:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [ExtensionFeedItemService.GetExtensionFeedItem][google.ads.googleads.v1.services.ExtensionFeedItemService.GetExtensionFeedItem].
+message GetExtensionFeedItemRequest {
+  // The resource name of the extension feed item to fetch.
+  string resource_name = 1;
+}
+
+// Request message for
+// [ExtensionFeedItemService.MutateExtensionFeedItems][google.ads.googleads.v1.services.ExtensionFeedItemService.MutateExtensionFeedItems].
+message MutateExtensionFeedItemsRequest {
+  // The ID of the customer whose extension feed items are being
+  // modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual extension feed items.
+  repeated ExtensionFeedItemOperation operations = 2;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// A single operation (create, update, remove) on an extension feed item.
+message ExtensionFeedItemOperation {
+  // FieldMask that determines which resource fields are modified in an update.
+  google.protobuf.FieldMask update_mask = 4;
+
+  // The mutate operation.
+  oneof operation {
+    // Create operation: No resource name is expected for the new extension
+    // feed item.
+    google.ads.googleads.v1.resources.ExtensionFeedItem create = 1;
+
+    // Update operation: The extension feed item is expected to have a
+    // valid resource name.
+    google.ads.googleads.v1.resources.ExtensionFeedItem update = 2;
+
+    // Remove operation: A resource name for the removed extension feed item
+    // is expected, in this format:
+    //
+    // `customers/{customer_id}/extensionFeedItems/{feed_item_id}`
+    string remove = 3;
+  }
+}
+
+// Response message for an extension feed item mutate.
+message MutateExtensionFeedItemsResponse {
+  // All results for the mutate.
+  repeated MutateExtensionFeedItemResult results = 2;
+}
+
+// The result for the extension feed item mutate.
+message MutateExtensionFeedItemResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}

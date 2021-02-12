@@ -1,0 +1,108 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/resources/media_file.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+import "google/rpc/status.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "MediaFileServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the Media File service.
+
+// Service to manage media files.
+service MediaFileService {
+  // Returns the requested media file in full detail.
+  rpc GetMediaFile(GetMediaFileRequest)
+      returns (google.ads.googleads.v1.resources.MediaFile) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/mediaFiles/*}"
+    };
+  }
+
+  // Creates media files. Operation statuses are returned.
+  rpc MutateMediaFiles(MutateMediaFilesRequest)
+      returns (MutateMediaFilesResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}/mediaFiles:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [MediaFileService.GetMediaFile][google.ads.googleads.v1.services.MediaFileService.GetMediaFile]
+message GetMediaFileRequest {
+  // The resource name of the media file to fetch.
+  string resource_name = 1;
+}
+
+// Request message for
+// [MediaFileService.MutateMediaFiles][google.ads.googleads.v1.services.MediaFileService.MutateMediaFiles]
+message MutateMediaFilesRequest {
+  // The ID of the customer whose media files are being modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual media file.
+  repeated MediaFileOperation operations = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried
+  // out in one transaction if and only if they are all valid.
+  // Default is false.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// A single operation to create media file.
+message MediaFileOperation {
+  // The mutate operation.
+  oneof operation {
+    // Create operation: No resource name is expected for the new media file.
+    google.ads.googleads.v1.resources.MediaFile create = 1;
+  }
+}
+
+// Response message for a media file mutate.
+message MutateMediaFilesResponse {
+  // Errors that pertain to operation failures in the partial failure mode.
+  // Returned only when partial_failure = true and all errors occur inside the
+  // operations. If any errors occur outside the operations (e.g. auth errors),
+  // we return an RPC level error.
+  google.rpc.Status partial_failure_error = 3;
+
+  // All results for the mutate.
+  repeated MutateMediaFileResult results = 2;
+}
+
+// The result for the media file mutate.
+message MutateMediaFileResult {
+  // The resource name returned for successful operations.
+  string resource_name = 1;
+}

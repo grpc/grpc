@@ -1,0 +1,208 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.dialogflow.v2;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.Dialogflow.V2";
+option go_package = "google.golang.org/genproto/googleapis/cloud/dialogflow/v2;dialogflow";
+option java_multiple_files = true;
+option java_outer_classname = "ContextProto";
+option java_package = "com.google.cloud.dialogflow.v2";
+option objc_class_prefix = "DF";
+
+// A context represents additional information included with user input or with
+// an intent returned by the Dialogflow API. Contexts are helpful for
+// differentiating user input which may be vague or have a different meaning
+// depending on additional details from your application such as user setting
+// and preferences, previous user input, where the user is in your application,
+// geographic location, and so on.
+//
+// You can include contexts as input parameters of a
+// [DetectIntent][google.cloud.dialogflow.v2.Sessions.DetectIntent] (or
+// [StreamingDetectIntent][google.cloud.dialogflow.v2.Sessions.StreamingDetectIntent]) request,
+// or as output contexts included in the returned intent.
+// Contexts expire when an intent is matched, after the number of `DetectIntent`
+// requests specified by the `lifespan_count` parameter, or after 20 minutes
+// if no intents are matched for a `DetectIntent` request.
+//
+// For more information about contexts, see the
+// [Dialogflow
+// documentation](https://cloud.google.com/dialogflow/docs/contexts-overview).
+service Contexts {
+  option (google.api.default_host) = "dialogflow.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/dialogflow";
+
+  // Returns the list of all contexts in the specified session.
+  rpc ListContexts(ListContextsRequest) returns (ListContextsResponse) {
+    option (google.api.http) = {
+      get: "/v2/{parent=projects/*/agent/sessions/*}/contexts"
+    };
+    option (google.api.method_signature) = "parent";
+  }
+
+  // Retrieves the specified context.
+  rpc GetContext(GetContextRequest) returns (Context) {
+    option (google.api.http) = {
+      get: "/v2/{name=projects/*/agent/sessions/*/contexts/*}"
+    };
+  }
+
+  // Creates a context.
+  //
+  // If the specified context already exists, overrides the context.
+  rpc CreateContext(CreateContextRequest) returns (Context) {
+    option (google.api.http) = {
+      post: "/v2/{parent=projects/*/agent/sessions/*}/contexts"
+      body: "context"
+    };
+  }
+
+  // Updates the specified context.
+  rpc UpdateContext(UpdateContextRequest) returns (Context) {
+    option (google.api.http) = {
+      patch: "/v2/{context.name=projects/*/agent/sessions/*/contexts/*}"
+      body: "context"
+    };
+  }
+
+  // Deletes the specified context.
+  rpc DeleteContext(DeleteContextRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v2/{name=projects/*/agent/sessions/*/contexts/*}"
+    };
+  }
+
+  // Deletes all active contexts in the specified session.
+  rpc DeleteAllContexts(DeleteAllContextsRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v2/{parent=projects/*/agent/sessions/*}/contexts"
+    };
+  }
+}
+
+// Represents a context.
+message Context {
+  option (google.api.resource) = {
+    type: "dialogflow.googleapis.com/Context"
+    pattern: "projects/{project}/agent/sessions/{session}/contexts/{context}"
+  };
+
+  // Required. The unique identifier of the context. Format:
+  // `projects/<Project ID>/agent/sessions/<Session ID>/contexts/<Context ID>`.
+  //
+  // The `Context ID` is always converted to lowercase, may only contain
+  // characters in [a-zA-Z0-9_-%] and may be at most 250 bytes long.
+  string name = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. The number of conversational query requests after which the
+  // context expires. If set to `0` (the default) the context expires
+  // immediately. Contexts expire automatically after 20 minutes if there
+  // are no matching queries.
+  int32 lifespan_count = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The collection of parameters associated with this context.
+  // Refer to [this
+  // doc](https://cloud.google.com/dialogflow/docs/intents-actions-parameters)
+  // for syntax.
+  google.protobuf.Struct parameters = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// The request message for [Contexts.ListContexts][google.cloud.dialogflow.v2.Contexts.ListContexts].
+message ListContextsRequest {
+  // Required. The session to list all contexts from.
+  // Format: `projects/<Project ID>/agent/sessions/<Session ID>`.
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. The maximum number of items to return in a single page. By
+  // default 100 and at most 1000.
+  int32 page_size = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The next_page_token value returned from a previous list request.
+  string page_token = 3 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// The response message for [Contexts.ListContexts][google.cloud.dialogflow.v2.Contexts.ListContexts].
+message ListContextsResponse {
+  // The list of contexts. There will be a maximum number of items
+  // returned based on the page_size field in the request.
+  repeated Context contexts = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no
+  // more results in the list.
+  string next_page_token = 2;
+}
+
+// The request message for [Contexts.GetContext][google.cloud.dialogflow.v2.Contexts.GetContext].
+message GetContextRequest {
+  // Required. The name of the context. Format:
+  // `projects/<Project ID>/agent/sessions/<Session ID>/contexts/<Context ID>`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "dialogflow.googleapis.com/Context"
+    }
+  ];
+}
+
+// The request message for [Contexts.CreateContext][google.cloud.dialogflow.v2.Contexts.CreateContext].
+message CreateContextRequest {
+  // Required. The session to create a context for.
+  // Format: `projects/<Project ID>/agent/sessions/<Session ID>`.
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The context to create.
+  Context context = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The request message for [Contexts.UpdateContext][google.cloud.dialogflow.v2.Contexts.UpdateContext].
+message UpdateContextRequest {
+  // Required. The context to update.
+  Context context = 1 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. The mask to control which fields get updated.
+  google.protobuf.FieldMask update_mask = 2 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// The request message for [Contexts.DeleteContext][google.cloud.dialogflow.v2.Contexts.DeleteContext].
+message DeleteContextRequest {
+  // Required. The name of the context to delete. Format:
+  // `projects/<Project ID>/agent/sessions/<Session ID>/contexts/<Context ID>`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "dialogflow.googleapis.com/Context"
+    }
+  ];
+}
+
+// The request message for [Contexts.DeleteAllContexts][google.cloud.dialogflow.v2.Contexts.DeleteAllContexts].
+message DeleteAllContextsRequest {
+  // Required. The name of the session to delete all contexts from. Format:
+  // `projects/<Project ID>/agent/sessions/<Session ID>`.
+  string parent = 1 [(google.api.field_behavior) = REQUIRED];
+}

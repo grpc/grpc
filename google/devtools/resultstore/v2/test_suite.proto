@@ -1,0 +1,198 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.resultstore.v2;
+
+import "google/devtools/resultstore/v2/common.proto";
+import "google/devtools/resultstore/v2/file.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/resultstore/v2;resultstore";
+option java_multiple_files = true;
+option java_package = "com.google.devtools.resultstore.v2";
+
+// The result of running a test suite, as reported in a <testsuite> element of
+// an XML log.
+message TestSuite {
+  // The full name of this suite, as reported in the name attribute. For Java
+  // tests, this is normally the fully qualified class name. Eg.
+  // "com.google.common.hash.BloomFilterTest".
+  string suite_name = 1;
+
+  // The results of the test cases and test suites contained in this suite,
+  // as reported in the <testcase> and <testsuite> elements contained within
+  // this <testsuite>.
+  repeated Test tests = 2;
+
+  // Failures reported in <failure> elements within this <testsuite>.
+  repeated TestFailure failures = 3;
+
+  // Errors reported in <error> elements within this <testsuite>.
+  repeated TestError errors = 4;
+
+  // The timing for the entire TestSuite, as reported by the time attribute.
+  Timing timing = 6;
+
+  // Arbitrary name-value pairs, as reported in custom attributes or in a
+  // <properties> element within this <testsuite>. Multiple properties are
+  // allowed with the same key. Properties will be returned in lexicographical
+  // order by key.
+  repeated Property properties = 7;
+
+  // Files produced by this test suite, as reported by undeclared output
+  // annotations.
+  // The file IDs must be unique within this list. Duplicate file IDs will
+  // result in an error. Files will be returned in lexicographical order by ID.
+  repeated File files = 8;
+}
+
+// The result of running a test case or test suite. JUnit3 TestDecorators are
+// represented as a TestSuite with a single test.
+message Test {
+  // Either a TestCase of a TestSuite
+  oneof test_type {
+    // When this contains just a single TestCase
+    TestCase test_case = 1;
+
+    // When this contains a TestSuite of test cases.
+    TestSuite test_suite = 2;
+  }
+}
+
+// The result of running a test case, as reported in a <testcase> element of
+// an XML log.
+message TestCase {
+  // The result of running a test case.
+  enum Result {
+    // The implicit default enum value. Do not use.
+    RESULT_UNSPECIFIED = 0;
+
+    // Test case ran to completion. Look for failures or errors to determine
+    // whether it passed, failed, or errored.
+    COMPLETED = 1;
+
+    // Test case started but did not complete because the test harness received
+    // a signal and decided to stop running tests.
+    INTERRUPTED = 2;
+
+    // Test case was not started because the test harness received a SIGINT or
+    // timed out.
+    CANCELLED = 3;
+
+    // Test case was not run because the user or process running the test
+    // specified a filter that excluded this test case.
+    FILTERED = 4;
+
+    // Test case was not run to completion because the test case decided it
+    // should not be run (eg. due to a failed assumption in a JUnit4 test).
+    // Per-test setup or tear-down may or may not have run.
+    SKIPPED = 5;
+
+    // The test framework did not run the test case because it was labeled as
+    // suppressed.  Eg. if someone temporarily disables a failing test.
+    SUPPRESSED = 6;
+  }
+
+  // The name of the test case, as reported in the name attribute. For Java,
+  // this is normally the method name. Eg. "testBasic".
+  string case_name = 1;
+
+  // The name of the class in which the test case was defined, as reported in
+  // the classname attribute. For Java, this is normally the fully qualified
+  // class name. Eg. "com.google.common.hash.BloomFilterTest".
+  string class_name = 2;
+
+  // An enum reported in the result attribute that is used in conjunction with
+  // failures and errors below to report the outcome.
+  Result result = 3;
+
+  // Failures reported in <failure> elements within this <testcase>.
+  repeated TestFailure failures = 4;
+
+  // Errors reported in <error> elements within this <testcase>.
+  repeated TestError errors = 5;
+
+  // The timing for the TestCase, as reported by the time attribute.
+  Timing timing = 7;
+
+  // Arbitrary name-value pairs, as reported in custom attributes or in a
+  // <properties> element within this <testcase>. Multiple properties are
+  // allowed with the same key. Properties will be returned in lexicographical
+  // order by key.
+  repeated Property properties = 8;
+
+  // Files produced by this test case, as reported by undeclared output
+  // annotations.
+  // The file IDs must be unique within this list. Duplicate file IDs will
+  // result in an error. Files will be returned in lexicographical order by ID.
+  repeated File files = 9;
+}
+
+// Represents a violated assertion, as reported in a <failure> element within a
+// <testcase>. Some languages allow assertions to be made without stopping the
+// test case when they're violated, leading to multiple TestFailures. For Java,
+// multiple TestFailures are used to represent a chained exception.
+message TestFailure {
+  // The exception message reported in the message attribute. Typically short,
+  // but may be multi-line. Eg. "Expected 'foo' but was 'bar'".
+  string failure_message = 1;
+
+  // The type of the exception being thrown, reported in the type attribute.
+  // Eg: "org.junit.ComparisonFailure"
+  string exception_type = 2;
+
+  // The stack trace reported as the content of the <failure> element, often in
+  // a CDATA block. This contains one line for each stack frame, each including
+  // a method/function name, a class/file name, and a line number. Most recent
+  // call is usually first, but not for Python stack traces. May contain the
+  // exception_type and message.
+  string stack_trace = 3;
+
+  // The expected values.
+  //
+  // These values can be diffed against the actual values. Often, there is just
+  // one actual and one expected value. If there is more than one, they should
+  // be compared as an unordered collection.
+  repeated string expected = 4;
+
+  // The actual values.
+  //
+  // These values can be diffed against the expected values. Often, there is
+  // just one actual and one expected value. If there is more than one, they
+  // should be compared as an unordered collection.
+  repeated string actual = 5;
+}
+
+// Represents an exception that prevented a test case from completing, as
+// reported in an <error> element within a <testcase>. For Java, multiple
+// TestErrors are used to represent a chained exception.
+message TestError {
+  // The exception message, as reported in the message attribute. Typically
+  // short, but may be multi-line. Eg. "argument cannot be null".
+  string error_message = 1;
+
+  // The type of the exception being thrown, reported in the type attribute.
+  // For Java, this is a fully qualified Throwable class name.
+  // Eg: "java.lang.IllegalArgumentException"
+  string exception_type = 2;
+
+  // The stack trace reported as the content of the <error> element, often in
+  // a CDATA block. This contains one line for each stack frame, each including
+  // a method/function name, a class/file name, and a line number. Most recent
+  // call is usually first, but not for Python stack traces. May contain the
+  // exception_type and message.
+  string stack_trace = 3;
+}

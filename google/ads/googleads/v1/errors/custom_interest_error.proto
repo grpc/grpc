@@ -1,0 +1,65 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "CustomInterestErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing custom interest errors.
+
+// Container for enum describing possible custom interest errors.
+message CustomInterestErrorEnum {
+  // Enum describing possible custom interest errors.
+  enum CustomInterestError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Duplicate custom interest name ignoring case.
+    NAME_ALREADY_USED = 2;
+
+    // In the remove custom interest member operation, both member ID and
+    // pair [type, parameter] are not present.
+    CUSTOM_INTEREST_MEMBER_ID_AND_TYPE_PARAMETER_NOT_PRESENT_IN_REMOVE = 3;
+
+    // The pair of [type, parameter] does not exist.
+    TYPE_AND_PARAMETER_NOT_FOUND = 4;
+
+    // The pair of [type, parameter] already exists.
+    TYPE_AND_PARAMETER_ALREADY_EXISTED = 5;
+
+    // Unsupported custom interest member type.
+    INVALID_CUSTOM_INTEREST_MEMBER_TYPE = 6;
+
+    // Cannot remove a custom interest while it's still being targeted.
+    CANNOT_REMOVE_WHILE_IN_USE = 7;
+
+    // Cannot mutate custom interest type.
+    CANNOT_CHANGE_TYPE = 8;
+  }
+}

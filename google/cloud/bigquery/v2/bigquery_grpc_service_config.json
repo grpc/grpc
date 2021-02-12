@@ -1,0 +1,25 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.bigquery.v2.ModelService",
+          "method": "GetModel"
+        },
+        {
+          "service": "google.cloud.bigquery.v2.ModelService",
+          "method": "ListModels"
+        },
+        {
+          "service": "google.cloud.bigquery.v2.ModelService",
+          "method": "PatchModel"
+        },
+        {
+          "service": "google.cloud.bigquery.v2.ModelService",
+          "method": "DeleteModel"
+        }
+      ],
+      "timeout": "600s"
+    }
+  ]
+}

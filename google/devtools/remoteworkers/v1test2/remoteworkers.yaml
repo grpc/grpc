@@ -1,0 +1,18 @@
+type: google.api.Service
+config_version: 3
+name: remoteworkers.googleapis.com
+title: Remote Workers API
+
+apis:
+- name: google.devtools.remoteworkers.v1test2.Bots
+- name: google.devtools.remoteworkers.v1test2.Tasks
+
+types:
+- name: google.devtools.remoteworkers.v1test2.AdminTemp
+- name: google.devtools.remoteworkers.v1test2.CommandOutputs
+- name: google.devtools.remoteworkers.v1test2.CommandOverhead
+- name: google.devtools.remoteworkers.v1test2.CommandResult
+- name: google.devtools.remoteworkers.v1test2.CommandTask
+- name: google.devtools.remoteworkers.v1test2.Directory
+- name: google.devtools.remoteworkers.v1test2.DirectoryMetadata
+- name: google.devtools.remoteworkers.v1test2.FileMetadata

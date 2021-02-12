@@ -1,0 +1,370 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.firestore.admin.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/firestore/admin/v1beta1/index.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/timestamp.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Cloud.Firestore.Admin.V1Beta1";
+option go_package = "google.golang.org/genproto/googleapis/firestore/admin/v1beta1;admin";
+option java_multiple_files = true;
+option java_outer_classname = "FirestoreAdminProto";
+option java_package = "com.google.firestore.admin.v1beta1";
+option objc_class_prefix = "GCFS";
+
+// The Cloud Firestore Admin API.
+//
+// This API provides several administrative services for Cloud Firestore.
+//
+// # Concepts
+//
+// Project, Database, Namespace, Collection, and Document are used as defined in
+// the Google Cloud Firestore API.
+//
+// Operation: An Operation represents work being performed in the background.
+//
+//
+// # Services
+//
+// ## Index
+//
+// The index service manages Cloud Firestore indexes.
+//
+// Index creation is performed asynchronously.
+// An Operation resource is created for each such asynchronous operation.
+// The state of the operation (including any errors encountered)
+// may be queried via the Operation resource.
+//
+// ## Metadata
+//
+// Provides metadata and statistical information about data in Cloud Firestore.
+// The data provided as part of this API may be stale.
+//
+// ## Operation
+//
+// The Operations collection provides a record of actions performed for the
+// specified Project (including any Operations in progress). Operations are not
+// created directly but through calls on other collections or resources.
+//
+// An Operation that is not yet done may be cancelled. The request to cancel is
+// asynchronous and the Operation may continue to run for some time after the
+// request to cancel is made.
+//
+// An Operation that is done may be deleted so that it is no longer listed as
+// part of the Operation collection.
+//
+// Operations are created by service `FirestoreAdmin`, but are accessed via
+// service `google.longrunning.Operations`.
+service FirestoreAdmin {
+  option (google.api.default_host) = "firestore.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/datastore";
+
+  // Creates the specified index.
+  // A newly created index's initial state is `CREATING`. On completion of the
+  // returned [google.longrunning.Operation][google.longrunning.Operation], the state will be `READY`.
+  // If the index already exists, the call will return an `ALREADY_EXISTS`
+  // status.
+  //
+  // During creation, the process could result in an error, in which case the
+  // index will move to the `ERROR` state. The process can be recovered by
+  // fixing the data that caused the error, removing the index with
+  // [delete][google.firestore.admin.v1beta1.FirestoreAdmin.DeleteIndex], then re-creating the index with
+  // [create][google.firestore.admin.v1beta1.FirestoreAdmin.CreateIndex].
+  //
+  // Indexes with a single field cannot be created.
+  rpc CreateIndex(CreateIndexRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*/databases/*}/indexes"
+      body: "index"
+    };
+  }
+
+  // Lists the indexes that match the specified filters.
+  rpc ListIndexes(ListIndexesRequest) returns (ListIndexesResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*/databases/*}/indexes"
+    };
+  }
+
+  // Gets an index.
+  rpc GetIndex(GetIndexRequest) returns (Index) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/databases/*/indexes/*}"
+    };
+  }
+
+  // Deletes an index.
+  rpc DeleteIndex(DeleteIndexRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/databases/*/indexes/*}"
+    };
+  }
+
+  // Exports a copy of all or a subset of documents from Google Cloud Firestore
+  // to another storage system, such as Google Cloud Storage. Recent updates to
+  // documents may not be reflected in the export. The export occurs in the
+  // background and its progress can be monitored and managed via the
+  // Operation resource that is created. The output of an export may only be
+  // used once the associated operation is done. If an export operation is
+  // cancelled before completion it may leave partial data behind in Google
+  // Cloud Storage.
+  rpc ExportDocuments(ExportDocumentsRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/databases/*}:exportDocuments"
+      body: "*"
+    };
+  }
+
+  // Imports documents into Google Cloud Firestore. Existing documents with the
+  // same name are overwritten. The import occurs in the background and its
+  // progress can be monitored and managed via the Operation resource that is
+  // created. If an ImportDocuments operation is cancelled, it is possible
+  // that a subset of the data has already been imported to Cloud Firestore.
+  rpc ImportDocuments(ImportDocumentsRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/databases/*}:importDocuments"
+      body: "*"
+    };
+  }
+}
+
+// Metadata for index operations. This metadata populates
+// the metadata field of [google.longrunning.Operation][google.longrunning.Operation].
+message IndexOperationMetadata {
+  // The type of index operation.
+  enum OperationType {
+    // Unspecified. Never set by server.
+    OPERATION_TYPE_UNSPECIFIED = 0;
+
+    // The operation is creating the index. Initiated by a `CreateIndex` call.
+    CREATING_INDEX = 1;
+  }
+
+  // The time that work began on the operation.
+  google.protobuf.Timestamp start_time = 1;
+
+  // The time the operation ended, either successfully or otherwise. Unset if
+  // the operation is still active.
+  google.protobuf.Timestamp end_time = 2;
+
+  // The index resource that this operation is acting on. For example:
+  // `projects/{project_id}/databases/{database_id}/indexes/{index_id}`
+  string index = 3;
+
+  // The type of index operation.
+  OperationType operation_type = 4;
+
+  // True if the [google.longrunning.Operation] was cancelled. If the
+  // cancellation is in progress, cancelled will be true but
+  // [google.longrunning.Operation.done][google.longrunning.Operation.done] will be false.
+  bool cancelled = 5;
+
+  // Progress of the existing operation, measured in number of documents.
+  Progress document_progress = 6;
+}
+
+// Measures the progress of a particular metric.
+message Progress {
+  // An estimate of how much work has been completed. Note that this may be
+  // greater than `work_estimated`.
+  int64 work_completed = 1;
+
+  // An estimate of how much work needs to be performed. Zero if the
+  // work estimate is unavailable. May change as work progresses.
+  int64 work_estimated = 2;
+}
+
+// The request for [FirestoreAdmin.CreateIndex][google.firestore.admin.v1beta1.FirestoreAdmin.CreateIndex].
+message CreateIndexRequest {
+  // The name of the database this index will apply to. For example:
+  // `projects/{project_id}/databases/{database_id}`
+  string parent = 1;
+
+  // The index to create. The name and state fields are output only and will be
+  // ignored. Certain single field indexes cannot be created or deleted.
+  Index index = 2;
+}
+
+// The request for [FirestoreAdmin.GetIndex][google.firestore.admin.v1beta1.FirestoreAdmin.GetIndex].
+message GetIndexRequest {
+  // The name of the index. For example:
+  // `projects/{project_id}/databases/{database_id}/indexes/{index_id}`
+  string name = 1;
+}
+
+// The request for [FirestoreAdmin.ListIndexes][google.firestore.admin.v1beta1.FirestoreAdmin.ListIndexes].
+message ListIndexesRequest {
+  // The database name. For example:
+  // `projects/{project_id}/databases/{database_id}`
+  string parent = 1;
+
+  string filter = 2;
+
+  // The standard List page size.
+  int32 page_size = 3;
+
+  // The standard List page token.
+  string page_token = 4;
+}
+
+// The request for [FirestoreAdmin.DeleteIndex][google.firestore.admin.v1beta1.FirestoreAdmin.DeleteIndex].
+message DeleteIndexRequest {
+  // The index name. For example:
+  // `projects/{project_id}/databases/{database_id}/indexes/{index_id}`
+  string name = 1;
+}
+
+// The response for [FirestoreAdmin.ListIndexes][google.firestore.admin.v1beta1.FirestoreAdmin.ListIndexes].
+message ListIndexesResponse {
+  // The indexes.
+  repeated Index indexes = 1;
+
+  // The standard List next-page token.
+  string next_page_token = 2;
+}
+
+// The request for [FirestoreAdmin.ExportDocuments][google.firestore.admin.v1beta1.FirestoreAdmin.ExportDocuments].
+message ExportDocumentsRequest {
+  // Database to export. Should be of the form:
+  // `projects/{project_id}/databases/{database_id}`.
+  string name = 1;
+
+  // Which collection ids to export. Unspecified means all collections.
+  repeated string collection_ids = 3;
+
+  // The output URI. Currently only supports Google Cloud Storage URIs of the
+  // form: `gs://BUCKET_NAME[/NAMESPACE_PATH]`, where `BUCKET_NAME` is the name
+  // of the Google Cloud Storage bucket and `NAMESPACE_PATH` is an optional
+  // Google Cloud Storage namespace path. When
+  // choosing a name, be sure to consider Google Cloud Storage naming
+  // guidelines: https://cloud.google.com/storage/docs/naming.
+  // If the URI is a bucket (without a namespace path), a prefix will be
+  // generated based on the start time.
+  string output_uri_prefix = 4;
+}
+
+// The request for [FirestoreAdmin.ImportDocuments][google.firestore.admin.v1beta1.FirestoreAdmin.ImportDocuments].
+message ImportDocumentsRequest {
+  // Database to import into. Should be of the form:
+  // `projects/{project_id}/databases/{database_id}`.
+  string name = 1;
+
+  // Which collection ids to import. Unspecified means all collections included
+  // in the import.
+  repeated string collection_ids = 3;
+
+  // Location of the exported files.
+  // This must match the output_uri_prefix of an ExportDocumentsResponse from
+  // an export that has completed successfully.
+  // See:
+  // [google.firestore.admin.v1beta1.ExportDocumentsResponse.output_uri_prefix][google.firestore.admin.v1beta1.ExportDocumentsResponse.output_uri_prefix].
+  string input_uri_prefix = 4;
+}
+
+// Returned in the [google.longrunning.Operation][google.longrunning.Operation] response field.
+message ExportDocumentsResponse {
+  // Location of the output files. This can be used to begin an import
+  // into Cloud Firestore (this project or another project) after the operation
+  // completes successfully.
+  string output_uri_prefix = 1;
+}
+
+// Metadata for ExportDocuments operations.
+message ExportDocumentsMetadata {
+  // The time that work began on the operation.
+  google.protobuf.Timestamp start_time = 1;
+
+  // The time the operation ended, either successfully or otherwise. Unset if
+  // the operation is still active.
+  google.protobuf.Timestamp end_time = 2;
+
+  // The state of the export operation.
+  OperationState operation_state = 3;
+
+  // An estimate of the number of documents processed.
+  Progress progress_documents = 4;
+
+  // An estimate of the number of bytes processed.
+  Progress progress_bytes = 5;
+
+  // Which collection ids are being exported.
+  repeated string collection_ids = 6;
+
+  // Where the entities are being exported to.
+  string output_uri_prefix = 7;
+}
+
+// Metadata for ImportDocuments operations.
+message ImportDocumentsMetadata {
+  // The time that work began on the operation.
+  google.protobuf.Timestamp start_time = 1;
+
+  // The time the operation ended, either successfully or otherwise. Unset if
+  // the operation is still active.
+  google.protobuf.Timestamp end_time = 2;
+
+  // The state of the import operation.
+  OperationState operation_state = 3;
+
+  // An estimate of the number of documents processed.
+  Progress progress_documents = 4;
+
+  // An estimate of the number of bytes processed.
+  Progress progress_bytes = 5;
+
+  // Which collection ids are being imported.
+  repeated string collection_ids = 6;
+
+  // The location of the documents being imported.
+  string input_uri_prefix = 7;
+}
+
+// The various possible states for an ongoing Operation.
+enum OperationState {
+  // Unspecified.
+  STATE_UNSPECIFIED = 0;
+
+  // Request is being prepared for processing.
+  INITIALIZING = 1;
+
+  // Request is actively being processed.
+  PROCESSING = 2;
+
+  // Request is in the process of being cancelled after user called
+  // google.longrunning.Operations.CancelOperation on the operation.
+  CANCELLING = 3;
+
+  // Request has been processed and is in its finalization stage.
+  FINALIZING = 4;
+
+  // Request has completed successfully.
+  SUCCESSFUL = 5;
+
+  // Request has finished being processed, but encountered an error.
+  FAILED = 6;
+
+  // Request has finished being cancelled after user called
+  // google.longrunning.Operations.CancelOperation.
+  CANCELLED = 7;
+}

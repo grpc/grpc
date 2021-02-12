@@ -1,0 +1,43 @@
+type: com.google.api.codegen.samplegen.v1p2.SampleConfigProto
+schema_version: 1.2.0
+samples:
+- region_tag: speech_contexts_classes_beta
+  title: Using Context Classes (Cloud Storage)
+  description: Transcribe a short audio file with static context classes.
+  rpc: Recognize
+  service: google.cloud.speech.v1p1beta1.Speech
+  request:
+  - field: audio.uri
+    value: "gs://cloud-samples-data/speech/time.mp3"
+    input_parameter: storage_uri
+    comment: URI for audio file in Cloud Storage, e.g. gs://[BUCKET]/[FILE]
+  - field: config.speech_contexts[0].phrases[0]
+    value: "$TIME"
+    input_parameter: phrase
+    comment: |
+      Phrase "hints" help recognize the specified phrases from your audio.
+      In this sample we are using a static class phrase ($TIME).
+      Classes represent groups of words that represent common concepts
+      that occur in natural language.
+  - field: config.language_code
+    value: "en-US"
+    comment: The language of the supplied audio
+  - field: config.sample_rate_hertz
+    value: 24000
+    comment: Sample rate in Hertz of the audio data sent
+  - field: config.encoding
+    value: MP3
+    comment: |
+      Encoding of audio data sent. This sample sets this explicitly.
+      This field is optional for FLAC and WAV audio formats.
+  response:
+  - loop:
+      variable: result
+      collection: $resp.results
+      body:
+      - comment:
+        - First alternative is the most probable result
+      - define: alternative = result.alternatives[0]
+      - print:
+        - "Transcript: %s"
+        - alternative.transcript

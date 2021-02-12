@@ -1,0 +1,914 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.irm.v1alpha2;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/cloud/irm/v1alpha2/incidents.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/cloud/irm/v1alpha2;irm";
+option java_multiple_files = true;
+option java_package = "com.google.irm.service.v1alpha2.api";
+
+// The Incident API for Incident Response & Management.
+service IncidentService {
+  option (google.api.default_host) = "irm.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform";
+
+  // Creates a new incident.
+  rpc CreateIncident(CreateIncidentRequest) returns (Incident) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{parent=projects/*}/incidents"
+      body: "incident"
+    };
+  }
+
+  // Returns an incident by name.
+  rpc GetIncident(GetIncidentRequest) returns (Incident) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{name=projects/*/incidents/*}"
+    };
+  }
+
+  // Returns a list of incidents.
+  // Incidents are ordered by start time, with the most recent incidents first.
+  rpc SearchIncidents(SearchIncidentsRequest)
+      returns (SearchIncidentsResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{parent=projects/*}/incidents:search"
+    };
+  }
+
+  // Updates an existing incident.
+  rpc UpdateIncident(UpdateIncidentRequest) returns (Incident) {
+    option (google.api.http) = {
+      patch: "/v1alpha2/{incident.name=projects/*/incidents/*}"
+      body: "incident"
+    };
+  }
+
+  // Returns a list of incidents that are "similar" to the specified incident
+  // or signal. This functionality is provided on a best-effort basis and the
+  // definition of "similar" is subject to change.
+  rpc SearchSimilarIncidents(SearchSimilarIncidentsRequest)
+      returns (SearchSimilarIncidentsResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{name=projects/*/incidents/*}:searchSimilar"
+      additional_bindings {
+        get: "/v1alpha2/{name=projects/*/signals/*}:searchSimilarIncidents"
+      }
+    };
+  }
+
+  // Creates an annotation on an existing incident. Only 'text/plain' and
+  // 'text/markdown' annotations can be created via this method.
+  rpc CreateAnnotation(CreateAnnotationRequest) returns (Annotation) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{parent=projects/*/incidents/*}/annotations"
+      body: "annotation"
+    };
+  }
+
+  // Lists annotations that are part of an incident. No assumptions should be
+  // made on the content-type of the annotation returned.
+  rpc ListAnnotations(ListAnnotationsRequest)
+      returns (ListAnnotationsResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{parent=projects/*/incidents/*}/annotations"
+    };
+  }
+
+  // Creates a tag on an existing incident.
+  rpc CreateTag(CreateTagRequest) returns (Tag) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{parent=projects/*/incidents/*}/tags"
+      body: "tag"
+    };
+  }
+
+  // Deletes an existing tag.
+  rpc DeleteTag(DeleteTagRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1alpha2/{name=projects/*/incidents/*/tags/*}"
+    };
+  }
+
+  // Lists tags that are part of an incident.
+  rpc ListTags(ListTagsRequest) returns (ListTagsResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{parent=projects/*/incidents/*}/tags"
+    };
+  }
+
+  // Creates a new signal.
+  rpc CreateSignal(CreateSignalRequest) returns (Signal) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{parent=projects/*}/signals"
+      body: "signal"
+    };
+  }
+
+  // Lists signals that are part of an incident.
+  // Signals are returned in reverse chronological order.
+  rpc SearchSignals(SearchSignalsRequest) returns (SearchSignalsResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{parent=projects/*}/signals:search"
+    };
+  }
+
+  // Finds a signal by other unique IDs.
+  rpc LookupSignal(LookupSignalRequest) returns (Signal) {
+    option (google.api.http) = {
+      get: "/v1alpha2/signals:lookup"
+    };
+  }
+
+  // Returns a signal by name.
+  rpc GetSignal(GetSignalRequest) returns (Signal) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{name=projects/*/signals/*}"
+    };
+  }
+
+  // Updates an existing signal (for example, to assign/unassign it to an
+  // incident).
+  rpc UpdateSignal(UpdateSignalRequest) returns (Signal) {
+    option (google.api.http) = {
+      patch: "/v1alpha2/{signal.name=projects/*/signals/*}"
+      body: "signal"
+    };
+  }
+
+  // Escalates an incident.
+  rpc EscalateIncident(EscalateIncidentRequest)
+      returns (EscalateIncidentResponse) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{incident.name=projects/*/incidents/*}:escalate"
+      body: "*"
+    };
+  }
+
+  // Creates a new artifact.
+  rpc CreateArtifact(CreateArtifactRequest) returns (Artifact) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{parent=projects/*/incidents/*}/artifacts"
+      body: "artifact"
+    };
+  }
+
+  // Returns a list of artifacts for an incident.
+  rpc ListArtifacts(ListArtifactsRequest) returns (ListArtifactsResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{parent=projects/*/incidents/*}/artifacts"
+    };
+  }
+
+  // Updates an existing artifact.
+  rpc UpdateArtifact(UpdateArtifactRequest) returns (Artifact) {
+    option (google.api.http) = {
+      patch: "/v1alpha2/{artifact.name=projects/*/incidents/*/artifacts/*}"
+      body: "artifact"
+    };
+  }
+
+  // Deletes an existing artifact.
+  rpc DeleteArtifact(DeleteArtifactRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1alpha2/{name=projects/*/incidents/*/artifacts/*}"
+    };
+  }
+
+  // Sends a summary of the shift for oncall handoff.
+  rpc SendShiftHandoff(SendShiftHandoffRequest)
+      returns (SendShiftHandoffResponse) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{parent=projects/*}/shiftHandoff:send"
+      body: "*"
+    };
+  }
+
+  // Creates a new subscription.
+  // This will fail if:
+  //    a. there are too many (50) subscriptions in the incident already
+  //    b. a subscription using the given channel already exists
+  rpc CreateSubscription(CreateSubscriptionRequest) returns (Subscription) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{parent=projects/*/incidents/*}/subscriptions"
+      body: "subscription"
+    };
+  }
+
+  // Updates a subscription.
+  rpc UpdateSubscription(UpdateSubscriptionRequest) returns (Subscription) {
+    option (google.api.http) = {
+      patch: "/v1alpha2/{subscription.name=projects/*/incidents/*/subscriptions/*}"
+      body: "subscription"
+    };
+  }
+
+  // Returns a list of subscriptions for an incident.
+  rpc ListSubscriptions(ListSubscriptionsRequest)
+      returns (ListSubscriptionsResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{parent=projects/*/incidents/*}/subscriptions"
+    };
+  }
+
+  // Deletes an existing subscription.
+  rpc DeleteSubscription(DeleteSubscriptionRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1alpha2/{name=projects/*/incidents/*/subscriptions/*}"
+    };
+  }
+
+  // Creates a role assignment on an existing incident. Normally, the user field
+  // will be set when assigning a role to oneself, and the next field will be
+  // set when proposing another user as the assignee. Setting the next field
+  // directly to a user other than oneself is equivalent to proposing and
+  // force-assigning the role to the user.
+  rpc CreateIncidentRoleAssignment(CreateIncidentRoleAssignmentRequest)
+      returns (IncidentRoleAssignment) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{parent=projects/*/incidents/*}/roleAssignments"
+      body: "*"
+    };
+  }
+
+  // Deletes an existing role assignment.
+  rpc DeleteIncidentRoleAssignment(DeleteIncidentRoleAssignmentRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1alpha2/{name=projects/*/incidents/*/roleAssignments/*}"
+    };
+  }
+
+  // Lists role assignments that are part of an incident.
+  rpc ListIncidentRoleAssignments(ListIncidentRoleAssignmentsRequest)
+      returns (ListIncidentRoleAssignmentsResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha2/{parent=projects/*/incidents/*}/roleAssignments"
+    };
+  }
+
+  // Starts a role handover. The proposed assignee will receive an email
+  // notifying them of the assignment. This will fail if a role handover is
+  // already pending.
+  rpc RequestIncidentRoleHandover(RequestIncidentRoleHandoverRequest)
+      returns (IncidentRoleAssignment) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{name=projects/*/incidents/*/roleAssignments/*}:requestHandover"
+      body: "*"
+    };
+  }
+
+  // Confirms a role handover. This will fail if the 'proposed_assignee' field
+  // of the IncidentRoleAssignment is not equal to the 'new_assignee' field of
+  // the request. If the caller is not the new_assignee,
+  // ForceIncidentRoleHandover should be used instead.
+  rpc ConfirmIncidentRoleHandover(ConfirmIncidentRoleHandoverRequest)
+      returns (IncidentRoleAssignment) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{name=projects/*/incidents/*/roleAssignments/*}:confirmHandover"
+      body: "*"
+    };
+  }
+
+  // Forces a role handover. This will fail if the 'proposed_assignee' field of
+  // the IncidentRoleAssignment is not equal to the 'new_assignee' field of the
+  // request. If the caller is the new_assignee, ConfirmIncidentRoleHandover
+  // should be used instead.
+  rpc ForceIncidentRoleHandover(ForceIncidentRoleHandoverRequest)
+      returns (IncidentRoleAssignment) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{name=projects/*/incidents/*/roleAssignments/*}:forceHandover"
+      body: "*"
+    };
+  }
+
+  // Cancels a role handover. This will fail if the 'proposed_assignee' field of
+  // the IncidentRoleAssignment is not equal to the 'new_assignee' field of the
+  // request.
+  rpc CancelIncidentRoleHandover(CancelIncidentRoleHandoverRequest)
+      returns (IncidentRoleAssignment) {
+    option (google.api.http) = {
+      post: "/v1alpha2/{name=projects/*/incidents/*/roleAssignments/*}:cancelHandover"
+      body: "*"
+    };
+  }
+}
+
+// Request for the CreateIncident method.
+message CreateIncidentRequest {
+  // The incident to create.
+  Incident incident = 1;
+
+  // The resource name of the hosting Stackdriver project which the incident
+  // belongs to.
+  // The name is of the form `projects/{project_id_or_number}`
+  // .
+  string parent = 2;
+}
+
+// Request for the GetIncident method.
+message GetIncidentRequest {
+  // Resource name of the incident, for example,
+  // "projects/{project_id}/incidents/{incident_id}".
+  string name = 1;
+}
+
+// Request for the UpdateIncident method.
+message UpdateIncidentRequest {
+  // The incident to update with the new values.
+  Incident incident = 1;
+
+  // List of fields that should be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request for the SearchSimilarIncidents method.
+message SearchSimilarIncidentsRequest {
+  // Resource name of the incident or signal, for example,
+  // "projects/{project_id}/incidents/{incident_id}".
+  string name = 1;
+
+  // Number of similar incidents to return.
+  int32 page_size = 2;
+
+  // Page token from an earlier query, as returned in 'next_page_token'.
+  string page_token = 3;
+}
+
+// Response for the SearchSimilarIncidents method.
+message SearchSimilarIncidentsResponse {
+  // A single search result, i.e. an incident with (potentially) additional
+  // information.
+  message Result {
+    // An incident that is "similar" to the incident or signal specified in the
+    // request.
+    Incident incident = 1;
+  }
+
+  // The search results, ordered by descending relevance.
+  repeated Result results = 1;
+
+  // Page token to fetch the next set of similar incidents.
+  string next_page_token = 2;
+}
+
+// Request for the CreateAnnotation method.
+message CreateAnnotationRequest {
+  // Resource name of the incident, for example,
+  // "projects/{project_id}/incidents/{incident_id}".
+  string parent = 1;
+
+  // Only annotation.content is an input argument.
+  Annotation annotation = 2;
+}
+
+// Request for the ListAnnotations method.
+message ListAnnotationsRequest {
+  // Resource name of the incident, for example,
+  // "projects/{project_id}/incidents/{incident_id}".
+  string parent = 1;
+
+  // Number of annotations to return.
+  int32 page_size = 2;
+
+  // Page token from an earlier query, as returned in `next_page_token`.
+  string page_token = 3;
+}
+
+// Response for the ListAnnotations method.
+message ListAnnotationsResponse {
+  // List of annotations.
+  repeated Annotation annotations = 1;
+
+  // Page token to fetch the next set of annotations.
+  string next_page_token = 2;
+}
+
+// Request for the CreateTag method.
+message CreateTagRequest {
+  // Resource name of the incident, for example,
+  // "projects/{project_id}/incidents/{incident_id}".
+  string parent = 1;
+
+  // Tag to create. Only tag.display_name is an input argument.
+  Tag tag = 2;
+}
+
+// Request for the DeleteTag method.
+message DeleteTagRequest {
+  // Resource name of the tag.
+  string name = 1;
+}
+
+// Request for the ListTagsForIncident method.
+message ListTagsRequest {
+  // Resource name of the incident, for example,
+  // "projects/{project_id}/incidents/{incident_id}".
+  string parent = 1;
+
+  // Number of tags to return.
+  int32 page_size = 2;
+
+  // Page token from an earlier query, as returned in `next_page_token`.
+  string page_token = 3;
+}
+
+// Response for the ListTagsForIncident method.
+message ListTagsResponse {
+  // Tags.
+  repeated Tag tags = 1;
+
+  // Page token to fetch the next set of tags.
+  string next_page_token = 2;
+}
+
+// Request for the CreateSignal method.
+message CreateSignalRequest {
+  // The resource name of the hosting Stackdriver project which requested
+  // signal belongs to.
+  string parent = 1;
+
+  // The signal to create.
+  Signal signal = 2;
+}
+
+// Request for the SearchSignals method.
+message SearchSignalsRequest {
+  // The resource name of the hosting Stackdriver project which requested
+  // incidents belong to.
+  string parent = 1;
+
+  // An expression that defines which signals to return.
+  //
+  // Search atoms can be used to match certain specific fields.  Otherwise,
+  // plain text will match text fields in the signal.
+  //
+  // Search atoms:
+  //
+  // * `start` - (timestamp) The time the signal was created.
+  // * `title` - The title of the signal.
+  // * `signal_state` - `open` or `closed`. State of the signal.
+  //   (e.g., `signal_state:open`)
+  //
+  // Timestamp formats:
+  //
+  // * yyyy-MM-dd - an absolute date, treated as a calendar-day-wide window.
+  //   In other words, the "<" operator will match dates before that date, the
+  //   ">" operator will match dates after that date, and the ":" operator will
+  //   match the entire day.
+  // * yyyy-MM-ddTHH:mm - Same as above, but with minute resolution.
+  // * yyyy-MM-ddTHH:mm:ss - Same as above, but with second resolution.
+  // * Nd (e.g. 7d) - a relative number of days ago, treated as a moment in time
+  //   (as opposed to a day-wide span) a multiple of 24 hours ago (as opposed to
+  //   calendar days).  In the case of daylight savings time, it will apply the
+  //   current timezone to both ends of the range.  Note that exact matching
+  //   (e.g. `start:7d`) is unlikely to be useful because that would only match
+  //   signals created precisely at a particular instant in time.
+  //
+  // The absolute timestamp formats (everything starting with a year) can
+  // optionally be followed with a UTC offset in +/-hh:mm format.  Also, the 'T'
+  // separating dates and times can optionally be replaced with a space. Note
+  // that any timestamp containing a space or colon will need to be quoted.
+  //
+  // Examples:
+  //
+  // * `foo` - matches signals containing the word "foo"
+  // * `"foo bar"` - matches signals containing the phrase "foo bar"
+  // * `foo bar` or `foo AND bar` - matches signals containing the words
+  //   "foo" and "bar"
+  // * `foo -bar` or `foo AND NOT bar` - matches signals containing the
+  //   word
+  //   "foo" but not the word "bar"
+  // * `foo OR bar` - matches signals containing the word "foo" or the
+  //   word "bar"
+  // * `start>2018-11-28` - matches signals which started after November
+  //   11, 2018.
+  // * `start<=2018-11-28` - matches signals which started on or before
+  //   November 11, 2018.
+  // * `start:2018-11-28` - matches signals which started on November 11,
+  //   2018.
+  // * `start>"2018-11-28 01:02:03+04:00"` - matches signals which started
+  //   after November 11, 2018 at 1:02:03 AM according to the UTC+04 time
+  //   zone.
+  // * `start>7d` - matches signals which started after the point in time
+  //   7*24 hours ago
+  // * `start>180d` - similar to 7d, but likely to cross the daylight savings
+  //   time boundary, so the end time will be 1 hour different from "now."
+  // * `foo AND start>90d AND stage<resolved` - unresolved signals from
+  //   the past 90 days containing the word "foo"
+  string query = 2;
+
+  // Maximum number of `signals` to return in the response.
+  int32 page_size = 3;
+
+  // Page token from an earlier query, as returned in `next_page_token`. All
+  // field values except for page_size and page_token should be the same as the
+  // original query (may return an error or unexpected data otherwise).
+  string page_token = 4;
+}
+
+// Response for the SearchSignals method.
+message SearchSignalsResponse {
+  // Signals that matched the query in the request.
+  repeated Signal signals = 1;
+
+  // Page token to fetch the next set of signals.
+  string next_page_token = 2;
+}
+
+// Request for the GetSignal method.
+message GetSignalRequest {
+  // Resource name of the Signal resource, for example,
+  // "projects/{project_id}/signals/{signal_id}".
+  string name = 1;
+}
+
+// Request for the LookupSignal method.
+message LookupSignalRequest {
+  // Required. The ID to use for lookup.
+  oneof alternate_id {
+    // Full resource name of the CSCC finding id this signal refers to (e.g.
+    // "organizations/abc/sources/123/findings/xyz")
+    string cscc_finding = 2;
+
+    // The ID from the Stackdriver Alerting notification.
+    string stackdriver_notification_id = 3;
+  }
+}
+
+// Request for the UpdateSignal method.
+message UpdateSignalRequest {
+  // The signal to update with the new values.
+  Signal signal = 1;
+
+  // List of fields that should be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request for the SearchIncidents method.
+message SearchIncidentsRequest {
+  // The resource name of the hosting Stackdriver project which requested
+  // incidents belong to.
+  string parent = 1;
+
+  // An expression that defines which incidents to return.
+  //
+  // Search atoms can be used to match certain specific fields.  Otherwise,
+  // plain text will match text fields in the incident.
+  //
+  // Search atoms:
+  // * `start` - (timestamp) The time the incident started.
+  // * `stage` - The stage of the incident, one of detected, triaged, mitigated,
+  //   resolved, documented, or duplicate (which correspond to values in the
+  //   Incident.Stage enum). These are ordered, so `stage<resolved` is
+  //   equivalent to `stage:detected OR stage:triaged OR stage:mitigated`.
+  // * `severity` - (Incident.Severity) The severity of the incident.
+  //    + Supports matching on a specific severity (for example,
+  //    `severity:major`) or on a range (for example, `severity>medium`,
+  //    `severity<=minor`, etc.).
+  //
+  // Timestamp formats:
+  // * yyyy-MM-dd - an absolute date, treated as a calendar-day-wide window.
+  //   In other words, the "<" operator will match dates before that date, the
+  //   ">" operator will match dates after that date, and the ":" or "="
+  //   operators will match the entire day.
+  // * Nd (for example, 7d) - a relative number of days ago, treated as a moment
+  //   in time (as opposed to a day-wide span). A multiple of 24 hours ago (as
+  //   opposed to calendar days).  In the case of daylight savings time, it will
+  //   apply the current timezone to both ends of the range.  Note that exact
+  //   matching (for example, `start:7d`) is unlikely to be useful because that
+  //   would only match incidents created precisely at a particular instant in
+  //   time.
+  //
+  // Examples:
+  //
+  // * `foo` - matches incidents containing the word "foo"
+  // * `"foo bar"` - matches incidents containing the phrase "foo bar"
+  // * `foo bar` or `foo AND bar` - matches incidents containing the words "foo"
+  //   and "bar"
+  // * `foo -bar` or `foo AND NOT bar` - matches incidents containing the word
+  //   "foo" but not the word "bar"
+  // * `foo OR bar` - matches incidents containing the word "foo" or the word
+  //   "bar"
+  // * `start>2018-11-28` - matches incidents which started after November 11,
+  //   2018.
+  // * `start<=2018-11-28` - matches incidents which started on or before
+  //   November 11, 2018.
+  // * `start:2018-11-28` - matches incidents which started on November 11,
+  //   2018.
+  // * `start>7d` - matches incidents which started after the point in time 7*24
+  //   hours ago
+  // * `start>180d` - similar to 7d, but likely to cross the daylight savings
+  //   time boundary, so the end time will be 1 hour different from "now."
+  // * `foo AND start>90d AND stage<resolved` - unresolved incidents from the
+  //   past 90 days containing the word "foo"
+  string query = 2;
+
+  // Number of incidents to return.
+  int32 page_size = 3;
+
+  // Page token from an earlier query, as returned in `next_page_token`.
+  string page_token = 4;
+
+  // The time zone name. It should be an IANA TZ name, such as
+  // "America/Los_Angeles". For more information,
+  // see https://en.wikipedia.org/wiki/List_of_tz_database_time_zones.
+  // If no time zone is specified, the default is UTC.
+  string time_zone = 5;
+}
+
+// Response for the SearchIncidents method.
+message SearchIncidentsResponse {
+  // Incidents.
+  repeated Incident incidents = 1;
+
+  // Page token to fetch the next set of incidents.
+  string next_page_token = 2;
+}
+
+// Request to escalate an incident.
+message EscalateIncidentRequest {
+  // The incident to escalate with the new values.
+  Incident incident = 1;
+
+  // List of fields that should be updated.
+  google.protobuf.FieldMask update_mask = 2;
+
+  // Subscriptions to add or update. Existing subscriptions with the same
+  // channel and address as a subscription in the list will be updated.
+  repeated Subscription subscriptions = 3;
+
+  // Tags to add. Tags identical to existing tags will be ignored.
+  repeated Tag tags = 4;
+
+  // Roles to add or update. Existing roles with the same type (and title, for
+  // TYPE_OTHER roles) will be updated.
+  repeated IncidentRoleAssignment roles = 5;
+
+  // Artifacts to add. All artifacts are added without checking for duplicates.
+  repeated Artifact artifacts = 6;
+}
+
+// Response for EscalateIncident.
+message EscalateIncidentResponse {
+  // The escalated incident.
+  Incident incident = 1;
+
+  // New or modified subscriptions.
+  repeated Subscription subscriptions = 2;
+
+  // New or modified tags.
+  repeated Tag tags = 3;
+
+  // New or modified roles.
+  repeated IncidentRole roles = 4;
+
+  // New or modified artifacts.
+  repeated Artifact artifacts = 5;
+}
+
+// Request for the CreateArtifact method.
+message CreateArtifactRequest {
+  // Resource name of the incident, for example,
+  // "projects/{project_id}/incidents/{incident_id}".
+  string parent = 1;
+
+  // The artifact to create.
+  Artifact artifact = 2;
+}
+
+// Request for the ListArtifacts method.
+message ListArtifactsRequest {
+  // Resource name of the incident, for example,
+  // "projects/{project_id}/incidents/{incident_id}".
+  string parent = 1;
+
+  // Number of artifacts to return.
+  int32 page_size = 2;
+
+  // Page token from an earlier query, as returned in `next_page_token`.
+  string page_token = 3;
+}
+
+// Response for the ListArtifacts method.
+message ListArtifactsResponse {
+  // List of artifacts.
+  repeated Artifact artifacts = 1;
+
+  // Page token to fetch the next set of artifacts.
+  string next_page_token = 2;
+}
+
+// Request for the UpdateArtifact method.
+message UpdateArtifactRequest {
+  // The artifact to update with the new values.
+  Artifact artifact = 1;
+
+  // List of fields that should be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request for deleting an artifact.
+message DeleteArtifactRequest {
+  // Resource name of the artifact.
+  string name = 1;
+}
+
+// SendShiftHandoff and PreviewShiftHandoff RPC request.
+message SendShiftHandoffRequest {
+  // Describes an incident for inclusion in the handoff.
+  // This is wrapped in a message to provide flexibility for potentially
+  // attaching additional data to each incident in the future.
+  message Incident {
+    // Resource name of the incident, for example,
+    // "projects/{project_id}/incidents/{incident_id}".
+    string name = 1;
+  }
+
+  // The resource name of the Stackdriver project that the handoff is being sent
+  // from. for example, `projects/{project_id}`
+  string parent = 1;
+
+  // Email addresses of the recipients of the handoff, for example,
+  // "user@example.com". Must contain at least one entry.
+  repeated string recipients = 2;
+
+  // Email addresses that should be CC'd on the handoff. Optional.
+  repeated string cc = 3;
+
+  // The subject of the email. Required.
+  string subject = 4;
+
+  // Content type string, for example, 'text/plain' or 'text/html'.
+  string notes_content_type = 5;
+
+  // Additional notes to be included in the handoff. Optional.
+  string notes_content = 6;
+
+  // The set of incidents that should be included in the handoff. Optional.
+  repeated Incident incidents = 7;
+
+  // If set to true a ShiftHandoffResponse will be returned but the handoff
+  // will not actually be sent.
+  bool preview_only = 8;
+}
+
+// SendShiftHandoff and PreviewShiftHandoff RPC response.
+message SendShiftHandoffResponse {
+  // Content type string, for example, 'text/plain' or 'text/html'.
+  string content_type = 1;
+
+  // The contents of the handoff that was sent or would have been sent (if the
+  // request was preview_only).
+  // This will typically contain a full HTML document.
+  string content = 2;
+}
+
+// Request for the CreateSubscription method.
+message CreateSubscriptionRequest {
+  // Resource name of the incident, for example,
+  // "projects/{project_id}/incidents/{incident_id}".
+  string parent = 1;
+
+  // The subscription to create.
+  Subscription subscription = 2;
+}
+
+// Request for the UpdateSubscription method.
+message UpdateSubscriptionRequest {
+  // The subscription to update, with new values.
+  Subscription subscription = 1;
+
+  // List of fields that should be updated.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request for the ListSubscriptions method.
+message ListSubscriptionsRequest {
+  // Resource name of the incident, for example,
+  // "projects/{project_id}/incidents/{incident_id}".
+  string parent = 1;
+
+  // Number of subscriptions to return.
+  int32 page_size = 2;
+
+  // Page token from an earlier query, as returned in `next_page_token`.
+  string page_token = 3;
+}
+
+// Response for the ListSubscriptions method.
+message ListSubscriptionsResponse {
+  // List of subscriptions.
+  repeated Subscription subscriptions = 1;
+
+  // Page token to fetch the next set of subscriptions.
+  string next_page_token = 2;
+}
+
+// Request for deleting a subscription.
+message DeleteSubscriptionRequest {
+  // Resource name of the subscription.
+  string name = 1;
+}
+
+// Request for creating a role assignment.
+message CreateIncidentRoleAssignmentRequest {
+  // Resource name of the incident, for example,
+  // "projects/{project_id}/incidents/{incident_id}".
+  string parent = 1;
+
+  // Role assignment to create.
+  IncidentRoleAssignment incident_role_assignment = 2;
+}
+
+// Request for deleting a role assignment.
+message DeleteIncidentRoleAssignmentRequest {
+  // Resource name of the role assignment.
+  string name = 1;
+}
+
+// Request to list role assignments of an incident.
+message ListIncidentRoleAssignmentsRequest {
+  // Resource name of the incident, for example,
+  // "projects/{project_id}/incidents/{incident_id}".
+  string parent = 1;
+
+  // Number of assignments to return.
+  int32 page_size = 2;
+
+  // Page token from an earlier query, as returned in `next_page_token`.
+  string page_token = 3;
+}
+
+// Response for the ListIncidentRoleAssignments method.
+message ListIncidentRoleAssignmentsResponse {
+  // List of assignments.
+  repeated IncidentRoleAssignment incident_role_assignments = 1;
+
+  // Page token to fetch the next set of assignments.
+  string next_page_token = 2;
+}
+
+// Request to start a role handover.
+message RequestIncidentRoleHandoverRequest {
+  // Resource name of the role assignment.
+  string name = 1;
+
+  // The proposed assignee.
+  User new_assignee = 2;
+}
+
+// Request to confirm a role handover.
+message ConfirmIncidentRoleHandoverRequest {
+  // Resource name of the role assignment.
+  string name = 1;
+
+  // The proposed assignee, who will now be the assignee. This should be the
+  // current user; otherwise ForceRoleHandover should be called.
+  User new_assignee = 2;
+}
+
+// Request to force a role handover.
+message ForceIncidentRoleHandoverRequest {
+  // Resource name of the role assignment.
+  string name = 1;
+
+  // The proposed assignee, who will now be the assignee. This should not be
+  // the current user; otherwise ConfirmRoleHandover should be called.
+  User new_assignee = 2;
+}
+
+// Request to cancel a role handover.
+message CancelIncidentRoleHandoverRequest {
+  // Resource name of the role assignment.
+  string name = 1;
+
+  // Person who was proposed as the next assignee (i.e.
+  // IncidentRoleAssignment.proposed_assignee) and whose proposal is being
+  // cancelled.
+  User new_assignee = 2;
+}

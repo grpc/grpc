@@ -1,0 +1,840 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.iam.admin.v1;
+
+import "google/api/annotations.proto";
+import "google/iam/v1/iam_policy.proto";
+import "google/iam/v1/policy.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/iam/admin/v1;admin";
+option java_multiple_files = true;
+option java_outer_classname = "IamProto";
+option java_package = "com.google.iam.admin.v1";
+
+// Creates and manages service account objects.
+//
+// Service account is an account that belongs to your project instead
+// of to an individual end user. It is used to authenticate calls
+// to a Google API.
+//
+// To create a service account, specify the `project_id` and `account_id`
+// for the account.  The `account_id` is unique within the project, and used
+// to generate the service account email address and a stable
+// `unique_id`.
+//
+// All other methods can identify accounts using the format
+// `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}`.
+// Using `-` as a wildcard for the project will infer the project from
+// the account. The `account` value can be the `email` address or the
+// `unique_id` of the service account.
+service IAM {
+  // Lists [ServiceAccounts][google.iam.admin.v1.ServiceAccount] for a project.
+  rpc ListServiceAccounts(ListServiceAccountsRequest)
+      returns (ListServiceAccountsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*}/serviceAccounts"
+    };
+  }
+
+  // Gets a [ServiceAccount][google.iam.admin.v1.ServiceAccount].
+  rpc GetServiceAccount(GetServiceAccountRequest) returns (ServiceAccount) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/serviceAccounts/*}"
+    };
+  }
+
+  // Creates a [ServiceAccount][google.iam.admin.v1.ServiceAccount]
+  // and returns it.
+  rpc CreateServiceAccount(CreateServiceAccountRequest)
+      returns (ServiceAccount) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*}/serviceAccounts"
+      body: "*"
+    };
+  }
+
+  // Updates a [ServiceAccount][google.iam.admin.v1.ServiceAccount].
+  //
+  // Currently, only the following fields are updatable:
+  // `display_name` .
+  // The `etag` is mandatory.
+  rpc UpdateServiceAccount(ServiceAccount) returns (ServiceAccount) {
+    option (google.api.http) = {
+      put: "/v1/{name=projects/*/serviceAccounts/*}"
+      body: "*"
+    };
+  }
+
+  // Deletes a [ServiceAccount][google.iam.admin.v1.ServiceAccount].
+  rpc DeleteServiceAccount(DeleteServiceAccountRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/{name=projects/*/serviceAccounts/*}"
+    };
+  }
+
+  // Lists [ServiceAccountKeys][google.iam.admin.v1.ServiceAccountKey].
+  rpc ListServiceAccountKeys(ListServiceAccountKeysRequest)
+      returns (ListServiceAccountKeysResponse) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/serviceAccounts/*}/keys"
+    };
+  }
+
+  // Gets the [ServiceAccountKey][google.iam.admin.v1.ServiceAccountKey]
+  // by key id.
+  rpc GetServiceAccountKey(GetServiceAccountKeyRequest)
+      returns (ServiceAccountKey) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/serviceAccounts/*/keys/*}"
+    };
+  }
+
+  // Creates a [ServiceAccountKey][google.iam.admin.v1.ServiceAccountKey]
+  // and returns it.
+  rpc CreateServiceAccountKey(CreateServiceAccountKeyRequest)
+      returns (ServiceAccountKey) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/serviceAccounts/*}/keys"
+      body: "*"
+    };
+  }
+
+  // Deletes a [ServiceAccountKey][google.iam.admin.v1.ServiceAccountKey].
+  rpc DeleteServiceAccountKey(DeleteServiceAccountKeyRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/{name=projects/*/serviceAccounts/*/keys/*}"
+    };
+  }
+
+  // Signs a blob using a service account's system-managed private key.
+  rpc SignBlob(SignBlobRequest) returns (SignBlobResponse) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/serviceAccounts/*}:signBlob"
+      body: "*"
+    };
+  }
+
+  // Signs a JWT using a service account's system-managed private key.
+  //
+  // If no expiry time (`exp`) is provided in the `SignJwtRequest`, IAM sets an
+  // an expiry time of one hour by default. If you request an expiry time of
+  // more than one hour, the request will fail.
+  rpc SignJwt(SignJwtRequest) returns (SignJwtResponse) {
+    option (google.api.http) = {
+      post: "/v1/{name=projects/*/serviceAccounts/*}:signJwt"
+      body: "*"
+    };
+  }
+
+  // Returns the IAM access control policy for a
+  // [ServiceAccount][google.iam.admin.v1.ServiceAccount].
+  rpc GetIamPolicy(google.iam.v1.GetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1/{resource=projects/*/serviceAccounts/*}:getIamPolicy"
+      body: ""
+    };
+  }
+
+  // Sets the IAM access control policy for a
+  // [ServiceAccount][google.iam.admin.v1.ServiceAccount].
+  rpc SetIamPolicy(google.iam.v1.SetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1/{resource=projects/*/serviceAccounts/*}:setIamPolicy"
+      body: "*"
+    };
+  }
+
+  // Tests the specified permissions against the IAM access control policy
+  // for a [ServiceAccount][google.iam.admin.v1.ServiceAccount].
+  rpc TestIamPermissions(google.iam.v1.TestIamPermissionsRequest)
+      returns (google.iam.v1.TestIamPermissionsResponse) {
+    option (google.api.http) = {
+      post: "/v1/{resource=projects/*/serviceAccounts/*}:testIamPermissions"
+      body: "*"
+    };
+  }
+
+  // Queries roles that can be granted on a particular resource.
+  // A role is grantable if it can be used as the role in a binding for a policy
+  // for that resource.
+  rpc QueryGrantableRoles(QueryGrantableRolesRequest)
+      returns (QueryGrantableRolesResponse) {
+    option (google.api.http) = {
+      post: "/v1/roles:queryGrantableRoles"
+      body: "*"
+    };
+  }
+
+  // Lists the Roles defined on a resource.
+  rpc ListRoles(ListRolesRequest) returns (ListRolesResponse) {
+    option (google.api.http) = {
+      get: "/v1/roles"
+    };
+  }
+
+  // Gets a Role definition.
+  rpc GetRole(GetRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      get: "/v1/{name=roles/*}"
+    };
+  }
+
+  // Creates a new Role.
+  rpc CreateRole(CreateRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      post: "/v1/{parent=organizations/*}/roles"
+      body: "*"
+    };
+  }
+
+  // Updates a Role definition.
+  rpc UpdateRole(UpdateRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      patch: "/v1/{name=organizations/*/roles/*}"
+      body: "role"
+    };
+  }
+
+  // Soft deletes a role. The role is suspended and cannot be used to create new
+  // IAM Policy Bindings.
+  // The Role will not be included in `ListRoles()` unless `show_deleted` is set
+  // in the `ListRolesRequest`. The Role contains the deleted boolean set.
+  // Existing Bindings remains, but are inactive. The Role can be undeleted
+  // within 7 days. After 7 days the Role is deleted and all Bindings associated
+  // with the role are removed.
+  rpc DeleteRole(DeleteRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      delete: "/v1/{name=organizations/*/roles/*}"
+    };
+  }
+
+  // Undelete a Role, bringing it back in its previous state.
+  rpc UndeleteRole(UndeleteRoleRequest) returns (Role) {
+    option (google.api.http) = {
+      post: "/v1/{name=organizations/*/roles/*}:undelete"
+      body: "*"
+    };
+  }
+
+  // Lists the permissions testable on a resource.
+  // A permission is testable if it can be tested for an identity on a resource.
+  rpc QueryTestablePermissions(QueryTestablePermissionsRequest)
+      returns (QueryTestablePermissionsResponse) {
+    option (google.api.http) = {
+      post: "/v1/permissions:queryTestablePermissions"
+      body: "*"
+    };
+  }
+}
+
+// A service account in the Identity and Access Management API.
+//
+// To create a service account, specify the `project_id` and the `account_id`
+// for the account.  The `account_id` is unique within the project, and is used
+// to generate the service account email address and a stable
+// `unique_id`.
+//
+// If the account already exists, the account's resource name is returned
+// in util::Status's ResourceInfo.resource_name in the format of
+// projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}. The caller can
+// use the name in other methods to access the account.
+//
+// All other methods can identify the service account using the format
+// `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}`.
+// Using `-` as a wildcard for the project will infer the project from
+// the account. The `account` value can be the `email` address or the
+// `unique_id` of the service account.
+message ServiceAccount {
+  // The resource name of the service account in the following format:
+  // `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}`.
+  //
+  // Requests using `-` as a wildcard for the project will infer the project
+  // from the `account` and the `account` value can be the `email` address or
+  // the `unique_id` of the service account.
+  //
+  // In responses the resource name will always be in the format
+  // `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}`.
+  string name = 1;
+
+  // @OutputOnly The id of the project that owns the service account.
+  string project_id = 2;
+
+  // @OutputOnly The unique and stable id of the service account.
+  string unique_id = 4;
+
+  // @OutputOnly The email address of the service account.
+  string email = 5;
+
+  // Optional. A user-specified description of the service account.  Must be
+  // fewer than 100 UTF-8 bytes.
+  string display_name = 6;
+
+  // Used to perform a consistent read-modify-write.
+  bytes etag = 7;
+
+  // @OutputOnly. The OAuth2 client id for the service account.
+  // This is used in conjunction with the OAuth2 clientconfig API to make
+  // three legged OAuth2 (3LO) flows to access the data of Google users.
+  string oauth2_client_id = 9;
+}
+
+// The service account create request.
+message CreateServiceAccountRequest {
+  // Required. The resource name of the project associated with the service
+  // accounts, such as `projects/my-project-123`.
+  string name = 1;
+
+  // Required. The account id that is used to generate the service account
+  // email address and a stable unique id. It is unique within a project,
+  // must be 6-30 characters long, and match the regular expression
+  // `[a-z]([-a-z0-9]*[a-z0-9])` to comply with RFC1035.
+  string account_id = 2;
+
+  // The [ServiceAccount][google.iam.admin.v1.ServiceAccount] resource to
+  // create. Currently, only the following values are user assignable:
+  // `display_name` .
+  ServiceAccount service_account = 3;
+}
+
+// The service account list request.
+message ListServiceAccountsRequest {
+  // Required. The resource name of the project associated with the service
+  // accounts, such as `projects/my-project-123`.
+  string name = 1;
+
+  // Optional limit on the number of service accounts to include in the
+  // response. Further accounts can subsequently be obtained by including the
+  // [ListServiceAccountsResponse.next_page_token][google.iam.admin.v1.ListServiceAccountsResponse.next_page_token]
+  // in a subsequent request.
+  int32 page_size = 2;
+
+  // Optional pagination token returned in an earlier
+  // [ListServiceAccountsResponse.next_page_token][google.iam.admin.v1.ListServiceAccountsResponse.next_page_token].
+  string page_token = 3;
+}
+
+// The service account list response.
+message ListServiceAccountsResponse {
+  // The list of matching service accounts.
+  repeated ServiceAccount accounts = 1;
+
+  // To retrieve the next page of results, set
+  // [ListServiceAccountsRequest.page_token][google.iam.admin.v1.ListServiceAccountsRequest.page_token]
+  // to this value.
+  string next_page_token = 2;
+}
+
+// The service account get request.
+message GetServiceAccountRequest {
+  // The resource name of the service account in the following format:
+  // `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}`.
+  // Using `-` as a wildcard for the project will infer the project from
+  // the account. The `account` value can be the `email` address or the
+  // `unique_id` of the service account.
+  string name = 1;
+}
+
+// The service account delete request.
+message DeleteServiceAccountRequest {
+  // The resource name of the service account in the following format:
+  // `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}`.
+  // Using `-` as a wildcard for the project will infer the project from
+  // the account. The `account` value can be the `email` address or the
+  // `unique_id` of the service account.
+  string name = 1;
+}
+
+// The service account keys list request.
+message ListServiceAccountKeysRequest {
+  // `KeyType` filters to selectively retrieve certain varieties
+  // of keys.
+  enum KeyType {
+    // Unspecified key type. The presence of this in the
+    // message will immediately result in an error.
+    KEY_TYPE_UNSPECIFIED = 0;
+
+    // User-managed keys (managed and rotated by the user).
+    USER_MANAGED = 1;
+
+    // System-managed keys (managed and rotated by Google).
+    SYSTEM_MANAGED = 2;
+  }
+
+  // The resource name of the service account in the following format:
+  // `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}`.
+  //
+  // Using `-` as a wildcard for the project, will infer the project from
+  // the account. The `account` value can be the `email` address or the
+  // `unique_id` of the service account.
+  string name = 1;
+
+  // Filters the types of keys the user wants to include in the list
+  // response. Duplicate key types are not allowed. If no key type
+  // is provided, all keys are returned.
+  repeated KeyType key_types = 2;
+}
+
+// The service account keys list response.
+message ListServiceAccountKeysResponse {
+  // The public keys for the service account.
+  repeated ServiceAccountKey keys = 1;
+}
+
+// The service account key get by id request.
+message GetServiceAccountKeyRequest {
+  // The resource name of the service account key in the following format:
+  // `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}/keys/{key}`.
+  //
+  // Using `-` as a wildcard for the project will infer the project from
+  // the account. The `account` value can be the `email` address or the
+  // `unique_id` of the service account.
+  string name = 1;
+
+  // The output format of the public key requested.
+  // X509_PEM is the default output format.
+  ServiceAccountPublicKeyType public_key_type = 2;
+}
+
+// Represents a service account key.
+//
+// A service account has two sets of key-pairs: user-managed, and
+// system-managed.
+//
+// User-managed key-pairs can be created and deleted by users.  Users are
+// responsible for rotating these keys periodically to ensure security of
+// their service accounts.  Users retain the private key of these key-pairs,
+// and Google retains ONLY the public key.
+//
+// System-managed key-pairs are managed automatically by Google, and rotated
+// daily without user intervention.  The private key never leaves Google's
+// servers to maximize security.
+//
+// Public keys for all service accounts are also published at the OAuth2
+// Service Account API.
+message ServiceAccountKey {
+  // The resource name of the service account key in the following format
+  // `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}/keys/{key}`.
+  string name = 1;
+
+  // The output format for the private key.
+  // Only provided in `CreateServiceAccountKey` responses, not
+  // in `GetServiceAccountKey` or `ListServiceAccountKey` responses.
+  //
+  // Google never exposes system-managed private keys, and never retains
+  // user-managed private keys.
+  ServiceAccountPrivateKeyType private_key_type = 2;
+
+  // Specifies the algorithm (and possibly key size) for the key.
+  ServiceAccountKeyAlgorithm key_algorithm = 8;
+
+  // The private key data. Only provided in `CreateServiceAccountKey`
+  // responses. Make sure to keep the private key data secure because it
+  // allows for the assertion of the service account identity.
+  // When decoded, the private key data can be used to authenticate with
+  // Google API client libraries and with
+  // <a href="/sdk/gcloud/reference/auth/activate-service-account">gcloud
+  // auth activate-service-account</a>.
+  bytes private_key_data = 3;
+
+  // The public key data. Only provided in `GetServiceAccountKey` responses.
+  bytes public_key_data = 7;
+
+  // The key can be used after this timestamp.
+  google.protobuf.Timestamp valid_after_time = 4;
+
+  // The key can be used before this timestamp.
+  google.protobuf.Timestamp valid_before_time = 5;
+}
+
+// The service account key create request.
+message CreateServiceAccountKeyRequest {
+  // The resource name of the service account in the following format:
+  // `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}`.
+  // Using `-` as a wildcard for the project will infer the project from
+  // the account. The `account` value can be the `email` address or the
+  // `unique_id` of the service account.
+  string name = 1;
+
+  // The output format of the private key. `GOOGLE_CREDENTIALS_FILE` is the
+  // default output format.
+  ServiceAccountPrivateKeyType private_key_type = 2;
+
+  // Which type of key and algorithm to use for the key.
+  // The default is currently a 2K RSA key.  However this may change in the
+  // future.
+  ServiceAccountKeyAlgorithm key_algorithm = 3;
+}
+
+// The service account key delete request.
+message DeleteServiceAccountKeyRequest {
+  // The resource name of the service account key in the following format:
+  // `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}/keys/{key}`.
+  // Using `-` as a wildcard for the project will infer the project from
+  // the account. The `account` value can be the `email` address or the
+  // `unique_id` of the service account.
+  string name = 1;
+}
+
+// The service account sign blob request.
+message SignBlobRequest {
+  // The resource name of the service account in the following format:
+  // `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}`.
+  // Using `-` as a wildcard for the project will infer the project from
+  // the account. The `account` value can be the `email` address or the
+  // `unique_id` of the service account.
+  string name = 1;
+
+  // The bytes to sign.
+  bytes bytes_to_sign = 2;
+}
+
+// The service account sign blob response.
+message SignBlobResponse {
+  // The id of the key used to sign the blob.
+  string key_id = 1;
+
+  // The signed blob.
+  bytes signature = 2;
+}
+
+// The service account sign JWT request.
+message SignJwtRequest {
+  // The resource name of the service account in the following format:
+  // `projects/{PROJECT_ID}/serviceAccounts/{SERVICE_ACCOUNT_EMAIL}`.
+  // Using `-` as a wildcard for the project will infer the project from
+  // the account. The `account` value can be the `email` address or the
+  // `unique_id` of the service account.
+  string name = 1;
+
+  // The JWT payload to sign, a JSON JWT Claim set.
+  string payload = 2;
+}
+
+// The service account sign JWT response.
+message SignJwtResponse {
+  // The id of the key used to sign the JWT.
+  string key_id = 1;
+
+  // The signed JWT.
+  string signed_jwt = 2;
+}
+
+// A role in the Identity and Access Management API.
+message Role {
+  // A stage representing a role's lifecycle phase.
+  enum RoleLaunchStage {
+    // The user has indicated this role is currently in an alpha phase.
+    ALPHA = 0;
+
+    // The user has indicated this role is currently in a beta phase.
+    BETA = 1;
+
+    // The user has indicated this role is generally available.
+    GA = 2;
+
+    // The user has indicated this role is being deprecated.
+    DEPRECATED = 4;
+
+    // This role is disabled and will not contribute permissions to any members
+    // it is granted to in policies.
+    DISABLED = 5;
+
+    // The user has indicated this role is currently in an eap phase.
+    EAP = 6;
+  }
+
+  // The name of the role.
+  //
+  // When Role is used in CreateRole, the role name must not be set.
+  //
+  // When Role is used in output and other input such as UpdateRole, the role
+  // name is the complete path, e.g., roles/logging.viewer for curated roles
+  // and organizations/{ORGANIZATION_ID}/roles/logging.viewer for custom roles.
+  string name = 1;
+
+  // Optional.  A human-readable title for the role.  Typically this
+  // is limited to 100 UTF-8 bytes.
+  string title = 2;
+
+  // Optional.  A human-readable description for the role.
+  string description = 3;
+
+  // The names of the permissions this role grants when bound in an IAM policy.
+  repeated string included_permissions = 7;
+
+  // The current launch stage of the role.
+  RoleLaunchStage stage = 8;
+
+  // Used to perform a consistent read-modify-write.
+  bytes etag = 9;
+
+  // The current deleted state of the role. This field is read only.
+  // It will be ignored in calls to CreateRole and UpdateRole.
+  bool deleted = 11;
+}
+
+// The grantable role query request.
+message QueryGrantableRolesRequest {
+  // Required. The full resource name to query from the list of grantable roles.
+  //
+  // The name follows the Google Cloud Platform resource format.
+  // For example, a Cloud Platform project with id `my-project` will be named
+  // `//cloudresourcemanager.googleapis.com/projects/my-project`.
+  string full_resource_name = 1;
+
+  RoleView view = 2;
+
+  // Optional limit on the number of roles to include in the response.
+  int32 page_size = 3;
+
+  // Optional pagination token returned in an earlier
+  // QueryGrantableRolesResponse.
+  string page_token = 4;
+}
+
+// The grantable role query response.
+message QueryGrantableRolesResponse {
+  // The list of matching roles.
+  repeated Role roles = 1;
+
+  // To retrieve the next page of results, set
+  // `QueryGrantableRolesRequest.page_token` to this value.
+  string next_page_token = 2;
+}
+
+// The request to get all roles defined under a resource.
+message ListRolesRequest {
+  // The resource name of the parent resource in one of the following formats:
+  // `` (empty string) -- this refers to curated roles.
+  // `organizations/{ORGANIZATION_ID}`
+  // `projects/{PROJECT_ID}`
+  string parent = 1;
+
+  // Optional limit on the number of roles to include in the response.
+  int32 page_size = 2;
+
+  // Optional pagination token returned in an earlier ListRolesResponse.
+  string page_token = 3;
+
+  // Optional view for the returned Role objects.
+  RoleView view = 4;
+
+  // Include Roles that have been deleted.
+  bool show_deleted = 6;
+}
+
+// The response containing the roles defined under a resource.
+message ListRolesResponse {
+  // The Roles defined on this resource.
+  repeated Role roles = 1;
+
+  // To retrieve the next page of results, set
+  // `ListRolesRequest.page_token` to this value.
+  string next_page_token = 2;
+}
+
+// The request to get the definition of an existing role.
+message GetRoleRequest {
+  // The resource name of the role in one of the following formats:
+  // `roles/{ROLE_NAME}`
+  // `organizations/{ORGANIZATION_ID}/roles/{ROLE_NAME}`
+  // `projects/{PROJECT_ID}/roles/{ROLE_NAME}`
+  string name = 1;
+}
+
+// The request to create a new role.
+message CreateRoleRequest {
+  // The resource name of the parent resource in one of the following formats:
+  // `organizations/{ORGANIZATION_ID}`
+  // `projects/{PROJECT_ID}`
+  string parent = 1;
+
+  // The role id to use for this role.
+  string role_id = 2;
+
+  // The Role resource to create.
+  Role role = 3;
+}
+
+// The request to update a role.
+message UpdateRoleRequest {
+  // The resource name of the role in one of the following formats:
+  // `roles/{ROLE_NAME}`
+  // `organizations/{ORGANIZATION_ID}/roles/{ROLE_NAME}`
+  // `projects/{PROJECT_ID}/roles/{ROLE_NAME}`
+  string name = 1;
+
+  // The updated role.
+  Role role = 2;
+
+  // A mask describing which fields in the Role have changed.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// The request to delete an existing role.
+message DeleteRoleRequest {
+  // The resource name of the role in one of the following formats:
+  // `organizations/{ORGANIZATION_ID}/roles/{ROLE_NAME}`
+  // `projects/{PROJECT_ID}/roles/{ROLE_NAME}`
+  string name = 1;
+
+  // Used to perform a consistent read-modify-write.
+  bytes etag = 2;
+}
+
+// The request to undelete an existing role.
+message UndeleteRoleRequest {
+  // The resource name of the role in one of the following formats:
+  // `organizations/{ORGANIZATION_ID}/roles/{ROLE_NAME}`
+  // `projects/{PROJECT_ID}/roles/{ROLE_NAME}`
+  string name = 1;
+
+  // Used to perform a consistent read-modify-write.
+  bytes etag = 2;
+}
+
+// A permission which can be included by a role.
+message Permission {
+  // A stage representing a permission's lifecycle phase.
+  enum PermissionLaunchStage {
+    // The permission is currently in an alpha phase.
+    ALPHA = 0;
+
+    // The permission is currently in a beta phase.
+    BETA = 1;
+
+    // The permission is generally available.
+    GA = 2;
+
+    // The permission is being deprecated.
+    DEPRECATED = 3;
+  }
+
+  // The state of the permission with regards to custom roles.
+  enum CustomRolesSupportLevel {
+    // Permission is fully supported for custom role use.
+    SUPPORTED = 0;
+
+    // Permission is being tested to check custom role compatibility.
+    TESTING = 1;
+
+    // Permission is not supported for custom role use.
+    NOT_SUPPORTED = 2;
+  }
+
+  // The name of this Permission.
+  string name = 1;
+
+  // The title of this Permission.
+  string title = 2;
+
+  // A brief description of what this Permission is used for.
+  string description = 3;
+
+  // This permission can ONLY be used in predefined roles.
+  bool only_in_predefined_roles = 4;
+
+  // The current launch stage of the permission.
+  PermissionLaunchStage stage = 5;
+
+  // The current custom role support level.
+  CustomRolesSupportLevel custom_roles_support_level = 6;
+}
+
+// A request to get permissions which can be tested on a resource.
+message QueryTestablePermissionsRequest {
+  // Required. The full resource name to query from the list of testable
+  // permissions.
+  //
+  // The name follows the Google Cloud Platform resource format.
+  // For example, a Cloud Platform project with id `my-project` will be named
+  // `//cloudresourcemanager.googleapis.com/projects/my-project`.
+  string full_resource_name = 1;
+
+  // Optional limit on the number of permissions to include in the response.
+  int32 page_size = 2;
+
+  // Optional pagination token returned in an earlier
+  // QueryTestablePermissionsRequest.
+  string page_token = 3;
+}
+
+// The response containing permissions which can be tested on a resource.
+message QueryTestablePermissionsResponse {
+  // The Permissions testable on the requested resource.
+  repeated Permission permissions = 1;
+
+  // To retrieve the next page of results, set
+  // `QueryTestableRolesRequest.page_token` to this value.
+  string next_page_token = 2;
+}
+
+// Supported key algorithms.
+enum ServiceAccountKeyAlgorithm {
+  // An unspecified key algorithm.
+  KEY_ALG_UNSPECIFIED = 0;
+
+  // 1k RSA Key.
+  KEY_ALG_RSA_1024 = 1;
+
+  // 2k RSA Key.
+  KEY_ALG_RSA_2048 = 2;
+}
+
+// Supported private key output formats.
+enum ServiceAccountPrivateKeyType {
+  // Unspecified. Equivalent to `TYPE_GOOGLE_CREDENTIALS_FILE`.
+  TYPE_UNSPECIFIED = 0;
+
+  // PKCS12 format.
+  // The password for the PKCS12 file is `notasecret`.
+  // For more information, see https://tools.ietf.org/html/rfc7292.
+  TYPE_PKCS12_FILE = 1;
+
+  // Google Credentials File format.
+  TYPE_GOOGLE_CREDENTIALS_FILE = 2;
+}
+
+// Supported public key output formats.
+enum ServiceAccountPublicKeyType {
+  // Unspecified. Returns nothing here.
+  TYPE_NONE = 0;
+
+  // X509 PEM format.
+  TYPE_X509_PEM_FILE = 1;
+
+  // Raw public key.
+  TYPE_RAW_PUBLIC_KEY = 2;
+}
+
+// A view for Role objects.
+enum RoleView {
+  // Omits the `included_permissions` field.
+  // This is the default value.
+  BASIC = 0;
+
+  // Returns all fields.
+  FULL = 1;
+}

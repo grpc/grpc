@@ -1,0 +1,59 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.spanner.admin.database.v1.DatabaseAdmin",
+          "method": "ListDatabases"
+        },
+        {
+          "service": "google.spanner.admin.database.v1.DatabaseAdmin",
+          "method": "GetDatabase"
+        },
+        {
+          "service": "google.spanner.admin.database.v1.DatabaseAdmin",
+          "method": "UpdateDatabaseDdl"
+        },
+        {
+          "service": "google.spanner.admin.database.v1.DatabaseAdmin",
+          "method": "DropDatabase"
+        },
+        {
+          "service": "google.spanner.admin.database.v1.DatabaseAdmin",
+          "method": "GetDatabaseDdl"
+        },
+        {
+          "service": "google.spanner.admin.database.v1.DatabaseAdmin",
+          "method": "GetIamPolicy"
+        }
+      ],
+      "timeout": "3600s",
+      "retryPolicy": {
+        "initialBackoff": "1s",
+        "maxBackoff": "32s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.spanner.admin.database.v1.DatabaseAdmin",
+          "method": "CreateDatabase"
+        },
+        {
+          "service": "google.spanner.admin.database.v1.DatabaseAdmin",
+          "method": "SetIamPolicy"
+        },
+        {
+          "service": "google.spanner.admin.database.v1.DatabaseAdmin",
+          "method": "TestIamPermissions"
+        }
+      ],
+      "timeout": "3600s"
+    }
+  ]
+}

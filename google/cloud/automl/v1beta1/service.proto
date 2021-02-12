@@ -1,0 +1,632 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/automl/v1beta1/annotation_payload.proto";
+import "google/cloud/automl/v1beta1/annotation_spec.proto";
+import "google/cloud/automl/v1beta1/column_spec.proto";
+import "google/cloud/automl/v1beta1/dataset.proto";
+import "google/cloud/automl/v1beta1/image.proto";
+import "google/cloud/automl/v1beta1/io.proto";
+import "google/cloud/automl/v1beta1/model.proto";
+import "google/cloud/automl/v1beta1/model_evaluation.proto";
+import "google/cloud/automl/v1beta1/operations.proto";
+import "google/cloud/automl/v1beta1/table_spec.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/api/client.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1beta1;automl";
+option java_multiple_files = true;
+option java_outer_classname = "AutoMlProto";
+option java_package = "com.google.cloud.automl.v1beta1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1beta1";
+option ruby_package = "Google::Cloud::AutoML::V1beta1";
+
+// AutoML Server API.
+//
+// The resource names are assigned by the server.
+// The server never reuses names that it has created after the resources with
+// those names are deleted.
+//
+// An ID of a resource is the last element of the item's resource name. For
+// `projects/{project_id}/locations/{location_id}/datasets/{dataset_id}`, then
+// the id for the item is `{dataset_id}`.
+//
+// Currently the only supported `location_id` is "us-central1".
+//
+// On any input that is documented to expect a string parameter in
+// snake_case or kebab-case, either of those cases is accepted.
+service AutoMl {
+  option (google.api.default_host) = "automl.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Creates a dataset.
+  rpc CreateDataset(CreateDatasetRequest) returns (Dataset) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*/locations/*}/datasets"
+      body: "dataset"
+    };
+  }
+
+  // Gets a dataset.
+  rpc GetDataset(GetDatasetRequest) returns (Dataset) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/locations/*/datasets/*}"
+    };
+  }
+
+  // Lists datasets in a project.
+  rpc ListDatasets(ListDatasetsRequest) returns (ListDatasetsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*/locations/*}/datasets"
+    };
+  }
+
+  // Updates a dataset.
+  rpc UpdateDataset(UpdateDatasetRequest) returns (Dataset) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{dataset.name=projects/*/locations/*/datasets/*}"
+      body: "dataset"
+    };
+  }
+
+  // Deletes a dataset and all of its contents.
+  // Returns empty response in the
+  // [response][google.longrunning.Operation.response] field when it completes,
+  // and `delete_details` in the
+  // [metadata][google.longrunning.Operation.metadata] field.
+  rpc DeleteDataset(DeleteDatasetRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/locations/*/datasets/*}"
+    };
+  }
+
+  // Imports data into a dataset.
+  // For Tables this method can only be called on an empty Dataset.
+  //
+  // For Tables:
+  // *   A
+  // [schema_inference_version][google.cloud.automl.v1beta1.InputConfig.params]
+  //     parameter must be explicitly set.
+  // Returns an empty response in the
+  // [response][google.longrunning.Operation.response] field when it completes.
+  rpc ImportData(ImportDataRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/locations/*/datasets/*}:importData"
+      body: "*"
+    };
+  }
+
+  // Exports dataset's data to the provided output location.
+  // Returns an empty response in the
+  // [response][google.longrunning.Operation.response] field when it completes.
+  rpc ExportData(ExportDataRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/locations/*/datasets/*}:exportData"
+      body: "*"
+    };
+  }
+
+  // Gets an annotation spec.
+  rpc GetAnnotationSpec(GetAnnotationSpecRequest) returns (AnnotationSpec) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/locations/*/datasets/*/annotationSpecs/*}"
+    };
+  }
+
+  // Gets a table spec.
+  rpc GetTableSpec(GetTableSpecRequest) returns (TableSpec) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/locations/*/datasets/*/tableSpecs/*}"
+    };
+  }
+
+  // Lists table specs in a dataset.
+  rpc ListTableSpecs(ListTableSpecsRequest) returns (ListTableSpecsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*/locations/*/datasets/*}/tableSpecs"
+    };
+  }
+
+  // Updates a table spec.
+  rpc UpdateTableSpec(UpdateTableSpecRequest) returns (TableSpec) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{table_spec.name=projects/*/locations/*/datasets/*/tableSpecs/*}"
+      body: "table_spec"
+    };
+  }
+
+  // Gets a column spec.
+  rpc GetColumnSpec(GetColumnSpecRequest) returns (ColumnSpec) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/locations/*/datasets/*/tableSpecs/*/columnSpecs/*}"
+    };
+  }
+
+  // Lists column specs in a table spec.
+  rpc ListColumnSpecs(ListColumnSpecsRequest) returns (ListColumnSpecsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*/locations/*/datasets/*/tableSpecs/*}/columnSpecs"
+    };
+  }
+
+  // Updates a column spec.
+  rpc UpdateColumnSpec(UpdateColumnSpecRequest) returns (ColumnSpec) {
+    option (google.api.http) = {
+      patch: "/v1beta1/{column_spec.name=projects/*/locations/*/datasets/*/tableSpecs/*/columnSpecs/*}"
+      body: "column_spec"
+    };
+  }
+
+  // Creates a model.
+  // Returns a Model in the [response][google.longrunning.Operation.response]
+  // field when it completes.
+  // When you create a model, several model evaluations are created for it:
+  // a global evaluation, and one evaluation for each annotation spec.
+  rpc CreateModel(CreateModelRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*/locations/*}/models"
+      body: "model"
+    };
+  }
+
+  // Gets a model.
+  rpc GetModel(GetModelRequest) returns (Model) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/locations/*/models/*}"
+    };
+  }
+
+  // Lists models.
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*/locations/*}/models"
+    };
+  }
+
+  // Deletes a model.
+  // Returns `google.protobuf.Empty` in the
+  // [response][google.longrunning.Operation.response] field when it completes,
+  // and `delete_details` in the
+  // [metadata][google.longrunning.Operation.metadata] field.
+  rpc DeleteModel(DeleteModelRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/locations/*/models/*}"
+    };
+  }
+
+  // Deploys a model. If a model is already deployed, deploying it with the
+  // same parameters has no effect. Deploying with different parametrs
+  // (as e.g. changing
+  //
+  // [node_number][google.cloud.automl.v1beta1.ImageObjectDetectionModelDeploymentMetadata.node_number])
+  //  will reset the deployment state without pausing the model's availability.
+  //
+  // Only applicable for Text Classification, Image Object Detection and Tables; all other domains manage deployment automatically.
+  //
+  // Returns an empty response in the
+  // [response][google.longrunning.Operation.response] field when it completes.
+  rpc DeployModel(DeployModelRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/locations/*/models/*}:deploy"
+      body: "*"
+    };
+  }
+
+  // Undeploys a model. If the model is not deployed this method has no effect.
+  //
+  // Only applicable for Text Classification, Image Object Detection and Tables;
+  // all other domains manage deployment automatically.
+  //
+  // Returns an empty response in the
+  // [response][google.longrunning.Operation.response] field when it completes.
+  rpc UndeployModel(UndeployModelRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/locations/*/models/*}:undeploy"
+      body: "*"
+    };
+  }
+
+  // Exports a trained, "export-able", model to a user specified Google Cloud
+  // Storage location. A model is considered export-able if and only if it has
+  // an export format defined for it in
+  //
+  // [ModelExportOutputConfig][google.cloud.automl.v1beta1.ModelExportOutputConfig].
+  //
+  // Returns an empty response in the
+  // [response][google.longrunning.Operation.response] field when it completes.
+  rpc ExportModel(ExportModelRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/locations/*/models/*}:export"
+      body: "*"
+    };
+  }
+
+  // Exports examples on which the model was evaluated (i.e. which were in the
+  // TEST set of the dataset the model was created from), together with their
+  // ground truth annotations and the annotations created (predicted) by the
+  // model.
+  // The examples, ground truth and predictions are exported in the state
+  // they were at the moment the model was evaluated.
+  //
+  // This export is available only for 30 days since the model evaluation is
+  // created.
+  //
+  // Currently only available for Tables.
+  //
+  // Returns an empty response in the
+  // [response][google.longrunning.Operation.response] field when it completes.
+  rpc ExportEvaluatedExamples(ExportEvaluatedExamplesRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1beta1/{name=projects/*/locations/*/models/*}:exportEvaluatedExamples"
+      body: "*"
+    };
+  }
+
+  // Gets a model evaluation.
+  rpc GetModelEvaluation(GetModelEvaluationRequest) returns (ModelEvaluation) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/locations/*/models/*/modelEvaluations/*}"
+    };
+  }
+
+  // Lists model evaluations.
+  rpc ListModelEvaluations(ListModelEvaluationsRequest) returns (ListModelEvaluationsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*/locations/*/models/*}/modelEvaluations"
+    };
+  }
+}
+
+// Request message for [AutoMl.CreateDataset][google.cloud.automl.v1beta1.AutoMl.CreateDataset].
+message CreateDatasetRequest {
+  // The resource name of the project to create the dataset for.
+  string parent = 1;
+
+  // The dataset to create.
+  Dataset dataset = 2;
+}
+
+// Request message for [AutoMl.GetDataset][google.cloud.automl.v1beta1.AutoMl.GetDataset].
+message GetDatasetRequest {
+  // The resource name of the dataset to retrieve.
+  string name = 1;
+}
+
+// Request message for [AutoMl.ListDatasets][google.cloud.automl.v1beta1.AutoMl.ListDatasets].
+message ListDatasetsRequest {
+  // The resource name of the project from which to list datasets.
+  string parent = 1;
+
+  // An expression for filtering the results of the request.
+  //
+  //   * `dataset_metadata` - for existence of the case (e.g.
+  //             image_classification_dataset_metadata:*). Some examples of using the filter are:
+  //
+  //   * `translation_dataset_metadata:*` --> The dataset has
+  //                                          translation_dataset_metadata.
+  string filter = 3;
+
+  // Requested page size. Server may return fewer results than requested.
+  // If unspecified, server will pick a default size.
+  int32 page_size = 4;
+
+  // A token identifying a page of results for the server to return
+  // Typically obtained via
+  // [ListDatasetsResponse.next_page_token][google.cloud.automl.v1beta1.ListDatasetsResponse.next_page_token] of the previous
+  // [AutoMl.ListDatasets][google.cloud.automl.v1beta1.AutoMl.ListDatasets] call.
+  string page_token = 6;
+}
+
+// Response message for [AutoMl.ListDatasets][google.cloud.automl.v1beta1.AutoMl.ListDatasets].
+message ListDatasetsResponse {
+  // The datasets read.
+  repeated Dataset datasets = 1;
+
+  // A token to retrieve next page of results.
+  // Pass to [ListDatasetsRequest.page_token][google.cloud.automl.v1beta1.ListDatasetsRequest.page_token] to obtain that page.
+  string next_page_token = 2;
+}
+
+// Request message for [AutoMl.UpdateDataset][google.cloud.automl.v1beta1.AutoMl.UpdateDataset]
+message UpdateDatasetRequest {
+  // The dataset which replaces the resource on the server.
+  Dataset dataset = 1;
+
+  // The update mask applies to the resource.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for [AutoMl.DeleteDataset][google.cloud.automl.v1beta1.AutoMl.DeleteDataset].
+message DeleteDatasetRequest {
+  // The resource name of the dataset to delete.
+  string name = 1;
+}
+
+// Request message for [AutoMl.ImportData][google.cloud.automl.v1beta1.AutoMl.ImportData].
+message ImportDataRequest {
+  // Required. Dataset name. Dataset must already exist. All imported
+  // annotations and examples will be added.
+  string name = 1;
+
+  // Required. The desired input location and its domain specific semantics,
+  // if any.
+  InputConfig input_config = 3;
+}
+
+// Request message for [AutoMl.ExportData][google.cloud.automl.v1beta1.AutoMl.ExportData].
+message ExportDataRequest {
+  // Required. The resource name of the dataset.
+  string name = 1;
+
+  // Required. The desired output location.
+  OutputConfig output_config = 3;
+}
+
+// Request message for [AutoMl.GetAnnotationSpec][google.cloud.automl.v1beta1.AutoMl.GetAnnotationSpec].
+message GetAnnotationSpecRequest {
+  // The resource name of the annotation spec to retrieve.
+  string name = 1;
+}
+
+// Request message for [AutoMl.GetTableSpec][google.cloud.automl.v1beta1.AutoMl.GetTableSpec].
+message GetTableSpecRequest {
+  // The resource name of the table spec to retrieve.
+  string name = 1;
+
+  // Mask specifying which fields to read.
+  google.protobuf.FieldMask field_mask = 2;
+}
+
+// Request message for [AutoMl.ListTableSpecs][google.cloud.automl.v1beta1.AutoMl.ListTableSpecs].
+message ListTableSpecsRequest {
+  // The resource name of the dataset to list table specs from.
+  string parent = 1;
+
+  // Mask specifying which fields to read.
+  google.protobuf.FieldMask field_mask = 2;
+
+  // Filter expression, see go/filtering.
+  string filter = 3;
+
+  // Requested page size. The server can return fewer results than requested.
+  // If unspecified, the server will pick a default size.
+  int32 page_size = 4;
+
+  // A token identifying a page of results for the server to return.
+  // Typically obtained from the
+  // [ListTableSpecsResponse.next_page_token][google.cloud.automl.v1beta1.ListTableSpecsResponse.next_page_token] field of the previous
+  // [AutoMl.ListTableSpecs][google.cloud.automl.v1beta1.AutoMl.ListTableSpecs] call.
+  string page_token = 6;
+}
+
+// Response message for [AutoMl.ListTableSpecs][google.cloud.automl.v1beta1.AutoMl.ListTableSpecs].
+message ListTableSpecsResponse {
+  // The table specs read.
+  repeated TableSpec table_specs = 1;
+
+  // A token to retrieve next page of results.
+  // Pass to [ListTableSpecsRequest.page_token][google.cloud.automl.v1beta1.ListTableSpecsRequest.page_token] to obtain that page.
+  string next_page_token = 2;
+}
+
+// Request message for [AutoMl.UpdateTableSpec][google.cloud.automl.v1beta1.AutoMl.UpdateTableSpec]
+message UpdateTableSpecRequest {
+  // The table spec which replaces the resource on the server.
+  TableSpec table_spec = 1;
+
+  // The update mask applies to the resource.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for [AutoMl.GetColumnSpec][google.cloud.automl.v1beta1.AutoMl.GetColumnSpec].
+message GetColumnSpecRequest {
+  // The resource name of the column spec to retrieve.
+  string name = 1;
+
+  // Mask specifying which fields to read.
+  google.protobuf.FieldMask field_mask = 2;
+}
+
+// Request message for [AutoMl.ListColumnSpecs][google.cloud.automl.v1beta1.AutoMl.ListColumnSpecs].
+message ListColumnSpecsRequest {
+  // The resource name of the table spec to list column specs from.
+  string parent = 1;
+
+  // Mask specifying which fields to read.
+  google.protobuf.FieldMask field_mask = 2;
+
+  // Filter expression, see go/filtering.
+  string filter = 3;
+
+  // Requested page size. The server can return fewer results than requested.
+  // If unspecified, the server will pick a default size.
+  int32 page_size = 4;
+
+  // A token identifying a page of results for the server to return.
+  // Typically obtained from the
+  // [ListColumnSpecsResponse.next_page_token][google.cloud.automl.v1beta1.ListColumnSpecsResponse.next_page_token] field of the previous
+  // [AutoMl.ListColumnSpecs][google.cloud.automl.v1beta1.AutoMl.ListColumnSpecs] call.
+  string page_token = 6;
+}
+
+// Response message for [AutoMl.ListColumnSpecs][google.cloud.automl.v1beta1.AutoMl.ListColumnSpecs].
+message ListColumnSpecsResponse {
+  // The column specs read.
+  repeated ColumnSpec column_specs = 1;
+
+  // A token to retrieve next page of results.
+  // Pass to [ListColumnSpecsRequest.page_token][google.cloud.automl.v1beta1.ListColumnSpecsRequest.page_token] to obtain that page.
+  string next_page_token = 2;
+}
+
+// Request message for [AutoMl.UpdateColumnSpec][google.cloud.automl.v1beta1.AutoMl.UpdateColumnSpec]
+message UpdateColumnSpecRequest {
+  // The column spec which replaces the resource on the server.
+  ColumnSpec column_spec = 1;
+
+  // The update mask applies to the resource.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for [AutoMl.CreateModel][google.cloud.automl.v1beta1.AutoMl.CreateModel].
+message CreateModelRequest {
+  // Resource name of the parent project where the model is being created.
+  string parent = 1;
+
+  // The model to create.
+  Model model = 4;
+}
+
+// Request message for [AutoMl.GetModel][google.cloud.automl.v1beta1.AutoMl.GetModel].
+message GetModelRequest {
+  // Resource name of the model.
+  string name = 1;
+}
+
+// Request message for [AutoMl.ListModels][google.cloud.automl.v1beta1.AutoMl.ListModels].
+message ListModelsRequest {
+  // Resource name of the project, from which to list the models.
+  string parent = 1;
+
+  // An expression for filtering the results of the request.
+  //
+  //   * `model_metadata` - for existence of the case (e.g.
+  //             video_classification_model_metadata:*).
+  //   * `dataset_id` - for = or !=. Some examples of using the filter are:
+  //
+  //   * `image_classification_model_metadata:*` --> The model has
+  //                                        image_classification_model_metadata.
+  //   * `dataset_id=5` --> The model was created from a dataset with ID 5.
+  string filter = 3;
+
+  // Requested page size.
+  int32 page_size = 4;
+
+  // A token identifying a page of results for the server to return
+  // Typically obtained via
+  // [ListModelsResponse.next_page_token][google.cloud.automl.v1beta1.ListModelsResponse.next_page_token] of the previous
+  // [AutoMl.ListModels][google.cloud.automl.v1beta1.AutoMl.ListModels] call.
+  string page_token = 6;
+}
+
+// Response message for [AutoMl.ListModels][google.cloud.automl.v1beta1.AutoMl.ListModels].
+message ListModelsResponse {
+  // List of models in the requested page.
+  repeated Model model = 1;
+
+  // A token to retrieve next page of results.
+  // Pass to [ListModelsRequest.page_token][google.cloud.automl.v1beta1.ListModelsRequest.page_token] to obtain that page.
+  string next_page_token = 2;
+}
+
+// Request message for [AutoMl.DeleteModel][google.cloud.automl.v1beta1.AutoMl.DeleteModel].
+message DeleteModelRequest {
+  // Resource name of the model being deleted.
+  string name = 1;
+}
+
+// Request message for [AutoMl.DeployModel][google.cloud.automl.v1beta1.AutoMl.DeployModel].
+message DeployModelRequest {
+  // The per-domain specific deployment parameters.
+  oneof model_deployment_metadata {
+    // Model deployment metadata specific to Image Object Detection.
+    ImageObjectDetectionModelDeploymentMetadata image_object_detection_model_deployment_metadata = 2;
+    // Model deployment metadata specific to Image Classification.
+    ImageClassificationModelDeploymentMetadata image_classification_model_deployment_metadata = 4;
+  }
+
+  // Resource name of the model to deploy.
+  string name = 1;
+}
+
+// Request message for [AutoMl.UndeployModel][google.cloud.automl.v1beta1.AutoMl.UndeployModel].
+message UndeployModelRequest {
+  // Resource name of the model to undeploy.
+  string name = 1;
+}
+
+// Request message for [AutoMl.ExportModel][google.cloud.automl.v1beta1.AutoMl.ExportModel].
+// Models need to be enabled for exporting, otherwise an error code will be
+// returned.
+message ExportModelRequest {
+  // Required. The resource name of the model to export.
+  string name = 1;
+
+  // Required. The desired output location and configuration.
+  ModelExportOutputConfig output_config = 3;
+}
+
+// Request message for [AutoMl.ExportEvaluatedExamples][google.cloud.automl.v1beta1.AutoMl.ExportEvaluatedExamples].
+message ExportEvaluatedExamplesRequest {
+  // Required. The resource name of the model whose evaluated examples are to
+  // be exported.
+  string name = 1;
+
+  // Required. The desired output location and configuration.
+  ExportEvaluatedExamplesOutputConfig output_config = 3;
+}
+
+// Request message for [AutoMl.GetModelEvaluation][google.cloud.automl.v1beta1.AutoMl.GetModelEvaluation].
+message GetModelEvaluationRequest {
+  // Resource name for the model evaluation.
+  string name = 1;
+}
+
+// Request message for [AutoMl.ListModelEvaluations][google.cloud.automl.v1beta1.AutoMl.ListModelEvaluations].
+message ListModelEvaluationsRequest {
+  // Resource name of the model to list the model evaluations for.
+  // If modelId is set as "-", this will list model evaluations from across all
+  // models of the parent location.
+  string parent = 1;
+
+  // An expression for filtering the results of the request.
+  //
+  //   * `annotation_spec_id` - for =, !=  or existence. See example below for
+  //                          the last.
+  //
+  // Some examples of using the filter are:
+  //
+  //   * `annotation_spec_id!=4` --> The model evaluation was done for
+  //                             annotation spec with ID different than 4.
+  //   * `NOT annotation_spec_id:*` --> The model evaluation was done for
+  //                                aggregate of all annotation specs.
+  string filter = 3;
+
+  // Requested page size.
+  int32 page_size = 4;
+
+  // A token identifying a page of results for the server to return.
+  // Typically obtained via
+  // [ListModelEvaluationsResponse.next_page_token][google.cloud.automl.v1beta1.ListModelEvaluationsResponse.next_page_token] of the previous
+  // [AutoMl.ListModelEvaluations][google.cloud.automl.v1beta1.AutoMl.ListModelEvaluations] call.
+  string page_token = 6;
+}
+
+// Response message for [AutoMl.ListModelEvaluations][google.cloud.automl.v1beta1.AutoMl.ListModelEvaluations].
+message ListModelEvaluationsResponse {
+  // List of model evaluations in the requested page.
+  repeated ModelEvaluation model_evaluation = 1;
+
+  // A token to retrieve next page of results.
+  // Pass to the [ListModelEvaluationsRequest.page_token][google.cloud.automl.v1beta1.ListModelEvaluationsRequest.page_token] field of a new
+  // [AutoMl.ListModelEvaluations][google.cloud.automl.v1beta1.AutoMl.ListModelEvaluations] request to obtain that page.
+  string next_page_token = 2;
+}

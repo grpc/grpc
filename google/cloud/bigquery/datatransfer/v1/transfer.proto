@@ -1,0 +1,259 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.bigquery.datatransfer.v1;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+
+option csharp_namespace = "Google.Cloud.BigQuery.DataTransfer.V1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/bigquery/datatransfer/v1;datatransfer";
+option java_multiple_files = true;
+option java_outer_classname = "TransferProto";
+option java_package = "com.google.cloud.bigquery.datatransfer.v1";
+option objc_class_prefix = "GCBDT";
+option php_namespace = "Google\\Cloud\\BigQuery\\DataTransfer\\V1";
+
+// DEPRECATED. Represents data transfer type.
+enum TransferType {
+  option deprecated = true;
+
+  // Invalid or Unknown transfer type placeholder.
+  TRANSFER_TYPE_UNSPECIFIED = 0;
+
+  // Batch data transfer.
+  BATCH = 1;
+
+  // Streaming data transfer. Streaming data source currently doesn't
+  // support multiple transfer configs per project.
+  STREAMING = 2;
+}
+
+// Represents data transfer run state.
+enum TransferState {
+  // State placeholder.
+  TRANSFER_STATE_UNSPECIFIED = 0;
+
+  // Data transfer is scheduled and is waiting to be picked up by
+  // data transfer backend.
+  PENDING = 2;
+
+  // Data transfer is in progress.
+  RUNNING = 3;
+
+  // Data transfer completed successfully.
+  SUCCEEDED = 4;
+
+  // Data transfer failed.
+  FAILED = 5;
+
+  // Data transfer is cancelled.
+  CANCELLED = 6;
+}
+
+// Options customizing the data transfer schedule.
+message ScheduleOptions {
+  // If true, automatic scheduling of data transfer runs for this configuration
+  // will be disabled. The runs can be started on ad-hoc basis using
+  // StartManualTransferRuns API. When automatic scheduling is disabled, the
+  // TransferConfig.schedule field will be ignored.
+  bool disable_auto_scheduling = 3;
+
+  // Specifies time to start scheduling transfer runs. The first run will be
+  // scheduled at or after the start time according to a recurrence pattern
+  // defined in the schedule string. The start time can be changed at any
+  // moment. The time when a data transfer can be trigerred manually is not
+  // limited by this option.
+  google.protobuf.Timestamp start_time = 1;
+
+  // Defines time to stop scheduling transfer runs. A transfer run cannot be
+  // scheduled at or after the end time. The end time can be changed at any
+  // moment. The time when a data transfer can be trigerred manually is not
+  // limited by this option.
+  google.protobuf.Timestamp end_time = 2;
+}
+
+// Represents a data transfer configuration. A transfer configuration
+// contains all metadata needed to perform a data transfer. For example,
+// `destination_dataset_id` specifies where data should be stored.
+// When a new transfer configuration is created, the specified
+// `destination_dataset_id` is created when needed and shared with the
+// appropriate data source service account.
+message TransferConfig {
+  option (google.api.resource) = {
+    type: "bigquerydatatransfer.googleapis.com/TransferConfig"
+    pattern: "projects/{project}/transferConfigs/{transfer_config}"
+  };
+
+  // The resource name of the transfer config.
+  // Transfer config names have the form of
+  // `projects/{project_id}/locations/{region}/transferConfigs/{config_id}`.
+  // The name is automatically generated based on the config_id specified in
+  // CreateTransferConfigRequest along with project_id and region. If config_id
+  // is not provided, usually a uuid, even though it is not guaranteed or
+  // required, will be generated for config_id.
+  string name = 1;
+
+  // The desination of the transfer config.
+  oneof destination {
+    // The BigQuery target dataset id.
+    string destination_dataset_id = 2;
+  }
+
+  // User specified display name for the data transfer.
+  string display_name = 3;
+
+  // Data source id. Cannot be changed once data transfer is created.
+  string data_source_id = 5;
+
+  // Data transfer specific parameters.
+  google.protobuf.Struct params = 9;
+
+  // Data transfer schedule.
+  // If the data source does not support a custom schedule, this should be
+  // empty. If it is empty, the default value for the data source will be
+  // used.
+  // The specified times are in UTC.
+  // Examples of valid format:
+  // `1st,3rd monday of month 15:30`,
+  // `every wed,fri of jan,jun 13:15`, and
+  // `first sunday of quarter 00:00`.
+  // See more explanation about the format here:
+  // https://cloud.google.com/appengine/docs/flexible/python/scheduling-jobs-with-cron-yaml#the_schedule_format
+  // NOTE: the granularity should be at least 8 hours, or less frequent.
+  string schedule = 7;
+
+  // Options customizing the data transfer schedule.
+  ScheduleOptions schedule_options = 24;
+
+  // The number of days to look back to automatically refresh the data.
+  // For example, if `data_refresh_window_days = 10`, then every day
+  // BigQuery reingests data for [today-10, today-1], rather than ingesting data
+  // for just [today-1].
+  // Only valid if the data source supports the feature. Set the value to  0
+  // to use the default value.
+  int32 data_refresh_window_days = 12;
+
+  // Is this config disabled. When set to true, no runs are scheduled
+  // for a given transfer.
+  bool disabled = 13;
+
+  // Output only. Data transfer modification time. Ignored by server on input.
+  google.protobuf.Timestamp update_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Next time when data transfer will run.
+  google.protobuf.Timestamp next_run_time = 8 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. State of the most recently updated transfer run.
+  TransferState state = 10 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Deprecated. Unique ID of the user on whose behalf transfer is done.
+  int64 user_id = 11;
+
+  // Output only. Region in which BigQuery dataset is located.
+  string dataset_region = 14 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Represents a data transfer run.
+message TransferRun {
+  option (google.api.resource) = {
+    type: "bigquerydatatransfer.googleapis.com/TransferRun"
+    pattern: "projects/{project}/locations/{location}/transferConfigs/{transfer_config}/runs/{run}"
+  };
+
+  // The resource name of the transfer run.
+  // Transfer run names have the form
+  // `projects/{project_id}/locations/{location}/transferConfigs/{config_id}/runs/{run_id}`.
+  // The name is ignored when creating a transfer run.
+  string name = 1;
+
+  // Minimum time after which a transfer run can be started.
+  google.protobuf.Timestamp schedule_time = 3;
+
+  // For batch transfer runs, specifies the date and time of the data should be
+  // ingested.
+  google.protobuf.Timestamp run_time = 10;
+
+  // Status of the transfer run.
+  google.rpc.Status error_status = 21;
+
+  // Output only. Time when transfer run was started.
+  // Parameter ignored by server for input requests.
+  google.protobuf.Timestamp start_time = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Time when transfer run ended.
+  // Parameter ignored by server for input requests.
+  google.protobuf.Timestamp end_time = 5 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Last time the data transfer run state was updated.
+  google.protobuf.Timestamp update_time = 6 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. Data transfer specific parameters.
+  google.protobuf.Struct params = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Data transfer destination.
+  oneof destination {
+    // Output only. The BigQuery target dataset id.
+    string destination_dataset_id = 2 [(google.api.field_behavior) = OUTPUT_ONLY];
+  }
+
+  // Output only. Data source id.
+  string data_source_id = 7 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Data transfer run state. Ignored for input requests.
+  TransferState state = 8;
+
+  // Deprecated. Unique ID of the user on whose behalf transfer is done.
+  int64 user_id = 11;
+
+  // Output only. Describes the schedule of this transfer run if it was
+  // created as part of a regular schedule. For batch transfer runs that are
+  // scheduled manually, this is empty.
+  // NOTE: the system might choose to delay the schedule depending on the
+  // current load, so `schedule_time` doesn't always match this.
+  string schedule = 12 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Represents a user facing message for a particular data transfer run.
+message TransferMessage {
+  // Represents data transfer user facing message severity.
+  enum MessageSeverity {
+    // No severity specified.
+    MESSAGE_SEVERITY_UNSPECIFIED = 0;
+
+    // Informational message.
+    INFO = 1;
+
+    // Warning message.
+    WARNING = 2;
+
+    // Error message.
+    ERROR = 3;
+  }
+
+  // Time when message was logged.
+  google.protobuf.Timestamp message_time = 1;
+
+  // Message severity.
+  MessageSeverity severity = 2;
+
+  // Message text.
+  string message_text = 3;
+}

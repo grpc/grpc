@@ -1,0 +1,287 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.appengine.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/appengine/v1;appengine";
+option java_multiple_files = true;
+option java_outer_classname = "AppYamlProto";
+option java_package = "com.google.appengine.v1";
+
+// [Google Cloud
+// Endpoints](https://cloud.google.com/appengine/docs/python/endpoints/)
+// configuration for API handlers.
+message ApiConfigHandler {
+  // Action to take when users access resources that require
+  // authentication. Defaults to `redirect`.
+  AuthFailAction auth_fail_action = 1;
+
+  // Level of login required to access this resource. Defaults to
+  // `optional`.
+  LoginRequirement login = 2;
+
+  // Path to the script from the application root directory.
+  string script = 3;
+
+  // Security (HTTPS) enforcement for this URL.
+  SecurityLevel security_level = 4;
+
+  // URL to serve the endpoint at.
+  string url = 5;
+}
+
+// Custom static error page to be served when an error occurs.
+message ErrorHandler {
+  // Error codes.
+  enum ErrorCode {
+    option allow_alias = true;
+
+    // Not specified. ERROR_CODE_DEFAULT is assumed.
+    ERROR_CODE_UNSPECIFIED = 0;
+
+    // All other error types.
+    ERROR_CODE_DEFAULT = 0;
+
+    // Application has exceeded a resource quota.
+    ERROR_CODE_OVER_QUOTA = 1;
+
+    // Client blocked by the application's Denial of Service protection
+    // configuration.
+    ERROR_CODE_DOS_API_DENIAL = 2;
+
+    // Deadline reached before the application responds.
+    ERROR_CODE_TIMEOUT = 3;
+  }
+
+  // Error condition this handler applies to.
+  ErrorCode error_code = 1;
+
+  // Static file content to be served for this error.
+  string static_file = 2;
+
+  // MIME type of file. Defaults to `text/html`.
+  string mime_type = 3;
+}
+
+// URL pattern and description of how the URL should be handled. App Engine can
+// handle URLs by executing application code or by serving static files
+// uploaded with the version, such as images, CSS, or JavaScript.
+message UrlMap {
+  // Redirect codes.
+  enum RedirectHttpResponseCode {
+    // Not specified. `302` is assumed.
+    REDIRECT_HTTP_RESPONSE_CODE_UNSPECIFIED = 0;
+
+    // `301 Moved Permanently` code.
+    REDIRECT_HTTP_RESPONSE_CODE_301 = 1;
+
+    // `302 Moved Temporarily` code.
+    REDIRECT_HTTP_RESPONSE_CODE_302 = 2;
+
+    // `303 See Other` code.
+    REDIRECT_HTTP_RESPONSE_CODE_303 = 3;
+
+    // `307 Temporary Redirect` code.
+    REDIRECT_HTTP_RESPONSE_CODE_307 = 4;
+  }
+
+  // URL prefix. Uses regular expression syntax, which means regexp
+  // special characters must be escaped, but should not contain groupings.
+  // All URLs that begin with this prefix are handled by this handler, using the
+  // portion of the URL after the prefix as part of the file path.
+  string url_regex = 1;
+
+  // Type of handler for this URL pattern.
+  oneof handler_type {
+    // Returns the contents of a file, such as an image, as the response.
+    StaticFilesHandler static_files = 2;
+
+    // Executes a script to handle the request that matches this URL
+    // pattern.
+    ScriptHandler script = 3;
+
+    // Uses API Endpoints to handle requests.
+    ApiEndpointHandler api_endpoint = 4;
+  }
+
+  // Security (HTTPS) enforcement for this URL.
+  SecurityLevel security_level = 5;
+
+  // Level of login required to access this resource.
+  LoginRequirement login = 6;
+
+  // Action to take when users access resources that require
+  // authentication. Defaults to `redirect`.
+  AuthFailAction auth_fail_action = 7;
+
+  // `30x` code to use when performing redirects for the `secure` field.
+  // Defaults to `302`.
+  RedirectHttpResponseCode redirect_http_response_code = 8;
+}
+
+// Files served directly to the user for a given URL, such as images, CSS
+// stylesheets, or JavaScript source files. Static file handlers describe which
+// files in the application directory are static files, and which URLs serve
+// them.
+message StaticFilesHandler {
+  // Path to the static files matched by the URL pattern, from the
+  // application root directory. The path can refer to text matched in groupings
+  // in the URL pattern.
+  string path = 1;
+
+  // Regular expression that matches the file paths for all files that should be
+  // referenced by this handler.
+  string upload_path_regex = 2;
+
+  // HTTP headers to use for all responses from these URLs.
+  map<string, string> http_headers = 3;
+
+  // MIME type used to serve all files served by this handler.
+  //
+  // Defaults to file-specific MIME types, which are derived from each file's
+  // filename extension.
+  string mime_type = 4;
+
+  // Time a static file served by this handler should be cached
+  // by web proxies and browsers.
+  google.protobuf.Duration expiration = 5;
+
+  // Whether this handler should match the request if the file
+  // referenced by the handler does not exist.
+  bool require_matching_file = 6;
+
+  // Whether files should also be uploaded as code data. By default, files
+  // declared in static file handlers are uploaded as static
+  // data and are only served to end users; they cannot be read by the
+  // application. If enabled, uploads are charged against both your code and
+  // static data storage resource quotas.
+  bool application_readable = 7;
+}
+
+// Executes a script to handle the request that matches the URL pattern.
+message ScriptHandler {
+  // Path to the script from the application root directory.
+  string script_path = 1;
+}
+
+// Uses Google Cloud Endpoints to handle requests.
+message ApiEndpointHandler {
+  // Path to the script from the application root directory.
+  string script_path = 1;
+}
+
+// Health checking configuration for VM instances. Unhealthy instances
+// are killed and replaced with new instances. Only applicable for
+// instances in App Engine flexible environment.
+message HealthCheck {
+  // Whether to explicitly disable health checks for this instance.
+  bool disable_health_check = 1;
+
+  // Host header to send when performing an HTTP health check.
+  // Example: "myapp.appspot.com"
+  string host = 2;
+
+  // Number of consecutive successful health checks required before receiving
+  // traffic.
+  uint32 healthy_threshold = 3;
+
+  // Number of consecutive failed health checks required before removing
+  // traffic.
+  uint32 unhealthy_threshold = 4;
+
+  // Number of consecutive failed health checks required before an instance is
+  // restarted.
+  uint32 restart_threshold = 5;
+
+  // Interval between health checks.
+  google.protobuf.Duration check_interval = 6;
+
+  // Time before the health check is considered failed.
+  google.protobuf.Duration timeout = 7;
+}
+
+// Third-party Python runtime library that is required by the application.
+message Library {
+  // Name of the library. Example: "django".
+  string name = 1;
+
+  // Version of the library to select, or "latest".
+  string version = 2;
+}
+
+// Actions to take when the user is not logged in.
+enum AuthFailAction {
+  // Not specified. `AUTH_FAIL_ACTION_REDIRECT` is assumed.
+  AUTH_FAIL_ACTION_UNSPECIFIED = 0;
+
+  // Redirects user to "accounts.google.com". The user is redirected back to the
+  // application URL after signing in or creating an account.
+  AUTH_FAIL_ACTION_REDIRECT = 1;
+
+  // Rejects request with a `401` HTTP status code and an error
+  // message.
+  AUTH_FAIL_ACTION_UNAUTHORIZED = 2;
+}
+
+// Methods to restrict access to a URL based on login status.
+enum LoginRequirement {
+  // Not specified. `LOGIN_OPTIONAL` is assumed.
+  LOGIN_UNSPECIFIED = 0;
+
+  // Does not require that the user is signed in.
+  LOGIN_OPTIONAL = 1;
+
+  // If the user is not signed in, the `auth_fail_action` is taken.
+  // In addition, if the user is not an administrator for the
+  // application, they are given an error message regardless of
+  // `auth_fail_action`. If the user is an administrator, the handler
+  // proceeds.
+  LOGIN_ADMIN = 2;
+
+  // If the user has signed in, the handler proceeds normally. Otherwise, the
+  // auth_fail_action is taken.
+  LOGIN_REQUIRED = 3;
+}
+
+// Methods to enforce security (HTTPS) on a URL.
+enum SecurityLevel {
+  option allow_alias = true;
+
+  // Not specified.
+  SECURE_UNSPECIFIED = 0;
+
+  // Both HTTP and HTTPS requests with URLs that match the handler succeed
+  // without redirects. The application can examine the request to determine
+  // which protocol was used, and respond accordingly.
+  SECURE_DEFAULT = 0;
+
+  // Requests for a URL that match this handler that use HTTPS are automatically
+  // redirected to the HTTP equivalent URL.
+  SECURE_NEVER = 1;
+
+  // Both HTTP and HTTPS requests with URLs that match the handler succeed
+  // without redirects. The application can examine the request to determine
+  // which protocol was used and respond accordingly.
+  SECURE_OPTIONAL = 2;
+
+  // Requests for a URL that match this handler that do not use HTTPS are
+  // automatically redirected to the HTTPS URL with the same path. Query
+  // parameters are reserved for the redirect.
+  SECURE_ALWAYS = 3;
+}

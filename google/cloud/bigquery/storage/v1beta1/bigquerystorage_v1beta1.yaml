@@ -1,0 +1,16 @@
+type: google.api.Service
+config_version: 3
+name: bigquerystorage.googleapis.com
+title: BigQuery Storage API
+
+apis:
+- name: google.cloud.bigquery.storage.v1beta1.BigQueryStorage
+
+authentication:
+  rules:
+  - selector: 'google.cloud.bigquery.storage.v1beta1.BigQueryStorage.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigquery,
+        https://www.googleapis.com/auth/bigquery.readonly,
+        https://www.googleapis.com/auth/cloud-platform

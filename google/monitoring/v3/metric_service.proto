@@ -1,0 +1,341 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.monitoring.v3;
+
+import "google/api/annotations.proto";
+import "google/api/metric.proto";
+import "google/api/monitored_resource.proto";
+import "google/monitoring/v3/alert.proto";
+import "google/monitoring/v3/common.proto";
+import "google/monitoring/v3/metric.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/rpc/status.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Cloud.Monitoring.V3";
+option go_package = "google.golang.org/genproto/googleapis/monitoring/v3;monitoring";
+option java_multiple_files = true;
+option java_outer_classname = "MetricServiceProto";
+option java_package = "com.google.monitoring.v3";
+option php_namespace = "Google\\Cloud\\Monitoring\\V3";
+
+// Manages metric descriptors, monitored resource descriptors, and
+// time series data.
+service MetricService {
+  option (google.api.default_host) = "monitoring.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/monitoring,"
+      "https://www.googleapis.com/auth/monitoring.read,"
+      "https://www.googleapis.com/auth/monitoring.write";
+
+  // Lists monitored resource descriptors that match a filter. This method does not require a Stackdriver account.
+  rpc ListMonitoredResourceDescriptors(ListMonitoredResourceDescriptorsRequest) returns (ListMonitoredResourceDescriptorsResponse) {
+    option (google.api.http) = {
+      get: "/v3/{name=projects/*}/monitoredResourceDescriptors"
+    };
+  }
+
+  // Gets a single monitored resource descriptor. This method does not require a Stackdriver account.
+  rpc GetMonitoredResourceDescriptor(GetMonitoredResourceDescriptorRequest) returns (google.api.MonitoredResourceDescriptor) {
+    option (google.api.http) = {
+      get: "/v3/{name=projects/*/monitoredResourceDescriptors/*}"
+    };
+  }
+
+  // Lists metric descriptors that match a filter. This method does not require a Stackdriver account.
+  rpc ListMetricDescriptors(ListMetricDescriptorsRequest) returns (ListMetricDescriptorsResponse) {
+    option (google.api.http) = {
+      get: "/v3/{name=projects/*}/metricDescriptors"
+    };
+  }
+
+  // Gets a single metric descriptor. This method does not require a Stackdriver account.
+  rpc GetMetricDescriptor(GetMetricDescriptorRequest) returns (google.api.MetricDescriptor) {
+    option (google.api.http) = {
+      get: "/v3/{name=projects/*/metricDescriptors/**}"
+    };
+  }
+
+  // Creates a new metric descriptor.
+  // User-created metric descriptors define
+  // [custom metrics](/monitoring/custom-metrics).
+  rpc CreateMetricDescriptor(CreateMetricDescriptorRequest) returns (google.api.MetricDescriptor) {
+    option (google.api.http) = {
+      post: "/v3/{name=projects/*}/metricDescriptors"
+      body: "metric_descriptor"
+    };
+  }
+
+  // Deletes a metric descriptor. Only user-created
+  // [custom metrics](/monitoring/custom-metrics) can be deleted.
+  rpc DeleteMetricDescriptor(DeleteMetricDescriptorRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v3/{name=projects/*/metricDescriptors/**}"
+    };
+  }
+
+  // Lists time series that match a filter. This method does not require a Stackdriver account.
+  rpc ListTimeSeries(ListTimeSeriesRequest) returns (ListTimeSeriesResponse) {
+    option (google.api.http) = {
+      get: "/v3/{name=projects/*}/timeSeries"
+    };
+  }
+
+  // Creates or adds data to one or more time series.
+  // The response is empty if all time series in the request were written.
+  // If any time series could not be written, a corresponding failure message is
+  // included in the error response.
+  rpc CreateTimeSeries(CreateTimeSeriesRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v3/{name=projects/*}/timeSeries"
+      body: "*"
+    };
+  }
+}
+
+// The `ListMonitoredResourceDescriptors` request.
+message ListMonitoredResourceDescriptorsRequest {
+  // The project on which to execute the request. The format is
+  // `"projects/{project_id_or_number}"`.
+  string name = 5;
+
+  // An optional [filter](/monitoring/api/v3/filters) describing
+  // the descriptors to be returned.  The filter can reference
+  // the descriptor's type and labels. For example, the
+  // following filter returns only Google Compute Engine descriptors
+  // that have an `id` label:
+  //
+  //     resource.type = starts_with("gce_") AND resource.label:id
+  string filter = 2;
+
+  // A positive number that is the maximum number of results to return.
+  int32 page_size = 3;
+
+  // If this field is not empty then it must contain the `nextPageToken` value
+  // returned by a previous call to this method.  Using this field causes the
+  // method to return additional results from the previous method call.
+  string page_token = 4;
+}
+
+// The `ListMonitoredResourceDescriptors` response.
+message ListMonitoredResourceDescriptorsResponse {
+  // The monitored resource descriptors that are available to this project
+  // and that match `filter`, if present.
+  repeated google.api.MonitoredResourceDescriptor resource_descriptors = 1;
+
+  // If there are more results than have been returned, then this field is set
+  // to a non-empty value.  To see the additional results,
+  // use that value as `pageToken` in the next call to this method.
+  string next_page_token = 2;
+}
+
+// The `GetMonitoredResourceDescriptor` request.
+message GetMonitoredResourceDescriptorRequest {
+  // The monitored resource descriptor to get.  The format is
+  // `"projects/{project_id_or_number}/monitoredResourceDescriptors/{resource_type}"`.
+  // The `{resource_type}` is a predefined type, such as
+  // `cloudsql_database`.
+  string name = 3;
+}
+
+// The `ListMetricDescriptors` request.
+message ListMetricDescriptorsRequest {
+  // The project on which to execute the request. The format is
+  // `"projects/{project_id_or_number}"`.
+  string name = 5;
+
+  // If this field is empty, all custom and
+  // system-defined metric descriptors are returned.
+  // Otherwise, the [filter](/monitoring/api/v3/filters)
+  // specifies which metric descriptors are to be
+  // returned. For example, the following filter matches all
+  // [custom metrics](/monitoring/custom-metrics):
+  //
+  //     metric.type = starts_with("custom.googleapis.com/")
+  string filter = 2;
+
+  // A positive number that is the maximum number of results to return.
+  int32 page_size = 3;
+
+  // If this field is not empty then it must contain the `nextPageToken` value
+  // returned by a previous call to this method.  Using this field causes the
+  // method to return additional results from the previous method call.
+  string page_token = 4;
+}
+
+// The `ListMetricDescriptors` response.
+message ListMetricDescriptorsResponse {
+  // The metric descriptors that are available to the project
+  // and that match the value of `filter`, if present.
+  repeated google.api.MetricDescriptor metric_descriptors = 1;
+
+  // If there are more results than have been returned, then this field is set
+  // to a non-empty value.  To see the additional results,
+  // use that value as `pageToken` in the next call to this method.
+  string next_page_token = 2;
+}
+
+// The `GetMetricDescriptor` request.
+message GetMetricDescriptorRequest {
+  // The metric descriptor on which to execute the request. The format is
+  // `"projects/{project_id_or_number}/metricDescriptors/{metric_id}"`.
+  // An example value of `{metric_id}` is
+  // `"compute.googleapis.com/instance/disk/read_bytes_count"`.
+  string name = 3;
+}
+
+// The `CreateMetricDescriptor` request.
+message CreateMetricDescriptorRequest {
+  // The project on which to execute the request. The format is
+  // `"projects/{project_id_or_number}"`.
+  string name = 3;
+
+  // The new [custom metric](/monitoring/custom-metrics)
+  // descriptor.
+  google.api.MetricDescriptor metric_descriptor = 2;
+}
+
+// The `DeleteMetricDescriptor` request.
+message DeleteMetricDescriptorRequest {
+  // The metric descriptor on which to execute the request. The format is
+  // `"projects/{project_id_or_number}/metricDescriptors/{metric_id}"`.
+  // An example of `{metric_id}` is:
+  // `"custom.googleapis.com/my_test_metric"`.
+  string name = 3;
+}
+
+// The `ListTimeSeries` request.
+message ListTimeSeriesRequest {
+  // Controls which fields are returned by `ListTimeSeries`.
+  enum TimeSeriesView {
+    // Returns the identity of the metric(s), the time series,
+    // and the time series data.
+    FULL = 0;
+
+    // Returns the identity of the metric and the time series resource,
+    // but not the time series data.
+    HEADERS = 1;
+  }
+
+  // The project on which to execute the request. The format is
+  // "projects/{project_id_or_number}".
+  string name = 10;
+
+  // A [monitoring filter](/monitoring/api/v3/filters) that specifies which time
+  // series should be returned.  The filter must specify a single metric type,
+  // and can additionally specify metric labels and other information. For
+  // example:
+  //
+  //     metric.type = "compute.googleapis.com/instance/cpu/usage_time" AND
+  //         metric.labels.instance_name = "my-instance-name"
+  string filter = 2;
+
+  // The time interval for which results should be returned. Only time series
+  // that contain data points in the specified interval are included
+  // in the response.
+  TimeInterval interval = 4;
+
+  // Specifies the alignment of data points in individual time series as
+  // well as how to combine the retrieved time series across specified labels.
+  //
+  // By default (if no `aggregation` is explicitly specified), the raw time
+  // series data is returned.
+  Aggregation aggregation = 5;
+
+  // Unsupported: must be left blank. The points in each time series are
+  // currently returned in reverse time order (most recent to oldest).
+  string order_by = 6;
+
+  // Specifies which information is returned about the time series.
+  TimeSeriesView view = 7;
+
+  // A positive number that is the maximum number of results to return. If
+  // `page_size` is empty or more than 100,000 results, the effective
+  // `page_size` is 100,000 results. If `view` is set to `FULL`, this is the
+  // maximum number of `Points` returned. If `view` is set to `HEADERS`, this is
+  // the maximum number of `TimeSeries` returned.
+  int32 page_size = 8;
+
+  // If this field is not empty then it must contain the `nextPageToken` value
+  // returned by a previous call to this method.  Using this field causes the
+  // method to return additional results from the previous method call.
+  string page_token = 9;
+}
+
+// The `ListTimeSeries` response.
+message ListTimeSeriesResponse {
+  // One or more time series that match the filter included in the request.
+  repeated TimeSeries time_series = 1;
+
+  // If there are more results than have been returned, then this field is set
+  // to a non-empty value.  To see the additional results,
+  // use that value as `pageToken` in the next call to this method.
+  string next_page_token = 2;
+
+  // Query execution errors that may have caused the time series data returned
+  // to be incomplete.
+  repeated google.rpc.Status execution_errors = 3;
+}
+
+// The `CreateTimeSeries` request.
+message CreateTimeSeriesRequest {
+  // The project on which to execute the request. The format is
+  // `"projects/{project_id_or_number}"`.
+  string name = 3;
+
+  // The new data to be added to a list of time series.
+  // Adds at most one data point to each of several time series.  The new data
+  // point must be more recent than any other point in its time series.  Each
+  // `TimeSeries` value must fully specify a unique time series by supplying
+  // all label values for the metric and the monitored resource.
+  //
+  // The maximum number of `TimeSeries` objects per `Create` request is 200.
+  repeated TimeSeries time_series = 2;
+}
+
+// DEPRECATED. Used to hold per-time-series error status.
+message CreateTimeSeriesError {
+  // DEPRECATED. Time series ID that resulted in the `status` error.
+  TimeSeries time_series = 1 [deprecated = true];
+
+  // DEPRECATED. The status of the requested write operation for `time_series`.
+  google.rpc.Status status = 2 [deprecated = true];
+}
+
+// Summary of the result of a failed request to write data to a time series.
+message CreateTimeSeriesSummary {
+  // Detailed information about an error category.
+  message Error {
+    // The status of the requested write operation.
+    google.rpc.Status status = 1;
+
+    // The number of points that couldn't be written because of `status`.
+    int32 point_count = 2;
+  }
+
+  // The number of points in the request.
+  int32 total_point_count = 1;
+
+  // The number of points that were successfully written.
+  int32 success_point_count = 2;
+
+  // The number of points that failed to be written. Order is not guaranteed.
+  repeated Error errors = 3;
+}

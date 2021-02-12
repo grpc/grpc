@@ -1,0 +1,374 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.clouderrorreporting.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/devtools/clouderrorreporting/v1beta1/common.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.ErrorReporting.V1Beta1";
+option go_package = "google.golang.org/genproto/googleapis/devtools/clouderrorreporting/v1beta1;clouderrorreporting";
+option java_multiple_files = true;
+option java_outer_classname = "ErrorStatsServiceProto";
+option java_package = "com.google.devtools.clouderrorreporting.v1beta1";
+option php_namespace = "Google\\Cloud\\ErrorReporting\\V1beta1";
+
+// An API for retrieving and managing error statistics as well as data for
+// individual events.
+service ErrorStatsService {
+  option (google.api.default_host) = "clouderrorreporting.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // Lists the specified groups.
+  rpc ListGroupStats(ListGroupStatsRequest) returns (ListGroupStatsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{project_name=projects/*}/groupStats"
+    };
+    option (google.api.method_signature) = "project_name,time_range";
+  }
+
+  // Lists the specified events.
+  rpc ListEvents(ListEventsRequest) returns (ListEventsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{project_name=projects/*}/events"
+    };
+    option (google.api.method_signature) = "project_name,group_id";
+  }
+
+  // Deletes all error events of a given project.
+  rpc DeleteEvents(DeleteEventsRequest) returns (DeleteEventsResponse) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{project_name=projects/*}/events"
+    };
+    option (google.api.method_signature) = "project_name";
+  }
+}
+
+// Specifies a set of `ErrorGroupStats` to return.
+message ListGroupStatsRequest {
+  // Required. The resource name of the Google Cloud Platform project. Written
+  // as <code>projects/</code> plus the
+  // <a href="https://support.google.com/cloud/answer/6158840">Google Cloud
+  // Platform project ID</a>.
+  //
+  // Example: <code>projects/my-project-123</code>.
+  string project_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudresourcemanager.googleapis.com/Project"
+    }
+  ];
+
+  // Optional. List all <code>ErrorGroupStats</code> with these IDs.
+  repeated string group_id = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. List only <code>ErrorGroupStats</code> which belong to a service
+  // context that matches the filter.
+  // Data for all service contexts is returned if this field is not specified.
+  ServiceContextFilter service_filter = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. List data for the given time range.
+  // If not set, a default time range is used. The field
+  // <code>time_range_begin</code> in the response will specify the beginning
+  // of this time range.
+  // Only <code>ErrorGroupStats</code> with a non-zero count in the given time
+  // range are returned, unless the request contains an explicit
+  // <code>group_id</code> list. If a <code>group_id</code> list is given, also
+  // <code>ErrorGroupStats</code> with zero occurrences are returned.
+  QueryTimeRange time_range = 5 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The preferred duration for a single returned `TimedCount`.
+  // If not set, no timed counts are returned.
+  google.protobuf.Duration timed_count_duration = 6 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The alignment of the timed counts to be returned.
+  // Default is `ALIGNMENT_EQUAL_AT_END`.
+  TimedCountAlignment alignment = 7 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. Time where the timed counts shall be aligned if rounded
+  // alignment is chosen. Default is 00:00 UTC.
+  google.protobuf.Timestamp alignment_time = 8 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The sort order in which the results are returned.
+  // Default is `COUNT_DESC`.
+  ErrorGroupOrder order = 9 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The maximum number of results to return per response.
+  // Default is 20.
+  int32 page_size = 11 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. A `next_page_token` provided by a previous response. To view
+  // additional results, pass this token along with the identical query
+  // parameters as the first request.
+  string page_token = 12 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Contains a set of requested error group stats.
+message ListGroupStatsResponse {
+  // The error group stats which match the given request.
+  repeated ErrorGroupStats error_group_stats = 1;
+
+  // If non-empty, more results are available.
+  // Pass this token, along with the same query parameters as the first
+  // request, to view the next page of results.
+  string next_page_token = 2;
+
+  // The timestamp specifies the start time to which the request was restricted.
+  // The start time is set based on the requested time range. It may be adjusted
+  // to a later time if a project has exceeded the storage quota and older data
+  // has been deleted.
+  google.protobuf.Timestamp time_range_begin = 4;
+}
+
+// Data extracted for a specific group based on certain filter criteria,
+// such as a given time period and/or service filter.
+message ErrorGroupStats {
+  // Group data that is independent of the filter criteria.
+  ErrorGroup group = 1;
+
+  // Approximate total number of events in the given group that match
+  // the filter criteria.
+  int64 count = 2;
+
+  // Approximate number of affected users in the given group that
+  // match the filter criteria.
+  // Users are distinguished by data in the `ErrorContext` of the
+  // individual error events, such as their login name or their remote
+  // IP address in case of HTTP requests.
+  // The number of affected users can be zero even if the number of
+  // errors is non-zero if no data was provided from which the
+  // affected user could be deduced.
+  // Users are counted based on data in the request
+  // context that was provided in the error report. If more users are
+  // implicitly affected, such as due to a crash of the whole service,
+  // this is not reflected here.
+  int64 affected_users_count = 3;
+
+  // Approximate number of occurrences over time.
+  // Timed counts returned by ListGroups are guaranteed to be:
+  //
+  // - Inside the requested time interval
+  // - Non-overlapping, and
+  // - Ordered by ascending time.
+  repeated TimedCount timed_counts = 4;
+
+  // Approximate first occurrence that was ever seen for this group
+  // and which matches the given filter criteria, ignoring the
+  // time_range that was specified in the request.
+  google.protobuf.Timestamp first_seen_time = 5;
+
+  // Approximate last occurrence that was ever seen for this group and
+  // which matches the given filter criteria, ignoring the time_range
+  // that was specified in the request.
+  google.protobuf.Timestamp last_seen_time = 6;
+
+  // Service contexts with a non-zero error count for the given filter
+  // criteria. This list can be truncated if multiple services are affected.
+  // Refer to `num_affected_services` for the total count.
+  repeated ServiceContext affected_services = 7;
+
+  // The total number of services with a non-zero error count for the given
+  // filter criteria.
+  int32 num_affected_services = 8;
+
+  // An arbitrary event that is chosen as representative for the whole group.
+  // The representative event is intended to be used as a quick preview for
+  // the whole group. Events in the group are usually sufficiently similar
+  // to each other such that showing an arbitrary representative provides
+  // insight into the characteristics of the group as a whole.
+  ErrorEvent representative = 9;
+}
+
+// The number of errors in a given time period.
+// All numbers are approximate since the error events are sampled
+// before counting them.
+message TimedCount {
+  // Approximate number of occurrences in the given time period.
+  int64 count = 1;
+
+  // Start of the time period to which `count` refers (included).
+  google.protobuf.Timestamp start_time = 2;
+
+  // End of the time period to which `count` refers (excluded).
+  google.protobuf.Timestamp end_time = 3;
+}
+
+// Specifies how the time periods of error group counts are aligned.
+enum TimedCountAlignment {
+  // No alignment specified.
+  ERROR_COUNT_ALIGNMENT_UNSPECIFIED = 0;
+
+  // The time periods shall be consecutive, have width equal to the
+  // requested duration, and be aligned at the `alignment_time` provided in
+  // the request.
+  // The `alignment_time` does not have to be inside the query period but
+  // even if it is outside, only time periods are returned which overlap
+  // with the query period.
+  // A rounded alignment will typically result in a
+  // different size of the first or the last time period.
+  ALIGNMENT_EQUAL_ROUNDED = 1;
+
+  // The time periods shall be consecutive, have width equal to the
+  // requested duration, and be aligned at the end of the requested time
+  // period. This can result in a different size of the
+  // first time period.
+  ALIGNMENT_EQUAL_AT_END = 2;
+}
+
+// A sorting order of error groups.
+enum ErrorGroupOrder {
+  // No group order specified.
+  GROUP_ORDER_UNSPECIFIED = 0;
+
+  // Total count of errors in the given time window in descending order.
+  COUNT_DESC = 1;
+
+  // Timestamp when the group was last seen in the given time window
+  // in descending order.
+  LAST_SEEN_DESC = 2;
+
+  // Timestamp when the group was created in descending order.
+  CREATED_DESC = 3;
+
+  // Number of affected users in the given time window in descending order.
+  AFFECTED_USERS_DESC = 4;
+}
+
+// Specifies a set of error events to return.
+message ListEventsRequest {
+  // Required. The resource name of the Google Cloud Platform project. Written
+  // as `projects/` plus the
+  // [Google Cloud Platform project
+  // ID](https://support.google.com/cloud/answer/6158840).
+  // Example: `projects/my-project-123`.
+  string project_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudresourcemanager.googleapis.com/Project"
+    }
+  ];
+
+  // Required. The group for which events shall be returned.
+  string group_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Optional. List only ErrorGroups which belong to a service context that
+  // matches the filter.
+  // Data for all service contexts is returned if this field is not specified.
+  ServiceContextFilter service_filter = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. List only data for the given time range.
+  // If not set a default time range is used. The field time_range_begin
+  // in the response will specify the beginning of this time range.
+  QueryTimeRange time_range = 4 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The maximum number of results to return per response.
+  int32 page_size = 6 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. A `next_page_token` provided by a previous response.
+  string page_token = 7 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Contains a set of requested error events.
+message ListEventsResponse {
+  // The error events which match the given request.
+  repeated ErrorEvent error_events = 1;
+
+  // If non-empty, more results are available.
+  // Pass this token, along with the same query parameters as the first
+  // request, to view the next page of results.
+  string next_page_token = 2;
+
+  // The timestamp specifies the start time to which the request was restricted.
+  google.protobuf.Timestamp time_range_begin = 4;
+}
+
+// Requests might be rejected or the resulting timed count durations might be
+// adjusted for lower durations.
+message QueryTimeRange {
+  // The supported time ranges.
+  enum Period {
+    // Do not use.
+    PERIOD_UNSPECIFIED = 0;
+
+    // Retrieve data for the last hour.
+    // Recommended minimum timed count duration: 1 min.
+    PERIOD_1_HOUR = 1;
+
+    // Retrieve data for the last 6 hours.
+    // Recommended minimum timed count duration: 10 min.
+    PERIOD_6_HOURS = 2;
+
+    // Retrieve data for the last day.
+    // Recommended minimum timed count duration: 1 hour.
+    PERIOD_1_DAY = 3;
+
+    // Retrieve data for the last week.
+    // Recommended minimum timed count duration: 6 hours.
+    PERIOD_1_WEEK = 4;
+
+    // Retrieve data for the last 30 days.
+    // Recommended minimum timed count duration: 1 day.
+    PERIOD_30_DAYS = 5;
+  }
+
+  // Restricts the query to the specified time range.
+  Period period = 1;
+}
+
+// Specifies criteria for filtering a subset of service contexts.
+// The fields in the filter correspond to the fields in `ServiceContext`.
+// Only exact, case-sensitive matches are supported.
+// If a field is unset or empty, it matches arbitrary values.
+message ServiceContextFilter {
+  // Optional. The exact value to match against
+  // [`ServiceContext.service`](/error-reporting/reference/rest/v1beta1/ServiceContext#FIELDS.service).
+  string service = 2 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The exact value to match against
+  // [`ServiceContext.version`](/error-reporting/reference/rest/v1beta1/ServiceContext#FIELDS.version).
+  string version = 3 [(google.api.field_behavior) = OPTIONAL];
+
+  // Optional. The exact value to match against
+  // [`ServiceContext.resource_type`](/error-reporting/reference/rest/v1beta1/ServiceContext#FIELDS.resource_type).
+  string resource_type = 4 [(google.api.field_behavior) = OPTIONAL];
+}
+
+// Deletes all events in the project.
+message DeleteEventsRequest {
+  // Required. The resource name of the Google Cloud Platform project. Written
+  // as `projects/` plus the
+  // [Google Cloud Platform project
+  // ID](https://support.google.com/cloud/answer/6158840).
+  // Example: `projects/my-project-123`.
+  string project_name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudresourcemanager.googleapis.com/Project"
+    }
+  ];
+}
+
+// Response message for deleting error events.
+message DeleteEventsResponse {
+
+}

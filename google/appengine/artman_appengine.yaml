@@ -1,0 +1,17 @@
+common:
+  api_name: appengine
+  api_version: v1
+  organization_name: google
+  src_proto_paths:
+  - v1
+  proto_deps:
+  - name: google-common-protos
+  - name: google-iam-v1
+    proto_path: google/iam/v1
+artifacts:
+- name: java_grpc
+  type: GRPC
+  language: JAVA
+- name: php_grpc
+  type: GRPC
+  language: PHP

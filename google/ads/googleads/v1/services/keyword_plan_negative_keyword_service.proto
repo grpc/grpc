@@ -1,0 +1,129 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/resources/keyword_plan_negative_keyword.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/wrappers.proto";
+import "google/rpc/status.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "KeywordPlanNegativeKeywordServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the keyword plan negative keyword service.
+
+// Service to manage Keyword Plan negative keywords.
+service KeywordPlanNegativeKeywordService {
+  // Returns the requested plan in full detail.
+  rpc GetKeywordPlanNegativeKeyword(GetKeywordPlanNegativeKeywordRequest)
+      returns (google.ads.googleads.v1.resources.KeywordPlanNegativeKeyword) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/keywordPlanNegativeKeywords/*}"
+    };
+  }
+
+  // Creates, updates, or removes Keyword Plan negative keywords. Operation
+  // statuses are returned.
+  rpc MutateKeywordPlanNegativeKeywords(
+      MutateKeywordPlanNegativeKeywordsRequest)
+      returns (MutateKeywordPlanNegativeKeywordsResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}/keywordPlanNegativeKeywords:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [KeywordPlanNegativeKeywordService.GetKeywordPlanNegativeKeyword][google.ads.googleads.v1.services.KeywordPlanNegativeKeywordService.GetKeywordPlanNegativeKeyword].
+message GetKeywordPlanNegativeKeywordRequest {
+  // The resource name of the plan to fetch.
+  string resource_name = 1;
+}
+
+// Request message for
+// [KeywordPlanNegativeKeywordService.MutateKeywordPlanNegativeKeywords][google.ads.googleads.v1.services.KeywordPlanNegativeKeywordService.MutateKeywordPlanNegativeKeywords].
+message MutateKeywordPlanNegativeKeywordsRequest {
+  // The ID of the customer whose negative keywords are being modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual Keyword Plan negative
+  // keywords.
+  repeated KeywordPlanNegativeKeywordOperation operations = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried
+  // out in one transaction if and only if they are all valid.
+  // Default is false.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// A single operation (create, update, remove) on a Keyword Plan negative
+// keyword.
+message KeywordPlanNegativeKeywordOperation {
+  // The FieldMask that determines which resource fields are modified in an
+  // update.
+  google.protobuf.FieldMask update_mask = 4;
+
+  // The mutate operation.
+  oneof operation {
+    // Create operation: No resource name is expected for the new Keyword Plan
+    // negative keyword.
+    google.ads.googleads.v1.resources.KeywordPlanNegativeKeyword create = 1;
+
+    // Update operation: The Keyword Plan negative keyword expected to have a
+    // valid resource name.
+    google.ads.googleads.v1.resources.KeywordPlanNegativeKeyword update = 2;
+
+    // Remove operation: A resource name for the removed Keyword Plan negative
+    // keywords expected in this format:
+    //
+    //
+    // `customers/{customer_id}/keywordPlanNegativeKeywords/{kp_negative_keyword_id}`
+    string remove = 3;
+  }
+}
+
+// Response message for a Keyword Plan negative keyword mutate.
+message MutateKeywordPlanNegativeKeywordsResponse {
+  // Errors that pertain to operation failures in the partial failure mode.
+  // Returned only when partial_failure = true and all errors occur inside the
+  // operations. If any errors occur outside the operations (e.g. auth errors),
+  // we return an RPC level error.
+  google.rpc.Status partial_failure_error = 3;
+
+  // All results for the mutate.
+  repeated MutateKeywordPlanNegativeKeywordResult results = 2;
+}
+
+// The result for the Keyword Plan negative keyword mutate.
+message MutateKeywordPlanNegativeKeywordResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}

@@ -1,0 +1,100 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "FeedItemQualityDisapprovalReasonProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Proto file describing feed item quality disapproval reasons.
+
+// Container for enum describing possible quality evaluation disapproval reasons
+// of a feed item.
+message FeedItemQualityDisapprovalReasonEnum {
+  // The possible quality evaluation disapproval reasons of a feed item.
+  enum FeedItemQualityDisapprovalReason {
+    // No value has been specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Price contains repetitive headers.
+    PRICE_TABLE_REPETITIVE_HEADERS = 2;
+
+    // Price contains repetitive description.
+    PRICE_TABLE_REPETITIVE_DESCRIPTION = 3;
+
+    // Price contains inconsistent items.
+    PRICE_TABLE_INCONSISTENT_ROWS = 4;
+
+    // Price contains qualifiers in description.
+    PRICE_DESCRIPTION_HAS_PRICE_QUALIFIERS = 5;
+
+    // Price contains an unsupported language.
+    PRICE_UNSUPPORTED_LANGUAGE = 6;
+
+    // Price item header is not relevant to the price type.
+    PRICE_TABLE_ROW_HEADER_TABLE_TYPE_MISMATCH = 7;
+
+    // Price item header has promotional text.
+    PRICE_TABLE_ROW_HEADER_HAS_PROMOTIONAL_TEXT = 8;
+
+    // Price item description is not relevant to the item header.
+    PRICE_TABLE_ROW_DESCRIPTION_NOT_RELEVANT = 9;
+
+    // Price item description contains promotional text.
+    PRICE_TABLE_ROW_DESCRIPTION_HAS_PROMOTIONAL_TEXT = 10;
+
+    // Price item header and description are repetitive.
+    PRICE_TABLE_ROW_HEADER_DESCRIPTION_REPETITIVE = 11;
+
+    // Price item is in a foreign language, nonsense, or can't be rated.
+    PRICE_TABLE_ROW_UNRATEABLE = 12;
+
+    // Price item price is invalid or inaccurate.
+    PRICE_TABLE_ROW_PRICE_INVALID = 13;
+
+    // Price item URL is invalid or irrelevant.
+    PRICE_TABLE_ROW_URL_INVALID = 14;
+
+    // Price item header or description has price.
+    PRICE_HEADER_OR_DESCRIPTION_HAS_PRICE = 15;
+
+    // Structured snippet values do not match the header.
+    STRUCTURED_SNIPPETS_HEADER_POLICY_VIOLATED = 16;
+
+    // Structured snippet values are repeated.
+    STRUCTURED_SNIPPETS_REPEATED_VALUES = 17;
+
+    // Structured snippet values violate editorial guidelines like punctuation.
+    STRUCTURED_SNIPPETS_EDITORIAL_GUIDELINES = 18;
+
+    // Structured snippet contain promotional text.
+    STRUCTURED_SNIPPETS_HAS_PROMOTIONAL_TEXT = 19;
+  }
+
+
+}

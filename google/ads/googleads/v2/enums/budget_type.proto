@@ -1,0 +1,67 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "BudgetTypeProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Proto file describing Budget types.
+
+// Describes Budget types.
+message BudgetTypeEnum {
+  // Possible Budget types.
+  enum BudgetType {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Budget type for standard Google Ads usage.
+    // Caps daily spend at two times the specified budget amount.
+    // Full details: https://support.google.com/google-ads/answer/6385083
+    STANDARD = 2;
+
+    // Budget type for Hotels Ads commission program.
+    // Full details: https://support.google.com/google-ads/answer/9243945
+    //
+    // This type is only supported by campaigns with
+    // AdvertisingChannelType.HOTEL, BiddingStrategyType.COMMISSION and
+    // PaymentMode.CONVERSION_VALUE.
+    HOTEL_ADS_COMMISSION = 3;
+
+    // Budget type with a fixed cost-per-acquisition (conversion).
+    // Full details: https://support.google.com/google-ads/answer/7528254
+    //
+    // This type is only supported by campaigns with
+    // AdvertisingChannelType.DISPLAY (excluding
+    // AdvertisingChannelSubType.DISPLAY_GMAIL),
+    // BiddingStrategyType.TARGET_CPA and PaymentMode.CONVERSIONS.
+    FIXED_CPA = 4;
+  }
+
+
+}

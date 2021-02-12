@@ -1,0 +1,84 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.trace.v1
+  python:
+    package_name: google.cloud.trace_v1.gapic
+  ruby:
+    package_name: Google::Cloud::Trace::V1
+  php:
+    package_name: Google\Cloud\Trace\V1
+  nodejs:
+    package_name: trace.v1
+    domain_layer_location: google-cloud
+  go:
+    package_name: cloud.google.com/go/trace/apiv1
+    domain_layer_location: cloud.google.com/go/trace
+  csharp:
+    package_name: Google.Cloud.Trace.V1
+    release_level: GA
+interfaces:
+- name: google.devtools.cloudtrace.v1.TraceService
+  smoke_test:
+    method: ListTraces
+    init_fields:
+    - project_id=$PROJECT_ID
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.2
+    max_retry_delay_millis: 1000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1.5
+    max_rpc_timeout_millis: 30000
+    total_timeout_millis: 45000
+  methods:
+  - name: PatchTraces
+    flattening:
+      groups:
+      - parameters:
+        - project_id
+        - traces
+    required_fields:
+    - project_id
+    - traces
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 30000
+  - name: GetTrace
+    flattening:
+      groups:
+      - parameters:
+        - project_id
+        - trace_id
+    required_fields:
+    - project_id
+    - trace_id
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 30000
+  - name: ListTraces
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: traces
+    flattening:
+      groups:
+      - parameters:
+        - project_id
+    required_fields:
+    - project_id
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 30000

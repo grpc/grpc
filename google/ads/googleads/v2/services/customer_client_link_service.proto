@@ -1,0 +1,94 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/resources/customer_client_link.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "CustomerClientLinkServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Service to manage customer client links.
+service CustomerClientLinkService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns the requested CustomerClientLink in full detail.
+  rpc GetCustomerClientLink(GetCustomerClientLinkRequest) returns (google.ads.googleads.v2.resources.CustomerClientLink) {
+    option (google.api.http) = {
+      get: "/v2/{resource_name=customers/*/customerClientLinks/*}"
+    };
+  }
+
+  // Creates or updates a customer client link. Operation statuses are returned.
+  rpc MutateCustomerClientLink(MutateCustomerClientLinkRequest) returns (MutateCustomerClientLinkResponse) {
+    option (google.api.http) = {
+      post: "/v2/customers/{customer_id=*}/customerClientLinks:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for [CustomerClientLinkService.GetCustomerClientLink][google.ads.googleads.v2.services.CustomerClientLinkService.GetCustomerClientLink].
+message GetCustomerClientLinkRequest {
+  // The resource name of the customer client link to fetch.
+  string resource_name = 1;
+}
+
+// Request message for [CustomerClientLinkService.MutateCustomerClientLink][google.ads.googleads.v2.services.CustomerClientLinkService.MutateCustomerClientLink].
+message MutateCustomerClientLinkRequest {
+  // The ID of the customer whose customer link are being modified.
+  string customer_id = 1;
+
+  // The operation to perform on the individual CustomerClientLink.
+  CustomerClientLinkOperation operation = 2;
+}
+
+// A single operation (create, update) on a CustomerClientLink.
+message CustomerClientLinkOperation {
+  // FieldMask that determines which resource fields are modified in an update.
+  google.protobuf.FieldMask update_mask = 4;
+
+  // The mutate operation.
+  oneof operation {
+    // Create operation: No resource name is expected for the new link.
+    google.ads.googleads.v2.resources.CustomerClientLink create = 1;
+
+    // Update operation: The link is expected to have a valid resource name.
+    google.ads.googleads.v2.resources.CustomerClientLink update = 2;
+  }
+}
+
+// Response message for a CustomerClientLink mutate.
+message MutateCustomerClientLinkResponse {
+  // A result that identifies the resource affected by the mutate request.
+  MutateCustomerClientLinkResult result = 1;
+}
+
+// The result for a single customer client link mutate.
+message MutateCustomerClientLinkResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}

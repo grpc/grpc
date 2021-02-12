@@ -1,0 +1,68 @@
+type: google.api.Service
+config_version: 2
+name: dataproc.googleapis.com
+title: Cloud Dataproc API
+
+apis:
+- name: google.cloud.dataproc.v1beta2.AutoscalingPolicyService
+- name: google.cloud.dataproc.v1beta2.ClusterController
+- name: google.cloud.dataproc.v1beta2.JobController
+- name: google.cloud.dataproc.v1beta2.WorkflowTemplateService
+
+types:
+- name: google.cloud.dataproc.v1beta2.ClusterOperationMetadata
+- name: google.cloud.dataproc.v1beta2.DiagnoseClusterResults
+- name: google.cloud.dataproc.v1beta2.WorkflowMetadata
+
+documentation:
+  summary: 'Manages Hadoop-based clusters and jobs on Google Cloud Platform.'
+  rules:
+  - selector: google.iam.v1.IAMPolicy.GetIamPolicy
+    description: |-
+      Gets the access control policy for a resource. Returns an empty policy
+      if the resource exists and does not have a policy set.
+
+  - selector: google.iam.v1.IAMPolicy.SetIamPolicy
+    description: |-
+      Sets the access control policy on the specified resource. Replaces
+      any existing policy.
+
+      Can return Public Errors: NOT_FOUND, INVALID_ARGUMENT and
+      PERMISSION_DENIED
+
+  - selector: google.iam.v1.IAMPolicy.TestIamPermissions
+    description: |-
+      Returns permissions that a caller has on the specified resource. If the
+      resource does not exist, this will return an empty set of
+      permissions, not a NOT_FOUND error.
+
+      Note: This operation is designed to be used for building
+      permission-aware UIs and command-line tools, not for authorization
+      checking. This operation may "fail open" without warning.
+
+authentication:
+  rules:
+  - selector: 'google.cloud.dataproc.v1beta2.AutoscalingPolicyService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.cloud.dataproc.v1beta2.ClusterController.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.cloud.dataproc.v1beta2.JobController.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.cloud.dataproc.v1beta2.WorkflowTemplateService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.iam.v1.IAMPolicy.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.longrunning.Operations.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

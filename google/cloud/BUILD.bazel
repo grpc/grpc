@@ -1,0 +1,13 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+# This is an API workspace, having public visibility by default makes perfect sense.
+package(default_visibility = ["//visibility:public"])
+
+##############################################################################
+# Common
+##############################################################################
+proto_library(
+    name = "common_resources_proto",
+    srcs = ["common_resources.proto"],
+    deps = ["//google/api:resource_proto"],
+)

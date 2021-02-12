@@ -1,0 +1,60 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "PaymentsAccountProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the PaymentsAccount resource.
+
+// A payments account, which can be used to set up billing for an Ads customer.
+message PaymentsAccount {
+  // The resource name of the payments account.
+  // PaymentsAccount resource names have the form:
+  //
+  // `customers/{customer_id}/paymentsAccounts/{payments_account_id}`
+  string resource_name = 1;
+
+  // A 16 digit ID used to identify a payments account.
+  google.protobuf.StringValue payments_account_id = 2;
+
+  // The name of the payments account.
+  google.protobuf.StringValue name = 3;
+
+  // The currency code of the payments account.
+  // A subset of the currency codes derived from the ISO 4217 standard is
+  // supported.
+  google.protobuf.StringValue currency_code = 4;
+
+  // A 12 digit ID used to identify the payments profile associated with the
+  // payments account.
+  google.protobuf.StringValue payments_profile_id = 5;
+
+  // A secondary payments profile ID present in uncommon situations, e.g.
+  // when a sequential liability agreement has been arranged.
+  google.protobuf.StringValue secondary_payments_profile_id = 6;
+}

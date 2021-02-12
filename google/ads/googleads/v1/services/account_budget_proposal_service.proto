@@ -1,0 +1,128 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/resources/account_budget_proposal.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "AccountBudgetProposalServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the AccountBudgetProposal service.
+
+// A service for managing account-level budgets via proposals.
+//
+// A proposal is a request to create a new budget or make changes to an
+// existing one.
+//
+// Reads for account-level budgets managed by these proposals will be
+// supported in a future version.  Please use BudgetOrderService until then:
+// https://developers.google.com/adwords/api/docs/guides/budget-order
+//
+// Mutates:
+// The CREATE operation creates a new proposal.
+// UPDATE operations aren't supported.
+// The REMOVE operation cancels a pending proposal.
+service AccountBudgetProposalService {
+  // Returns an account-level budget proposal in full detail.
+  rpc GetAccountBudgetProposal(GetAccountBudgetProposalRequest)
+      returns (google.ads.googleads.v1.resources.AccountBudgetProposal) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/accountBudgetProposals/*}"
+    };
+  }
+
+  // Creates, updates, or removes account budget proposals.  Operation statuses
+  // are returned.
+  rpc MutateAccountBudgetProposal(MutateAccountBudgetProposalRequest)
+      returns (MutateAccountBudgetProposalResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}/accountBudgetProposals:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [AccountBudgetProposalService.GetAccountBudgetProposal][google.ads.googleads.v1.services.AccountBudgetProposalService.GetAccountBudgetProposal].
+message GetAccountBudgetProposalRequest {
+  // The resource name of the account-level budget proposal to fetch.
+  string resource_name = 1;
+}
+
+// Request message for
+// [AccountBudgetProposalService.MutateAccountBudgetProposal][google.ads.googleads.v1.services.AccountBudgetProposalService.MutateAccountBudgetProposal].
+message MutateAccountBudgetProposalRequest {
+  // The ID of the customer.
+  string customer_id = 1;
+
+  // The operation to perform on an individual account-level budget proposal.
+  AccountBudgetProposalOperation operation = 2;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 3;
+}
+
+// A single operation to propose the creation of a new account-level budget or
+// edit/end/remove an existing one.
+message AccountBudgetProposalOperation {
+  // FieldMask that determines which budget fields are modified.  While budgets
+  // may be modified, proposals that propose such modifications are final.
+  // Therefore, update operations are not supported for proposals.
+  //
+  // Proposals that modify budgets have the 'update' proposal type.  Specifying
+  // a mask for any other proposal type is considered an error.
+  google.protobuf.FieldMask update_mask = 3;
+
+  // The mutate operation.
+  oneof operation {
+    // Create operation: A new proposal to create a new budget, edit an
+    // existing budget, end an actively running budget, or remove an approved
+    // budget scheduled to start in the future.
+    // No resource name is expected for the new proposal.
+    google.ads.googleads.v1.resources.AccountBudgetProposal create = 2;
+
+    // Remove operation: A resource name for the removed proposal is expected,
+    // in this format:
+    //
+    //
+    // `customers/{customer_id}/accountBudgetProposals/{account_budget_proposal_id}`
+    // A request may be cancelled iff it is pending.
+    string remove = 1;
+  }
+}
+
+// Response message for account-level budget mutate operations.
+message MutateAccountBudgetProposalResponse {
+  // The result of the mutate.
+  MutateAccountBudgetProposalResult result = 2;
+}
+
+// The result for the account budget proposal mutate.
+message MutateAccountBudgetProposalResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}

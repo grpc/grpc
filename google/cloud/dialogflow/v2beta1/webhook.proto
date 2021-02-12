@@ -1,0 +1,146 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.dialogflow.v2beta1;
+
+import "google/cloud/dialogflow/v2beta1/context.proto";
+import "google/cloud/dialogflow/v2beta1/intent.proto";
+import "google/cloud/dialogflow/v2beta1/session.proto";
+import "google/cloud/dialogflow/v2beta1/session_entity_type.proto";
+import "google/protobuf/struct.proto";
+import "google/api/annotations.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.Dialogflow.V2beta1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/dialogflow/v2beta1;dialogflow";
+option java_multiple_files = true;
+option java_outer_classname = "WebhookProto";
+option java_package = "com.google.cloud.dialogflow.v2beta1";
+option objc_class_prefix = "DF";
+
+// The request message for a webhook call.
+message WebhookRequest {
+  // The unique identifier of detectIntent request session.
+  // Can be used to identify end-user inside webhook implementation.
+  // Format: `projects/<Project ID>/agent/sessions/<Session ID>`, or
+  // `projects/<Project ID>/agent/environments/<Environment ID>/users/<User
+  // ID>/sessions/<Session ID>`.
+  string session = 4;
+
+  // The unique identifier of the response. Contains the same value as
+  // `[Streaming]DetectIntentResponse.response_id`.
+  string response_id = 1;
+
+  // The result of the conversational query or event processing. Contains the
+  // same value as `[Streaming]DetectIntentResponse.query_result`.
+  QueryResult query_result = 2;
+
+  // Alternative query results from KnowledgeService.
+  repeated QueryResult alternative_query_results = 5;
+
+  // Optional. The contents of the original request that was passed to
+  // `[Streaming]DetectIntent` call.
+  OriginalDetectIntentRequest original_detect_intent_request = 3;
+}
+
+// The response message for a webhook call.
+message WebhookResponse {
+  // Optional. The text to be shown on the screen. This value is passed directly
+  // to `QueryResult.fulfillment_text`.
+  string fulfillment_text = 1;
+
+  // Optional. The collection of rich messages to present to the user. This
+  // value is passed directly to `QueryResult.fulfillment_messages`.
+  repeated Intent.Message fulfillment_messages = 2;
+
+  // Optional. This value is passed directly to `QueryResult.webhook_source`.
+  string source = 3;
+
+  // Optional. This value is passed directly to `QueryResult.webhook_payload`.
+  // See the related `fulfillment_messages[i].payload field`, which may be used
+  // as an alternative to this field.
+  //
+  // This field can be used for Actions on Google responses.
+  // It should have a structure similar to the JSON message shown here. For more
+  // information, see
+  // [Actions on Google Webhook
+  // Format](https://developers.google.com/actions/dialogflow/webhook)
+  // <pre>{
+  //   "google": {
+  //     "expectUserResponse": true,
+  //     "richResponse": {
+  //       "items": [
+  //         {
+  //           "simpleResponse": {
+  //             "textToSpeech": "this is a simple response"
+  //           }
+  //         }
+  //       ]
+  //     }
+  //   }
+  // }</pre>
+  google.protobuf.Struct payload = 4;
+
+  // Optional. The collection of output contexts. This value is passed directly
+  // to `QueryResult.output_contexts`.
+  repeated Context output_contexts = 5;
+
+  // Optional. Makes the platform immediately invoke another `DetectIntent` call
+  // internally with the specified event as input.
+  // When this field is set, Dialogflow ignores the `fulfillment_text`,
+  // `fulfillment_messages`, and `payload` fields.
+  EventInput followup_event_input = 6;
+
+  // Optional. Indicates that this intent ends an interaction. Some integrations
+  // (e.g., Actions on Google or Dialogflow phone gateway) use this information
+  // to close interaction with an end user. Default is false.
+  bool end_interaction = 8;
+
+  // Optional. Additional session entity types to replace or extend developer
+  // entity types with. The entity synonyms apply to all languages and persist
+  // for the session of this query. Setting the session entity types inside
+  // webhook overwrites the session entity types that have been set through
+  // `DetectIntentRequest.query_params.session_entity_types`.
+  repeated SessionEntityType session_entity_types = 10;
+}
+
+// Represents the contents of the original request that was passed to
+// the `[Streaming]DetectIntent` call.
+message OriginalDetectIntentRequest {
+  // The source of this request, e.g., `google`, `facebook`, `slack`. It is set
+  // by Dialogflow-owned servers.
+  string source = 1;
+
+  // Optional. The version of the protocol used for this request.
+  // This field is AoG-specific.
+  string version = 2;
+
+  // Optional. This field is set to the value of the `QueryParameters.payload`
+  // field passed in the request. Some integrations that query a Dialogflow
+  // agent may provide additional information in the payload.
+  //
+  // In particular for the Telephony Gateway this field has the form:
+  // <pre>{
+  //  "telephony": {
+  //    "caller_id": "+18558363987"
+  //  }
+  // }</pre>
+  // Note: The caller ID field (`caller_id`) will be redacted for Standard
+  // Edition agents and populated with the caller ID in [E.164
+  // format](https://en.wikipedia.org/wiki/E.164) for Enterprise Edition agents.
+  google.protobuf.Struct payload = 3;
+}

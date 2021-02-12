@@ -1,0 +1,994 @@
+// Copyright 2018 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.devtools.containeranalysis.v1alpha1;
+
+import "google/api/annotations.proto";
+import "google/devtools/containeranalysis/v1alpha1/bill_of_materials.proto";
+import "google/devtools/containeranalysis/v1alpha1/image_basis.proto";
+import "google/devtools/containeranalysis/v1alpha1/package_vulnerability.proto";
+import "google/devtools/containeranalysis/v1alpha1/provenance.proto";
+import "google/iam/v1/iam_policy.proto";
+import "google/iam/v1/policy.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1alpha1;containeranalysis";
+option java_multiple_files = true;
+option java_package = "com.google.containeranalysis.v1alpha1";
+option objc_class_prefix = "GCA";
+
+// Retrieves the results of vulnerability scanning of cloud components such as
+// container images. The Container Analysis API is an implementation of the
+// [Grafeas](grafeas.io) API.
+//
+// The vulnerability results are stored as a series of Occurrences.
+// An `Occurrence` contains information about a specific vulnerability in a
+// resource. An `Occurrence` references a `Note`. A `Note` contains details
+// about the vulnerability and is stored in a stored in a separate project.
+// Multiple `Occurrences` can reference the same `Note`. For example, an SSL
+// vulnerability could affect multiple packages in an image. In this case,
+// there would be one `Note` for the vulnerability and an `Occurrence` for
+// each package with the vulnerability referencing that `Note`.
+service ContainerAnalysis {
+  // Returns the requested `Occurrence`.
+  rpc GetOccurrence(GetOccurrenceRequest) returns (Occurrence) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{name=projects/*/occurrences/*}"
+    };
+  }
+
+  // Lists active `Occurrences` for a given project matching the filters.
+  rpc ListOccurrences(ListOccurrencesRequest)
+      returns (ListOccurrencesResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{parent=projects/*}/occurrences"
+    };
+  }
+
+  // Deletes the given `Occurrence` from the system. Use this when
+  // an `Occurrence` is no longer applicable for the given resource.
+  rpc DeleteOccurrence(DeleteOccurrenceRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1alpha1/{name=projects/*/occurrences/*}"
+    };
+  }
+
+  // Creates a new `Occurrence`. Use this method to create `Occurrences`
+  // for a resource.
+  rpc CreateOccurrence(CreateOccurrenceRequest) returns (Occurrence) {
+    option (google.api.http) = {
+      post: "/v1alpha1/{parent=projects/*}/occurrences"
+      body: "occurrence"
+    };
+  }
+
+  // Updates an existing occurrence.
+  rpc UpdateOccurrence(UpdateOccurrenceRequest) returns (Occurrence) {
+    option (google.api.http) = {
+      patch: "/v1alpha1/{name=projects/*/occurrences/*}"
+      body: "occurrence"
+    };
+  }
+
+  // Gets the `Note` attached to the given `Occurrence`.
+  rpc GetOccurrenceNote(GetOccurrenceNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{name=projects/*/occurrences/*}/notes"
+    };
+  }
+
+  // Returns the requested `Note`.
+  rpc GetNote(GetNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{name=projects/*/notes/*}"
+    };
+  }
+
+  // Lists all `Notes` for a given project.
+  rpc ListNotes(ListNotesRequest) returns (ListNotesResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{parent=projects/*}/notes"
+    };
+  }
+
+  // Deletes the given `Note` from the system.
+  rpc DeleteNote(DeleteNoteRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1alpha1/{name=projects/*/notes/*}"
+    };
+  }
+
+  // Creates a new `Note`.
+  rpc CreateNote(CreateNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      post: "/v1alpha1/{parent=projects/*}/notes"
+      body: "note"
+    };
+  }
+
+  // Updates an existing `Note`.
+  rpc UpdateNote(UpdateNoteRequest) returns (Note) {
+    option (google.api.http) = {
+      patch: "/v1alpha1/{name=projects/*/notes/*}"
+      body: "note"
+    };
+  }
+
+  // Lists `Occurrences` referencing the specified `Note`. Use this method to
+  // get all occurrences referencing your `Note` across all your customer
+  // projects.
+  rpc ListNoteOccurrences(ListNoteOccurrencesRequest)
+      returns (ListNoteOccurrencesResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{name=projects/*/notes/*}/occurrences"
+    };
+  }
+
+  // Gets a summary of the number and severity of occurrences.
+  rpc GetVulnzOccurrencesSummary(GetVulnzOccurrencesSummaryRequest)
+      returns (GetVulnzOccurrencesSummaryResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{parent=projects/*}/occurrences:vulnerabilitySummary"
+    };
+  }
+
+  // Sets the access control policy on the specified `Note` or `Occurrence`.
+  // Requires `containeranalysis.notes.setIamPolicy` or
+  // `containeranalysis.occurrences.setIamPolicy` permission if the resource is
+  // a `Note` or an `Occurrence`, respectively.
+  // Attempting to call this method without these permissions will result in a `
+  // `PERMISSION_DENIED` error.
+  // Attempting to call this method on a non-existent resource will result in a
+  // `NOT_FOUND` error if the user has `containeranalysis.notes.list` permission
+  // on a `Note` or `containeranalysis.occurrences.list` on an `Occurrence`, or
+  // a `PERMISSION_DENIED` error otherwise. The resource takes the following
+  // formats: `projects/{projectid}/occurrences/{occurrenceid}` for occurrences
+  // and projects/{projectid}/notes/{noteid} for notes
+  rpc SetIamPolicy(google.iam.v1.SetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1alpha1/{resource=projects/*/notes/*}:setIamPolicy"
+      body: "*"
+      additional_bindings {
+        post: "/v1alpha1/{resource=projects/*/occurrences/*}:setIamPolicy"
+        body: "*"
+      }
+    };
+  }
+
+  // Gets the access control policy for a note or an `Occurrence` resource.
+  // Requires `containeranalysis.notes.setIamPolicy` or
+  // `containeranalysis.occurrences.setIamPolicy` permission if the resource is
+  // a note or occurrence, respectively.
+  // Attempting to call this method on a resource without the required
+  // permission will result in a `PERMISSION_DENIED` error. Attempting to call
+  // this method on a non-existent resource will result in a `NOT_FOUND` error
+  // if the user has list permission on the project, or a `PERMISSION_DENIED`
+  // error otherwise. The resource takes the following formats:
+  // `projects/{PROJECT_ID}/occurrences/{OCCURRENCE_ID}` for occurrences and
+  // projects/{PROJECT_ID}/notes/{NOTE_ID} for notes
+  rpc GetIamPolicy(google.iam.v1.GetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v1alpha1/{resource=projects/*/notes/*}:getIamPolicy"
+      body: "*"
+      additional_bindings {
+        post: "/v1alpha1/{resource=projects/*/occurrences/*}:getIamPolicy"
+        body: "*"
+      }
+    };
+  }
+
+  // Returns the permissions that a caller has on the specified note or
+  // occurrence resource. Requires list permission on the project (for example,
+  // "storage.objects.list" on the containing bucket for testing permission of
+  // an object). Attempting to call this method on a non-existent resource will
+  // result in a `NOT_FOUND` error if the user has list permission on the
+  // project, or a `PERMISSION_DENIED` error otherwise. The resource takes the
+  // following formats: `projects/{PROJECT_ID}/occurrences/{OCCURRENCE_ID}` for
+  // `Occurrences` and `projects/{PROJECT_ID}/notes/{NOTE_ID}` for `Notes`
+  rpc TestIamPermissions(google.iam.v1.TestIamPermissionsRequest)
+      returns (google.iam.v1.TestIamPermissionsResponse) {
+    option (google.api.http) = {
+      post: "/v1alpha1/{resource=projects/*/notes/*}:testIamPermissions"
+      body: "*"
+      additional_bindings {
+        post: "/v1alpha1/{resource=projects/*/occurrences/*}:testIamPermissions"
+        body: "*"
+      }
+    };
+  }
+
+  // Creates a new `Operation`.
+  rpc CreateOperation(CreateOperationRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v1alpha1/{parent=projects/*}/operations"
+      body: "*"
+    };
+  }
+
+  // Updates an existing operation returns an error if operation
+  //  does not exist. The only valid operations are to update mark the done bit
+  // change the result.
+  rpc UpdateOperation(UpdateOperationRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      patch: "/v1alpha1/{name=projects/*/operations/*}"
+      body: "*"
+    };
+  }
+
+  // Gets a specific scan configuration for a project.
+  rpc GetScanConfig(GetScanConfigRequest) returns (ScanConfig) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{name=projects/*/scan_configs/*}"
+    };
+  }
+
+  // Lists scan configurations for a project.
+  rpc ListScanConfigs(ListScanConfigsRequest)
+      returns (ListScanConfigsResponse) {
+    option (google.api.http) = {
+      get: "/v1alpha1/{parent=projects/*}/scan_configs"
+    };
+  }
+
+  // Updates the scan configuration to a new value.
+  rpc UpdateScanConfig(UpdateScanConfigRequest) returns (ScanConfig) {
+    option (google.api.http) = {
+      patch: "/v1alpha1/{name=projects/*/scan_configs/*}"
+      body: "scan_config"
+    };
+  }
+}
+
+// `Occurrence` includes information about analysis occurrences for an image.
+message Occurrence {
+  // Output only. The name of the `Occurrence` in the form
+  // "projects/{project_id}/occurrences/{OCCURRENCE_ID}"
+  string name = 1;
+
+  // The unique URL of the image or the container for which the `Occurrence`
+  // applies. For example, https://gcr.io/project/image@sha256:foo This field
+  // can be used as a filter in list requests.
+  string resource_url = 2;
+
+  // The resource for which the `Occurrence` applies.
+  Resource resource = 17;
+
+  // An analysis note associated with this image, in the form
+  // "providers/{provider_id}/notes/{NOTE_ID}"
+  // This field can be used as a filter in list requests.
+  string note_name = 3;
+
+  // Output only. This explicitly denotes which of the `Occurrence` details are
+  // specified. This field can be used as a filter in list requests.
+  Note.Kind kind = 6;
+
+  // Describes the details of the vulnerability `Note` found in this resource.
+  oneof details {
+    // Details of a security vulnerability note.
+    VulnerabilityType.VulnerabilityDetails vulnerability_details = 8;
+
+    // Build details for a verifiable build.
+    BuildDetails build_details = 7;
+
+    // Describes how this resource derives from the basis
+    // in the associated note.
+    DockerImage.Derived derived_image = 11;
+
+    // Describes the installation of a package on the linked resource.
+    PackageManager.Installation installation = 12;
+
+    // Describes the deployment of an artifact on a runtime.
+    Deployable.Deployment deployment = 14;
+
+    // Describes the initial scan status for this resource.
+    Discovery.Discovered discovered = 15;
+
+    // Describes an attestation of an artifact.
+    AttestationAuthority.Attestation attestation = 16;
+  }
+
+  // A description of actions that can be taken to remedy the `Note`
+  string remediation = 5;
+
+  // Output only. The time this `Occurrence` was created.
+  google.protobuf.Timestamp create_time = 9;
+
+  // Output only. The time this `Occurrence` was last updated.
+  google.protobuf.Timestamp update_time = 10;
+}
+
+// Resource is an entity that can have metadata. E.g., a Docker image.
+message Resource {
+  // The name of the resource. E.g., the name of a Docker image - "Debian".
+  string name = 1;
+
+  // The unique URI of the resource. E.g.,
+  // "https://gcr.io/project/image@sha256:foo" for a Docker image.
+  string uri = 2;
+
+  // The hash of the resource content. E.g., the Docker digest.
+  Hash content_hash = 3;
+}
+
+// Provides a detailed description of a `Note`.
+message Note {
+  // Metadata for any related URL information
+  message RelatedUrl {
+    // Specific URL to associate with the note
+    string url = 1;
+
+    // Label to describe usage of the URL
+    string label = 2;
+  }
+
+  // This must be 1:1 with members of our oneofs, it can be used for filtering
+  // Note and Occurrence on their kind.
+  enum Kind {
+    // Unknown
+    KIND_UNSPECIFIED = 0;
+
+    // The note and occurrence represent a package vulnerability.
+    PACKAGE_VULNERABILITY = 2;
+
+    // The note and occurrence assert build provenance.
+    BUILD_DETAILS = 3;
+
+    // This represents an image basis relationship.
+    IMAGE_BASIS = 4;
+
+    // This represents a package installed via a package manager.
+    PACKAGE_MANAGER = 5;
+
+    // The note and occurrence track deployment events.
+    DEPLOYABLE = 6;
+
+    // The note and occurrence track the initial discovery status of a resource.
+    DISCOVERY = 7;
+
+    // This represents a logical "role" that can attest to artifacts.
+    ATTESTATION_AUTHORITY = 8;
+  }
+
+  // The name of the note in the form
+  // "providers/{provider_id}/notes/{NOTE_ID}"
+  string name = 1;
+
+  // A one sentence description of this `Note`.
+  string short_description = 3;
+
+  // A detailed description of this `Note`.
+  string long_description = 4;
+
+  // Output only. This explicitly denotes which kind of note is specified. This
+  // field can be used as a filter in list requests.
+  Kind kind = 9;
+
+  // The type of note.
+  oneof note_type {
+    // A package vulnerability type of note.
+    VulnerabilityType vulnerability_type = 6;
+
+    // Build provenance type for a verifiable build.
+    BuildType build_type = 8;
+
+    // A note describing a base image.
+    DockerImage.Basis base_image = 13;
+
+    // A note describing a package hosted by various package managers.
+    PackageManager.Package package = 14;
+
+    // A note describing something that can be deployed.
+    Deployable deployable = 17;
+
+    // A note describing a provider/analysis type.
+    Discovery discovery = 18;
+
+    // A note describing an attestation role.
+    AttestationAuthority attestation_authority = 19;
+  }
+
+  // URLs associated with this note
+  repeated RelatedUrl related_url = 7;
+
+  // Time of expiration for this note, null if note does not expire.
+  google.protobuf.Timestamp expiration_time = 10;
+
+  // Output only. The time this note was created. This field can be used as a
+  // filter in list requests.
+  google.protobuf.Timestamp create_time = 11;
+
+  // Output only. The time this note was last updated. This field can be used as
+  // a filter in list requests.
+  google.protobuf.Timestamp update_time = 12;
+}
+
+// An artifact that can be deployed in some runtime.
+message Deployable {
+  // The period during which some deployable was active in a runtime.
+  message Deployment {
+    // Types of platforms.
+    enum Platform {
+      // Unknown
+      PLATFORM_UNSPECIFIED = 0;
+
+      // Google Container Engine
+      GKE = 1;
+
+      // Google App Engine: Flexible Environment
+      FLEX = 2;
+
+      // Custom user-defined platform
+      CUSTOM = 3;
+    }
+
+    // Identity of the user that triggered this deployment.
+    string user_email = 1;
+
+    // Beginning of the lifetime of this deployment.
+    google.protobuf.Timestamp deploy_time = 2;
+
+    // End of the lifetime of this deployment.
+    google.protobuf.Timestamp undeploy_time = 3;
+
+    // Configuration used to create this deployment.
+    string config = 8;
+
+    // Address of the runtime element hosting this deployment.
+    string address = 5;
+
+    // Output only. Resource URI for the artifact being deployed taken from the
+    // deployable field with the same name.
+    repeated string resource_uri = 6;
+
+    // Platform hosting this deployment.
+    Platform platform = 7;
+  }
+
+  // Resource URI for the artifact being deployed.
+  repeated string resource_uri = 1;
+}
+
+// A note that indicates a type of analysis a provider would perform. This note
+// exists in a provider's project. A `Discovery` occurrence is created in a
+// consumer's project at the start of analysis. The occurrence's operation will
+// indicate the status of the analysis. Absence of an occurrence linked to this
+// note for a resource indicates that analysis hasn't started.
+message Discovery {
+  // Provides information about the scan status of a discovered resource.
+  message Discovered {
+    // Analysis status for a resource.
+    enum AnalysisStatus {
+      // Unknown
+      ANALYSIS_STATUS_UNSPECIFIED = 0;
+
+      // Resource is known but no action has been taken yet.
+      PENDING = 1;
+
+      // Resource is being analyzed.
+      SCANNING = 2;
+
+      // Analysis has finished successfully.
+      FINISHED_SUCCESS = 3;
+
+      // Analysis has finished unsuccessfully, the analysis itself is in a bad
+      // state.
+      FINISHED_FAILED = 4;
+
+      // Analysis will not happen, the resource is not supported.
+      UNSUPPORTED_RESOURCE = 5;
+    }
+
+    // Output only. An operation that indicates the status of the current scan.
+    google.longrunning.Operation operation = 1;
+
+    // The status of discovery for the resource.
+    AnalysisStatus analysis_status = 5;
+
+    // When an error is encountered this will contain a LocalizedMessage under
+    // details to show to the user. The LocalizedMessage output only and
+    // populated by the API.
+    google.rpc.Status analysis_status_error = 6;
+  }
+
+  // The kind of analysis that is handled by this discovery.
+  Note.Kind analysis_kind = 1;
+}
+
+// Note holding the version of the provider's builder and the signature of
+// the provenance message in linked BuildDetails.
+message BuildType {
+  // Version of the builder which produced this Note.
+  string builder_version = 1;
+
+  // Signature of the build in Occurrences pointing to the Note containing this
+  // `BuilderDetails`.
+  BuildSignature signature = 2;
+}
+
+// Message encapsulating the signature of the verified build.
+message BuildSignature {
+  // Public key formats
+  enum KeyType {
+    // `KeyType` is not set.
+    KEY_TYPE_UNSPECIFIED = 0;
+
+    // `PGP ASCII Armored` public key.
+    PGP_ASCII_ARMORED = 1;
+
+    // `PKIX PEM` public key.
+    PKIX_PEM = 2;
+  }
+
+  // Public key of the builder which can be used to verify that the related
+  // findings are valid and unchanged. If `key_type` is empty, this defaults
+  // to PEM encoded public keys.
+  //
+  // This field may be empty if `key_id` references an external key.
+  //
+  // For Cloud Build based signatures, this is a PEM encoded public
+  // key. To verify the Cloud Build signature, place the contents of
+  // this field into a file (public.pem). The signature field is base64-decoded
+  // into its binary representation in signature.bin, and the provenance bytes
+  // from `BuildDetails` are base64-decoded into a binary representation in
+  // signed.bin. OpenSSL can then verify the signature:
+  // `openssl sha256 -verify public.pem -signature signature.bin signed.bin`
+  string public_key = 1;
+
+  // Signature of the related `BuildProvenance`, encoded in a base64 string.
+  string signature = 2;
+
+  // An Id for the key used to sign. This could be either an Id for the key
+  // stored in `public_key` (such as the Id or fingerprint for a PGP key, or the
+  // CN for a cert), or a reference to an external key (such as a reference to a
+  // key in Cloud Key Management Service).
+  string key_id = 3;
+
+  // The type of the key, either stored in `public_key` or referenced in
+  // `key_id`
+  KeyType key_type = 4;
+}
+
+// An attestation wrapper with a PGP-compatible signature.
+// This message only supports `ATTACHED` signatures, where the payload that is
+// signed is included alongside the signature itself in the same file.
+message PgpSignedAttestation {
+  // Type (for example schema) of the attestation payload that was signed.
+  enum ContentType {
+    // `ContentType` is not set.
+    CONTENT_TYPE_UNSPECIFIED = 0;
+
+    // Atomic format attestation signature. See
+    // https://github.com/containers/image/blob/8a5d2f82a6e3263290c8e0276c3e0f64e77723e7/docs/atomic-signature.md
+    // The payload extracted from `signature` is a JSON blob conforming to the
+    // linked schema.
+    SIMPLE_SIGNING_JSON = 1;
+  }
+
+  // The raw content of the signature, as output by GNU Privacy Guard (GPG) or
+  // equivalent.  Since this message only supports attached signatures, the
+  // payload that was signed must be attached. While the signature format
+  // supported is dependent on the verification implementation, currently only
+  // ASCII-armored (`--armor` to gpg), non-clearsigned (`--sign` rather than
+  // `--clearsign` to gpg) are supported. Concretely, `gpg --sign --armor
+  // --output=signature.gpg payload.json` will create the signature content
+  // expected in this field in `signature.gpg` for the `payload.json`
+  // attestation payload.
+  string signature = 1;
+
+  // Type (for example schema) of the attestation payload that was signed.
+  // The verifier must ensure that the provided type is one that the verifier
+  // supports, and that the attestation payload is a valid instantiation of that
+  // type (for example by validating a JSON schema).
+  ContentType content_type = 3;
+
+  // This field is used by verifiers to select the public key used to validate
+  // the signature.  Note that the policy of the verifier ultimately determines
+  // which public keys verify a signature based on the context of the
+  // verification.  There is no guarantee validation will succeed if the
+  // verifier has no key matching this ID, even if it has a key under a
+  // different ID that would verify the signature. Note that this ID should also
+  // be present in the signature content above, but that is not expected to be
+  // used by the verifier.
+  oneof key_id {
+    // The cryptographic fingerprint of the key used to generate the signature,
+    // as output by, e.g. `gpg --list-keys`. This should be the version 4, full
+    // 160-bit fingerprint, expressed as a 40 character hexadecimal string. See
+    // https://tools.ietf.org/html/rfc4880#section-12.2 for details.
+    // Implementations may choose to acknowledge "LONG", "SHORT", or other
+    // abbreviated key IDs, but only the full fingerprint is guaranteed to work.
+    // In gpg, the full fingerprint can be retrieved from the `fpr` field
+    // returned when calling --list-keys with --with-colons.  For example:
+    // ```
+    // gpg --with-colons --with-fingerprint --force-v4-certs \
+    //     --list-keys attester@example.com
+    // tru::1:1513631572:0:3:1:5
+    // pub:...<SNIP>...
+    // fpr:::::::::24FF6481B76AC91E66A00AC657A93A81EF3AE6FB:
+    // ```
+    // Above, the fingerprint is `24FF6481B76AC91E66A00AC657A93A81EF3AE6FB`.
+    string pgp_key_id = 2;
+  }
+}
+
+// Note kind that represents a logical attestation "role" or "authority".  For
+// example, an organization might have one `AttestationAuthority` for "QA" and
+// one for "build".  This Note is intended to act strictly as a grouping
+// mechanism for the attached Occurrences (Attestations).  This grouping
+// mechanism also provides a security boundary, since IAM ACLs gate the ability
+// for a principle to attach an Occurrence to a given Note.  It also provides a
+// single point of lookup to find all attached Attestation Occurrences, even if
+// they don't all live in the same project.
+message AttestationAuthority {
+  // This submessage provides human-readable hints about the purpose of the
+  // AttestationAuthority.  Because the name of a Note acts as its resource
+  // reference, it is important to disambiguate the canonical name of the Note
+  // (which might be a UUID for security purposes) from "readable" names more
+  // suitable for debug output.  Note that these hints should NOT be used to
+  // look up AttestationAuthorities in security sensitive contexts, such as when
+  // looking up Attestations to verify.
+  message AttestationAuthorityHint {
+    // The human readable name of this Attestation Authority, for example "qa".
+    string human_readable_name = 1;
+  }
+
+  // Occurrence that represents a single "attestation".  The authenticity of an
+  // Attestation can be verified using the attached signature. If the verifier
+  // trusts the public key of the signer, then verifying the signature is
+  // sufficient to establish trust.  In this circumstance, the
+  // AttestationAuthority to which this Attestation is attached is primarily
+  // useful for look-up (how to find this Attestation if you already know the
+  // Authority and artifact to be verified) and intent (which authority was this
+  // attestation intended to sign for).
+  message Attestation {
+    // The signature, generally over the `resource_url`, that verifies this
+    // attestation.  The semantics of the signature veracity are ultimately
+    // determined by the verification engine.
+    oneof signature {
+      PgpSignedAttestation pgp_signed_attestation = 1;
+    }
+  }
+
+  AttestationAuthorityHint hint = 1;
+}
+
+// Message encapsulating build provenance details.
+message BuildDetails {
+  // The actual provenance
+  BuildProvenance provenance = 1;
+
+  // Serialized JSON representation of the provenance, used in generating the
+  // `BuildSignature` in the corresponding Result. After verifying the
+  // signature, `provenance_bytes` can be unmarshalled and compared to the
+  // provenance to confirm that it is unchanged. A base64-encoded string
+  // representation of the provenance bytes is used for the signature in order
+  // to interoperate with openssl which expects this format for signature
+  // verification.
+  //
+  // The serialized form is captured both to avoid ambiguity in how the
+  // provenance is marshalled to json as well to prevent incompatibilities with
+  // future changes.
+  string provenance_bytes = 2;
+}
+
+// Indicates various scans and whether they are turned on or off.
+message ScanConfig {
+  // Output only. The name of the ScanConfig in the form
+  // “projects/{project_id}/ScanConfigs/{ScanConfig_id}".
+  string name = 1;
+
+  // Output only. A human-readable description of what the `ScanConfig` does.
+  string description = 2;
+
+  // Indicates whether the Scan is enabled.
+  bool enabled = 3;
+}
+
+// Request to get a Occurrence.
+message GetOccurrenceRequest {
+  // The name of the occurrence of the form
+  // "projects/{project_id}/occurrences/{OCCURRENCE_ID}"
+  string name = 1;
+}
+
+// Request to list occurrences.
+message ListOccurrencesRequest {
+  // The name field contains the project Id. For example:
+  // "projects/{project_id}
+  // @Deprecated
+  string name = 1;
+
+  // This contains the project Id for example: projects/{project_id}.
+  string parent = 5;
+
+  // The filter expression.
+  string filter = 2;
+
+  // Number of occurrences to return in the list.
+  int32 page_size = 3;
+
+  // Token to provide to skip to a particular spot in the list.
+  string page_token = 4;
+
+  // The kind of occurrences to filter on.
+  Note.Kind kind = 6;
+}
+
+// Response including listed active occurrences.
+message ListOccurrencesResponse {
+  // The occurrences requested.
+  repeated Occurrence occurrences = 1;
+
+  // The next pagination token in the list response. It should be used as
+  // `page_token` for the following request. An empty value means no more
+  // results.
+  string next_page_token = 2;
+}
+
+// Request to delete a occurrence
+message DeleteOccurrenceRequest {
+  // The name of the occurrence in the form of
+  // "projects/{project_id}/occurrences/{OCCURRENCE_ID}"
+  string name = 1;
+}
+
+// Request to insert a new occurrence.
+message CreateOccurrenceRequest {
+  // The name of the project.  Should be of the form "projects/{project_id}".
+  // @Deprecated
+  string name = 1;
+
+  // This field contains the project Id for example: "projects/{project_id}"
+  string parent = 3;
+
+  // The occurrence to be inserted
+  Occurrence occurrence = 2;
+}
+
+// Request to update an existing occurrence
+message UpdateOccurrenceRequest {
+  // The name of the occurrence.
+  // Should be of the form "projects/{project_id}/occurrences/{OCCURRENCE_ID}".
+  string name = 1;
+
+  // The updated occurrence.
+  Occurrence occurrence = 2;
+
+  // The fields to update.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// Request to get a Note.
+message GetNoteRequest {
+  // The name of the note in the form of
+  // "providers/{provider_id}/notes/{NOTE_ID}"
+  string name = 1;
+}
+
+// Request to get the note to which this occurrence is attached.
+message GetOccurrenceNoteRequest {
+  // The name of the occurrence in the form
+  // "projects/{project_id}/occurrences/{OCCURRENCE_ID}"
+  string name = 1;
+}
+
+// Request to list notes.
+message ListNotesRequest {
+  // The name field will contain the project Id for example:
+  // "providers/{provider_id}
+  // @Deprecated
+  string name = 1;
+
+  // This field contains the project Id for example: "projects/{PROJECT_ID}".
+  string parent = 5;
+
+  // The filter expression.
+  string filter = 2;
+
+  // Number of notes to return in the list.
+  int32 page_size = 3;
+
+  // Token to provide to skip to a particular spot in the list.
+  string page_token = 4;
+}
+
+// Response including listed notes.
+message ListNotesResponse {
+  // The occurrences requested
+  repeated Note notes = 1;
+
+  // The next pagination token in the list response. It should be used as
+  // page_token for the following request. An empty value means no more result.
+  string next_page_token = 2;
+}
+
+// Request to delete a note
+message DeleteNoteRequest {
+  // The name of the note in the form of
+  // "providers/{provider_id}/notes/{NOTE_ID}"
+  string name = 1;
+}
+
+// Request to insert a new note
+message CreateNoteRequest {
+  // The name of the project.
+  // Should be of the form "providers/{provider_id}".
+  // @Deprecated
+  string name = 1;
+
+  // This field contains the project Id for example:
+  // "projects/{project_id}
+  string parent = 4;
+
+  // The ID to use for this note.
+  string note_id = 2;
+
+  // The Note to be inserted
+  Note note = 3;
+}
+
+// Request to update an existing note
+message UpdateNoteRequest {
+  // The name of the note.
+  // Should be of the form "projects/{provider_id}/notes/{note_id}".
+  string name = 1;
+
+  // The updated note.
+  Note note = 2;
+
+  // The fields to update.
+  google.protobuf.FieldMask update_mask = 3;
+}
+
+// Request to list occurrences.
+message ListNoteOccurrencesRequest {
+  // The name field will contain the note name for example:
+  //   "provider/{provider_id}/notes/{note_id}"
+  string name = 1;
+
+  // The filter expression.
+  string filter = 2;
+
+  // Number of notes to return in the list.
+  int32 page_size = 3;
+
+  // Token to provide to skip to a particular spot in the list.
+  string page_token = 4;
+}
+
+// Response including listed occurrences for a note.
+message ListNoteOccurrencesResponse {
+  // The occurrences attached to the specified note.
+  repeated Occurrence occurrences = 1;
+
+  // Token to receive the next page of notes.
+  string next_page_token = 2;
+}
+
+// Request for creating an operation
+message CreateOperationRequest {
+  // The project Id that this operation should be created under.
+  string parent = 1;
+
+  // The ID to use for this operation.
+  string operation_id = 2;
+
+  // The operation to create.
+  google.longrunning.Operation operation = 3;
+}
+
+// Request for updating an existing operation
+message UpdateOperationRequest {
+  // The name of the Operation.
+  // Should be of the form "projects/{provider_id}/operations/{operation_id}".
+  string name = 1;
+
+  // The operation to create.
+  google.longrunning.Operation operation = 3;
+
+  google.protobuf.FieldMask update_mask = 4;
+}
+
+// Metadata for all operations used and required for all operations
+// that created by Container Analysis Providers
+message OperationMetadata {
+  // Output only. The time this operation was created.
+  google.protobuf.Timestamp create_time = 1;
+
+  // Output only. The time that this operation was marked completed or failed.
+  google.protobuf.Timestamp end_time = 2;
+}
+
+// Request to get the vulnz summary for some set of vulnerability Occurrences.
+message GetVulnzOccurrencesSummaryRequest {
+  // This contains the project Id for example: projects/{project_id}
+  string parent = 1;
+
+  // The filter expression.
+  string filter = 2;
+}
+
+// A summary of how many vulnz occurrences there are per severity type.
+// counts by groups, or if we should have different summary messages
+// like this.
+message GetVulnzOccurrencesSummaryResponse {
+  // The number of occurrences created for a specific severity.
+  message SeverityCount {
+    // The severity of the occurrences.
+    VulnerabilityType.Severity severity = 1;
+
+    // The number of occurrences with the severity.
+    int64 count = 2;
+  }
+
+  // A map of how many occurrences were found for each severity.
+  repeated SeverityCount counts = 1;
+}
+
+// Request to get a ScanConfig.
+message GetScanConfigRequest {
+  // The name of the ScanConfig in the form
+  // projects/{project_id}/scan_configs/{ScanConfig_id}
+  // instead.
+  string name = 1;
+}
+
+// Request to list the available scan configurations.
+message ListScanConfigsRequest {
+  // This containers the project Id i.e.: projects/{project_id}
+  // instead.
+  string parent = 1;
+
+  // The filter expression.
+  string filter = 2;
+
+  // The number of items to return.
+  int32 page_size = 3;
+
+  // The page token to use for the next request.
+  string page_token = 4;
+}
+
+// A list of ScanConfigs for the project.
+message ListScanConfigsResponse {
+  // The set of scan configs
+  repeated ScanConfig scan_configs = 1;
+
+  // A page token to pass in order to get more scans.
+  string next_page_token = 2;
+}
+
+// A request to update a ScanConfig.
+message UpdateScanConfigRequest {
+  // The scan config to update of the form
+  // projects/{project_id}/scan_configs/{ScanConfig_id}
+  // instead.
+  string name = 1;
+
+  // The new scan configuration
+  ScanConfig scan_config = 2;
+
+  google.protobuf.FieldMask update_mask = 3;
+}

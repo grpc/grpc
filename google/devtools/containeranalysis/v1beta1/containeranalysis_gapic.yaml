@@ -1,0 +1,597 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.devtools.containeranalysis.v1beta1
+  python:
+    package_name: google.cloud.devtools.containeranalysis_v1beta1.gapic
+  go:
+    package_name: cloud.google.com/go/containeranalysis/apiv1beta1
+    release_level: BETA
+  csharp:
+    package_name: Google.Devtools.Containeranalysis.V1beta1
+  ruby:
+    package_name: Google::Cloud::Devtools::Containeranalysis::V1beta1
+  php:
+    package_name: Google\Cloud\Devtools\Containeranalysis\V1beta1
+  nodejs:
+    package_name: containeranalysis.v1beta1
+    domain_layer_location: google-cloud
+# A list of resource collection configurations.
+# Consists of a name_pattern and an entity_name.
+# The name_pattern is a pattern to describe the names of the resources of this
+# collection, using the platform's conventions for URI patterns. A generator
+# may use this to generate methods to compose and decompose such names. The
+# pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+# those will be taken as hints for the parameter names of the generated
+# methods. If empty, no name methods are generated.
+# The entity_name is the name to be used as a basis for generated methods and
+# classes.
+collections:
+- name_pattern: projects/{project}
+  entity_name: project
+- name_pattern: projects/{project}/notes/{note}
+  entity_name: note
+- name_pattern: projects/{project}/occurrences/{occurrence}
+  entity_name: occurrence
+- name_pattern: projects/{project}/scanConfigs/{scan_config}
+  entity_name: scan_config
+collection_oneofs:
+- oneof_name: iam_resource_oneof
+  collection_names:
+  - note
+  - occurrence
+# A list of API interface configurations.
+interfaces:
+# The fully qualified name of the API interface.
+- name: google.devtools.containeranalysis.v1beta1.ContainerAnalysisV1Beta1
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #
+  #   name - The simple name of the method.
+  #
+  #   flattening - Specifies the configuration for parameter flattening.
+  #   Describes the parameter groups for which a generator should produce method
+  #   overloads which allow a client to directly pass request message fields as
+  #   method parameters. This information may or may not be used, depending on
+  #   the target language.
+  #   Consists of groups, which each represent a list of parameters to be
+  #   flattened. Each parameter listed must be a field of the request message.
+  #
+  #   required_fields - Fields that are always required for a request to be
+  #   valid.
+  #
+  #   resource_name_treatment - An enum that specifies how to treat the resource
+  #   name formats defined in the field_name_patterns and
+  #   response_field_name_patterns fields.
+  #   UNSET: default value
+  #   NONE: the collection configs will not be used by the generated code.
+  #   VALIDATE: string fields will be validated by the client against the
+  #   specified resource name formats.
+  #   STATIC_TYPES: the client will use generated types for resource names.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #   Describes information for generating a method which transforms a paging
+  #   list RPC into a stream of resources.
+  #   Consists of a request and a response.
+  #   The request specifies request information of the list method. It defines
+  #   which fields match the paging pattern in the request. The request consists
+  #   of a page_size_field and a token_field. The page_size_field is the name of
+  #   the optional field specifying the maximum number of elements to be
+  #   returned in the response. The token_field is the name of the field in the
+  #   request containing the page token.
+  #   The response specifies response information of the list method. It defines
+  #   which fields match the paging pattern in the response. The response
+  #   consists of a token_field and a resources_field. The token_field is the
+  #   name of the field in the response containing the next page token. The
+  #   resources_field is the name of the field in the response containing the
+  #   list of resources belonging to the page.
+  #
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #   name must be defined in interfaces.retry_codes_def.
+  #
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #   parameters. The name must be defined in interfaces.retry_params_def.
+  #
+  #   field_name_patterns - Maps the field name of the request type to
+  #   entity_name of interfaces.collections.
+  #   Specifies the string pattern that the field must follow.
+  #
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #   the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: SetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - policy
+    required_fields:
+    - resource
+    - policy
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: iam_resource_oneof
+    timeout_millis: 30000
+  - name: GetIamPolicy
+    flattening:
+      groups:
+      - parameters:
+        - resource
+    required_fields:
+    - resource
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: iam_resource_oneof
+    timeout_millis: 30000
+  - name: TestIamPermissions
+    flattening:
+      groups:
+      - parameters:
+        - resource
+        - permissions
+    required_fields:
+    - resource
+    - permissions
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      resource: iam_resource_oneof
+    timeout_millis: 30000
+  - name: GetScanConfig
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: scan_config
+    timeout_millis: 30000
+  - name: ListScanConfigs
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - filter
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: scan_configs
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 30000
+  - name: UpdateScanConfig
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - scan_config
+    required_fields:
+    - name
+    - scan_config
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: scan_config
+    timeout_millis: 30000
+# The fully qualified name of the API interface.
+- name: grafeas.v1beta1.GrafeasV1Beta1
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #
+  #   name - The simple name of the method.
+  #
+  #   flattening - Specifies the configuration for parameter flattening.
+  #   Describes the parameter groups for which a generator should produce method
+  #   overloads which allow a client to directly pass request message fields as
+  #   method parameters. This information may or may not be used, depending on
+  #   the target language.
+  #   Consists of groups, which each represent a list of parameters to be
+  #   flattened. Each parameter listed must be a field of the request message.
+  #
+  #   required_fields - Fields that are always required for a request to be
+  #   valid.
+  #
+  #   resource_name_treatment - An enum that specifies how to treat the resource
+  #   name formats defined in the field_name_patterns and
+  #   response_field_name_patterns fields.
+  #   UNSET: default value
+  #   NONE: the collection configs will not be used by the generated code.
+  #   VALIDATE: string fields will be validated by the client against the
+  #   specified resource name formats.
+  #   STATIC_TYPES: the client will use generated types for resource names.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #   Describes information for generating a method which transforms a paging
+  #   list RPC into a stream of resources.
+  #   Consists of a request and a response.
+  #   The request specifies request information of the list method. It defines
+  #   which fields match the paging pattern in the request. The request consists
+  #   of a page_size_field and a token_field. The page_size_field is the name of
+  #   the optional field specifying the maximum number of elements to be
+  #   returned in the response. The token_field is the name of the field in the
+  #   request containing the page token.
+  #   The response specifies response information of the list method. It defines
+  #   which fields match the paging pattern in the response. The response
+  #   consists of a token_field and a resources_field. The token_field is the
+  #   name of the field in the response containing the next page token. The
+  #   resources_field is the name of the field in the response containing the
+  #   list of resources belonging to the page.
+  #
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #   name must be defined in interfaces.retry_codes_def.
+  #
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #   parameters. The name must be defined in interfaces.retry_params_def.
+  #
+  #   field_name_patterns - Maps the field name of the request type to
+  #   entity_name of interfaces.collections.
+  #   Specifies the string pattern that the field must follow.
+  #
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #   the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: GetOccurrence
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: occurrence
+    timeout_millis: 30000
+  - name: ListOccurrences
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - filter
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: occurrences
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 30000
+  - name: DeleteOccurrence
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: occurrence
+    timeout_millis: 30000
+  - name: CreateOccurrence
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - occurrence
+    required_fields:
+    - parent
+    - occurrence
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 30000
+  - name: BatchCreateOccurrences
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - occurrences
+    required_fields:
+    - parent
+    - occurrences
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 30000
+  - name: UpdateOccurrence
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - occurrence
+        - update_mask
+    required_fields:
+    - name
+    - occurrence
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: occurrence
+    timeout_millis: 30000
+  - name: GetOccurrenceNote
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: occurrence
+    timeout_millis: 30000
+  - name: GetNote
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: note
+    timeout_millis: 30000
+  - name: ListNotes
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - filter
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: notes
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 30000
+  - name: DeleteNote
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: note
+    timeout_millis: 30000
+  - name: CreateNote
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - note_id
+        - note
+    required_fields:
+    - parent
+    - note_id
+    - note
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 30000
+  - name: BatchCreateNotes
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - notes
+    required_fields:
+    - parent
+    - notes
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 30000
+  - name: UpdateNote
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - note
+        - update_mask
+    required_fields:
+    - name
+    - note
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: note
+    timeout_millis: 30000
+  - name: ListNoteOccurrences
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - filter
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: occurrences
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: note
+    timeout_millis: 30000
+  - name: GetVulnerabilityOccurrencesSummary
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - filter
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 30000
+resource_name_generation:
+- message_name: google.iam.v1.SetIamPolicyRequest
+  field_entity_map:
+    resource: iam_resource_oneof
+- message_name: google.iam.v1.GetIamPolicyRequest
+  field_entity_map:
+    resource: iam_resource_oneof
+- message_name: google.iam.v1.TestIamPermissionsRequest
+  field_entity_map:
+    resource: iam_resource_oneof
+- message_name: ScanConfig
+  field_entity_map:
+    name: scan_config
+- message_name: GetScanConfigRequest
+  field_entity_map:
+    name: scan_config
+- message_name: ListScanConfigsRequest
+  field_entity_map:
+    parent: project
+- message_name: UpdateScanConfigRequest
+  field_entity_map:
+    name: scan_config
+- message_name: grafeas.v1beta1.Occurrence
+  field_entity_map:
+    name: occurrence
+- message_name: grafeas.v1beta1.GetOccurrenceRequest
+  field_entity_map:
+    name: occurrence
+- message_name: grafeas.v1beta1.ListOccurrencesRequest
+  field_entity_map:
+    parent: project
+- message_name: grafeas.v1beta1.DeleteOccurrenceRequest
+  field_entity_map:
+    name: occurrence
+- message_name: grafeas.v1beta1.CreateOccurrenceRequest
+  field_entity_map:
+    parent: project
+- message_name: grafeas.v1beta1.UpdateOccurrenceRequest
+  field_entity_map:
+    name: occurrence
+- message_name: grafeas.v1beta1.BatchCreateOccurrencesRequest
+  field_entity_map:
+    parent: project
+- message_name: grafeas.v1beta1.Note
+  field_entity_map:
+    name: note
+- message_name: grafeas.v1beta1.GetNoteRequest
+  field_entity_map:
+    name: note
+- message_name: grafeas.v1beta1.ListNotesRequest
+  field_entity_map:
+    parent: project
+- message_name: grafeas.v1beta1.DeleteNoteRequest
+  field_entity_map:
+    name: note
+- message_name: grafeas.v1beta1.CreateNoteRequest
+  field_entity_map:
+    parent: project
+- message_name: grafeas.v1beta1.UpdateNoteRequest
+  field_entity_map:
+    name: note
+- message_name: grafeas.v1beta1.BatchCreateNotesRequest
+  field_entity_map:
+    parent: project
+- message_name: grafeas.v1beta1.GetOccurrenceNoteRequest
+  field_entity_map:
+    name: occurrence
+- message_name: grafeas.v1beta1.ListNoteOccurrencesRequest
+  field_entity_map:
+    name: note
+- message_name: grafeas.v1beta1.GetVulnerabilityOccurrencesSummaryRequest
+  field_entity_map:
+    parent: project

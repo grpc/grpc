@@ -1,0 +1,232 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/enums/account_budget_proposal_type.proto";
+import "google/ads/googleads/v2/enums/account_budget_status.proto";
+import "google/ads/googleads/v2/enums/spending_limit_type.proto";
+import "google/ads/googleads/v2/enums/time_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "AccountBudgetProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the AccountBudget resource.
+
+// An account-level budget. It contains information about the budget itself,
+// as well as the most recently approved changes to the budget and proposed
+// changes that are pending approval. The proposed changes that are pending
+// approval, if any, are found in 'pending_proposal'.  Effective details about
+// the budget are found in fields prefixed 'approved_', 'adjusted_' and those
+// without a prefix.  Since some effective details may differ from what the user
+// had originally requested (e.g. spending limit), these differences are
+// juxtaposed via 'proposed_', 'approved_', and possibly 'adjusted_' fields.
+//
+// This resource is mutated using AccountBudgetProposal and cannot be mutated
+// directly. A budget may have at most one pending proposal at any given time.
+// It is read through pending_proposal.
+//
+// Once approved, a budget may be subject to adjustments, such as credit
+// adjustments.  Adjustments create differences between the 'approved' and
+// 'adjusted' fields, which would otherwise be identical.
+message AccountBudget {
+  // A pending proposal associated with the enclosing account-level budget,
+  // if applicable.
+  message PendingAccountBudgetProposal {
+    // The resource name of the proposal.
+    // AccountBudgetProposal resource names have the form:
+    //
+    // `customers/{customer_id}/accountBudgetProposals/{account_budget_proposal_id}`
+    google.protobuf.StringValue account_budget_proposal = 1;
+
+    // The type of this proposal, e.g. END to end the budget associated
+    // with this proposal.
+    google.ads.googleads.v2.enums.AccountBudgetProposalTypeEnum.AccountBudgetProposalType proposal_type = 2;
+
+    // The name to assign to the account-level budget.
+    google.protobuf.StringValue name = 3;
+
+    // The start time in yyyy-MM-dd HH:mm:ss format.
+    google.protobuf.StringValue start_date_time = 4;
+
+    // A purchase order number is a value that helps users reference this budget
+    // in their monthly invoices.
+    google.protobuf.StringValue purchase_order_number = 9;
+
+    // Notes associated with this budget.
+    google.protobuf.StringValue notes = 10;
+
+    // The time when this account-level budget proposal was created.
+    // Formatted as yyyy-MM-dd HH:mm:ss.
+    google.protobuf.StringValue creation_date_time = 11;
+
+    // The end time of the account-level budget.
+    oneof end_time {
+      // The end time in yyyy-MM-dd HH:mm:ss format.
+      google.protobuf.StringValue end_date_time = 5;
+
+      // The end time as a well-defined type, e.g. FOREVER.
+      google.ads.googleads.v2.enums.TimeTypeEnum.TimeType end_time_type = 6;
+    }
+
+    // The spending limit.
+    oneof spending_limit {
+      // The spending limit in micros.  One million is equivalent to
+      // one unit.
+      google.protobuf.Int64Value spending_limit_micros = 7;
+
+      // The spending limit as a well-defined type, e.g. INFINITE.
+      google.ads.googleads.v2.enums.SpendingLimitTypeEnum.SpendingLimitType spending_limit_type = 8;
+    }
+  }
+
+  // The resource name of the account-level budget.
+  // AccountBudget resource names have the form:
+  //
+  // `customers/{customer_id}/accountBudgets/{account_budget_id}`
+  string resource_name = 1;
+
+  // The ID of the account-level budget.
+  google.protobuf.Int64Value id = 2;
+
+  // The resource name of the billing setup associated with this account-level
+  // budget.  BillingSetup resource names have the form:
+  //
+  // `customers/{customer_id}/billingSetups/{billing_setup_id}`
+  google.protobuf.StringValue billing_setup = 3;
+
+  // The status of this account-level budget.
+  google.ads.googleads.v2.enums.AccountBudgetStatusEnum.AccountBudgetStatus status = 4;
+
+  // The name of the account-level budget.
+  google.protobuf.StringValue name = 5;
+
+  // The proposed start time of the account-level budget in
+  // yyyy-MM-dd HH:mm:ss format.  If a start time type of NOW was proposed,
+  // this is the time of request.
+  google.protobuf.StringValue proposed_start_date_time = 6;
+
+  // The approved start time of the account-level budget in yyyy-MM-dd HH:mm:ss
+  // format.
+  //
+  // For example, if a new budget is approved after the proposed start time,
+  // the approved start time is the time of approval.
+  google.protobuf.StringValue approved_start_date_time = 7;
+
+  // The total adjustments amount.
+  //
+  // An example of an adjustment is courtesy credits.
+  google.protobuf.Int64Value total_adjustments_micros = 18;
+
+  // The value of Ads that have been served, in micros.
+  //
+  // This includes overdelivery costs, in which case a credit might be
+  // automatically applied to the budget (see total_adjustments_micros).
+  google.protobuf.Int64Value amount_served_micros = 19;
+
+  // A purchase order number is a value that helps users reference this budget
+  // in their monthly invoices.
+  google.protobuf.StringValue purchase_order_number = 20;
+
+  // Notes associated with the budget.
+  google.protobuf.StringValue notes = 21;
+
+  // The pending proposal to modify this budget, if applicable.
+  PendingAccountBudgetProposal pending_proposal = 22;
+
+  // The proposed end time of the account-level budget.
+  oneof proposed_end_time {
+    // The proposed end time in yyyy-MM-dd HH:mm:ss format.
+    google.protobuf.StringValue proposed_end_date_time = 8;
+
+    // The proposed end time as a well-defined type, e.g. FOREVER.
+    google.ads.googleads.v2.enums.TimeTypeEnum.TimeType proposed_end_time_type = 9;
+  }
+
+  // The approved end time of the account-level budget.
+  //
+  // For example, if a budget's end time is updated and the proposal is approved
+  // after the proposed end time, the approved end time is the time of approval.
+  oneof approved_end_time {
+    // The approved end time in yyyy-MM-dd HH:mm:ss format.
+    google.protobuf.StringValue approved_end_date_time = 10;
+
+    // The approved end time as a well-defined type, e.g. FOREVER.
+    google.ads.googleads.v2.enums.TimeTypeEnum.TimeType approved_end_time_type = 11;
+  }
+
+  // The proposed spending limit.
+  oneof proposed_spending_limit {
+    // The proposed spending limit in micros.  One million is equivalent to
+    // one unit.
+    google.protobuf.Int64Value proposed_spending_limit_micros = 12;
+
+    // The proposed spending limit as a well-defined type, e.g. INFINITE.
+    google.ads.googleads.v2.enums.SpendingLimitTypeEnum.SpendingLimitType proposed_spending_limit_type = 13;
+  }
+
+  // The approved spending limit.
+  //
+  // For example, if the amount already spent by the account exceeds the
+  // proposed spending limit at the time the proposal is approved, the approved
+  // spending limit is set to the amount already spent.
+  oneof approved_spending_limit {
+    // The approved spending limit in micros.  One million is equivalent to
+    // one unit.  This will only be populated if the proposed spending limit
+    // is finite, and will always be greater than or equal to the
+    // proposed spending limit.
+    google.protobuf.Int64Value approved_spending_limit_micros = 14;
+
+    // The approved spending limit as a well-defined type, e.g. INFINITE.  This
+    // will only be populated if the approved spending limit is INFINITE.
+    google.ads.googleads.v2.enums.SpendingLimitTypeEnum.SpendingLimitType approved_spending_limit_type = 15;
+  }
+
+  // The spending limit after adjustments have been applied.  Adjustments are
+  // stored in total_adjustments_micros.
+  //
+  // This value has the final say on how much the account is allowed to spend.
+  oneof adjusted_spending_limit {
+    // The adjusted spending limit in micros.  One million is equivalent to
+    // one unit.
+    //
+    // If the approved spending limit is finite, the adjusted
+    // spending limit may vary depending on the types of adjustments applied
+    // to this budget, if applicable.
+    //
+    // The different kinds of adjustments are described here:
+    // https://support.google.com/google-ads/answer/1704323
+    //
+    // For example, a debit adjustment reduces how much the account is
+    // allowed to spend.
+    google.protobuf.Int64Value adjusted_spending_limit_micros = 16;
+
+    // The adjusted spending limit as a well-defined type, e.g. INFINITE.
+    // This will only be populated if the adjusted spending limit is INFINITE,
+    // which is guaranteed to be true if the approved spending limit is
+    // INFINITE.
+    google.ads.googleads.v2.enums.SpendingLimitTypeEnum.SpendingLimitType adjusted_spending_limit_type = 17;
+  }
+}

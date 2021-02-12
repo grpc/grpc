@@ -1,0 +1,36 @@
+type: com.google.api.codegen.samplegen.v1p2.SampleConfigProto
+schema_version: 1.2.0
+samples:
+- region_tag: speech_transcribe_async
+  title: Transcribe Audio File using Long Running Operation (Local File) (LRO)
+  description: Transcribe a long audio file using asynchronous speech recognition
+  rpc: LongRunningRecognize
+  service: google.cloud.speech.v1.Speech
+  request:
+  - field: audio.content
+    value: "resources/brooklyn_bridge.raw"
+    input_parameter: local_file_path
+    comment: Path to local audio file, e.g. /path/audio.wav
+    value_is_file: true
+  - field: config.language_code
+    value: "en-US"
+    comment: The language of the supplied audio
+  - field: config.sample_rate_hertz
+    value: 16000
+    comment: Sample rate in Hertz of the audio data sent
+  - field: config.encoding
+    value: LINEAR16
+    comment: |
+      Encoding of audio data sent. This sample sets this explicitly.
+      This field is optional for FLAC and WAV audio formats.
+  response:
+  - loop:
+      variable: result
+      collection: $resp.results
+      body:
+      - comment:
+        - First alternative is the most probable result
+      - define: alternative = result.alternatives[0]
+      - print:
+        - "Transcript: %s"
+        - alternative.transcript

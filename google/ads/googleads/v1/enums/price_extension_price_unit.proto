@@ -1,0 +1,61 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "PriceExtensionPriceUnitProto";
+option java_package = "com.google.ads.googleads.v1.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V1::Enums";
+
+// Proto file describing price extension price unit.
+
+// Container for enum describing price extension price unit.
+message PriceExtensionPriceUnitEnum {
+  // Price extension price unit.
+  enum PriceExtensionPriceUnit {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Per hour.
+    PER_HOUR = 2;
+
+    // Per day.
+    PER_DAY = 3;
+
+    // Per week.
+    PER_WEEK = 4;
+
+    // Per month.
+    PER_MONTH = 5;
+
+    // Per year.
+    PER_YEAR = 6;
+
+    // Per night.
+    PER_NIGHT = 7;
+  }
+}

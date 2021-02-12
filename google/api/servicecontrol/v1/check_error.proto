@@ -1,0 +1,133 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.api.servicecontrol.v1;
+
+import "google/api/annotations.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/api/servicecontrol/v1;servicecontrol";
+option java_multiple_files = true;
+option java_outer_classname = "CheckErrorProto";
+option java_package = "com.google.api.servicecontrol.v1";
+
+// Defines the errors to be returned in
+// [google.api.servicecontrol.v1.CheckResponse.check_errors][google.api.servicecontrol.v1.CheckResponse.check_errors].
+message CheckError {
+  // Error codes for Check responses.
+  enum Code {
+    // This is never used in `CheckResponse`.
+    ERROR_CODE_UNSPECIFIED = 0;
+
+    // The consumer's project id, network container, or resource container was
+    // not found. Same as [google.rpc.Code.NOT_FOUND][].
+    NOT_FOUND = 5;
+
+    // The consumer doesn't have access to the specified resource.
+    // Same as [google.rpc.Code.PERMISSION_DENIED][].
+    PERMISSION_DENIED = 7;
+
+    // Quota check failed. Same as [google.rpc.Code.RESOURCE_EXHAUSTED][].
+    RESOURCE_EXHAUSTED = 8;
+
+    // The consumer has been flagged as an abuser.
+    ABUSER_DETECTED = 103;
+
+    // The consumer hasn't activated the service.
+    SERVICE_NOT_ACTIVATED = 104;
+
+    // The consumer cannot access the service because billing is disabled.
+    BILLING_DISABLED = 107;
+
+    // The consumer's project has been marked as deleted (soft deletion).
+    PROJECT_DELETED = 108;
+
+    // The consumer's project number or id does not represent a valid project.
+    PROJECT_INVALID = 114;
+
+    // The IP address of the consumer is invalid for the specific consumer
+    // project.
+    IP_ADDRESS_BLOCKED = 109;
+
+    // The referer address of the consumer request is invalid for the specific
+    // consumer project.
+    REFERER_BLOCKED = 110;
+
+    // The client application of the consumer request is invalid for the
+    // specific consumer project.
+    CLIENT_APP_BLOCKED = 111;
+
+    // The API targeted by this request is invalid for the specified consumer
+    // project.
+    API_TARGET_BLOCKED = 122;
+
+    // The consumer's API key is invalid.
+    API_KEY_INVALID = 105;
+
+    // The consumer's API Key has expired.
+    API_KEY_EXPIRED = 112;
+
+    // The consumer's API Key was not found in config record.
+    API_KEY_NOT_FOUND = 113;
+
+    // Request is not allowed as per security policies defined in Org Policy.
+    SECURITY_POLICY_VIOLATED = 121;
+
+    // The credential in the request can not be verified.
+    INVALID_CREDENTIAL = 123;
+
+    // Request is not allowed as per location policies defined in Org Policy.
+    LOCATION_POLICY_VIOLATED = 124;
+
+    // The input consumer info does not represent a valid consumer folder or
+    // organization.
+    CONSUMER_INVALID = 125;
+
+    // NOTE: By convention, all *_UNAVAILABLE codes are required to be in the
+    // 300 - 399 range.
+
+    // NOTE: Unless there are very special business requirements, service
+    // producer should ignore the following errors. These errors should not
+    // cause the rejection of client requests.
+
+    // The backend server for looking up project id/number is unavailable.
+    NAMESPACE_LOOKUP_UNAVAILABLE = 300;
+
+    // The backend server for checking service status is unavailable.
+    SERVICE_STATUS_UNAVAILABLE = 301;
+
+    // The backend server for checking billing status is unavailable.
+    BILLING_STATUS_UNAVAILABLE = 302;
+
+    // The backend server for checking quota limits is unavailable.
+    QUOTA_CHECK_UNAVAILABLE = 303;
+
+    // Cloud Resource Manager backend server is unavailable.
+    CLOUD_RESOURCE_MANAGER_BACKEND_UNAVAILABLE = 305;
+
+    // Backend server for evaluating security policy is unavailable.
+    SECURITY_POLICY_BACKEND_UNAVAILABLE = 306;
+
+    // Backend server for evaluating location policy is unavailable.
+    LOCATION_POLICY_BACKEND_UNAVAILABLE = 307;
+  }
+
+  // The error code.
+  Code code = 1;
+
+  // Free-form text providing details on the error cause of the error.
+  string detail = 2;
+}

@@ -1,0 +1,128 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.cloud.audit;
+
+import "google/api/annotations.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+import "google/rpc/status.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/audit;audit";
+option java_multiple_files = true;
+option java_outer_classname = "AuditLogProto";
+option java_package = "com.google.cloud.audit";
+
+// Common audit log format for Google Cloud Platform API operations.
+message AuditLog {
+  // The name of the API service performing the operation. For example,
+  // `"datastore.googleapis.com"`.
+  string service_name = 7;
+
+  // The name of the service method or operation.
+  // For API calls, this should be the name of the API method.
+  // For example,
+  //
+  //     "google.datastore.v1.Datastore.RunQuery"
+  //     "google.logging.v1.LoggingService.DeleteLog"
+  string method_name = 8;
+
+  // The resource or collection that is the target of the operation.
+  // The name is a scheme-less URI, not including the API service name.
+  // For example:
+  //
+  //     "shelves/SHELF_ID/books"
+  //     "shelves/SHELF_ID/books/BOOK_ID"
+  string resource_name = 11;
+
+  // The number of items returned from a List or Query API method,
+  // if applicable.
+  int64 num_response_items = 12;
+
+  // The status of the overall operation.
+  google.rpc.Status status = 2;
+
+  // Authentication information.
+  AuthenticationInfo authentication_info = 3;
+
+  // Authorization information. If there are multiple
+  // resources or permissions involved, then there is
+  // one AuthorizationInfo element for each {resource, permission} tuple.
+  repeated AuthorizationInfo authorization_info = 9;
+
+  // Metadata about the operation.
+  RequestMetadata request_metadata = 4;
+
+  // The operation request. This may not include all request parameters,
+  // such as those that are too large, privacy-sensitive, or duplicated
+  // elsewhere in the log record.
+  // It should never include user-generated data, such as file contents.
+  // When the JSON object represented here has a proto equivalent, the proto
+  // name will be indicated in the `@type` property.
+  google.protobuf.Struct request = 16;
+
+  // The operation response. This may not include all response elements,
+  // such as those that are too large, privacy-sensitive, or duplicated
+  // elsewhere in the log record.
+  // It should never include user-generated data, such as file contents.
+  // When the JSON object represented here has a proto equivalent, the proto
+  // name will be indicated in the `@type` property.
+  google.protobuf.Struct response = 17;
+
+  // Other service-specific data about the request, response, and other
+  // activities.
+  google.protobuf.Any service_data = 15;
+}
+
+// Authentication information for the operation.
+message AuthenticationInfo {
+  // The email address of the authenticated user making the request.
+  string principal_email = 1;
+}
+
+// Authorization information for the operation.
+message AuthorizationInfo {
+  // The resource being accessed, as a REST-style string. For example:
+  //
+  //     bigquery.googlapis.com/projects/PROJECTID/datasets/DATASETID
+  string resource = 1;
+
+  // The required IAM permission.
+  string permission = 2;
+
+  // Whether or not authorization for `resource` and `permission`
+  // was granted.
+  bool granted = 3;
+}
+
+// Metadata about the request.
+message RequestMetadata {
+  // The IP address of the caller.
+  string caller_ip = 1;
+
+  // The user agent of the caller.
+  // This information is not authenticated and should be treated accordingly.
+  // For example:
+  //
+  // +   `google-api-python-client/1.4.0`:
+  //     The request was made by the Google API client for Python.
+  // +   `Cloud SDK Command Line Tool apitools-client/1.0 gcloud/0.9.62`:
+  //     The request was made by the Google Cloud SDK CLI (gcloud).
+  // +   `AppEngine-Google; (+http://code.google.com/appengine; appid:
+  // s~my-project`:
+  //     The request was made from the `my-project` App Engine app.
+  string caller_supplied_user_agent = 2;
+}

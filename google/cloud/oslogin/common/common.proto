@@ -1,0 +1,110 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.oslogin.common;
+
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+
+option csharp_namespace = "Google.Cloud.OsLogin.Common";
+option go_package = "google.golang.org/genproto/googleapis/cloud/oslogin/common;common";
+option java_outer_classname = "OsLoginProto";
+option java_package = "com.google.cloud.oslogin.common";
+option php_namespace = "Google\\Cloud\\OsLogin\\Common";
+
+// The operating system options for account entries.
+enum OperatingSystemType {
+  // The operating system type associated with the user account information is
+  // unspecified.
+  OPERATING_SYSTEM_TYPE_UNSPECIFIED = 0;
+
+  // Linux user account information.
+  LINUX = 1;
+
+  // Windows user account information.
+  WINDOWS = 2;
+}
+
+// The POSIX account information associated with a Google account.
+message PosixAccount {
+  option (google.api.resource) = {
+    type: "oslogin.googleapis.com/PosixAccount"
+    pattern: "users/{user}/projects/{project}"
+  };
+
+  // Only one POSIX account can be marked as primary.
+  bool primary = 1;
+
+  // The username of the POSIX account.
+  string username = 2;
+
+  // The user ID.
+  int64 uid = 3;
+
+  // The default group ID.
+  int64 gid = 4;
+
+  // The path to the home directory for this account.
+  string home_directory = 5;
+
+  // The path to the logic shell for this account.
+  string shell = 6;
+
+  // The GECOS (user information) entry for this account.
+  string gecos = 7;
+
+  // System identifier for which account the username or uid applies to.
+  // By default, the empty value is used.
+  string system_id = 8;
+
+  // Output only. A POSIX account identifier.
+  string account_id = 9 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // The operating system type where this account applies.
+  OperatingSystemType operating_system_type = 10;
+
+  // Output only. The canonical resource name.
+  string name = 11 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// The SSH public key information associated with a Google account.
+message SshPublicKey {
+  option (google.api.resource) = {
+    type: "oslogin.googleapis.com/SshPublicKey"
+    pattern: "users/{user}/sshPublicKeys/{fingerprint}"
+  };
+
+  // Public key text in SSH format, defined by
+  // <a href="https://www.ietf.org/rfc/rfc4253.txt" target="_blank">RFC4253</a>
+  // section 6.6.
+  string key = 1;
+
+  // An expiration time in microseconds since epoch.
+  int64 expiration_time_usec = 2;
+
+  // Output only. The SHA-256 fingerprint of the SSH public key.
+  string fingerprint = 3 [(google.api.field_behavior) = OUTPUT_ONLY];
+
+  // Output only. The canonical resource name.
+  string name = 4 [(google.api.field_behavior) = OUTPUT_ONLY];
+}
+
+// Define a "User" resource owned by OS Login.
+option (google.api.resource_definition) = {
+  type: "oslogin.googleapis.com/User"
+  pattern: "users/{user}"
+};

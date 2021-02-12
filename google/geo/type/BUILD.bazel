@@ -1,0 +1,41 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+load("@com_google_googleapis_imports//:imports.bzl", "cc_proto_library", "go_proto_library", "java_proto_library")
+
+package(default_visibility = ["//visibility:public"])
+
+##############################################################################
+# Common
+##############################################################################
+proto_library(
+    name = "viewport_proto",
+    srcs = ["viewport.proto"],
+    deps = ["//google/type:latlng_proto"],
+)
+
+##############################################################################
+# Java
+##############################################################################
+java_proto_library(
+    name = "viewport_java_proto",
+    deps = [
+        ":viewport_proto",
+    ],
+)
+
+##############################################################################
+# Go
+##############################################################################
+go_proto_library(
+    name = "viewport_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/geo/type",
+    protos = [":viewport_proto"],
+    deps = ["//google/type:latlng_go_proto"],
+)
+
+##############################################################################
+# C++
+##############################################################################
+cc_proto_library(
+    name = "viewport_cc_proto",
+    deps = [":viewport_proto"],
+)

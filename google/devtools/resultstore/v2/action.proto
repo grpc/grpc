@@ -1,0 +1,348 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.resultstore.v2;
+
+import "google/devtools/resultstore/v2/common.proto";
+import "google/devtools/resultstore/v2/coverage.proto";
+import "google/devtools/resultstore/v2/file.proto";
+import "google/devtools/resultstore/v2/file_processing_error.proto";
+import "google/devtools/resultstore/v2/test_suite.proto";
+import "google/protobuf/duration.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/resultstore/v2;resultstore";
+option java_multiple_files = true;
+option java_package = "com.google.devtools.resultstore.v2";
+
+// An action that happened as part of a configured target. This action could be
+// a build, a test, or another type of action, as specified in action_type
+// oneof.
+//
+// Each parent ConfiguredTarget resource should have at least one Action as its
+// child resource before the invocation is finalized. For a simple build, at
+// least one build action should be created to represent the build result, and
+// at at least one test action should be created to represent the test result,
+// if any.
+message Action {
+  // The resource ID components that identify the Action.
+  message Id {
+    // The Invocation ID.
+    string invocation_id = 1;
+
+    // The Target ID.
+    string target_id = 2;
+
+    // The Configuration ID.
+    string configuration_id = 3;
+
+    // The Action ID.
+    string action_id = 4;
+  }
+
+  // The resource name.  Its format must be:
+  // invocations/${INVOCATION_ID}/targets/${url_encode(TARGET_ID)}/configuredTargets/url_encode(${CONFIG_ID})/actions/${url_encode(ACTION_ID)}
+  //
+  // See CreateActionRequest proto for more information.
+  string name = 1;
+
+  // The resource ID components that identify the Action. They must match the
+  // resource name after proper encoding.
+  Id id = 2;
+
+  // The status of the action.
+  StatusAttributes status_attributes = 3;
+
+  // The timing of the whole action. For TestActions, the start time may be
+  // before the test actually started, and the duration may last until after the
+  // test actually finished.
+  Timing timing = 4;
+
+  // The type of the action. The type of an action may not change over the
+  // lifetime of the invocation. If one of these fields is to be set, it must be
+  // set in the CreateAction method. It may be set to an empty message that is
+  // populated in later methods or post-processing. A generic "untyped" action
+  // can be created by not setting any of these fields. An untyped action will
+  // be untyped for the lifetime of the invocation.
+  oneof action_type {
+    // Used only when this action represents a build action.
+    BuildAction build_action = 9;
+
+    // Only for test actions.
+    TestAction test_action = 10;
+  }
+
+  // General attributes of the action.
+  ActionAttributes action_attributes = 5;
+
+  // A list of resources that this action depended upon. May be used to provide
+  // the cause of a build failure in the case of a failed build action.
+  repeated Dependency action_dependencies = 14;
+
+  // Arbitrary name-value pairs.
+  // This is implemented as a multi-map. Multiple properties are allowed with
+  // the same key. Properties will be returned in lexicographical order by key.
+  repeated Property properties = 7;
+
+  // A list of file references for action level files.
+  // The file IDs must be unique within this list. Duplicate file IDs will
+  // result in an error. Files will be returned in lexicographical order by ID.
+  //
+  // Files with the following reserved file IDs cause specific post-processing
+  // or have special handling. These files must be immediately available to
+  // ResultStore for processing when the reference is uploaded.
+  //
+  // For build actions:
+  // stdout: The stdout of the action
+  // stderr: The stderr of the action
+  // baseline.lcov: Baseline coverage file to be parsed by the server. This
+  //     uses a stripped down implementation of the LCOV standard.
+  //     http://ltp.sourceforge.net/coverage/lcov/geninfo.1.php
+  //
+  // For test actions:
+  // test.xml: The test suite / test case data in XML format.
+  // test.log: The combined stdout and stderr of the test process.
+  // test.lcov: Coverage file to be parsed by the server. This uses a stripped
+  //     down implementation of the LCOV standard.
+  //     http://ltp.sourceforge.net/coverage/lcov/geninfo.1.php
+  repeated File files = 8;
+
+  // List of names of file sets that are referenced from this Action.
+  // Each name must point to a file set under the same Invocation. The name
+  // format must be: invocations/${INVOCATION_ID}/fileSets/${FILE_SET_ID}
+  repeated string file_sets = 15;
+
+  // Coverage data was collected while running the build or test action. This
+  // usually includes line coverage, and may also include branch coverage.
+  // For test actions, this is usually only for the source files which were
+  // actually executed by that particular action.
+  // For build actions, this is the baseline coverage, which captures the
+  // instrumented files and lines, without any lines being executed. This
+  // ensures files that are never covered at all are included.
+  ActionCoverage coverage = 11;
+
+  // ResultStore will read and parse Files with reserved IDs listed above. Read
+  // and parse errors for all these Files are reported here.
+  // This is implemented as a map, with one FileProcessingErrors for each file.
+  // Typically produced when parsing Files, but may also be provided directly
+  // by clients.
+  repeated FileProcessingErrors file_processing_errors = 13;
+}
+
+// A build action, such as building a java library.
+message BuildAction {
+  // The type of the action.  This is intended to be a clue as to how the output
+  // of the action should be parsed. For example "javac" for a Java compile
+  // action.
+  string type = 1;
+
+  // The "primary" input artifact processed by this action.  E.g., the .cc file
+  // of a C++ compile action.  Empty string ("") if the action has no input
+  // artifacts or no "primary" input artifact.
+  string primary_input_path = 2;
+
+  // The "primary" output artifact processed by this action.  E.g., the .o file
+  // of a C++ compile action.  Empty string ("") if the action has no output
+  // artifacts or no "primary" output artifact.
+  string primary_output_path = 3;
+}
+
+// A test action, such as running a JUnit4 test binary.
+message TestAction {
+  // Timing data for execution of the test action.
+  TestTiming test_timing = 1;
+
+  // If the test is divided up into shards to improve performance, set this to
+  // indicate which shard this test action is for. Value must be in interval
+  // [0, total_shard_count). Defaults to 0, which is appropriate if all test
+  // cases are run in the same process.
+  int32 shard_number = 2;
+
+  // If the user requested that every test be run multiple times, as is often
+  // done to measure flakiness, set this to indicate which run this test action
+  // is for. Value must be in interval [0, total_run_count). Defaults to 0,
+  // which is appropriate if multiple runs were not requested.
+  int32 run_number = 3;
+
+  // If flaky tests are automatically retried, set this to indicate which
+  // attempt this test action is for. (e.g. 0 for the first attempt, 1 for
+  // second, and so on). Defaults to 0, which is appropriate if this is only
+  // attempt.
+  int32 attempt_number = 4;
+
+  // A tree of test suites and test cases that were run by this test action.
+  // Each test case has its own status information, including stack traces.
+  // Typically produced by parsing an XML Log, but may also be provided directly
+  // by clients.
+  TestSuite test_suite = 5;
+
+  // Warnings for this test action.
+  repeated TestWarning warnings = 8;
+
+  // Estimated memory consumption of the test action, in bytes. A default value
+  // of 0 means there is no memory consumption estimate specified.
+  int64 estimated_memory_bytes = 10;
+}
+
+// General attributes of an action
+message ActionAttributes {
+  // Strategy used for executing the action.
+  ExecutionStrategy execution_strategy = 1;
+
+  // Exit code of the process that ran the action. A non-zero value means
+  // failure.
+  int32 exit_code = 2;
+
+  // Where the action was run.
+  string hostname = 3;
+
+  // Information about the input files used in all actions under this configured
+  // target.
+  InputFileInfo input_file_info = 4;
+}
+
+// File count and size information for the input files to a configured target.
+message InputFileInfo {
+  // The number of input files (counting every file, even if a duplicate).
+  int64 count = 1;
+
+  // The number of distinct input files.
+  int64 distinct_count = 2;
+
+  // The max number of input files allowed by the build system (counting every
+  // file, even if a duplicate).
+  int64 count_limit = 3;
+
+  // The total size of the distinct input files.
+  int64 distinct_bytes = 4;
+
+  // The max allowed total size of the distinct input files.
+  int64 distinct_byte_limit = 5;
+}
+
+// Timing data for tests executed locally on the machine running the build.
+message LocalTestTiming {
+  // Time taken by the test process, typically surrounded by a small wrapper
+  // script.
+  google.protobuf.Duration test_process_duration = 1;
+}
+
+// Timing data for one attempt to execute a test action remotely.
+message RemoteTestAttemptTiming {
+  // Idle period before the test process is invoked on the remote machine.
+  google.protobuf.Duration queue_duration = 1;
+
+  // Time to upload data dependencies from the local machine to the remote
+  // machine running the test, or to the distributed cache.
+  google.protobuf.Duration upload_duration = 2;
+
+  // Time to set up the remote machine.
+  // Not to be confused with setup time in
+  // xUnit test frameworks, which falls within the test_process_time.
+  google.protobuf.Duration machine_setup_duration = 3;
+
+  // Time taken by the test process, typically surrounded by a small wrapper
+  // script.
+  // For Java tests, this includes JVM setup, flag parsing, class path setup,
+  // parsing files to setup the suite, and finally running your test methods.
+  // In many cases, only a small fraction of the test process time is spent
+  // running the test methods.
+  google.protobuf.Duration test_process_duration = 4;
+
+  // Time spent retrieving test logs and any other test outputs, back to the
+  // local machine.
+  google.protobuf.Duration download_duration = 5;
+}
+
+// Timing data for the part of the test execution that is done remotely.
+message RemoteTestTiming {
+  // Time taken locally to determine what to do.
+  google.protobuf.Duration local_analysis_duration = 1;
+
+  // Normally there is only one attempt, but the system may retry on internal
+  // errors, leading to multiple attempts.
+  repeated RemoteTestAttemptTiming attempts = 2;
+}
+
+// Timing data for execution of a test action. The action may be performed
+// locally, on the machine running the build, or remotely.
+message TestTiming {
+  // Test timing for either a local or remote execution.
+  oneof location {
+    // Used for local test actions.
+    LocalTestTiming local = 1;
+
+    // Used for remote test actions.
+    RemoteTestTiming remote = 2;
+  }
+
+  // The amount of CPU time spent by the test process executing system calls
+  // within the kernel, as opposed to library code. Time the test process spent
+  // blocked does not count towards this figure.
+  google.protobuf.Duration system_time_duration = 3;
+
+  // The amount of CPU time spent by the test process executing user-mode code
+  // outside the kernel, as opposed to library code. Time the test process
+  // spent blocked does not count towards this figure. You can add user_time to
+  // system_time to get total CPU time taken by the test process.
+  google.protobuf.Duration user_time_duration = 4;
+
+  // Most build systems cache build results to speed up incremental builds.
+  // Some also cache test results too. This indicates whether the test results
+  // were found in a cache, and where that cache was located.
+  TestCaching test_caching = 5;
+}
+
+// A warning from a test execution.
+message TestWarning {
+  // Contains the message detailing the warning.
+  string warning_message = 1;
+}
+
+// Indicates how/where this Action was executed.
+enum ExecutionStrategy {
+  // The action did not indicate how it was executed.
+  EXECUTION_STRATEGY_UNSPECIFIED = 0;
+
+  // The action was executed in some other form.
+  OTHER_ENVIRONMENT = 1;
+
+  // The action used a remote build service.
+  REMOTE_SERVICE = 2;
+
+  // The action was executed locally, in parallel with other actions.
+  LOCAL_PARALLEL = 3;
+
+  // The action was executed locally, without parallelism.
+  LOCAL_SEQUENTIAL = 4;
+}
+
+// Most build systems cache build results to speed up incremental builds.
+// Some also cache test results too. This indicates whether the test results
+// were found in a cache, and where that cache was located.
+enum TestCaching {
+  // The implicit default enum value. Should never be set.
+  TEST_CACHING_UNSPECIFIED = 0;
+
+  // The test result was found in a local cache, so it wasn't run again.
+  LOCAL_CACHE_HIT = 1;
+
+  // The test result was found in a remote cache, so it wasn't run again.
+  REMOTE_CACHE_HIT = 2;
+
+  // The test result was not found in any cache, so it had to be run again.
+  CACHE_MISS = 3;
+}

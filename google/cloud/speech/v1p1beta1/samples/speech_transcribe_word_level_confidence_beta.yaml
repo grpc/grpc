@@ -1,0 +1,45 @@
+type: com.google.api.codegen.samplegen.v1p2.SampleConfigProto
+schema_version: 1.2.0
+samples:
+- region_tag: speech_transcribe_word_level_confidence_beta
+  title: Enabling word-level confidence (Local File) (Beta)
+  description: |
+    Print confidence level for individual words in a transcription of a short audio file.
+  rpc: Recognize
+  service: google.cloud.speech.v1p1beta1.Speech
+  request:
+  - field: audio.content
+    value: "resources/brooklyn_bridge.flac"
+    input_parameter: local_file_path
+    comment: Path to local audio file, e.g. /path/audio.wav
+    value_is_file: true
+  - field: config.enable_word_confidence
+    value: true
+    comment: |
+      When enabled, the first result returned by the API will include a list
+      of words and the confidence level for each of those words.
+  - field: config.language_code
+    value: "en-US"
+    comment: The language of the supplied audio
+  response:
+  - comment:
+    - The first result includes confidence levels per word
+  - define: result = $resp.results[0]
+  - comment:
+    - First alternative is the most probable result
+  - define: alternative = result.alternatives[0]
+  - print:
+    - "Transcript: %s"
+    - alternative.transcript
+  - comment:
+    - Print the confidence level of each word
+  - loop:
+      collection: alternative.words
+      variable: word
+      body:
+      - print:
+        - "Word: %s"
+        - word.word
+      - print:
+        - "Confidence: %s"
+        - word.confidence

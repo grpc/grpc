@@ -1,0 +1,195 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/enums/ad_customizer_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/affiliate_location_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/app_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/call_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/callout_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/custom_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/dsa_page_feed_criterion_field.proto";
+import "google/ads/googleads/v1/enums/education_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/feed_mapping_criterion_type.proto";
+import "google/ads/googleads/v1/enums/feed_mapping_status.proto";
+import "google/ads/googleads/v1/enums/flight_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/hotel_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/job_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/local_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/location_extension_targeting_criterion_field.proto";
+import "google/ads/googleads/v1/enums/location_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/message_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/placeholder_type.proto";
+import "google/ads/googleads/v1/enums/price_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/promotion_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/real_estate_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/sitelink_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/structured_snippet_placeholder_field.proto";
+import "google/ads/googleads/v1/enums/travel_placeholder_field.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "FeedMappingProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the FeedMapping resource.
+
+// A feed mapping.
+message FeedMapping {
+  // The resource name of the feed mapping.
+  // Feed mapping resource names have the form:
+  //
+  // `customers/{customer_id}/feedMappings/{feed_id}~{feed_mapping_id}`
+  string resource_name = 1;
+
+  // The feed of this feed mapping.
+  google.protobuf.StringValue feed = 2;
+
+  // Feed attributes to field mappings. These mappings are a one-to-many
+  // relationship meaning that 1 feed attribute can be used to populate
+  // multiple placeholder fields, but 1 placeholder field can only draw
+  // data from 1 feed attribute. Ad Customizer is an exception, 1 placeholder
+  // field can be mapped to multiple feed attributes. Required.
+  repeated AttributeFieldMapping attribute_field_mappings = 5;
+
+  // Status of the feed mapping.
+  // This field is read-only.
+  google.ads.googleads.v1.enums.FeedMappingStatusEnum.FeedMappingStatus status =
+      6;
+
+  // Feed mapping target. Can be either a placeholder or a criterion. For a
+  // given feed, the active FeedMappings must have unique targets. Required.
+  oneof target {
+    // The placeholder type of this mapping (i.e., if the mapping maps feed
+    // attributes to placeholder fields).
+    google.ads.googleads.v1.enums.PlaceholderTypeEnum.PlaceholderType
+        placeholder_type = 3;
+
+    // The criterion type of this mapping (i.e., if the mapping maps feed
+    // attributes to criterion fields).
+    google.ads.googleads.v1.enums.FeedMappingCriterionTypeEnum
+        .FeedMappingCriterionType criterion_type = 4;
+  }
+}
+
+// Maps from feed attribute id to a placeholder or criterion field id.
+message AttributeFieldMapping {
+  // Feed attribute from which to map.
+  google.protobuf.Int64Value feed_attribute_id = 1;
+
+  // The placeholder field ID. If a placeholder field enum is not published in
+  // the current API version, then this field will be populated and the field
+  // oneof will be empty.
+  // This field is read-only.
+  google.protobuf.Int64Value field_id = 2;
+
+  // Placeholder or criterion field to be populated using data from
+  // the above feed attribute. Required.
+  oneof field {
+    // Sitelink Placeholder Fields.
+    google.ads.googleads.v1.enums.SitelinkPlaceholderFieldEnum
+        .SitelinkPlaceholderField sitelink_field = 3;
+
+    // Call Placeholder Fields.
+    google.ads.googleads.v1.enums.CallPlaceholderFieldEnum.CallPlaceholderField
+        call_field = 4;
+
+    // App Placeholder Fields.
+    google.ads.googleads.v1.enums.AppPlaceholderFieldEnum.AppPlaceholderField
+        app_field = 5;
+
+    // Location Placeholder Fields. This field is read-only.
+    google.ads.googleads.v1.enums.LocationPlaceholderFieldEnum
+        .LocationPlaceholderField location_field = 6;
+
+    // Affiliate Location Placeholder Fields. This field is read-only.
+    google.ads.googleads.v1.enums.AffiliateLocationPlaceholderFieldEnum
+        .AffiliateLocationPlaceholderField affiliate_location_field = 7;
+
+    // Callout Placeholder Fields.
+    google.ads.googleads.v1.enums.CalloutPlaceholderFieldEnum
+        .CalloutPlaceholderField callout_field = 8;
+
+    // Structured Snippet Placeholder Fields.
+    google.ads.googleads.v1.enums.StructuredSnippetPlaceholderFieldEnum
+        .StructuredSnippetPlaceholderField structured_snippet_field = 9;
+
+    // Message Placeholder Fields.
+    google.ads.googleads.v1.enums.MessagePlaceholderFieldEnum
+        .MessagePlaceholderField message_field = 10;
+
+    // Price Placeholder Fields.
+    google.ads.googleads.v1.enums.PricePlaceholderFieldEnum
+        .PricePlaceholderField price_field = 11;
+
+    // Promotion Placeholder Fields.
+    google.ads.googleads.v1.enums.PromotionPlaceholderFieldEnum
+        .PromotionPlaceholderField promotion_field = 12;
+
+    // Ad Customizer Placeholder Fields
+    google.ads.googleads.v1.enums.AdCustomizerPlaceholderFieldEnum
+        .AdCustomizerPlaceholderField ad_customizer_field = 13;
+
+    // Dynamic Search Ad Page Feed Fields.
+    google.ads.googleads.v1.enums.DsaPageFeedCriterionFieldEnum
+        .DsaPageFeedCriterionField dsa_page_feed_field = 14;
+
+    // Location Target Fields.
+    google.ads.googleads.v1.enums.LocationExtensionTargetingCriterionFieldEnum
+        .LocationExtensionTargetingCriterionField
+            location_extension_targeting_field = 15;
+
+    // Education Placeholder Fields
+    google.ads.googleads.v1.enums.EducationPlaceholderFieldEnum
+        .EducationPlaceholderField education_field = 16;
+
+    // Flight Placeholder Fields
+    google.ads.googleads.v1.enums.FlightPlaceholderFieldEnum
+        .FlightPlaceholderField flight_field = 17;
+
+    // Custom Placeholder Fields
+    google.ads.googleads.v1.enums.CustomPlaceholderFieldEnum
+        .CustomPlaceholderField custom_field = 18;
+
+    // Hotel Placeholder Fields
+    google.ads.googleads.v1.enums.HotelPlaceholderFieldEnum
+        .HotelPlaceholderField hotel_field = 19;
+
+    // Real Estate Placeholder Fields
+    google.ads.googleads.v1.enums.RealEstatePlaceholderFieldEnum
+        .RealEstatePlaceholderField real_estate_field = 20;
+
+    // Travel Placeholder Fields
+    google.ads.googleads.v1.enums.TravelPlaceholderFieldEnum
+        .TravelPlaceholderField travel_field = 21;
+
+    // Local Placeholder Fields
+    google.ads.googleads.v1.enums.LocalPlaceholderFieldEnum
+        .LocalPlaceholderField local_field = 22;
+
+    // Job Placeholder Fields
+    google.ads.googleads.v1.enums.JobPlaceholderFieldEnum.JobPlaceholderField
+        job_field = 23;
+  }
+}

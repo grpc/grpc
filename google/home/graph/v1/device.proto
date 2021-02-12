@@ -1,0 +1,117 @@
+// Copyright 2018 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.home.graph.v1;
+
+import "google/protobuf/struct.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/home/graph/v1;graph";
+option java_outer_classname = "DeviceProto";
+option java_package = "com.google.home.graph.v1";
+
+// Third-party partner's device definition.
+message Device {
+  // Third-party partner's device ID.
+  string id = 1;
+
+  // Hardware type of the device (e.g. light, outlet, etc).
+  string type = 2;
+
+  // Traits supported by the device.
+  repeated string traits = 3;
+
+  // Name of the device given by the third party. This includes names given to
+  // the device via third party device manufacturer's app, model names for the
+  // device, etc.
+  DeviceNames name = 4;
+
+  // Indicates whether the state of this device is being reported to Google
+  // through ReportStateAndNotification call.
+  bool will_report_state = 5;
+
+  // If the third-party partner's cloud configuration includes placing devices
+  // in rooms, the name of the room can be provided here.
+  string room_hint = 6;
+
+  // As in roomHint, for structures that users set up in the partner's system.
+  string structure_hint = 7;
+
+  // Device manufacturer, model, hardware version, and software version.
+  DeviceInfo device_info = 8;
+
+  // Attributes for the traits supported by the device.
+  google.protobuf.Struct attributes = 9;
+
+  // Custom JSON data provided by the manufacturer and attached to QUERY and
+  // EXECUTE requests in AoG.
+  google.protobuf.Struct custom_data = 10;
+
+  // IDs of other devices associated with this device. This is used to
+  // represent a device group (e.g. bonded zone) or "facets" synced
+  // through different flows (e.g. Google Nest Hub Max with a Nest Camera).
+  //
+  // This may also be used to pass in alternate IDs used to identify a cloud
+  // synced device for local execution (i.e. local verification). If used for
+  // local verification, this field is synced from the cloud.
+  repeated AgentOtherDeviceId other_device_ids = 11;
+
+  // Indicates whether the device is capable of sending notifications. This
+  // field will be set by the agent (partner) on an incoming SYNC. If a device
+  // is not capable of generating notifications, the partner should set this
+  // flag to false. If a partner is not capable of calling
+  // ReportStateAndNotification to send notifications to Google, the partner
+  // should set this flag to false. If there is a user setting in the partner
+  // app to enable notifications and it is turned off, the partner should set
+  // this flag to false.
+  bool notification_supported_by_agent = 12;
+}
+
+// Different names for the device.
+message DeviceNames {
+  // Primary name of the device, generally provided by the user.
+  string name = 1;
+
+  // Additional names provided by the user for the device.
+  repeated string nicknames = 2;
+
+  // List of names provided by the partner rather than the user, often
+  // manufacturer names, SKUs, etc.
+  repeated string default_names = 3;
+}
+
+// Device information.
+message DeviceInfo {
+  // Device manufacturer.
+  string manufacturer = 1;
+
+  // Device model.
+  string model = 2;
+
+  // Device hardware version.
+  string hw_version = 3;
+
+  // Device software version.
+  string sw_version = 4;
+}
+
+// Identifies a device in the third party or first party system.
+message AgentOtherDeviceId {
+  // The agent's ID. Generally it is the agent's AoG project id.
+  string agent_id = 1;
+
+  // Device ID defined by the agent. The device_id must be unique.
+  string device_id = 2;
+}

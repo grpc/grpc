@@ -1,0 +1,44 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.billing.budgets.v1beta1.BudgetService",
+          "method": "CreateBudget"
+        }
+      ],
+      "timeout": "60s"
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.billing.budgets.v1beta1.BudgetService",
+          "method": "UpdateBudget"
+        },
+        {
+          "service": "google.cloud.billing.budgets.v1beta1.BudgetService",
+          "method": "GetBudget"
+        },
+        {
+          "service": "google.cloud.billing.budgets.v1beta1.BudgetService",
+          "method": "ListBudgets"
+        },
+        {
+          "service": "google.cloud.billing.budgets.v1beta1.BudgetService",
+          "method": "DeleteBudget"
+        }
+      ],
+      "timeout": "60s",
+      "retryPolicy": {
+        "maxAttempts": 5,
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,180 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/enums/affiliate_location_feed_relationship_type.proto";
+import "google/ads/googleads/v2/enums/feed_attribute_type.proto";
+import "google/ads/googleads/v2/enums/feed_origin.proto";
+import "google/ads/googleads/v2/enums/feed_status.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "FeedProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the Feed resource.
+
+// A feed.
+message Feed {
+  // Data used to configure a location feed populated from Google My Business
+  // Locations.
+  message PlacesLocationFeedData {
+    // Data used for authorization using OAuth.
+    message OAuthInfo {
+      // The HTTP method used to obtain authorization.
+      google.protobuf.StringValue http_method = 1;
+
+      // The HTTP request URL used to obtain authorization.
+      google.protobuf.StringValue http_request_url = 2;
+
+      // The HTTP authorization header used to obtain authorization.
+      google.protobuf.StringValue http_authorization_header = 3;
+    }
+
+    // Required authentication token (from OAuth API) for the email.
+    // This field can only be specified in a create request. All its subfields
+    // are not selectable.
+    OAuthInfo oauth_info = 1;
+
+    // Email address of a Google My Business account or email address of a
+    // manager of the Google My Business account. Required.
+    google.protobuf.StringValue email_address = 2;
+
+    // Plus page ID of the managed business whose locations should be used. If
+    // this field is not set, then all businesses accessible by the user
+    // (specified by email_address) are used.
+    // This field is mutate-only and is not selectable.
+    google.protobuf.StringValue business_account_id = 10;
+
+    // Used to filter Google My Business listings by business name. If
+    // business_name_filter is set, only listings with a matching business name
+    // are candidates to be sync'd into FeedItems.
+    google.protobuf.StringValue business_name_filter = 4;
+
+    // Used to filter Google My Business listings by categories. If entries
+    // exist in category_filters, only listings that belong to any of the
+    // categories are candidates to be sync'd into FeedItems. If no entries
+    // exist in category_filters, then all listings are candidates for syncing.
+    repeated google.protobuf.StringValue category_filters = 5;
+
+    // Used to filter Google My Business listings by labels. If entries exist in
+    // label_filters, only listings that has any of the labels set are
+    // candidates to be synchronized into FeedItems. If no entries exist in
+    // label_filters, then all listings are candidates for syncing.
+    repeated google.protobuf.StringValue label_filters = 6;
+  }
+
+  // Data used to configure an affiliate location feed populated with the
+  // specified chains.
+  message AffiliateLocationFeedData {
+    // The list of chains that the affiliate location feed will sync the
+    // locations from.
+    repeated google.protobuf.Int64Value chain_ids = 1;
+
+    // The relationship the chains have with the advertiser.
+    google.ads.googleads.v2.enums.AffiliateLocationFeedRelationshipTypeEnum.AffiliateLocationFeedRelationshipType relationship_type = 2;
+  }
+
+  // The resource name of the feed.
+  // Feed resource names have the form:
+  //
+  // `customers/{customer_id}/feeds/{feed_id}`
+  string resource_name = 1;
+
+  // The ID of the feed.
+  // This field is read-only.
+  google.protobuf.Int64Value id = 2;
+
+  // Name of the feed. Required.
+  google.protobuf.StringValue name = 3;
+
+  // The Feed's attributes. Required on CREATE.
+  // Disallowed on UPDATE. Use attribute_operations to add new attributes.
+  repeated FeedAttribute attributes = 4;
+
+  // The list of operations changing the feed attributes. Attributes can only
+  // be added, not removed.
+  repeated FeedAttributeOperation attribute_operations = 9;
+
+  // Specifies who manages the FeedAttributes for the Feed.
+  google.ads.googleads.v2.enums.FeedOriginEnum.FeedOrigin origin = 5;
+
+  // Status of the feed.
+  // This field is read-only.
+  google.ads.googleads.v2.enums.FeedStatusEnum.FeedStatus status = 8;
+
+  // The system data for the Feed. This data specifies information for
+  // generating the feed items of the system generated feed.
+  oneof system_feed_generation_data {
+    // Data used to configure a location feed populated from Google My Business
+    // Locations.
+    PlacesLocationFeedData places_location_feed_data = 6;
+
+    // Data used to configure an affiliate location feed populated with
+    // the specified chains.
+    AffiliateLocationFeedData affiliate_location_feed_data = 7;
+  }
+}
+
+// FeedAttributes define the types of data expected to be present in a Feed. A
+// single FeedAttribute specifies the expected type of the FeedItemAttributes
+// with the same FeedAttributeId. Optionally, a FeedAttribute can be marked as
+// being part of a FeedItem's unique key.
+message FeedAttribute {
+  // ID of the attribute.
+  google.protobuf.Int64Value id = 1;
+
+  // The name of the attribute. Required.
+  google.protobuf.StringValue name = 2;
+
+  // Data type for feed attribute. Required.
+  google.ads.googleads.v2.enums.FeedAttributeTypeEnum.FeedAttributeType type = 3;
+
+  // Indicates that data corresponding to this attribute is part of a
+  // FeedItem's unique key. It defaults to false if it is unspecified. Note
+  // that a unique key is not required in a Feed's schema, in which case the
+  // FeedItems must be referenced by their feed_item_id.
+  google.protobuf.BoolValue is_part_of_key = 4;
+}
+
+// Operation to be performed on a feed attribute list in a mutate.
+message FeedAttributeOperation {
+  // The operator.
+  enum Operator {
+    // Unspecified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Add the attribute to the existing attributes.
+    ADD = 2;
+  }
+
+  // Type of list operation to perform.
+  Operator operator = 1;
+
+  // The feed attribute being added to the list.
+  FeedAttribute value = 2;
+}

@@ -1,0 +1,71 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.services;
+
+import "google/ads/googleads/v2/enums/month_of_year.proto";
+import "google/ads/googleads/v2/resources/invoice.proto";
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "InvoiceServiceProto";
+option java_package = "com.google.ads.googleads.v2.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V2::Services";
+
+// Proto file describing the Invoice service.
+
+// A service to fetch invoices issued for a billing setup during a given month.
+service InvoiceService {
+  option (google.api.default_host) = "googleads.googleapis.com";
+
+  // Returns all invoices associated with a billing setup, for a given month.
+  rpc ListInvoices(ListInvoicesRequest) returns (ListInvoicesResponse) {
+    option (google.api.http) = {
+      get: "/v2/customers/{customer_id=*}/invoices"
+    };
+  }
+}
+
+// Request message for fetching the invoices of a given billing setup that were
+// issued during a given month.
+message ListInvoicesRequest {
+  // The ID of the customer to fetch invoices for.
+  string customer_id = 1;
+
+  // Required. The billing setup resource name of the requested invoices.
+  //
+  // `customers/{customer_id}/billingSetups/{billing_setup_id}`
+  string billing_setup = 2;
+
+  // Required. The issue year to retrieve invoices, in yyyy format. Only
+  // invoices issued in 2019 or later can be retrieved.
+  string issue_year = 3;
+
+  // Required. The issue month to retrieve invoices.
+  google.ads.googleads.v2.enums.MonthOfYearEnum.MonthOfYear issue_month = 4;
+}
+
+// Response message for [InvoiceService.ListInvoices][google.ads.googleads.v2.services.InvoiceService.ListInvoices].
+message ListInvoicesResponse {
+  // The list of invoices that match the billing setup and time period.
+  repeated google.ads.googleads.v2.resources.Invoice invoices = 1;
+}

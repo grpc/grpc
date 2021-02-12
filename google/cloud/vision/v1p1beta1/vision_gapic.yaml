@@ -1,0 +1,55 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.vision.v1p1beta1
+  python:
+    package_name: google.cloud.vision_v1p1beta1.gapic
+  go:
+    package_name: cloud.google.com/go/vision/apiv1p1beta1
+    release_level: BETA
+  csharp:
+    package_name: Google.Cloud.Vision.V1P1Beta1
+    release_level: BETA
+  ruby:
+    package_name: Google::Cloud::Vision::V1p1beta1
+  php:
+    package_name: Google\Cloud\Vision\V1p1beta1
+  nodejs:
+    package_name: vision.v1p1beta1
+    domain_layer_location: google-cloud
+interfaces:
+- name: google.cloud.vision.v1p1beta1.ImageAnnotator
+  smoke_test:
+    method: BatchAnnotateImages
+    init_fields:
+    - requests[0].image.source.gcs_image_uri="gs://cloud-samples-data/vision/face_detection/celebrity_recognition/sergey.jpg"
+    - requests[0].features[0].type=FACE_DETECTION
+  collections: []
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 60000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 60000
+    total_timeout_millis: 600000
+  methods:
+  - name: BatchAnnotateImages
+    flattening:
+      groups:
+      - parameters:
+        - requests
+    required_fields:
+    - requests
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000

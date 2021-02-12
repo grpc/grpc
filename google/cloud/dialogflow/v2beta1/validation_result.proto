@@ -1,0 +1,77 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.dialogflow.v2beta1;
+
+import "google/api/annotations.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.Dialogflow.V2beta1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/dialogflow/v2beta1;dialogflow";
+option java_multiple_files = true;
+option java_outer_classname = "ValidationResultProto";
+option java_package = "com.google.cloud.dialogflow.v2beta1";
+option objc_class_prefix = "DF";
+
+// Represents a single validation error.
+message ValidationError {
+  // Represents a level of severity.
+  enum Severity {
+    // Not specified. This value should never be used.
+    SEVERITY_UNSPECIFIED = 0;
+
+    // The agent doesn't follow Dialogflow best practicies.
+    INFO = 1;
+
+    // The agent may not behave as expected.
+    WARNING = 2;
+
+    // The agent may experience partial failures.
+    ERROR = 3;
+
+    // The agent may completely fail.
+    CRITICAL = 4;
+  }
+
+  // The severity of the error.
+  Severity severity = 1;
+
+  // The names of the entries that the error is associated with.
+  // Format:
+  //
+  // - "projects/<Project ID>/agent", if the error is associated with the entire
+  // agent.
+  // - "projects/<Project ID>/agent/intents/<Intent ID>", if the error is
+  // associated with certain intents.
+  // - "projects/<Project
+  // ID>/agent/intents/<Intent Id>/trainingPhrases/<Training Phrase ID>", if the
+  // error is associated with certain intent training phrases.
+  // - "projects/<Project ID>/agent/intents/<Intent Id>/parameters/<Parameter
+  // ID>", if the error is associated with certain intent parameters.
+  // - "projects/<Project ID>/agent/entities/<Entity ID>", if the error is
+  // associated with certain entities.
+  repeated string entries = 3;
+
+  // The detailed error messsage.
+  string error_message = 4;
+}
+
+// Represents the output of agent validation.
+message ValidationResult {
+  // Contains all validation errors.
+  repeated ValidationError validation_errors = 1;
+}

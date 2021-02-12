@@ -1,0 +1,56 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/api/annotations.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "CustomerClientProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the CustomerClient resource.
+
+// A link between the given customer and a client customer. CustomerClients only
+// exist for manager customers. All direct and indirect client customers are
+// included, as well as the manager itself.
+message CustomerClient {
+  // The resource name of the customer client.
+  // CustomerClient resource names have the form:
+  // `customers/{customer_id}/customerClients/{client_customer_id}`
+  string resource_name = 1;
+
+  // The resource name of the client-customer which is linked to
+  // the given customer. Read only.
+  google.protobuf.StringValue client_customer = 3;
+
+  // Specifies whether this is a hidden account. Learn more about hidden
+  // accounts <a
+  // href="https://support.google.com/google-ads/answer/7519830">here</a>. Read
+  // only.
+  google.protobuf.BoolValue hidden = 4;
+
+  // Distance between given customer and client. For self link, the level value
+  // will be 0. Read only.
+  google.protobuf.Int64Value level = 5;
+}

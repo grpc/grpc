@@ -1,0 +1,20 @@
+type: google.api.Service
+config_version: 3
+name: billingbudgets.googleapis.com
+title: Cloud Billing Budget API
+
+apis:
+- name: google.cloud.billing.budgets.v1beta1.BudgetService
+
+documentation:
+  summary: |-
+    The Cloud Billing Budget API stores Cloud Billing budgets, which define a
+    budget plan and the rules to execute as spend is tracked against that
+    plan.
+
+authentication:
+  rules:
+  - selector: 'google.cloud.billing.budgets.v1beta1.BudgetService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

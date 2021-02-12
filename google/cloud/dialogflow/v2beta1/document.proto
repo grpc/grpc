@@ -1,0 +1,305 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.dialogflow.v2beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/dialogflow/v2beta1/gcs.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+import "google/api/client.proto";
+
+option cc_enable_arenas = true;
+option csharp_namespace = "Google.Cloud.Dialogflow.V2beta1";
+option go_package = "google.golang.org/genproto/googleapis/cloud/dialogflow/v2beta1;dialogflow";
+option java_multiple_files = true;
+option java_outer_classname = "DocumentProto";
+option java_package = "com.google.cloud.dialogflow.v2beta1";
+option objc_class_prefix = "DF";
+
+// Manages documents of a knowledge base.
+service Documents {
+  option (google.api.default_host) = "dialogflow.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/dialogflow";
+
+  // Returns the list of all documents of the knowledge base.
+  //
+  // Note: The `projects.agent.knowledgeBases.documents` resource is deprecated;
+  // only use `projects.knowledgeBases.documents`.
+  rpc ListDocuments(ListDocumentsRequest) returns (ListDocumentsResponse) {
+    option (google.api.http) = {
+      get: "/v2beta1/{parent=projects/*/knowledgeBases/*}/documents"
+      additional_bindings {
+        get: "/v2beta1/{parent=projects/*/agent/knowledgeBases/*}/documents"
+      }
+    };
+  }
+
+  // Retrieves the specified document.
+  //
+  // Note: The `projects.agent.knowledgeBases.documents` resource is deprecated;
+  // only use `projects.knowledgeBases.documents`.
+  rpc GetDocument(GetDocumentRequest) returns (Document) {
+    option (google.api.http) = {
+      get: "/v2beta1/{name=projects/*/knowledgeBases/*/documents/*}"
+      additional_bindings {
+        get: "/v2beta1/{name=projects/*/agent/knowledgeBases/*/documents/*}"
+      }
+    };
+  }
+
+  // Creates a new document.
+  //
+  // Note: The `projects.agent.knowledgeBases.documents` resource is deprecated;
+  // only use `projects.knowledgeBases.documents`.
+  //
+  // Operation <response: [Document][google.cloud.dialogflow.v2beta1.Document],
+  //            metadata: [KnowledgeOperationMetadata][google.cloud.dialogflow.v2beta1.KnowledgeOperationMetadata]>
+  rpc CreateDocument(CreateDocumentRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v2beta1/{parent=projects/*/knowledgeBases/*}/documents"
+      body: "document"
+      additional_bindings {
+        post: "/v2beta1/{parent=projects/*/agent/knowledgeBases/*}/documents"
+        body: "document"
+      }
+    };
+  }
+
+  // Deletes the specified document.
+  //
+  // Note: The `projects.agent.knowledgeBases.documents` resource is deprecated;
+  // only use `projects.knowledgeBases.documents`.
+  //
+  // Operation <response: [google.protobuf.Empty][google.protobuf.Empty],
+  //            metadata: [KnowledgeOperationMetadata][google.cloud.dialogflow.v2beta1.KnowledgeOperationMetadata]>
+  rpc DeleteDocument(DeleteDocumentRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      delete: "/v2beta1/{name=projects/*/knowledgeBases/*/documents/*}"
+      additional_bindings {
+        delete: "/v2beta1/{name=projects/*/agent/knowledgeBases/*/documents/*}"
+      }
+    };
+  }
+
+  // Updates the specified document.
+  //
+  // Note: The `projects.agent.knowledgeBases.documents` resource is deprecated;
+  // only use `projects.knowledgeBases.documents`.
+  //
+  // Operation <response: [Document][google.cloud.dialogflow.v2beta1.Document],
+  //            metadata: [KnowledgeOperationMetadata][google.cloud.dialogflow.v2beta1.KnowledgeOperationMetadata]>
+  rpc UpdateDocument(UpdateDocumentRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      patch: "/v2beta1/{document.name=projects/*/knowledgeBases/*/documents/*}"
+      body: "document"
+      additional_bindings {
+        patch: "/v2beta1/{document.name=projects/*/agent/knowledgeBases/*/documents/*}"
+        body: "document"
+      }
+    };
+  }
+
+  // Reloads the specified document from its specified source, content_uri or
+  // content. The previously loaded content of the document will be deleted.
+  // Note: Even when the content of the document has not changed, there still
+  // may be side effects because of internal implementation changes.
+  //
+  // Note: The `projects.agent.knowledgeBases.documents` resource is deprecated;
+  // only use `projects.knowledgeBases.documents`.
+  //
+  // Operation <response: [Document][google.cloud.dialogflow.v2beta1.Document],
+  //            metadata: [KnowledgeOperationMetadata][google.cloud.dialogflow.v2beta1.KnowledgeOperationMetadata]>
+  rpc ReloadDocument(ReloadDocumentRequest) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v2beta1/{name=projects/*/knowledgeBases/*/documents/*}:reload"
+      body: "*"
+      additional_bindings {
+        post: "/v2beta1/{name=projects/*/agent/knowledgeBases/*/documents/*}:reload"
+        body: "*"
+      }
+    };
+  }
+}
+
+// A document resource.
+//
+// Note: The `projects.agent.knowledgeBases.documents` resource is deprecated;
+// only use `projects.knowledgeBases.documents`.
+message Document {
+  // The knowledge type of document content.
+  enum KnowledgeType {
+    // The type is unspecified or arbitrary.
+    KNOWLEDGE_TYPE_UNSPECIFIED = 0;
+
+    // The document content contains question and answer pairs as either HTML or
+    // CSV. Typical FAQ HTML formats are parsed accurately, but unusual formats
+    // may fail to be parsed.
+    //
+    // CSV must have questions in the first column and answers in the second,
+    // with no header. Because of this explicit format, they are always parsed
+    // accurately.
+    FAQ = 1;
+
+    // Documents for which unstructured text is extracted and used for
+    // question answering.
+    EXTRACTIVE_QA = 2;
+  }
+
+  // The document resource name.
+  // The name must be empty when creating a document.
+  // Format: `projects/<Project ID>/knowledgeBases/<Knowledge Base
+  // ID>/documents/<Document ID>`.
+  string name = 1;
+
+  // Required. The display name of the document. The name must be 1024 bytes or
+  // less; otherwise, the creation request fails.
+  string display_name = 2;
+
+  // Required. The MIME type of this document.
+  string mime_type = 3;
+
+  // Required. The knowledge type of document content.
+  repeated KnowledgeType knowledge_types = 4;
+
+  // Required. The source of this document.
+  oneof source {
+    // The URI where the file content is located.
+    //
+    // For documents stored in Google Cloud Storage, these URIs must have
+    // the form `gs://<bucket-name>/<object-name>`.
+    //
+    // NOTE: External URLs must correspond to public webpages, i.e., they must
+    // be indexed by Google Search. In particular, URLs for showing documents in
+    // Google Cloud Storage (i.e. the URL in your browser) are not supported.
+    // Instead use the `gs://` format URI described above.
+    string content_uri = 5;
+
+    // The raw content of the document. This field is only permitted for
+    // EXTRACTIVE_QA and FAQ knowledge types.
+    // Note: This field is in the process of being deprecated, please use
+    // raw_content instead.
+    string content = 6 [deprecated = true];
+
+    // The raw content of the document. This field is only permitted for
+    // EXTRACTIVE_QA and FAQ knowledge types.
+    bytes raw_content = 9;
+  }
+}
+
+// Request message for [Documents.ListDocuments][google.cloud.dialogflow.v2beta1.Documents.ListDocuments].
+message ListDocumentsRequest {
+  // Required. The knowledge base to list all documents for.
+  // Format: `projects/<Project ID>/knowledgeBases/<Knowledge Base ID>`.
+  string parent = 1;
+
+  // Optional. The maximum number of items to return in a single page. By
+  // default 10 and at most 100.
+  int32 page_size = 2;
+
+  // Optional. The next_page_token value returned from a previous list request.
+  string page_token = 3;
+}
+
+// Response message for [Documents.ListDocuments][google.cloud.dialogflow.v2beta1.Documents.ListDocuments].
+message ListDocumentsResponse {
+  // The list of documents.
+  repeated Document documents = 1;
+
+  // Token to retrieve the next page of results, or empty if there are no
+  // more results in the list.
+  string next_page_token = 2;
+}
+
+// Request message for [Documents.GetDocument][google.cloud.dialogflow.v2beta1.Documents.GetDocument].
+message GetDocumentRequest {
+  // Required. The name of the document to retrieve.
+  // Format `projects/<Project ID>/knowledgeBases/<Knowledge Base
+  // ID>/documents/<Document ID>`.
+  string name = 1;
+}
+
+// Request message for [Documents.CreateDocument][google.cloud.dialogflow.v2beta1.Documents.CreateDocument].
+message CreateDocumentRequest {
+  // Required. The knoweldge base to create a document for.
+  // Format: `projects/<Project ID>/knowledgeBases/<Knowledge Base ID>`.
+  string parent = 1;
+
+  // Required. The document to create.
+  Document document = 2;
+}
+
+// Request message for [Documents.DeleteDocument][google.cloud.dialogflow.v2beta1.Documents.DeleteDocument].
+message DeleteDocumentRequest {
+  // The name of the document to delete.
+  // Format: `projects/<Project ID>/knowledgeBases/<Knowledge Base
+  // ID>/documents/<Document ID>`.
+  string name = 1;
+}
+
+// Request message for [Documents.UpdateDocument][google.cloud.dialogflow.v2beta1.Documents.UpdateDocument].
+message UpdateDocumentRequest {
+  // Required. The document to update.
+  Document document = 1;
+
+  // Optional. Not specified means `update all`.
+  // Currently, only `display_name` can be updated, an InvalidArgument will be
+  // returned for attempting to update other fields.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Metadata in google::longrunning::Operation for Knowledge operations.
+message KnowledgeOperationMetadata {
+  // States of the operation.
+  enum State {
+    // State unspecified.
+    STATE_UNSPECIFIED = 0;
+
+    // The operation has been created.
+    PENDING = 1;
+
+    // The operation is currently running.
+    RUNNING = 2;
+
+    // The operation is done, either cancelled or completed.
+    DONE = 3;
+  }
+
+  // Required. The current state of this operation.
+  State state = 1;
+}
+
+// Request message for [Documents.ReloadDocument][google.cloud.dialogflow.v2beta1.Documents.ReloadDocument].
+message ReloadDocumentRequest {
+  // The name of the document to reload.
+  // Format: `projects/<Project ID>/knowledgeBases/<Knowledge Base
+  // ID>/documents/<Document ID>`
+  string name = 1;
+
+  // The source for document reloading.
+  // Optional. If provided, the service will load the contents from the source
+  // and update document in the knowledge base.
+  oneof source {
+    // The path of gcs source file for reloading document content.
+    GcsSource gcs_source = 3;
+  }
+}

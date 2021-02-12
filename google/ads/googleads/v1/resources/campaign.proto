@@ -1,0 +1,360 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.resources;
+
+import "google/ads/googleads/v1/common/bidding.proto";
+import "google/ads/googleads/v1/common/custom_parameter.proto";
+import "google/ads/googleads/v1/common/frequency_cap.proto";
+import "google/ads/googleads/v1/common/real_time_bidding_setting.proto";
+import "google/ads/googleads/v1/common/targeting_setting.proto";
+import "google/ads/googleads/v1/enums/ad_serving_optimization_status.proto";
+import "google/ads/googleads/v1/enums/advertising_channel_sub_type.proto";
+import "google/ads/googleads/v1/enums/advertising_channel_type.proto";
+import "google/ads/googleads/v1/enums/app_campaign_app_store.proto";
+import "google/ads/googleads/v1/enums/app_campaign_bidding_strategy_goal_type.proto";
+import "google/ads/googleads/v1/enums/bidding_strategy_type.proto";
+import "google/ads/googleads/v1/enums/brand_safety_suitability.proto";
+import "google/ads/googleads/v1/enums/campaign_experiment_type.proto";
+import "google/ads/googleads/v1/enums/campaign_serving_status.proto";
+import "google/ads/googleads/v1/enums/campaign_status.proto";
+import "google/ads/googleads/v1/enums/negative_geo_target_type.proto";
+import "google/ads/googleads/v1/enums/payment_mode.proto";
+import "google/ads/googleads/v1/enums/positive_geo_target_type.proto";
+import "google/ads/googleads/v1/enums/vanity_pharma_display_url_mode.proto";
+import "google/ads/googleads/v1/enums/vanity_pharma_text.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "CampaignProto";
+option java_package = "com.google.ads.googleads.v1.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V1::Resources";
+
+// Proto file describing the Campaign resource.
+
+// A campaign.
+message Campaign {
+  // The network settings for the campaign.
+  message NetworkSettings {
+    // Whether ads will be served with google.com search results.
+    google.protobuf.BoolValue target_google_search = 1;
+
+    // Whether ads will be served on partner sites in the Google Search Network
+    // (requires `target_google_search` to also be `true`).
+    google.protobuf.BoolValue target_search_network = 2;
+
+    // Whether ads will be served on specified placements in the Google Display
+    // Network. Placements are specified using the Placement criterion.
+    google.protobuf.BoolValue target_content_network = 3;
+
+    // Whether ads will be served on the Google Partner Network.
+    // This is available only to some select Google partner accounts.
+    google.protobuf.BoolValue target_partner_search_network = 4;
+  }
+
+  // Campaign-level settings for hotel ads.
+  message HotelSettingInfo {
+    // The linked Hotel Center account.
+    google.protobuf.Int64Value hotel_center_id = 1;
+  }
+
+  // Describes how unbranded pharma ads will be displayed.
+  message VanityPharma {
+    // The display mode for vanity pharma URLs.
+    google.ads.googleads.v1.enums.VanityPharmaDisplayUrlModeEnum.VanityPharmaDisplayUrlMode vanity_pharma_display_url_mode = 1;
+
+    // The text that will be displayed in display URL of the text ad when
+    // website description is the selected display mode for vanity pharma URLs.
+    google.ads.googleads.v1.enums.VanityPharmaTextEnum.VanityPharmaText vanity_pharma_text = 2;
+  }
+
+  // The setting for controlling Dynamic Search Ads (DSA).
+  message DynamicSearchAdsSetting {
+    // The Internet domain name that this setting represents, e.g., "google.com"
+    // or "www.google.com".
+    google.protobuf.StringValue domain_name = 1;
+
+    // The language code specifying the language of the domain, e.g., "en".
+    google.protobuf.StringValue language_code = 2;
+
+    // Whether the campaign uses advertiser supplied URLs exclusively.
+    google.protobuf.BoolValue use_supplied_urls_only = 3;
+
+    // The list of page feeds associated with the campaign.
+    repeated google.protobuf.StringValue feeds = 5;
+  }
+
+  // The setting for Shopping campaigns. Defines the universe of products that
+  // can be advertised by the campaign, and how this campaign interacts with
+  // other Shopping campaigns.
+  message ShoppingSetting {
+    // ID of the Merchant Center account.
+    // This field is required for create operations. This field is immutable for
+    // Shopping campaigns.
+    google.protobuf.Int64Value merchant_id = 1;
+
+    // Sales country of products to include in the campaign.
+    // This field is required for Shopping campaigns. This field is immutable.
+    // This field is optional for non-Shopping campaigns, but it must be equal
+    // to 'ZZ' if set.
+    google.protobuf.StringValue sales_country = 2;
+
+    // Priority of the campaign. Campaigns with numerically higher priorities
+    // take precedence over those with lower priorities.
+    // This field is required for Shopping campaigns, with values between 0 and
+    // 2, inclusive.
+    // This field is optional for Smart Shopping campaigns, but must be equal to
+    // 3 if set.
+    google.protobuf.Int32Value campaign_priority = 3;
+
+    // Whether to include local products.
+    google.protobuf.BoolValue enable_local = 4;
+  }
+
+  // Campaign level settings for tracking information.
+  message TrackingSetting {
+    // The url used for dynamic tracking.
+    google.protobuf.StringValue tracking_url = 1;
+  }
+
+  // Selective optimization setting for this campaign, which includes a set of
+  // conversion actions to optimize this campaign towards.
+  message SelectiveOptimization {
+    // The selected set of conversion actions for optimizing this campaign.
+    repeated google.protobuf.StringValue conversion_actions = 1;
+  }
+
+  // Campaign level settings for App Campaigns.
+  message AppCampaignSetting {
+    // Represents the goal which the bidding strategy of this app campaign
+    // should optimize towards.
+    google.ads.googleads.v1.enums.AppCampaignBiddingStrategyGoalTypeEnum.AppCampaignBiddingStrategyGoalType bidding_strategy_goal_type = 1;
+
+    // A string that uniquely identifies a mobile application.
+    google.protobuf.StringValue app_id = 2;
+
+    // The application store that distributes this specific app.
+    google.ads.googleads.v1.enums.AppCampaignAppStoreEnum.AppCampaignAppStore app_store = 3;
+  }
+
+  // Represents a collection of settings related to ads geotargeting.
+  message GeoTargetTypeSetting {
+    // The setting used for positive geotargeting in this particular campaign.
+    google.ads.googleads.v1.enums.PositiveGeoTargetTypeEnum.PositiveGeoTargetType positive_geo_target_type = 1;
+
+    // The setting used for negative geotargeting in this particular campaign.
+    google.ads.googleads.v1.enums.NegativeGeoTargetTypeEnum.NegativeGeoTargetType negative_geo_target_type = 2;
+  }
+
+  // The resource name of the campaign.
+  // Campaign resource names have the form:
+  //
+  // `customers/{customer_id}/campaigns/{campaign_id}`
+  string resource_name = 1;
+
+  // The ID of the campaign.
+  google.protobuf.Int64Value id = 3;
+
+  // The name of the campaign.
+  //
+  // This field is required and should not be empty when creating new
+  // campaigns.
+  //
+  // It must not contain any null (code point 0x0), NL line feed
+  // (code point 0xA) or carriage return (code point 0xD) characters.
+  google.protobuf.StringValue name = 4;
+
+  // The status of the campaign.
+  //
+  // When a new campaign is added, the status defaults to ENABLED.
+  google.ads.googleads.v1.enums.CampaignStatusEnum.CampaignStatus status = 5;
+
+  // The ad serving status of the campaign.
+  google.ads.googleads.v1.enums.CampaignServingStatusEnum.CampaignServingStatus serving_status = 21;
+
+  // The ad serving optimization status of the campaign.
+  google.ads.googleads.v1.enums.AdServingOptimizationStatusEnum.AdServingOptimizationStatus ad_serving_optimization_status = 8;
+
+  // The primary serving target for ads within the campaign.
+  // The targeting options can be refined in `network_settings`.
+  //
+  // This field is required and should not be empty when creating new
+  // campaigns.
+  //
+  // Can be set only when creating campaigns.
+  // After the campaign is created, the field can not be changed.
+  google.ads.googleads.v1.enums.AdvertisingChannelTypeEnum.AdvertisingChannelType advertising_channel_type = 9;
+
+  // Optional refinement to `advertising_channel_type`.
+  // Must be a valid sub-type of the parent channel type.
+  //
+  // Can be set only when creating campaigns.
+  // After campaign is created, the field can not be changed.
+  google.ads.googleads.v1.enums.AdvertisingChannelSubTypeEnum.AdvertisingChannelSubType advertising_channel_sub_type = 10;
+
+  // The URL template for constructing a tracking URL.
+  google.protobuf.StringValue tracking_url_template = 11;
+
+  // The list of mappings used to substitute custom parameter tags in a
+  // `tracking_url_template`, `final_urls`, or `mobile_final_urls`.
+  repeated google.ads.googleads.v1.common.CustomParameter url_custom_parameters = 12;
+
+  // Settings for Real-Time Bidding, a feature only available for campaigns
+  // targeting the Ad Exchange network.
+  google.ads.googleads.v1.common.RealTimeBiddingSetting real_time_bidding_setting = 39;
+
+  // The network settings for the campaign.
+  NetworkSettings network_settings = 14;
+
+  // The hotel setting for the campaign.
+  HotelSettingInfo hotel_setting = 32;
+
+  // The setting for controlling Dynamic Search Ads (DSA).
+  DynamicSearchAdsSetting dynamic_search_ads_setting = 33;
+
+  // The setting for controlling Shopping campaigns.
+  ShoppingSetting shopping_setting = 36;
+
+  // Setting for targeting related features.
+  google.ads.googleads.v1.common.TargetingSetting targeting_setting = 43;
+
+  // The setting for ads geotargeting.
+  GeoTargetTypeSetting geo_target_type_setting = 47;
+
+  // The setting related to App Campaign.
+  AppCampaignSetting app_campaign_setting = 51;
+
+  // The resource names of labels attached to this campaign.
+  repeated google.protobuf.StringValue labels = 53;
+
+  // The type of campaign: normal, draft, or experiment.
+  google.ads.googleads.v1.enums.CampaignExperimentTypeEnum.CampaignExperimentType experiment_type = 17;
+
+  // The resource name of the base campaign of a draft or experiment campaign.
+  // For base campaigns, this is equal to `resource_name`.
+  //
+  // This field is read-only.
+  google.protobuf.StringValue base_campaign = 28;
+
+  // The budget of the campaign.
+  google.protobuf.StringValue campaign_budget = 6;
+
+  // The type of bidding strategy.
+  //
+  // A bidding strategy can be created by setting either the bidding scheme to
+  // create a standard bidding strategy or the `bidding_strategy` field to
+  // create a portfolio bidding strategy.
+  //
+  // This field is read-only.
+  google.ads.googleads.v1.enums.BiddingStrategyTypeEnum.BiddingStrategyType bidding_strategy_type = 22;
+
+  // The date when campaign started.
+  //
+  // This field must not be used in WHERE clauses.
+  google.protobuf.StringValue start_date = 19;
+
+  // The date when campaign ended.
+  //
+  // This field must not be used in WHERE clauses.
+  google.protobuf.StringValue end_date = 20;
+
+  // Suffix used to append query parameters to landing pages that are served
+  // with parallel tracking.
+  google.protobuf.StringValue final_url_suffix = 38;
+
+  // A list that limits how often each user will see this campaign's ads.
+  repeated google.ads.googleads.v1.common.FrequencyCapEntry frequency_caps = 40;
+
+  // 3-Tier Brand Safety setting for the campaign.
+  google.ads.googleads.v1.enums.BrandSafetySuitabilityEnum.BrandSafetySuitability video_brand_safety_suitability = 42;
+
+  // Describes how unbranded pharma ads will be displayed.
+  VanityPharma vanity_pharma = 44;
+
+  // Selective optimization setting for this campaign, which includes a set of
+  // conversion actions to optimize this campaign towards.
+  SelectiveOptimization selective_optimization = 45;
+
+  // Campaign level settings for tracking information.
+  TrackingSetting tracking_setting = 46;
+
+  // Payment mode for the campaign.
+  google.ads.googleads.v1.enums.PaymentModeEnum.PaymentMode payment_mode = 52;
+
+  // The bidding strategy for the campaign.
+  //
+  // Must be either portfolio (created via BiddingStrategy service) or
+  // standard, that is embedded into the campaign.
+  oneof campaign_bidding_strategy {
+    // Portfolio bidding strategy used by campaign.
+    google.protobuf.StringValue bidding_strategy = 23;
+
+    // Commission is an automatic bidding strategy in which the advertiser pays
+    // a certain portion of the conversion value.
+    google.ads.googleads.v1.common.Commission commission = 49;
+
+    // Standard Manual CPC bidding strategy.
+    // Manual click-based bidding where user pays per click.
+    google.ads.googleads.v1.common.ManualCpc manual_cpc = 24;
+
+    // Standard Manual CPM bidding strategy.
+    // Manual impression-based bidding where user pays per thousand
+    // impressions.
+    google.ads.googleads.v1.common.ManualCpm manual_cpm = 25;
+
+    // A bidding strategy that pays a configurable amount per video view.
+    google.ads.googleads.v1.common.ManualCpv manual_cpv = 37;
+
+    // Standard Maximize Conversions bidding strategy that automatically
+    // maximizes number of conversions given a daily budget.
+    google.ads.googleads.v1.common.MaximizeConversions maximize_conversions = 30;
+
+    // Standard Maximize Conversion Value bidding strategy that automatically
+    // sets bids to maximize revenue while spending your budget.
+    google.ads.googleads.v1.common.MaximizeConversionValue maximize_conversion_value = 31;
+
+    // Standard Target CPA bidding strategy that automatically sets bids to
+    // help get as many conversions as possible at the target
+    // cost-per-acquisition (CPA) you set.
+    google.ads.googleads.v1.common.TargetCpa target_cpa = 26;
+
+    // Target Impression Share bidding strategy. An automated bidding strategy
+    // that sets bids to achieve a desired percentage of impressions.
+    google.ads.googleads.v1.common.TargetImpressionShare target_impression_share = 48;
+
+    // Standard Target ROAS bidding strategy that automatically maximizes
+    // revenue while averaging a specific target return on ad spend (ROAS).
+    google.ads.googleads.v1.common.TargetRoas target_roas = 29;
+
+    // Standard Target Spend bidding strategy that automatically sets your bids
+    // to help get as many clicks as possible within your budget.
+    google.ads.googleads.v1.common.TargetSpend target_spend = 27;
+
+    // Standard Percent Cpc bidding strategy where bids are a fraction of the
+    // advertised price for some good or service.
+    google.ads.googleads.v1.common.PercentCpc percent_cpc = 34;
+
+    // A bidding strategy that automatically optimizes cost per thousand
+    // impressions.
+    google.ads.googleads.v1.common.TargetCpm target_cpm = 41;
+  }
+}

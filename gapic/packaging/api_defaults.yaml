@@ -1,0 +1,49 @@
+# Copyright 2016 Google Inc. All Rights Reserved.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+
+# Provides default values used as metadata when constructing various packages.
+
+# THIS FILE IS DEPRECATED
+# Its new location is:
+# https://github.com/googleapis/gapic-generator/blob/master/src/main/resources/com/google/api/codegen/packaging/api_defaults.yaml
+# Artman will no longer use this file as of version 0.10.0. It is only being
+# kept around for users of older versions of Artman, and it will eventually
+# be deleted.
+
+author: Google LLC
+email: googleapis-packages@google.com
+homepage: https://github.com/googleapis/googleapis
+license: Apache-2.0
+release_level:
+  python: alpha
+  java: alpha
+  ruby: alpha
+  nodejs: alpha
+generated_package_version:
+  python:
+    lower: '0.1.0'
+    upper: '0.2dev'
+  nodejs:
+    lower: '0.1.0'
+  php:
+    lower: '0.1.0'
+  ruby:
+    lower: '0.1.0'
+  java:
+    lower: '0.12.0'
+
+generated_ga_package_version:
+  java:
+    lower: '1.11.0'

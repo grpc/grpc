@@ -1,0 +1,59 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "MutateJobErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing mutate job errors.
+
+// Container for enum describing possible mutate job errors.
+message MutateJobErrorEnum {
+  // Enum describing possible request errors.
+  enum MutateJobError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // The mutate job cannot add more operations or run after it has started
+    // running.
+    CANNOT_MODIFY_JOB_AFTER_JOB_STARTS_RUNNING = 2;
+
+    // The operations for an AddMutateJobOperations request were empty.
+    EMPTY_OPERATIONS = 3;
+
+    // The sequence token for an AddMutateJobOperations request was invalid.
+    INVALID_SEQUENCE_TOKEN = 4;
+
+    // Mutate Job Results can only be retrieved once the job is finished.
+    RESULTS_NOT_READY = 5;
+
+    // The page size for ListMutateJobResults was invalid.
+    INVALID_PAGE_SIZE = 6;
+  }
+}

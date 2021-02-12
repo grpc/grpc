@@ -1,0 +1,72 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/common/dates.proto";
+import "google/ads/googleads/v2/enums/keyword_plan_forecast_interval.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "KeywordPlanProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the keyword plan resource.
+
+// A Keyword Planner plan.
+// Max number of saved keyword plans: 10000.
+// It's possible to remove plans if limit is reached.
+message KeywordPlan {
+  // The resource name of the Keyword Planner plan.
+  // KeywordPlan resource names have the form:
+  //
+  // `customers/{customer_id}/keywordPlans/{kp_plan_id}`
+  string resource_name = 1;
+
+  // The ID of the keyword plan.
+  google.protobuf.Int64Value id = 2;
+
+  // The name of the keyword plan.
+  //
+  // This field is required and should not be empty when creating new keyword
+  // plans.
+  google.protobuf.StringValue name = 3;
+
+  // The date period used for forecasting the plan.
+  KeywordPlanForecastPeriod forecast_period = 4;
+}
+
+// The forecasting period associated with the keyword plan.
+message KeywordPlanForecastPeriod {
+  // Required. The date used for forecasting the Plan.
+  oneof interval {
+    // A future date range relative to the current date used for forecasting.
+    google.ads.googleads.v2.enums.KeywordPlanForecastIntervalEnum.KeywordPlanForecastInterval date_interval = 1;
+
+    // The custom date range used for forecasting.
+    // The start and end dates must be in the future. Otherwise, an error will
+    // be returned when the forecasting action is performed.
+    // The start and end dates are inclusive.
+    google.ads.googleads.v2.common.DateRange date_range = 2;
+  }
+}

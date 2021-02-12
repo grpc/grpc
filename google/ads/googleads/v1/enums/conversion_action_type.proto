@@ -1,0 +1,72 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "ConversionActionTypeProto";
+option java_package = "com.google.ads.googleads.v1.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V1::Enums";
+
+// Proto file describing conversion action type.
+
+// Container for enum describing possible types of a conversion action.
+message ConversionActionTypeEnum {
+  // Possible types of a conversion action.
+  enum ConversionActionType {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Conversions that occur when a user clicks on an ad's call extension.
+    AD_CALL = 2;
+
+    // Conversions that occur when a user on a mobile device clicks a phone
+    // number.
+    CLICK_TO_CALL = 3;
+
+    // Conversions that occur when a user downloads a mobile app from the Google
+    // Play Store.
+    GOOGLE_PLAY_DOWNLOAD = 4;
+
+    // Conversions that occur when a user makes a purchase in an app through
+    // Android billing.
+    GOOGLE_PLAY_IN_APP_PURCHASE = 5;
+
+    // Call conversions that are tracked by the advertiser and uploaded.
+    UPLOAD_CALLS = 6;
+
+    // Conversions that are tracked by the advertiser and uploaded with
+    // attributed clicks.
+    UPLOAD_CLICKS = 7;
+
+    // Conversions that occur on a webpage.
+    WEBPAGE = 8;
+
+    // Conversions that occur when a user calls a dynamically-generated phone
+    // number from an advertiser's website.
+    WEBSITE_CALL = 9;
+  }
+}

@@ -1,0 +1,74 @@
+// Copyright 2018 The Grafeas Authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grafeas.v1beta1.deployment;
+
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/deployment;deployment";
+option java_multiple_files = true;
+option java_package = "io.grafeas.v1beta1.deployment";
+option objc_class_prefix = "GRA";
+
+// An artifact that can be deployed in some runtime.
+message Deployable {
+  // Resource URI for the artifact being deployed.
+  repeated string resource_uri = 1;
+}
+
+// Details of a deployment occurrence.
+message Details {
+  // Deployment history for the resource.
+  Deployment deployment = 1;
+}
+
+// The period during which some deployable was active in a runtime.
+message Deployment {
+  // Identity of the user that triggered this deployment.
+  string user_email = 1;
+
+  // Beginning of the lifetime of this deployment.
+  google.protobuf.Timestamp deploy_time = 2;
+
+  // End of the lifetime of this deployment.
+  google.protobuf.Timestamp undeploy_time = 3;
+
+  // Configuration used to create this deployment.
+  string config = 4;
+
+  // Address of the runtime element hosting this deployment.
+  string address = 5;
+
+  // Output only. Resource URI for the artifact being deployed taken from
+  // the deployable field with the same name.
+  repeated string resource_uri = 6;
+
+  // Types of platforms.
+  enum Platform {
+    // Unknown.
+    PLATFORM_UNSPECIFIED = 0;
+    // Google Container Engine.
+    GKE = 1;
+    // Google App Engine: Flexible Environment.
+    FLEX = 2;
+    // Custom user-defined platform.
+    CUSTOM = 3;
+  }
+  // Platform hosting this deployment.
+  Platform platform = 7;
+
+  // next_id = 8;
+}

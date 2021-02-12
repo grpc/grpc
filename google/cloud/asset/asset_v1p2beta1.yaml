@@ -1,0 +1,38 @@
+type: google.api.Service
+config_version: 3
+name: cloudasset.googleapis.com
+title: Cloud Asset API
+
+apis:
+- name: google.cloud.asset.v1p2beta1.AssetService
+
+documentation:
+  summary: The cloud asset API manages the history and inventory of cloud resources.
+  overview: |-
+    # Cloud Asset API
+
+    The Cloud Asset API keeps a history of Google Cloud Platform (GCP) asset
+    metadata, and allows GCP users to download a dump of all asset metadata
+    for the resource types listed below within an organization or a project at
+    a given timestamp.
+
+    Read more documents here:
+    https://cloud.google.com/resource-manager/docs/cloud-asset-inventory/overview
+
+backend:
+  rules:
+  - selector: 'google.cloud.asset.v1p2beta1.AssetService.*'
+    deadline: 600.0
+  - selector: google.longrunning.Operations.GetOperation
+    deadline: 60.0
+
+authentication:
+  rules:
+  - selector: 'google.cloud.asset.v1p2beta1.AssetService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: google.longrunning.Operations.GetOperation
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

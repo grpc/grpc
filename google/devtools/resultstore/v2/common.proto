@@ -1,0 +1,224 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.resultstore.v2;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/resultstore/v2;resultstore";
+option java_multiple_files = true;
+option java_package = "com.google.devtools.resultstore.v2";
+
+// Describes the status of a resource in both enum and string form.
+// Only use description when conveying additional info not captured in the enum
+// name.
+message StatusAttributes {
+  // Enum representation of the status.
+  Status status = 1;
+
+  // A longer description about the status.
+  string description = 2;
+}
+
+// A generic key-value property definition.
+message Property {
+  // The key.
+  string key = 1;
+
+  // The value.
+  string value = 2;
+}
+
+// The timing of a particular Invocation, Action, etc. The start_time is
+// specified, stop time can be calculated by adding duration to start_time.
+message Timing {
+  // The time the resource started running. This is in UTC Epoch time.
+  google.protobuf.Timestamp start_time = 1;
+
+  // The duration for which the resource ran.
+  google.protobuf.Duration duration = 2;
+}
+
+// Represents a dependency of a resource on another resource. This can be used
+// to define a graph or a workflow paradigm through resources.
+message Dependency {
+  // The resource depended upon. It may be a Target, ConfiguredTarget, or
+  // Action.
+  oneof resource {
+    // The name of a target.  Its format must be:
+    // invocations/${INVOCATION_ID}/targets/${url_encode(TARGET_ID)}
+    // This must point to an target under the same invocation.
+    string target = 1;
+
+    // The name of a configured target.  Its format must be:
+    // invocations/${INVOCATION_ID}/targets/${url_encode(TARGET_ID)}/configuredTargets/${url_encode(CONFIG_ID)}
+    // This must point to an configured target under the same invocation.
+    string configured_target = 2;
+
+    // The name of an action.  Its format must be:
+    // invocations/${INVOCATION_ID}/targets/${url_encode(TARGET_ID)}/configuredTargets/${url_encode(CONFIG_ID)}/actions/${url_encode(ACTION_ID)}
+    // This must point to an action under the same invocation.
+    string action = 3;
+  }
+
+  // A label describing this dependency.
+  // The label "Root Cause" is handled specially. It is used to point to the
+  // exact resource that caused a resource to fail.
+  string label = 4;
+}
+
+// These correspond to the prefix of the rule name. Eg cc_test has language CC.
+enum Language {
+  // Language unspecified or not listed here.
+  LANGUAGE_UNSPECIFIED = 0;
+
+  // Not related to any particular language
+  NONE = 1;
+
+  // Android
+  ANDROID = 2;
+
+  // ActionScript (Flash)
+  AS = 3;
+
+  // C++ or C
+  CC = 4;
+
+  // Cascading-Style-Sheets
+  CSS = 5;
+
+  // Dart
+  DART = 6;
+
+  // Go
+  GO = 7;
+
+  // Google-Web-Toolkit
+  GWT = 8;
+
+  // Haskell
+  HASKELL = 9;
+
+  // Java
+  JAVA = 10;
+
+  // Javascript
+  JS = 11;
+
+  // Lisp
+  LISP = 12;
+
+  // Objective-C
+  OBJC = 13;
+
+  // Python
+  PY = 14;
+
+  // Shell (Typically Bash)
+  SH = 15;
+
+  // Swift
+  SWIFT = 16;
+
+  // Typescript
+  TS = 18;
+
+  // Webtesting
+  WEB = 19;
+
+  // Scala
+  SCALA = 20;
+
+  // Protocol Buffer
+  PROTO = 21;
+
+  // Extensible Markup Language
+  XML = 22;
+}
+
+// Status of a resource.
+enum Status {
+  // The implicit default enum value. Should never be set.
+  STATUS_UNSPECIFIED = 0;
+
+  // Displays as "Building". Means the target is compiling, linking, etc.
+  BUILDING = 1;
+
+  // Displays as "Built". Means the target was built successfully.
+  // If testing was requested, it should never reach this status: it should go
+  // straight from BUILDING to TESTING.
+  BUILT = 2;
+
+  // Displays as "Broken". Means build failure such as compile error.
+  FAILED_TO_BUILD = 3;
+
+  // Displays as "Testing". Means the test is running.
+  TESTING = 4;
+
+  // Displays as "Passed". Means the test was run and passed.
+  PASSED = 5;
+
+  // Displays as "Failed". Means the test was run and failed.
+  FAILED = 6;
+
+  // Displays as "Timed out". Means the test didn't finish in time.
+  TIMED_OUT = 7;
+
+  // Displays as "Cancelled". Means the build or test was cancelled.
+  // E.g. User hit control-C.
+  CANCELLED = 8;
+
+  // Displays as "Tool Failed". Means the build or test had internal tool
+  // failure.
+  TOOL_FAILED = 9;
+
+  // Displays as "Incomplete". Means the build or test did not complete.  This
+  // might happen when a build breakage or test failure causes the tool to stop
+  // trying to build anything more or run any more tests, with the default
+  // bazel --nokeep_going option or the --notest_keep_going option.
+  INCOMPLETE = 10;
+
+  // Displays as "Flaky". Means the aggregate status contains some runs that
+  // were successful, and some that were not.
+  FLAKY = 11;
+
+  // Displays as "Unknown". Means the tool uploading to the server died
+  // mid-upload or does not know the state.
+  UNKNOWN = 12;
+
+  // Displays as "Skipped". Means building and testing were skipped.
+  // (E.g. Restricted to a different configuration.)
+  SKIPPED = 13;
+}
+
+// Indicates the upload status of the invocation, whether it is
+// post-processing, or immutable, etc.
+enum UploadStatus {
+  // The implicit default enum value. Should never be set.
+  UPLOAD_STATUS_UNSPECIFIED = 0;
+
+  // The invocation is still uploading to the ResultStore.
+  UPLOADING = 1;
+
+  // The invocation upload is complete. The ResultStore is still post-processing
+  // the invocation.
+  POST_PROCESSING = 2;
+
+  // All post-processing is complete, and the invocation is now immutable.
+  IMMUTABLE = 3;
+}

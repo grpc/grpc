@@ -1,0 +1,63 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.genomics.v1;
+
+import "google/api/annotations.proto";
+import "google/genomics/v1/readgroup.proto";
+import "google/protobuf/struct.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/genomics/v1;genomics";
+option java_multiple_files = true;
+option java_outer_classname = "ReadGroupSetProto";
+option java_package = "com.google.genomics.v1";
+
+// A read group set is a logical collection of read groups, which are
+// collections of reads produced by a sequencer. A read group set typically
+// models reads corresponding to one sample, sequenced one way, and aligned one
+// way.
+//
+// * A read group set belongs to one dataset.
+// * A read group belongs to one read group set.
+// * A read belongs to one read group.
+//
+// For more genomics resource definitions, see [Fundamentals of Google
+// Genomics](https://cloud.google.com/genomics/fundamentals-of-google-genomics)
+message ReadGroupSet {
+  // The server-generated read group set ID, unique for all read group sets.
+  string id = 1;
+
+  // The dataset to which this read group set belongs.
+  string dataset_id = 2;
+
+  // The reference set to which the reads in this read group set are aligned.
+  string reference_set_id = 3;
+
+  // The read group set name. By default this will be initialized to the sample
+  // name of the sequenced data contained in this set.
+  string name = 4;
+
+  // The filename of the original source file for this read group set, if any.
+  string filename = 5;
+
+  // The read groups in this set. There are typically 1-10 read groups in a read
+  // group set.
+  repeated ReadGroup read_groups = 6;
+
+  // A map of additional read group set information.
+  map<string, google.protobuf.ListValue> info = 7;
+}

@@ -1,0 +1,39 @@
+test:
+  suites:
+  - name: Data Catalog v1beta1 Get Entry sample tests
+    setup:
+    - call:
+        sample: datacatalog_lookup_entry
+        params:
+          resource_name:
+            literal: //bigquery.googleapis.com/projects/bigquery-public-data/datasets/new_york_taxi_trips/tables/taxi_zone_geom
+    - extract_match:
+        pattern: projects/([\w-]+)
+        variable: project_id
+    - extract_match:
+        pattern: locations/([\w-]+)
+        variable: location_id
+    - extract_match:
+        pattern: entryGroups/(@[\w-]+|[\w-]+)
+        variable: entry_group_id
+    - extract_match:
+        pattern: entries/([\w-]+)
+        variable: entry_id
+    cases:
+    - name: Get Entry for a public BigQuery Table
+      spec:
+      - call:
+          sample: datacatalog_get_entry
+          params:
+            project_id:
+              variable: project_id
+            location_id:
+              variable: location_id
+            entry_group_id:
+              variable: entry_group_id
+            entry_id:
+              variable: entry_id
+      - assert_contains:
+        - literal: "Entry name: projects/bigquery-public-data"
+        - literal: "Entry type: TABLE"
+        - literal: "Linked resource: //bigquery.googleapis.com/projects/bigquery-public-data/datasets/new_york_taxi_trips/tables/taxi_zone_geom"

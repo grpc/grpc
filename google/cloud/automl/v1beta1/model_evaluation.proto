@@ -1,0 +1,111 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1beta1;
+
+import "google/cloud/automl/v1beta1/classification.proto";
+import "google/cloud/automl/v1beta1/detection.proto";
+import "google/cloud/automl/v1beta1/regression.proto";
+import "google/cloud/automl/v1beta1/tables.proto";
+import "google/cloud/automl/v1beta1/text_extraction.proto";
+import "google/cloud/automl/v1beta1/text_sentiment.proto";
+import "google/cloud/automl/v1beta1/translation.proto";
+import "google/protobuf/timestamp.proto";
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1beta1;automl";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.automl.v1beta1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1beta1";
+option ruby_package = "Google::Cloud::AutoML::V1beta1";
+
+// Evaluation results of a model.
+message ModelEvaluation {
+  // Output only. Problem type specific evaluation metrics.
+  oneof metrics {
+    // Model evaluation metrics for image, text, video and tables
+    // classification.
+    // Tables problem is considered a classification when the target column
+    // is CATEGORY DataType.
+    ClassificationEvaluationMetrics classification_evaluation_metrics = 8;
+
+    // Model evaluation metrics for Tables regression.
+    // Tables problem is considered a regression when the target column
+    // has FLOAT64 DataType.
+    RegressionEvaluationMetrics regression_evaluation_metrics = 24;
+
+    // Model evaluation metrics for translation.
+    TranslationEvaluationMetrics translation_evaluation_metrics = 9;
+
+    // Model evaluation metrics for image object detection.
+    ImageObjectDetectionEvaluationMetrics image_object_detection_evaluation_metrics = 12;
+
+    // Model evaluation metrics for video object tracking.
+    VideoObjectTrackingEvaluationMetrics video_object_tracking_evaluation_metrics = 14;
+
+    // Evaluation metrics for text sentiment models.
+    TextSentimentEvaluationMetrics text_sentiment_evaluation_metrics = 11;
+
+    // Evaluation metrics for text extraction models.
+    TextExtractionEvaluationMetrics text_extraction_evaluation_metrics = 13;
+  }
+
+  // Output only. Resource name of the model evaluation.
+  // Format:
+  //
+  // `projects/{project_id}/locations/{location_id}/models/{model_id}/modelEvaluations/{model_evaluation_id}`
+  string name = 1;
+
+  // Output only. The ID of the annotation spec that the model evaluation applies to. The
+  // The ID is empty for the overall model evaluation.
+  // For Tables annotation specs in the dataset do not exist and this ID is
+  // always not set, but for CLASSIFICATION
+  //
+  // [prediction_type-s][google.cloud.automl.v1beta1.TablesModelMetadata.prediction_type]
+  // the
+  // [display_name][google.cloud.automl.v1beta1.ModelEvaluation.display_name]
+  // field is used.
+  string annotation_spec_id = 2;
+
+  // Output only. The value of
+  // [display_name][google.cloud.automl.v1beta1.AnnotationSpec.display_name] at
+  // the moment when the model was trained. Because this field returns a value
+  // at model training time, for different models trained from the same dataset,
+  // the values may differ, since display names could had been changed between
+  // the two model's trainings.
+  // For Tables CLASSIFICATION
+  //
+  // [prediction_type-s][google.cloud.automl.v1beta1.TablesModelMetadata.prediction_type]
+  // distinct values of the target column at the moment of the model evaluation
+  // are populated here.
+  // The display_name is empty for the overall model evaluation.
+  string display_name = 15;
+
+  // Output only. Timestamp when this model evaluation was created.
+  google.protobuf.Timestamp create_time = 5;
+
+  // Output only. The number of examples used for model evaluation, i.e. for
+  // which ground truth from time of model creation is compared against the
+  // predicted annotations created by the model.
+  // For overall ModelEvaluation (i.e. with annotation_spec_id not set) this is
+  // the total number of all examples used for evaluation.
+  // Otherwise, this is the count of examples that according to the ground
+  // truth were annotated by the
+  //
+  // [annotation_spec_id][google.cloud.automl.v1beta1.ModelEvaluation.annotation_spec_id].
+  int32 evaluated_example_count = 6;
+}

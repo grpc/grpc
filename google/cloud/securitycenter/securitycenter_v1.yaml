@@ -1,0 +1,80 @@
+type: google.api.Service
+config_version: 3
+name: securitycenter.googleapis.com
+title: Cloud Security Command Center API
+
+apis:
+- name: google.cloud.securitycenter.v1.SecurityCenter
+
+types:
+- name: google.cloud.securitycenter.v1.RunAssetDiscoveryResponse
+
+documentation:
+  summary: |-
+    Cloud Security Command Center API provides access to temporal views of
+    assets and findings within an organization.
+
+backend:
+  rules:
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.CreateSource
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.CreateFinding
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.GetIamPolicy
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.GetOrganizationSettings
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.GetSource
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.GroupAssets
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.GroupFindings
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.ListAssets
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.ListFindings
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.ListSources
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.RunAssetDiscovery
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.SetFindingState
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.SetIamPolicy
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.TestIamPermissions
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.UpdateFinding
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.UpdateOrganizationSettings
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.UpdateSource
+    deadline: 60.0
+  - selector: google.cloud.securitycenter.v1.SecurityCenter.UpdateSecurityMarks
+    deadline: 60.0
+
+http:
+  rules:
+  - selector: google.longrunning.Operations.ListOperations
+    get: '/v1/{name=organizations/*/operations}'
+
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v1/{name=organizations/*/operations/*}'
+
+  - selector: google.longrunning.Operations.DeleteOperation
+    delete: '/v1/{name=organizations/*/operations/*}'
+
+  - selector: google.longrunning.Operations.CancelOperation
+    post: '/v1/{name=organizations/*/operations/*}:cancel'
+    body: '*'
+
+authentication:
+  rules:
+  - selector: 'google.cloud.securitycenter.v1.SecurityCenter.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.longrunning.Operations.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

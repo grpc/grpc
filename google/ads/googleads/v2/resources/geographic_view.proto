@@ -1,0 +1,53 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.resources;
+
+import "google/ads/googleads/v2/enums/geo_targeting_type.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Resources";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/resources;resources";
+option java_multiple_files = true;
+option java_outer_classname = "GeographicViewProto";
+option java_package = "com.google.ads.googleads.v2.resources";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Resources";
+option ruby_package = "Google::Ads::GoogleAds::V2::Resources";
+
+// Proto file describing the geographic view resource.
+
+// A geographic view.
+//
+// Geographic View includes all metrics aggregated at the country level,
+// one row per country. It reports metrics at either actual physical location of
+// the user or an area of interest. If other segment fields are used, you may
+// get more than one row per country.
+message GeographicView {
+  // The resource name of the geographic view.
+  // Geographic view resource names have the form:
+  //
+  // `customers/{customer_id}/geographicViews/{country_criterion_id}~{location_type}`
+  string resource_name = 1;
+
+  // Type of the geo targeting of the campaign.
+  google.ads.googleads.v2.enums.GeoTargetingTypeEnum.GeoTargetingType location_type = 3;
+
+  // Criterion Id for the country.
+  google.protobuf.Int64Value country_criterion_id = 4;
+}

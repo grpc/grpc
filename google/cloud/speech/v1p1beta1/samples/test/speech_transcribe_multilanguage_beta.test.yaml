@@ -1,0 +1,33 @@
+type: test/samples
+schema_version: 1
+test:
+  suites:
+  - name: Detecting language spoken automatically (Local File) (Beta)
+    cases:
+
+    # This sample should default to using brooklyn_bridge.flac
+    - name: speech_transcribe_multilanguage_beta (no arguments)
+      spec:
+      - call:
+          sample: speech_transcribe_multilanguage_beta
+      - assert_contains:
+        - literal: "how old is the Brooklyn Bridge"
+        # Note: the primary language_code given was not English, but
+        #       English was provided in the list of alternative_language_codes
+        - literal: "Detected language: en-us"
+
+    # Confirm that another file can be transcribed (use another .flac file)
+    - name: speech_transcribe_multilanguage_beta (--local_file_path)
+      spec:
+      - call:
+          sample: speech_transcribe_multilanguage_beta
+          params:
+            local_file_path:
+              literal: "resources/multi.flac"
+      - assert_contains:
+        - literal: "how are you doing"
+        # Note: the primary language_code given was not English, but
+        #       English was provided in the list of alternative_language_codes
+        - literal: "Detected language: en-us"
+      - assert_not_contains:
+        - literal: "how old is the Brooklyn Bridge"

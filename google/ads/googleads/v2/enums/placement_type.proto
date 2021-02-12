@@ -1,0 +1,60 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "PlacementTypeProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Proto file describing placement types.
+
+// Container for enum describing possible placement types.
+message PlacementTypeEnum {
+  // Possible placement types for a feed mapping.
+  enum PlacementType {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Websites(e.g. 'www.flowers4sale.com').
+    WEBSITE = 2;
+
+    // Mobile application categories(e.g. 'Games').
+    MOBILE_APP_CATEGORY = 3;
+
+    // mobile applications(e.g. 'mobileapp::2-com.whatsthewordanswers').
+    MOBILE_APPLICATION = 4;
+
+    // YouTube videos(e.g. 'youtube.com/video/wtLJPvx7-ys').
+    YOUTUBE_VIDEO = 5;
+
+    // YouTube channels(e.g. 'youtube.com::L8ZULXASCc1I_oaOT0NaOQ').
+    YOUTUBE_CHANNEL = 6;
+  }
+
+
+}

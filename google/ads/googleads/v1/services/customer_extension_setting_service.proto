@@ -1,0 +1,126 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/resources/customer_extension_setting.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/wrappers.proto";
+import "google/rpc/status.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "CustomerExtensionSettingServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the CustomerExtensionSetting service.
+
+// Service to manage customer extension settings.
+service CustomerExtensionSettingService {
+  // Returns the requested customer extension setting in full detail.
+  rpc GetCustomerExtensionSetting(GetCustomerExtensionSettingRequest)
+      returns (google.ads.googleads.v1.resources.CustomerExtensionSetting) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/customerExtensionSettings/*}"
+    };
+  }
+
+  // Creates, updates, or removes customer extension settings. Operation
+  // statuses are returned.
+  rpc MutateCustomerExtensionSettings(MutateCustomerExtensionSettingsRequest)
+      returns (MutateCustomerExtensionSettingsResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}/customerExtensionSettings:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [CustomerExtensionSettingService.GetCustomerExtensionSetting][google.ads.googleads.v1.services.CustomerExtensionSettingService.GetCustomerExtensionSetting].
+message GetCustomerExtensionSettingRequest {
+  // The resource name of the customer extension setting to fetch.
+  string resource_name = 1;
+}
+
+// Request message for
+// [CustomerExtensionSettingService.MutateCustomerExtensionSettings][google.ads.googleads.v1.services.CustomerExtensionSettingService.MutateCustomerExtensionSettings].
+message MutateCustomerExtensionSettingsRequest {
+  // The ID of the customer whose customer extension settings are being
+  // modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual customer extension
+  // settings.
+  repeated CustomerExtensionSettingOperation operations = 2;
+
+  // If true, successful operations will be carried out and invalid
+  // operations will return errors. If false, all operations will be carried
+  // out in one transaction if and only if they are all valid.
+  // Default is false.
+  bool partial_failure = 3;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 4;
+}
+
+// A single operation (create, update, remove) on a customer extension setting.
+message CustomerExtensionSettingOperation {
+  // FieldMask that determines which resource fields are modified in an update.
+  google.protobuf.FieldMask update_mask = 4;
+
+  // The mutate operation.
+  oneof operation {
+    // Create operation: No resource name is expected for the new customer
+    // extension setting.
+    google.ads.googleads.v1.resources.CustomerExtensionSetting create = 1;
+
+    // Update operation: The customer extension setting is expected to have a
+    // valid resource name.
+    google.ads.googleads.v1.resources.CustomerExtensionSetting update = 2;
+
+    // Remove operation: A resource name for the removed customer extension
+    // setting is expected, in this format:
+    //
+    // `customers/{customer_id}/customerExtensionSettings/{extension_type}`
+    string remove = 3;
+  }
+}
+
+// Response message for a customer extension setting mutate.
+message MutateCustomerExtensionSettingsResponse {
+  // Errors that pertain to operation failures in the partial failure mode.
+  // Returned only when partial_failure = true and all errors occur inside the
+  // operations. If any errors occur outside the operations (e.g. auth errors),
+  // we return an RPC level error.
+  google.rpc.Status partial_failure_error = 3;
+
+  // All results for the mutate.
+  repeated MutateCustomerExtensionSettingResult results = 2;
+}
+
+// The result for the customer extension setting mutate.
+message MutateCustomerExtensionSettingResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}

@@ -1,0 +1,231 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.automl.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/cloud/automl/v1beta1/geometry.proto";
+import "google/cloud/automl/v1beta1/io.proto";
+import "google/cloud/automl/v1beta1/text_segment.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/automl/v1beta1;automl";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.automl.v1beta1";
+option php_namespace = "Google\\Cloud\\AutoMl\\V1beta1";
+option ruby_package = "Google::Cloud::AutoML::V1beta1";
+
+// A representation of an image.
+// Only images up to 30MB in size are supported.
+message Image {
+  // Input only. The data representing the image.
+  // For Predict calls
+  // [image_bytes][google.cloud.automl.v1beta1.Image.image_bytes] must be set,
+  // as other options are not currently supported by prediction API. You can
+  // read the contents of an uploaded image by using the
+  // [content_uri][google.cloud.automl.v1beta1.Image.content_uri] field.
+  oneof data {
+    // Image content represented as a stream of bytes.
+    // Note: As with all `bytes` fields, protobuffers use a pure binary
+    // representation, whereas JSON representations use base64.
+    bytes image_bytes = 1;
+
+    // An input config specifying the content of the image.
+    InputConfig input_config = 6;
+  }
+
+  // Output only. HTTP URI to the thumbnail image.
+  string thumbnail_uri = 4;
+}
+
+// A representation of a text snippet.
+message TextSnippet {
+  // Required. The content of the text snippet as a string. Up to 250000
+  // characters long.
+  string content = 1;
+
+  // Optional. The format of
+  // [content][google.cloud.automl.v1beta1.TextSnippet.content]. Currently the
+  // only two allowed values are "text/html" and "text/plain". If left blank,
+  // the format is automatically determined from the type of the uploaded
+  // [content][google.cloud.automl.v1beta1.TextSnippet.content].
+  string mime_type = 2;
+
+  // Output only. HTTP URI where you can download the content.
+  string content_uri = 4;
+}
+
+// Message that describes dimension of a document.
+message DocumentDimensions {
+  // Unit of the document dimension.
+  enum DocumentDimensionUnit {
+    // Should not be used.
+    DOCUMENT_DIMENSION_UNIT_UNSPECIFIED = 0;
+
+    // Document dimension is measured in inches.
+    INCH = 1;
+
+    // Document dimension is measured in centimeters.
+    CENTIMETER = 2;
+
+    // Document dimension is measured in points. 72 points = 1 inch.
+    POINT = 3;
+  }
+
+  // Unit of the dimension.
+  DocumentDimensionUnit unit = 1;
+
+  // Width value of the document, works together with the unit.
+  float width = 2;
+
+  // Height value of the document, works together with the unit.
+  float height = 3;
+}
+
+// A structured text document e.g. a PDF.
+message Document {
+  // Describes the layout information of a
+  // [text_segment][google.cloud.automl.v1beta1.Document.Layout.text_segment] in
+  // the document.
+  message Layout {
+    // The type of TextSegment in the context of the original document.
+    enum TextSegmentType {
+      // Should not be used.
+      TEXT_SEGMENT_TYPE_UNSPECIFIED = 0;
+
+      // The text segment is a token. e.g. word.
+      TOKEN = 1;
+
+      // The text segment is a paragraph.
+      PARAGRAPH = 2;
+
+      // The text segment is a form field.
+      FORM_FIELD = 3;
+
+      // The text segment is the name part of a form field. It will be treated
+      // as child of another FORM_FIELD TextSegment if its span is subspan of
+      // another TextSegment with type FORM_FIELD.
+      FORM_FIELD_NAME = 4;
+
+      // The text segment is the text content part of a form field. It will be
+      // treated as child of another FORM_FIELD TextSegment if its span is
+      // subspan of another TextSegment with type FORM_FIELD.
+      FORM_FIELD_CONTENTS = 5;
+
+      // The text segment is a whole table, including headers, and all rows.
+      TABLE = 6;
+
+      // The text segment is a table's headers. It will be treated as child of
+      // another TABLE TextSegment if its span is subspan of another TextSegment
+      // with type TABLE.
+      TABLE_HEADER = 7;
+
+      // The text segment is a row in table. It will be treated as child of
+      // another TABLE TextSegment if its span is subspan of another TextSegment
+      // with type TABLE.
+      TABLE_ROW = 8;
+
+      // The text segment is a cell in table. It will be treated as child of
+      // another TABLE_ROW TextSegment if its span is subspan of another
+      // TextSegment with type TABLE_ROW.
+      TABLE_CELL = 9;
+    }
+
+    // Text Segment that represents a segment in
+    // [document_text][google.cloud.automl.v1beta1.Document.document_text].
+    TextSegment text_segment = 1;
+
+    // Page number of the
+    // [text_segment][google.cloud.automl.v1beta1.Document.Layout.text_segment]
+    // in the original document, starts from 1.
+    int32 page_number = 2;
+
+    // The position of the
+    // [text_segment][google.cloud.automl.v1beta1.Document.Layout.text_segment]
+    // in the page. Contains exactly 4
+    //
+    // [normalized_vertices][google.cloud.automl.v1beta1.BoundingPoly.normalized_vertices]
+    // and they are connected by edges in the order provided, which will
+    // represent a rectangle parallel to the frame. The
+    // [NormalizedVertex-s][google.cloud.automl.v1beta1.NormalizedVertex] are
+    // relative to the page.
+    // Coordinates are based on top-left as point (0,0).
+    BoundingPoly bounding_poly = 3;
+
+    // The type of the
+    // [text_segment][google.cloud.automl.v1beta1.Document.Layout.text_segment]
+    // in document.
+    TextSegmentType text_segment_type = 4;
+  }
+
+  // An input config specifying the content of the document.
+  DocumentInputConfig input_config = 1;
+
+  // The plain text version of this document.
+  TextSnippet document_text = 2;
+
+  // Describes the layout of the document.
+  // Sorted by [page_number][].
+  repeated Layout layout = 3;
+
+  // The dimensions of the page in the document.
+  DocumentDimensions document_dimensions = 4;
+
+  // Number of pages in the document.
+  int32 page_count = 5;
+}
+
+// A representation of a row in a relational table.
+message Row {
+  // The resource IDs of the column specs describing the columns of the row.
+  // If set must contain, but possibly in a different order, all input
+  // feature
+  //
+  // [column_spec_ids][google.cloud.automl.v1beta1.TablesModelMetadata.input_feature_column_specs]
+  // of the Model this row is being passed to.
+  // Note: The below `values` field must match order of this field, if this
+  // field is set.
+  repeated string column_spec_ids = 2;
+
+  // Required. The values of the row cells, given in the same order as the
+  // column_spec_ids, or, if not set, then in the same order as input
+  // feature
+  //
+  // [column_specs][google.cloud.automl.v1beta1.TablesModelMetadata.input_feature_column_specs]
+  // of the Model this row is being passed to.
+  repeated google.protobuf.Value values = 3;
+}
+
+// Example data used for training or prediction.
+message ExamplePayload {
+  // Required. Input only. The example data.
+  oneof payload {
+    // Example image.
+    Image image = 1;
+
+    // Example text.
+    TextSnippet text_snippet = 2;
+
+    // Example document.
+    Document document = 4;
+
+    // Example relational table row.
+    Row row = 3;
+  }
+}

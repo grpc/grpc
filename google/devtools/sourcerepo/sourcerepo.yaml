@@ -1,0 +1,20 @@
+type: google.api.Service
+config_version: 3
+name: sourcerepo.googleapis.com
+title: Cloud Source Repositories API
+
+apis:
+- name: google.devtools.sourcerepo.v1.SourceRepo
+
+documentation:
+  summary: Access source code repositories hosted by Google.
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/source.full_control,
+        https://www.googleapis.com/auth/source.read_only,
+        https://www.googleapis.com/auth/source.read_write

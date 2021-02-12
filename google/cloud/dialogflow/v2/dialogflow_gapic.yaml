@@ -1,0 +1,1260 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+# The settings of generated code in a specific language.
+language_settings:
+  java:
+    package_name: com.google.cloud.dialogflow.v2
+  python:
+    package_name: google.cloud.dialogflow_v2.gapic
+  go:
+    package_name: cloud.google.com/go/dialogflow/apiv2
+    release_level: GA
+  csharp:
+    package_name: Google.Cloud.Dialogflow.V2
+  ruby:
+    package_name: Google::Cloud::Dialogflow::V2
+  php:
+    package_name: Google\Cloud\Dialogflow\V2
+  nodejs:
+    package_name: dialogflow.v2
+    domain_layer_location: google-cloud
+# A list of API interface configurations.
+interfaces:
+  # The fully qualified name of the API interface.
+- name: google.cloud.dialogflow.v2.Agents
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections:
+  - name_pattern: projects/{project}
+    entity_name: project
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Api.Gax.ResourceNames.ProjectName
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #   name - The simple name of the method.
+  #   flattening - Specifies the configuration for parameter flattening.
+  #       Describes the parameter groups for which a generator should produce
+  #       method overloads which allow a client to directly pass request message
+  #       fields as method parameters. This information may or may not be used,
+  #       depending on the target language.
+  #       Consists of groups, which each represent a list of parameters to be
+  #       flattened. Each parameter listed must be a field of the request
+  #       message.
+  #   required_fields - Fields that are always required for a request to be
+  #       valid.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #       Describes information for generating a method which transforms a
+  #       paging list RPC into a stream of resources.
+  #       Consists of a request and a response.
+  #       The request specifies request information of the list method. It
+  #       defines which fields match the paging pattern in the request. The
+  #       request consists of a page_size_field and a token_field. The
+  #       page_size_field is the name of the optional field specifying the
+  #       maximum number of elements to be returned in the response. The
+  #       token_field is the name of the field in the request containing the
+  #       page token.
+  #       The response specifies response information of the list method. It
+  #       defines which fields match the paging pattern in the response. The
+  #       response consists of a token_field and a resources_field. The
+  #       token_field is the name of the field in the response containing the
+  #       next page token. The resources_field is the name of the field in the
+  #       response containing the list of resources belonging to the page.
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #       name must be defined in interfaces.retry_codes_def.
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #       parameters. The name must be defined in interfaces.retry_params_def.
+  #   field_name_patterns - Maps the field name of the request type to
+  #       entity_name of interfaces.collections.
+  #       Specifies the string pattern that the field must follow.
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #       the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: SetAgent
+    flattening:
+      groups:
+      - parameters:
+        - agent
+    required_fields:
+    - agent
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      agent.parent: project
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: DeleteAgent
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: GetAgent
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: SearchAgents
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: agents
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: TrainAgent
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 60000
+    long_running:
+      # LINT.IfChange(train_agent_long_running_operation)
+      return_type: google.protobuf.Empty
+      metadata_type: google.protobuf.Struct
+      # LINT.ThenChange()
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 300000
+    resource_name_treatment: STATIC_TYPES
+  - name: ExportAgent
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 60000
+    long_running:
+      # LINT.IfChange(export_agent_long_running_operation)
+      return_type: google.cloud.dialogflow.v2.ExportAgentResponse
+      metadata_type: google.protobuf.Struct
+      # LINT.ThenChange()
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 300000
+    resource_name_treatment: STATIC_TYPES
+  - name: ImportAgent
+    required_fields:
+    - parent
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 60000
+    long_running:
+      # LINT.IfChange(import_agent_long_running_operation)
+      return_type: google.protobuf.Empty
+      metadata_type: google.protobuf.Struct
+      # LINT.ThenChange()
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 300000
+    resource_name_treatment: STATIC_TYPES
+  - name: RestoreAgent
+
+    required_fields:
+    - parent
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 60000
+    long_running:
+      # LINT.IfChange(restore_agent_long_running_operation)
+      return_type: google.protobuf.Empty
+      metadata_type: google.protobuf.Struct
+      # LINT.ThenChange()
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 300000
+    resource_name_treatment: STATIC_TYPES
+  # The fully qualified name of the API interface.
+- name: google.cloud.dialogflow.v2.Contexts
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections:
+  - name_pattern: projects/{project}/agent/sessions/{session}
+    entity_name: session
+  - name_pattern: projects/{project}/agent/sessions/{session}/contexts/{context}
+    entity_name: context
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #   name - The simple name of the method.
+  #   flattening - Specifies the configuration for parameter flattening.
+  #       Describes the parameter groups for which a generator should produce
+  #       method overloads which allow a client to directly pass request message
+  #       fields as method parameters. This information may or may not be used,
+  #       depending on the target language.
+  #       Consists of groups, which each represent a list of parameters to be
+  #       flattened. Each parameter listed must be a field of the request
+  #       message.
+  #   required_fields - Fields that are always required for a request to be
+  #       valid.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #       Describes information for generating a method which transforms a
+  #       paging list RPC into a stream of resources.
+  #       Consists of a request and a response.
+  #       The request specifies request information of the list method. It
+  #       defines which fields match the paging pattern in the request. The
+  #       request consists of a page_size_field and a token_field. The
+  #       page_size_field is the name of the optional field specifying the
+  #       maximum number of elements to be returned in the response. The
+  #       token_field is the name of the field in the request containing the
+  #       page token.
+  #       The response specifies response information of the list method. It
+  #       defines which fields match the paging pattern in the response. The
+  #       response consists of a token_field and a resources_field. The
+  #       token_field is the name of the field in the response containing the
+  #       next page token. The resources_field is the name of the field in the
+  #       response containing the list of resources belonging to the page.
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #       name must be defined in interfaces.retry_codes_def.
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #       parameters. The name must be defined in interfaces.retry_params_def.
+  #   field_name_patterns - Maps the field name of the request type to
+  #       entity_name of interfaces.collections.
+  #       Specifies the string pattern that the field must follow.
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #       the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: ListContexts
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: contexts
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: session
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: GetContext
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: context
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: CreateContext
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - context
+    required_fields:
+    - parent
+    - context
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: session
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: UpdateContext
+    flattening:
+      groups:
+      - parameters:
+        - context
+    required_fields:
+    - context
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      context.name: context
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: DeleteContext
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: context
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: DeleteAllContexts
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: session
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  # The fully qualified name of the API interface.
+- name: google.cloud.dialogflow.v2.EntityTypes
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections:
+  - name_pattern: projects/{project}/agent
+    entity_name: project_agent
+  - name_pattern: projects/{project}/agent/entityTypes/{entity_type}
+    entity_name: entity_type
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #   name - The simple name of the method.
+  #   flattening - Specifies the configuration for parameter flattening.
+  #       Describes the parameter groups for which a generator should produce
+  #       method overloads which allow a client to directly pass request message
+  #       fields as method parameters. This information may or may not be used,
+  #       depending on the target language.
+  #       Consists of groups, which each represent a list of parameters to be
+  #       flattened. Each parameter listed must be a field of the request
+  #       message.
+  #   required_fields - Fields that are always required for a request to be
+  #       valid.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #       Describes information for generating a method which transforms a
+  #       paging list RPC into a stream of resources.
+  #       Consists of a request and a response.
+  #       The request specifies request information of the list method. It
+  #       defines which fields match the paging pattern in the request. The
+  #       request consists of a page_size_field and a token_field. The
+  #       page_size_field is the name of the optional field specifying the
+  #       maximum number of elements to be returned in the response. The
+  #       token_field is the name of the field in the request containing the
+  #       page token.
+  #       The response specifies response information of the list method. It
+  #       defines which fields match the paging pattern in the response. The
+  #       response consists of a token_field and a resources_field. The
+  #       token_field is the name of the field in the response containing the
+  #       next page token. The resources_field is the name of the field in the
+  #       response containing the list of resources belonging to the page.
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #       name must be defined in interfaces.retry_codes_def.
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #       parameters. The name must be defined in interfaces.retry_params_def.
+  #   field_name_patterns - Maps the field name of the request type to
+  #       entity_name of interfaces.collections.
+  #       Specifies the string pattern that the field must follow.
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #       the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: ListEntityTypes
+    flattening:
+      groups:
+      - parameters:
+        - parent
+      - parameters:
+        - parent
+        - language_code
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: entity_types
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project_agent
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: GetEntityType
+    flattening:
+      groups:
+      - parameters:
+        - name
+      - parameters:
+        - name
+        - language_code
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: entity_type
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: CreateEntityType
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - entity_type
+      - parameters:
+        - parent
+        - entity_type
+        - language_code
+    required_fields:
+    - parent
+    - entity_type
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project_agent
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: UpdateEntityType
+    flattening:
+      groups:
+      - parameters:
+        - entity_type
+      - parameters:
+        - entity_type
+        - language_code
+    required_fields:
+    - entity_type
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      entity_type.name: entity_type
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: DeleteEntityType
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: entity_type
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: BatchUpdateEntityTypes
+    required_fields:
+    - parent
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project_agent
+    timeout_millis: 60000
+    long_running:
+      # LINT.IfChange(batch_update_entity_types_long_running_operation)
+      return_type: google.cloud.dialogflow.v2.BatchUpdateEntityTypesResponse
+      metadata_type: google.protobuf.Struct
+      # LINT.ThenChange()
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 300000
+    resource_name_treatment: STATIC_TYPES
+  - name: BatchDeleteEntityTypes
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - entity_type_names
+    required_fields:
+    - parent
+    - entity_type_names
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project_agent
+    timeout_millis: 60000
+    long_running:
+      # LINT.IfChange(batch_delete_entity_types_long_running_operation)
+      return_type: google.protobuf.Empty
+      metadata_type: google.protobuf.Struct
+      # LINT.ThenChange()
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 300000
+    resource_name_treatment: STATIC_TYPES
+  - name: BatchCreateEntities
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - entities
+      - parameters:
+        - parent
+        - entities
+        - language_code
+    required_fields:
+    - parent
+    - entities
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: entity_type
+    timeout_millis: 60000
+    long_running:
+      # LINT.IfChange(batch_create_entities_long_running_operation)
+      return_type: google.protobuf.Empty
+      metadata_type: google.protobuf.Struct
+      # LINT.ThenChange()
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 300000
+    resource_name_treatment: STATIC_TYPES
+  - name: BatchUpdateEntities
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - entities
+      - parameters:
+        - parent
+        - entities
+        - language_code
+    required_fields:
+    - parent
+    - entities
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: entity_type
+    timeout_millis: 60000
+    long_running:
+      # LINT.IfChange(batch_update_entities_long_running_operation)
+      return_type: google.protobuf.Empty
+      metadata_type: google.protobuf.Struct
+      # LINT.ThenChange()
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 300000
+    resource_name_treatment: STATIC_TYPES
+  - name: BatchDeleteEntities
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - entity_values
+      - parameters:
+        - parent
+        - entity_values
+        - language_code
+    required_fields:
+    - parent
+    - entity_values
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: entity_type
+    timeout_millis: 60000
+    long_running:
+      # LINT.IfChange(batch_delete_entities_long_running_operation)
+      return_type: google.protobuf.Empty
+      metadata_type: google.protobuf.Struct
+      # LINT.ThenChange()
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 300000
+    resource_name_treatment: STATIC_TYPES
+  # The fully qualified name of the API interface.
+- name: google.cloud.dialogflow.v2.Intents
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections:
+  - name_pattern: projects/{project}/agent
+    entity_name: project_agent
+  - name_pattern: projects/{project}/agent/intents/{intent}
+    entity_name: intent
+  - name_pattern: projects/{project}/agents/{agent}
+    entity_name: agent
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #   name - The simple name of the method.
+  #   flattening - Specifies the configuration for parameter flattening.
+  #       Describes the parameter groups for which a generator should produce
+  #       method overloads which allow a client to directly pass request message
+  #       fields as method parameters. This information may or may not be used,
+  #       depending on the target language.
+  #       Consists of groups, which each represent a list of parameters to be
+  #       flattened. Each parameter listed must be a field of the request
+  #       message.
+  #   required_fields - Fields that are always required for a request to be
+  #       valid.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #       Describes information for generating a method which transforms a
+  #       paging list RPC into a stream of resources.
+  #       Consists of a request and a response.
+  #       The request specifies request information of the list method. It
+  #       defines which fields match the paging pattern in the request. The
+  #       request consists of a page_size_field and a token_field. The
+  #       page_size_field is the name of the optional field specifying the
+  #       maximum number of elements to be returned in the response. The
+  #       token_field is the name of the field in the request containing the
+  #       page token.
+  #       The response specifies response information of the list method. It
+  #       defines which fields match the paging pattern in the response. The
+  #       response consists of a token_field and a resources_field. The
+  #       token_field is the name of the field in the response containing the
+  #       next page token. The resources_field is the name of the field in the
+  #       response containing the list of resources belonging to the page.
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #       name must be defined in interfaces.retry_codes_def.
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #       parameters. The name must be defined in interfaces.retry_params_def.
+  #   field_name_patterns - Maps the field name of the request type to
+  #       entity_name of interfaces.collections.
+  #       Specifies the string pattern that the field must follow.
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #       the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: ListIntents
+    flattening:
+      groups:
+      - parameters:
+        - parent
+      - parameters:
+        - parent
+        - language_code
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: intents
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project_agent
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: GetIntent
+    flattening:
+      groups:
+      - parameters:
+        - name
+      - parameters:
+        - name
+        - language_code
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: intent
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: CreateIntent
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - intent
+      - parameters:
+        - parent
+        - intent
+        - language_code
+    required_fields:
+    - parent
+    - intent
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project_agent
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: UpdateIntent
+    flattening:
+      groups:
+      - parameters:
+        - intent
+        - language_code
+      - parameters:
+        - intent
+        - language_code
+        - update_mask
+    required_fields:
+    - intent
+    - language_code
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      intent.name: intent
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: DeleteIntent
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: intent
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: BatchUpdateIntents
+    required_fields:
+    - parent
+    - language_code
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project_agent
+    timeout_millis: 60000
+    long_running:
+      # LINT.IfChange(batch_update_intents_long_running_operation)
+      return_type: google.cloud.dialogflow.v2.BatchUpdateIntentsResponse
+      metadata_type: google.protobuf.Struct
+      # LINT.ThenChange()
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 300000
+    resource_name_treatment: STATIC_TYPES
+  - name: BatchDeleteIntents
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - intents
+    required_fields:
+    - parent
+    - intents
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project_agent
+    timeout_millis: 60000
+    long_running:
+      # LINT.IfChange(batch_delete_intents_long_running_operation)
+      return_type: google.protobuf.Empty
+      metadata_type: google.protobuf.Struct
+      # LINT.ThenChange()
+      initial_poll_delay_millis: 500
+      poll_delay_multiplier: 1.5
+      max_poll_delay_millis: 5000
+      total_poll_timeout_millis: 300000
+    resource_name_treatment: STATIC_TYPES
+  # The fully qualified name of the API interface.
+- name: google.cloud.dialogflow.v2.SessionEntityTypes
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections:
+  - name_pattern: projects/{project}/agent/sessions/{session}
+    entity_name: session
+  - name_pattern: projects/{project}/agent/sessions/{session}/entityTypes/{entity_type}
+    entity_name: session_entity_type
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #   name - The simple name of the method.
+  #   flattening - Specifies the configuration for parameter flattening.
+  #       Describes the parameter groups for which a generator should produce
+  #       method overloads which allow a client to directly pass request message
+  #       fields as method parameters. This information may or may not be used,
+  #       depending on the target language.
+  #       Consists of groups, which each represent a list of parameters to be
+  #       flattened. Each parameter listed must be a field of the request
+  #       message.
+  #   required_fields - Fields that are always required for a request to be
+  #       valid.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #       Describes information for generating a method which transforms a
+  #       paging list RPC into a stream of resources.
+  #       Consists of a request and a response.
+  #       The request specifies request information of the list method. It
+  #       defines which fields match the paging pattern in the request. The
+  #       request consists of a page_size_field and a token_field. The
+  #       page_size_field is the name of the optional field specifying the
+  #       maximum number of elements to be returned in the response. The
+  #       token_field is the name of the field in the request containing the
+  #       page token.
+  #       The response specifies response information of the list method. It
+  #       defines which fields match the paging pattern in the response. The
+  #       response consists of a token_field and a resources_field. The
+  #       token_field is the name of the field in the response containing the
+  #       next page token. The resources_field is the name of the field in the
+  #       response containing the list of resources belonging to the page.
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #       name must be defined in interfaces.retry_codes_def.
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #       parameters. The name must be defined in interfaces.retry_params_def.
+  #   field_name_patterns - Maps the field name of the request type to
+  #       entity_name of interfaces.collections.
+  #       Specifies the string pattern that the field must follow.
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #       the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: ListSessionEntityTypes
+    flattening:
+      groups:
+      - parameters:
+        - parent
+    required_fields:
+    - parent
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: session_entity_types
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: session
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: GetSessionEntityType
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: session_entity_type
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: CreateSessionEntityType
+    flattening:
+      groups:
+      - parameters:
+        - parent
+        - session_entity_type
+    required_fields:
+    - parent
+    - session_entity_type
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: session
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: UpdateSessionEntityType
+    flattening:
+      groups:
+      - parameters:
+        - session_entity_type
+    required_fields:
+    - session_entity_type
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      session_entity_type.name: session_entity_type
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  - name: DeleteSessionEntityType
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: session_entity_type
+    timeout_millis: 60000
+    resource_name_treatment: STATIC_TYPES
+  # The fully qualified name of the API interface.
+- name: google.cloud.dialogflow.v2.Sessions
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections:
+  - name_pattern: projects/{project}/agent/sessions/{session}
+    entity_name: session
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #   name - The simple name of the method.
+  #   flattening - Specifies the configuration for parameter flattening.
+  #       Describes the parameter groups for which a generator should produce
+  #       method overloads which allow a client to directly pass request message
+  #       fields as method parameters. This information may or may not be used,
+  #       depending on the target language.
+  #       Consists of groups, which each represent a list of parameters to be
+  #       flattened. Each parameter listed must be a field of the request
+  #       message.
+  #   required_fields - Fields that are always required for a request to be
+  #       valid.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #       Describes information for generating a method which transforms a
+  #       paging list RPC into a stream of resources.
+  #       Consists of a request and a response.
+  #       The request specifies request information of the list method. It
+  #       defines which fields match the paging pattern in the request. The
+  #       request consists of a page_size_field and a token_field. The
+  #       page_size_field is the name of the optional field specifying the
+  #       maximum number of elements to be returned in the response. The
+  #       token_field is the name of the field in the request containing the
+  #       page token.
+  #       The response specifies response information of the list method. It
+  #       defines which fields match the paging pattern in the response. The
+  #       response consists of a token_field and a resources_field. The
+  #       token_field is the name of the field in the response containing the
+  #       next page token. The resources_field is the name of the field in the
+  #       response containing the list of resources belonging to the page.
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #       name must be defined in interfaces.retry_codes_def.
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #       parameters. The name must be defined in interfaces.retry_params_def.
+  #   field_name_patterns - Maps the field name of the request type to
+  #       entity_name of interfaces.collections.
+  #       Specifies the string pattern that the field must follow.
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #       the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: DetectIntent
+    flattening:
+      groups:
+      - parameters:
+        - session
+        - query_input
+    required_fields:
+    - session
+    - query_input
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      session: session
+    timeout_millis: 220000
+    resource_name_treatment: STATIC_TYPES
+  - name: StreamingDetectIntent
+    required_fields:
+    - session
+    - query_input
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    timeout_millis: 220000
+resource_name_generation:
+- message_name: SetAgentRequest
+  field_entity_map:
+    agent.parent: project
+- message_name: DeleteAgentRequest
+  field_entity_map:
+    parent: project
+- message_name: GetAgentRequest
+  field_entity_map:
+    parent: project
+- message_name: SearchAgentsRequest
+  field_entity_map:
+    parent: project
+- message_name: TrainAgentRequest
+  field_entity_map:
+    parent: project
+- message_name: ExportAgentRequest
+  field_entity_map:
+    parent: project
+- message_name: ImportAgentRequest
+  field_entity_map:
+    parent: project
+- message_name: RestoreAgentRequest
+  field_entity_map:
+    parent: project
+- message_name: ListContextsRequest
+  field_entity_map:
+    parent: session
+- message_name: GetContextRequest
+  field_entity_map:
+    name: context
+- message_name: CreateContextRequest
+  field_entity_map:
+    parent: session
+- message_name: Context
+  field_entity_map:
+    name: context
+- message_name: DeleteContextRequest
+  field_entity_map:
+    name: context
+- message_name: DeleteAllContextsRequest
+  field_entity_map:
+    parent: session
+- message_name: ListEntityTypesRequest
+  field_entity_map:
+    parent: project_agent
+- message_name: GetEntityTypeRequest
+  field_entity_map:
+    name: entity_type
+- message_name: CreateEntityTypeRequest
+  field_entity_map:
+    parent: project_agent
+- message_name: EntityType
+  field_entity_map:
+    name: entity_type
+- message_name: DeleteEntityTypeRequest
+  field_entity_map:
+    name: entity_type
+- message_name: BatchUpdateEntityTypesRequest
+  field_entity_map:
+    parent: project_agent
+- message_name: BatchDeleteEntityTypesRequest
+  field_entity_map:
+    parent: project_agent
+- message_name: BatchCreateEntitiesRequest
+  field_entity_map:
+    parent: entity_type
+- message_name: BatchUpdateEntitiesRequest
+  field_entity_map:
+    parent: entity_type
+- message_name: BatchDeleteEntitiesRequest
+  field_entity_map:
+    parent: entity_type
+- message_name: ListIntentsRequest
+  field_entity_map:
+    parent: project_agent
+- message_name: GetIntentRequest
+  field_entity_map:
+    name: intent
+- message_name: CreateIntentRequest
+  field_entity_map:
+    parent: project_agent
+- message_name: Intent
+  field_entity_map:
+    name: intent
+- message_name: DeleteIntentRequest
+  field_entity_map:
+    name: intent
+- message_name: BatchUpdateIntentsRequest
+  field_entity_map:
+    parent: project_agent
+- message_name: BatchDeleteIntentsRequest
+  field_entity_map:
+    parent: project_agent
+- message_name: ListSessionEntityTypesRequest
+  field_entity_map:
+    parent: session
+- message_name: GetSessionEntityTypeRequest
+  field_entity_map:
+    name: session_entity_type
+- message_name: CreateSessionEntityTypeRequest
+  field_entity_map:
+    parent: session
+- message_name: SessionEntityType
+  field_entity_map:
+    name: session_entity_type
+- message_name: DeleteSessionEntityTypeRequest
+  field_entity_map:
+    name: session_entity_type
+- message_name: DetectIntentRequest
+  field_entity_map:
+    session: session

@@ -1,0 +1,221 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.binaryauthorization.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/cloud/binaryauthorization/v1beta1/resources.proto";
+import "google/protobuf/empty.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/cloud/binaryauthorization/v1beta1;binaryauthorization";
+
+// Customer-facing API for Cloud Binary Authorization.
+
+// Google Cloud Management Service for Binary Authorization admission policies
+// and attestation authorities.
+//
+// This API implements a REST model with the following objects:
+//
+// * [Policy][google.cloud.binaryauthorization.v1beta1.Policy]
+// * [Attestor][google.cloud.binaryauthorization.v1beta1.Attestor]
+service BinauthzManagementServiceV1Beta1 {
+  option (google.api.default_host) = "binaryauthorization.googleapis.com";
+  option (google.api.oauth_scopes) = "https://www.googleapis.com/auth/cloud-platform";
+
+  // A [policy][google.cloud.binaryauthorization.v1beta1.Policy] specifies the [attestors][google.cloud.binaryauthorization.v1beta1.Attestor] that must attest to
+  // a container image, before the project is allowed to deploy that
+  // image. There is at most one policy per project. All image admission
+  // requests are permitted if a project has no policy.
+  //
+  // Gets the [policy][google.cloud.binaryauthorization.v1beta1.Policy] for this project. Returns a default
+  // [policy][google.cloud.binaryauthorization.v1beta1.Policy] if the project does not have one.
+  rpc GetPolicy(GetPolicyRequest) returns (Policy) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/policy}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Creates or updates a project's [policy][google.cloud.binaryauthorization.v1beta1.Policy], and returns a copy of the
+  // new [policy][google.cloud.binaryauthorization.v1beta1.Policy]. A policy is always updated as a whole, to avoid race
+  // conditions with concurrent policy enforcement (or management!)
+  // requests. Returns NOT_FOUND if the project does not exist, INVALID_ARGUMENT
+  // if the request is malformed.
+  rpc UpdatePolicy(UpdatePolicyRequest) returns (Policy) {
+    option (google.api.http) = {
+      put: "/v1beta1/{policy.name=projects/*/policy}"
+      body: "policy"
+    };
+    option (google.api.method_signature) = "policy";
+  }
+
+  // Creates an [attestor][google.cloud.binaryauthorization.v1beta1.Attestor], and returns a copy of the new
+  // [attestor][google.cloud.binaryauthorization.v1beta1.Attestor]. Returns NOT_FOUND if the project does not exist,
+  // INVALID_ARGUMENT if the request is malformed, ALREADY_EXISTS if the
+  // [attestor][google.cloud.binaryauthorization.v1beta1.Attestor] already exists.
+  rpc CreateAttestor(CreateAttestorRequest) returns (Attestor) {
+    option (google.api.http) = {
+      post: "/v1beta1/{parent=projects/*}/attestors"
+      body: "attestor"
+    };
+    option (google.api.method_signature) = "parent,attestor_id,attestor";
+  }
+
+  // Gets an [attestor][google.cloud.binaryauthorization.v1beta1.Attestor].
+  // Returns NOT_FOUND if the [attestor][google.cloud.binaryauthorization.v1beta1.Attestor] does not exist.
+  rpc GetAttestor(GetAttestorRequest) returns (Attestor) {
+    option (google.api.http) = {
+      get: "/v1beta1/{name=projects/*/attestors/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Updates an [attestor][google.cloud.binaryauthorization.v1beta1.Attestor].
+  // Returns NOT_FOUND if the [attestor][google.cloud.binaryauthorization.v1beta1.Attestor] does not exist.
+  rpc UpdateAttestor(UpdateAttestorRequest) returns (Attestor) {
+    option (google.api.http) = {
+      put: "/v1beta1/{attestor.name=projects/*/attestors/*}"
+      body: "attestor"
+    };
+    option (google.api.method_signature) = "attestor";
+  }
+
+  // Lists [attestors][google.cloud.binaryauthorization.v1beta1.Attestor].
+  // Returns INVALID_ARGUMENT if the project does not exist.
+  rpc ListAttestors(ListAttestorsRequest) returns (ListAttestorsResponse) {
+    option (google.api.http) = {
+      get: "/v1beta1/{parent=projects/*}/attestors"
+    };
+    option (google.api.method_signature) = "parent";
+  }
+
+  // Deletes an [attestor][google.cloud.binaryauthorization.v1beta1.Attestor]. Returns NOT_FOUND if the
+  // [attestor][google.cloud.binaryauthorization.v1beta1.Attestor] does not exist.
+  rpc DeleteAttestor(DeleteAttestorRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1beta1/{name=projects/*/attestors/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+}
+
+// Request message for [BinauthzManagementService.GetPolicy][].
+message GetPolicyRequest {
+  // Required. The resource name of the [policy][google.cloud.binaryauthorization.v1beta1.Policy] to retrieve,
+  // in the format `projects/*/policy`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "binaryauthorization.googleapis.com/Policy"
+    }
+  ];
+}
+
+// Request message for [BinauthzManagementService.UpdatePolicy][].
+message UpdatePolicyRequest {
+  // Required. A new or updated [policy][google.cloud.binaryauthorization.v1beta1.Policy] value. The service will
+  // overwrite the [policy name][google.cloud.binaryauthorization.v1beta1.Policy.name] field with the resource name in
+  // the request URL, in the format `projects/*/policy`.
+  Policy policy = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request message for [BinauthzManagementService.CreateAttestor][].
+message CreateAttestorRequest {
+  // Required. The parent of this [attestor][google.cloud.binaryauthorization.v1beta1.Attestor].
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudresourcemanager.googleapis.com/Project"
+    }
+  ];
+
+  // Required. The [attestors][google.cloud.binaryauthorization.v1beta1.Attestor] ID.
+  string attestor_id = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The initial [attestor][google.cloud.binaryauthorization.v1beta1.Attestor] value. The service will
+  // overwrite the [attestor name][google.cloud.binaryauthorization.v1beta1.Attestor.name] field with the resource name,
+  // in the format `projects/*/attestors/*`.
+  Attestor attestor = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request message for [BinauthzManagementService.GetAttestor][].
+message GetAttestorRequest {
+  // Required. The name of the [attestor][google.cloud.binaryauthorization.v1beta1.Attestor] to retrieve, in the format
+  // `projects/*/attestors/*`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "binaryauthorization.googleapis.com/Attestor"
+    }
+  ];
+}
+
+// Request message for [BinauthzManagementService.UpdateAttestor][].
+message UpdateAttestorRequest {
+  // Required. The updated [attestor][google.cloud.binaryauthorization.v1beta1.Attestor] value. The service will
+  // overwrite the [attestor name][google.cloud.binaryauthorization.v1beta1.Attestor.name] field with the resource name
+  // in the request URL, in the format `projects/*/attestors/*`.
+  Attestor attestor = 1 [(google.api.field_behavior) = REQUIRED];
+}
+
+// Request message for [BinauthzManagementService.ListAttestors][].
+message ListAttestorsRequest {
+  // Required. The resource name of the project associated with the
+  // [attestors][google.cloud.binaryauthorization.v1beta1.Attestor], in the format `projects/*`.
+  string parent = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "cloudresourcemanager.googleapis.com/Project"
+    }
+  ];
+
+  // Requested page size. The server may return fewer results than requested. If
+  // unspecified, the server will pick an appropriate default.
+  int32 page_size = 2;
+
+  // A token identifying a page of results the server should return. Typically,
+  // this is the value of [ListAttestorsResponse.next_page_token][google.cloud.binaryauthorization.v1beta1.ListAttestorsResponse.next_page_token] returned
+  // from the previous call to the `ListAttestors` method.
+  string page_token = 3;
+}
+
+// Response message for [BinauthzManagementService.ListAttestors][].
+message ListAttestorsResponse {
+  // The list of [attestors][google.cloud.binaryauthorization.v1beta1.Attestor].
+  repeated Attestor attestors = 1;
+
+  // A token to retrieve the next page of results. Pass this value in the
+  // [ListAttestorsRequest.page_token][google.cloud.binaryauthorization.v1beta1.ListAttestorsRequest.page_token] field in the subsequent call to the
+  // `ListAttestors` method to retrieve the next page of results.
+  string next_page_token = 2;
+}
+
+// Request message for [BinauthzManagementService.DeleteAttestor][].
+message DeleteAttestorRequest {
+  // Required. The name of the [attestors][google.cloud.binaryauthorization.v1beta1.Attestor] to delete, in the format
+  // `projects/*/attestors/*`.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "binaryauthorization.googleapis.com/Attestor"
+    }
+  ];
+}

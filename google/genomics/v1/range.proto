@@ -1,0 +1,38 @@
+// Copyright 2016 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.genomics.v1;
+
+import "google/api/annotations.proto";
+
+option cc_enable_arenas = true;
+option go_package = "google.golang.org/genproto/googleapis/genomics/v1;genomics";
+option java_multiple_files = true;
+option java_outer_classname = "RangeProto";
+option java_package = "com.google.genomics.v1";
+
+// A 0-based half-open genomic coordinate range for search requests.
+message Range {
+  // The reference sequence name, for example `chr1`,
+  // `1`, or `chrX`.
+  string reference_name = 1;
+
+  // The start position of the range on the reference, 0-based inclusive.
+  int64 start = 2;
+
+  // The end position of the range on the reference, 0-based exclusive.
+  int64 end = 3;
+}

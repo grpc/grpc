@@ -1,0 +1,350 @@
+// Copyright 2018 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.home.graph.v1;
+
+import "google/api/annotations.proto";
+import "google/home/graph/v1/device.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/home/graph/v1;graph";
+option java_outer_classname = "HomeGraphApiServiceProto";
+option java_package = "com.google.home.graph.v1";
+
+// Google HomeGraph API. HomeGraph Service provides the support for storing
+// and querying first-party and third-party devices, rooms and structures,
+// the relationships among them and their state in the home. It stores
+// entities and their relationships in the home.
+service HomeGraphApiService {
+  // Requests a Sync call from Google to a 3p partner's home control agent for
+  // a user.
+  //
+  //
+  // Third-party user's identity is passed in as agent_user_id.
+  // (see
+  // [RequestSyncDevicesRequest][google.home.graph.v1.RequestSyncDevicesRequest])
+  // and forwarded back to the agent. Agent is identified by the API key or JWT
+  // signed by the partner's service account.
+  rpc RequestSyncDevices(RequestSyncDevicesRequest)
+      returns (RequestSyncDevicesResponse) {
+    option (google.api.http) = {
+      post: "/v1/devices:requestSync"
+      body: "*"
+    };
+  }
+
+  // Reports device state and optionally sends device notifications. Called by
+  // an agent when the device state of a third-party changes or the agent wants
+  // to send a notification about the device.
+  // This method updates a predefined set of States for a device, which all
+  // devices have (for example a light will have OnOff, Color, Brightness).
+  // A new State may not be created and an INVALID_ARGUMENT code will be thrown
+  // if so. It also optionally takes in a list of Notifications that may be
+  // created, which are associated to this State change.
+  //
+  // Third-party user's identity is passed in as agent_user_id.
+  // Agent is identified by the JWT signed by the partner's service account.
+  rpc ReportStateAndNotification(ReportStateAndNotificationRequest)
+      returns (ReportStateAndNotificationResponse) {
+    option (google.api.http) = {
+      post: "/v1/devices:reportStateAndNotification"
+      body: "*"
+    };
+  }
+
+  // Unlink an agent user from Google. As result, all data related to this user
+  // will be deleted.
+  //
+  // Here is how the agent user is created in Google:
+  // When users open their Google Home App, they can begin linking a 3p
+  // partner. User is guided through the OAuth process. After entering the 3p
+  // credentials, Google gets the 3p OAuth token, and uses it to make a
+  // Sync call to the 3p partner and gets back all the user's data, including
+  // agent_user_id and devices.
+  // Google then creates the agent user and stores a mapping from the
+  // agent_user_id -> Google ID mapping. Google also stores all user's devices
+  // under that Google ID.
+  // The mapping from agent_user_id -> Google ID is many to many, since one
+  // Google user can have multiple 3p accounts, and multiple Google users can
+  // map to one agent_user_id (e.g. husband and wife share one Nest account
+  // username/password).
+  //
+  // Third-party user's identity is passed in as agent_user_id
+  // Agent is identified by the JWT signed by the partner's service account.
+  //
+  // Note: Special characters (except "/") in agent_user_id must be URL encoded.
+  rpc DeleteAgentUser(DeleteAgentUserRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/{agent_user_id=agentUsers/**}"
+    };
+  }
+
+  // Gets the device states for the devices in QueryRequest.
+  // Third-party user's identity is passed in as agent_user_id. Agent is
+  // identified by the JWT signed by the third-party partner's service account.
+  rpc Query(QueryRequest) returns (QueryResponse) {
+    option (google.api.http) = {
+      post: "/v1/devices:query"
+      body: "*"
+    };
+  }
+
+  // Gets all the devices associated with the given third-party user.
+  // Third-party user's identity is passed in as agent_user_id. Agent is
+  // identified by the JWT signed by the third-party partner's service account.
+  rpc Sync(SyncRequest) returns (SyncResponse) {
+    option (google.api.http) = {
+      post: "/v1/devices:sync"
+      body: "*"
+    };
+  }
+}
+
+// Request type for RequestSyncDevices call.
+message RequestSyncDevicesRequest {
+  // Required. Third-party user id issued by agent's third-party identity
+  // provider.
+  string agent_user_id = 1;
+
+  // Optional. If set, the request will be added to a queue and a response will
+  // be returned immediately. The queue allows for de-duplication of
+  // simultaneous requests.
+  bool async = 2;
+}
+
+// Response type for RequestSyncDevices call. Intentionally empty upon success.
+// An HTTP response code is returned with more details upon failure.
+message RequestSyncDevicesResponse {}
+
+// Sample ReportStateAndNotificationRequest, with states and notifications
+// defined per device_id (eg: "123" and "456" in the following example):
+// {
+//   "requestId": "ff36a3cc-ec34-11e6-b1a0-64510650abcf",
+//   "agentUserId": "1234",
+//   "payload": {
+//     "devices": {
+//       "states": {
+//         "123": {
+//           "on": true
+//         },
+//         "456": {
+//           "on": true,
+//           "brightness": 10
+//         }
+//       },
+//       "notifications": {
+//         "123": {
+//           "ObjectDetected": {
+//             "priority": 0,
+//             "objects": {
+//               "NAMED": ["Alice", "Bob", "Carol", "Eve"]
+//             }
+//           },
+//           "DoorUnlocked": {
+//             "priority": 0,
+//             "keyUsed": {
+//               "keyName": "Wife's key"
+//             }
+//           }
+//         },
+//         "456": {
+//           "SprinklersOn": {
+//             "priority": 0,
+//             "timeStarted": "1513792702"
+//           }
+//         }
+//       }
+//     }
+//   }
+// }
+// Request type for ReportStateAndNotification call. It may include States,
+// Notifications, or both. This request uses globally unique flattened state
+// names instead of namespaces based on traits to align with the existing QUERY
+// and EXECUTE APIs implemented by 90+ Smart Home partners.
+// Next tag: 6.
+message ReportStateAndNotificationRequest {
+  // Request id used for debugging.
+  string request_id = 1;
+
+  // Unique identifier per event (eg: doorbell press).
+  string event_id = 4;
+
+  // Required. Third-party user id.
+  string agent_user_id = 2;
+
+  // Token to maintain state in the follow up notification response.
+  string follow_up_token = 5;
+
+  // State of devices to update and notification metadata for devices. For
+  // example, if a user turns a light on manually, a State update should be
+  // sent so that the information is always the current status of the device.
+  // Notifications are independent from the state and its piece of the payload
+  // should contain everything necessary to notify the user. Although it may be
+  // related to a state change, it does not need to be. For example, if a
+  // device can turn on/off and change temperature, the states reported would
+  // include both "on" and "70 degrees" but the 3p may choose not to send any
+  // notification for that, or to only say that the "the room is heating up",
+  // keeping state and notification independent.
+  StateAndNotificationPayload payload = 3;
+}
+
+// Response type for ReportStateAndNotification call.
+message ReportStateAndNotificationResponse {
+  // Request id copied from ReportStateAndNotificationRequest.
+  string request_id = 1;
+}
+
+// Payload containing the State and Notification information for devices.
+message StateAndNotificationPayload {
+  // The devices for updating State and sending Notifications.
+  ReportStateAndNotificationDevice devices = 1;
+}
+
+// The States and Notifications specific to a device.
+message ReportStateAndNotificationDevice {
+  // States of devices to update.
+  google.protobuf.Struct states = 1;
+
+  // Notifications metadata for devices.
+  google.protobuf.Struct notifications = 2;
+}
+
+// Request type for DeleteAgentUser call.
+message DeleteAgentUserRequest {
+  // Request id used for debugging.
+  string request_id = 1;
+
+  // Required. Third-party user id.
+  string agent_user_id = 2;
+}
+
+// Request type for Query call. This should be the same format as the AoG
+// action.devices.QUERY request
+// (https://developers.google.com/actions/smarthome/create-app#actiondevicesquery)
+// with the exception of the extra "agent_user_id" and no "intent" and
+// "customData" field.
+message QueryRequest {
+  // Request ID used for debugging.
+  string request_id = 1;
+
+  // Required. Third-party user ID.
+  string agent_user_id = 2;
+
+  // Required. Inputs containing third-party partner's device IDs for which to
+  // get the device states.
+  repeated QueryRequestInput inputs = 3;
+}
+
+// Device ID inputs to QueryRequest.
+message QueryRequestInput {
+  // Payload containing third-party partner's device IDs.
+  QueryRequestPayload payload = 1;
+}
+
+// Payload containing device IDs.
+message QueryRequestPayload {
+  // Third-party partner's device IDs to get device states for.
+  repeated AgentDeviceId devices = 1;
+}
+
+// Third-party partner's device ID for one device.
+message AgentDeviceId {
+  // Third-party partner's device ID.
+  string id = 1;
+}
+
+// Response type for Query call. This should follow the same format as AoG
+// action.devices.QUERY response
+// (https://developers.google.com/actions/smarthome/create-app#actiondevicesquery).
+message QueryResponse {
+  // Request ID used for debugging. Copied from the request.
+  string request_id = 1;
+
+  // Device states for the devices given in the request.
+  QueryResponsePayload payload = 2;
+}
+
+// Payload containing device states information.
+message QueryResponsePayload {
+  // States of the devices. Map of third-party device ID to struct of device
+  // states.
+  map<string, google.protobuf.Struct> devices = 1;
+}
+
+// Request type for Sync call. This should follow the same format as AoG
+// action.devices.SYNC request
+// (https://developers.google.com/actions/smarthome/create-app#actiondevicessync)
+// with the exception of the extra "agent_user_id" and no "intent" field.
+message SyncRequest {
+  // Request ID used for debugging.
+  string request_id = 1;
+
+  // Required. Third-party user ID.
+  string agent_user_id = 2;
+}
+
+// Example SyncResponse:
+// {
+//   "requestId": "ff36a3cc-ec34-11e6-b1a0-64510650abcf",
+//   "payload": {
+//     "agentUserId": "1836.15267389",
+//     "devices": [{
+//       "id": "123",
+//       "type": "action.devices.types.OUTLET",
+//       "traits": [
+//         "action.devices.traits.OnOff"
+//       ],
+//       "name": {
+//         "defaultNames": ["My Outlet 1234"],
+//         "name": "Night light",
+//         "nicknames": ["wall plug"]
+//       },
+//       "willReportState": false,
+//       "deviceInfo": {
+//         "manufacturer": "lights-out-inc",
+//         "model": "hs1234",
+//         "hwVersion": "3.2",
+//         "swVersion": "11.4"
+//       },
+//       "customData": {
+//         "fooValue": 74,
+//         "barValue": true,
+//         "bazValue": "foo"
+//       }
+//     }]
+//   }
+// }
+//
+// Response type for Sync call. This should follow the same format as AoG
+// action.devices.SYNC response
+// (https://developers.google.com/actions/smarthome/create-app#actiondevicessync).
+message SyncResponse {
+  // Request ID used for debugging. Copied from the request.
+  string request_id = 1;
+
+  // Devices associated with the third-party user.
+  SyncResponsePayload payload = 2;
+}
+
+// Payload containing device information.
+message SyncResponsePayload {
+  // Third-party user ID
+  string agent_user_id = 1;
+
+  // Devices associated with the third-party user.
+  repeated google.home.graph.v1.Device devices = 2;
+}

@@ -1,0 +1,170 @@
+type: google.api.Service
+config_version: 3
+name: bigtableadmin.googleapis.com
+title: Cloud Bigtable Admin API
+
+apis:
+- name: google.bigtable.admin.v2.BigtableInstanceAdmin
+- name: google.bigtable.admin.v2.BigtableTableAdmin
+
+types:
+- name: google.bigtable.admin.v2.CreateInstanceMetadata
+- name: google.bigtable.admin.v2.UpdateInstanceMetadata
+- name: google.bigtable.admin.v2.CreateTableFromSnapshotMetadata
+- name: google.bigtable.admin.v2.SnapshotTableMetadata
+- name: google.bigtable.admin.v2.CreateClusterMetadata
+- name: google.bigtable.admin.v2.UpdateClusterMetadata
+- name: google.bigtable.admin.v2.UpdateAppProfileMetadata
+
+backend:
+  rules:
+  - selector: google.longrunning.Operations.ListOperations
+    deadline: 60.0
+  - selector: google.longrunning.Operations.GetOperation
+    deadline: 60.0
+  - selector: google.longrunning.Operations.DeleteOperation
+    deadline: 60.0
+  - selector: google.longrunning.Operations.CancelOperation
+    deadline: 60.0
+  - selector: google.longrunning.Operations.WaitOperation
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.CreateInstance
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.GetInstance
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.ListInstances
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.UpdateInstance
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.PartialUpdateInstance
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.DeleteInstance
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.CreateCluster
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.GetCluster
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.ListClusters
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.UpdateCluster
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.DeleteCluster
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.CreateAppProfile
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.GetAppProfile
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.ListAppProfiles
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.UpdateAppProfile
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.EnableAppProfile
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.DisableAppProfile
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.DeleteAppProfile
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.GetIamPolicy
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.SetIamPolicy
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableInstanceAdmin.TestIamPermissions
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.CreateTable
+    deadline: 130.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.CreateTableFromSnapshot
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.ListTables
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.GetTable
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.DeleteTable
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.ModifyColumnFamilies
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.DropRowRange
+    deadline: 900.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.GenerateConsistencyToken
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.CheckConsistency
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.SnapshotTable
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.GetSnapshot
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.ListSnapshots
+    deadline: 60.0
+  - selector: google.bigtable.admin.v2.BigtableTableAdmin.DeleteSnapshot
+    deadline: 60.0
+
+http:
+  rules:
+  - selector: google.longrunning.Operations.ListOperations
+    get: '/v2/{name=operations/projects/**}/operations'
+
+  - selector: google.longrunning.Operations.GetOperation
+    get: '/v2/{name=operations/**}'
+
+  - selector: google.longrunning.Operations.DeleteOperation
+    delete: '/v2/{name=operations/**}'
+
+  - selector: google.longrunning.Operations.CancelOperation
+    post: '/v2/{name=operations/**}:cancel'
+
+
+authentication:
+  rules:
+  - selector: '*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigtable.admin,
+        https://www.googleapis.com/auth/bigtable.admin.cluster,
+        https://www.googleapis.com/auth/bigtable.admin.instance,
+        https://www.googleapis.com/auth/cloud-bigtable.admin,
+        https://www.googleapis.com/auth/cloud-bigtable.admin.cluster,
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.bigtable.admin.v2.BigtableTableAdmin.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigtable.admin,
+        https://www.googleapis.com/auth/bigtable.admin.table,
+        https://www.googleapis.com/auth/cloud-bigtable.admin,
+        https://www.googleapis.com/auth/cloud-bigtable.admin.table,
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: |-
+      google.bigtable.admin.v2.BigtableInstanceAdmin.GetCluster,
+      google.bigtable.admin.v2.BigtableInstanceAdmin.GetInstance,
+      google.bigtable.admin.v2.BigtableInstanceAdmin.ListClusters,
+      google.bigtable.admin.v2.BigtableInstanceAdmin.ListInstances
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigtable.admin,
+        https://www.googleapis.com/auth/bigtable.admin.cluster,
+        https://www.googleapis.com/auth/bigtable.admin.instance,
+        https://www.googleapis.com/auth/cloud-bigtable.admin,
+        https://www.googleapis.com/auth/cloud-bigtable.admin.cluster,
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only
+  - selector: |-
+      google.bigtable.admin.v2.BigtableTableAdmin.GetTable,
+      google.bigtable.admin.v2.BigtableTableAdmin.ListTables
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigtable.admin,
+        https://www.googleapis.com/auth/bigtable.admin.table,
+        https://www.googleapis.com/auth/cloud-bigtable.admin,
+        https://www.googleapis.com/auth/cloud-bigtable.admin.table,
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only
+  - selector: |-
+      google.longrunning.Operations.GetOperation,
+      google.longrunning.Operations.ListOperations
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/bigtable.admin,
+        https://www.googleapis.com/auth/bigtable.admin.cluster,
+        https://www.googleapis.com/auth/bigtable.admin.instance,
+        https://www.googleapis.com/auth/cloud-bigtable.admin,
+        https://www.googleapis.com/auth/cloud-bigtable.admin.cluster,
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only

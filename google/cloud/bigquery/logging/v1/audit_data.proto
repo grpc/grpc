@@ -1,0 +1,524 @@
+// Copyright 2017 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.cloud.bigquery.logging.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/bigquery/logging/v1;logging";
+option java_multiple_files = true;
+option java_outer_classname = "AuditDataProto";
+option java_package = "com.google.cloud.bigquery.logging.v1";
+
+// BigQuery request and response messages for audit log.
+// Note: `Table.schema` has been deprecated in favor of `Table.schemaJson`.
+// `Table.schema` may continue to be present in your logs during this
+// transition.
+message AuditData {
+  // Request data for each BigQuery method.
+  oneof request {
+    // Table insert request.
+    TableInsertRequest table_insert_request = 1;
+
+    // Table update request.
+    TableUpdateRequest table_update_request = 16;
+
+    // Dataset list request.
+    DatasetListRequest dataset_list_request = 2;
+
+    // Dataset insert request.
+    DatasetInsertRequest dataset_insert_request = 3;
+
+    // Dataset update request.
+    DatasetUpdateRequest dataset_update_request = 4;
+
+    // Job insert request.
+    JobInsertRequest job_insert_request = 5;
+
+    // Job query request.
+    JobQueryRequest job_query_request = 6;
+
+    // Job get query results request.
+    JobGetQueryResultsRequest job_get_query_results_request = 7;
+
+    // Table data-list request.
+    TableDataListRequest table_data_list_request = 8;
+  }
+
+  // Response data for each BigQuery method.
+  oneof response {
+    // Table insert response.
+    TableInsertResponse table_insert_response = 9;
+
+    // Table update response.
+    TableUpdateResponse table_update_response = 10;
+
+    // Dataset insert response.
+    DatasetInsertResponse dataset_insert_response = 11;
+
+    // Dataset update response.
+    DatasetUpdateResponse dataset_update_response = 12;
+
+    // Job insert response.
+    JobInsertResponse job_insert_response = 18;
+
+    // Job query response.
+    JobQueryResponse job_query_response = 13;
+
+    // Job get query results response.
+    JobGetQueryResultsResponse job_get_query_results_response = 14;
+
+    // Deprecated: Job query-done response. Use this information for usage
+    // analysis.
+    JobQueryDoneResponse job_query_done_response = 15;
+  }
+
+  // A job completion event.
+  JobCompletedEvent job_completed_event = 17;
+}
+
+// Table insert request.
+message TableInsertRequest {
+  // The new table.
+  Table resource = 1;
+}
+
+// Table update request.
+message TableUpdateRequest {
+  // The table to be updated.
+  Table resource = 1;
+}
+
+// Table insert response.
+message TableInsertResponse {
+  // Final state of the inserted table.
+  Table resource = 1;
+}
+
+// Table update response.
+message TableUpdateResponse {
+  // Final state of the updated table.
+  Table resource = 1;
+}
+
+// Dataset list request.
+message DatasetListRequest {
+  // Whether to list all datasets, including hidden ones.
+  bool list_all = 1;
+}
+
+// Dataset insert request.
+message DatasetInsertRequest {
+  // The dataset to be inserted.
+  Dataset resource = 1;
+}
+
+// Dataset insert response.
+message DatasetInsertResponse {
+  // Final state of the inserted dataset.
+  Dataset resource = 1;
+}
+
+// Dataset update request.
+message DatasetUpdateRequest {
+  // The dataset to be updated.
+  Dataset resource = 1;
+}
+
+// Dataset update response.
+message DatasetUpdateResponse {
+  // Final state of the updated dataset.
+  Dataset resource = 1;
+}
+
+// Job insert request.
+message JobInsertRequest {
+  // Job insert request.
+  Job resource = 1;
+}
+
+// Job insert response.
+message JobInsertResponse {
+  // Job insert response.
+  Job resource = 1;
+}
+
+// Job query request.
+message JobQueryRequest {
+  // The query.
+  string query = 1;
+
+  // The maximum number of results.
+  uint32 max_results = 2;
+
+  // The default dataset for tables that do not have a dataset specified.
+  DatasetName default_dataset = 3;
+
+  // Project that the query should be charged to.
+  string project_id = 4;
+
+  // If true, don't actually run the job. Just check that it would run.
+  bool dry_run = 5;
+}
+
+// Job query response.
+message JobQueryResponse {
+  // The total number of rows in the full query result set.
+  uint64 total_results = 1;
+
+  // Information about the queried job.
+  Job job = 2;
+}
+
+// Job getQueryResults request.
+message JobGetQueryResultsRequest {
+  // Maximum number of results to return.
+  uint32 max_results = 1;
+
+  // Zero-based row number at which to start.
+  uint64 start_row = 2;
+}
+
+// Job getQueryResults response.
+message JobGetQueryResultsResponse {
+  // Total number of results in query results.
+  uint64 total_results = 1;
+
+  // The job that was created to run the query.
+  // It completed if `job.status.state` is `DONE`.
+  // It failed if `job.status.errorResult` is also present.
+  Job job = 2;
+}
+
+// Job getQueryDone response.
+message JobQueryDoneResponse {
+  // The job and status information.
+  // The job completed if `job.status.state` is `DONE`.
+  Job job = 1;
+}
+
+// Query job completed event.
+message JobCompletedEvent {
+  // Name of the event.
+  string event_name = 1;
+
+  // Job information.
+  Job job = 2;
+}
+
+// Table data-list request.
+message TableDataListRequest {
+  // Starting row offset.
+  uint64 start_row = 1;
+
+  // Maximum number of results to return.
+  uint32 max_results = 2;
+}
+
+// Describes a BigQuery table.
+// See the [Table](/bigquery/docs/reference/v2/tables) API resource
+// for more details on individual fields.
+// Note: `Table.schema` has been deprecated in favor of `Table.schemaJson`.
+// `Table.schema` may continue to be present in your logs during this
+// transition.
+message Table {
+  // The name of the table.
+  TableName table_name = 1;
+
+  // User-provided metadata for the table.
+  TableInfo info = 2;
+
+  // A JSON representation of the table's schema.
+  string schema_json = 8;
+
+  // If present, this is a virtual table defined by a SQL query.
+  TableViewDefinition view = 4;
+
+  // The expiration date for the table, after which the table
+  // is deleted and the storage reclaimed.
+  // If not present, the table persists indefinitely.
+  google.protobuf.Timestamp expire_time = 5;
+
+  // The time the table was created.
+  google.protobuf.Timestamp create_time = 6;
+
+  // The time the table was last truncated
+  // by an operation with a `writeDisposition` of `WRITE_TRUNCATE`.
+  google.protobuf.Timestamp truncate_time = 7;
+}
+
+// User-provided metadata for a table.
+message TableInfo {
+  // A short name for the table, such as`"Analytics Data - Jan 2011"`.
+  string friendly_name = 1;
+
+  // A long description, perhaps several paragraphs,
+  // describing the table contents in detail.
+  string description = 2;
+}
+
+// Describes a virtual table defined by a SQL query.
+message TableViewDefinition {
+  // SQL query defining the view.
+  string query = 1;
+}
+
+// BigQuery dataset information.
+// See the [Dataset](/bigquery/docs/reference/v2/datasets) API resource
+// for more details on individual fields.
+message Dataset {
+  // The name of the dataset.
+  DatasetName dataset_name = 1;
+
+  // User-provided metadata for the dataset.
+  DatasetInfo info = 2;
+
+  // The time the dataset was created.
+  google.protobuf.Timestamp create_time = 4;
+
+  // The time the dataset was last modified.
+  google.protobuf.Timestamp update_time = 5;
+
+  // The access control list for the dataset.
+  BigQueryAcl acl = 6;
+
+  // If this field is present, each table that does not specify an
+  // expiration time is assigned an expiration time by adding this
+  // duration to the table's `createTime`.  If this field is empty,
+  // there is no default table expiration time.
+  google.protobuf.Duration default_table_expire_duration = 8;
+}
+
+// User-provided metadata for a dataset.
+message DatasetInfo {
+  // A short name for the dataset, such as`"Analytics Data 2011"`.
+  string friendly_name = 1;
+
+  // A long description, perhaps several paragraphs,
+  // describing the dataset contents in detail.
+  string description = 2;
+}
+
+// An access control list.
+message BigQueryAcl {
+  // Access control entry.
+  message Entry {
+    // The granted role, which can be `READER`, `WRITER`, or `OWNER`.
+    string role = 1;
+
+    // Grants access to a group identified by an email address.
+    string group_email = 2;
+
+    // Grants access to a user identified by an email address.
+    string user_email = 3;
+
+    // Grants access to all members of a domain.
+    string domain = 4;
+
+    // Grants access to special groups. Valid groups are `PROJECT_OWNERS`,
+    // `PROJECT_READERS`, `PROJECT_WRITERS` and `ALL_AUTHENTICATED_USERS`.
+    string special_group = 5;
+
+    // Grants access to a BigQuery View.
+    TableName view_name = 6;
+  }
+
+  // Access control entry list.
+  repeated Entry entries = 1;
+}
+
+// Describes a job.
+message Job {
+  // Job name.
+  JobName job_name = 1;
+
+  // Job configuration.
+  JobConfiguration job_configuration = 2;
+
+  // Job status.
+  JobStatus job_status = 3;
+
+  // Job statistics.
+  JobStatistics job_statistics = 4;
+}
+
+// Job configuration information.
+// See the [Jobs](/bigquery/docs/reference/v2/jobs) API resource
+// for more details on individual fields.
+message JobConfiguration {
+  // Describes a query job, which executes a SQL-like query.
+  message Query {
+    // The SQL query to run.
+    string query = 1;
+
+    // The table where results are written.
+    TableName destination_table = 2;
+
+    // Describes when a job is allowed to create a table:
+    // `CREATE_IF_NEEDED`, `CREATE_NEVER`.
+    string create_disposition = 3;
+
+    // Describes how writes affect existing tables:
+    // `WRITE_TRUNCATE`, `WRITE_APPEND`, `WRITE_EMPTY`.
+    string write_disposition = 4;
+
+    // If a table name is specified without a dataset in a query,
+    // this dataset will be added to table name.
+    DatasetName default_dataset = 5;
+
+    // Describes data sources outside BigQuery, if needed.
+    repeated TableDefinition table_definitions = 6;
+  }
+
+  // Describes a load job, which loads data from an external source via
+  // the  import pipeline.
+  message Load {
+    // URIs for the data to be imported. Only Google Cloud Storage URIs are
+    // supported.
+    repeated string source_uris = 1;
+
+    // The table schema in JSON format representation of a TableSchema.
+    string schema_json = 6;
+
+    // The table where the imported data is written.
+    TableName destination_table = 3;
+
+    // Describes when a job is allowed to create a table:
+    // `CREATE_IF_NEEDED`, `CREATE_NEVER`.
+    string create_disposition = 4;
+
+    // Describes how writes affect existing tables:
+    // `WRITE_TRUNCATE`, `WRITE_APPEND`, `WRITE_EMPTY`.
+    string write_disposition = 5;
+  }
+
+  // Describes an extract job, which exports data to an external source
+  // via the  export pipeline.
+  message Extract {
+    // Google Cloud Storage URIs where extracted data should be written.
+    repeated string destination_uris = 1;
+
+    // The source table.
+    TableName source_table = 2;
+  }
+
+  // Describes a copy job, which copies an existing table to another table.
+  message TableCopy {
+    // Source tables.
+    repeated TableName source_tables = 1;
+
+    // Destination table.
+    TableName destination_table = 2;
+
+    // Describes when a job is allowed to create a table:
+    // `CREATE_IF_NEEDED`, `CREATE_NEVER`.
+    string create_disposition = 3;
+
+    // Describes how writes affect existing tables:
+    // `WRITE_TRUNCATE`, `WRITE_APPEND`, `WRITE_EMPTY`.
+    string write_disposition = 4;
+  }
+
+  // Job configuration information.
+  oneof configuration {
+    // Query job information.
+    Query query = 5;
+
+    // Load job information.
+    Load load = 6;
+
+    // Extract job information.
+    Extract extract = 7;
+
+    // TableCopy job information.
+    TableCopy table_copy = 8;
+  }
+
+  // If true, don't actually run the job. Just check that it would run.
+  bool dry_run = 9;
+}
+
+// Describes an external data source used in a query.
+message TableDefinition {
+  // Name of the table, used in queries.
+  string name = 1;
+
+  // Google Cloud Storage URIs for the data to be imported.
+  repeated string source_uris = 2;
+}
+
+// Running state of a job.
+message JobStatus {
+  // State of a job: `PENDING`, `RUNNING`, or `DONE`.
+  string state = 1;
+
+  // If the job did not complete successfully, this field describes why.
+  google.rpc.Status error = 2;
+}
+
+// Job statistics that may change after a job starts.
+message JobStatistics {
+  // Time when the job was created.
+  google.protobuf.Timestamp create_time = 1;
+
+  // Time when the job started.
+  google.protobuf.Timestamp start_time = 2;
+
+  // Time when the job ended.
+  google.protobuf.Timestamp end_time = 3;
+
+  // Total bytes processed for a job.
+  int64 total_processed_bytes = 4;
+
+  // Processed bytes, adjusted by the job's CPU usage.
+  int64 total_billed_bytes = 5;
+
+  // The tier assigned by CPU-based billing.
+  int32 billing_tier = 7;
+}
+
+// The fully-qualified name for a dataset.
+message DatasetName {
+  // The project ID.
+  string project_id = 1;
+
+  // The dataset ID within the project.
+  string dataset_id = 2;
+}
+
+// The fully-qualified name for a table.
+message TableName {
+  // The project ID.
+  string project_id = 1;
+
+  // The dataset ID within the project.
+  string dataset_id = 2;
+
+  // The table ID of the table within the dataset.
+  string table_id = 3;
+}
+
+// The fully-qualified name for a job.
+message JobName {
+  // The project ID.
+  string project_id = 1;
+
+  // The job ID within the project.
+  string job_id = 2;
+}

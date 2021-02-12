@@ -1,0 +1,35 @@
+type: com.google.api.codegen.samplegen.v1p2.SampleConfigProto
+schema_version: 1.2.0
+samples:
+- region_tag: speech_transcribe_sync_gcs
+  title: Transcript Audio File (Cloud Storage)
+  description: Transcribe short audio file from Cloud Storage using synchronous speech recognition
+  rpc: Recognize
+  service: google.cloud.speech.v1.Speech
+  request:
+  - field: audio.uri
+    value: "gs://cloud-samples-data/speech/brooklyn_bridge.raw"
+    input_parameter: storage_uri
+    comment: URI for audio file in Cloud Storage, e.g. gs://[BUCKET]/[FILE]
+  - field: config.sample_rate_hertz
+    value: 16000
+    comment: Sample rate in Hertz of the audio data sent
+  - field: config.language_code
+    value: "en-US"
+    comment: The language of the supplied audio
+  - field: config.encoding
+    value: LINEAR16
+    comment: |
+      Encoding of audio data sent. This sample sets this explicitly.
+      This field is optional for FLAC and WAV audio formats.
+  response:
+  - loop:
+      variable: result
+      collection: $resp.results
+      body:
+      - comment:
+        - First alternative is the most probable result
+      - define: alternative = result.alternatives[0]
+      - print:
+        - "Transcript: %s"
+        - alternative.transcript

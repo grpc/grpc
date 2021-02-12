@@ -1,0 +1,461 @@
+// Copyright 2018 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.bigtable.admin.v2;
+
+import "google/api/annotations.proto";
+import "google/bigtable/admin/v2/instance.proto";
+import "google/iam/v1/iam_policy.proto";
+import "google/iam/v1/policy.proto";
+import "google/longrunning/operations.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/timestamp.proto";
+
+option csharp_namespace = "Google.Cloud.Bigtable.Admin.V2";
+option go_package = "google.golang.org/genproto/googleapis/bigtable/admin/v2;admin";
+option java_multiple_files = true;
+option java_outer_classname = "BigtableInstanceAdminProto";
+option java_package = "com.google.bigtable.admin.v2";
+option php_namespace = "Google\\Cloud\\Bigtable\\Admin\\V2";
+
+// Service for creating, configuring, and deleting Cloud Bigtable Instances and
+// Clusters. Provides access to the Instance and Cluster schemas only, not the
+// tables' metadata or data stored in those tables.
+service BigtableInstanceAdmin {
+  // Create an instance within a project.
+  rpc CreateInstance(CreateInstanceRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v2/{parent=projects/*}/instances"
+      body: "*"
+    };
+  }
+
+  // Gets information about an instance.
+  rpc GetInstance(GetInstanceRequest) returns (Instance) {
+    option (google.api.http) = {
+      get: "/v2/{name=projects/*/instances/*}"
+    };
+  }
+
+  // Lists information about instances in a project.
+  rpc ListInstances(ListInstancesRequest) returns (ListInstancesResponse) {
+    option (google.api.http) = {
+      get: "/v2/{parent=projects/*}/instances"
+    };
+  }
+
+  // Updates an instance within a project.
+  rpc UpdateInstance(Instance) returns (Instance) {
+    option (google.api.http) = {
+      put: "/v2/{name=projects/*/instances/*}"
+      body: "*"
+    };
+  }
+
+  // Partially updates an instance within a project.
+  rpc PartialUpdateInstance(PartialUpdateInstanceRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      patch: "/v2/{instance.name=projects/*/instances/*}"
+      body: "instance"
+    };
+  }
+
+  // Delete an instance from a project.
+  rpc DeleteInstance(DeleteInstanceRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v2/{name=projects/*/instances/*}"
+    };
+  }
+
+  // Creates a cluster within an instance.
+  rpc CreateCluster(CreateClusterRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      post: "/v2/{parent=projects/*/instances/*}/clusters"
+      body: "cluster"
+    };
+  }
+
+  // Gets information about a cluster.
+  rpc GetCluster(GetClusterRequest) returns (Cluster) {
+    option (google.api.http) = {
+      get: "/v2/{name=projects/*/instances/*/clusters/*}"
+    };
+  }
+
+  // Lists information about clusters in an instance.
+  rpc ListClusters(ListClustersRequest) returns (ListClustersResponse) {
+    option (google.api.http) = {
+      get: "/v2/{parent=projects/*/instances/*}/clusters"
+    };
+  }
+
+  // Updates a cluster within an instance.
+  rpc UpdateCluster(Cluster) returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      put: "/v2/{name=projects/*/instances/*/clusters/*}"
+      body: "*"
+    };
+  }
+
+  // Deletes a cluster from an instance.
+  rpc DeleteCluster(DeleteClusterRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v2/{name=projects/*/instances/*/clusters/*}"
+    };
+  }
+
+  // Creates an app profile within an instance.
+  rpc CreateAppProfile(CreateAppProfileRequest) returns (AppProfile) {
+    option (google.api.http) = {
+      post: "/v2/{parent=projects/*/instances/*}/appProfiles"
+      body: "app_profile"
+    };
+  }
+
+  // Gets information about an app profile.
+  rpc GetAppProfile(GetAppProfileRequest) returns (AppProfile) {
+    option (google.api.http) = {
+      get: "/v2/{name=projects/*/instances/*/appProfiles/*}"
+    };
+  }
+
+  // Lists information about app profiles in an instance.
+  rpc ListAppProfiles(ListAppProfilesRequest)
+      returns (ListAppProfilesResponse) {
+    option (google.api.http) = {
+      get: "/v2/{parent=projects/*/instances/*}/appProfiles"
+    };
+  }
+
+  // Updates an app profile within an instance.
+  rpc UpdateAppProfile(UpdateAppProfileRequest)
+      returns (google.longrunning.Operation) {
+    option (google.api.http) = {
+      patch: "/v2/{app_profile.name=projects/*/instances/*/appProfiles/*}"
+      body: "app_profile"
+    };
+  }
+
+  // Deletes an app profile from an instance.
+  rpc DeleteAppProfile(DeleteAppProfileRequest)
+      returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v2/{name=projects/*/instances/*/appProfiles/*}"
+    };
+  }
+
+  // Gets the access control policy for an instance resource. Returns an empty
+  // policy if an instance exists but does not have a policy set.
+  rpc GetIamPolicy(google.iam.v1.GetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v2/{resource=projects/*/instances/*}:getIamPolicy"
+      body: "*"
+    };
+  }
+
+  // Sets the access control policy on an instance resource. Replaces any
+  // existing policy.
+  rpc SetIamPolicy(google.iam.v1.SetIamPolicyRequest)
+      returns (google.iam.v1.Policy) {
+    option (google.api.http) = {
+      post: "/v2/{resource=projects/*/instances/*}:setIamPolicy"
+      body: "*"
+    };
+  }
+
+  // Returns permissions that the caller has on the specified instance resource.
+  rpc TestIamPermissions(google.iam.v1.TestIamPermissionsRequest)
+      returns (google.iam.v1.TestIamPermissionsResponse) {
+    option (google.api.http) = {
+      post: "/v2/{resource=projects/*/instances/*}:testIamPermissions"
+      body: "*"
+    };
+  }
+}
+
+// Request message for BigtableInstanceAdmin.CreateInstance.
+message CreateInstanceRequest {
+  // The unique name of the project in which to create the new instance.
+  // Values are of the form `projects/<project>`.
+  string parent = 1;
+
+  // The ID to be used when referring to the new instance within its project,
+  // e.g., just `myinstance` rather than
+  // `projects/myproject/instances/myinstance`.
+  string instance_id = 2;
+
+  // The instance to create.
+  // Fields marked `OutputOnly` must be left blank.
+  Instance instance = 3;
+
+  // The clusters to be created within the instance, mapped by desired
+  // cluster ID, e.g., just `mycluster` rather than
+  // `projects/myproject/instances/myinstance/clusters/mycluster`.
+  // Fields marked `OutputOnly` must be left blank.
+  // Currently, at most two clusters can be specified.
+  map<string, Cluster> clusters = 4;
+}
+
+// Request message for BigtableInstanceAdmin.GetInstance.
+message GetInstanceRequest {
+  // The unique name of the requested instance. Values are of the form
+  // `projects/<project>/instances/<instance>`.
+  string name = 1;
+}
+
+// Request message for BigtableInstanceAdmin.ListInstances.
+message ListInstancesRequest {
+  // The unique name of the project for which a list of instances is requested.
+  // Values are of the form `projects/<project>`.
+  string parent = 1;
+
+  // DEPRECATED: This field is unused and ignored.
+  string page_token = 2;
+}
+
+// Response message for BigtableInstanceAdmin.ListInstances.
+message ListInstancesResponse {
+  // The list of requested instances.
+  repeated Instance instances = 1;
+
+  // Locations from which Instance information could not be retrieved,
+  // due to an outage or some other transient condition.
+  // Instances whose Clusters are all in one of the failed locations
+  // may be missing from `instances`, and Instances with at least one
+  // Cluster in a failed location may only have partial information returned.
+  // Values are of the form `projects/<project>/locations/<zone_id>`
+  repeated string failed_locations = 2;
+
+  // DEPRECATED: This field is unused and ignored.
+  string next_page_token = 3;
+}
+
+// Request message for BigtableInstanceAdmin.PartialUpdateInstance.
+message PartialUpdateInstanceRequest {
+  // The Instance which will (partially) replace the current value.
+  Instance instance = 1;
+
+  // The subset of Instance fields which should be replaced.
+  // Must be explicitly set.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Request message for BigtableInstanceAdmin.DeleteInstance.
+message DeleteInstanceRequest {
+  // The unique name of the instance to be deleted.
+  // Values are of the form `projects/<project>/instances/<instance>`.
+  string name = 1;
+}
+
+// Request message for BigtableInstanceAdmin.CreateCluster.
+message CreateClusterRequest {
+  // The unique name of the instance in which to create the new cluster.
+  // Values are of the form
+  // `projects/<project>/instances/<instance>`.
+  string parent = 1;
+
+  // The ID to be used when referring to the new cluster within its instance,
+  // e.g., just `mycluster` rather than
+  // `projects/myproject/instances/myinstance/clusters/mycluster`.
+  string cluster_id = 2;
+
+  // The cluster to be created.
+  // Fields marked `OutputOnly` must be left blank.
+  Cluster cluster = 3;
+}
+
+// Request message for BigtableInstanceAdmin.GetCluster.
+message GetClusterRequest {
+  // The unique name of the requested cluster. Values are of the form
+  // `projects/<project>/instances/<instance>/clusters/<cluster>`.
+  string name = 1;
+}
+
+// Request message for BigtableInstanceAdmin.ListClusters.
+message ListClustersRequest {
+  // The unique name of the instance for which a list of clusters is requested.
+  // Values are of the form `projects/<project>/instances/<instance>`.
+  // Use `<instance> = '-'` to list Clusters for all Instances in a project,
+  // e.g., `projects/myproject/instances/-`.
+  string parent = 1;
+
+  // DEPRECATED: This field is unused and ignored.
+  string page_token = 2;
+}
+
+// Response message for BigtableInstanceAdmin.ListClusters.
+message ListClustersResponse {
+  // The list of requested clusters.
+  repeated Cluster clusters = 1;
+
+  // Locations from which Cluster information could not be retrieved,
+  // due to an outage or some other transient condition.
+  // Clusters from these locations may be missing from `clusters`,
+  // or may only have partial information returned.
+  // Values are of the form `projects/<project>/locations/<zone_id>`
+  repeated string failed_locations = 2;
+
+  // DEPRECATED: This field is unused and ignored.
+  string next_page_token = 3;
+}
+
+// Request message for BigtableInstanceAdmin.DeleteCluster.
+message DeleteClusterRequest {
+  // The unique name of the cluster to be deleted. Values are of the form
+  // `projects/<project>/instances/<instance>/clusters/<cluster>`.
+  string name = 1;
+}
+
+// The metadata for the Operation returned by CreateInstance.
+message CreateInstanceMetadata {
+  // The request that prompted the initiation of this CreateInstance operation.
+  CreateInstanceRequest original_request = 1;
+
+  // The time at which the original request was received.
+  google.protobuf.Timestamp request_time = 2;
+
+  // The time at which the operation failed or was completed successfully.
+  google.protobuf.Timestamp finish_time = 3;
+}
+
+// The metadata for the Operation returned by UpdateInstance.
+message UpdateInstanceMetadata {
+  // The request that prompted the initiation of this UpdateInstance operation.
+  PartialUpdateInstanceRequest original_request = 1;
+
+  // The time at which the original request was received.
+  google.protobuf.Timestamp request_time = 2;
+
+  // The time at which the operation failed or was completed successfully.
+  google.protobuf.Timestamp finish_time = 3;
+}
+
+// The metadata for the Operation returned by CreateCluster.
+message CreateClusterMetadata {
+  // The request that prompted the initiation of this CreateCluster operation.
+  CreateClusterRequest original_request = 1;
+
+  // The time at which the original request was received.
+  google.protobuf.Timestamp request_time = 2;
+
+  // The time at which the operation failed or was completed successfully.
+  google.protobuf.Timestamp finish_time = 3;
+}
+
+// The metadata for the Operation returned by UpdateCluster.
+message UpdateClusterMetadata {
+  // The request that prompted the initiation of this UpdateCluster operation.
+  Cluster original_request = 1;
+
+  // The time at which the original request was received.
+  google.protobuf.Timestamp request_time = 2;
+
+  // The time at which the operation failed or was completed successfully.
+  google.protobuf.Timestamp finish_time = 3;
+}
+
+// Request message for BigtableInstanceAdmin.CreateAppProfile.
+message CreateAppProfileRequest {
+  // The unique name of the instance in which to create the new app profile.
+  // Values are of the form
+  // `projects/<project>/instances/<instance>`.
+  string parent = 1;
+
+  // The ID to be used when referring to the new app profile within its
+  // instance, e.g., just `myprofile` rather than
+  // `projects/myproject/instances/myinstance/appProfiles/myprofile`.
+  string app_profile_id = 2;
+
+  // The app profile to be created.
+  // Fields marked `OutputOnly` will be ignored.
+  AppProfile app_profile = 3;
+
+  // If true, ignore safety checks when creating the app profile.
+  bool ignore_warnings = 4;
+}
+
+// Request message for BigtableInstanceAdmin.GetAppProfile.
+message GetAppProfileRequest {
+  // The unique name of the requested app profile. Values are of the form
+  // `projects/<project>/instances/<instance>/appProfiles/<app_profile>`.
+  string name = 1;
+}
+
+// Request message for BigtableInstanceAdmin.ListAppProfiles.
+message ListAppProfilesRequest {
+  // The unique name of the instance for which a list of app profiles is
+  // requested. Values are of the form
+  // `projects/<project>/instances/<instance>`.
+  // Use `<instance> = '-'` to list AppProfiles for all Instances in a project,
+  // e.g., `projects/myproject/instances/-`.
+  string parent = 1;
+
+  // Maximum number of results per page.
+  // CURRENTLY UNIMPLEMENTED AND IGNORED.
+  int32 page_size = 3;
+
+  // The value of `next_page_token` returned by a previous call.
+  string page_token = 2;
+}
+
+// Response message for BigtableInstanceAdmin.ListAppProfiles.
+message ListAppProfilesResponse {
+  // The list of requested app profiles.
+  repeated AppProfile app_profiles = 1;
+
+  // Set if not all app profiles could be returned in a single response.
+  // Pass this value to `page_token` in another request to get the next
+  // page of results.
+  string next_page_token = 2;
+
+  // Locations from which AppProfile information could not be retrieved,
+  // due to an outage or some other transient condition.
+  // AppProfiles from these locations may be missing from `app_profiles`.
+  // Values are of the form `projects/<project>/locations/<zone_id>`
+  repeated string failed_locations = 3;
+}
+
+// Request message for BigtableInstanceAdmin.UpdateAppProfile.
+message UpdateAppProfileRequest {
+  // The app profile which will (partially) replace the current value.
+  AppProfile app_profile = 1;
+
+  // The subset of app profile fields which should be replaced.
+  // If unset, all fields will be replaced.
+  google.protobuf.FieldMask update_mask = 2;
+
+  // If true, ignore safety checks when updating the app profile.
+  bool ignore_warnings = 3;
+}
+
+// Request message for BigtableInstanceAdmin.DeleteAppProfile.
+message DeleteAppProfileRequest {
+  // The unique name of the app profile to be deleted. Values are of the form
+  // `projects/<project>/instances/<instance>/appProfiles/<app_profile>`.
+  string name = 1;
+
+  // If true, ignore safety checks when deleting the app profile.
+  bool ignore_warnings = 2;
+}
+
+// The metadata for the Operation returned by UpdateAppProfile.
+message UpdateAppProfileMetadata {}

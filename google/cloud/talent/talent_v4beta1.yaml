@@ -1,0 +1,95 @@
+type: google.api.Service
+config_version: 3
+name: jobs.googleapis.com
+title: Cloud Talent Solution API
+
+apis:
+- name: google.cloud.talent.v4beta1.ApplicationService
+- name: google.cloud.talent.v4beta1.CompanyService
+- name: google.cloud.talent.v4beta1.Completion
+- name: google.cloud.talent.v4beta1.EventService
+- name: google.cloud.talent.v4beta1.JobService
+- name: google.cloud.talent.v4beta1.ProfileService
+- name: google.cloud.talent.v4beta1.TenantService
+
+types:
+- name: google.cloud.talent.v4beta1.BatchOperationMetadata
+- name: google.cloud.talent.v4beta1.JobOperationResult
+
+documentation:
+  summary: |-
+    Cloud Talent Solution provides the capability to create, read, update, and
+    delete job postings, as well as search jobs based on keywords and filters.
+  overview: |-
+    # Introduction
+
+    Cloud Talent Solution provides hiring companies and job distributors with
+    the capability to create and manage job postings and organizational
+    information, and perform job search using field based queries. This site
+    contains all of the information you need to integrate Cloud Talent
+    Solution, create company entities that represent employers with intended
+    access control, post and manage jobs on Garage Jobs on behalf of
+    employers, and search jobs where access control permits. For a full list
+    of supported API methods, refer to the [Reference](rest/) section.
+
+backend:
+  rules:
+  - selector: 'google.cloud.talent.v4beta1.ApplicationService.*'
+    deadline: 30.0
+  - selector: 'google.cloud.talent.v4beta1.CompanyService.*'
+    deadline: 30.0
+  - selector: google.cloud.talent.v4beta1.Completion.CompleteQuery
+    deadline: 30.0
+  - selector: google.cloud.talent.v4beta1.EventService.CreateClientEvent
+    deadline: 30.0
+  - selector: 'google.cloud.talent.v4beta1.JobService.*'
+    deadline: 30.0
+  - selector: 'google.cloud.talent.v4beta1.ProfileService.*'
+    deadline: 30.0
+  - selector: 'google.cloud.talent.v4beta1.TenantService.*'
+    deadline: 30.0
+  - selector: 'google.longrunning.Operations.*'
+    deadline: 30.0
+
+authentication:
+  rules:
+  - selector: 'google.cloud.talent.v4beta1.ApplicationService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/jobs
+  - selector: 'google.cloud.talent.v4beta1.CompanyService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/jobs
+  - selector: google.cloud.talent.v4beta1.Completion.CompleteQuery
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/jobs
+  - selector: google.cloud.talent.v4beta1.EventService.CreateClientEvent
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/jobs
+  - selector: 'google.cloud.talent.v4beta1.JobService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/jobs
+  - selector: 'google.cloud.talent.v4beta1.ProfileService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/jobs
+  - selector: 'google.cloud.talent.v4beta1.TenantService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/jobs
+  - selector: 'google.longrunning.Operations.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/jobs

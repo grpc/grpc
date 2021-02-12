@@ -1,0 +1,110 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.devtools.resultstore.v2;
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/resultstore/v2;resultstore";
+option java_multiple_files = true;
+option java_package = "com.google.devtools.resultstore.v2";
+
+// Describes line coverage for a file
+message LineCoverage {
+  // Which source lines in the file represent the start of a statement that was
+  // instrumented to detect whether it was executed by the test.
+  //
+  // This is a bitfield where i-th bit corresponds to the i-th line. Divide line
+  // number by 8 to get index into byte array. Mod line number by 8 to get bit
+  // number (0 = LSB, 7 = MSB).
+  //
+  // A 1 denotes the line was instrumented.
+  // A 0 denotes the line was not instrumented.
+  bytes instrumented_lines = 1;
+
+  // Which of the instrumented source lines were executed by the test. Should
+  // include lines that were not instrumented.
+  //
+  // This is a bitfield where i-th bit corresponds to the i-th line. Divide line
+  // number by 8 to get index into byte array. Mod line number by 8 to get bit
+  // number (0 = LSB, 7 = MSB).
+  //
+  // A 1 denotes the line was executed.
+  // A 0 denotes the line was not executed.
+  bytes executed_lines = 2;
+}
+
+// Describes branch coverage for a file
+message BranchCoverage {
+  // The field branch_present denotes the lines containing at least one branch.
+  //
+  // This is a bitfield where i-th bit corresponds to the i-th line. Divide line
+  // number by 8 to get index into byte array. Mod line number by 8 to get bit
+  // number (0 = LSB, 7 = MSB).
+  //
+  // A 1 denotes the line contains at least one branch.
+  // A 0 denotes the line contains no branches.
+  bytes branch_present = 1;
+
+  // Contains the number of branches present, only for the lines which have the
+  // corresponding bit set in branch_present, in a relative order ignoring
+  // lines which do not have any branches.
+  repeated int32 branches_in_line = 2;
+
+  // As each branch can have any one of the following three states: not
+  // executed, executed but not taken, executed and taken.
+  //
+  // This is a bitfield where i-th bit corresponds to the i-th branch. Divide
+  // branch number by 8 to get index into byte array. Mod branch number by 8 to
+  // get bit number (0 = LSB, 7 = MSB).
+  //
+  // i-th bit of the following two byte arrays are used to denote the above
+  // mentioned states.
+  //
+  // not executed: i-th bit of executed == 0 && i-th bit of taken == 0
+  // executed but not taken: i-th bit of executed == 1 && i-th bit of taken == 0
+  // executed and taken: i-th bit of executed == 1 && i-th bit of taken == 1
+  bytes executed = 3;
+
+  // Described above.
+  bytes taken = 4;
+}
+
+// Describes code coverage for a particular file under test.
+message FileCoverage {
+  // Path of source file within the SourceContext of this Invocation.
+  string path = 1;
+
+  // Details of lines in a file required to calculate line coverage.
+  LineCoverage line_coverage = 2;
+
+  // Details of branches in a file required to calculate branch coverage.
+  BranchCoverage branch_coverage = 3;
+}
+
+// Describes code coverage for a build or test Action. This is used to store
+// baseline coverage for build Actions and test coverage for test Actions.
+message ActionCoverage {
+  // List of coverage info for all source files that the TestResult covers.
+  repeated FileCoverage file_coverages = 2;
+}
+
+// Describes aggregate code coverage for a collection of build or test Actions.
+// A line or branch is covered if and only if it is covered in any of the build
+// or test actions.
+message AggregateCoverage {
+  // Aggregated coverage info for all source files that the actions cover.
+  repeated FileCoverage file_coverages = 1;
+}

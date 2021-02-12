@@ -1,0 +1,85 @@
+// Copyright 2018 The Grafeas Authors. All rights reserved.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package grafeas.v1beta1.discovery;
+
+import "google/devtools/containeranalysis/v1beta1/common/common.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1beta1/discovery;discovery";
+option java_multiple_files = true;
+option java_package = "io.grafeas.v1beta1.discovery";
+option objc_class_prefix = "GRA";
+
+// A note that indicates a type of analysis a provider would perform. This note
+// exists in a provider's project. A `Discovery` occurrence is created in a
+// consumer's project at the start of analysis.
+message Discovery {
+  // The kind of analysis that is handled by this discovery.
+  grafeas.v1beta1.NoteKind analysis_kind = 1;
+}
+
+// Details of a discovery occurrence.
+message Details {
+  // Analysis status for the discovered resource.
+  Discovered discovered = 1;
+}
+
+// Provides information about the analysis status of a discovered resource.
+message Discovered {
+  // Whether the resource is continuously analyzed.
+  enum ContinuousAnalysis {
+    // Unknown.
+    CONTINUOUS_ANALYSIS_UNSPECIFIED = 0;
+    // The resource is continuously analyzed.
+    ACTIVE = 1;
+    // The resource is ignored for continuous analysis.
+    INACTIVE = 2;
+  }
+
+  // Whether the resource is continuously analyzed.
+  ContinuousAnalysis continuous_analysis = 1;
+
+  // The last time continuous analysis was done for this resource.
+  google.protobuf.Timestamp last_analysis_time = 2;
+
+  // Analysis status for a resource. Currently for initial analysis only (not
+  // updated in continuous analysis).
+  enum AnalysisStatus {
+    // Unknown.
+    ANALYSIS_STATUS_UNSPECIFIED = 0;
+    // Resource is known but no action has been taken yet.
+    PENDING = 1;
+    // Resource is being analyzed.
+    SCANNING = 2;
+    // Analysis has finished successfully.
+    FINISHED_SUCCESS = 3;
+    // Analysis has finished unsuccessfully, the analysis itself is in a bad
+    // state.
+    FINISHED_FAILED = 4;
+    // The resource is known not to be supported
+    FINISHED_UNSUPPORTED = 5;
+  }
+
+  // The status of discovery for the resource.
+  AnalysisStatus analysis_status = 3;
+
+  // When an error is encountered this will contain a LocalizedMessage under
+  // details to show to the user. The LocalizedMessage is output only and
+  // populated by the API.
+  google.rpc.Status analysis_status_error = 4;
+}

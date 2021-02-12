@@ -1,0 +1,75 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.datalabeling.v1beta1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/timestamp.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/datalabeling/v1beta1;datalabeling";
+option java_multiple_files = true;
+option java_package = "com.google.cloud.datalabeling.v1beta1";
+
+// Container of information about an image.
+message ImagePayload {
+  // Image format.
+  string mime_type = 1;
+
+  // A byte string of a thumbnail image.
+  bytes image_thumbnail = 2;
+
+  // Image uri from the user bucket.
+  string image_uri = 3;
+
+  // Signed uri of the image file in the service bucket.
+  string signed_uri = 4;
+}
+
+// Container of information about a piece of text.
+message TextPayload {
+  // Text content.
+  string text_content = 1;
+}
+
+// Container of information of a video thumbnail.
+message VideoThumbnail {
+  // A byte string of the video frame.
+  bytes thumbnail = 1;
+
+  // Time offset relative to the beginning of the video, corresponding to the
+  // video frame where the thumbnail has been extracted from.
+  google.protobuf.Duration time_offset = 2;
+}
+
+// Container of information of a video.
+message VideoPayload {
+  // Video format.
+  string mime_type = 1;
+
+  // Video uri from the user bucket.
+  string video_uri = 2;
+
+  // The list of video thumbnails.
+  repeated VideoThumbnail video_thumbnails = 3;
+
+  // FPS of the video.
+  float frame_rate = 4;
+
+  // Signed uri of the video file in the service bucket.
+  string signed_uri = 5;
+}

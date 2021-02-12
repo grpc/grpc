@@ -1,0 +1,542 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.cloud.dlp.v2
+  python:
+    package_name: google.cloud.dlp_v2.gapic
+  go:
+    package_name: cloud.google.com/go/dlp/apiv2
+    release_level: GA
+  csharp:
+    package_name: Google.Cloud.Dlp.V2
+  ruby:
+    package_name: Google::Cloud::Dlp::V2
+  php:
+    package_name: Google\Cloud\Dlp\V2
+  nodejs:
+    package_name: dlp.v2
+    domain_layer_location: google-cloud
+collection_oneofs:
+- oneof_name: deidentify_template_oneof
+  collection_names:
+  - organization_deidentify_template
+  - project_deidentify_template
+- oneof_name: inspect_template_oneof
+  collection_names:
+  - organization_inspect_template
+  - project_inspect_template
+- oneof_name: stored_info_type_oneof
+  collection_names:
+  - organization_stored_info_type
+  - project_stored_info_type
+# A list of API interface configurations.
+interfaces:
+- name: google.privacy.dlp.v2.DlpService
+  # A list of resource collection configurations.
+  # Consists of a name_pattern and an entity_name.
+  # The name_pattern is a pattern to describe the names of the resources of this
+  # collection, using the platform's conventions for URI patterns. A generator
+  # may use this to generate methods to compose and decompose such names. The
+  # pattern should use named placeholders as in `shelves/{shelf}/books/{book}`;
+  # those will be taken as hints for the parameter names of the generated
+  # methods. If empty, no name methods are generated.
+  # The entity_name is the name to be used as a basis for generated methods and
+  # classes.
+  collections:
+  - name_pattern: organizations/{organization}
+    entity_name: organization
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Api.Gax.ResourceNames.OrganizationName
+  - name_pattern: organizations/{organization}/deidentifyTemplates/{deidentify_template}
+    entity_name: organization_deidentify_template
+  - name_pattern: projects/{project}/deidentifyTemplates/{deidentify_template}
+    entity_name: project_deidentify_template
+  - name_pattern: organizations/{organization}/inspectTemplates/{inspect_template}
+    entity_name: organization_inspect_template
+  - name_pattern: projects/{project}/inspectTemplates/{inspect_template}
+    entity_name: project_inspect_template
+  - name_pattern: projects/{project}/jobTriggers/{job_trigger}
+    entity_name: project_job_trigger
+  - name_pattern: projects/{project}
+    entity_name: project
+    language_overrides:
+    - language: csharp
+      common_resource_name: Google.Api.Gax.ResourceNames.ProjectName
+  - name_pattern: projects/{project}/dlpJobs/{dlp_job}
+    entity_name: dlp_job
+  - name_pattern: organizations/{organization}/storedInfoTypes/{stored_info_type}
+    entity_name: organization_stored_info_type
+  - name_pattern: projects/{project}/storedInfoTypes/{stored_info_type}
+    entity_name: project_stored_info_type
+  # Definition for retryable codes.
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  # Definition for retry/backoff parameters.
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 20000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 20000
+    total_timeout_millis: 600000
+  # A list of method configurations.
+  # Common properties:
+  #
+  #   name - The simple name of the method.
+  #
+  #   flattening - Specifies the configuration for parameter flattening.
+  #   Describes the parameter groups for which a generator should produce method
+  #   overloads which allow a client to directly pass request message fields as
+  #   method parameters. This information may or may not be used, depending on
+  #   the target language.
+  #   Consists of groups, which each represent a list of parameters to be
+  #   flattened. Each parameter listed must be a field of the request message.
+  #
+  #   required_fields - Fields that are always required for a request to be
+  #   valid.
+  #
+  #   resource_name_treatment - An enum that specifies how to treat the resource
+  #   name formats defined in the field_name_patterns and
+  #   response_field_name_patterns fields.
+  #   UNSET: default value
+  #   NONE: the collection configs will not be used by the generated code.
+  #   VALIDATE: string fields will be validated by the client against the
+  #   specified resource name formats.
+  #   STATIC_TYPES: the client will use generated types for resource names.
+  #
+  #   page_streaming - Specifies the configuration for paging.
+  #   Describes information for generating a method which transforms a paging
+  #   list RPC into a stream of resources.
+  #   Consists of a request and a response.
+  #   The request specifies request information of the list method. It defines
+  #   which fields match the paging pattern in the request. The request consists
+  #   of a page_size_field and a token_field. The page_size_field is the name of
+  #   the optional field specifying the maximum number of elements to be
+  #   returned in the response. The token_field is the name of the field in the
+  #   request containing the page token.
+  #   The response specifies response information of the list method. It defines
+  #   which fields match the paging pattern in the response. The response
+  #   consists of a token_field and a resources_field. The token_field is the
+  #   name of the field in the response containing the next page token. The
+  #   resources_field is the name of the field in the response containing the
+  #   list of resources belonging to the page.
+  #
+  #   retry_codes_name - Specifies the configuration for retryable codes. The
+  #   name must be defined in interfaces.retry_codes_def.
+  #
+  #   retry_params_name - Specifies the configuration for retry/backoff
+  #   parameters. The name must be defined in interfaces.retry_params_def.
+  #
+  #   field_name_patterns - Maps the field name of the request type to
+  #   entity_name of interfaces.collections.
+  #   Specifies the string pattern that the field must follow.
+  #
+  #   timeout_millis - Specifies the default timeout for a non-retrying call. If
+  #   the call is retrying, refer to retry_params_name instead.
+  methods:
+  - name: InspectContent
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 300000
+  - name: RedactImage
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 300000
+  - name: DeidentifyContent
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 300000
+  - name: ReidentifyContent
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 300000
+  - name: ListInfoTypes
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 300000
+  - name: CreateInspectTemplate
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: organization
+    timeout_millis: 300000
+  - name: UpdateInspectTemplate
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: inspect_template_oneof
+    timeout_millis: 300000
+  - name: GetInspectTemplate
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: inspect_template_oneof
+    timeout_millis: 300000
+  - name: ListInspectTemplates
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: inspect_templates
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: organization
+    timeout_millis: 300000
+  - name: DeleteInspectTemplate
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: inspect_template_oneof
+    timeout_millis: 300000
+  - name: CreateDeidentifyTemplate
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: organization
+    timeout_millis: 300000
+  - name: UpdateDeidentifyTemplate
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: deidentify_template_oneof
+    timeout_millis: 300000
+  - name: GetDeidentifyTemplate
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: deidentify_template_oneof
+    timeout_millis: 300000
+  - name: ListDeidentifyTemplates
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: deidentify_templates
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: organization
+    timeout_millis: 300000
+  - name: DeleteDeidentifyTemplate
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: deidentify_template_oneof
+    timeout_millis: 300000
+  - name: CreateDlpJob
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 300000
+  - name: ListDlpJobs
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: jobs
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 300000
+  - name: GetDlpJob
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: dlp_job
+    timeout_millis: 300000
+  - name: DeleteDlpJob
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: dlp_job
+    timeout_millis: 300000
+  - name: CancelDlpJob
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: dlp_job
+    timeout_millis: 300000
+  - name: ListJobTriggers
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: job_triggers
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 300000
+  - name: GetJobTrigger
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: project_job_trigger
+    timeout_millis: 300000
+  - name: DeleteJobTrigger
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 300000
+  - name: ActivateJobTrigger
+    surface_treatments:
+    - include_languages:
+      - go
+      - java
+      - csharp
+      - ruby
+      - nodejs
+      - python
+      - php
+      visibility: DISABLED
+  - name: UpdateJobTrigger
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: project_job_trigger
+    timeout_millis: 300000
+  - name: CreateJobTrigger
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: project
+    timeout_millis: 300000
+
+  - name: CreateStoredInfoType
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: organization
+    timeout_millis: 300000
+  - name: UpdateStoredInfoType
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: non_idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: stored_info_type_oneof
+    timeout_millis: 300000
+  - name: GetStoredInfoType
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: stored_info_type_oneof
+    timeout_millis: 300000
+  - name: ListStoredInfoTypes
+    required_fields:
+    - parent
+    resource_name_treatment: STATIC_TYPES
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: stored_info_types
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      parent: organization
+    timeout_millis: 300000
+  - name: DeleteStoredInfoType
+    required_fields:
+    - name
+    resource_name_treatment: STATIC_TYPES
+    retry_codes_name: idempotent
+    retry_params_name: default
+    field_name_patterns:
+      name: stored_info_type_oneof
+    timeout_millis: 300000
+
+resource_name_generation:
+- message_name: InspectContentRequest
+  field_entity_map:
+    parent: project
+- message_name: RedactImageRequest
+  field_entity_map:
+    parent: project
+- message_name: DeidentifyContentRequest
+  field_entity_map:
+    parent: project
+- message_name: ReidentifyContentRequest
+  field_entity_map:
+    parent: project
+- message_name: CreateInspectTemplateRequest
+  field_entity_map:
+    parent: organization
+- message_name: UpdateInspectTemplateRequest
+  field_entity_map:
+    name: inspect_template_oneof
+- message_name: GetInspectTemplateRequest
+  field_entity_map:
+    name: inspect_template_oneof
+- message_name: ListInspectTemplatesRequest
+  field_entity_map:
+    parent: organization
+- message_name: DeleteInspectTemplateRequest
+  field_entity_map:
+    name: inspect_template_oneof
+- message_name: CreateDeidentifyTemplateRequest
+  field_entity_map:
+    parent: organization
+- message_name: UpdateDeidentifyTemplateRequest
+  field_entity_map:
+    name: deidentify_template_oneof
+- message_name: GetDeidentifyTemplateRequest
+  field_entity_map:
+    name: deidentify_template_oneof
+- message_name: ListDeidentifyTemplatesRequest
+  field_entity_map:
+    parent: organization
+- message_name: DeleteDeidentifyTemplateRequest
+  field_entity_map:
+    name: deidentify_template_oneof
+- message_name: CreateJobTriggerRequest
+  field_entity_map:
+    parent: project
+- message_name: UpdateJobTriggerRequest
+  field_entity_map:
+    name: project_job_trigger
+- message_name: GetJobTriggerRequest
+  field_entity_map:
+    name: project_job_trigger
+- message_name: ListJobTriggersRequest
+  field_entity_map:
+    parent: project
+- message_name: DeleteJobTriggerRequest
+  field_entity_map:
+    name: project_job_trigger
+- message_name: CreateDlpJobRequest
+  field_entity_map:
+    parent: project
+- message_name: ListDlpJobsRequest
+  field_entity_map:
+    parent: project
+- message_name: GetDlpJobRequest
+  field_entity_map:
+    name: dlp_job
+- message_name: DeleteDlpJobRequest
+  field_entity_map:
+    name: dlp_job
+- message_name: CancelDlpJobRequest
+  field_entity_map:
+    name: dlp_job
+- message_name: CreateStoredInfoTypeRequest
+  field_entity_map:
+    parent: organization
+- message_name: UpdateStoredInfoTypeRequest
+  field_entity_map:
+    name: stored_info_type_oneof
+- message_name: GetStoredInfoTypeRequest
+  field_entity_map:
+    name: stored_info_type_oneof
+- message_name: ListStoredInfoTypesRequest
+  field_entity_map:
+    parent: organization
+- message_name: DeleteStoredInfoTypeRequest
+  field_entity_map:
+    name: stored_info_type_oneof

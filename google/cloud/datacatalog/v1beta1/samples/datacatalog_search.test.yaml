@@ -1,0 +1,25 @@
+test:
+  suites:
+  - name: Data Catalog v1beta1 Search sample tests
+    setup:
+    # Get project ID from environment variable.
+    - env:
+        name: GOOGLE_PROJECT_ID
+        variable: project_id
+    cases:
+    - name: Search Catalog
+      spec:
+      - call:
+          sample: datacatalog_search
+          params:
+            include_project_id:
+              variable: project_id
+            include_gcp_public_datasets:
+              literal: "true"
+            query:
+              literal: "system=bigquery type=dataset name:trips"
+      - assert_contains:
+        - literal: "Result type: ENTRY"
+        - literal: "Result subtype: entry.dataset"
+        - literal: "Relative resource name: projects/bigquery-public-data"
+        - literal: "Linked resource: //bigquery.googleapis.com/projects/bigquery-public-data/datasets"

@@ -1,0 +1,100 @@
+type: com.google.api.codegen.ConfigProto
+config_schema_version: 1.0.0
+language_settings:
+  java:
+    package_name: com.google.longrunning
+  python:
+    package_name: google.longrunning.gapic
+  go:
+    package_name: cloud.google.com/go/longrunning/autogen
+    domain_layer_location: cloud.google.com/go/longrunning
+  csharp:
+    package_name: Google.LongRunning
+  ruby:
+    package_name: Google::Longrunning
+  php:
+    package_name: Google\ApiCore\LongRunning
+  nodejs:
+    package_name: longrunning
+interfaces:
+- name: google.longrunning.Operations
+  required_constructor_params:
+  - service_address
+  - scopes
+  retry_codes_def:
+  - name: idempotent
+    retry_codes:
+    - UNAVAILABLE
+    - DEADLINE_EXCEEDED
+  - name: non_idempotent
+    retry_codes: []
+  retry_params_def:
+  - name: default
+    initial_retry_delay_millis: 100
+    retry_delay_multiplier: 1.3
+    max_retry_delay_millis: 60000
+    initial_rpc_timeout_millis: 90000
+    rpc_timeout_multiplier: 1
+    max_rpc_timeout_millis: 90000
+    total_timeout_millis: 600000
+  methods:
+  - name: GetOperation
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: ListOperations
+    flattening:
+      groups:
+      - parameters:
+        - name
+        - filter
+    required_fields:
+    - name
+    - filter
+    page_streaming:
+      request:
+        page_size_field: page_size
+        token_field: page_token
+      response:
+        token_field: next_page_token
+        resources_field: operations
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: CancelOperation
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: DeleteOperation
+    flattening:
+      groups:
+      - parameters:
+        - name
+    required_fields:
+    - name
+    retry_codes_name: idempotent
+    retry_params_name: default
+    timeout_millis: 60000
+  - name: WaitOperation
+    surface_treatments:
+    - include_languages:
+      - go
+      - java
+      - csharp
+      - ruby
+      - nodejs
+      - python
+      - php
+      visibility: DISABLED

@@ -1,0 +1,314 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.common;
+
+import "google/ads/googleads/v2/common/criteria.proto";
+import "google/ads/googleads/v2/enums/ad_network_type.proto";
+import "google/ads/googleads/v2/enums/click_type.proto";
+import "google/ads/googleads/v2/enums/conversion_action_category.proto";
+import "google/ads/googleads/v2/enums/conversion_attribution_event_type.proto";
+import "google/ads/googleads/v2/enums/conversion_lag_bucket.proto";
+import "google/ads/googleads/v2/enums/conversion_or_adjustment_lag_bucket.proto";
+import "google/ads/googleads/v2/enums/day_of_week.proto";
+import "google/ads/googleads/v2/enums/device.proto";
+import "google/ads/googleads/v2/enums/external_conversion_source.proto";
+import "google/ads/googleads/v2/enums/hotel_date_selection_type.proto";
+import "google/ads/googleads/v2/enums/hotel_price_bucket.proto";
+import "google/ads/googleads/v2/enums/hotel_rate_type.proto";
+import "google/ads/googleads/v2/enums/month_of_year.proto";
+import "google/ads/googleads/v2/enums/placeholder_type.proto";
+import "google/ads/googleads/v2/enums/product_channel.proto";
+import "google/ads/googleads/v2/enums/product_channel_exclusivity.proto";
+import "google/ads/googleads/v2/enums/product_condition.proto";
+import "google/ads/googleads/v2/enums/search_engine_results_page_type.proto";
+import "google/ads/googleads/v2/enums/search_term_match_type.proto";
+import "google/ads/googleads/v2/enums/slot.proto";
+import "google/protobuf/wrappers.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Common";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/common;common";
+option java_multiple_files = true;
+option java_outer_classname = "SegmentsProto";
+option java_package = "com.google.ads.googleads.v2.common";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Common";
+option ruby_package = "Google::Ads::GoogleAds::V2::Common";
+
+// Proto file describing segment only fields.
+
+// Segment only fields.
+message Segments {
+  // Ad network type.
+  google.ads.googleads.v2.enums.AdNetworkTypeEnum.AdNetworkType ad_network_type = 3;
+
+  // Click type.
+  google.ads.googleads.v2.enums.ClickTypeEnum.ClickType click_type = 26;
+
+  // Resource name of the conversion action.
+  google.protobuf.StringValue conversion_action = 52;
+
+  // Conversion action category.
+  google.ads.googleads.v2.enums.ConversionActionCategoryEnum.ConversionActionCategory conversion_action_category = 53;
+
+  // Conversion action name.
+  google.protobuf.StringValue conversion_action_name = 54;
+
+  // This segments your conversion columns by the original conversion and
+  // conversion value vs. the delta if conversions were adjusted. False row has
+  // the data as originally stated; While true row has the delta between data
+  // now and the data as originally stated. Summing the two together results
+  // post-adjustment data.
+  google.protobuf.BoolValue conversion_adjustment = 27;
+
+  // Conversion attribution event type.
+  google.ads.googleads.v2.enums.ConversionAttributionEventTypeEnum.ConversionAttributionEventType conversion_attribution_event_type = 2;
+
+  // An enum value representing the number of days between the impression and
+  // the conversion.
+  google.ads.googleads.v2.enums.ConversionLagBucketEnum.ConversionLagBucket conversion_lag_bucket = 50;
+
+  // An enum value representing the number of days between the impression and
+  // the conversion or between the impression and adjustments to the conversion.
+  google.ads.googleads.v2.enums.ConversionOrAdjustmentLagBucketEnum.ConversionOrAdjustmentLagBucket conversion_or_adjustment_lag_bucket = 51;
+
+  // Date to which metrics apply.
+  // yyyy-MM-dd format, e.g., 2018-04-17.
+  google.protobuf.StringValue date = 4;
+
+  // Day of the week, e.g., MONDAY.
+  google.ads.googleads.v2.enums.DayOfWeekEnum.DayOfWeek day_of_week = 5;
+
+  // Device to which metrics apply.
+  google.ads.googleads.v2.enums.DeviceEnum.Device device = 1;
+
+  // External conversion source.
+  google.ads.googleads.v2.enums.ExternalConversionSourceEnum.ExternalConversionSource external_conversion_source = 55;
+
+  // Resource name of the geo target constant that represents an airport.
+  google.protobuf.StringValue geo_target_airport = 65;
+
+  // Resource name of the geo target constant that represents a canton.
+  google.protobuf.StringValue geo_target_canton = 76;
+
+  // Resource name of the geo target constant that represents a city.
+  google.protobuf.StringValue geo_target_city = 62;
+
+  // Resource name of the geo target constant that represents a country.
+  google.protobuf.StringValue geo_target_country = 77;
+
+  // Resource name of the geo target constant that represents a county.
+  google.protobuf.StringValue geo_target_county = 68;
+
+  // Resource name of the geo target constant that represents a district.
+  google.protobuf.StringValue geo_target_district = 69;
+
+  // Resource name of the geo target constant that represents a metro.
+  google.protobuf.StringValue geo_target_metro = 63;
+
+  // Resource name of the geo target constant that represents the most
+  // specific location.
+  google.protobuf.StringValue geo_target_most_specific_location = 72;
+
+  // Resource name of the geo target constant that represents a postal code.
+  google.protobuf.StringValue geo_target_postal_code = 71;
+
+  // Resource name of the geo target constant that represents a province.
+  google.protobuf.StringValue geo_target_province = 75;
+
+  // Resource name of the geo target constant that represents a region.
+  google.protobuf.StringValue geo_target_region = 64;
+
+  // Resource name of the geo target constant that represents a state.
+  google.protobuf.StringValue geo_target_state = 67;
+
+  // Hotel booking window in days.
+  google.protobuf.Int64Value hotel_booking_window_days = 6;
+
+  // Hotel center ID.
+  google.protobuf.Int64Value hotel_center_id = 7;
+
+  // Hotel check-in date. Formatted as yyyy-MM-dd.
+  google.protobuf.StringValue hotel_check_in_date = 8;
+
+  // Hotel check-in day of week.
+  google.ads.googleads.v2.enums.DayOfWeekEnum.DayOfWeek hotel_check_in_day_of_week = 9;
+
+  // Hotel city.
+  google.protobuf.StringValue hotel_city = 10;
+
+  // Hotel class.
+  google.protobuf.Int32Value hotel_class = 11;
+
+  // Hotel country.
+  google.protobuf.StringValue hotel_country = 12;
+
+  // Hotel date selection type.
+  google.ads.googleads.v2.enums.HotelDateSelectionTypeEnum.HotelDateSelectionType hotel_date_selection_type = 13;
+
+  // Hotel length of stay.
+  google.protobuf.Int32Value hotel_length_of_stay = 14;
+
+  // Hotel rate rule ID.
+  google.protobuf.StringValue hotel_rate_rule_id = 73;
+
+  // Hotel rate type.
+  google.ads.googleads.v2.enums.HotelRateTypeEnum.HotelRateType hotel_rate_type = 74;
+
+  // Hotel price bucket.
+  google.ads.googleads.v2.enums.HotelPriceBucketEnum.HotelPriceBucket hotel_price_bucket = 78;
+
+  // Hotel state.
+  google.protobuf.StringValue hotel_state = 15;
+
+  // Hour of day as a number between 0 and 23, inclusive.
+  google.protobuf.Int32Value hour = 16;
+
+  // Only used with feed item metrics.
+  // Indicates whether the interaction metrics occurred on the feed item itself
+  // or a different extension or ad unit.
+  google.protobuf.BoolValue interaction_on_this_extension = 49;
+
+  // Keyword criterion.
+  Keyword keyword = 61;
+
+  // Month as represented by the date of the first day of a month. Formatted as
+  // yyyy-MM-dd.
+  google.protobuf.StringValue month = 17;
+
+  // Month of the year, e.g., January.
+  google.ads.googleads.v2.enums.MonthOfYearEnum.MonthOfYear month_of_year = 18;
+
+  // Partner hotel ID.
+  google.protobuf.StringValue partner_hotel_id = 19;
+
+  // Placeholder type. This is only used with feed item metrics.
+  google.ads.googleads.v2.enums.PlaceholderTypeEnum.PlaceholderType placeholder_type = 20;
+
+  // Aggregator ID of the product.
+  google.protobuf.UInt64Value product_aggregator_id = 28;
+
+  // Bidding category (level 1) of the product.
+  google.protobuf.StringValue product_bidding_category_level1 = 56;
+
+  // Bidding category (level 2) of the product.
+  google.protobuf.StringValue product_bidding_category_level2 = 57;
+
+  // Bidding category (level 3) of the product.
+  google.protobuf.StringValue product_bidding_category_level3 = 58;
+
+  // Bidding category (level 4) of the product.
+  google.protobuf.StringValue product_bidding_category_level4 = 59;
+
+  // Bidding category (level 5) of the product.
+  google.protobuf.StringValue product_bidding_category_level5 = 60;
+
+  // Brand of the product.
+  google.protobuf.StringValue product_brand = 29;
+
+  // Channel of the product.
+  google.ads.googleads.v2.enums.ProductChannelEnum.ProductChannel product_channel = 30;
+
+  // Channel exclusivity of the product.
+  google.ads.googleads.v2.enums.ProductChannelExclusivityEnum.ProductChannelExclusivity product_channel_exclusivity = 31;
+
+  // Condition of the product.
+  google.ads.googleads.v2.enums.ProductConditionEnum.ProductCondition product_condition = 32;
+
+  // Resource name of the geo target constant for the country of sale of the
+  // product.
+  google.protobuf.StringValue product_country = 33;
+
+  // Custom attribute 0 of the product.
+  google.protobuf.StringValue product_custom_attribute0 = 34;
+
+  // Custom attribute 1 of the product.
+  google.protobuf.StringValue product_custom_attribute1 = 35;
+
+  // Custom attribute 2 of the product.
+  google.protobuf.StringValue product_custom_attribute2 = 36;
+
+  // Custom attribute 3 of the product.
+  google.protobuf.StringValue product_custom_attribute3 = 37;
+
+  // Custom attribute 4 of the product.
+  google.protobuf.StringValue product_custom_attribute4 = 38;
+
+  // Item ID of the product.
+  google.protobuf.StringValue product_item_id = 39;
+
+  // Resource name of the language constant for the language of the product.
+  google.protobuf.StringValue product_language = 40;
+
+  // Merchant ID of the product.
+  google.protobuf.UInt64Value product_merchant_id = 41;
+
+  // Store ID of the product.
+  google.protobuf.StringValue product_store_id = 42;
+
+  // Title of the product.
+  google.protobuf.StringValue product_title = 43;
+
+  // Type (level 1) of the product.
+  google.protobuf.StringValue product_type_l1 = 44;
+
+  // Type (level 2) of the product.
+  google.protobuf.StringValue product_type_l2 = 45;
+
+  // Type (level 3) of the product.
+  google.protobuf.StringValue product_type_l3 = 46;
+
+  // Type (level 4) of the product.
+  google.protobuf.StringValue product_type_l4 = 47;
+
+  // Type (level 5) of the product.
+  google.protobuf.StringValue product_type_l5 = 48;
+
+  // Quarter as represented by the date of the first day of a quarter.
+  // Uses the calendar year for quarters, e.g., the second quarter of 2018
+  // starts on 2018-04-01. Formatted as yyyy-MM-dd.
+  google.protobuf.StringValue quarter = 21;
+
+  // Type of the search engine results page.
+  google.ads.googleads.v2.enums.SearchEngineResultsPageTypeEnum.SearchEngineResultsPageType search_engine_results_page_type = 70;
+
+  // Match type of the keyword that triggered the ad, including variants.
+  google.ads.googleads.v2.enums.SearchTermMatchTypeEnum.SearchTermMatchType search_term_match_type = 22;
+
+  // Position of the ad.
+  google.ads.googleads.v2.enums.SlotEnum.Slot slot = 23;
+
+  // Resource name of the ad group criterion that represents webpage criterion.
+  google.protobuf.StringValue webpage = 66;
+
+  // Week as defined as Monday through Sunday, and represented by the date of
+  // Monday. Formatted as yyyy-MM-dd.
+  google.protobuf.StringValue week = 24;
+
+  // Year, formatted as yyyy.
+  google.protobuf.Int32Value year = 25;
+}
+
+// A Keyword criterion segment.
+message Keyword {
+  // The AdGroupCriterion resource name.
+  google.protobuf.StringValue ad_group_criterion = 1;
+
+  // Keyword info.
+  KeywordInfo info = 2;
+}

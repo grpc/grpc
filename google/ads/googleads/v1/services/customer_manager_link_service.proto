@@ -1,0 +1,96 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/resources/customer_manager_link.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "CustomerManagerLinkServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Service to manage customer-manager links.
+service CustomerManagerLinkService {
+  // Returns the requested CustomerManagerLink in full detail.
+  rpc GetCustomerManagerLink(GetCustomerManagerLinkRequest)
+      returns (google.ads.googleads.v1.resources.CustomerManagerLink) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/customerManagerLinks/*}"
+    };
+  }
+
+  // Creates or updates customer manager links. Operation statuses are returned.
+  rpc MutateCustomerManagerLink(MutateCustomerManagerLinkRequest)
+      returns (MutateCustomerManagerLinkResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}/customerManagerLinks:mutate"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [CustomerManagerLinkService.GetCustomerManagerLink][google.ads.googleads.v1.services.CustomerManagerLinkService.GetCustomerManagerLink].
+message GetCustomerManagerLinkRequest {
+  // The resource name of the CustomerManagerLink to fetch.
+  string resource_name = 1;
+}
+
+// Request message for
+// [CustomerManagerLinkService.MutateCustomerManagerLink][google.ads.googleads.v1.services.CustomerManagerLinkService.MutateCustomerManagerLink].
+message MutateCustomerManagerLinkRequest {
+  // The ID of the customer whose customer manager links are being modified.
+  string customer_id = 1;
+
+  // The list of operations to perform on individual customer manager links.
+  repeated CustomerManagerLinkOperation operations = 2;
+}
+
+// Updates the status of a CustomerManagerLink.
+// The following actions are possible:
+// 1. Update operation with status ACTIVE accepts a pending invitation.
+// 2. Update operation with status REFUSED declines a pending invitation.
+// 3. Update operation with status INACTIVE terminates link to manager.
+message CustomerManagerLinkOperation {
+  // FieldMask that determines which resource fields are modified in an update.
+  google.protobuf.FieldMask update_mask = 4;
+
+  // The mutate operation.
+  oneof operation {
+    // Update operation: The link is expected to have a valid resource name.
+    google.ads.googleads.v1.resources.CustomerManagerLink update = 2;
+  }
+}
+
+// Response message for a CustomerManagerLink mutate.
+message MutateCustomerManagerLinkResponse {
+  // A result that identifies the resource affected by the mutate request.
+  repeated MutateCustomerManagerLinkResult results = 1;
+}
+
+// The result for the customer manager link mutate.
+message MutateCustomerManagerLinkResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}

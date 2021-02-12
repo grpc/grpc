@@ -1,0 +1,219 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "QueryErrorProto";
+option java_package = "com.google.ads.googleads.v2.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V2::Errors";
+
+// Proto file describing query errors.
+
+// Container for enum describing possible query errors.
+message QueryErrorEnum {
+  // Enum describing possible query errors.
+  enum QueryError {
+    // Name unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Returned if all other query error reasons are not applicable.
+    QUERY_ERROR = 50;
+
+    // A condition used in the query references an invalid enum constant.
+    BAD_ENUM_CONSTANT = 18;
+
+    // Query contains an invalid escape sequence.
+    BAD_ESCAPE_SEQUENCE = 7;
+
+    // Field name is invalid.
+    BAD_FIELD_NAME = 12;
+
+    // Limit value is invalid (i.e. not a number)
+    BAD_LIMIT_VALUE = 15;
+
+    // Encountered number can not be parsed.
+    BAD_NUMBER = 5;
+
+    // Invalid operator encountered.
+    BAD_OPERATOR = 3;
+
+    // Parameter unknown or not supported.
+    BAD_PARAMETER_NAME = 61;
+
+    // Parameter have invalid value.
+    BAD_PARAMETER_VALUE = 62;
+
+    // Invalid resource type was specified in the FROM clause.
+    BAD_RESOURCE_TYPE_IN_FROM_CLAUSE = 45;
+
+    // Non-ASCII symbol encountered outside of strings.
+    BAD_SYMBOL = 2;
+
+    // Value is invalid.
+    BAD_VALUE = 4;
+
+    // Date filters fail to restrict date to a range smaller than 31 days.
+    // Applicable if the query is segmented by date.
+    DATE_RANGE_TOO_WIDE = 36;
+
+    // Filters on date/week/month/quarter have a start date after
+    // end date.
+    DATE_RANGE_TOO_NARROW = 60;
+
+    // Expected AND between values with BETWEEN operator.
+    EXPECTED_AND = 30;
+
+    // Expecting ORDER BY to have BY.
+    EXPECTED_BY = 14;
+
+    // There was no dimension field selected.
+    EXPECTED_DIMENSION_FIELD_IN_SELECT_CLAUSE = 37;
+
+    // Missing filters on date related fields.
+    EXPECTED_FILTERS_ON_DATE_RANGE = 55;
+
+    // Missing FROM clause.
+    EXPECTED_FROM = 44;
+
+    // The operator used in the conditions requires the value to be a list.
+    EXPECTED_LIST = 41;
+
+    // Fields used in WHERE or ORDER BY clauses are missing from the SELECT
+    // clause.
+    EXPECTED_REFERENCED_FIELD_IN_SELECT_CLAUSE = 16;
+
+    // SELECT is missing at the beginning of query.
+    EXPECTED_SELECT = 13;
+
+    // A list was passed as a value to a condition whose operator expects a
+    // single value.
+    EXPECTED_SINGLE_VALUE = 42;
+
+    // Missing one or both values with BETWEEN operator.
+    EXPECTED_VALUE_WITH_BETWEEN_OPERATOR = 29;
+
+    // Invalid date format. Expected 'YYYY-MM-DD'.
+    INVALID_DATE_FORMAT = 38;
+
+    // Value passed was not a string when it should have been. I.e., it was a
+    // number or unquoted literal.
+    INVALID_STRING_VALUE = 57;
+
+    // A String value passed to the BETWEEN operator does not parse as a date.
+    INVALID_VALUE_WITH_BETWEEN_OPERATOR = 26;
+
+    // The value passed to the DURING operator is not a Date range literal
+    INVALID_VALUE_WITH_DURING_OPERATOR = 22;
+
+    // A non-string value was passed to the LIKE operator.
+    INVALID_VALUE_WITH_LIKE_OPERATOR = 56;
+
+    // An operator was provided that is inapplicable to the field being
+    // filtered.
+    OPERATOR_FIELD_MISMATCH = 35;
+
+    // A Condition was found with an empty list.
+    PROHIBITED_EMPTY_LIST_IN_CONDITION = 28;
+
+    // A condition used in the query references an unsupported enum constant.
+    PROHIBITED_ENUM_CONSTANT = 54;
+
+    // Fields that are not allowed to be selected together were included in
+    // the SELECT clause.
+    PROHIBITED_FIELD_COMBINATION_IN_SELECT_CLAUSE = 31;
+
+    // A field that is not orderable was included in the ORDER BY clause.
+    PROHIBITED_FIELD_IN_ORDER_BY_CLAUSE = 40;
+
+    // A field that is not selectable was included in the SELECT clause.
+    PROHIBITED_FIELD_IN_SELECT_CLAUSE = 23;
+
+    // A field that is not filterable was included in the WHERE clause.
+    PROHIBITED_FIELD_IN_WHERE_CLAUSE = 24;
+
+    // Resource type specified in the FROM clause is not supported by this
+    // service.
+    PROHIBITED_RESOURCE_TYPE_IN_FROM_CLAUSE = 43;
+
+    // A field that comes from an incompatible resource was included in the
+    // SELECT clause.
+    PROHIBITED_RESOURCE_TYPE_IN_SELECT_CLAUSE = 48;
+
+    // A field that comes from an incompatible resource was included in the
+    // WHERE clause.
+    PROHIBITED_RESOURCE_TYPE_IN_WHERE_CLAUSE = 58;
+
+    // A metric incompatible with the main resource or other selected
+    // segmenting resources was included in the SELECT or WHERE clause.
+    PROHIBITED_METRIC_IN_SELECT_OR_WHERE_CLAUSE = 49;
+
+    // A segment incompatible with the main resource or other selected
+    // segmenting resources was included in the SELECT or WHERE clause.
+    PROHIBITED_SEGMENT_IN_SELECT_OR_WHERE_CLAUSE = 51;
+
+    // A segment in the SELECT clause is incompatible with a metric in the
+    // SELECT or WHERE clause.
+    PROHIBITED_SEGMENT_WITH_METRIC_IN_SELECT_OR_WHERE_CLAUSE = 53;
+
+    // The value passed to the limit clause is too low.
+    LIMIT_VALUE_TOO_LOW = 25;
+
+    // Query has a string containing a newline character.
+    PROHIBITED_NEWLINE_IN_STRING = 8;
+
+    // List contains values of different types.
+    PROHIBITED_VALUE_COMBINATION_IN_LIST = 10;
+
+    // The values passed to the BETWEEN operator are not of the same type.
+    PROHIBITED_VALUE_COMBINATION_WITH_BETWEEN_OPERATOR = 21;
+
+    // Query contains unterminated string.
+    STRING_NOT_TERMINATED = 6;
+
+    // Too many segments are specified in SELECT clause.
+    TOO_MANY_SEGMENTS = 34;
+
+    // Query is incomplete and cannot be parsed.
+    UNEXPECTED_END_OF_QUERY = 9;
+
+    // FROM clause cannot be specified in this query.
+    UNEXPECTED_FROM_CLAUSE = 47;
+
+    // Query contains one or more unrecognized fields.
+    UNRECOGNIZED_FIELD = 32;
+
+    // Query has an unexpected extra part.
+    UNEXPECTED_INPUT = 11;
+
+    // Metrics cannot be requested for a manager account. To retrieve metrics,
+    // issue separate requests against each client account under the manager
+    // account.
+    REQUESTED_METRICS_FOR_MANAGER = 59;
+  }
+
+
+}

@@ -1,0 +1,78 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.bigtable.v2.Bigtable",
+          "method": "ReadRows"
+        }
+      ],
+      "timeout": "43200s",
+      "retryPolicy": {
+        "maxAttempts": 5,
+        "initialBackoff": "0.010s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 2,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.bigtable.v2.Bigtable",
+          "method": "SampleRowKeys"
+        },
+        {
+          "service": "google.bigtable.v2.Bigtable",
+          "method": "MutateRow"
+        }
+      ],
+      "timeout": "20s",
+      "retryPolicy": {
+        "maxAttempts": 5,
+        "initialBackoff": "0.010s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 2,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.bigtable.v2.Bigtable",
+          "method": "MutateRows"
+        }
+      ],
+      "timeout": "60s",
+      "retryPolicy": {
+        "maxAttempts": 5,
+        "initialBackoff": "0.010s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 2,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.bigtable.v2.Bigtable",
+          "method": "CheckAndMutateRow"
+        },
+        {
+          "service": "google.bigtable.v2.Bigtable",
+          "method": "ReadModifyWriteRow"
+        }
+      ],
+      "timeout": "20s"
+    }
+  ]
+}

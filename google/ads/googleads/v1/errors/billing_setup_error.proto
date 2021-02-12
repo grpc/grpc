@@ -1,0 +1,100 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.errors;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Errors";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/errors;errors";
+option java_multiple_files = true;
+option java_outer_classname = "BillingSetupErrorProto";
+option java_package = "com.google.ads.googleads.v1.errors";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Errors";
+option ruby_package = "Google::Ads::GoogleAds::V1::Errors";
+
+// Proto file describing billing setup errors.
+
+// Container for enum describing possible billing setup errors.
+message BillingSetupErrorEnum {
+  // Enum describing possible billing setup errors.
+  enum BillingSetupError {
+    // Enum unspecified.
+    UNSPECIFIED = 0;
+
+    // The received error code is not known in this version.
+    UNKNOWN = 1;
+
+    // Cannot use both an existing Payments account and a new Payments account
+    // when setting up billing.
+    CANNOT_USE_EXISTING_AND_NEW_ACCOUNT = 2;
+
+    // Cannot cancel an APPROVED billing setup whose start time has passed.
+    CANNOT_REMOVE_STARTED_BILLING_SETUP = 3;
+
+    // Cannot perform a Change of Bill-To (CBT) to the same Payments account.
+    CANNOT_CHANGE_BILLING_TO_SAME_PAYMENTS_ACCOUNT = 4;
+
+    // Billing Setups can only be used by customers with ENABLED or DRAFT
+    // status.
+    BILLING_SETUP_NOT_PERMITTED_FOR_CUSTOMER_STATUS = 5;
+
+    // Billing Setups must either include a correctly formatted existing
+    // Payments account id, or a non-empty new Payments account name.
+    INVALID_PAYMENTS_ACCOUNT = 6;
+
+    // Only billable and third-party customers can create billing setups.
+    BILLING_SETUP_NOT_PERMITTED_FOR_CUSTOMER_CATEGORY = 7;
+
+    // Billing Setup creations can only use NOW for start time type.
+    INVALID_START_TIME_TYPE = 8;
+
+    // Billing Setups can only be created for a third-party customer if they do
+    // not already have a setup.
+    THIRD_PARTY_ALREADY_HAS_BILLING = 9;
+
+    // Billing Setups cannot be created if there is already a pending billing in
+    // progress, ie. a billing known to Payments.
+    BILLING_SETUP_IN_PROGRESS = 10;
+
+    // Billing Setups can only be created by customers who have permission to
+    // setup billings. Users can contact a representative for help setting up
+    // permissions.
+    NO_SIGNUP_PERMISSION = 11;
+
+    // Billing Setups cannot be created if there is already a future-approved
+    // billing.
+    CHANGE_OF_BILL_TO_IN_PROGRESS = 12;
+
+    // Billing Setup creation failed because Payments could not find the
+    // requested Payments profile.
+    PAYMENTS_PROFILE_NOT_FOUND = 13;
+
+    // Billing Setup creation failed because Payments could not find the
+    // requested Payments account.
+    PAYMENTS_ACCOUNT_NOT_FOUND = 14;
+
+    // Billing Setup creation failed because Payments considers requested
+    // Payments profile ineligible.
+    PAYMENTS_PROFILE_INELIGIBLE = 15;
+
+    // Billing Setup creation failed because Payments considers requested
+    // Payments account ineligible.
+    PAYMENTS_ACCOUNT_INELIGIBLE = 16;
+  }
+}

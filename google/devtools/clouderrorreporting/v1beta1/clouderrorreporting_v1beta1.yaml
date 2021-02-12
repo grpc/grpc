@@ -1,0 +1,34 @@
+type: google.api.Service
+config_version: 3
+name: clouderrorreporting.googleapis.com
+title: Stackdriver Error Reporting API
+
+apis:
+- name: google.devtools.clouderrorreporting.v1beta1.ErrorGroupService
+- name: google.devtools.clouderrorreporting.v1beta1.ErrorStatsService
+- name: google.devtools.clouderrorreporting.v1beta1.ReportErrorsService
+
+documentation:
+  summary: |-
+    Groups and counts similar errors from cloud services and applications,
+    reports new errors, and provides access to error groups and their
+    associated errors.
+
+authentication:
+  rules:
+  - selector: google.devtools.clouderrorreporting.v1beta1.ErrorGroupService.GetGroup
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: google.devtools.clouderrorreporting.v1beta1.ErrorGroupService.UpdateGroup
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: 'google.devtools.clouderrorreporting.v1beta1.ErrorStatsService.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: google.devtools.clouderrorreporting.v1beta1.ReportErrorsService.ReportErrorEvent
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform

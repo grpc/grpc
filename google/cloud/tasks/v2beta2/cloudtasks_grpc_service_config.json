@@ -1,0 +1,103 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "ListQueues"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "GetQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "DeleteQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "GetIamPolicy"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "TestIamPermissions"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "ListTasks"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "GetTask"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "DeleteTask"
+        }
+      ],
+      "timeout": "25s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "10s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "CreateQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "UpdateQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "PurgeQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "PauseQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "ResumeQueue"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "SetIamPolicy"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "CreateTask"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "LeaseTasks"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "AcknowledgeTask"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "RenewLease"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "CancelLease"
+        },
+        {
+          "service": "google.cloud.tasks.v2beta2.CloudTasks",
+          "method": "RunTask"
+        }
+      ],
+      "timeout": "25s"
+    }
+  ]
+}

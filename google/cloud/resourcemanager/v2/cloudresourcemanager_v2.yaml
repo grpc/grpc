@@ -1,0 +1,47 @@
+type: google.api.Service
+config_version: 1
+name: cloudresourcemanager.googleapis.com
+title: Cloud Resource Manager API
+
+apis:
+- name: google.cloud.resourcemanager.v2.Folders
+
+types:
+- name: google.cloud.resourcemanager.v2.FolderOperation
+
+documentation:
+  summary: |-
+    Creates, reads, and updates metadata for Google Cloud Platform resource
+    containers.
+
+backend:
+  rules:
+  - selector: 'google.cloud.resourcemanager.v2.Folders.*'
+    deadline: 30.0
+
+authentication:
+  rules:
+  - selector: 'google.cloud.resourcemanager.v2.Folders.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
+  - selector: google.cloud.resourcemanager.v2.Folders.GetFolder
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only
+  - selector: google.cloud.resourcemanager.v2.Folders.GetIamPolicy
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only
+  - selector: google.cloud.resourcemanager.v2.Folders.ListFolders
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only
+  - selector: google.cloud.resourcemanager.v2.Folders.SearchFolders
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform,
+        https://www.googleapis.com/auth/cloud-platform.read-only

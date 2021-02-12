@@ -1,0 +1,131 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v2.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V2.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v2/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "ExternalConversionSourceProto";
+option java_package = "com.google.ads.googleads.v2.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V2\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V2::Enums";
+
+// Container for enum describing the external conversion source that is
+// associated with a ConversionAction.
+message ExternalConversionSourceEnum {
+  // The external conversion source that is associated with a ConversionAction.
+  enum ExternalConversionSource {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // Conversion that occurs when a user navigates to a particular webpage
+    // after viewing an ad; Displayed in Google Ads UI as 'Website'.
+    WEBPAGE = 2;
+
+    // Conversion that comes from linked Google Analytics goal or transaction;
+    // Displayed in Google Ads UI as 'Analytics'.
+    ANALYTICS = 3;
+
+    // Website conversion that is uploaded through ConversionUploadService;
+    // Displayed in Google Ads UI as 'Import from clicks'.
+    UPLOAD = 4;
+
+    // Conversion that occurs when a user clicks on a call extension directly on
+    // an ad; Displayed in Google Ads UI as 'Calls from ads'.
+    AD_CALL_METRICS = 5;
+
+    // Conversion that occurs when a user calls a dynamically-generated phone
+    // number (by installed javascript) from an advertiser's website after
+    // clicking on an ad; Displayed in Google Ads UI as 'Calls from website'.
+    WEBSITE_CALL_METRICS = 6;
+
+    // Conversion that occurs when a user visits an advertiser's retail store
+    // after clicking on a Google ad;
+    // Displayed in Google Ads UI as 'Store visits'.
+    STORE_VISITS = 7;
+
+    // Conversion that occurs when a user takes an in-app action such as a
+    // purchase in an Android app;
+    // Displayed in Google Ads UI as 'Android in-app action'.
+    ANDROID_IN_APP = 8;
+
+    // Conversion that occurs when a user takes an in-app action such as a
+    // purchase in an iOS app;
+    // Displayed in Google Ads UI as 'iOS in-app action'.
+    IOS_IN_APP = 9;
+
+    // Conversion that occurs when a user opens an iOS app for the first time;
+    // Displayed in Google Ads UI as 'iOS app install (first open)'.
+    IOS_FIRST_OPEN = 10;
+
+    // Legacy app conversions that do not have an AppPlatform provided;
+    // Displayed in Google Ads UI as 'Mobile app'.
+    APP_UNSPECIFIED = 11;
+
+    // Conversion that occurs when a user opens an Android app for the first
+    // time; Displayed in Google Ads UI as 'Android app install (first open)'.
+    ANDROID_FIRST_OPEN = 12;
+
+    // Call conversion that is uploaded through ConversionUploadService;
+    // Displayed in Google Ads UI as 'Import from calls'.
+    UPLOAD_CALLS = 13;
+
+    // Conversion that comes from a linked Firebase event;
+    // Displayed in Google Ads UI as 'Firebase'.
+    FIREBASE = 14;
+
+    // Conversion that occurs when a user clicks on a mobile phone number;
+    // Displayed in Google Ads UI as 'Phone number clicks'.
+    CLICK_TO_CALL = 15;
+
+    // Conversion that comes from Salesforce;
+    // Displayed in Google Ads UI as 'Salesforce.com'.
+    SALESFORCE = 16;
+
+    // Conversion that comes from in-store purchases recorded by CRM;
+    // Displayed in Google Ads UI as 'Store sales (data partner)'.
+    STORE_SALES_CRM = 17;
+
+    // Conversion that comes from in-store purchases from payment network;
+    // Displayed in Google Ads UI as 'Store sales (payment network)'.
+    STORE_SALES_PAYMENT_NETWORK = 18;
+
+    // Codeless Google Play conversion;
+    // Displayed in Google Ads UI as 'Google Play'.
+    GOOGLE_PLAY = 19;
+
+    // Conversion that comes from a linked third-party app analytics event;
+    // Displayed in Google Ads UI as 'Third-party app analytics'.
+    THIRD_PARTY_APP_ANALYTICS = 20;
+
+    // Conversion that is controlled by Google Attribution.
+    GOOGLE_ATTRIBUTION = 21;
+
+    // Store Sales conversion based on first-party or third-party merchant data
+    // uploads. Displayed in Google Ads UI as 'Store sales (direct)'.
+    STORE_SALES_DIRECT = 22;
+  }
+
+
+}

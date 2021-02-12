@@ -1,0 +1,32 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.devtools.clouderrorreporting.v1beta1.ErrorStatsService"
+        },
+        {
+          "service": "google.devtools.clouderrorreporting.v1beta1.ErrorGroupService"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "UNAVAILABLE",
+          "DEADLINE_EXCEEDED"
+        ]
+      }
+    },
+    {
+      "name": [
+        {
+          "service": "google.devtools.clouderrorreporting.v1beta1.ReportErrorsService"
+        }
+      ],
+      "timeout": "600s"
+    }
+  ]
+}

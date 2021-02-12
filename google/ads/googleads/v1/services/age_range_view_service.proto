@@ -1,0 +1,50 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/resources/age_range_view.proto";
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "AgeRangeViewServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the Age Range View service.
+
+// Service to manage age range views.
+service AgeRangeViewService {
+  // Returns the requested age range view in full detail.
+  rpc GetAgeRangeView(GetAgeRangeViewRequest)
+      returns (google.ads.googleads.v1.resources.AgeRangeView) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*/ageRangeViews/*}"
+    };
+  }
+}
+
+// Request message for
+// [AgeRangeViewService.GetAgeRangeView][google.ads.googleads.v1.services.AgeRangeViewService.GetAgeRangeView].
+message GetAgeRangeViewRequest {
+  // The resource name of the age range view to fetch.
+  string resource_name = 1;
+}

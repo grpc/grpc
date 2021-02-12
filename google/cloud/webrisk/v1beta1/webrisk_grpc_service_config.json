@@ -1,0 +1,30 @@
+{
+  "methodConfig": [
+    {
+      "name": [
+        {
+          "service": "google.cloud.webrisk.v1beta1.WebRiskServiceV1Beta1",
+          "method": "ComputeThreatListDiff"
+        },
+        {
+          "service": "google.cloud.webrisk.v1beta1.WebRiskServiceV1Beta1",
+          "method": "SearchUris"
+        },
+        {
+          "service": "google.cloud.webrisk.v1beta1.WebRiskServiceV1Beta1",
+          "method": "SearchHashes"
+        }
+      ],
+      "timeout": "600s",
+      "retryPolicy": {
+        "initialBackoff": "0.100s",
+        "maxBackoff": "60s",
+        "backoffMultiplier": 1.3,
+        "retryableStatusCodes": [
+          "DEADLINE_EXCEEDED",
+          "UNAVAILABLE"
+        ]
+      }
+    }
+  ]
+}

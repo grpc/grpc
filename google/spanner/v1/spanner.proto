@@ -1,0 +1,913 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.spanner.v1;
+
+import "google/api/annotations.proto";
+import "google/api/client.proto";
+import "google/api/field_behavior.proto";
+import "google/api/resource.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+import "google/rpc/status.proto";
+import "google/spanner/v1/keys.proto";
+import "google/spanner/v1/mutation.proto";
+import "google/spanner/v1/result_set.proto";
+import "google/spanner/v1/transaction.proto";
+import "google/spanner/v1/type.proto";
+
+option csharp_namespace = "Google.Cloud.Spanner.V1";
+option go_package = "google.golang.org/genproto/googleapis/spanner/v1;spanner";
+option java_multiple_files = true;
+option java_outer_classname = "SpannerProto";
+option java_package = "com.google.spanner.v1";
+option php_namespace = "Google\\Cloud\\Spanner\\V1";
+
+// The Database resource is defined in `google.spanner.admin.database.v1`.
+// Because this is a separate, independent API (technically), we redefine
+// the resource name pattern here.
+option (google.api.resource_definition) = {
+  type: "spanner.googleapis.com/Database"
+  pattern: "projects/{project}/instances/{instance}/databases/{database}"
+};
+
+// Cloud Spanner API
+//
+// The Cloud Spanner API can be used to manage sessions and execute
+// transactions on data stored in Cloud Spanner databases.
+service Spanner {
+  option (google.api.default_host) = "spanner.googleapis.com";
+  option (google.api.oauth_scopes) =
+      "https://www.googleapis.com/auth/cloud-platform,"
+      "https://www.googleapis.com/auth/spanner.data";
+
+  // Creates a new session. A session can be used to perform
+  // transactions that read and/or modify data in a Cloud Spanner database.
+  // Sessions are meant to be reused for many consecutive
+  // transactions.
+  //
+  // Sessions can only execute one transaction at a time. To execute
+  // multiple concurrent read-write/write-only transactions, create
+  // multiple sessions. Note that standalone reads and queries use a
+  // transaction internally, and count toward the one transaction
+  // limit.
+  //
+  // Active sessions use additional server resources, so it is a good idea to
+  // delete idle and unneeded sessions.
+  // Aside from explicit deletes, Cloud Spanner can delete sessions for which no
+  // operations are sent for more than an hour. If a session is deleted,
+  // requests to it return `NOT_FOUND`.
+  //
+  // Idle sessions can be kept alive by sending a trivial SQL query
+  // periodically, e.g., `"SELECT 1"`.
+  rpc CreateSession(CreateSessionRequest) returns (Session) {
+    option (google.api.http) = {
+      post: "/v1/{database=projects/*/instances/*/databases/*}/sessions"
+      body: "*"
+    };
+    option (google.api.method_signature) = "database";
+  }
+
+  // Creates multiple new sessions.
+  //
+  // This API can be used to initialize a session cache on the clients.
+  // See https://goo.gl/TgSFN2 for best practices on session cache management.
+  rpc BatchCreateSessions(BatchCreateSessionsRequest)
+      returns (BatchCreateSessionsResponse) {
+    option (google.api.http) = {
+      post: "/v1/{database=projects/*/instances/*/databases/*}/sessions:batchCreate"
+      body: "*"
+    };
+    option (google.api.method_signature) = "database,session_count";
+  }
+
+  // Gets a session. Returns `NOT_FOUND` if the session does not exist.
+  // This is mainly useful for determining whether a session is still
+  // alive.
+  rpc GetSession(GetSessionRequest) returns (Session) {
+    option (google.api.http) = {
+      get: "/v1/{name=projects/*/instances/*/databases/*/sessions/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Lists all sessions in a given database.
+  rpc ListSessions(ListSessionsRequest) returns (ListSessionsResponse) {
+    option (google.api.http) = {
+      get: "/v1/{database=projects/*/instances/*/databases/*}/sessions"
+    };
+    option (google.api.method_signature) = "database";
+  }
+
+  // Ends a session, releasing server resources associated with it. This will
+  // asynchronously trigger cancellation of any operations that are running with
+  // this session.
+  rpc DeleteSession(DeleteSessionRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      delete: "/v1/{name=projects/*/instances/*/databases/*/sessions/*}"
+    };
+    option (google.api.method_signature) = "name";
+  }
+
+  // Executes an SQL statement, returning all results in a single reply. This
+  // method cannot be used to return a result set larger than 10 MiB;
+  // if the query yields more data than that, the query fails with
+  // a `FAILED_PRECONDITION` error.
+  //
+  // Operations inside read-write transactions might return `ABORTED`. If
+  // this occurs, the application should restart the transaction from
+  // the beginning. See [Transaction][google.spanner.v1.Transaction] for more
+  // details.
+  //
+  // Larger result sets can be fetched in streaming fashion by calling
+  // [ExecuteStreamingSql][google.spanner.v1.Spanner.ExecuteStreamingSql]
+  // instead.
+  rpc ExecuteSql(ExecuteSqlRequest) returns (ResultSet) {
+    option (google.api.http) = {
+      post: "/v1/{session=projects/*/instances/*/databases/*/sessions/*}:executeSql"
+      body: "*"
+    };
+  }
+
+  // Like [ExecuteSql][google.spanner.v1.Spanner.ExecuteSql], except returns the
+  // result set as a stream. Unlike
+  // [ExecuteSql][google.spanner.v1.Spanner.ExecuteSql], there is no limit on
+  // the size of the returned result set. However, no individual row in the
+  // result set can exceed 100 MiB, and no column value can exceed 10 MiB.
+  rpc ExecuteStreamingSql(ExecuteSqlRequest) returns (stream PartialResultSet) {
+    option (google.api.http) = {
+      post: "/v1/{session=projects/*/instances/*/databases/*/sessions/*}:executeStreamingSql"
+      body: "*"
+    };
+  }
+
+  // Executes a batch of SQL DML statements. This method allows many statements
+  // to be run with lower latency than submitting them sequentially with
+  // [ExecuteSql][google.spanner.v1.Spanner.ExecuteSql].
+  //
+  // Statements are executed in sequential order. A request can succeed even if
+  // a statement fails. The
+  // [ExecuteBatchDmlResponse.status][google.spanner.v1.ExecuteBatchDmlResponse.status]
+  // field in the response provides information about the statement that failed.
+  // Clients must inspect this field to determine whether an error occurred.
+  //
+  // Execution stops after the first failed statement; the remaining statements
+  // are not executed.
+  rpc ExecuteBatchDml(ExecuteBatchDmlRequest)
+      returns (ExecuteBatchDmlResponse) {
+    option (google.api.http) = {
+      post: "/v1/{session=projects/*/instances/*/databases/*/sessions/*}:executeBatchDml"
+      body: "*"
+    };
+  }
+
+  // Reads rows from the database using key lookups and scans, as a
+  // simple key/value style alternative to
+  // [ExecuteSql][google.spanner.v1.Spanner.ExecuteSql].  This method cannot be
+  // used to return a result set larger than 10 MiB; if the read matches more
+  // data than that, the read fails with a `FAILED_PRECONDITION`
+  // error.
+  //
+  // Reads inside read-write transactions might return `ABORTED`. If
+  // this occurs, the application should restart the transaction from
+  // the beginning. See [Transaction][google.spanner.v1.Transaction] for more
+  // details.
+  //
+  // Larger result sets can be yielded in streaming fashion by calling
+  // [StreamingRead][google.spanner.v1.Spanner.StreamingRead] instead.
+  rpc Read(ReadRequest) returns (ResultSet) {
+    option (google.api.http) = {
+      post: "/v1/{session=projects/*/instances/*/databases/*/sessions/*}:read"
+      body: "*"
+    };
+  }
+
+  // Like [Read][google.spanner.v1.Spanner.Read], except returns the result set
+  // as a stream. Unlike [Read][google.spanner.v1.Spanner.Read], there is no
+  // limit on the size of the returned result set. However, no individual row in
+  // the result set can exceed 100 MiB, and no column value can exceed
+  // 10 MiB.
+  rpc StreamingRead(ReadRequest) returns (stream PartialResultSet) {
+    option (google.api.http) = {
+      post: "/v1/{session=projects/*/instances/*/databases/*/sessions/*}:streamingRead"
+      body: "*"
+    };
+  }
+
+  // Begins a new transaction. This step can often be skipped:
+  // [Read][google.spanner.v1.Spanner.Read],
+  // [ExecuteSql][google.spanner.v1.Spanner.ExecuteSql] and
+  // [Commit][google.spanner.v1.Spanner.Commit] can begin a new transaction as a
+  // side-effect.
+  rpc BeginTransaction(BeginTransactionRequest) returns (Transaction) {
+    option (google.api.http) = {
+      post: "/v1/{session=projects/*/instances/*/databases/*/sessions/*}:beginTransaction"
+      body: "*"
+    };
+    option (google.api.method_signature) = "session,options";
+  }
+
+  // Commits a transaction. The request includes the mutations to be
+  // applied to rows in the database.
+  //
+  // `Commit` might return an `ABORTED` error. This can occur at any time;
+  // commonly, the cause is conflicts with concurrent
+  // transactions. However, it can also happen for a variety of other
+  // reasons. If `Commit` returns `ABORTED`, the caller should re-attempt
+  // the transaction from the beginning, re-using the same session.
+  rpc Commit(CommitRequest) returns (CommitResponse) {
+    option (google.api.http) = {
+      post: "/v1/{session=projects/*/instances/*/databases/*/sessions/*}:commit"
+      body: "*"
+    };
+    option (google.api.method_signature) = "session,transaction_id,mutations";
+    option (google.api.method_signature) =
+        "session,single_use_transaction,mutations";
+  }
+
+  // Rolls back a transaction, releasing any locks it holds. It is a good
+  // idea to call this for any transaction that includes one or more
+  // [Read][google.spanner.v1.Spanner.Read] or
+  // [ExecuteSql][google.spanner.v1.Spanner.ExecuteSql] requests and ultimately
+  // decides not to commit.
+  //
+  // `Rollback` returns `OK` if it successfully aborts the transaction, the
+  // transaction was already aborted, or the transaction is not
+  // found. `Rollback` never returns `ABORTED`.
+  rpc Rollback(RollbackRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {
+      post: "/v1/{session=projects/*/instances/*/databases/*/sessions/*}:rollback"
+      body: "*"
+    };
+    option (google.api.method_signature) = "session,transaction_id";
+  }
+
+  // Creates a set of partition tokens that can be used to execute a query
+  // operation in parallel.  Each of the returned partition tokens can be used
+  // by [ExecuteStreamingSql][google.spanner.v1.Spanner.ExecuteStreamingSql] to
+  // specify a subset of the query result to read.  The same session and
+  // read-only transaction must be used by the PartitionQueryRequest used to
+  // create the partition tokens and the ExecuteSqlRequests that use the
+  // partition tokens.
+  //
+  // Partition tokens become invalid when the session used to create them
+  // is deleted, is idle for too long, begins a new transaction, or becomes too
+  // old.  When any of these happen, it is not possible to resume the query, and
+  // the whole operation must be restarted from the beginning.
+  rpc PartitionQuery(PartitionQueryRequest) returns (PartitionResponse) {
+    option (google.api.http) = {
+      post: "/v1/{session=projects/*/instances/*/databases/*/sessions/*}:partitionQuery"
+      body: "*"
+    };
+  }
+
+  // Creates a set of partition tokens that can be used to execute a read
+  // operation in parallel.  Each of the returned partition tokens can be used
+  // by [StreamingRead][google.spanner.v1.Spanner.StreamingRead] to specify a
+  // subset of the read result to read.  The same session and read-only
+  // transaction must be used by the PartitionReadRequest used to create the
+  // partition tokens and the ReadRequests that use the partition tokens.  There
+  // are no ordering guarantees on rows returned among the returned partition
+  // tokens, or even within each individual StreamingRead call issued with a
+  // partition_token.
+  //
+  // Partition tokens become invalid when the session used to create them
+  // is deleted, is idle for too long, begins a new transaction, or becomes too
+  // old.  When any of these happen, it is not possible to resume the read, and
+  // the whole operation must be restarted from the beginning.
+  rpc PartitionRead(PartitionReadRequest) returns (PartitionResponse) {
+    option (google.api.http) = {
+      post: "/v1/{session=projects/*/instances/*/databases/*/sessions/*}:partitionRead"
+      body: "*"
+    };
+  }
+}
+
+// The request for [CreateSession][google.spanner.v1.Spanner.CreateSession].
+message CreateSessionRequest {
+  // Required. The database in which the new session is created.
+  string database = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "spanner.googleapis.com/Database"
+    }
+  ];
+
+  // The session to create.
+  Session session = 2;
+}
+
+// The request for
+// [BatchCreateSessions][google.spanner.v1.Spanner.BatchCreateSessions].
+message BatchCreateSessionsRequest {
+  // Required. The database in which the new sessions are created.
+  string database = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "spanner.googleapis.com/Database"
+    }
+  ];
+
+  // Parameters to be applied to each created session.
+  Session session_template = 2;
+
+  // Required. The number of sessions to be created in this batch call.
+  // The API may return fewer than the requested number of sessions. If a
+  // specific number of sessions are desired, the client can make additional
+  // calls to BatchCreateSessions (adjusting
+  // [session_count][google.spanner.v1.BatchCreateSessionsRequest.session_count]
+  // as necessary).
+  int32 session_count = 3 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The response for
+// [BatchCreateSessions][google.spanner.v1.Spanner.BatchCreateSessions].
+message BatchCreateSessionsResponse {
+  // The freshly created sessions.
+  repeated Session session = 1;
+}
+
+// A session in the Cloud Spanner API.
+message Session {
+  option (google.api.resource) = {
+    type: "spanner.googleapis.com/Session"
+    pattern: "projects/{project}/instances/{instance}/databases/{database}/sessions/{session}"
+  };
+
+  // The name of the session. This is always system-assigned; values provided
+  // when creating a session are ignored.
+  string name = 1;
+
+  // The labels for the session.
+  //
+  //  * Label keys must be between 1 and 63 characters long and must conform to
+  //    the following regular expression: `[a-z]([-a-z0-9]*[a-z0-9])?`.
+  //  * Label values must be between 0 and 63 characters long and must conform
+  //    to the regular expression `([a-z]([-a-z0-9]*[a-z0-9])?)?`.
+  //  * No more than 64 labels can be associated with a given session.
+  //
+  // See https://goo.gl/xmQnxf for more information on and examples of labels.
+  map<string, string> labels = 2;
+
+  // Output only. The timestamp when the session is created.
+  google.protobuf.Timestamp create_time = 3;
+
+  // Output only. The approximate timestamp when the session is last used. It is
+  // typically earlier than the actual last use time.
+  google.protobuf.Timestamp approximate_last_use_time = 4;
+}
+
+// The request for [GetSession][google.spanner.v1.Spanner.GetSession].
+message GetSessionRequest {
+  // Required. The name of the session to retrieve.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "spanner.googleapis.com/Session" }
+  ];
+}
+
+// The request for [ListSessions][google.spanner.v1.Spanner.ListSessions].
+message ListSessionsRequest {
+  // Required. The database in which to list sessions.
+  string database = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = {
+      type: "spanner.googleapis.com/Database"
+    }
+  ];
+
+  // Number of sessions to be returned in the response. If 0 or less, defaults
+  // to the server's maximum allowed page size.
+  int32 page_size = 2;
+
+  // If non-empty, `page_token` should contain a
+  // [next_page_token][google.spanner.v1.ListSessionsResponse.next_page_token]
+  // from a previous
+  // [ListSessionsResponse][google.spanner.v1.ListSessionsResponse].
+  string page_token = 3;
+
+  // An expression for filtering the results of the request. Filter rules are
+  // case insensitive. The fields eligible for filtering are:
+  //
+  //   * `labels.key` where key is the name of a label
+  //
+  // Some examples of using filters are:
+  //
+  //   * `labels.env:*` --> The session has the label "env".
+  //   * `labels.env:dev` --> The session has the label "env" and the value of
+  //                        the label contains the string "dev".
+  string filter = 4;
+}
+
+// The response for [ListSessions][google.spanner.v1.Spanner.ListSessions].
+message ListSessionsResponse {
+  // The list of requested sessions.
+  repeated Session sessions = 1;
+
+  // `next_page_token` can be sent in a subsequent
+  // [ListSessions][google.spanner.v1.Spanner.ListSessions] call to fetch more
+  // of the matching sessions.
+  string next_page_token = 2;
+}
+
+// The request for [DeleteSession][google.spanner.v1.Spanner.DeleteSession].
+message DeleteSessionRequest {
+  // Required. The name of the session to delete.
+  string name = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "spanner.googleapis.com/Session" }
+  ];
+}
+
+// The request for [ExecuteSql][google.spanner.v1.Spanner.ExecuteSql] and
+// [ExecuteStreamingSql][google.spanner.v1.Spanner.ExecuteStreamingSql].
+message ExecuteSqlRequest {
+  // Mode in which the statement must be processed.
+  enum QueryMode {
+    // The default mode. Only the statement results are returned.
+    NORMAL = 0;
+
+    // This mode returns only the query plan, without any results or
+    // execution statistics information.
+    PLAN = 1;
+
+    // This mode returns both the query plan and the execution statistics along
+    // with the results.
+    PROFILE = 2;
+  }
+
+  // Required. The session in which the SQL query should be performed.
+  string session = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "spanner.googleapis.com/Session" }
+  ];
+
+  // The transaction to use.
+  //
+  // For queries, if none is provided, the default is a temporary read-only
+  // transaction with strong concurrency.
+  //
+  // Standard DML statements require a read-write transaction. To protect
+  // against replays, single-use transactions are not supported.  The caller
+  // must either supply an existing transaction ID or begin a new transaction.
+  //
+  // Partitioned DML requires an existing Partitioned DML transaction ID.
+  TransactionSelector transaction = 2;
+
+  // Required. The SQL string.
+  string sql = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Parameter names and values that bind to placeholders in the SQL string.
+  //
+  // A parameter placeholder consists of the `@` character followed by the
+  // parameter name (for example, `@firstName`). Parameter names can contain
+  // letters, numbers, and underscores.
+  //
+  // Parameters can appear anywhere that a literal value is expected.  The same
+  // parameter name can be used more than once, for example:
+  //
+  // `"WHERE id > @msg_id AND id < @msg_id + 100"`
+  //
+  // It is an error to execute a SQL statement with unbound parameters.
+  google.protobuf.Struct params = 4;
+
+  // It is not always possible for Cloud Spanner to infer the right SQL type
+  // from a JSON value.  For example, values of type `BYTES` and values
+  // of type `STRING` both appear in
+  // [params][google.spanner.v1.ExecuteSqlRequest.params] as JSON strings.
+  //
+  // In these cases, `param_types` can be used to specify the exact
+  // SQL type for some or all of the SQL statement parameters. See the
+  // definition of [Type][google.spanner.v1.Type] for more information
+  // about SQL types.
+  map<string, Type> param_types = 5;
+
+  // If this request is resuming a previously interrupted SQL statement
+  // execution, `resume_token` should be copied from the last
+  // [PartialResultSet][google.spanner.v1.PartialResultSet] yielded before the
+  // interruption. Doing this enables the new SQL statement execution to resume
+  // where the last one left off. The rest of the request parameters must
+  // exactly match the request that yielded this token.
+  bytes resume_token = 6;
+
+  // Used to control the amount of debugging information returned in
+  // [ResultSetStats][google.spanner.v1.ResultSetStats]. If
+  // [partition_token][google.spanner.v1.ExecuteSqlRequest.partition_token] is
+  // set, [query_mode][google.spanner.v1.ExecuteSqlRequest.query_mode] can only
+  // be set to
+  // [QueryMode.NORMAL][google.spanner.v1.ExecuteSqlRequest.QueryMode.NORMAL].
+  QueryMode query_mode = 7;
+
+  // If present, results will be restricted to the specified partition
+  // previously created using PartitionQuery().  There must be an exact
+  // match for the values of fields common to this message and the
+  // PartitionQueryRequest message used to create this partition_token.
+  bytes partition_token = 8;
+
+  // A per-transaction sequence number used to identify this request. This field
+  // makes each request idempotent such that if the request is received multiple
+  // times, at most one will succeed.
+  //
+  // The sequence number must be monotonically increasing within the
+  // transaction. If a request arrives for the first time with an out-of-order
+  // sequence number, the transaction may be aborted. Replays of previously
+  // handled requests will yield the same response as the first execution.
+  //
+  // Required for DML statements. Ignored for queries.
+  int64 seqno = 9;
+}
+
+// The request for [ExecuteBatchDml][google.spanner.v1.Spanner.ExecuteBatchDml].
+message ExecuteBatchDmlRequest {
+  // A single DML statement.
+  message Statement {
+    // Required. The DML string.
+    string sql = 1;
+
+    // Parameter names and values that bind to placeholders in the DML string.
+    //
+    // A parameter placeholder consists of the `@` character followed by the
+    // parameter name (for example, `@firstName`). Parameter names can contain
+    // letters, numbers, and underscores.
+    //
+    // Parameters can appear anywhere that a literal value is expected.  The
+    // same parameter name can be used more than once, for example:
+    //
+    // `"WHERE id > @msg_id AND id < @msg_id + 100"`
+    //
+    // It is an error to execute a SQL statement with unbound parameters.
+    google.protobuf.Struct params = 2;
+
+    // It is not always possible for Cloud Spanner to infer the right SQL type
+    // from a JSON value.  For example, values of type `BYTES` and values
+    // of type `STRING` both appear in
+    // [params][google.spanner.v1.ExecuteBatchDmlRequest.Statement.params] as
+    // JSON strings.
+    //
+    // In these cases, `param_types` can be used to specify the exact
+    // SQL type for some or all of the SQL statement parameters. See the
+    // definition of [Type][google.spanner.v1.Type] for more information
+    // about SQL types.
+    map<string, Type> param_types = 3;
+  }
+
+  // Required. The session in which the DML statements should be performed.
+  string session = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "spanner.googleapis.com/Session" }
+  ];
+
+  // Required. The transaction to use. Must be a read-write transaction.
+  //
+  // To protect against replays, single-use transactions are not supported. The
+  // caller must either supply an existing transaction ID or begin a new
+  // transaction.
+  TransactionSelector transaction = 2 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. The list of statements to execute in this batch. Statements are
+  // executed serially, such that the effects of statement `i` are visible to
+  // statement `i+1`. Each statement must be a DML statement. Execution stops at
+  // the first failed statement; the remaining statements are not executed.
+  //
+  // Callers must provide at least one statement.
+  repeated Statement statements = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. A per-transaction sequence number used to identify this request.
+  // This field makes each request idempotent such that if the request is
+  // received multiple times, at most one will succeed.
+  //
+  // The sequence number must be monotonically increasing within the
+  // transaction. If a request arrives for the first time with an out-of-order
+  // sequence number, the transaction may be aborted. Replays of previously
+  // handled requests will yield the same response as the first execution.
+  int64 seqno = 4 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The response for
+// [ExecuteBatchDml][google.spanner.v1.Spanner.ExecuteBatchDml]. Contains a list
+// of [ResultSet][google.spanner.v1.ResultSet] messages, one for each DML
+// statement that has successfully executed, in the same order as the statements
+// in the request. If a statement fails, the status in the response body
+// identifies the cause of the failure.
+//
+// To check for DML statements that failed, use the following approach:
+//
+// 1. Check the status in the response message. The
+// [google.rpc.Code][google.rpc.Code] enum
+//    value `OK` indicates that all statements were executed successfully.
+// 2. If the status was not `OK`, check the number of result sets in the
+//    response. If the response contains `N`
+//    [ResultSet][google.spanner.v1.ResultSet] messages, then statement `N+1` in
+//    the request failed.
+//
+// Example 1:
+//
+// * Request: 5 DML statements, all executed successfully.
+// * Response: 5 [ResultSet][google.spanner.v1.ResultSet] messages, with the
+// status `OK`.
+//
+// Example 2:
+//
+// * Request: 5 DML statements. The third statement has a syntax error.
+// * Response: 2 [ResultSet][google.spanner.v1.ResultSet] messages, and a syntax
+// error (`INVALID_ARGUMENT`)
+//   status. The number of [ResultSet][google.spanner.v1.ResultSet] messages
+//   indicates that the third statement failed, and the fourth and fifth
+//   statements were not executed.
+message ExecuteBatchDmlResponse {
+  // One [ResultSet][google.spanner.v1.ResultSet] for each statement in the
+  // request that ran successfully, in the same order as the statements in the
+  // request. Each [ResultSet][google.spanner.v1.ResultSet] does not contain any
+  // rows. The [ResultSetStats][google.spanner.v1.ResultSetStats] in each
+  // [ResultSet][google.spanner.v1.ResultSet] contain the number of rows
+  // modified by the statement.
+  //
+  // Only the first [ResultSet][google.spanner.v1.ResultSet] in the response
+  // contains valid [ResultSetMetadata][google.spanner.v1.ResultSetMetadata].
+  repeated ResultSet result_sets = 1;
+
+  // If all DML statements are executed successfully, the status is `OK`.
+  // Otherwise, the error status of the first failed statement.
+  google.rpc.Status status = 2;
+}
+
+// Options for a PartitionQueryRequest and
+// PartitionReadRequest.
+message PartitionOptions {
+  // **Note:** This hint is currently ignored by PartitionQuery and
+  // PartitionRead requests.
+  //
+  // The desired data size for each partition generated.  The default for this
+  // option is currently 1 GiB.  This is only a hint. The actual size of each
+  // partition may be smaller or larger than this size request.
+  int64 partition_size_bytes = 1;
+
+  // **Note:** This hint is currently ignored by PartitionQuery and
+  // PartitionRead requests.
+  //
+  // The desired maximum number of partitions to return.  For example, this may
+  // be set to the number of workers available.  The default for this option
+  // is currently 10,000. The maximum value is currently 200,000.  This is only
+  // a hint.  The actual number of partitions returned may be smaller or larger
+  // than this maximum count request.
+  int64 max_partitions = 2;
+}
+
+// The request for [PartitionQuery][google.spanner.v1.Spanner.PartitionQuery]
+message PartitionQueryRequest {
+  // Required. The session used to create the partitions.
+  string session = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "spanner.googleapis.com/Session" }
+  ];
+
+  // Read only snapshot transactions are supported, read/write and single use
+  // transactions are not.
+  TransactionSelector transaction = 2;
+
+  // Required. The query request to generate partitions for. The request will
+  // fail if the query is not root partitionable. The query plan of a root
+  // partitionable query has a single distributed union operator. A distributed
+  // union operator conceptually divides one or more tables into multiple
+  // splits, remotely evaluates a subquery independently on each split, and
+  // then unions all results.
+  //
+  // This must not contain DML commands, such as INSERT, UPDATE, or
+  // DELETE. Use
+  // [ExecuteStreamingSql][google.spanner.v1.Spanner.ExecuteStreamingSql] with a
+  // PartitionedDml transaction for large, partition-friendly DML operations.
+  string sql = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // Parameter names and values that bind to placeholders in the SQL string.
+  //
+  // A parameter placeholder consists of the `@` character followed by the
+  // parameter name (for example, `@firstName`). Parameter names can contain
+  // letters, numbers, and underscores.
+  //
+  // Parameters can appear anywhere that a literal value is expected.  The same
+  // parameter name can be used more than once, for example:
+  //
+  // `"WHERE id > @msg_id AND id < @msg_id + 100"`
+  //
+  // It is an error to execute a SQL statement with unbound parameters.
+  google.protobuf.Struct params = 4;
+
+  // It is not always possible for Cloud Spanner to infer the right SQL type
+  // from a JSON value.  For example, values of type `BYTES` and values
+  // of type `STRING` both appear in
+  // [params][google.spanner.v1.PartitionQueryRequest.params] as JSON strings.
+  //
+  // In these cases, `param_types` can be used to specify the exact
+  // SQL type for some or all of the SQL query parameters. See the
+  // definition of [Type][google.spanner.v1.Type] for more information
+  // about SQL types.
+  map<string, Type> param_types = 5;
+
+  // Additional options that affect how many partitions are created.
+  PartitionOptions partition_options = 6;
+}
+
+// The request for [PartitionRead][google.spanner.v1.Spanner.PartitionRead]
+message PartitionReadRequest {
+  // Required. The session used to create the partitions.
+  string session = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "spanner.googleapis.com/Session" }
+  ];
+
+  // Read only snapshot transactions are supported, read/write and single use
+  // transactions are not.
+  TransactionSelector transaction = 2;
+
+  // Required. The name of the table in the database to be read.
+  string table = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // If non-empty, the name of an index on
+  // [table][google.spanner.v1.PartitionReadRequest.table]. This index is used
+  // instead of the table primary key when interpreting
+  // [key_set][google.spanner.v1.PartitionReadRequest.key_set] and sorting
+  // result rows. See [key_set][google.spanner.v1.PartitionReadRequest.key_set]
+  // for further information.
+  string index = 4;
+
+  // The columns of [table][google.spanner.v1.PartitionReadRequest.table] to be
+  // returned for each row matching this request.
+  repeated string columns = 5;
+
+  // Required. `key_set` identifies the rows to be yielded. `key_set` names the
+  // primary keys of the rows in
+  // [table][google.spanner.v1.PartitionReadRequest.table] to be yielded, unless
+  // [index][google.spanner.v1.PartitionReadRequest.index] is present. If
+  // [index][google.spanner.v1.PartitionReadRequest.index] is present, then
+  // [key_set][google.spanner.v1.PartitionReadRequest.key_set] instead names
+  // index keys in [index][google.spanner.v1.PartitionReadRequest.index].
+  //
+  // It is not an error for the `key_set` to name rows that do not
+  // exist in the database. Read yields nothing for nonexistent rows.
+  KeySet key_set = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // Additional options that affect how many partitions are created.
+  PartitionOptions partition_options = 9;
+}
+
+// Information returned for each partition returned in a
+// PartitionResponse.
+message Partition {
+  // This token can be passed to Read, StreamingRead, ExecuteSql, or
+  // ExecuteStreamingSql requests to restrict the results to those identified by
+  // this partition token.
+  bytes partition_token = 1;
+}
+
+// The response for [PartitionQuery][google.spanner.v1.Spanner.PartitionQuery]
+// or [PartitionRead][google.spanner.v1.Spanner.PartitionRead]
+message PartitionResponse {
+  // Partitions created by this request.
+  repeated Partition partitions = 1;
+
+  // Transaction created by this request.
+  Transaction transaction = 2;
+}
+
+// The request for [Read][google.spanner.v1.Spanner.Read] and
+// [StreamingRead][google.spanner.v1.Spanner.StreamingRead].
+message ReadRequest {
+  // Required. The session in which the read should be performed.
+  string session = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "spanner.googleapis.com/Session" }
+  ];
+
+  // The transaction to use. If none is provided, the default is a
+  // temporary read-only transaction with strong concurrency.
+  TransactionSelector transaction = 2;
+
+  // Required. The name of the table in the database to be read.
+  string table = 3 [(google.api.field_behavior) = REQUIRED];
+
+  // If non-empty, the name of an index on
+  // [table][google.spanner.v1.ReadRequest.table]. This index is used instead of
+  // the table primary key when interpreting
+  // [key_set][google.spanner.v1.ReadRequest.key_set] and sorting result rows.
+  // See [key_set][google.spanner.v1.ReadRequest.key_set] for further
+  // information.
+  string index = 4;
+
+  // Required. The columns of [table][google.spanner.v1.ReadRequest.table] to be
+  // returned for each row matching this request.
+  repeated string columns = 5 [(google.api.field_behavior) = REQUIRED];
+
+  // Required. `key_set` identifies the rows to be yielded. `key_set` names the
+  // primary keys of the rows in [table][google.spanner.v1.ReadRequest.table] to
+  // be yielded, unless [index][google.spanner.v1.ReadRequest.index] is present.
+  // If [index][google.spanner.v1.ReadRequest.index] is present, then
+  // [key_set][google.spanner.v1.ReadRequest.key_set] instead names index keys
+  // in [index][google.spanner.v1.ReadRequest.index].
+  //
+  // If the [partition_token][google.spanner.v1.ReadRequest.partition_token]
+  // field is empty, rows are yielded in table primary key order (if
+  // [index][google.spanner.v1.ReadRequest.index] is empty) or index key order
+  // (if [index][google.spanner.v1.ReadRequest.index] is non-empty).  If the
+  // [partition_token][google.spanner.v1.ReadRequest.partition_token] field is
+  // not empty, rows will be yielded in an unspecified order.
+  //
+  // It is not an error for the `key_set` to name rows that do not
+  // exist in the database. Read yields nothing for nonexistent rows.
+  KeySet key_set = 6 [(google.api.field_behavior) = REQUIRED];
+
+  // If greater than zero, only the first `limit` rows are yielded. If `limit`
+  // is zero, the default is no limit. A limit cannot be specified if
+  // `partition_token` is set.
+  int64 limit = 8;
+
+  // If this request is resuming a previously interrupted read,
+  // `resume_token` should be copied from the last
+  // [PartialResultSet][google.spanner.v1.PartialResultSet] yielded before the
+  // interruption. Doing this enables the new read to resume where the last read
+  // left off. The rest of the request parameters must exactly match the request
+  // that yielded this token.
+  bytes resume_token = 9;
+
+  // If present, results will be restricted to the specified partition
+  // previously created using PartitionRead().    There must be an exact
+  // match for the values of fields common to this message and the
+  // PartitionReadRequest message used to create this partition_token.
+  bytes partition_token = 10;
+}
+
+// The request for
+// [BeginTransaction][google.spanner.v1.Spanner.BeginTransaction].
+message BeginTransactionRequest {
+  // Required. The session in which the transaction runs.
+  string session = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "spanner.googleapis.com/Session" }
+  ];
+
+  // Required. Options for the new transaction.
+  TransactionOptions options = 2 [(google.api.field_behavior) = REQUIRED];
+}
+
+// The request for [Commit][google.spanner.v1.Spanner.Commit].
+message CommitRequest {
+  // Required. The session in which the transaction to be committed is running.
+  string session = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "spanner.googleapis.com/Session" }
+  ];
+
+  // Required. The transaction in which to commit.
+  oneof transaction {
+    // Commit a previously-started transaction.
+    bytes transaction_id = 2;
+
+    // Execute mutations in a temporary transaction. Note that unlike
+    // commit of a previously-started transaction, commit with a
+    // temporary transaction is non-idempotent. That is, if the
+    // `CommitRequest` is sent to Cloud Spanner more than once (for
+    // instance, due to retries in the application, or in the
+    // transport library), it is possible that the mutations are
+    // executed more than once. If this is undesirable, use
+    // [BeginTransaction][google.spanner.v1.Spanner.BeginTransaction] and
+    // [Commit][google.spanner.v1.Spanner.Commit] instead.
+    TransactionOptions single_use_transaction = 3;
+  }
+
+  // The mutations to be executed when this transaction commits. All
+  // mutations are applied atomically, in the order they appear in
+  // this list.
+  repeated Mutation mutations = 4;
+}
+
+// The response for [Commit][google.spanner.v1.Spanner.Commit].
+message CommitResponse {
+  // The Cloud Spanner timestamp at which the transaction committed.
+  google.protobuf.Timestamp commit_timestamp = 1;
+}
+
+// The request for [Rollback][google.spanner.v1.Spanner.Rollback].
+message RollbackRequest {
+  // Required. The session in which the transaction to roll back is running.
+  string session = 1 [
+    (google.api.field_behavior) = REQUIRED,
+    (google.api.resource_reference) = { type: "spanner.googleapis.com/Session" }
+  ];
+
+  // Required. The transaction to roll back.
+  bytes transaction_id = 2 [(google.api.field_behavior) = REQUIRED];
+}

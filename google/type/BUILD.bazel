@@ -1,0 +1,221 @@
+load("@rules_proto//proto:defs.bzl", "proto_library")
+
+# This is an API workspace, having public visibility by default makes perfect sense.
+package(default_visibility = ["//visibility:public"])
+
+##############################################################################
+# Common
+##############################################################################
+proto_library(
+    name = "calendar_period_proto",
+    srcs = ["calendar_period.proto"],
+)
+
+proto_library(
+    name = "color_proto",
+    srcs = ["color.proto"],
+    deps = [
+        "@com_google_protobuf//:wrappers_proto",
+    ],
+)
+
+proto_library(
+    name = "date_proto",
+    srcs = ["date.proto"],
+)
+
+proto_library(
+    name = "dayofweek_proto",
+    srcs = ["dayofweek.proto"],
+)
+
+proto_library(
+    name = "expr_proto",
+    srcs = ["expr.proto"],
+)
+
+proto_library(
+    name = "fraction_proto",
+    srcs = ["fraction.proto"],
+)
+
+proto_library(
+    name = "latlng_proto",
+    srcs = ["latlng.proto"],
+)
+
+proto_library(
+    name = "money_proto",
+    srcs = ["money.proto"],
+)
+
+proto_library(
+    name = "postal_address_proto",
+    srcs = ["postal_address.proto"],
+)
+
+proto_library(
+    name = "quaternion_proto",
+    srcs = ["quaternion.proto"],
+)
+
+proto_library(
+    name = "timeofday_proto",
+    srcs = ["timeofday.proto"],
+)
+
+##############################################################################
+# Java
+##############################################################################
+load("@com_google_googleapis_imports//:imports.bzl", "java_proto_library")
+
+java_proto_library(
+    name = "type_java_proto",
+    deps = [
+        ":calendar_period_proto",
+        ":color_proto",
+        ":date_proto",
+        ":dayofweek_proto",
+        ":expr_proto",
+        ":fraction_proto",
+        ":latlng_proto",
+        ":money_proto",
+        ":postal_address_proto",
+        ":quaternion_proto",
+        ":timeofday_proto",
+    ],
+)
+
+##############################################################################
+# Go
+##############################################################################
+load("@com_google_googleapis_imports//:imports.bzl", "go_proto_library")
+
+go_proto_library(
+    name = "calendar_period_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/type/calendarperiod",
+    protos = [":calendar_period_proto"],
+)
+
+go_proto_library(
+    name = "color_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/type/color",
+    protos = [":color_proto"],
+)
+
+go_proto_library(
+    name = "date_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/type/date",
+    protos = [":date_proto"],
+)
+
+go_proto_library(
+    name = "dayofweek_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/type/dayofweek",
+    protos = [":dayofweek_proto"],
+)
+
+go_proto_library(
+    name = "expr_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/type/expr",
+    protos = [":expr_proto"],
+)
+
+go_proto_library(
+    name = "fraction_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/type/fraction",
+    protos = [":fraction_proto"],
+)
+
+go_proto_library(
+    name = "latlng_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/type/latlng",
+    protos = [":latlng_proto"],
+)
+
+go_proto_library(
+    name = "money_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/type/money",
+    protos = [":money_proto"],
+)
+
+go_proto_library(
+    name = "postaladdress_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/type/postaladdress",
+    protos = [":postal_address_proto"],
+)
+
+go_proto_library(
+    name = "quaternion_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/type/quaternion",
+    protos = [":quaternion_proto"],
+)
+
+go_proto_library(
+    name = "timeofday_go_proto",
+    importpath = "google.golang.org/genproto/googleapis/type/timeofday",
+    protos = [":timeofday_proto"],
+)
+
+##############################################################################
+# C++
+##############################################################################
+load(
+    "@com_google_googleapis_imports//:imports.bzl",
+    "cc_proto_library",
+)
+
+cc_proto_library(
+    name = "calendar_period_cc_proto",
+    deps = [":calendar_period_proto"],
+)
+
+cc_proto_library(
+    name = "color_cc_proto",
+    deps = [":color_proto"],
+)
+
+cc_proto_library(
+    name = "date_cc_proto",
+    deps = [":date_proto"],
+)
+
+cc_proto_library(
+    name = "dayofweek_cc_proto",
+    deps = [":dayofweek_proto"],
+)
+
+cc_proto_library(
+    name = "expr_cc_proto",
+    deps = [":expr_proto"],
+)
+
+cc_proto_library(
+    name = "fraction_cc_proto",
+    deps = [":fraction_proto"],
+)
+
+cc_proto_library(
+    name = "latlng_cc_proto",
+    deps = [":latlng_proto"],
+)
+
+cc_proto_library(
+    name = "money_cc_proto",
+    deps = [":money_proto"],
+)
+
+cc_proto_library(
+    name = "postal_address_cc_proto",
+    deps = [":postal_address_proto"],
+)
+
+cc_proto_library(
+    name = "quaternion_cc_proto",
+    deps = [":quaternion_proto"],
+)
+
+cc_proto_library(
+    name = "timeofday_cc_proto",
+    deps = [":timeofday_proto"],
+)

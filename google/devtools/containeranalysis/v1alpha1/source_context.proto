@@ -1,0 +1,140 @@
+// Copyright 2018 Google Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+syntax = "proto3";
+
+package google.devtools.containeranalysis.v1alpha1;
+
+import "google/api/annotations.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/devtools/containeranalysis/v1alpha1;containeranalysis";
+option java_multiple_files = true;
+option java_package = "com.google.containeranalysis.v1alpha1";
+option objc_class_prefix = "GCA";
+
+// A SourceContext is a reference to a tree of files. A SourceContext together
+// with a path point to a unique revision of a single file or directory.
+message SourceContext {
+  // A SourceContext can refer any one of the following types of repositories.
+  oneof context {
+    // A SourceContext referring to a revision in a Google Cloud Source Repo.
+    CloudRepoSourceContext cloud_repo = 1;
+
+    // A SourceContext referring to a Gerrit project.
+    GerritSourceContext gerrit = 2;
+
+    // A SourceContext referring to any third party Git repo (e.g., GitHub).
+    GitSourceContext git = 3;
+  }
+
+  // Labels with user defined metadata.
+  map<string, string> labels = 4;
+}
+
+// An alias to a repo revision.
+message AliasContext {
+  // The type of an alias.
+  enum Kind {
+    // Unknown.
+    KIND_UNSPECIFIED = 0;
+
+    // Git tag.
+    FIXED = 1;
+
+    // Git branch.
+    MOVABLE = 2;
+
+    // Used to specify non-standard aliases. For example, if a Git repo has a
+    // ref named "refs/foo/bar".
+    OTHER = 4;
+  }
+
+  // The alias kind.
+  Kind kind = 1;
+
+  // The alias name.
+  string name = 2;
+}
+
+// A CloudRepoSourceContext denotes a particular revision in a Google Cloud
+// Source Repo.
+message CloudRepoSourceContext {
+  // The ID of the repo.
+  RepoId repo_id = 1;
+
+  // A revision in a Cloud Repo can be identified by either its revision ID or
+  // its alias.
+  oneof revision {
+    // A revision ID.
+    string revision_id = 2;
+
+    // An alias, which may be a branch or tag.
+    AliasContext alias_context = 3;
+  }
+}
+
+// A SourceContext referring to a Gerrit project.
+message GerritSourceContext {
+  // The URI of a running Gerrit instance.
+  string host_uri = 1;
+
+  // The full project name within the host. Projects may be nested, so
+  // "project/subproject" is a valid project name. The "repo name" is
+  // the hostURI/project.
+  string gerrit_project = 2;
+
+  // A revision in a Gerrit project can be identified by either its revision ID
+  // or its alias.
+  oneof revision {
+    // A revision (commit) ID.
+    string revision_id = 3;
+
+    // An alias, which may be a branch or tag.
+    AliasContext alias_context = 4;
+  }
+}
+
+// A GitSourceContext denotes a particular revision in a third party Git
+// repository (e.g., GitHub).
+message GitSourceContext {
+  // Git repository URL.
+  string url = 1;
+
+  // Required.
+  // Git commit hash.
+  string revision_id = 2;
+}
+
+// A unique identifier for a Cloud Repo.
+message RepoId {
+  // A cloud repo can be identified by either its project ID and repository name
+  // combination, or its globally unique identifier.
+  oneof id {
+    // A combination of a project ID and a repo name.
+    ProjectRepoId project_repo_id = 1;
+
+    // A server-assigned, globally unique identifier.
+    string uid = 2;
+  }
+}
+
+// Selects a repo using a Google Cloud Platform project ID (e.g.,
+// winged-cargo-31) and a repo name within that project.
+message ProjectRepoId {
+  // The ID of the project.
+  string project_id = 1;
+
+  // The name of the repo. Leave empty for the default repo.
+  string repo_name = 2;
+}

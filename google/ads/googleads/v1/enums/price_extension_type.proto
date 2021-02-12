@@ -1,0 +1,70 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.enums;
+
+import "google/api/annotations.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Enums";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/enums;enums";
+option java_multiple_files = true;
+option java_outer_classname = "PriceExtensionTypeProto";
+option java_package = "com.google.ads.googleads.v1.enums";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Enums";
+option ruby_package = "Google::Ads::GoogleAds::V1::Enums";
+
+// Proto file describing price extension type.
+
+// Container for enum describing types for a price extension.
+message PriceExtensionTypeEnum {
+  // Price extension type.
+  enum PriceExtensionType {
+    // Not specified.
+    UNSPECIFIED = 0;
+
+    // Used for return value only. Represents value unknown in this version.
+    UNKNOWN = 1;
+
+    // The type for showing a list of brands.
+    BRANDS = 2;
+
+    // The type for showing a list of events.
+    EVENTS = 3;
+
+    // The type for showing locations relevant to your business.
+    LOCATIONS = 4;
+
+    // The type for showing sub-regions or districts within a city or region.
+    NEIGHBORHOODS = 5;
+
+    // The type for showing a collection of product categories.
+    PRODUCT_CATEGORIES = 6;
+
+    // The type for showing a collection of related product tiers.
+    PRODUCT_TIERS = 7;
+
+    // The type for showing a collection of services offered by your business.
+    SERVICES = 8;
+
+    // The type for showing a collection of service categories.
+    SERVICE_CATEGORIES = 9;
+
+    // The type for showing a collection of related service tiers.
+    SERVICE_TIERS = 10;
+  }
+}

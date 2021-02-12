@@ -1,0 +1,142 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.ads.googleads.v1.services;
+
+import "google/ads/googleads/v1/resources/customer.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/wrappers.proto";
+
+option csharp_namespace = "Google.Ads.GoogleAds.V1.Services";
+option go_package = "google.golang.org/genproto/googleapis/ads/googleads/v1/services;services";
+option java_multiple_files = true;
+option java_outer_classname = "CustomerServiceProto";
+option java_package = "com.google.ads.googleads.v1.services";
+option objc_class_prefix = "GAA";
+option php_namespace = "Google\\Ads\\GoogleAds\\V1\\Services";
+option ruby_package = "Google::Ads::GoogleAds::V1::Services";
+
+// Proto file describing the Customer service.
+
+// Service to manage customers.
+service CustomerService {
+  // Returns the requested customer in full detail.
+  rpc GetCustomer(GetCustomerRequest)
+      returns (google.ads.googleads.v1.resources.Customer) {
+    option (google.api.http) = {
+      get: "/v1/{resource_name=customers/*}"
+    };
+  }
+
+  // Updates a customer. Operation statuses are returned.
+  rpc MutateCustomer(MutateCustomerRequest) returns (MutateCustomerResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}:mutate"
+      body: "*"
+    };
+  }
+
+  // Returns resource names of customers directly accessible by the
+  // user authenticating the call.
+  rpc ListAccessibleCustomers(ListAccessibleCustomersRequest)
+      returns (ListAccessibleCustomersResponse) {
+    option (google.api.http) = {
+      get: "/v1/customers:listAccessibleCustomers"
+    };
+  }
+
+  // Creates a new client under manager. The new client customer is returned.
+  rpc CreateCustomerClient(CreateCustomerClientRequest)
+      returns (CreateCustomerClientResponse) {
+    option (google.api.http) = {
+      post: "/v1/customers/{customer_id=*}:createCustomerClient"
+      body: "*"
+    };
+  }
+}
+
+// Request message for
+// [CustomerService.GetCustomer][google.ads.googleads.v1.services.CustomerService.GetCustomer].
+message GetCustomerRequest {
+  // The resource name of the customer to fetch.
+  string resource_name = 1;
+}
+
+// Request message for
+// [CustomerService.MutateCustomer][google.ads.googleads.v1.services.CustomerService.MutateCustomer].
+message MutateCustomerRequest {
+  // The ID of the customer being modified.
+  string customer_id = 1;
+
+  // The operation to perform on the customer
+  CustomerOperation operation = 4;
+
+  // If true, the request is validated but not executed. Only errors are
+  // returned, not results.
+  bool validate_only = 5;
+}
+
+// Request message for
+// [CustomerService.CreateCustomerClient][google.ads.googleads.v1.services.CustomerService.CreateCustomerClient].
+message CreateCustomerClientRequest {
+  // The ID of the Manager under whom client customer is being created.
+  string customer_id = 1;
+
+  // The new client customer to create. The resource name on this customer
+  // will be ignored.
+  google.ads.googleads.v1.resources.Customer customer_client = 2;
+}
+
+// A single update on a customer.
+message CustomerOperation {
+  // Mutate operation. Only updates are supported for customer.
+  google.ads.googleads.v1.resources.Customer update = 1;
+
+  // FieldMask that determines which resource fields are modified in an update.
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+// Response message for CreateCustomerClient mutate.
+message CreateCustomerClientResponse {
+  // The resource name of the newly created customer client.
+  string resource_name = 2;
+}
+
+// Response message for customer mutate.
+message MutateCustomerResponse {
+  // Result for the mutate.
+  MutateCustomerResult result = 2;
+}
+
+// The result for the customer mutate.
+message MutateCustomerResult {
+  // Returned for successful operations.
+  string resource_name = 1;
+}
+
+// Request message for
+// [CustomerService.ListAccessibleCustomers][google.ads.googleads.v1.services.CustomerService.ListAccessibleCustomers].
+message ListAccessibleCustomersRequest {}
+
+// Response message for
+// [CustomerService.ListAccessibleCustomers][google.ads.googleads.v1.services.CustomerService.ListAccessibleCustomers].
+message ListAccessibleCustomersResponse {
+  // Resource name of customers directly accessible by the
+  // user authenticating the call.
+  repeated string resource_names = 1;
+}

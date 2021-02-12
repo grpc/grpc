@@ -1,0 +1,74 @@
+// Copyright 2019 Google LLC.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto3";
+
+package google.cloud.websecurityscanner.v1beta;
+
+import "google/cloud/websecurityscanner/v1beta/scan_config_error.proto";
+
+option go_package = "google.golang.org/genproto/googleapis/cloud/websecurityscanner/v1beta;websecurityscanner";
+option java_multiple_files = true;
+option java_outer_classname = "ScanRunErrorTraceProto";
+option java_package = "com.google.cloud.websecurityscanner.v1beta";
+option php_namespace = "Google\\Cloud\\WebSecurityScanner\\V1beta";
+
+// Output only.
+// Defines an error trace message for a ScanRun.
+message ScanRunErrorTrace {
+  // Output only.
+  // Defines an error reason code.
+  // Next id: 7
+  enum Code {
+    // Default value is never used.
+    CODE_UNSPECIFIED = 0;
+
+    // Indicates that the scan run failed due to an internal server error.
+    INTERNAL_ERROR = 1;
+
+    // Indicates a scan configuration error, usually due to outdated ScanConfig
+    // settings, such as starting_urls or the DNS configuration.
+    SCAN_CONFIG_ISSUE = 2;
+
+    // Indicates an authentication error, usually due to outdated ScanConfig
+    // authentication settings.
+    AUTHENTICATION_CONFIG_ISSUE = 3;
+
+    // Indicates a scan operation timeout, usually caused by a very large site.
+    TIMED_OUT_WHILE_SCANNING = 4;
+
+    // Indicates that a scan encountered excessive redirects, either to
+    // authentication or some other page outside of the scan scope.
+    TOO_MANY_REDIRECTS = 5;
+
+    // Indicates that a scan encountered numerous errors from the web site
+    // pages. When available, most_common_http_error_code field indicates the
+    // most common HTTP error code encountered during the scan.
+    TOO_MANY_HTTP_ERRORS = 6;
+  }
+
+  // Indicates the error reason code.
+  Code code = 1;
+
+  // If the scan encounters SCAN_CONFIG_ISSUE error, this field has the error
+  // message encountered during scan configuration validation that is performed
+  // before each scan run.
+  ScanConfigError scan_config_error = 2;
+
+  // If the scan encounters TOO_MANY_HTTP_ERRORS, this field indicates the most
+  // common HTTP error code, if such is available. For example, if this code is
+  // 404, the scan has encountered too many NOT_FOUND responses.
+  int32 most_common_http_error_code = 3;
+}

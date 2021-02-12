@@ -1,0 +1,22 @@
+type: google.api.Service
+config_version: 3
+name: websecurityscanner.googleapis.com
+title: Web Security Scanner API
+
+apis:
+- name: google.cloud.websecurityscanner.v1beta.WebSecurityScanner
+
+documentation:
+  summary: Scans your Compute and App Engine apps for common web vulnerabilities.
+
+backend:
+  rules:
+  - selector: 'google.cloud.websecurityscanner.v1beta.WebSecurityScanner.*'
+    deadline: 60.0
+
+authentication:
+  rules:
+  - selector: 'google.cloud.websecurityscanner.v1beta.WebSecurityScanner.*'
+    oauth:
+      canonical_scopes: |-
+        https://www.googleapis.com/auth/cloud-platform
