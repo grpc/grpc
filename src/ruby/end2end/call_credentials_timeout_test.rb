@@ -61,6 +61,7 @@ def check_rpcs_still_possible(stub)
       begin
         stub.echo(Echo::EchoRequest.new(request: 'hello'), deadline: Time.now + 10)
         success = true
+        break
       rescue GRPC::BadStatus => e
         STDERR.puts "RPC received status: #{e}. Try again..."
       end
