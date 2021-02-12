@@ -39,17 +39,12 @@ class XdsServerServingStatusNotifierInterface {
 
 class XdsServerBuilder : public ::grpc::ServerBuilder {
  public:
-  XdsServerBuilder() {
-    c_notifier_.on_serving_status_change = OnServingStatusChange;
-    c_notifier_.user_data = nullptr;
-  }
-
   // It is the responsibility of the application to make sure that \a notifier
   // outlasts the life of the server. Notifications will start being made
   // asynchronously once `BuildAndStart()` has been called. Note that it is
   // possible for notifications to be made before `BuildAndStart()` returns.
   void set_status_notifier(XdsServerServingStatusNotifierInterface* notifier) {
-    c_notifier_.user_data = notifier;
+    notifier_ = notifier;
   }
 
   std::unique_ptr<Server> BuildAndStart() override {
@@ -67,13 +62,14 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   static void OnServingStatusChange(void* user_data, const char* uri,
                                     grpc_status_code code,
                                     const char* error_message) {
+    if (user_data == nullptr) return;
     XdsServerServingStatusNotifierInterface* notifier =
         static_cast<XdsServerServingStatusNotifierInterface*>(user_data);
     notifier->OnServingStatusChange(
         uri, grpc::Status(static_cast<StatusCode>(code), error_message));
   }
 
-  XdsServerServingStatusNotifierInterface* notifer_;
+  XdsServerServingStatusNotifierInterface* notifier_ = nullptr;
 };
 
 }  // namespace experimental

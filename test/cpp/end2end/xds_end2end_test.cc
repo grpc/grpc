@@ -2093,8 +2093,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
  protected:
   class XdsServingStatusNotifier
-      : public grpc::experimental::
-            XdsServerBuilderServingStatusNotifierInterface {
+      : public grpc::experimental::XdsServerServingStatusNotifierInterface {
    public:
     void OnServingStatusChange(std::string uri, grpc::Status status) override {
       grpc_core::MutexLock lock(&mu_);
@@ -7466,8 +7465,10 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
-// Alternative name - ServingStatusToNonServingStatusTransition
-TEST_P(XdsEnabledServerStatusNotificationTest, ResourceGetsDeleted) {
+// This test verifies that the resource getting deleted when already serving
+// results in future connections being dropped.
+TEST_P(XdsEnabledServerStatusNotificationTest,
+       ServingStatusToNonServingStatusTransition) {
   SetValidLdsUpdate();
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
@@ -7504,19 +7505,24 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
   constexpr int kNumChannels = 10;
-  std::shared_ptr<Channel> channel[kNumChannels];
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub[kNumChannels];
-  ClientContext context[kNumChannels];
+  struct StreamingRpc {
+    std::shared_ptr<Channel> channel;
+    std::unique_ptr<grpc::testing::EchoTestService::Stub> stub;
+    ClientContext context;
+    std::unique_ptr<ClientWriter<EchoRequest>> writer;
+  } streaming_rpcs[kNumChannels];
+
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
-  std::unique_ptr<ClientWriter<EchoRequest>> writer[kNumChannels];
   for (int i = 0; i < kNumChannels; i++) {
-    channel[i] = CreateInsecureChannel();
-    stub[i] = grpc::testing::EchoTestService::NewStub(channel[i]);
-    context[i].set_wait_for_ready(true);
-    writer[i] = stub[i]->RequestStream(&context[i], &response);
-    EXPECT_TRUE(writer[i]->Write(request));
+    streaming_rpcs[i].channel = CreateInsecureChannel();
+    streaming_rpcs[i].stub =
+        grpc::testing::EchoTestService::NewStub(streaming_rpcs[i].channel);
+    streaming_rpcs[i].context.set_wait_for_ready(true);
+    streaming_rpcs[i].writer = streaming_rpcs[i].stub->RequestStream(
+        &streaming_rpcs[i].context, &response);
+    EXPECT_TRUE(streaming_rpcs[i].writer->Write(request));
   }
   // Deleting the resource will make the server start rejecting connections
   UnsetLdsUpdate();
@@ -7526,13 +7532,14 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           true /* test_expects_failure */);
   for (int i = 0; i < kNumChannels; i++) {
-    EXPECT_TRUE(writer[i]->Write(request));
-    EXPECT_TRUE(writer[i]->WritesDone());
-    EXPECT_TRUE(writer[i]->Finish().ok());
+    EXPECT_TRUE(streaming_rpcs[i].writer->Write(request));
+    EXPECT_TRUE(streaming_rpcs[i].writer->WritesDone());
+    EXPECT_TRUE(streaming_rpcs[i].writer->Finish().ok());
     // New RPCs on the existing channels should fail.
     ClientContext new_context;
     new_context.set_deadline(grpc_timeout_milliseconds_to_deadline(1000));
-    EXPECT_FALSE(stub[i]->Echo(&new_context, request, &response).ok());
+    EXPECT_FALSE(
+        streaming_rpcs[i].stub->Echo(&new_context, request, &response).ok());
   }
 }
 
