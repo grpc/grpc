@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package xds.core.v3;
+
+import "udpa/annotations/status.proto";
+import "xds/core/v3/context_params.proto";
+
+import "validate/validate.proto";
+
+option java_outer_classname = "ResourceNameProto";
+option java_multiple_files = true;
+option java_package = "com.github.udpa.xds.core.v3";
+
+option (udpa.annotations.file_status).work_in_progress = true;
+
+// xDS resource name. This has a canonical xdstp:// URI representation:
+//
+//   xdstp://{authority}/{type_url}/{id}?{context_params}
+//
+// where context_params take the form of URI query parameters.
+//
+// A xDS resource name fully identifies a network resource for transport
+// purposes. xDS resource names in this form appear only in discovery
+// request/response messages used with the xDS transport.
+message ResourceName {
+  // Opaque identifier for the resource. Any '/' will not be escaped during URI
+  // encoding and will form part of the URI path.
+  string id = 1;
+
+  // Logical authority for resource (not necessarily transport network address).
+  // Authorities are opaque in the xDS API, data-plane load balancers will map
+  // them to concrete network transports such as an xDS management server.
+  string authority = 2;
+
+  // Fully qualified resource type (as in type URL without types.googleapis.com/
+  // prefix).
+  string resource_type = 3 [(validate.rules).string = {min_len: 1}];
+
+  // Additional parameters that can be used to select resource variants.
+  ContextParams context = 4;
+}

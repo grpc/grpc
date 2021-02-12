@@ -1,0 +1,4 @@
+*.pb.go linguist-generated=true
+*.pb.go -diff -merge
+*.pb.validate.go linguist-generated=true
+*.pb.validate.go -diff -merge

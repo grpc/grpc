@@ -1,0 +1,33 @@
+diff --git a/src/google/protobuf/stubs/strutil.cc b/src/google/protobuf/stubs/strutil.cc
+index 3844fa6b8b..5486887295 100644
+--- a/src/google/protobuf/stubs/strutil.cc
++++ b/src/google/protobuf/stubs/strutil.cc
+@@ -1065,10 +1065,12 @@ char* FastUInt32ToBufferLeft(uint32 u, char* buffer) {
+ }
+ 
+ char* FastInt32ToBufferLeft(int32 i, char* buffer) {
+-  uint32 u = i;
++  uint32 u = 0;
+   if (i < 0) {
+     *buffer++ = '-';
+-    u = -i;
++    u -= i;
++  } else {
++    u = i;
+   }
+   return FastUInt32ToBufferLeft(u, buffer);
+ }
+
+diff --git a/BUILD b/BUILD
+index 6665de94..55f28582 100644
+--- a/BUILD
++++ b/BUILD
+@@ -19,6 +19,6 @@ config_setting(
+ # ZLIB configuration
+ ################################################################################
+ 
+-ZLIB_DEPS = ["@zlib//:zlib"]
++ZLIB_DEPS = ["//external:zlib"]
+ 
+ ################################################################################
+ # Protobuf Runtime Library

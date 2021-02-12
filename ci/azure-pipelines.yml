@@ -1,0 +1,24 @@
+trigger:
+  branches:
+    include:
+    - 'master'
+  tags:
+    include:
+    - 'v*'
+
+jobs:
+- job: CI
+  container: envoyproxy/envoy-build-ubuntu@sha256:f0b2453c3587e3297f5caf5e97fbf57c97592c96136209ec13fe2795aae2c896
+  steps:
+  - task: CacheBeta@1
+    inputs:
+      key: './WORKSPACE | ./.bazel* | **/*.bzl'
+      path: $(Agent.TempDirectory)/tmp
+
+  - bash: ci/check.sh
+    env:
+      TEST_TMPDIR: $(Agent.TempDirectory)/tmp
+
+  - bash: tools/generate_go_protobuf.py && test -z "$(git status --porcelain)"
+    env:
+      TEST_TMPDIR: $(Agent.TempDirectory)/tmp

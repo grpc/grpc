@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package udpa.data.orca.v1;
+
+option java_outer_classname = "OrcaLoadReportProto";
+option java_multiple_files = true;
+option java_package = "com.github.udpa.udpa.data.orca.v1";
+
+import "validate/validate.proto";
+
+// See section `ORCA load report format` of the design document in
+// :ref:`https://github.com/envoyproxy/envoy/issues/6614`.
+
+message OrcaLoadReport {
+  // CPU utilization expressed as a fraction of available CPU resources. This
+  // should be derived from the latest sample or measurement.
+  double cpu_utilization = 1 [(validate.rules).double.gte = 0, (validate.rules).double.lte = 1];
+
+  // Memory utilization expressed as a fraction of available memory
+  // resources. This should be derived from the latest sample or measurement.
+  double mem_utilization = 2 [(validate.rules).double.gte = 0, (validate.rules).double.lte = 1];
+
+  // Total RPS being served by an endpoint. This should cover all services that an endpoint is
+  // responsible for.
+  uint64 rps = 3;
+
+  // Application specific requests costs. Each value is an absolute cost (e.g. 3487 bytes of
+  // storage) associated with the request.
+  map<string, double> request_cost = 4;
+
+  // Resource utilization values. Each value is expressed as a fraction of total resources
+  // available, derived from the latest sample or measurement.
+  map<string, double> utilization = 5
+      [(validate.rules).map.values.double.gte = 0, (validate.rules).map.values.double.lte = 1];
+}

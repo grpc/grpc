@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package xds.core.v3;
+
+import "google/protobuf/any.proto";
+
+import "udpa/annotations/status.proto";
+import "xds/core/v3/resource_name.proto";
+
+option java_outer_classname = "ResourceProto";
+option java_multiple_files = true;
+option java_package = "com.github.udpa.xds.core.v3";
+
+option (udpa.annotations.file_status).work_in_progress = true;
+
+// xDS resource wrapper. This encapsulates a xDS resource when appearing in an
+// xDS transport discovery response or when accessed as a filesystem object.
+message Resource {
+  // Resource name. This may be omitted for filesystem resources.
+  ResourceName name = 1;
+
+  // The resource's logical version. It is illegal to have the same named xDS
+  // resource name at a given version with different resource payloads.
+  string version = 2;
+
+  // The resource payload, including type URL.
+  google.protobuf.Any resource = 3;
+}

@@ -1,0 +1,31 @@
+syntax = "proto3";
+
+package udpa.annotations;
+
+import "udpa/annotations/status.proto";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/descriptor.proto";
+
+import "validate/validate.proto";
+
+// All annotations in this file are experimental and subject to change. Their
+// only consumer today is the Envoy APIs and SecuritAnnotationValidator protoc
+// plugin in this repository.
+option (udpa.annotations.file_status).work_in_progress = true;
+
+extend google.protobuf.FieldOptions {
+  // Magic number is the 28 most significant bits in the sha256sum of
+  // "udpa.annotations.security".
+  FieldSecurityAnnotation security = 11122993;
+}
+
+// These annotations indicate metadata for the purpose of understanding the
+// security significance of fields.
+message FieldSecurityAnnotation {
+  // Field should be set in the presence of untrusted downstreams.
+  bool configure_for_untrusted_downstream = 1;
+
+  // Field should be set in the presence of untrusted upstreams.
+  bool configure_for_untrusted_upstream = 2;
+}

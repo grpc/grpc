@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+package udpa.annotations;
+
+import "google/protobuf/descriptor.proto";
+
+extend google.protobuf.FieldOptions {
+  // Magic number is the 28 most significant bits in the sha256sum of "udpa.annotations.sensitive".
+  // When set to true, `sensitive` indicates that this field contains sensitive data, such as
+  // personally identifiable information, passwords, or private keys, and should be redacted for
+  // display by tools aware of this annotation. Note that that this has no effect on standard
+  // Protobuf functions such as `TextFormat::PrintToString`.
+  bool sensitive = 76569463;
+}
