@@ -1823,6 +1823,9 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_xds_client",
     ],
+    external_deps = [
+        "xxhash",
+    ],
 )
 
 grpc_cc_library(

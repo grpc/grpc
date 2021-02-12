@@ -22,6 +22,7 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "re2/re2.h"
+#include "xxhash.h"
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
@@ -419,6 +420,9 @@ bool UnderFraction(const uint32_t fraction_per_million) {
 
 ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     GetCallConfigArgs args) {
+  std::string blah = "blah";
+  uint64_t hash = XXH64(blah.c_str(), blah.size(), 0);
+  gpr_log(GPR_DEBUG, "DONNA see hash %" PRIu64 "", hash);
   for (const auto& entry : route_table_) {
     // Path matching.
     if (!entry.route.matchers.path_matcher.Match(
