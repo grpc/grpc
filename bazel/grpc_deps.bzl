@@ -238,7 +238,7 @@ def grpc_deps():
     if "com_github_cyan4973_xxhash" not in native.existing_rules():
         http_archive(
             name = "com_github_cyan4973_xxhash",
-            build_file = "@com_github_grpc_grpc//third_party:xxhash/xxhash.BUILD",
+            build_file = "@com_github_grpc_grpc//third_party:xxhash.BUILD",
             sha256 = "3de01e4f8c60d84907a2ce65b6528be999c0a9331be719ae3671102d0e1a5ccc",
             strip_prefix = "xxHash-94e5f23e736f2bb67ebdf90727353e65344f9fc0",
             urls = [
