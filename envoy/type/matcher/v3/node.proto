@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package envoy.type.matcher.v3;
+
+import "envoy/type/matcher/v3/string.proto";
+import "envoy/type/matcher/v3/struct.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.type.matcher.v3";
+option java_outer_classname = "NodeProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Node matcher]
+
+// Specifies the way to match a Node.
+// The match follows AND semantics.
+message NodeMatcher {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.type.matcher.NodeMatcher";
+
+  // Specifies match criteria on the node id.
+  StringMatcher node_id = 1;
+
+  // Specifies match criteria on the node metadata.
+  repeated StructMatcher node_metadatas = 2;
+}

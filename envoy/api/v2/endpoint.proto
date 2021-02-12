@@ -1,0 +1,119 @@
+syntax = "proto3";
+
+package envoy.api.v2;
+
+import "envoy/api/v2/endpoint/endpoint_components.proto";
+import "envoy/type/percent.proto";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.api.v2";
+option java_outer_classname = "EndpointProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.config.endpoint.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Endpoint configuration]
+// Endpoint discovery :ref:`architecture overview <arch_overview_service_discovery_types_eds>`
+
+// Each route from RDS will map to a single cluster or traffic split across
+// clusters using weights expressed in the RDS WeightedCluster.
+//
+// With EDS, each cluster is treated independently from a LB perspective, with
+// LB taking place between the Localities within a cluster and at a finer
+// granularity between the hosts within a locality. The percentage of traffic
+// for each endpoint is determined by both its load_balancing_weight, and the
+// load_balancing_weight of its locality. First, a locality will be selected,
+// then an endpoint within that locality will be chose based on its weight.
+// [#next-free-field: 6]
+message ClusterLoadAssignment {
+  // Load balancing policy settings.
+  // [#next-free-field: 6]
+  message Policy {
+    // [#not-implemented-hide:]
+    message DropOverload {
+      // Identifier for the policy specifying the drop.
+      string category = 1 [(validate.rules).string = {min_bytes: 1}];
+
+      // Percentage of traffic that should be dropped for the category.
+      type.FractionalPercent drop_percentage = 2;
+    }
+
+    reserved 1;
+
+    // Action to trim the overall incoming traffic to protect the upstream
+    // hosts. This action allows protection in case the hosts are unable to
+    // recover from an outage, or unable to autoscale or unable to handle
+    // incoming traffic volume for any reason.
+    //
+    // At the client each category is applied one after the other to generate
+    // the 'actual' drop percentage on all outgoing traffic. For example:
+    //
+    // .. code-block:: json
+    //
+    //  { "drop_overloads": [
+    //      { "category": "throttle", "drop_percentage": 60 }
+    //      { "category": "lb", "drop_percentage": 50 }
+    //  ]}
+    //
+    // The actual drop percentages applied to the traffic at the clients will be
+    //    "throttle"_drop = 60%
+    //    "lb"_drop = 20%  // 50% of the remaining 'actual' load, which is 40%.
+    //    actual_outgoing_load = 20% // remaining after applying all categories.
+    // [#not-implemented-hide:]
+    repeated DropOverload drop_overloads = 2;
+
+    // Priority levels and localities are considered overprovisioned with this
+    // factor (in percentage). This means that we don't consider a priority
+    // level or locality unhealthy until the percentage of healthy hosts
+    // multiplied by the overprovisioning factor drops below 100.
+    // With the default value 140(1.4), Envoy doesn't consider a priority level
+    // or a locality unhealthy until their percentage of healthy hosts drops
+    // below 72%. For example:
+    //
+    // .. code-block:: json
+    //
+    //  { "overprovisioning_factor": 100 }
+    //
+    // Read more at :ref:`priority levels <arch_overview_load_balancing_priority_levels>` and
+    // :ref:`localities <arch_overview_load_balancing_locality_weighted_lb>`.
+    google.protobuf.UInt32Value overprovisioning_factor = 3 [(validate.rules).uint32 = {gt: 0}];
+
+    // The max time until which the endpoints from this assignment can be used.
+    // If no new assignments are received before this time expires the endpoints
+    // are considered stale and should be marked unhealthy.
+    // Defaults to 0 which means endpoints never go stale.
+    google.protobuf.Duration endpoint_stale_after = 4 [(validate.rules).duration = {gt {}}];
+
+    // The flag to disable overprovisioning. If it is set to true,
+    // :ref:`overprovisioning factor
+    // <arch_overview_load_balancing_overprovisioning_factor>` will be ignored
+    // and Envoy will not perform graceful failover between priority levels or
+    // localities as endpoints become unhealthy. Otherwise Envoy will perform
+    // graceful failover as :ref:`overprovisioning factor
+    // <arch_overview_load_balancing_overprovisioning_factor>` suggests.
+    // [#not-implemented-hide:]
+    bool disable_overprovisioning = 5 [deprecated = true];
+  }
+
+  // Name of the cluster. This will be the :ref:`service_name
+  // <envoy_api_field_Cluster.EdsClusterConfig.service_name>` value if specified
+  // in the cluster :ref:`EdsClusterConfig
+  // <envoy_api_msg_Cluster.EdsClusterConfig>`.
+  string cluster_name = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // List of endpoints to load balance to.
+  repeated endpoint.LocalityLbEndpoints endpoints = 2;
+
+  // Map of named endpoints that can be referenced in LocalityLbEndpoints.
+  // [#not-implemented-hide:]
+  map<string, endpoint.Endpoint> named_endpoints = 5;
+
+  // Load balancing policy settings.
+  Policy policy = 4;
+}

@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package envoy.api.v2;
+
+import "envoy/api/v2/discovery.proto";
+
+import "google/api/annotations.proto";
+
+import "envoy/annotations/resource.proto";
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+
+import public "envoy/api/v2/cluster.proto";
+
+option java_package = "io.envoyproxy.envoy.api.v2";
+option java_outer_classname = "CdsProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.service.cluster.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: CDS]
+
+// Return list of all clusters this proxy will load balance to.
+service ClusterDiscoveryService {
+  option (envoy.annotations.resource).type = "envoy.api.v2.Cluster";
+
+  rpc StreamClusters(stream DiscoveryRequest) returns (stream DiscoveryResponse) {
+  }
+
+  rpc DeltaClusters(stream DeltaDiscoveryRequest) returns (stream DeltaDiscoveryResponse) {
+  }
+
+  rpc FetchClusters(DiscoveryRequest) returns (DiscoveryResponse) {
+    option (google.api.http).post = "/v2/discovery:clusters";
+    option (google.api.http).body = "*";
+  }
+}
+
+// [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
+// services: https://github.com/google/protobuf/issues/4221 and protoxform to upgrade the file.
+message CdsDummy {
+}

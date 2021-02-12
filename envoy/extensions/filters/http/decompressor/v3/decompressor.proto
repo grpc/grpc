@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.decompressor.v3;
+
+import "envoy/config/core/v3/base.proto";
+import "envoy/config/core/v3/extension.proto";
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.decompressor.v3";
+option java_outer_classname = "DecompressorProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Decompressor]
+// [#extension: envoy.filters.http.decompressor]
+
+message Decompressor {
+  // Common configuration for filter behavior on both the request and response direction.
+  message CommonDirectionConfig {
+    // Runtime flag that controls whether the filter is enabled for decompression or not. If set to false, the
+    // filter will operate as a pass-through filter. If the message is unspecified, the filter will be enabled.
+    config.core.v3.RuntimeFeatureFlag enabled = 1;
+  }
+
+  // Configuration for filter behavior on the request direction.
+  message RequestDirectionConfig {
+    CommonDirectionConfig common_config = 1;
+
+    // If set to true, and response decompression is enabled, the filter modifies the Accept-Encoding
+    // request header by appending the decompressor_library's encoding. Defaults to true.
+    google.protobuf.BoolValue advertise_accept_encoding = 2;
+  }
+
+  // Configuration for filter behavior on the response direction.
+  message ResponseDirectionConfig {
+    CommonDirectionConfig common_config = 1;
+  }
+
+  // A decompressor library to use for both request and response decompression. Currently only
+  // :ref:`envoy.compression.gzip.compressor<envoy_api_msg_extensions.compression.gzip.decompressor.v3.Gzip>`
+  // is included in Envoy.
+  config.core.v3.TypedExtensionConfig decompressor_library = 1
+      [(validate.rules).message = {required: true}];
+
+  // Configuration for request decompression. Decompression is enabled by default if left empty.
+  RequestDirectionConfig request_direction_config = 2;
+
+  // Configuration for response decompression. Decompression is enabled by default if left empty.
+  ResponseDirectionConfig response_direction_config = 3;
+}

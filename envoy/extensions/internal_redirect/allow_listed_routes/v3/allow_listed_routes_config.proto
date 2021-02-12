@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package envoy.extensions.internal_redirect.allow_listed_routes.v3;
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.internal_redirect.allow_listed_routes.v3";
+option java_outer_classname = "AllowListedRoutesConfigProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Allow listed routes internal redirect predicate]
+
+// An internal redirect predicate that accepts only explicitly allowed target routes.
+// [#extension: envoy.internal_redirect_predicates.allow_listed_routes]
+message AllowListedRoutesConfig {
+  // The list of routes that's allowed as redirect target by this predicate,
+  // identified by the route's :ref:`name <envoy_api_field_config.route.v3.Route.route>`.
+  // Empty route names are not allowed.
+  repeated string allowed_route_names = 1
+      [(validate.rules).repeated = {items {string {min_len: 1}}}];
+}

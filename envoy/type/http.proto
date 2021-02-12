@@ -1,0 +1,23 @@
+syntax = "proto3";
+
+package envoy.type;
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.type";
+option java_outer_classname = "HttpProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: HTTP]
+
+enum CodecClientType {
+  HTTP1 = 0;
+
+  HTTP2 = 1;
+
+  // [#not-implemented-hide:] QUIC implementation is not production ready yet. Use this enum with
+  // caution to prevent accidental execution of QUIC code. I.e. `!= HTTP2` is no longer sufficient
+  // to distinguish HTTP1 and HTTP2 traffic.
+  HTTP3 = 2;
+}

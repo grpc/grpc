@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package envoy.extensions.transport_sockets.raw_buffer.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.transport_sockets.raw_buffer.v3";
+option java_outer_classname = "RawBufferProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Raw Buffer]
+// [#extension: envoy.transport_sockets.raw_buffer]
+
+// Configuration for raw buffer transport socket.
+message RawBuffer {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.transport_socket.raw_buffer.v2.RawBuffer";
+}

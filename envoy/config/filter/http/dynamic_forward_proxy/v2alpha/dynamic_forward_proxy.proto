@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package envoy.config.filter.http.dynamic_forward_proxy.v2alpha;
+
+import "envoy/config/common/dynamic_forward_proxy/v2alpha/dns_cache.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.http.dynamic_forward_proxy.v2alpha";
+option java_outer_classname = "DynamicForwardProxyProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.http.dynamic_forward_proxy.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Dynamic forward proxy]
+
+// Configuration for the dynamic forward proxy HTTP filter. See the :ref:`architecture overview
+// <arch_overview_http_dynamic_forward_proxy>` for more information.
+// [#extension: envoy.filters.http.dynamic_forward_proxy]
+message FilterConfig {
+  // The DNS cache configuration that the filter will attach to. Note this configuration must
+  // match that of associated :ref:`dynamic forward proxy cluster configuration
+  // <envoy_api_field_config.cluster.dynamic_forward_proxy.v2alpha.ClusterConfig.dns_cache_config>`.
+  common.dynamic_forward_proxy.v2alpha.DnsCacheConfig dns_cache_config = 1
+      [(validate.rules).message = {required: true}];
+}
+
+// Per route Configuration for the dynamic forward proxy HTTP filter.
+message PerRouteConfig {
+  oneof host_rewrite_specifier {
+    // Indicates that before DNS lookup, the host header will be swapped with
+    // this value. If not set or empty, the original host header value
+    // will be used and no rewrite will happen.
+    //
+    // Note: this rewrite affects both DNS lookup and host header forwarding. However, this
+    // option shouldn't be used with
+    // :ref:`HCM host rewrite <envoy_api_field_route.RouteAction.host_rewrite>` given that the
+    // value set here would be used for DNS lookups whereas the value set in the HCM would be used
+    // for host header forwarding which is not the desired outcome.
+    string host_rewrite = 1 [(udpa.annotations.field_migrate).rename = "host_rewrite_literal"];
+
+    // Indicates that before DNS lookup, the host header will be swapped with
+    // the value of this header. If not set or empty, the original host header
+    // value will be used and no rewrite will happen.
+    //
+    // Note: this rewrite affects both DNS lookup and host header forwarding. However, this
+    // option shouldn't be used with
+    // :ref:`HCM host rewrite header <envoy_api_field_route.RouteAction.auto_host_rewrite_header>`
+    // given that the value set here would be used for DNS lookups whereas the value set in the HCM
+    // would be used for host header forwarding which is not the desired outcome.
+    //
+    // .. note::
+    //
+    //   If the header appears multiple times only the first value is used.
+    string auto_host_rewrite_header = 2
+        [(udpa.annotations.field_migrate).rename = "host_rewrite_header"];
+  }
+}

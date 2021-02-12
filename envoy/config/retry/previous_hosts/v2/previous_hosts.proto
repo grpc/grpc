@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package envoy.config.retry.previous_hosts.v2;
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.config.retry.previous_hosts.v2";
+option java_outer_classname = "PreviousHostsProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.retry.host.previous_hosts.v3";
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Previous Hosts Predicate]
+// [#extension: envoy.retry_host_predicates.previous_hosts]
+
+message PreviousHostsPredicate {
+}

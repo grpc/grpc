@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package envoy.extensions.clusters.dynamic_forward_proxy.v3;
+
+import "envoy/extensions/common/dynamic_forward_proxy/v3/dns_cache.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.clusters.dynamic_forward_proxy.v3";
+option java_outer_classname = "ClusterProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Dynamic forward proxy cluster configuration]
+
+// Configuration for the dynamic forward proxy cluster. See the :ref:`architecture overview
+// <arch_overview_http_dynamic_forward_proxy>` for more information.
+// [#extension: envoy.clusters.dynamic_forward_proxy]
+message ClusterConfig {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.cluster.dynamic_forward_proxy.v2alpha.ClusterConfig";
+
+  // The DNS cache configuration that the cluster will attach to. Note this configuration must
+  // match that of associated :ref:`dynamic forward proxy HTTP filter configuration
+  // <envoy_api_field_extensions.filters.http.dynamic_forward_proxy.v3.FilterConfig.dns_cache_config>`.
+  common.dynamic_forward_proxy.v3.DnsCacheConfig dns_cache_config = 1
+      [(validate.rules).message = {required: true}];
+
+  // If true allow the cluster configuration to disable the auto_sni and auto_san_validation options
+  // in the :ref:`cluster's upstream_http_protocol_options
+  // <envoy_api_field_config.cluster.v3.Cluster.upstream_http_protocol_options>`
+  bool allow_insecure_cluster_options = 2;
+}

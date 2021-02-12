@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package envoy.config.trace.v2;
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.trace.v2";
+option java_outer_classname = "LightstepProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: LightStep tracer]
+
+// Configuration for the LightStep tracer.
+// [#extension: envoy.tracers.lightstep]
+message LightstepConfig {
+  // Available propagation modes
+  enum PropagationMode {
+    // Propagate trace context in the single header x-ot-span-context.
+    ENVOY = 0;
+
+    // Propagate trace context using LightStep's native format.
+    LIGHTSTEP = 1;
+
+    // Propagate trace context using the b3 format.
+    B3 = 2;
+
+    // Propagation trace context using the w3 trace-context standard.
+    TRACE_CONTEXT = 3;
+  }
+
+  // The cluster manager cluster that hosts the LightStep collectors.
+  string collector_cluster = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // File containing the access token to the `LightStep
+  // <https://lightstep.com/>`_ API.
+  string access_token_file = 2 [(validate.rules).string = {min_bytes: 1}];
+
+  // Propagation modes to use by LightStep's tracer.
+  repeated PropagationMode propagation_modes = 3
+      [(validate.rules).repeated = {items {enum {defined_only: true}}}];
+}

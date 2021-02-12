@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+package envoy.api.v2.endpoint;
+
+import public "envoy/api/v2/endpoint/endpoint_components.proto";
+
+option java_package = "io.envoyproxy.envoy.api.v2.endpoint";
+option java_outer_classname = "EndpointProto";
+option java_multiple_files = true;

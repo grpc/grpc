@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package envoy.admin.v2alpha;
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.admin.v2alpha";
+option java_outer_classname = "MutexStatsProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: MutexStats]
+
+// Proto representation of the statistics collected upon absl::Mutex contention, if Envoy is run
+// under :option:`--enable-mutex-tracing`. For more information, see the `absl::Mutex`
+// [docs](https://abseil.io/about/design/mutex#extra-features).
+//
+// *NB*: The wait cycles below are measured by `absl::base_internal::CycleClock`, and may not
+// correspond to core clock frequency. For more information, see the `CycleClock`
+// [docs](https://github.com/abseil/abseil-cpp/blob/master/absl/base/internal/cycleclock.h).
+message MutexStats {
+  // The number of individual mutex contentions which have occurred since startup.
+  uint64 num_contentions = 1;
+
+  // The length of the current contention wait cycle.
+  uint64 current_wait_cycles = 2;
+
+  // The lifetime total of all contention wait cycles.
+  uint64 lifetime_wait_cycles = 3;
+}

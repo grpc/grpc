@@ -1,0 +1,376 @@
+syntax = "proto3";
+
+package envoy.extensions.transport_sockets.tls.v4alpha;
+
+import "envoy/config/core/v4alpha/base.proto";
+import "envoy/type/matcher/v4alpha/string.proto";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/sensitive.proto";
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.transport_sockets.tls.v4alpha";
+option java_outer_classname = "CommonProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Common TLS configuration]
+
+message TlsParameters {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.transport_sockets.tls.v3.TlsParameters";
+
+  enum TlsProtocol {
+    // Envoy will choose the optimal TLS version.
+    TLS_AUTO = 0;
+
+    // TLS 1.0
+    TLSv1_0 = 1;
+
+    // TLS 1.1
+    TLSv1_1 = 2;
+
+    // TLS 1.2
+    TLSv1_2 = 3;
+
+    // TLS 1.3
+    TLSv1_3 = 4;
+  }
+
+  // Minimum TLS protocol version. By default, it's ``TLSv1_2`` for clients and ``TLSv1_0`` for
+  // servers.
+  TlsProtocol tls_minimum_protocol_version = 1 [(validate.rules).enum = {defined_only: true}];
+
+  // Maximum TLS protocol version. By default, it's ``TLSv1_2`` for clients and ``TLSv1_3`` for
+  // servers.
+  TlsProtocol tls_maximum_protocol_version = 2 [(validate.rules).enum = {defined_only: true}];
+
+  // If specified, the TLS listener will only support the specified `cipher list
+  // <https://commondatastorage.googleapis.com/chromium-boringssl-docs/ssl.h.html#Cipher-suite-configuration>`_
+  // when negotiating TLS 1.0-1.2 (this setting has no effect when negotiating TLS 1.3). If not
+  // specified, the default list will be used.
+  //
+  // In non-FIPS builds, the default cipher list is:
+  //
+  // .. code-block:: none
+  //
+  //   [ECDHE-ECDSA-AES128-GCM-SHA256|ECDHE-ECDSA-CHACHA20-POLY1305]
+  //   [ECDHE-RSA-AES128-GCM-SHA256|ECDHE-RSA-CHACHA20-POLY1305]
+  //   ECDHE-ECDSA-AES128-SHA
+  //   ECDHE-RSA-AES128-SHA
+  //   AES128-GCM-SHA256
+  //   AES128-SHA
+  //   ECDHE-ECDSA-AES256-GCM-SHA384
+  //   ECDHE-RSA-AES256-GCM-SHA384
+  //   ECDHE-ECDSA-AES256-SHA
+  //   ECDHE-RSA-AES256-SHA
+  //   AES256-GCM-SHA384
+  //   AES256-SHA
+  //
+  // In builds using :ref:`BoringSSL FIPS <arch_overview_ssl_fips>`, the default cipher list is:
+  //
+  // .. code-block:: none
+  //
+  //   ECDHE-ECDSA-AES128-GCM-SHA256
+  //   ECDHE-RSA-AES128-GCM-SHA256
+  //   ECDHE-ECDSA-AES128-SHA
+  //   ECDHE-RSA-AES128-SHA
+  //   AES128-GCM-SHA256
+  //   AES128-SHA
+  //   ECDHE-ECDSA-AES256-GCM-SHA384
+  //   ECDHE-RSA-AES256-GCM-SHA384
+  //   ECDHE-ECDSA-AES256-SHA
+  //   ECDHE-RSA-AES256-SHA
+  //   AES256-GCM-SHA384
+  //   AES256-SHA
+  repeated string cipher_suites = 3;
+
+  // If specified, the TLS connection will only support the specified ECDH
+  // curves. If not specified, the default curves will be used.
+  //
+  // In non-FIPS builds, the default curves are:
+  //
+  // .. code-block:: none
+  //
+  //   X25519
+  //   P-256
+  //
+  // In builds using :ref:`BoringSSL FIPS <arch_overview_ssl_fips>`, the default curve is:
+  //
+  // .. code-block:: none
+  //
+  //   P-256
+  repeated string ecdh_curves = 4;
+}
+
+// BoringSSL private key method configuration. The private key methods are used for external
+// (potentially asynchronous) signing and decryption operations. Some use cases for private key
+// methods would be TPM support and TLS acceleration.
+message PrivateKeyProvider {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.transport_sockets.tls.v3.PrivateKeyProvider";
+
+  reserved 2;
+
+  reserved "config";
+
+  // Private key method provider name. The name must match a
+  // supported private key method provider type.
+  string provider_name = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Private key method provider specific configuration.
+  oneof config_type {
+    google.protobuf.Any typed_config = 3 [(udpa.annotations.sensitive) = true];
+  }
+}
+
+// [#next-free-field: 8]
+message TlsCertificate {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.transport_sockets.tls.v3.TlsCertificate";
+
+  // The TLS certificate chain.
+  //
+  // If *certificate_chain* is a filesystem path, a watch will be added to the
+  // parent directory for any file moves to support rotation. This currently
+  // only applies to dynamic secrets, when the *TlsCertificate* is delivered via
+  // SDS.
+  config.core.v4alpha.DataSource certificate_chain = 1;
+
+  // The TLS private key.
+  //
+  // If *private_key* is a filesystem path, a watch will be added to the parent
+  // directory for any file moves to support rotation. This currently only
+  // applies to dynamic secrets, when the *TlsCertificate* is delivered via SDS.
+  config.core.v4alpha.DataSource private_key = 2 [(udpa.annotations.sensitive) = true];
+
+  // If specified, updates of file-based *certificate_chain* and *private_key*
+  // sources will be triggered by this watch. The certificate/key pair will be
+  // read together and validated for atomic read consistency (i.e. no
+  // intervening modification occurred between cert/key read, verified by file
+  // hash comparisons). This allows explicit control over the path watched, by
+  // default the parent directories of the filesystem paths in
+  // *certificate_chain* and *private_key* are watched if this field is not
+  // specified. This only applies when a *TlsCertificate* is delivered by SDS
+  // with references to filesystem paths. See the :ref:`SDS key rotation
+  // <sds_key_rotation>` documentation for further details.
+  config.core.v4alpha.WatchedDirectory watched_directory = 7;
+
+  // BoringSSL private key method provider. This is an alternative to :ref:`private_key
+  // <envoy_api_field_extensions.transport_sockets.tls.v4alpha.TlsCertificate.private_key>` field. This can't be
+  // marked as ``oneof`` due to API compatibility reasons. Setting both :ref:`private_key
+  // <envoy_api_field_extensions.transport_sockets.tls.v4alpha.TlsCertificate.private_key>` and
+  // :ref:`private_key_provider
+  // <envoy_api_field_extensions.transport_sockets.tls.v4alpha.TlsCertificate.private_key_provider>` fields will result in an
+  // error.
+  PrivateKeyProvider private_key_provider = 6;
+
+  // The password to decrypt the TLS private key. If this field is not set, it is assumed that the
+  // TLS private key is not password encrypted.
+  config.core.v4alpha.DataSource password = 3 [(udpa.annotations.sensitive) = true];
+
+  // The OCSP response to be stapled with this certificate during the handshake.
+  // The response must be DER-encoded and may only be  provided via ``filename`` or
+  // ``inline_bytes``. The response may pertain to only one certificate.
+  config.core.v4alpha.DataSource ocsp_staple = 4;
+
+  // [#not-implemented-hide:]
+  repeated config.core.v4alpha.DataSource signed_certificate_timestamp = 5;
+}
+
+message TlsSessionTicketKeys {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.transport_sockets.tls.v3.TlsSessionTicketKeys";
+
+  // Keys for encrypting and decrypting TLS session tickets. The
+  // first key in the array contains the key to encrypt all new sessions created by this context.
+  // All keys are candidates for decrypting received tickets. This allows for easy rotation of keys
+  // by, for example, putting the new key first, and the previous key second.
+  //
+  // If :ref:`session_ticket_keys <envoy_api_field_extensions.transport_sockets.tls.v4alpha.DownstreamTlsContext.session_ticket_keys>`
+  // is not specified, the TLS library will still support resuming sessions via tickets, but it will
+  // use an internally-generated and managed key, so sessions cannot be resumed across hot restarts
+  // or on different hosts.
+  //
+  // Each key must contain exactly 80 bytes of cryptographically-secure random data. For
+  // example, the output of ``openssl rand 80``.
+  //
+  // .. attention::
+  //
+  //   Using this feature has serious security considerations and risks. Improper handling of keys
+  //   may result in loss of secrecy in connections, even if ciphers supporting perfect forward
+  //   secrecy are used. See https://www.imperialviolet.org/2013/06/27/botchingpfs.html for some
+  //   discussion. To minimize the risk, you must:
+  //
+  //   * Keep the session ticket keys at least as secure as your TLS certificate private keys
+  //   * Rotate session ticket keys at least daily, and preferably hourly
+  //   * Always generate keys using a cryptographically-secure random data source
+  repeated config.core.v4alpha.DataSource keys = 1
+      [(validate.rules).repeated = {min_items: 1}, (udpa.annotations.sensitive) = true];
+}
+
+// [#next-free-field: 12]
+message CertificateValidationContext {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.transport_sockets.tls.v3.CertificateValidationContext";
+
+  // Peer certificate verification mode.
+  enum TrustChainVerification {
+    // Perform default certificate verification (e.g., against CA / verification lists)
+    VERIFY_TRUST_CHAIN = 0;
+
+    // Connections where the certificate fails verification will be permitted.
+    // For HTTP connections, the result of certificate verification can be used in route matching. (
+    // see :ref:`validated <envoy_api_field_config.route.v4alpha.RouteMatch.TlsContextMatchOptions.validated>` ).
+    ACCEPT_UNTRUSTED = 1;
+  }
+
+  reserved 4, 5;
+
+  reserved "verify_subject_alt_name";
+
+  // TLS certificate data containing certificate authority certificates to use in verifying
+  // a presented peer certificate (e.g. server certificate for clusters or client certificate
+  // for listeners). If not specified and a peer certificate is presented it will not be
+  // verified. By default, a client certificate is optional, unless one of the additional
+  // options (:ref:`require_client_certificate
+  // <envoy_api_field_extensions.transport_sockets.tls.v4alpha.DownstreamTlsContext.require_client_certificate>`,
+  // :ref:`verify_certificate_spki
+  // <envoy_api_field_extensions.transport_sockets.tls.v4alpha.CertificateValidationContext.verify_certificate_spki>`,
+  // :ref:`verify_certificate_hash
+  // <envoy_api_field_extensions.transport_sockets.tls.v4alpha.CertificateValidationContext.verify_certificate_hash>`, or
+  // :ref:`match_subject_alt_names
+  // <envoy_api_field_extensions.transport_sockets.tls.v4alpha.CertificateValidationContext.match_subject_alt_names>`) is also
+  // specified.
+  //
+  // It can optionally contain certificate revocation lists, in which case Envoy will verify
+  // that the presented peer certificate has not been revoked by one of the included CRLs. Note
+  // that if a CRL is provided for any certificate authority in a trust chain, a CRL must be
+  // provided for all certificate authorities in that chain. Failure to do so will result in
+  // verification failure for both revoked and unrevoked certificates from that chain.
+  //
+  // See :ref:`the TLS overview <arch_overview_ssl_enabling_verification>` for a list of common
+  // system CA locations.
+  //
+  // If *trusted_ca* is a filesystem path, a watch will be added to the parent
+  // directory for any file moves to support rotation. This currently only
+  // applies to dynamic secrets, when the *CertificateValidationContext* is
+  // delivered via SDS.
+  config.core.v4alpha.DataSource trusted_ca = 1;
+
+  // If specified, updates of a file-based *trusted_ca* source will be triggered
+  // by this watch. This allows explicit control over the path watched, by
+  // default the parent directory of the filesystem path in *trusted_ca* is
+  // watched if this field is not specified. This only applies when a
+  // *CertificateValidationContext* is delivered by SDS with references to
+  // filesystem paths. See the :ref:`SDS key rotation <sds_key_rotation>`
+  // documentation for further details.
+  config.core.v4alpha.WatchedDirectory watched_directory = 11;
+
+  // An optional list of base64-encoded SHA-256 hashes. If specified, Envoy will verify that the
+  // SHA-256 of the DER-encoded Subject Public Key Information (SPKI) of the presented certificate
+  // matches one of the specified values.
+  //
+  // A base64-encoded SHA-256 of the Subject Public Key Information (SPKI) of the certificate
+  // can be generated with the following command:
+  //
+  // .. code-block:: bash
+  //
+  //   $ openssl x509 -in path/to/client.crt -noout -pubkey
+  //     | openssl pkey -pubin -outform DER
+  //     | openssl dgst -sha256 -binary
+  //     | openssl enc -base64
+  //   NvqYIYSbgK2vCJpQhObf77vv+bQWtc5ek5RIOwPiC9A=
+  //
+  // This is the format used in HTTP Public Key Pinning.
+  //
+  // When both:
+  // :ref:`verify_certificate_hash
+  // <envoy_api_field_extensions.transport_sockets.tls.v4alpha.CertificateValidationContext.verify_certificate_hash>` and
+  // :ref:`verify_certificate_spki
+  // <envoy_api_field_extensions.transport_sockets.tls.v4alpha.CertificateValidationContext.verify_certificate_spki>` are specified,
+  // a hash matching value from either of the lists will result in the certificate being accepted.
+  //
+  // .. attention::
+  //
+  //   This option is preferred over :ref:`verify_certificate_hash
+  //   <envoy_api_field_extensions.transport_sockets.tls.v4alpha.CertificateValidationContext.verify_certificate_hash>`,
+  //   because SPKI is tied to a private key, so it doesn't change when the certificate
+  //   is renewed using the same private key.
+  repeated string verify_certificate_spki = 3
+      [(validate.rules).repeated = {items {string {min_len: 44 max_bytes: 44}}}];
+
+  // An optional list of hex-encoded SHA-256 hashes. If specified, Envoy will verify that
+  // the SHA-256 of the DER-encoded presented certificate matches one of the specified values.
+  //
+  // A hex-encoded SHA-256 of the certificate can be generated with the following command:
+  //
+  // .. code-block:: bash
+  //
+  //   $ openssl x509 -in path/to/client.crt -outform DER | openssl dgst -sha256 | cut -d" " -f2
+  //   df6ff72fe9116521268f6f2dd4966f51df479883fe7037b39f75916ac3049d1a
+  //
+  // A long hex-encoded and colon-separated SHA-256 (a.k.a. "fingerprint") of the certificate
+  // can be generated with the following command:
+  //
+  // .. code-block:: bash
+  //
+  //   $ openssl x509 -in path/to/client.crt -noout -fingerprint -sha256 | cut -d"=" -f2
+  //   DF:6F:F7:2F:E9:11:65:21:26:8F:6F:2D:D4:96:6F:51:DF:47:98:83:FE:70:37:B3:9F:75:91:6A:C3:04:9D:1A
+  //
+  // Both of those formats are acceptable.
+  //
+  // When both:
+  // :ref:`verify_certificate_hash
+  // <envoy_api_field_extensions.transport_sockets.tls.v4alpha.CertificateValidationContext.verify_certificate_hash>` and
+  // :ref:`verify_certificate_spki
+  // <envoy_api_field_extensions.transport_sockets.tls.v4alpha.CertificateValidationContext.verify_certificate_spki>` are specified,
+  // a hash matching value from either of the lists will result in the certificate being accepted.
+  repeated string verify_certificate_hash = 2
+      [(validate.rules).repeated = {items {string {min_len: 64 max_bytes: 95}}}];
+
+  // An optional list of Subject Alternative name matchers. If specified, Envoy will verify that the
+  // Subject Alternative Name of the presented certificate matches one of the specified matchers.
+  //
+  // When a certificate has wildcard DNS SAN entries, to match a specific client, it should be
+  // configured with exact match type in the :ref:`string matcher <envoy_api_msg_type.matcher.v4alpha.StringMatcher>`.
+  // For example if the certificate has "\*.example.com" as DNS SAN entry, to allow only "api.example.com",
+  // it should be configured as shown below.
+  //
+  // .. code-block:: yaml
+  //
+  //  match_subject_alt_names:
+  //    exact: "api.example.com"
+  //
+  // .. attention::
+  //
+  //   Subject Alternative Names are easily spoofable and verifying only them is insecure,
+  //   therefore this option must be used together with :ref:`trusted_ca
+  //   <envoy_api_field_extensions.transport_sockets.tls.v4alpha.CertificateValidationContext.trusted_ca>`.
+  repeated type.matcher.v4alpha.StringMatcher match_subject_alt_names = 9;
+
+  // [#not-implemented-hide:] Must present signed certificate time-stamp.
+  google.protobuf.BoolValue require_signed_certificate_timestamp = 6;
+
+  // An optional `certificate revocation list
+  // <https://en.wikipedia.org/wiki/Certificate_revocation_list>`_
+  // (in PEM format). If specified, Envoy will verify that the presented peer
+  // certificate has not been revoked by this CRL. If this DataSource contains
+  // multiple CRLs, all of them will be used. Note that if a CRL is provided
+  // for any certificate authority in a trust chain, a CRL must be provided
+  // for all certificate authorities in that chain. Failure to do so will
+  // result in verification failure for both revoked and unrevoked certificates
+  // from that chain.
+  config.core.v4alpha.DataSource crl = 7;
+
+  // If specified, Envoy will not reject expired certificates.
+  bool allow_expired_certificate = 8;
+
+  // Certificate trust chain verification mode.
+  TrustChainVerification trust_chain_verification = 10
+      [(validate.rules).enum = {defined_only: true}];
+}

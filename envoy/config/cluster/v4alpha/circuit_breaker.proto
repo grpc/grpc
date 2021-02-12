@@ -1,0 +1,105 @@
+syntax = "proto3";
+
+package envoy.config.cluster.v4alpha;
+
+import "envoy/config/core/v4alpha/base.proto";
+import "envoy/type/v3/percent.proto";
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.cluster.v4alpha";
+option java_outer_classname = "CircuitBreakerProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Circuit breakers]
+
+// :ref:`Circuit breaking<arch_overview_circuit_break>` settings can be
+// specified individually for each defined priority.
+message CircuitBreakers {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.cluster.v3.CircuitBreakers";
+
+  // A Thresholds defines CircuitBreaker settings for a
+  // :ref:`RoutingPriority<envoy_api_enum_config.core.v4alpha.RoutingPriority>`.
+  // [#next-free-field: 9]
+  message Thresholds {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.config.cluster.v3.CircuitBreakers.Thresholds";
+
+    message RetryBudget {
+      option (udpa.annotations.versioning).previous_message_type =
+          "envoy.config.cluster.v3.CircuitBreakers.Thresholds.RetryBudget";
+
+      // Specifies the limit on concurrent retries as a percentage of the sum of active requests and
+      // active pending requests. For example, if there are 100 active requests and the
+      // budget_percent is set to 25, there may be 25 active retries.
+      //
+      // This parameter is optional. Defaults to 20%.
+      type.v3.Percent budget_percent = 1;
+
+      // Specifies the minimum retry concurrency allowed for the retry budget. The limit on the
+      // number of active retries may never go below this number.
+      //
+      // This parameter is optional. Defaults to 3.
+      google.protobuf.UInt32Value min_retry_concurrency = 2;
+    }
+
+    // The :ref:`RoutingPriority<envoy_api_enum_config.core.v4alpha.RoutingPriority>`
+    // the specified CircuitBreaker settings apply to.
+    core.v4alpha.RoutingPriority priority = 1 [(validate.rules).enum = {defined_only: true}];
+
+    // The maximum number of connections that Envoy will make to the upstream
+    // cluster. If not specified, the default is 1024.
+    google.protobuf.UInt32Value max_connections = 2;
+
+    // The maximum number of pending requests that Envoy will allow to the
+    // upstream cluster. If not specified, the default is 1024.
+    google.protobuf.UInt32Value max_pending_requests = 3;
+
+    // The maximum number of parallel requests that Envoy will make to the
+    // upstream cluster. If not specified, the default is 1024.
+    google.protobuf.UInt32Value max_requests = 4;
+
+    // The maximum number of parallel retries that Envoy will allow to the
+    // upstream cluster. If not specified, the default is 3.
+    google.protobuf.UInt32Value max_retries = 5;
+
+    // Specifies a limit on concurrent retries in relation to the number of active requests. This
+    // parameter is optional.
+    //
+    // .. note::
+    //
+    //    If this field is set, the retry budget will override any configured retry circuit
+    //    breaker.
+    RetryBudget retry_budget = 8;
+
+    // If track_remaining is true, then stats will be published that expose
+    // the number of resources remaining until the circuit breakers open. If
+    // not specified, the default is false.
+    //
+    // .. note::
+    //
+    //    If a retry budget is used in lieu of the max_retries circuit breaker,
+    //    the remaining retry resources remaining will not be tracked.
+    bool track_remaining = 6;
+
+    // The maximum number of connection pools per cluster that Envoy will concurrently support at
+    // once. If not specified, the default is unlimited. Set this for clusters which create a
+    // large number of connection pools. See
+    // :ref:`Circuit Breaking <arch_overview_circuit_break_cluster_maximum_connection_pools>` for
+    // more details.
+    google.protobuf.UInt32Value max_connection_pools = 7;
+  }
+
+  // If multiple :ref:`Thresholds<envoy_api_msg_config.cluster.v4alpha.CircuitBreakers.Thresholds>`
+  // are defined with the same :ref:`RoutingPriority<envoy_api_enum_config.core.v4alpha.RoutingPriority>`,
+  // the first one in the list is used. If no Thresholds is defined for a given
+  // :ref:`RoutingPriority<envoy_api_enum_config.core.v4alpha.RoutingPriority>`, the default values
+  // are used.
+  repeated Thresholds thresholds = 1;
+}

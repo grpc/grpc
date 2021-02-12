@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package envoy.config.listener.v4alpha;
+
+import "google/protobuf/any.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.config.listener.v4alpha";
+option java_outer_classname = "UdpListenerConfigProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: UDP Listener Config]
+// Listener :ref:`configuration overview <config_listeners>`
+
+message UdpListenerConfig {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.listener.v3.UdpListenerConfig";
+
+  reserved 2;
+
+  reserved "config";
+
+  // Used to look up UDP listener factory, matches "raw_udp_listener" or
+  // "quic_listener" to create a specific udp listener.
+  // If not specified, treat as "raw_udp_listener".
+  string udp_listener_name = 1;
+
+  // Used to create a specific listener factory. To some factory, e.g.
+  // "raw_udp_listener", config is not needed.
+  oneof config_type {
+    google.protobuf.Any typed_config = 3;
+  }
+}
+
+message ActiveRawUdpListenerConfig {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.listener.v3.ActiveRawUdpListenerConfig";
+}

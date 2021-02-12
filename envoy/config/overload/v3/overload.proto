@@ -1,0 +1,159 @@
+syntax = "proto3";
+
+package envoy.config.overload.v3;
+
+import "envoy/type/v3/percent.proto";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.overload.v3";
+option java_outer_classname = "OverloadProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Overload Manager]
+
+// The Overload Manager provides an extensible framework to protect Envoy instances
+// from overload of various resources (memory, cpu, file descriptors, etc).
+// It monitors a configurable set of resources and notifies registered listeners
+// when triggers related to those resources fire.
+
+message ResourceMonitor {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.overload.v2alpha.ResourceMonitor";
+
+  reserved 2;
+
+  reserved "config";
+
+  // The name of the resource monitor to instantiate. Must match a registered
+  // resource monitor type. The built-in resource monitors are:
+  //
+  // * :ref:`envoy.resource_monitors.fixed_heap
+  //   <envoy_api_msg_config.resource_monitor.fixed_heap.v2alpha.FixedHeapConfig>`
+  // * :ref:`envoy.resource_monitors.injected_resource
+  //   <envoy_api_msg_config.resource_monitor.injected_resource.v2alpha.InjectedResourceConfig>`
+  string name = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Configuration for the resource monitor being instantiated.
+  oneof config_type {
+    google.protobuf.Any typed_config = 3;
+  }
+}
+
+message ThresholdTrigger {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.overload.v2alpha.ThresholdTrigger";
+
+  // If the resource pressure is greater than or equal to this value, the trigger
+  // will enter saturation.
+  double value = 1 [(validate.rules).double = {lte: 1.0 gte: 0.0}];
+}
+
+message ScaledTrigger {
+  // If the resource pressure is greater than this value, the trigger will be in the
+  // :ref:`scaling <arch_overview_overload_manager-triggers-state>` state with value
+  // `(pressure - scaling_threshold) / (saturation_threshold - scaling_threshold)`.
+  double scaling_threshold = 1 [(validate.rules).double = {lte: 1.0 gte: 0.0}];
+
+  // If the resource pressure is greater than this value, the trigger will enter saturation.
+  double saturation_threshold = 2 [(validate.rules).double = {lte: 1.0 gte: 0.0}];
+}
+
+message Trigger {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.overload.v2alpha.Trigger";
+
+  // The name of the resource this is a trigger for.
+  string name = 1 [(validate.rules).string = {min_len: 1}];
+
+  oneof trigger_oneof {
+    option (validate.required) = true;
+
+    ThresholdTrigger threshold = 2;
+
+    ScaledTrigger scaled = 3;
+  }
+}
+
+// Typed configuration for the "envoy.overload_actions.reduce_timeouts" action. See
+// :ref:`the docs <config_overload_manager_reducing_timeouts>` for an example of how to configure
+// the action with different timeouts and minimum values.
+message ScaleTimersOverloadActionConfig {
+  enum TimerType {
+    // Unsupported value; users must explicitly specify the timer they want scaled.
+    UNSPECIFIED = 0;
+
+    // Adjusts the idle timer for downstream HTTP connections that takes effect when there are no active streams.
+    // This affects the value of :ref:`HttpConnectionManager.common_http_protocol_options.idle_timeout
+    // <envoy_v3_api_field_config.core.v3.HttpProtocolOptions.idle_timeout>`
+    HTTP_DOWNSTREAM_CONNECTION_IDLE = 1;
+
+    // Adjusts the idle timer for HTTP streams initiated by downstream clients.
+    // This affects the value of :ref:`RouteAction.idle_timeout <envoy_v3_api_field_config.route.v3.RouteAction.idle_timeout>` and
+    // :ref:`HttpConnectionManager.stream_idle_timeout
+    // <envoy_v3_api_field_extensions.filters.network.http_connection_manager.v3.HttpConnectionManager.stream_idle_timeout>`
+    HTTP_DOWNSTREAM_STREAM_IDLE = 2;
+
+    // Adjusts the timer for how long downstream clients have to finish transport-level negotiations
+    // before the connection is closed.
+    // This affects the value of
+    // :ref:`FilterChain.transport_socket_connect_timeout <envoy_v3_api_field_config.listener.v3.FilterChain.transport_socket_connect_timeout>`.
+    TRANSPORT_SOCKET_CONNECT = 3;
+  }
+
+  message ScaleTimer {
+    // The type of timer this minimum applies to.
+    TimerType timer = 1 [(validate.rules).enum = {defined_only: true not_in: 0}];
+
+    oneof overload_adjust {
+      option (validate.required) = true;
+
+      // Sets the minimum duration as an absolute value.
+      google.protobuf.Duration min_timeout = 2;
+
+      // Sets the minimum duration as a percentage of the maximum value.
+      type.v3.Percent min_scale = 3;
+    }
+  }
+
+  // A set of timer scaling rules to be applied.
+  repeated ScaleTimer timer_scale_factors = 1 [(validate.rules).repeated = {min_items: 1}];
+}
+
+message OverloadAction {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.overload.v2alpha.OverloadAction";
+
+  // The name of the overload action. This is just a well-known string that listeners can
+  // use for registering callbacks. Custom overload actions should be named using reverse
+  // DNS to ensure uniqueness.
+  string name = 1 [(validate.rules).string = {min_len: 1}];
+
+  // A set of triggers for this action. The state of the action is the maximum
+  // state of all triggers, which can be scaling between 0 and 1 or saturated. Listeners
+  // are notified when the overload action changes state.
+  repeated Trigger triggers = 2 [(validate.rules).repeated = {min_items: 1}];
+
+  // Configuration for the action being instantiated.
+  google.protobuf.Any typed_config = 3;
+}
+
+message OverloadManager {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.overload.v2alpha.OverloadManager";
+
+  // The interval for refreshing resource usage.
+  google.protobuf.Duration refresh_interval = 1;
+
+  // The set of resources to monitor.
+  repeated ResourceMonitor resource_monitors = 2 [(validate.rules).repeated = {min_items: 1}];
+
+  // The set of overload actions.
+  repeated OverloadAction actions = 3;
+}

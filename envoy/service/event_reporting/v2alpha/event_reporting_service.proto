@@ -1,0 +1,62 @@
+syntax = "proto3";
+
+package envoy.service.event_reporting.v2alpha;
+
+import "envoy/api/v2/core/base.proto";
+
+import "google/protobuf/any.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.service.event_reporting.v2alpha";
+option java_outer_classname = "EventReportingServiceProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.service.event_reporting.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: gRPC Event Reporting Service]
+
+// [#not-implemented-hide:]
+// Service for streaming different types of events from Envoy to a server. The examples of
+// such events may be health check or outlier detection events.
+service EventReportingService {
+  // Envoy will connect and send StreamEventsRequest messages forever.
+  // The management server may send StreamEventsResponse to configure event stream. See below.
+  // This API is designed for high throughput with the expectation that it might be lossy.
+  rpc StreamEvents(stream StreamEventsRequest) returns (stream StreamEventsResponse) {
+  }
+}
+
+// [#not-implemented-hide:]
+// An events envoy sends to the management server.
+message StreamEventsRequest {
+  message Identifier {
+    // The node sending the event messages over the stream.
+    api.v2.core.Node node = 1 [(validate.rules).message = {required: true}];
+  }
+
+  // Identifier data that will only be sent in the first message on the stream. This is effectively
+  // structured metadata and is a performance optimization.
+  Identifier identifier = 1;
+
+  // Batch of events. When the stream is already active, it will be the events occurred
+  // since the last message had been sent. If the server receives unknown event type, it should
+  // silently ignore it.
+  //
+  // The following events are supported:
+  //
+  // * :ref:`HealthCheckEvent <envoy_api_msg_data.core.v2alpha.HealthCheckEvent>`
+  // * :ref:`OutlierDetectionEvent <envoy_api_msg_data.cluster.v2alpha.OutlierDetectionEvent>`
+  repeated google.protobuf.Any events = 2 [(validate.rules).repeated = {min_items: 1}];
+}
+
+// [#not-implemented-hide:]
+// The management server may send envoy a StreamEventsResponse to tell which events the server
+// is interested in. In future, with aggregated event reporting service, this message will
+// contain, for example, clusters the envoy should send events for, or event types the server
+// wants to process.
+message StreamEventsResponse {
+}

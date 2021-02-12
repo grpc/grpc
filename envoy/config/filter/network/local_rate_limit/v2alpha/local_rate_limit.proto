@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package envoy.config.filter.network.local_rate_limit.v2alpha;
+
+import "envoy/api/v2/core/base.proto";
+import "envoy/type/token_bucket.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.network.local_rate_limit.v2alpha";
+option java_outer_classname = "LocalRateLimitProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.network.local_ratelimit.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Local rate limit]
+// Local rate limit :ref:`configuration overview <config_network_filters_local_rate_limit>`.
+// [#extension: envoy.filters.network.local_ratelimit]
+
+message LocalRateLimit {
+  // The prefix to use when emitting :ref:`statistics
+  // <config_network_filters_local_rate_limit_stats>`.
+  string stat_prefix = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // The token bucket configuration to use for rate limiting connections that are processed by the
+  // filter's filter chain. Each incoming connection processed by the filter consumes a single
+  // token. If the token is available, the connection will be allowed. If no tokens are available,
+  // the connection will be immediately closed.
+  //
+  // .. note::
+  //   In the current implementation each filter and filter chain has an independent rate limit.
+  //
+  // .. note::
+  //   In the current implementation the token bucket's :ref:`fill_interval
+  //   <envoy_api_field_type.TokenBucket.fill_interval>` must be >= 50ms to avoid too aggressive
+  //   refills.
+  type.TokenBucket token_bucket = 2 [(validate.rules).message = {required: true}];
+
+  // Runtime flag that controls whether the filter is enabled or not. If not specified, defaults
+  // to enabled.
+  api.v2.core.RuntimeFeatureFlag runtime_enabled = 3;
+}

@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package envoy.extensions.transport_sockets.quic.v4alpha;
+
+import "envoy/extensions/transport_sockets/tls/v4alpha/tls.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.transport_sockets.quic.v4alpha";
+option java_outer_classname = "QuicTransportProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: quic transport]
+// [#extension: envoy.transport_sockets.quic]
+
+// Configuration for Downstream QUIC transport socket. This provides Google's implementation of Google QUIC and IETF QUIC to Envoy.
+message QuicDownstreamTransport {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.transport_sockets.quic.v3.QuicDownstreamTransport";
+
+  tls.v4alpha.DownstreamTlsContext downstream_tls_context = 1
+      [(validate.rules).message = {required: true}];
+}
+
+// Configuration for Upstream QUIC transport socket. This provides Google's implementation of Google QUIC and IETF QUIC to Envoy.
+message QuicUpstreamTransport {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.transport_sockets.quic.v3.QuicUpstreamTransport";
+
+  tls.v4alpha.UpstreamTlsContext upstream_tls_context = 1
+      [(validate.rules).message = {required: true}];
+}

@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.cdn_loop.v3alpha;
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.cdn_loop.v3alpha";
+option java_outer_classname = "CdnLoopProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).work_in_progress = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: HTTP CDN-Loop Filter]
+// [#extension: envoy.filters.http.cdn_loop]
+
+// CDN-Loop Header filter config. See the :ref:`configuration overview
+// <config_http_filters_cdn_loop>` for more information.
+message CdnLoopConfig {
+  // The CDN identifier to use for loop checks and to append to the
+  // CDN-Loop header.
+  //
+  // RFC 8586 calls this the cdn-id. The cdn-id can either be a
+  // pseudonym or hostname the CDN is in control of.
+  //
+  // cdn_id must not be empty.
+  string cdn_id = 1 [(validate.rules).string = {min_len: 1}];
+
+  // The maximum allowed count of cdn_id in the downstream CDN-Loop
+  // request header.
+  //
+  // The default of 0 means a request can transit the CdnLoopFilter
+  // once. A value of 1 means that a request can transit the
+  // CdnLoopFilter twice and so on.
+  uint32 max_allowed_occurrences = 2;
+}

@@ -1,0 +1,54 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.csrf.v4alpha;
+
+import "envoy/config/core/v4alpha/base.proto";
+import "envoy/type/matcher/v4alpha/string.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.csrf.v4alpha";
+option java_outer_classname = "CsrfProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: CSRF]
+// Cross-Site Request Forgery :ref:`configuration overview <config_http_filters_csrf>`.
+// [#extension: envoy.filters.http.csrf]
+
+// CSRF filter config.
+message CsrfPolicy {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.http.csrf.v3.CsrfPolicy";
+
+  // Specifies the % of requests for which the CSRF filter is enabled.
+  //
+  // If :ref:`runtime_key <envoy_api_field_config.core.v4alpha.RuntimeFractionalPercent.runtime_key>` is specified,
+  // Envoy will lookup the runtime key to get the percentage of requests to filter.
+  //
+  // .. note::
+  //
+  //   This field defaults to 100/:ref:`HUNDRED
+  //   <envoy_api_enum_type.v3.FractionalPercent.DenominatorType>`.
+  config.core.v4alpha.RuntimeFractionalPercent filter_enabled = 1
+      [(validate.rules).message = {required: true}];
+
+  // Specifies that CSRF policies will be evaluated and tracked, but not enforced.
+  //
+  // This is intended to be used when ``filter_enabled`` is off and will be ignored otherwise.
+  //
+  // If :ref:`runtime_key <envoy_api_field_config.core.v4alpha.RuntimeFractionalPercent.runtime_key>` is specified,
+  // Envoy will lookup the runtime key to get the percentage of requests for which it will evaluate
+  // and track the request's *Origin* and *Destination* to determine if it's valid, but will not
+  // enforce any policies.
+  config.core.v4alpha.RuntimeFractionalPercent shadow_enabled = 2;
+
+  // Specifies additional source origins that will be allowed in addition to
+  // the destination origin.
+  //
+  // More information on how this can be configured via runtime can be found
+  // :ref:`here <csrf-configuration>`.
+  repeated type.matcher.v4alpha.StringMatcher additional_origins = 3;
+}

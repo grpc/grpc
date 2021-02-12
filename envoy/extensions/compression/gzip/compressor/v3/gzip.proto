@@ -1,0 +1,78 @@
+syntax = "proto3";
+
+package envoy.extensions.compression.gzip.compressor.v3;
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.compression.gzip.compressor.v3";
+option java_outer_classname = "GzipProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Gzip Compressor]
+// [#extension: envoy.compression.gzip.compressor]
+
+// [#next-free-field: 6]
+message Gzip {
+  // All the values of this enumeration translate directly to zlib's compression strategies.
+  // For more information about each strategy, please refer to zlib manual.
+  enum CompressionStrategy {
+    DEFAULT_STRATEGY = 0;
+    FILTERED = 1;
+    HUFFMAN_ONLY = 2;
+    RLE = 3;
+    FIXED = 4;
+  }
+
+  enum CompressionLevel {
+    option allow_alias = true;
+
+    DEFAULT_COMPRESSION = 0;
+    BEST_SPEED = 1;
+    COMPRESSION_LEVEL_1 = 1;
+    COMPRESSION_LEVEL_2 = 2;
+    COMPRESSION_LEVEL_3 = 3;
+    COMPRESSION_LEVEL_4 = 4;
+    COMPRESSION_LEVEL_5 = 5;
+    COMPRESSION_LEVEL_6 = 6;
+    COMPRESSION_LEVEL_7 = 7;
+    COMPRESSION_LEVEL_8 = 8;
+    COMPRESSION_LEVEL_9 = 9;
+    BEST_COMPRESSION = 9;
+  }
+
+  // Value from 1 to 9 that controls the amount of internal memory used by zlib. Higher values
+  // use more memory, but are faster and produce better compression results. The default value is 5.
+  google.protobuf.UInt32Value memory_level = 1 [(validate.rules).uint32 = {lte: 9 gte: 1}];
+
+  // A value used for selecting the zlib compression level. This setting will affect speed and
+  // amount of compression applied to the content. "BEST_COMPRESSION" provides higher compression
+  // at the cost of higher latency and is equal to "COMPRESSION_LEVEL_9". "BEST_SPEED" provides
+  // lower compression with minimum impact on response time, the same as "COMPRESSION_LEVEL_1".
+  // "DEFAULT_COMPRESSION" provides an optimal result between speed and compression. According
+  // to zlib's manual this level gives the same result as "COMPRESSION_LEVEL_6".
+  // This field will be set to "DEFAULT_COMPRESSION" if not specified.
+  CompressionLevel compression_level = 2 [(validate.rules).enum = {defined_only: true}];
+
+  // A value used for selecting the zlib compression strategy which is directly related to the
+  // characteristics of the content. Most of the time "DEFAULT_STRATEGY" will be the best choice,
+  // which is also the default value for the parameter, though there are situations when
+  // changing this parameter might produce better results. For example, run-length encoding (RLE)
+  // is typically used when the content is known for having sequences which same data occurs many
+  // consecutive times. For more information about each strategy, please refer to zlib manual.
+  CompressionStrategy compression_strategy = 3 [(validate.rules).enum = {defined_only: true}];
+
+  // Value from 9 to 15 that represents the base two logarithmic of the compressor's window size.
+  // Larger window results in better compression at the expense of memory usage. The default is 12
+  // which will produce a 4096 bytes window. For more details about this parameter, please refer to
+  // zlib manual > deflateInit2.
+  google.protobuf.UInt32Value window_bits = 4 [(validate.rules).uint32 = {lte: 15 gte: 9}];
+
+  // Value for Zlib's next output buffer. If not set, defaults to 4096.
+  // See https://www.zlib.net/manual.html for more details. Also see
+  // https://github.com/envoyproxy/envoy/issues/8448 for context on this filter's performance.
+  google.protobuf.UInt32Value chunk_size = 5 [(validate.rules).uint32 = {lte: 65536 gte: 4096}];
+}

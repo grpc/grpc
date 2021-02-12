@@ -1,0 +1,301 @@
+syntax = "proto3";
+
+package envoy.config.core.v4alpha;
+
+import "envoy/config/core/v4alpha/base.proto";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/sensitive.proto";
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.core.v4alpha";
+option java_outer_classname = "GrpcServiceProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: gRPC services]
+
+// gRPC service configuration. This is used by :ref:`ApiConfigSource
+// <envoy_api_msg_config.core.v4alpha.ApiConfigSource>` and filter configurations.
+// [#next-free-field: 6]
+message GrpcService {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.config.core.v3.GrpcService";
+
+  message EnvoyGrpc {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.config.core.v3.GrpcService.EnvoyGrpc";
+
+    // The name of the upstream gRPC cluster. SSL credentials will be supplied
+    // in the :ref:`Cluster <envoy_api_msg_config.cluster.v4alpha.Cluster>` :ref:`transport_socket
+    // <envoy_api_field_config.cluster.v4alpha.Cluster.transport_socket>`.
+    string cluster_name = 1 [(validate.rules).string = {min_len: 1}];
+
+    // The `:authority` header in the grpc request. If this field is not set, the authority header value will be `cluster_name`.
+    // Note that this authority does not override the SNI. The SNI is provided by the transport socket of the cluster.
+    string authority = 2
+        [(validate.rules).string =
+             {min_len: 0 max_bytes: 16384 well_known_regex: HTTP_HEADER_VALUE strict: false}];
+  }
+
+  // [#next-free-field: 9]
+  message GoogleGrpc {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.config.core.v3.GrpcService.GoogleGrpc";
+
+    // See https://grpc.io/grpc/cpp/structgrpc_1_1_ssl_credentials_options.html.
+    message SslCredentials {
+      option (udpa.annotations.versioning).previous_message_type =
+          "envoy.config.core.v3.GrpcService.GoogleGrpc.SslCredentials";
+
+      // PEM encoded server root certificates.
+      DataSource root_certs = 1;
+
+      // PEM encoded client private key.
+      DataSource private_key = 2 [(udpa.annotations.sensitive) = true];
+
+      // PEM encoded client certificate chain.
+      DataSource cert_chain = 3;
+    }
+
+    // Local channel credentials. Only UDS is supported for now.
+    // See https://github.com/grpc/grpc/pull/15909.
+    message GoogleLocalCredentials {
+      option (udpa.annotations.versioning).previous_message_type =
+          "envoy.config.core.v3.GrpcService.GoogleGrpc.GoogleLocalCredentials";
+    }
+
+    // See https://grpc.io/docs/guides/auth.html#credential-types to understand Channel and Call
+    // credential types.
+    message ChannelCredentials {
+      option (udpa.annotations.versioning).previous_message_type =
+          "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelCredentials";
+
+      oneof credential_specifier {
+        option (validate.required) = true;
+
+        SslCredentials ssl_credentials = 1;
+
+        // https://grpc.io/grpc/cpp/namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61
+        google.protobuf.Empty google_default = 2;
+
+        GoogleLocalCredentials local_credentials = 3;
+      }
+    }
+
+    // [#next-free-field: 8]
+    message CallCredentials {
+      option (udpa.annotations.versioning).previous_message_type =
+          "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials";
+
+      message ServiceAccountJWTAccessCredentials {
+        option (udpa.annotations.versioning).previous_message_type =
+            "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials."
+            "ServiceAccountJWTAccessCredentials";
+
+        string json_key = 1;
+
+        uint64 token_lifetime_seconds = 2;
+      }
+
+      message GoogleIAMCredentials {
+        option (udpa.annotations.versioning).previous_message_type =
+            "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.GoogleIAMCredentials";
+
+        string authorization_token = 1;
+
+        string authority_selector = 2;
+      }
+
+      message MetadataCredentialsFromPlugin {
+        option (udpa.annotations.versioning).previous_message_type =
+            "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials."
+            "MetadataCredentialsFromPlugin";
+
+        reserved 2;
+
+        reserved "config";
+
+        string name = 1;
+
+        oneof config_type {
+          google.protobuf.Any typed_config = 3;
+        }
+      }
+
+      // Security token service configuration that allows Google gRPC to
+      // fetch security token from an OAuth 2.0 authorization server.
+      // See https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16 and
+      // https://github.com/grpc/grpc/pull/19587.
+      // [#next-free-field: 10]
+      message StsService {
+        option (udpa.annotations.versioning).previous_message_type =
+            "envoy.config.core.v3.GrpcService.GoogleGrpc.CallCredentials.StsService";
+
+        // URI of the token exchange service that handles token exchange requests.
+        // [#comment:TODO(asraa): Add URI validation when implemented. Tracked by
+        // https://github.com/envoyproxy/protoc-gen-validate/issues/303]
+        string token_exchange_service_uri = 1;
+
+        // Location of the target service or resource where the client
+        // intends to use the requested security token.
+        string resource = 2;
+
+        // Logical name of the target service where the client intends to
+        // use the requested security token.
+        string audience = 3;
+
+        // The desired scope of the requested security token in the
+        // context of the service or resource where the token will be used.
+        string scope = 4;
+
+        // Type of the requested security token.
+        string requested_token_type = 5;
+
+        // The path of subject token, a security token that represents the
+        // identity of the party on behalf of whom the request is being made.
+        string subject_token_path = 6 [(validate.rules).string = {min_len: 1}];
+
+        // Type of the subject token.
+        string subject_token_type = 7 [(validate.rules).string = {min_len: 1}];
+
+        // The path of actor token, a security token that represents the identity
+        // of the acting party. The acting party is authorized to use the
+        // requested security token and act on behalf of the subject.
+        string actor_token_path = 8;
+
+        // Type of the actor token.
+        string actor_token_type = 9;
+      }
+
+      oneof credential_specifier {
+        option (validate.required) = true;
+
+        // Access token credentials.
+        // https://grpc.io/grpc/cpp/namespacegrpc.html#ad3a80da696ffdaea943f0f858d7a360d.
+        string access_token = 1;
+
+        // Google Compute Engine credentials.
+        // https://grpc.io/grpc/cpp/namespacegrpc.html#a6beb3ac70ff94bd2ebbd89b8f21d1f61
+        google.protobuf.Empty google_compute_engine = 2;
+
+        // Google refresh token credentials.
+        // https://grpc.io/grpc/cpp/namespacegrpc.html#a96901c997b91bc6513b08491e0dca37c.
+        string google_refresh_token = 3;
+
+        // Service Account JWT Access credentials.
+        // https://grpc.io/grpc/cpp/namespacegrpc.html#a92a9f959d6102461f66ee973d8e9d3aa.
+        ServiceAccountJWTAccessCredentials service_account_jwt_access = 4;
+
+        // Google IAM credentials.
+        // https://grpc.io/grpc/cpp/namespacegrpc.html#a9fc1fc101b41e680d47028166e76f9d0.
+        GoogleIAMCredentials google_iam = 5;
+
+        // Custom authenticator credentials.
+        // https://grpc.io/grpc/cpp/namespacegrpc.html#a823c6a4b19ffc71fb33e90154ee2ad07.
+        // https://grpc.io/docs/guides/auth.html#extending-grpc-to-support-other-authentication-mechanisms.
+        MetadataCredentialsFromPlugin from_plugin = 6;
+
+        // Custom security token service which implements OAuth 2.0 token exchange.
+        // https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16
+        // See https://github.com/grpc/grpc/pull/19587.
+        StsService sts_service = 7;
+      }
+    }
+
+    // Channel arguments.
+    message ChannelArgs {
+      option (udpa.annotations.versioning).previous_message_type =
+          "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs";
+
+      message Value {
+        option (udpa.annotations.versioning).previous_message_type =
+            "envoy.config.core.v3.GrpcService.GoogleGrpc.ChannelArgs.Value";
+
+        // Pointer values are not supported, since they don't make any sense when
+        // delivered via the API.
+        oneof value_specifier {
+          option (validate.required) = true;
+
+          string string_value = 1;
+
+          int64 int_value = 2;
+        }
+      }
+
+      // See grpc_types.h GRPC_ARG #defines for keys that work here.
+      map<string, Value> args = 1;
+    }
+
+    // The target URI when using the `Google C++ gRPC client
+    // <https://github.com/grpc/grpc>`_. SSL credentials will be supplied in
+    // :ref:`channel_credentials <envoy_api_field_config.core.v4alpha.GrpcService.GoogleGrpc.channel_credentials>`.
+    string target_uri = 1 [(validate.rules).string = {min_len: 1}];
+
+    ChannelCredentials channel_credentials = 2;
+
+    // A set of call credentials that can be composed with `channel credentials
+    // <https://grpc.io/docs/guides/auth.html#credential-types>`_.
+    repeated CallCredentials call_credentials = 3;
+
+    // The human readable prefix to use when emitting statistics for the gRPC
+    // service.
+    //
+    // .. csv-table::
+    //    :header: Name, Type, Description
+    //    :widths: 1, 1, 2
+    //
+    //    streams_total, Counter, Total number of streams opened
+    //    streams_closed_<gRPC status code>, Counter, Total streams closed with <gRPC status code>
+    string stat_prefix = 4 [(validate.rules).string = {min_len: 1}];
+
+    // The name of the Google gRPC credentials factory to use. This must have been registered with
+    // Envoy. If this is empty, a default credentials factory will be used that sets up channel
+    // credentials based on other configuration parameters.
+    string credentials_factory_name = 5;
+
+    // Additional configuration for site-specific customizations of the Google
+    // gRPC library.
+    google.protobuf.Struct config = 6;
+
+    // How many bytes each stream can buffer internally.
+    // If not set an implementation defined default is applied (1MiB).
+    google.protobuf.UInt32Value per_stream_buffer_limit_bytes = 7;
+
+    // Custom channels args.
+    ChannelArgs channel_args = 8;
+  }
+
+  reserved 4;
+
+  oneof target_specifier {
+    option (validate.required) = true;
+
+    // Envoy's in-built gRPC client.
+    // See the :ref:`gRPC services overview <arch_overview_grpc_services>`
+    // documentation for discussion on gRPC client selection.
+    EnvoyGrpc envoy_grpc = 1;
+
+    // `Google C++ gRPC client <https://github.com/grpc/grpc>`_
+    // See the :ref:`gRPC services overview <arch_overview_grpc_services>`
+    // documentation for discussion on gRPC client selection.
+    GoogleGrpc google_grpc = 2;
+  }
+
+  // The timeout for the gRPC request. This is the timeout for a specific
+  // request.
+  google.protobuf.Duration timeout = 3;
+
+  // Additional metadata to include in streams initiated to the GrpcService. This can be used for
+  // scenarios in which additional ad hoc authorization headers (e.g. ``x-foo-bar: baz-key``) are to
+  // be injected. For more information, including details on header value syntax, see the
+  // documentation on :ref:`custom request headers
+  // <config_http_conn_man_headers_custom_request_headers>`.
+  repeated HeaderValue initial_metadata = 5;
+}

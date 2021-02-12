@@ -1,0 +1,102 @@
+syntax = "proto3";
+
+package envoy.service.load_stats.v4alpha;
+
+import "envoy/config/core/v4alpha/base.proto";
+import "envoy/config/endpoint/v3/load_report.proto";
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.service.load_stats.v4alpha";
+option java_outer_classname = "LrsProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Load Reporting service (LRS)]
+
+// Load Reporting Service is an Envoy API to emit load reports. Envoy will initiate a bi-directional
+// stream with a management server. Upon connecting, the management server can send a
+// :ref:`LoadStatsResponse <envoy_api_msg_service.load_stats.v4alpha.LoadStatsResponse>` to a node it is
+// interested in getting the load reports for. Envoy in this node will start sending
+// :ref:`LoadStatsRequest <envoy_api_msg_service.load_stats.v4alpha.LoadStatsRequest>`. This is done periodically
+// based on the :ref:`load reporting interval <envoy_api_field_service.load_stats.v4alpha.LoadStatsResponse.load_reporting_interval>`
+// For details, take a look at the :ref:`Load Reporting Service sandbox example <install_sandboxes_load_reporting_service>`.
+
+service LoadReportingService {
+  // Advanced API to allow for multi-dimensional load balancing by remote
+  // server. For receiving LB assignments, the steps are:
+  // 1, The management server is configured with per cluster/zone/load metric
+  //    capacity configuration. The capacity configuration definition is
+  //    outside of the scope of this document.
+  // 2. Envoy issues a standard {Stream,Fetch}Endpoints request for the clusters
+  //    to balance.
+  //
+  // Independently, Envoy will initiate a StreamLoadStats bidi stream with a
+  // management server:
+  // 1. Once a connection establishes, the management server publishes a
+  //    LoadStatsResponse for all clusters it is interested in learning load
+  //    stats about.
+  // 2. For each cluster, Envoy load balances incoming traffic to upstream hosts
+  //    based on per-zone weights and/or per-instance weights (if specified)
+  //    based on intra-zone LbPolicy. This information comes from the above
+  //    {Stream,Fetch}Endpoints.
+  // 3. When upstream hosts reply, they optionally add header <define header
+  //    name> with ASCII representation of EndpointLoadMetricStats.
+  // 4. Envoy aggregates load reports over the period of time given to it in
+  //    LoadStatsResponse.load_reporting_interval. This includes aggregation
+  //    stats Envoy maintains by itself (total_requests, rpc_errors etc.) as
+  //    well as load metrics from upstream hosts.
+  // 5. When the timer of load_reporting_interval expires, Envoy sends new
+  //    LoadStatsRequest filled with load reports for each cluster.
+  // 6. The management server uses the load reports from all reported Envoys
+  //    from around the world, computes global assignment and prepares traffic
+  //    assignment destined for each zone Envoys are located in. Goto 2.
+  rpc StreamLoadStats(stream LoadStatsRequest) returns (stream LoadStatsResponse) {
+  }
+}
+
+// A load report Envoy sends to the management server.
+message LoadStatsRequest {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.service.load_stats.v3.LoadStatsRequest";
+
+  // Node identifier for Envoy instance.
+  config.core.v4alpha.Node node = 1;
+
+  // A list of load stats to report.
+  repeated config.endpoint.v3.ClusterStats cluster_stats = 2;
+}
+
+// The management server sends envoy a LoadStatsResponse with all clusters it
+// is interested in learning load stats about.
+message LoadStatsResponse {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.service.load_stats.v3.LoadStatsResponse";
+
+  // Clusters to report stats for.
+  // Not populated if *send_all_clusters* is true.
+  repeated string clusters = 1;
+
+  // If true, the client should send all clusters it knows about.
+  // Only clients that advertise the "envoy.lrs.supports_send_all_clusters" capability in their
+  // :ref:`client_features<envoy_api_field_config.core.v4alpha.Node.client_features>` field will honor this field.
+  bool send_all_clusters = 4;
+
+  // The minimum interval of time to collect stats over. This is only a minimum for two reasons:
+  //
+  // 1. There may be some delay from when the timer fires until stats sampling occurs.
+  // 2. For clusters that were already feature in the previous *LoadStatsResponse*, any traffic
+  //    that is observed in between the corresponding previous *LoadStatsRequest* and this
+  //    *LoadStatsResponse* will also be accumulated and billed to the cluster. This avoids a period
+  //    of inobservability that might otherwise exists between the messages. New clusters are not
+  //    subject to this consideration.
+  google.protobuf.Duration load_reporting_interval = 2;
+
+  // Set to *true* if the management server supports endpoint granularity
+  // report.
+  bool report_endpoint_granularity = 3;
+}

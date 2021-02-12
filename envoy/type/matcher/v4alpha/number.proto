@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package envoy.type.matcher.v4alpha;
+
+import "envoy/type/v3/range.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.type.matcher.v4alpha";
+option java_outer_classname = "NumberProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Number matcher]
+
+// Specifies the way to match a double value.
+message DoubleMatcher {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.type.matcher.v3.DoubleMatcher";
+
+  oneof match_pattern {
+    option (validate.required) = true;
+
+    // If specified, the input double value must be in the range specified here.
+    // Note: The range is using half-open interval semantics [start, end).
+    v3.DoubleRange range = 1;
+
+    // If specified, the input double value must be equal to the value specified here.
+    double exact = 2;
+  }
+}

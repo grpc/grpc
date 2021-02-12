@@ -1,0 +1,67 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.network.rocketmq_proxy.v4alpha;
+
+import "envoy/config/core/v4alpha/base.proto";
+import "envoy/config/route/v4alpha/route_components.proto";
+import "envoy/type/matcher/v4alpha/string.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.network.rocketmq_proxy.v4alpha";
+option java_outer_classname = "RouteProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Rocketmq Proxy Route Configuration]
+// Rocketmq Proxy :ref:`configuration overview <config_network_filters_rocketmq_proxy>`.
+
+message RouteConfiguration {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.network.rocketmq_proxy.v3.RouteConfiguration";
+
+  // The name of the route configuration.
+  string name = 1;
+
+  // The list of routes that will be matched, in order, against incoming requests. The first route
+  // that matches will be used.
+  repeated Route routes = 2;
+}
+
+message Route {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.network.rocketmq_proxy.v3.Route";
+
+  // Route matching parameters.
+  RouteMatch match = 1 [(validate.rules).message = {required: true}];
+
+  // Route request to some upstream cluster.
+  RouteAction route = 2 [(validate.rules).message = {required: true}];
+}
+
+message RouteMatch {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.network.rocketmq_proxy.v3.RouteMatch";
+
+  // The name of the topic.
+  type.matcher.v4alpha.StringMatcher topic = 1 [(validate.rules).message = {required: true}];
+
+  // Specifies a set of headers that the route should match on. The router will check the request’s
+  // headers against all the specified headers in the route config. A match will happen if all the
+  // headers in the route are present in the request with the same values (or based on presence if
+  // the value field is not in the config).
+  repeated config.route.v4alpha.HeaderMatcher headers = 2;
+}
+
+message RouteAction {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.network.rocketmq_proxy.v3.RouteAction";
+
+  // Indicates the upstream cluster to which the request should be routed.
+  string cluster = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Optional endpoint metadata match criteria used by the subset load balancer.
+  config.core.v4alpha.Metadata metadata_match = 2;
+}

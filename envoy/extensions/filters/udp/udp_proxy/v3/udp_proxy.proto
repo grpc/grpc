@@ -1,0 +1,71 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.udp.udp_proxy.v3;
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.udp.udp_proxy.v3";
+option java_outer_classname = "UdpProxyProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: UDP proxy]
+// UDP proxy :ref:`configuration overview <config_udp_listener_filters_udp_proxy>`.
+// [#extension: envoy.filters.udp_listener.udp_proxy]
+
+// Configuration for the UDP proxy filter.
+// [#next-free-field: 6]
+message UdpProxyConfig {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.udp.udp_proxy.v2alpha.UdpProxyConfig";
+
+  // Specifies the UDP hash policy.
+  // The packets can be routed by hash policy.
+  message HashPolicy {
+    oneof policy_specifier {
+      option (validate.required) = true;
+
+      // The source IP will be used to compute the hash used by hash-based load balancing algorithms.
+      bool source_ip = 1 [(validate.rules).bool = {const: true}];
+    }
+  }
+
+  // The stat prefix used when emitting UDP proxy filter stats.
+  string stat_prefix = 1 [(validate.rules).string = {min_len: 1}];
+
+  oneof route_specifier {
+    option (validate.required) = true;
+
+    // The upstream cluster to connect to.
+    string cluster = 2 [(validate.rules).string = {min_len: 1}];
+  }
+
+  // The idle timeout for sessions. Idle is defined as no datagrams between received or sent by
+  // the session. The default if not specified is 1 minute.
+  google.protobuf.Duration idle_timeout = 3;
+
+  // Use the remote downstream IP address as the sender IP address when sending packets to upstream hosts.
+  // This option requires Envoy to be run with the *CAP_NET_ADMIN* capability on Linux.
+  // And the IPv6 stack must be enabled on Linux kernel.
+  // This option does not preserve the remote downstream port.
+  // If this option is enabled, the IP address of sent datagrams will be changed to the remote downstream IP address.
+  // This means that Envoy will not receive packets that are sent by upstream hosts because the upstream hosts
+  // will send the packets with the remote downstream IP address as the destination. All packets will be routed
+  // to the remote downstream directly if there are route rules on the upstream host side.
+  // There are two options to return the packets back to the remote downstream.
+  // The first one is to use DSR (Direct Server Return).
+  // The other one is to configure routing rules on the upstream hosts to forward
+  // all packets back to Envoy and configure iptables rules on the host running Envoy to
+  // forward all packets from upstream hosts to the Envoy process so that Envoy can forward the packets to the downstream.
+  // If the platform does not support this option, Envoy will raise a configuration error.
+  bool use_original_src_ip = 4;
+
+  // Optional configuration for UDP proxy hash policies. If hash_policies is not set, the hash-based
+  // load balancing algorithms will select a host randomly. Currently the number of hash policies is
+  // limited to 1.
+  repeated HashPolicy hash_policies = 5 [(validate.rules).repeated = {max_items: 1}];
+}

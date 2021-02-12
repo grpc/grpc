@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package envoy.config.transport_socket.alts.v2alpha;
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.transport_socket.alts.v2alpha";
+option java_outer_classname = "AltsProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.transport_sockets.alts.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: ALTS]
+// [#extension: envoy.transport_sockets.alts]
+
+// Configuration for ALTS transport socket. This provides Google's ALTS protocol to Envoy.
+// https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security/
+message Alts {
+  // The location of a handshaker service, this is usually 169.254.169.254:8080
+  // on GCE.
+  string handshaker_service = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // The acceptable service accounts from peer, peers not in the list will be rejected in the
+  // handshake validation step. If empty, no validation will be performed.
+  repeated string peer_service_accounts = 2;
+}

@@ -1,0 +1,86 @@
+syntax = "proto3";
+
+package envoy.type.tracing.v2;
+
+import "envoy/type/metadata/v2/metadata.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.type.tracing.v2";
+option java_outer_classname = "CustomTagProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Custom Tag]
+
+// Describes custom tags for the active span.
+// [#next-free-field: 6]
+message CustomTag {
+  // Literal type custom tag with static value for the tag value.
+  message Literal {
+    // Static literal value to populate the tag value.
+    string value = 1 [(validate.rules).string = {min_bytes: 1}];
+  }
+
+  // Environment type custom tag with environment name and default value.
+  message Environment {
+    // Environment variable name to obtain the value to populate the tag value.
+    string name = 1 [(validate.rules).string = {min_bytes: 1}];
+
+    // When the environment variable is not found,
+    // the tag value will be populated with this default value if specified,
+    // otherwise no tag will be populated.
+    string default_value = 2;
+  }
+
+  // Header type custom tag with header name and default value.
+  message Header {
+    // Header name to obtain the value to populate the tag value.
+    string name = 1
+        [(validate.rules).string = {min_bytes: 1 well_known_regex: HTTP_HEADER_NAME strict: false}];
+
+    // When the header does not exist,
+    // the tag value will be populated with this default value if specified,
+    // otherwise no tag will be populated.
+    string default_value = 2;
+  }
+
+  // Metadata type custom tag using
+  // :ref:`MetadataKey <envoy_api_msg_type.metadata.v2.MetadataKey>` to retrieve the protobuf value
+  // from :ref:`Metadata <envoy_api_msg_core.Metadata>`, and populate the tag value with
+  // `the canonical JSON <https://developers.google.com/protocol-buffers/docs/proto3#json>`_
+  // representation of it.
+  message Metadata {
+    // Specify what kind of metadata to obtain tag value from.
+    metadata.v2.MetadataKind kind = 1;
+
+    // Metadata key to define the path to retrieve the tag value.
+    metadata.v2.MetadataKey metadata_key = 2;
+
+    // When no valid metadata is found,
+    // the tag value would be populated with this default value if specified,
+    // otherwise no tag would be populated.
+    string default_value = 3;
+  }
+
+  // Used to populate the tag name.
+  string tag = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // Used to specify what kind of custom tag.
+  oneof type {
+    option (validate.required) = true;
+
+    // A literal custom tag.
+    Literal literal = 2;
+
+    // An environment custom tag.
+    Environment environment = 3;
+
+    // A request header custom tag.
+    Header request_header = 4;
+
+    // A custom tag to obtain tag value from the metadata.
+    Metadata metadata = 5;
+  }
+}

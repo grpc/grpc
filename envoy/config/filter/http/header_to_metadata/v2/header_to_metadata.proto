@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package envoy.config.filter.http.header_to_metadata.v2;
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.http.header_to_metadata.v2";
+option java_outer_classname = "HeaderToMetadataProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.http.header_to_metadata.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Header-To-Metadata Filter]
+//
+// The configuration for transforming headers into metadata. This is useful
+// for matching load balancer subsets, logging, etc.
+//
+// Header to Metadata :ref:`configuration overview <config_http_filters_header_to_metadata>`.
+// [#extension: envoy.filters.http.header_to_metadata]
+
+message Config {
+  enum ValueType {
+    STRING = 0;
+
+    NUMBER = 1;
+
+    // The value is a serialized `protobuf.Value
+    // <https://github.com/protocolbuffers/protobuf/blob/master/src/google/protobuf/struct.proto#L62>`_.
+    PROTOBUF_VALUE = 2;
+  }
+
+  // ValueEncode defines the encoding algorithm.
+  enum ValueEncode {
+    // The value is not encoded.
+    NONE = 0;
+
+    // The value is encoded in `Base64 <https://tools.ietf.org/html/rfc4648#section-4>`_.
+    // Note: this is mostly used for STRING and PROTOBUF_VALUE to escape the
+    // non-ASCII characters in the header.
+    BASE64 = 1;
+  }
+
+  // [#next-free-field: 6]
+  message KeyValuePair {
+    // The namespace — if this is empty, the filter's namespace will be used.
+    string metadata_namespace = 1;
+
+    // The key to use within the namespace.
+    string key = 2 [(validate.rules).string = {min_bytes: 1}];
+
+    // The value to pair with the given key.
+    //
+    // When used for a `on_header_present` case, if value is non-empty it'll be used
+    // instead of the header value. If both are empty, no metadata is added.
+    //
+    // When used for a `on_header_missing` case, a non-empty value must be provided
+    // otherwise no metadata is added.
+    string value = 3;
+
+    // The value's type — defaults to string.
+    ValueType type = 4;
+
+    // How is the value encoded, default is NONE (not encoded).
+    // The value will be decoded accordingly before storing to metadata.
+    ValueEncode encode = 5;
+  }
+
+  // A Rule defines what metadata to apply when a header is present or missing.
+  message Rule {
+    // The header that triggers this rule — required.
+    string header = 1
+        [(validate.rules).string = {min_bytes: 1 well_known_regex: HTTP_HEADER_NAME strict: false}];
+
+    // If the header is present, apply this metadata KeyValuePair.
+    //
+    // If the value in the KeyValuePair is non-empty, it'll be used instead
+    // of the header value.
+    KeyValuePair on_header_present = 2;
+
+    // If the header is not present, apply this metadata KeyValuePair.
+    //
+    // The value in the KeyValuePair must be set, since it'll be used in lieu
+    // of the missing header value.
+    KeyValuePair on_header_missing = 3;
+
+    // Whether or not to remove the header after a rule is applied.
+    //
+    // This prevents headers from leaking.
+    bool remove = 4;
+  }
+
+  // The list of rules to apply to requests.
+  repeated Rule request_rules = 1;
+
+  // The list of rules to apply to responses.
+  repeated Rule response_rules = 2;
+}

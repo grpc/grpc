@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package envoy.extensions.common.matching.v4alpha;
+
+import "envoy/config/common/matcher/v4alpha/matcher.proto";
+import "envoy/config/core/v4alpha/extension.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.common.matching.v4alpha";
+option java_outer_classname = "ExtensionMatcherProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Extension Matcher]
+
+// Wrapper around an existing extension that provides an associated matcher. This allows
+// decorating an existing extension with a matcher, which can be used to match against
+// relevant protocol data.
+message ExtensionWithMatcher {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.common.matching.v3.ExtensionWithMatcher";
+
+  // The associated matcher.
+  config.common.matcher.v4alpha.Matcher matcher = 1 [(validate.rules).message = {required: true}];
+
+  // The underlying extension config.
+  config.core.v4alpha.TypedExtensionConfig extension_config = 2
+      [(validate.rules).message = {required: true}];
+}

@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package envoy.type.matcher.v3;
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.type.matcher.v3";
+option java_outer_classname = "HttpInputsProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Common HTTP Inputs]
+
+// Match input indicates that matching should be done on a specific request header.
+// The resulting input string will be all headers for the given key joined by a comma,
+// e.g. if the request contains two 'foo' headers with value 'bar' and 'baz', the input
+// string will be 'bar,baz'.
+// [#comment:TODO(snowp): Link to unified matching docs.]
+message HttpRequestHeaderMatchInput {
+  // The request header to match on.
+  string header_name = 1;
+}
+
+// Match input indicating that matching should be done on a specific response header.
+// The resulting input string will be all headers for the given key joined by a comma,
+// e.g. if the response contains two 'foo' headers with value 'bar' and 'baz', the input
+// string will be 'bar,baz'.
+// [#comment:TODO(snowp): Link to unified matching docs.]
+message HttpResponseHeaderMatchInput {
+  // The response header to match on.
+  string header_name = 1;
+}

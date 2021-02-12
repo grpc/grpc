@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.network.postgres_proxy.v3alpha;
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.network.postgres_proxy.v3alpha";
+option java_outer_classname = "PostgresProxyProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).work_in_progress = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Postgres proxy]
+// Postgres Proxy :ref:`configuration overview
+// <config_network_filters_postgres_proxy>`.
+// [#extension: envoy.filters.network.postgres_proxy]
+
+message PostgresProxy {
+  // The human readable prefix to use when emitting :ref:`statistics
+  // <config_network_filters_postgres_proxy_stats>`.
+  string stat_prefix = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Controls whether SQL statements received in Frontend Query messages
+  // are parsed. Parsing is required to produce Postgres proxy filter
+  // metadata. Defaults to true.
+  google.protobuf.BoolValue enable_sql_parsing = 2;
+}

@@ -1,0 +1,49 @@
+syntax = "proto3";
+
+package envoy.type.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.type.v3";
+option java_outer_classname = "RangeProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Range]
+
+// Specifies the int64 start and end of the range using half-open interval semantics [start,
+// end).
+message Int64Range {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.type.Int64Range";
+
+  // start of the range (inclusive)
+  int64 start = 1;
+
+  // end of the range (exclusive)
+  int64 end = 2;
+}
+
+// Specifies the int32 start and end of the range using half-open interval semantics [start,
+// end).
+message Int32Range {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.type.Int32Range";
+
+  // start of the range (inclusive)
+  int32 start = 1;
+
+  // end of the range (exclusive)
+  int32 end = 2;
+}
+
+// Specifies the double start and end of the range using half-open interval semantics [start,
+// end).
+message DoubleRange {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.type.DoubleRange";
+
+  // start of the range (inclusive)
+  double start = 1;
+
+  // end of the range (exclusive)
+  double end = 2;
+}

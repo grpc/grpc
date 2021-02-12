@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.dynamo.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.dynamo.v3";
+option java_outer_classname = "DynamoProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Dynamo]
+// Dynamo :ref:`configuration overview <config_http_filters_dynamo>`.
+// [#extension: envoy.filters.http.dynamo]
+
+// Dynamo filter config.
+message Dynamo {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.http.dynamo.v2.Dynamo";
+}

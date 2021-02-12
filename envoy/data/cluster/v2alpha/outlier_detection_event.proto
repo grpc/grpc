@@ -1,0 +1,135 @@
+syntax = "proto3";
+
+package envoy.data.cluster.v2alpha;
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.data.cluster.v2alpha";
+option java_outer_classname = "OutlierDetectionEventProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.data.cluster.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Outlier detection logging events]
+// :ref:`Outlier detection logging <arch_overview_outlier_detection_logging>`.
+
+// Type of ejection that took place
+enum OutlierEjectionType {
+  // In case upstream host returns certain number of consecutive 5xx.
+  // If
+  // :ref:`outlier_detection.split_external_local_origin_errors<envoy_api_field_cluster.OutlierDetection.split_external_local_origin_errors>`
+  // is *false*, all type of errors are treated as HTTP 5xx errors.
+  // See :ref:`Cluster outlier detection <arch_overview_outlier_detection>` documentation for
+  // details.
+  CONSECUTIVE_5XX = 0;
+
+  // In case upstream host returns certain number of consecutive gateway errors
+  CONSECUTIVE_GATEWAY_FAILURE = 1;
+
+  // Runs over aggregated success rate statistics from every host in cluster
+  // and selects hosts for which ratio of successful replies deviates from other hosts
+  // in the cluster.
+  // If
+  // :ref:`outlier_detection.split_external_local_origin_errors<envoy_api_field_cluster.OutlierDetection.split_external_local_origin_errors>`
+  // is *false*, all errors (externally and locally generated) are used to calculate success rate
+  // statistics. See :ref:`Cluster outlier detection <arch_overview_outlier_detection>`
+  // documentation for details.
+  SUCCESS_RATE = 2;
+
+  // Consecutive local origin failures: Connection failures, resets, timeouts, etc
+  // This type of ejection happens only when
+  // :ref:`outlier_detection.split_external_local_origin_errors<envoy_api_field_cluster.OutlierDetection.split_external_local_origin_errors>`
+  // is set to *true*.
+  // See :ref:`Cluster outlier detection <arch_overview_outlier_detection>` documentation for
+  CONSECUTIVE_LOCAL_ORIGIN_FAILURE = 3;
+
+  // Runs over aggregated success rate statistics for local origin failures
+  // for all hosts in the cluster and selects hosts for which success rate deviates from other
+  // hosts in the cluster. This type of ejection happens only when
+  // :ref:`outlier_detection.split_external_local_origin_errors<envoy_api_field_cluster.OutlierDetection.split_external_local_origin_errors>`
+  // is set to *true*.
+  // See :ref:`Cluster outlier detection <arch_overview_outlier_detection>` documentation for
+  SUCCESS_RATE_LOCAL_ORIGIN = 4;
+
+  // Runs over aggregated success rate statistics from every host in cluster and selects hosts for
+  // which ratio of failed replies is above configured value.
+  FAILURE_PERCENTAGE = 5;
+
+  // Runs over aggregated success rate statistics for local origin failures from every host in
+  // cluster and selects hosts for which ratio of failed replies is above configured value.
+  FAILURE_PERCENTAGE_LOCAL_ORIGIN = 6;
+}
+
+// Represents possible action applied to upstream host
+enum Action {
+  // In case host was excluded from service
+  EJECT = 0;
+
+  // In case host was brought back into service
+  UNEJECT = 1;
+}
+
+// [#next-free-field: 12]
+message OutlierDetectionEvent {
+  // In case of eject represents type of ejection that took place.
+  OutlierEjectionType type = 1 [(validate.rules).enum = {defined_only: true}];
+
+  // Timestamp for event.
+  google.protobuf.Timestamp timestamp = 2;
+
+  // The time in seconds since the last action (either an ejection or unejection) took place.
+  google.protobuf.UInt64Value secs_since_last_action = 3;
+
+  // The :ref:`cluster <envoy_api_msg_Cluster>` that owns the ejected host.
+  string cluster_name = 4 [(validate.rules).string = {min_bytes: 1}];
+
+  // The URL of the ejected host. E.g., ``tcp://1.2.3.4:80``.
+  string upstream_url = 5 [(validate.rules).string = {min_bytes: 1}];
+
+  // The action that took place.
+  Action action = 6 [(validate.rules).enum = {defined_only: true}];
+
+  // If ``action`` is ``eject``, specifies the number of times the host has been ejected (local to
+  // that Envoy and gets reset if the host gets removed from the upstream cluster for any reason and
+  // then re-added).
+  uint32 num_ejections = 7;
+
+  // If ``action`` is ``eject``, specifies if the ejection was enforced. ``true`` means the host was
+  // ejected. ``false`` means the event was logged but the host was not actually ejected.
+  bool enforced = 8;
+
+  oneof event {
+    option (validate.required) = true;
+
+    OutlierEjectSuccessRate eject_success_rate_event = 9;
+
+    OutlierEjectConsecutive eject_consecutive_event = 10;
+
+    OutlierEjectFailurePercentage eject_failure_percentage_event = 11;
+  }
+}
+
+message OutlierEjectSuccessRate {
+  // Host’s success rate at the time of the ejection event on a 0-100 range.
+  uint32 host_success_rate = 1 [(validate.rules).uint32 = {lte: 100}];
+
+  // Average success rate of the hosts in the cluster at the time of the ejection event on a 0-100
+  // range.
+  uint32 cluster_average_success_rate = 2 [(validate.rules).uint32 = {lte: 100}];
+
+  // Success rate ejection threshold at the time of the ejection event.
+  uint32 cluster_success_rate_ejection_threshold = 3 [(validate.rules).uint32 = {lte: 100}];
+}
+
+message OutlierEjectConsecutive {
+}
+
+message OutlierEjectFailurePercentage {
+  // Host's success rate at the time of the ejection event on a 0-100 range.
+  uint32 host_success_rate = 1 [(validate.rules).uint32 = {lte: 100}];
+}

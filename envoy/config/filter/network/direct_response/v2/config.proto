@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package envoy.config.filter.network.direct_response.v2;
+
+import "envoy/api/v2/core/base.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.network.direct_response.v2";
+option java_outer_classname = "ConfigProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.network.direct_response.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Direct response]
+// Direct response :ref:`configuration overview <config_network_filters_direct_response>`.
+// [#extension: envoy.filters.network.direct_response]
+
+message Config {
+  // Response data as a data source.
+  api.v2.core.DataSource response = 1;
+}

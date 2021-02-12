@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.cors.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.cors.v3";
+option java_outer_classname = "CorsProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Cors]
+// CORS Filter :ref:`configuration overview <config_http_filters_cors>`.
+// [#extension: envoy.filters.http.cors]
+
+// Cors filter config.
+message Cors {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.http.cors.v2.Cors";
+}

@@ -1,0 +1,66 @@
+syntax = "proto3";
+
+package envoy.config.filter.http.rate_limit.v2;
+
+import "envoy/config/ratelimit/v2/rls.proto";
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.http.rate_limit.v2";
+option java_outer_classname = "RateLimitProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.http.ratelimit.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Rate limit]
+// Rate limit :ref:`configuration overview <config_http_filters_rate_limit>`.
+// [#extension: envoy.filters.http.ratelimit]
+
+// [#next-free-field: 8]
+message RateLimit {
+  // The rate limit domain to use when calling the rate limit service.
+  string domain = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // Specifies the rate limit configurations to be applied with the same
+  // stage number. If not set, the default stage number is 0.
+  //
+  // .. note::
+  //
+  //  The filter supports a range of 0 - 10 inclusively for stage numbers.
+  uint32 stage = 2 [(validate.rules).uint32 = {lte: 10}];
+
+  // The type of requests the filter should apply to. The supported
+  // types are *internal*, *external* or *both*. A request is considered internal if
+  // :ref:`x-envoy-internal<config_http_conn_man_headers_x-envoy-internal>` is set to true. If
+  // :ref:`x-envoy-internal<config_http_conn_man_headers_x-envoy-internal>` is not set or false, a
+  // request is considered external. The filter defaults to *both*, and it will apply to all request
+  // types.
+  string request_type = 3
+      [(validate.rules).string = {in: "internal" in: "external" in: "both" in: ""}];
+
+  // The timeout in milliseconds for the rate limit service RPC. If not
+  // set, this defaults to 20ms.
+  google.protobuf.Duration timeout = 4;
+
+  // The filter's behaviour in case the rate limiting service does
+  // not respond back. When it is set to true, Envoy will not allow traffic in case of
+  // communication failure between rate limiting service and the proxy.
+  // Defaults to false.
+  bool failure_mode_deny = 5;
+
+  // Specifies whether a `RESOURCE_EXHAUSTED` gRPC code must be returned instead
+  // of the default `UNAVAILABLE` gRPC code for a rate limited gRPC call. The
+  // HTTP code will be 200 for a gRPC response.
+  bool rate_limited_as_resource_exhausted = 6;
+
+  // Configuration for an external rate limit service provider. If not
+  // specified, any calls to the rate limit service will immediately return
+  // success.
+  ratelimit.v2.RateLimitServiceConfig rate_limit_service = 7
+      [(validate.rules).message = {required: true}];
+}

@@ -1,0 +1,205 @@
+syntax = "proto3";
+
+package envoy.service.tap.v2alpha;
+
+import "envoy/api/v2/core/base.proto";
+import "envoy/api/v2/core/grpc_service.proto";
+import "envoy/api/v2/route/route_components.proto";
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.service.tap.v2alpha";
+option java_outer_classname = "CommonProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.config.tap.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Common tap configuration]
+
+// Tap configuration.
+message TapConfig {
+  // [#comment:TODO(mattklein123): Rate limiting]
+
+  // The match configuration. If the configuration matches the data source being tapped, a tap will
+  // occur, with the result written to the configured output.
+  MatchPredicate match_config = 1 [(validate.rules).message = {required: true}];
+
+  // The tap output configuration. If a match configuration matches a data source being tapped,
+  // a tap will occur and the data will be written to the configured output.
+  OutputConfig output_config = 2 [(validate.rules).message = {required: true}];
+
+  // [#not-implemented-hide:] Specify if Tap matching is enabled. The % of requests\connections for
+  // which the tap matching is enabled. When not enabled, the request\connection will not be
+  // recorded.
+  //
+  // .. note::
+  //
+  //   This field defaults to 100/:ref:`HUNDRED
+  //   <envoy_api_enum_type.FractionalPercent.DenominatorType>`.
+  api.v2.core.RuntimeFractionalPercent tap_enabled = 3;
+}
+
+// Tap match configuration. This is a recursive structure which allows complex nested match
+// configurations to be built using various logical operators.
+// [#next-free-field: 9]
+message MatchPredicate {
+  // A set of match configurations used for logical operations.
+  message MatchSet {
+    // The list of rules that make up the set.
+    repeated MatchPredicate rules = 1 [(validate.rules).repeated = {min_items: 2}];
+  }
+
+  oneof rule {
+    option (validate.required) = true;
+
+    // A set that describes a logical OR. If any member of the set matches, the match configuration
+    // matches.
+    MatchSet or_match = 1;
+
+    // A set that describes a logical AND. If all members of the set match, the match configuration
+    // matches.
+    MatchSet and_match = 2;
+
+    // A negation match. The match configuration will match if the negated match condition matches.
+    MatchPredicate not_match = 3;
+
+    // The match configuration will always match.
+    bool any_match = 4 [(validate.rules).bool = {const: true}];
+
+    // HTTP request headers match configuration.
+    HttpHeadersMatch http_request_headers_match = 5;
+
+    // HTTP request trailers match configuration.
+    HttpHeadersMatch http_request_trailers_match = 6;
+
+    // HTTP response headers match configuration.
+    HttpHeadersMatch http_response_headers_match = 7;
+
+    // HTTP response trailers match configuration.
+    HttpHeadersMatch http_response_trailers_match = 8;
+  }
+}
+
+// HTTP headers match configuration.
+message HttpHeadersMatch {
+  // HTTP headers to match.
+  repeated api.v2.route.HeaderMatcher headers = 1;
+}
+
+// Tap output configuration.
+message OutputConfig {
+  // Output sinks for tap data. Currently a single sink is allowed in the list. Once multiple
+  // sink types are supported this constraint will be relaxed.
+  repeated OutputSink sinks = 1 [(validate.rules).repeated = {min_items: 1 max_items: 1}];
+
+  // For buffered tapping, the maximum amount of received body that will be buffered prior to
+  // truncation. If truncation occurs, the :ref:`truncated
+  // <envoy_api_field_data.tap.v2alpha.Body.truncated>` field will be set. If not specified, the
+  // default is 1KiB.
+  google.protobuf.UInt32Value max_buffered_rx_bytes = 2;
+
+  // For buffered tapping, the maximum amount of transmitted body that will be buffered prior to
+  // truncation. If truncation occurs, the :ref:`truncated
+  // <envoy_api_field_data.tap.v2alpha.Body.truncated>` field will be set. If not specified, the
+  // default is 1KiB.
+  google.protobuf.UInt32Value max_buffered_tx_bytes = 3;
+
+  // Indicates whether taps produce a single buffered message per tap, or multiple streamed
+  // messages per tap in the emitted :ref:`TraceWrapper
+  // <envoy_api_msg_data.tap.v2alpha.TraceWrapper>` messages. Note that streamed tapping does not
+  // mean that no buffering takes place. Buffering may be required if data is processed before a
+  // match can be determined. See the HTTP tap filter :ref:`streaming
+  // <config_http_filters_tap_streaming>` documentation for more information.
+  bool streaming = 4;
+}
+
+// Tap output sink configuration.
+message OutputSink {
+  // Output format. All output is in the form of one or more :ref:`TraceWrapper
+  // <envoy_api_msg_data.tap.v2alpha.TraceWrapper>` messages. This enumeration indicates
+  // how those messages are written. Note that not all sinks support all output formats. See
+  // individual sink documentation for more information.
+  enum Format {
+    // Each message will be written as JSON. Any :ref:`body <envoy_api_msg_data.tap.v2alpha.Body>`
+    // data will be present in the :ref:`as_bytes
+    // <envoy_api_field_data.tap.v2alpha.Body.as_bytes>` field. This means that body data will be
+    // base64 encoded as per the `proto3 JSON mappings
+    // <https://developers.google.com/protocol-buffers/docs/proto3#json>`_.
+    JSON_BODY_AS_BYTES = 0;
+
+    // Each message will be written as JSON. Any :ref:`body <envoy_api_msg_data.tap.v2alpha.Body>`
+    // data will be present in the :ref:`as_string
+    // <envoy_api_field_data.tap.v2alpha.Body.as_string>` field. This means that body data will be
+    // string encoded as per the `proto3 JSON mappings
+    // <https://developers.google.com/protocol-buffers/docs/proto3#json>`_. This format type is
+    // useful when it is known that that body is human readable (e.g., JSON over HTTP) and the
+    // user wishes to view it directly without being forced to base64 decode the body.
+    JSON_BODY_AS_STRING = 1;
+
+    // Binary proto format. Note that binary proto is not self-delimiting. If a sink writes
+    // multiple binary messages without any length information the data stream will not be
+    // useful. However, for certain sinks that are self-delimiting (e.g., one message per file)
+    // this output format makes consumption simpler.
+    PROTO_BINARY = 2;
+
+    // Messages are written as a sequence tuples, where each tuple is the message length encoded
+    // as a `protobuf 32-bit varint
+    // <https://developers.google.com/protocol-buffers/docs/reference/cpp/google.protobuf.io.coded_stream>`_
+    // followed by the binary message. The messages can be read back using the language specific
+    // protobuf coded stream implementation to obtain the message length and the message.
+    PROTO_BINARY_LENGTH_DELIMITED = 3;
+
+    // Text proto format.
+    PROTO_TEXT = 4;
+  }
+
+  // Sink output format.
+  Format format = 1 [(validate.rules).enum = {defined_only: true}];
+
+  oneof output_sink_type {
+    option (validate.required) = true;
+
+    // Tap output will be streamed out the :http:post:`/tap` admin endpoint.
+    //
+    // .. attention::
+    //
+    //   It is only allowed to specify the streaming admin output sink if the tap is being
+    //   configured from the :http:post:`/tap` admin endpoint. Thus, if an extension has
+    //   been configured to receive tap configuration from some other source (e.g., static
+    //   file, XDS, etc.) configuring the streaming admin output type will fail.
+    StreamingAdminSink streaming_admin = 2;
+
+    // Tap output will be written to a file per tap sink.
+    FilePerTapSink file_per_tap = 3;
+
+    // [#not-implemented-hide:]
+    // GrpcService to stream data to. The format argument must be PROTO_BINARY.
+    StreamingGrpcSink streaming_grpc = 4;
+  }
+}
+
+// Streaming admin sink configuration.
+message StreamingAdminSink {
+}
+
+// The file per tap sink outputs a discrete file for every tapped stream.
+message FilePerTapSink {
+  // Path prefix. The output file will be of the form <path_prefix>_<id>.pb, where <id> is an
+  // identifier distinguishing the recorded trace for stream instances (the Envoy
+  // connection ID, HTTP stream ID, etc.).
+  string path_prefix = 1 [(validate.rules).string = {min_bytes: 1}];
+}
+
+// [#not-implemented-hide:] Streaming gRPC sink configuration sends the taps to an external gRPC
+// server.
+message StreamingGrpcSink {
+  // Opaque identifier, that will be sent back to the streaming grpc server.
+  string tap_id = 1;
+
+  // The gRPC server that hosts the Tap Sink Service.
+  api.v2.core.GrpcService grpc_service = 2 [(validate.rules).message = {required: true}];
+}

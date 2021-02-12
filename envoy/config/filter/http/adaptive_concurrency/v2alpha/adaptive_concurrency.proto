@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package envoy.config.filter.http.adaptive_concurrency.v2alpha;
+
+import "envoy/api/v2/core/base.proto";
+import "envoy/type/percent.proto";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.http.adaptive_concurrency.v2alpha";
+option java_outer_classname = "AdaptiveConcurrencyProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.http.adaptive_concurrency.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Adaptive Concurrency]
+// Adaptive Concurrency Control :ref:`configuration overview
+// <config_http_filters_adaptive_concurrency>`.
+// [#extension: envoy.filters.http.adaptive_concurrency]
+
+// Configuration parameters for the gradient controller.
+message GradientControllerConfig {
+  // Parameters controlling the periodic recalculation of the concurrency limit from sampled request
+  // latencies.
+  message ConcurrencyLimitCalculationParams {
+    // The allowed upper-bound on the calculated concurrency limit. Defaults to 1000.
+    google.protobuf.UInt32Value max_concurrency_limit = 2 [(validate.rules).uint32 = {gt: 0}];
+
+    // The period of time samples are taken to recalculate the concurrency limit.
+    google.protobuf.Duration concurrency_update_interval = 3 [(validate.rules).duration = {
+      required: true
+      gt {}
+    }];
+  }
+
+  // Parameters controlling the periodic minRTT recalculation.
+  // [#next-free-field: 6]
+  message MinimumRTTCalculationParams {
+    // The time interval between recalculating the minimum request round-trip time.
+    google.protobuf.Duration interval = 1 [(validate.rules).duration = {
+      required: true
+      gt {}
+    }];
+
+    // The number of requests to aggregate/sample during the minRTT recalculation window before
+    // updating. Defaults to 50.
+    google.protobuf.UInt32Value request_count = 2 [(validate.rules).uint32 = {gt: 0}];
+
+    // Randomized time delta that will be introduced to the start of the minRTT calculation window.
+    // This is represented as a percentage of the interval duration. Defaults to 15%.
+    //
+    // Example: If the interval is 10s and the jitter is 15%, the next window will begin
+    // somewhere in the range (10s - 11.5s).
+    type.Percent jitter = 3;
+
+    // The concurrency limit set while measuring the minRTT. Defaults to 3.
+    google.protobuf.UInt32Value min_concurrency = 4 [(validate.rules).uint32 = {gt: 0}];
+
+    // Amount added to the measured minRTT to add stability to the concurrency limit during natural
+    // variability in latency. This is expressed as a percentage of the measured value and can be
+    // adjusted to allow more or less tolerance to the sampled latency values.
+    //
+    // Defaults to 25%.
+    type.Percent buffer = 5;
+  }
+
+  // The percentile to use when summarizing aggregated samples. Defaults to p50.
+  type.Percent sample_aggregate_percentile = 1;
+
+  ConcurrencyLimitCalculationParams concurrency_limit_params = 2
+      [(validate.rules).message = {required: true}];
+
+  MinimumRTTCalculationParams min_rtt_calc_params = 3 [(validate.rules).message = {required: true}];
+}
+
+message AdaptiveConcurrency {
+  oneof concurrency_controller_config {
+    option (validate.required) = true;
+
+    // Gradient concurrency control will be used.
+    GradientControllerConfig gradient_controller_config = 1
+        [(validate.rules).message = {required: true}];
+  }
+
+  // If set to false, the adaptive concurrency filter will operate as a pass-through filter. If the
+  // message is unspecified, the filter will be enabled.
+  api.v2.core.RuntimeFeatureFlag enabled = 2;
+}

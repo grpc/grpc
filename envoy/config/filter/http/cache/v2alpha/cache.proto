@@ -1,0 +1,77 @@
+syntax = "proto3";
+
+package envoy.config.filter.http.cache.v2alpha;
+
+import "envoy/api/v2/route/route_components.proto";
+import "envoy/type/matcher/string.proto";
+
+import "google/protobuf/any.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.http.cache.v2alpha";
+option java_outer_classname = "CacheProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.http.cache.v3alpha";
+option (udpa.annotations.file_status).work_in_progress = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: HTTP Cache Filter]
+// [#extension: envoy.filters.http.cache]
+
+message CacheConfig {
+  // [#not-implemented-hide:]
+  // Modifies cache key creation by restricting which parts of the URL are included.
+  message KeyCreatorParams {
+    // If true, exclude the URL scheme from the cache key. Set to true if your origins always
+    // produce the same response for http and https requests.
+    bool exclude_scheme = 1;
+
+    // If true, exclude the host from the cache key. Set to true if your origins' responses don't
+    // ever depend on host.
+    bool exclude_host = 2;
+
+    // If *query_parameters_included* is nonempty, only query parameters matched
+    // by one or more of its matchers are included in the cache key. Any other
+    // query params will not affect cache lookup.
+    repeated api.v2.route.QueryParameterMatcher query_parameters_included = 3;
+
+    // If *query_parameters_excluded* is nonempty, query parameters matched by one
+    // or more of its matchers are excluded from the cache key (even if also
+    // matched by *query_parameters_included*), and will not affect cache lookup.
+    repeated api.v2.route.QueryParameterMatcher query_parameters_excluded = 4;
+  }
+
+  // Config specific to the cache storage implementation.
+  google.protobuf.Any typed_config = 1 [(validate.rules).any = {required: true}];
+
+  // List of matching rules that defines allowed *Vary* headers.
+  //
+  // The *vary* response header holds a list of header names that affect the
+  // contents of a response, as described by
+  // https://httpwg.org/specs/rfc7234.html#caching.negotiated.responses.
+  //
+  // During insertion, *allowed_vary_headers* acts as a allowlist: if a
+  // response's *vary* header mentions any header names that aren't matched by any rules in
+  // *allowed_vary_headers*, that response will not be cached.
+  //
+  // During lookup, *allowed_vary_headers* controls what request headers will be
+  // sent to the cache storage implementation.
+  repeated type.matcher.StringMatcher allowed_vary_headers = 2;
+
+  // [#not-implemented-hide:]
+  // <TODO(toddmgreer) implement key customization>
+  //
+  // Modifies cache key creation by restricting which parts of the URL are included.
+  KeyCreatorParams key_creator_params = 3;
+
+  // [#not-implemented-hide:]
+  // <TODO(toddmgreer) implement size limit>
+  //
+  // Max body size the cache filter will insert into a cache. 0 means unlimited (though the cache
+  // storage implementation may have its own limit beyond which it will reject insertions).
+  uint32 max_body_bytes = 4;
+}

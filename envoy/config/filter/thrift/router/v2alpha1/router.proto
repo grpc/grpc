@@ -1,0 +1,17 @@
+syntax = "proto3";
+
+package envoy.config.filter.thrift.router.v2alpha1;
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.thrift.router.v2alpha1";
+option java_outer_classname = "RouterProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Router]
+// Thrift router :ref:`configuration overview <config_thrift_filters_router>`.
+// [#extension: envoy.filters.thrift.router]
+
+message Router {
+}

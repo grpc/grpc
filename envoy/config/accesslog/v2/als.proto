@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+package envoy.config.accesslog.v2;
+
+import "envoy/api/v2/core/grpc_service.proto";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.accesslog.v2";
+option java_outer_classname = "AlsProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.extensions.access_loggers.grpc.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: gRPC Access Log Service (ALS)]
+
+// Configuration for the built-in *envoy.access_loggers.http_grpc*
+// :ref:`AccessLog <envoy_api_msg_config.filter.accesslog.v2.AccessLog>`. This configuration will
+// populate :ref:`StreamAccessLogsMessage.http_logs
+// <envoy_api_field_service.accesslog.v2.StreamAccessLogsMessage.http_logs>`.
+// [#extension: envoy.access_loggers.http_grpc]
+message HttpGrpcAccessLogConfig {
+  CommonGrpcAccessLogConfig common_config = 1 [(validate.rules).message = {required: true}];
+
+  // Additional request headers to log in :ref:`HTTPRequestProperties.request_headers
+  // <envoy_api_field_data.accesslog.v2.HTTPRequestProperties.request_headers>`.
+  repeated string additional_request_headers_to_log = 2;
+
+  // Additional response headers to log in :ref:`HTTPResponseProperties.response_headers
+  // <envoy_api_field_data.accesslog.v2.HTTPResponseProperties.response_headers>`.
+  repeated string additional_response_headers_to_log = 3;
+
+  // Additional response trailers to log in :ref:`HTTPResponseProperties.response_trailers
+  // <envoy_api_field_data.accesslog.v2.HTTPResponseProperties.response_trailers>`.
+  repeated string additional_response_trailers_to_log = 4;
+}
+
+// Configuration for the built-in *envoy.access_loggers.tcp_grpc* type. This configuration will
+// populate *StreamAccessLogsMessage.tcp_logs*.
+// [#extension: envoy.access_loggers.tcp_grpc]
+message TcpGrpcAccessLogConfig {
+  CommonGrpcAccessLogConfig common_config = 1 [(validate.rules).message = {required: true}];
+}
+
+// Common configuration for gRPC access logs.
+// [#next-free-field: 6]
+message CommonGrpcAccessLogConfig {
+  // The friendly name of the access log to be returned in :ref:`StreamAccessLogsMessage.Identifier
+  // <envoy_api_msg_service.accesslog.v2.StreamAccessLogsMessage.Identifier>`. This allows the
+  // access log server to differentiate between different access logs coming from the same Envoy.
+  string log_name = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // The gRPC service for the access log service.
+  api.v2.core.GrpcService grpc_service = 2 [(validate.rules).message = {required: true}];
+
+  // Interval for flushing access logs to the gRPC stream. Logger will flush requests every time
+  // this interval is elapsed, or when batch size limit is hit, whichever comes first. Defaults to
+  // 1 second.
+  google.protobuf.Duration buffer_flush_interval = 3 [(validate.rules).duration = {gt {}}];
+
+  // Soft size limit in bytes for access log entries buffer. Logger will buffer requests until
+  // this limit it hit, or every time flush interval is elapsed, whichever comes first. Setting it
+  // to zero effectively disables the batching. Defaults to 16384.
+  google.protobuf.UInt32Value buffer_size_bytes = 4;
+
+  // Additional filter state objects to log in :ref:`filter_state_objects
+  // <envoy_api_field_data.accesslog.v2.AccessLogCommon.filter_state_objects>`.
+  // Logger will call `FilterState::Object::serializeAsProto` to serialize the filter state object.
+  repeated string filter_state_objects_to_log = 5;
+}

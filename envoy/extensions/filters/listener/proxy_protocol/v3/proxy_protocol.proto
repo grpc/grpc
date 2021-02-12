@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.listener.proxy_protocol.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.listener.proxy_protocol.v3";
+option java_outer_classname = "ProxyProtocolProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Proxy Protocol Filter]
+// PROXY protocol listener filter.
+// [#extension: envoy.filters.listener.proxy_protocol]
+
+message ProxyProtocol {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.listener.proxy_protocol.v2.ProxyProtocol";
+
+  message KeyValuePair {
+    // The namespace — if this is empty, the filter's namespace will be used.
+    string metadata_namespace = 1;
+
+    // The key to use within the namespace.
+    string key = 2 [(validate.rules).string = {min_len: 1}];
+  }
+
+  // A Rule defines what metadata to apply when a header is present or missing.
+  message Rule {
+    // The type that triggers the rule - required
+    // TLV type is defined as uint8_t in proxy protocol. See `the spec
+    // <https://www.haproxy.org/download/2.1/doc/proxy-protocol.txt>`_ for details.
+    uint32 tlv_type = 1 [(validate.rules).uint32 = {lt: 256}];
+
+    // If the TLV type is present, apply this metadata KeyValuePair.
+    KeyValuePair on_tlv_present = 2;
+  }
+
+  // The list of rules to apply to requests.
+  repeated Rule rules = 1;
+}

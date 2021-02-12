@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.network.rocketmq_proxy.v4alpha;
+
+import "envoy/extensions/filters/network/rocketmq_proxy/v4alpha/route.proto";
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.network.rocketmq_proxy.v4alpha";
+option java_outer_classname = "RocketmqProxyProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: RocketMQ Proxy]
+// RocketMQ Proxy :ref:`configuration overview <config_network_filters_rocketmq_proxy>`.
+// [#extension: envoy.filters.network.rocketmq_proxy]
+
+message RocketmqProxy {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.extensions.filters.network.rocketmq_proxy.v3.RocketmqProxy";
+
+  // The human readable prefix to use when emitting statistics.
+  string stat_prefix = 1 [(validate.rules).string = {min_len: 1}];
+
+  // The route table for the connection manager is specified in this property.
+  RouteConfiguration route_config = 2;
+
+  // The largest duration transient object expected to live, more than 10s is recommended.
+  google.protobuf.Duration transient_object_life_span = 3;
+
+  // If develop_mode is enabled, this proxy plugin may work without dedicated traffic intercepting
+  // facility without considering backward compatibility of exiting RocketMQ client SDK.
+  bool develop_mode = 4;
+}

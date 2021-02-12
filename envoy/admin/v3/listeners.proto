@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package envoy.admin.v3;
+
+import "envoy/config/core/v3/address.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.admin.v3";
+option java_outer_classname = "ListenersProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Listeners]
+
+// Admin endpoint uses this wrapper for `/listeners` to display listener status information.
+// See :ref:`/listeners <operations_admin_interface_listeners>` for more information.
+message Listeners {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.admin.v2alpha.Listeners";
+
+  // List of listener statuses.
+  repeated ListenerStatus listener_statuses = 1;
+}
+
+// Details an individual listener's current status.
+message ListenerStatus {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.admin.v2alpha.ListenerStatus";
+
+  // Name of the listener
+  string name = 1;
+
+  // The actual local address that the listener is listening on. If a listener was configured
+  // to listen on port 0, then this address has the port that was allocated by the OS.
+  config.core.v3.Address local_address = 2;
+}

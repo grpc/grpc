@@ -1,0 +1,45 @@
+syntax = "proto3";
+
+package envoy.service.endpoint.v3;
+
+import "envoy/service/discovery/v3/discovery.proto";
+
+import "google/api/annotations.proto";
+
+import "envoy/annotations/resource.proto";
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.service.endpoint.v3";
+option java_outer_classname = "EdsProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: EDS]
+// Endpoint discovery :ref:`architecture overview <arch_overview_service_discovery_types_eds>`
+
+service EndpointDiscoveryService {
+  option (envoy.annotations.resource).type = "envoy.config.endpoint.v3.ClusterLoadAssignment";
+
+  // The resource_names field in DiscoveryRequest specifies a list of clusters
+  // to subscribe to updates for.
+  rpc StreamEndpoints(stream discovery.v3.DiscoveryRequest)
+      returns (stream discovery.v3.DiscoveryResponse) {
+  }
+
+  rpc DeltaEndpoints(stream discovery.v3.DeltaDiscoveryRequest)
+      returns (stream discovery.v3.DeltaDiscoveryResponse) {
+  }
+
+  rpc FetchEndpoints(discovery.v3.DiscoveryRequest) returns (discovery.v3.DiscoveryResponse) {
+    option (google.api.http).post = "/v3/discovery:endpoints";
+    option (google.api.http).body = "*";
+  }
+}
+
+// [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
+// services: https://github.com/google/protobuf/issues/4221 and protoxform to upgrade the file.
+message EdsDummy {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.api.v2.EdsDummy";
+}

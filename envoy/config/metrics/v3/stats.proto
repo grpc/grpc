@@ -1,0 +1,412 @@
+syntax = "proto3";
+
+package envoy.config.metrics.v3;
+
+import "envoy/config/core/v3/address.proto";
+import "envoy/type/matcher/v3/string.proto";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.metrics.v3";
+option java_outer_classname = "StatsProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Stats]
+// Statistics :ref:`architecture overview <arch_overview_statistics>`.
+
+// Configuration for pluggable stats sinks.
+message StatsSink {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.config.metrics.v2.StatsSink";
+
+  reserved 2;
+
+  reserved "config";
+
+  // The name of the stats sink to instantiate. The name must match a supported
+  // stats sink. The built-in stats sinks are:
+  //
+  // * :ref:`envoy.stat_sinks.statsd <envoy_api_msg_config.metrics.v3.StatsdSink>`
+  // * :ref:`envoy.stat_sinks.dog_statsd <envoy_api_msg_config.metrics.v3.DogStatsdSink>`
+  // * :ref:`envoy.stat_sinks.metrics_service <envoy_api_msg_config.metrics.v3.MetricsServiceConfig>`
+  // * :ref:`envoy.stat_sinks.hystrix <envoy_api_msg_config.metrics.v3.HystrixSink>`
+  //
+  // Sinks optionally support tagged/multiple dimensional metrics.
+  string name = 1;
+
+  // Stats sink specific configuration which depends on the sink being instantiated. See
+  // :ref:`StatsdSink <envoy_api_msg_config.metrics.v3.StatsdSink>` for an example.
+  oneof config_type {
+    google.protobuf.Any typed_config = 3;
+  }
+}
+
+// Statistics configuration such as tagging.
+message StatsConfig {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.metrics.v2.StatsConfig";
+
+  // Each stat name is iteratively processed through these tag specifiers.
+  // When a tag is matched, the first capture group is removed from the name so
+  // later :ref:`TagSpecifiers <envoy_api_msg_config.metrics.v3.TagSpecifier>` cannot match that
+  // same portion of the match.
+  repeated TagSpecifier stats_tags = 1;
+
+  // Use all default tag regexes specified in Envoy. These can be combined with
+  // custom tags specified in :ref:`stats_tags
+  // <envoy_api_field_config.metrics.v3.StatsConfig.stats_tags>`. They will be processed before
+  // the custom tags.
+  //
+  // .. note::
+  //
+  //   If any default tags are specified twice, the config will be considered
+  //   invalid.
+  //
+  // See :repo:`well_known_names.h <source/common/config/well_known_names.h>` for a list of the
+  // default tags in Envoy.
+  //
+  // If not provided, the value is assumed to be true.
+  google.protobuf.BoolValue use_all_default_tags = 2;
+
+  // Inclusion/exclusion matcher for stat name creation. If not provided, all stats are instantiated
+  // as normal. Preventing the instantiation of certain families of stats can improve memory
+  // performance for Envoys running especially large configs.
+  //
+  // .. warning::
+  //   Excluding stats may affect Envoy's behavior in undocumented ways. See
+  //   `issue #8771 <https://github.com/envoyproxy/envoy/issues/8771>`_ for more information.
+  //   If any unexpected behavior changes are observed, please open a new issue immediately.
+  StatsMatcher stats_matcher = 3;
+
+  // Defines rules for setting the histogram buckets. Rules are evaluated in order, and the first
+  // match is applied. If no match is found (or if no rules are set), the following default buckets
+  // are used:
+  //
+  //   .. code-block:: json
+  //
+  //     [
+  //       0.5,
+  //       1,
+  //       5,
+  //       10,
+  //       25,
+  //       50,
+  //       100,
+  //       250,
+  //       500,
+  //       1000,
+  //       2500,
+  //       5000,
+  //       10000,
+  //       30000,
+  //       60000,
+  //       300000,
+  //       600000,
+  //       1800000,
+  //       3600000
+  //     ]
+  repeated HistogramBucketSettings histogram_bucket_settings = 4;
+}
+
+// Configuration for disabling stat instantiation.
+message StatsMatcher {
+  // The instantiation of stats is unrestricted by default. If the goal is to configure Envoy to
+  // instantiate all stats, there is no need to construct a StatsMatcher.
+  //
+  // However, StatsMatcher can be used to limit the creation of families of stats in order to
+  // conserve memory. Stats can either be disabled entirely, or they can be
+  // limited by either an exclusion or an inclusion list of :ref:`StringMatcher
+  // <envoy_api_msg_type.matcher.v3.StringMatcher>` protos:
+  //
+  // * If `reject_all` is set to `true`, no stats will be instantiated. If `reject_all` is set to
+  //   `false`, all stats will be instantiated.
+  //
+  // * If an exclusion list is supplied, any stat name matching *any* of the StringMatchers in the
+  //   list will not instantiate.
+  //
+  // * If an inclusion list is supplied, no stats will instantiate, except those matching *any* of
+  //   the StringMatchers in the list.
+  //
+  //
+  // A StringMatcher can be used to match against an exact string, a suffix / prefix, or a regex.
+  // **NB:** For performance reasons, it is highly recommended to use a prefix- or suffix-based
+  // matcher rather than a regex-based matcher.
+  //
+  // Example 1. Excluding all stats.
+  //
+  // .. code-block:: json
+  //
+  //   {
+  //     "statsMatcher": {
+  //       "rejectAll": "true"
+  //     }
+  //   }
+  //
+  // Example 2. Excluding all cluster-specific stats, but not cluster-manager stats:
+  //
+  // .. code-block:: json
+  //
+  //   {
+  //     "statsMatcher": {
+  //       "exclusionList": {
+  //         "patterns": [
+  //           {
+  //             "prefix": "cluster."
+  //           }
+  //         ]
+  //       }
+  //     }
+  //   }
+  //
+  // Example 3. Including only manager-related stats:
+  //
+  // .. code-block:: json
+  //
+  //   {
+  //     "statsMatcher": {
+  //       "inclusionList": {
+  //         "patterns": [
+  //           {
+  //             "prefix": "cluster_manager."
+  //           },
+  //           {
+  //             "prefix": "listener_manager."
+  //           }
+  //         ]
+  //       }
+  //     }
+  //   }
+  //
+
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.metrics.v2.StatsMatcher";
+
+  oneof stats_matcher {
+    option (validate.required) = true;
+
+    // If `reject_all` is true, then all stats are disabled. If `reject_all` is false, then all
+    // stats are enabled.
+    bool reject_all = 1;
+
+    // Exclusive match. All stats are enabled except for those matching one of the supplied
+    // StringMatcher protos.
+    type.matcher.v3.ListStringMatcher exclusion_list = 2;
+
+    // Inclusive match. No stats are enabled except for those matching one of the supplied
+    // StringMatcher protos.
+    type.matcher.v3.ListStringMatcher inclusion_list = 3;
+  }
+}
+
+// Designates a tag name and value pair. The value may be either a fixed value
+// or a regex providing the value via capture groups. The specified tag will be
+// unconditionally set if a fixed value, otherwise it will only be set if one
+// or more capture groups in the regex match.
+message TagSpecifier {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.metrics.v2.TagSpecifier";
+
+  // Attaches an identifier to the tag values to identify the tag being in the
+  // sink. Envoy has a set of default names and regexes to extract dynamic
+  // portions of existing stats, which can be found in :repo:`well_known_names.h
+  // <source/common/config/well_known_names.h>` in the Envoy repository. If a :ref:`tag_name
+  // <envoy_api_field_config.metrics.v3.TagSpecifier.tag_name>` is provided in the config and
+  // neither :ref:`regex <envoy_api_field_config.metrics.v3.TagSpecifier.regex>` or
+  // :ref:`fixed_value <envoy_api_field_config.metrics.v3.TagSpecifier.fixed_value>` were specified,
+  // Envoy will attempt to find that name in its set of defaults and use the accompanying regex.
+  //
+  // .. note::
+  //
+  //   It is invalid to specify the same tag name twice in a config.
+  string tag_name = 1;
+
+  oneof tag_value {
+    // Designates a tag to strip from the tag extracted name and provide as a named
+    // tag value for all statistics. This will only occur if any part of the name
+    // matches the regex provided with one or more capture groups.
+    //
+    // The first capture group identifies the portion of the name to remove. The
+    // second capture group (which will normally be nested inside the first) will
+    // designate the value of the tag for the statistic. If no second capture
+    // group is provided, the first will also be used to set the value of the tag.
+    // All other capture groups will be ignored.
+    //
+    // Example 1. a stat name ``cluster.foo_cluster.upstream_rq_timeout`` and
+    // one tag specifier:
+    //
+    // .. code-block:: json
+    //
+    //   {
+    //     "tag_name": "envoy.cluster_name",
+    //     "regex": "^cluster\\.((.+?)\\.)"
+    //   }
+    //
+    // Note that the regex will remove ``foo_cluster.`` making the tag extracted
+    // name ``cluster.upstream_rq_timeout`` and the tag value for
+    // ``envoy.cluster_name`` will be ``foo_cluster`` (note: there will be no
+    // ``.`` character because of the second capture group).
+    //
+    // Example 2. a stat name
+    // ``http.connection_manager_1.user_agent.ios.downstream_cx_total`` and two
+    // tag specifiers:
+    //
+    // .. code-block:: json
+    //
+    //   [
+    //     {
+    //       "tag_name": "envoy.http_user_agent",
+    //       "regex": "^http(?=\\.).*?\\.user_agent\\.((.+?)\\.)\\w+?$"
+    //     },
+    //     {
+    //       "tag_name": "envoy.http_conn_manager_prefix",
+    //       "regex": "^http\\.((.*?)\\.)"
+    //     }
+    //   ]
+    //
+    // The two regexes of the specifiers will be processed in the definition order.
+    //
+    // The first regex will remove ``ios.``, leaving the tag extracted name
+    // ``http.connection_manager_1.user_agent.downstream_cx_total``. The tag
+    // ``envoy.http_user_agent`` will be added with tag value ``ios``.
+    //
+    // The second regex will remove ``connection_manager_1.`` from the tag
+    // extracted name produced by the first regex
+    // ``http.connection_manager_1.user_agent.downstream_cx_total``, leaving
+    // ``http.user_agent.downstream_cx_total`` as the tag extracted name. The tag
+    // ``envoy.http_conn_manager_prefix`` will be added with the tag value
+    // ``connection_manager_1``.
+    string regex = 2 [(validate.rules).string = {max_bytes: 1024}];
+
+    // Specifies a fixed tag value for the ``tag_name``.
+    string fixed_value = 3;
+  }
+}
+
+// Specifies a matcher for stats and the buckets that matching stats should use.
+message HistogramBucketSettings {
+  // The stats that this rule applies to. The match is applied to the original stat name
+  // before tag-extraction, for example `cluster.exampleclustername.upstream_cx_length_ms`.
+  type.matcher.v3.StringMatcher match = 1 [(validate.rules).message = {required: true}];
+
+  // Each value is the upper bound of a bucket. Each bucket must be greater than 0 and unique.
+  // The order of the buckets does not matter.
+  repeated double buckets = 2 [(validate.rules).repeated = {
+    min_items: 1
+    unique: true
+    items {double {gt: 0.0}}
+  }];
+}
+
+// Stats configuration proto schema for built-in *envoy.stat_sinks.statsd* sink. This sink does not support
+// tagged metrics.
+// [#extension: envoy.stat_sinks.statsd]
+message StatsdSink {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.config.metrics.v2.StatsdSink";
+
+  oneof statsd_specifier {
+    option (validate.required) = true;
+
+    // The UDP address of a running `statsd <https://github.com/etsy/statsd>`_
+    // compliant listener. If specified, statistics will be flushed to this
+    // address.
+    core.v3.Address address = 1;
+
+    // The name of a cluster that is running a TCP `statsd
+    // <https://github.com/etsy/statsd>`_ compliant listener. If specified,
+    // Envoy will connect to this cluster to flush statistics.
+    string tcp_cluster_name = 2;
+  }
+
+  // Optional custom prefix for StatsdSink. If
+  // specified, this will override the default prefix.
+  // For example:
+  //
+  // .. code-block:: json
+  //
+  //   {
+  //     "prefix" : "envoy-prod"
+  //   }
+  //
+  // will change emitted stats to
+  //
+  // .. code-block:: cpp
+  //
+  //   envoy-prod.test_counter:1|c
+  //   envoy-prod.test_timer:5|ms
+  //
+  // Note that the default prefix, "envoy", will be used if a prefix is not
+  // specified.
+  //
+  // Stats with default prefix:
+  //
+  // .. code-block:: cpp
+  //
+  //   envoy.test_counter:1|c
+  //   envoy.test_timer:5|ms
+  string prefix = 3;
+}
+
+// Stats configuration proto schema for built-in *envoy.stat_sinks.dog_statsd* sink.
+// The sink emits stats with `DogStatsD <https://docs.datadoghq.com/guides/dogstatsd/>`_
+// compatible tags. Tags are configurable via :ref:`StatsConfig
+// <envoy_api_msg_config.metrics.v3.StatsConfig>`.
+// [#extension: envoy.stat_sinks.dog_statsd]
+message DogStatsdSink {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.metrics.v2.DogStatsdSink";
+
+  reserved 2;
+
+  oneof dog_statsd_specifier {
+    option (validate.required) = true;
+
+    // The UDP address of a running DogStatsD compliant listener. If specified,
+    // statistics will be flushed to this address.
+    core.v3.Address address = 1;
+  }
+
+  // Optional custom metric name prefix. See :ref:`StatsdSink's prefix field
+  // <envoy_api_field_config.metrics.v3.StatsdSink.prefix>` for more details.
+  string prefix = 3;
+
+  // Optional max datagram size to use when sending UDP messages. By default Envoy
+  // will emit one metric per datagram. By specifying a max-size larger than a single
+  // metric, Envoy will emit multiple, new-line separated metrics. The max datagram
+  // size should not exceed your network's MTU.
+  //
+  // Note that this value may not be respected if smaller than a single metric.
+  google.protobuf.UInt64Value max_bytes_per_datagram = 4 [(validate.rules).uint64 = {gt: 0}];
+}
+
+// Stats configuration proto schema for built-in *envoy.stat_sinks.hystrix* sink.
+// The sink emits stats in `text/event-stream
+// <https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events>`_
+// formatted stream for use by `Hystrix dashboard
+// <https://github.com/Netflix-Skunkworks/hystrix-dashboard/wiki>`_.
+//
+// Note that only a single HystrixSink should be configured.
+//
+// Streaming is started through an admin endpoint :http:get:`/hystrix_event_stream`.
+// [#extension: envoy.stat_sinks.hystrix]
+message HystrixSink {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.metrics.v2.HystrixSink";
+
+  // The number of buckets the rolling statistical window is divided into.
+  //
+  // Each time the sink is flushed, all relevant Envoy statistics are sampled and
+  // added to the rolling window (removing the oldest samples in the window
+  // in the process). The sink then outputs the aggregate statistics across the
+  // current rolling window to the event stream(s).
+  //
+  // rolling_window(ms) = stats_flush_interval(ms) * num_of_buckets
+  //
+  // More detailed explanation can be found in `Hystrix wiki
+  // <https://github.com/Netflix/Hystrix/wiki/Metrics-and-Monitoring#hystrixrollingnumber>`_.
+  int64 num_buckets = 1;
+}

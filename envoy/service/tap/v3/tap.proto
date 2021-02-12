@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package envoy.service.tap.v3;
+
+import "envoy/config/core/v3/base.proto";
+import "envoy/data/tap/v3/wrapper.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.service.tap.v3";
+option java_outer_classname = "TapProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Tap Sink Service]
+
+// [#not-implemented-hide:] A tap service to receive incoming taps. Envoy will call
+// StreamTaps to deliver captured taps to the server
+service TapSinkService {
+  // Envoy will connect and send StreamTapsRequest messages forever. It does not expect any
+  // response to be sent as nothing would be done in the case of failure. The server should
+  // disconnect if it expects Envoy to reconnect.
+  rpc StreamTaps(stream StreamTapsRequest) returns (StreamTapsResponse) {
+  }
+}
+
+// [#not-implemented-hide:] Stream message for the Tap API. Envoy will open a stream to the server
+// and stream taps without ever expecting a response.
+message StreamTapsRequest {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.service.tap.v2alpha.StreamTapsRequest";
+
+  message Identifier {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.service.tap.v2alpha.StreamTapsRequest.Identifier";
+
+    // The node sending taps over the stream.
+    config.core.v3.Node node = 1 [(validate.rules).message = {required: true}];
+
+    // The opaque identifier that was set in the :ref:`output config
+    // <envoy_api_field_config.tap.v3.StreamingGrpcSink.tap_id>`.
+    string tap_id = 2;
+  }
+
+  // Identifier data effectively is a structured metadata. As a performance optimization this will
+  // only be sent in the first message on the stream.
+  Identifier identifier = 1;
+
+  // The trace id. this can be used to merge together a streaming trace. Note that the trace_id
+  // is not guaranteed to be spatially or temporally unique.
+  uint64 trace_id = 2;
+
+  // The trace data.
+  data.tap.v3.TraceWrapper trace = 3;
+}
+
+// [#not-implemented-hide:]
+message StreamTapsResponse {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.service.tap.v2alpha.StreamTapsResponse";
+}

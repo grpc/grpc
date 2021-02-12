@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package envoy.config.metrics.v2;
+
+import "envoy/api/v2/core/grpc_service.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.metrics.v2";
+option java_outer_classname = "MetricsServiceProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Metrics service]
+
+// Metrics Service is configured as a built-in *envoy.stat_sinks.metrics_service* :ref:`StatsSink
+// <envoy_api_msg_config.metrics.v2.StatsSink>`. This opaque configuration will be used to create
+// Metrics Service.
+// [#extension: envoy.stat_sinks.metrics_service]
+message MetricsServiceConfig {
+  // The upstream gRPC cluster that hosts the metrics service.
+  api.v2.core.GrpcService grpc_service = 1 [(validate.rules).message = {required: true}];
+}

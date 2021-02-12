@@ -1,0 +1,122 @@
+syntax = "proto3";
+
+package envoy.data.tap.v3;
+
+import "envoy/config/core/v3/address.proto";
+import "envoy/data/tap/v3/common.proto";
+
+import "google/protobuf/timestamp.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.data.tap.v3";
+option java_outer_classname = "TransportProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Transport tap data]
+// Trace format for the tap transport socket extension. This dumps plain text read/write
+// sequences on a socket.
+
+// Connection properties.
+message Connection {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.data.tap.v2alpha.Connection";
+
+  // Local address.
+  config.core.v3.Address local_address = 2;
+
+  // Remote address.
+  config.core.v3.Address remote_address = 3;
+}
+
+// Event in a socket trace.
+message SocketEvent {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.data.tap.v2alpha.SocketEvent";
+
+  // Data read by Envoy from the transport socket.
+  message Read {
+    // TODO(htuch): Half-close for reads.
+
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.data.tap.v2alpha.SocketEvent.Read";
+
+    // Binary data read.
+    Body data = 1;
+  }
+
+  // Data written by Envoy to the transport socket.
+  message Write {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.data.tap.v2alpha.SocketEvent.Write";
+
+    // Binary data written.
+    Body data = 1;
+
+    // Stream was half closed after this write.
+    bool end_stream = 2;
+  }
+
+  // The connection was closed.
+  message Closed {
+    // TODO(mattklein123): Close event type.
+
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.data.tap.v2alpha.SocketEvent.Closed";
+  }
+
+  // Timestamp for event.
+  google.protobuf.Timestamp timestamp = 1;
+
+  // Read or write with content as bytes string.
+  oneof event_selector {
+    Read read = 2;
+
+    Write write = 3;
+
+    Closed closed = 4;
+  }
+}
+
+// Sequence of read/write events that constitute a buffered trace on a socket.
+// [#next-free-field: 6]
+message SocketBufferedTrace {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.data.tap.v2alpha.SocketBufferedTrace";
+
+  // Trace ID unique to the originating Envoy only. Trace IDs can repeat and should not be used
+  // for long term stable uniqueness. Matches connection IDs used in Envoy logs.
+  uint64 trace_id = 1;
+
+  // Connection properties.
+  Connection connection = 2;
+
+  // Sequence of observed events.
+  repeated SocketEvent events = 3;
+
+  // Set to true if read events were truncated due to the :ref:`max_buffered_rx_bytes
+  // <envoy_api_field_config.tap.v3.OutputConfig.max_buffered_rx_bytes>` setting.
+  bool read_truncated = 4;
+
+  // Set to true if write events were truncated due to the :ref:`max_buffered_tx_bytes
+  // <envoy_api_field_config.tap.v3.OutputConfig.max_buffered_tx_bytes>` setting.
+  bool write_truncated = 5;
+}
+
+// A streamed socket trace segment. Multiple segments make up a full trace.
+message SocketStreamedTraceSegment {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.data.tap.v2alpha.SocketStreamedTraceSegment";
+
+  // Trace ID unique to the originating Envoy only. Trace IDs can repeat and should not be used
+  // for long term stable uniqueness. Matches connection IDs used in Envoy logs.
+  uint64 trace_id = 1;
+
+  oneof message_piece {
+    // Connection properties.
+    Connection connection = 2;
+
+    // Socket event.
+    SocketEvent event = 3;
+  }
+}

@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package envoy.data.tap.v2alpha;
+
+import "envoy/api/v2/core/base.proto";
+import "envoy/data/tap/v2alpha/common.proto";
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.data.tap.v2alpha";
+option java_outer_classname = "HttpProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: HTTP tap data]
+
+// A fully buffered HTTP trace message.
+message HttpBufferedTrace {
+  // HTTP message wrapper.
+  message Message {
+    // Message headers.
+    repeated api.v2.core.HeaderValue headers = 1;
+
+    // Message body.
+    Body body = 2;
+
+    // Message trailers.
+    repeated api.v2.core.HeaderValue trailers = 3;
+  }
+
+  // Request message.
+  Message request = 1;
+
+  // Response message.
+  Message response = 2;
+}
+
+// A streamed HTTP trace segment. Multiple segments make up a full trace.
+// [#next-free-field: 8]
+message HttpStreamedTraceSegment {
+  // Trace ID unique to the originating Envoy only. Trace IDs can repeat and should not be used
+  // for long term stable uniqueness.
+  uint64 trace_id = 1;
+
+  oneof message_piece {
+    // Request headers.
+    api.v2.core.HeaderMap request_headers = 2;
+
+    // Request body chunk.
+    Body request_body_chunk = 3;
+
+    // Request trailers.
+    api.v2.core.HeaderMap request_trailers = 4;
+
+    // Response headers.
+    api.v2.core.HeaderMap response_headers = 5;
+
+    // Response body chunk.
+    Body response_body_chunk = 6;
+
+    // Response trailers.
+    api.v2.core.HeaderMap response_trailers = 7;
+  }
+}

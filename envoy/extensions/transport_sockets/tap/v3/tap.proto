@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package envoy.extensions.transport_sockets.tap.v3;
+
+import "envoy/config/core/v3/base.proto";
+import "envoy/extensions/common/tap/v3/common.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.transport_sockets.tap.v3";
+option java_outer_classname = "TapProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Tap]
+// [#extension: envoy.transport_sockets.tap]
+
+// Configuration for tap transport socket. This wraps another transport socket, providing the
+// ability to interpose and record in plain text any traffic that is surfaced to Envoy.
+message Tap {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.transport_socket.tap.v2alpha.Tap";
+
+  // Common configuration for the tap transport socket.
+  common.tap.v3.CommonExtensionConfig common_config = 1
+      [(validate.rules).message = {required: true}];
+
+  // The underlying transport socket being wrapped.
+  config.core.v3.TransportSocket transport_socket = 2 [(validate.rules).message = {required: true}];
+}

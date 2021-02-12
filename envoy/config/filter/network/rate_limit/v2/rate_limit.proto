@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package envoy.config.filter.network.rate_limit.v2;
+
+import "envoy/api/v2/ratelimit/ratelimit.proto";
+import "envoy/config/ratelimit/v2/rls.proto";
+
+import "google/protobuf/duration.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.network.rate_limit.v2";
+option java_outer_classname = "RateLimitProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.network.ratelimit.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Rate limit]
+// Rate limit :ref:`configuration overview <config_network_filters_rate_limit>`.
+// [#extension: envoy.filters.network.ratelimit]
+
+// [#next-free-field: 7]
+message RateLimit {
+  // The prefix to use when emitting :ref:`statistics <config_network_filters_rate_limit_stats>`.
+  string stat_prefix = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // The rate limit domain to use in the rate limit service request.
+  string domain = 2 [(validate.rules).string = {min_bytes: 1}];
+
+  // The rate limit descriptor list to use in the rate limit service request.
+  repeated api.v2.ratelimit.RateLimitDescriptor descriptors = 3
+      [(validate.rules).repeated = {min_items: 1}];
+
+  // The timeout in milliseconds for the rate limit service RPC. If not
+  // set, this defaults to 20ms.
+  google.protobuf.Duration timeout = 4;
+
+  // The filter's behaviour in case the rate limiting service does
+  // not respond back. When it is set to true, Envoy will not allow traffic in case of
+  // communication failure between rate limiting service and the proxy.
+  // Defaults to false.
+  bool failure_mode_deny = 5;
+
+  // Configuration for an external rate limit service provider. If not
+  // specified, any calls to the rate limit service will immediately return
+  // success.
+  ratelimit.v2.RateLimitServiceConfig rate_limit_service = 6
+      [(validate.rules).message = {required: true}];
+}

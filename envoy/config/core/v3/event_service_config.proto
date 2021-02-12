@@ -1,0 +1,28 @@
+syntax = "proto3";
+
+package envoy.config.core.v3;
+
+import "envoy/config/core/v3/grpc_service.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.core.v3";
+option java_outer_classname = "EventServiceConfigProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#not-implemented-hide:]
+// Configuration of the event reporting service endpoint.
+message EventServiceConfig {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.api.v2.core.EventServiceConfig";
+
+  oneof config_source_specifier {
+    option (validate.required) = true;
+
+    // Specifies the gRPC service that hosts the event reporting service.
+    GrpcService grpc_service = 1;
+  }
+}

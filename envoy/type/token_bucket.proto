@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package envoy.type;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.type";
+option java_outer_classname = "TokenBucketProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Token bucket]
+
+// Configures a token bucket, typically used for rate limiting.
+message TokenBucket {
+  // The maximum tokens that the bucket can hold. This is also the number of tokens that the bucket
+  // initially contains.
+  uint32 max_tokens = 1 [(validate.rules).uint32 = {gt: 0}];
+
+  // The number of tokens added to the bucket during each fill interval. If not specified, defaults
+  // to a single token.
+  google.protobuf.UInt32Value tokens_per_fill = 2 [(validate.rules).uint32 = {gt: 0}];
+
+  // The fill interval that tokens are added to the bucket. During each fill interval
+  // `tokens_per_fill` are added to the bucket. The bucket will never contain more than
+  // `max_tokens` tokens.
+  google.protobuf.Duration fill_interval = 3 [(validate.rules).duration = {
+    required: true
+    gt {}
+  }];
+}

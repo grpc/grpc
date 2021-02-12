@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.http.aws_lambda.v3;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.http.aws_lambda.v3";
+option java_outer_classname = "AwsLambdaProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: AWS Lambda]
+// AWS Lambda :ref:`configuration overview <config_http_filters_aws_lambda>`.
+// [#extension: envoy.filters.http.aws_lambda]
+
+// AWS Lambda filter config
+message Config {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.http.aws_lambda.v2alpha.Config";
+
+  enum InvocationMode {
+    // This is the more common mode of invocation, in which Lambda responds after it has completed the function. In
+    // this mode the output of the Lambda function becomes the response of the HTTP request.
+    SYNCHRONOUS = 0;
+
+    // In this mode Lambda responds immediately but continues to process the function asynchronously. This mode can be
+    // used to signal events for example. In this mode, Lambda responds with an acknowledgment that it received the
+    // call which is translated to an HTTP 200 OK by the filter.
+    ASYNCHRONOUS = 1;
+  }
+
+  // The ARN of the AWS Lambda to invoke when the filter is engaged
+  // Must be in the following format:
+  // arn:<partition>:lambda:<region>:<account-number>:function:<function-name>
+  string arn = 1 [(validate.rules).string = {min_len: 1}];
+
+  // Whether to transform the request (headers and body) to a JSON payload or pass it as is.
+  bool payload_passthrough = 2;
+
+  // Determines the way to invoke the Lambda function.
+  InvocationMode invocation_mode = 3 [(validate.rules).enum = {defined_only: true}];
+}
+
+// Per-route configuration for AWS Lambda. This can be useful when invoking a different Lambda function or a different
+// version of the same Lambda depending on the route.
+message PerRouteConfig {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.filter.http.aws_lambda.v2alpha.PerRouteConfig";
+
+  Config invoke_config = 1;
+}

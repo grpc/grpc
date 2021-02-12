@@ -1,0 +1,100 @@
+syntax = "proto3";
+
+package envoy.config.core.v4alpha;
+
+import "envoy/config/core/v4alpha/base.proto";
+import "envoy/config/core/v4alpha/extension.proto";
+
+import "google/protobuf/struct.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.core.v4alpha";
+option java_outer_classname = "SubstitutionFormatStringProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Substitution format string]
+
+// Configuration to use multiple :ref:`command operators <config_access_log_command_operators>`
+// to generate a new string in either plain text or JSON format.
+// [#next-free-field: 7]
+message SubstitutionFormatString {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.core.v3.SubstitutionFormatString";
+
+  reserved 1;
+
+  reserved "text_format";
+
+  oneof format {
+    option (validate.required) = true;
+
+    // Specify a format with command operators to form a JSON string.
+    // Its details is described in :ref:`format dictionary<config_access_log_format_dictionaries>`.
+    // Values are rendered as strings, numbers, or boolean values as appropriate.
+    // Nested JSON objects may be produced by some command operators (e.g. FILTER_STATE or DYNAMIC_METADATA).
+    // See the documentation for a specific command operator for details.
+    //
+    // .. validated-code-block:: yaml
+    //   :type-name: envoy.config.core.v3.SubstitutionFormatString
+    //
+    //   json_format:
+    //     status: "%RESPONSE_CODE%"
+    //     message: "%LOCAL_REPLY_BODY%"
+    //
+    // The following JSON object would be created:
+    //
+    // .. code-block:: json
+    //
+    //  {
+    //    "status": 500,
+    //    "message": "My error message"
+    //  }
+    //
+    google.protobuf.Struct json_format = 2 [(validate.rules).message = {required: true}];
+
+    // Specify a format with command operators to form a text string.
+    // Its details is described in :ref:`format string<config_access_log_format_strings>`.
+    //
+    // For example, setting ``text_format`` like below,
+    //
+    // .. validated-code-block:: yaml
+    //   :type-name: envoy.config.core.v3.SubstitutionFormatString
+    //
+    //   text_format_source:
+    //     inline_string: "%LOCAL_REPLY_BODY%:%RESPONSE_CODE%:path=%REQ(:path)%\n"
+    //
+    // generates plain text similar to:
+    //
+    // .. code-block:: text
+    //
+    //   upstream connect error:503:path=/foo
+    //
+    DataSource text_format_source = 5;
+  }
+
+  // If set to true, when command operators are evaluated to null,
+  //
+  // * for ``text_format``, the output of the empty operator is changed from ``-`` to an
+  //   empty string, so that empty values are omitted entirely.
+  // * for ``json_format`` the keys with null values are omitted in the output structure.
+  bool omit_empty_values = 3;
+
+  // Specify a *content_type* field.
+  // If this field is not set then ``text/plain`` is used for *text_format* and
+  // ``application/json`` is used for *json_format*.
+  //
+  // .. validated-code-block:: yaml
+  //   :type-name: envoy.config.core.v3.SubstitutionFormatString
+  //
+  //   content_type: "text/html; charset=UTF-8"
+  //
+  string content_type = 4;
+
+  // Specifies a collection of Formatter plugins that can be called from the access log configuration.
+  // See the formatters extensions documentation for details.
+  repeated TypedExtensionConfig formatters = 6;
+}

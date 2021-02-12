@@ -1,0 +1,55 @@
+syntax = "proto3";
+
+package envoy.config.filter.network.rbac.v2;
+
+import "envoy/config/rbac/v2/rbac.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.network.rbac.v2";
+option java_outer_classname = "RbacProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.extensions.filters.network.rbac.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: RBAC]
+// Role-Based Access Control :ref:`configuration overview <config_network_filters_rbac>`.
+// [#extension: envoy.filters.network.rbac]
+
+// RBAC network filter config.
+//
+// Header should not be used in rules/shadow_rules in RBAC network filter as
+// this information is only available in :ref:`RBAC http filter <config_http_filters_rbac>`.
+message RBAC {
+  enum EnforcementType {
+    // Apply RBAC policies when the first byte of data arrives on the connection.
+    ONE_TIME_ON_FIRST_BYTE = 0;
+
+    // Continuously apply RBAC policies as data arrives. Use this mode when
+    // using RBAC with message oriented protocols such as Mongo, MySQL, Kafka,
+    // etc. when the protocol decoders emit dynamic metadata such as the
+    // resources being accessed and the operations on the resources.
+    CONTINUOUS = 1;
+  }
+
+  // Specify the RBAC rules to be applied globally.
+  // If absent, no enforcing RBAC policy will be applied.
+  config.rbac.v2.RBAC rules = 1;
+
+  // Shadow rules are not enforced by the filter but will emit stats and logs
+  // and can be used for rule testing.
+  // If absent, no shadow RBAC policy will be applied.
+  config.rbac.v2.RBAC shadow_rules = 2;
+
+  // The prefix to use when emitting statistics.
+  string stat_prefix = 3 [(validate.rules).string = {min_bytes: 1}];
+
+  // RBAC enforcement strategy. By default RBAC will be enforced only once
+  // when the first byte of data arrives from the downstream. When used in
+  // conjunction with filters that emit dynamic metadata after decoding
+  // every payload (e.g., Mongo, MySQL, Kafka) set the enforcement type to
+  // CONTINUOUS to enforce RBAC policies on every message boundary.
+  EnforcementType enforcement_type = 4;
+}

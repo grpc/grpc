@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package envoy.config.common.tap.v2alpha;
+
+import "envoy/service/tap/v2alpha/common.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.common.tap.v2alpha";
+option java_outer_classname = "CommonProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.extensions.common.tap.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Common tap extension configuration]
+
+// Common configuration for all tap extensions.
+message CommonExtensionConfig {
+  oneof config_type {
+    option (validate.required) = true;
+
+    // If specified, the tap filter will be configured via an admin handler.
+    AdminConfig admin_config = 1;
+
+    // If specified, the tap filter will be configured via a static configuration that cannot be
+    // changed.
+    service.tap.v2alpha.TapConfig static_config = 2;
+  }
+}
+
+// Configuration for the admin handler. See :ref:`here <config_http_filters_tap_admin_handler>` for
+// more information.
+message AdminConfig {
+  // Opaque configuration ID. When requests are made to the admin handler, the passed opaque ID is
+  // matched to the configured filter opaque ID to determine which filter to configure.
+  string config_id = 1 [(validate.rules).string = {min_bytes: 1}];
+}

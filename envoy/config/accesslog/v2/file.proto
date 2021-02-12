@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package envoy.config.accesslog.v2;
+
+import "google/protobuf/struct.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.accesslog.v2";
+option java_outer_classname = "FileProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.extensions.access_loggers.file.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: File access log]
+// [#extension: envoy.access_loggers.file]
+
+// Custom configuration for an :ref:`AccessLog <envoy_api_msg_config.filter.accesslog.v2.AccessLog>`
+// that writes log entries directly to a file. Configures the built-in *envoy.access_loggers.file*
+// AccessLog.
+message FileAccessLog {
+  // A path to a local file to which to write the access log entries.
+  string path = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  oneof access_log_format {
+    // Access log :ref:`format string<config_access_log_format_strings>`.
+    // Envoy supports :ref:`custom access log formats <config_access_log_format>` as well as a
+    // :ref:`default format <config_access_log_default_format>`.
+    string format = 2;
+
+    // Access log :ref:`format dictionary<config_access_log_format_dictionaries>`. All values
+    // are rendered as strings.
+    google.protobuf.Struct json_format = 3;
+
+    // Access log :ref:`format dictionary<config_access_log_format_dictionaries>`. Values are
+    // rendered as strings, numbers, or boolean values as appropriate. Nested JSON objects may
+    // be produced by some command operators (e.g.FILTER_STATE or DYNAMIC_METADATA). See the
+    // documentation for a specific command operator for details.
+    google.protobuf.Struct typed_json_format = 4;
+  }
+}

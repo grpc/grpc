@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+package envoy.type.matcher.v3;
+
+import "envoy/type/matcher/v3/string.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.type.matcher.v3";
+option java_outer_classname = "PathProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Path matcher]
+
+// Specifies the way to match a path on HTTP request.
+message PathMatcher {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.type.matcher.PathMatcher";
+
+  oneof rule {
+    option (validate.required) = true;
+
+    // The `path` must match the URL path portion of the :path header. The query and fragment
+    // string (if present) are removed in the URL path portion.
+    // For example, the path */data* will match the *:path* header */data#fragment?param=value*.
+    StringMatcher path = 1 [(validate.rules).message = {required: true}];
+  }
+}

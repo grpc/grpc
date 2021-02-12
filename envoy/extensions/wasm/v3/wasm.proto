@@ -1,0 +1,143 @@
+syntax = "proto3";
+
+package envoy.extensions.wasm.v3;
+
+import "envoy/config/core/v3/base.proto";
+
+import "google/protobuf/any.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.wasm.v3";
+option java_outer_classname = "WasmProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Wasm]
+// [#extension: envoy.bootstrap.wasm]
+
+// Configuration for restricting Proxy-Wasm capabilities available to modules.
+message CapabilityRestrictionConfig {
+  // The Proxy-Wasm capabilities which will be allowed. Capabilities are mapped by
+  // name. The *SanitizationConfig* which each capability maps to is currently unimplemented and ignored,
+  // and so should be left empty.
+  //
+  // The capability names are given in the
+  // `Proxy-Wasm ABI <https://github.com/proxy-wasm/spec/tree/master/abi-versions/vNEXT>`_.
+  // Additionally, the following WASI capabilities from
+  // `this list <https://github.com/WebAssembly/WASI/blob/master/phases/snapshot/docs.md#modules>`_
+  // are implemented and can be allowed:
+  // *fd_write*, *fd_read*, *fd_seek*, *fd_close*, *fd_fdstat_get*, *environ_get*, *environ_sizes_get*,
+  // *args_get*, *args_sizes_get*, *proc_exit*, *clock_time_get*, *random_get*.
+  map<string, SanitizationConfig> allowed_capabilities = 1;
+}
+
+// Configuration for sanitization of inputs to an allowed capability.
+//
+// NOTE: This is currently unimplemented.
+message SanitizationConfig {
+}
+
+// Configuration for a Wasm VM.
+// [#next-free-field: 7]
+message VmConfig {
+  // An ID which will be used along with a hash of the wasm code (or the name of the registered Null
+  // VM plugin) to determine which VM will be used for the plugin. All plugins which use the same
+  // *vm_id* and code will use the same VM. May be left blank. Sharing a VM between plugins can
+  // reduce memory utilization and make sharing of data easier which may have security implications.
+  // See ref: "TODO: add ref" for details.
+  string vm_id = 1;
+
+  // The Wasm runtime type.
+  // Available Wasm runtime types are registered as extensions. The following runtimes are included
+  // in Envoy code base:
+  //
+  // .. _extension_envoy.wasm.runtime.null:
+  //
+  // **envoy.wasm.runtime.null**: Null sandbox, the Wasm module must be compiled and linked into the
+  // Envoy binary. The registered name is given in the *code* field as *inline_string*.
+  //
+  // .. _extension_envoy.wasm.runtime.v8:
+  //
+  // **envoy.wasm.runtime.v8**: `V8 <https://v8.dev/>`_-based WebAssembly runtime.
+  //
+  // .. _extension_envoy.wasm.runtime.wavm:
+  //
+  // **envoy.wasm.runtime.wavm**: `WAVM <https://wavm.github.io/>`_-based WebAssembly runtime.
+  // This runtime is not enabled in the official build.
+  //
+  // .. _extension_envoy.wasm.runtime.wasmtime:
+  //
+  // **envoy.wasm.runtime.wasmtime**: `Wasmtime <https://wasmtime.dev/>`_-based WebAssembly runtime.
+  // This runtime is not enabled in the official build.
+  //
+  string runtime = 2 [(validate.rules).string = {min_len: 1}];
+
+  // The Wasm code that Envoy will execute.
+  config.core.v3.AsyncDataSource code = 3;
+
+  // The Wasm configuration used in initialization of a new VM
+  // (proxy_on_start). `google.protobuf.Struct` is serialized as JSON before
+  // passing it to the plugin. `google.protobuf.BytesValue` and
+  // `google.protobuf.StringValue` are passed directly without the wrapper.
+  google.protobuf.Any configuration = 4;
+
+  // Allow the wasm file to include pre-compiled code on VMs which support it.
+  // Warning: this should only be enable for trusted sources as the precompiled code is not
+  // verified.
+  bool allow_precompiled = 5;
+
+  // If true and the code needs to be remotely fetched and it is not in the cache then NACK the configuration
+  // update and do a background fetch to fill the cache, otherwise fetch the code asynchronously and enter
+  // warming state.
+  bool nack_on_code_cache_miss = 6;
+}
+
+// Base Configuration for Wasm Plugins e.g. filters and services.
+// [#next-free-field: 7]
+message PluginConfig {
+  // A unique name for a filters/services in a VM for use in identifying the filter/service if
+  // multiple filters/services are handled by the same *vm_id* and *root_id* and for
+  // logging/debugging.
+  string name = 1;
+
+  // A unique ID for a set of filters/services in a VM which will share a RootContext and Contexts
+  // if applicable (e.g. an Wasm HttpFilter and an Wasm AccessLog). If left blank, all
+  // filters/services with a blank root_id with the same *vm_id* will share Context(s).
+  string root_id = 2;
+
+  // Configuration for finding or starting VM.
+  oneof vm {
+    VmConfig vm_config = 3;
+    // TODO: add referential VM configurations.
+  }
+
+  // Filter/service configuration used to configure or reconfigure a plugin
+  // (proxy_on_configuration).
+  // `google.protobuf.Struct` is serialized as JSON before
+  // passing it to the plugin. `google.protobuf.BytesValue` and
+  // `google.protobuf.StringValue` are passed directly without the wrapper.
+  google.protobuf.Any configuration = 4;
+
+  // If there is a fatal error on the VM (e.g. exception, abort(), on_start or on_configure return false),
+  // then all plugins associated with the VM will either fail closed (by default), e.g. by returning an HTTP 503 error,
+  // or fail open (if 'fail_open' is set to true) by bypassing the filter. Note: when on_start or on_configure return false
+  // during xDS updates the xDS configuration will be rejected and when on_start or on_configuration return false on initial
+  // startup the proxy will not start.
+  bool fail_open = 5;
+
+  // Configuration for restricting Proxy-Wasm capabilities available to modules.
+  CapabilityRestrictionConfig capability_restriction_config = 6;
+}
+
+// WasmService is configured as a built-in *envoy.wasm_service* :ref:`WasmService
+// <config_wasm_service>` This opaque configuration will be used to create a Wasm Service.
+message WasmService {
+  // General plugin configuration.
+  PluginConfig config = 1;
+
+  // If true, create a single VM rather than creating one VM per worker. Such a singleton can
+  // not be used with filters.
+  bool singleton = 2;
+}

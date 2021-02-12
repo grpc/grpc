@@ -1,0 +1,19 @@
+syntax = "proto3";
+
+package envoy.config.filter.network.echo.v2;
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.network.echo.v2";
+option java_outer_classname = "EchoProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.extensions.filters.network.echo.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Echo]
+// Echo :ref:`configuration overview <config_network_filters_echo>`.
+// [#extension: envoy.filters.network.echo]
+
+message Echo {
+}

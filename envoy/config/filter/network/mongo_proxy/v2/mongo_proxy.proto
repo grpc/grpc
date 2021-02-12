@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package envoy.config.filter.network.mongo_proxy.v2;
+
+import "envoy/config/filter/fault/v2/fault.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.network.mongo_proxy.v2";
+option java_outer_classname = "MongoProxyProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.network.mongo_proxy.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Mongo proxy]
+// MongoDB :ref:`configuration overview <config_network_filters_mongo_proxy>`.
+// [#extension: envoy.filters.network.mongo_proxy]
+
+message MongoProxy {
+  // The human readable prefix to use when emitting :ref:`statistics
+  // <config_network_filters_mongo_proxy_stats>`.
+  string stat_prefix = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // The optional path to use for writing Mongo access logs. If not access log
+  // path is specified no access logs will be written. Note that access log is
+  // also gated :ref:`runtime <config_network_filters_mongo_proxy_runtime>`.
+  string access_log = 2;
+
+  // Inject a fixed delay before proxying a Mongo operation. Delays are
+  // applied to the following MongoDB operations: Query, Insert, GetMore,
+  // and KillCursors. Once an active delay is in progress, all incoming
+  // data up until the timer event fires will be a part of the delay.
+  fault.v2.FaultDelay delay = 3;
+
+  // Flag to specify whether :ref:`dynamic metadata
+  // <config_network_filters_mongo_proxy_dynamic_metadata>` should be emitted. Defaults to false.
+  bool emit_dynamic_metadata = 4;
+}

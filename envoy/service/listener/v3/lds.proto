@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package envoy.service.listener.v3;
+
+import "envoy/service/discovery/v3/discovery.proto";
+
+import "google/api/annotations.proto";
+
+import "envoy/annotations/resource.proto";
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.service.listener.v3";
+option java_outer_classname = "LdsProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Listener]
+// Listener :ref:`configuration overview <config_listeners>`
+
+// The Envoy instance initiates an RPC at startup to discover a list of
+// listeners. Updates are delivered via streaming from the LDS server and
+// consist of a complete update of all listeners. Existing connections will be
+// allowed to drain from listeners that are no longer present.
+service ListenerDiscoveryService {
+  option (envoy.annotations.resource).type = "envoy.config.listener.v3.Listener";
+
+  rpc DeltaListeners(stream discovery.v3.DeltaDiscoveryRequest)
+      returns (stream discovery.v3.DeltaDiscoveryResponse) {
+  }
+
+  rpc StreamListeners(stream discovery.v3.DiscoveryRequest)
+      returns (stream discovery.v3.DiscoveryResponse) {
+  }
+
+  rpc FetchListeners(discovery.v3.DiscoveryRequest) returns (discovery.v3.DiscoveryResponse) {
+    option (google.api.http).post = "/v3/discovery:listeners";
+    option (google.api.http).body = "*";
+  }
+}
+
+// [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
+// services: https://github.com/google/protobuf/issues/4221 and protoxform to upgrade the file.
+message LdsDummy {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.api.v2.LdsDummy";
+}

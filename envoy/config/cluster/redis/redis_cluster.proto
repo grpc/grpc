@@ -1,0 +1,81 @@
+syntax = "proto3";
+
+package envoy.config.cluster.redis;
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.cluster.redis";
+option java_outer_classname = "RedisClusterProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Redis Cluster Configuration]
+// This cluster adds support for `Redis Cluster <https://redis.io/topics/cluster-spec>`_, as part
+// of :ref:`Envoy's support for Redis Cluster <arch_overview_redis>`.
+//
+// Redis Cluster is an extension of Redis which supports sharding and high availability (where a
+// shard that loses its primary fails over to a replica, and designates it as the new primary).
+// However, as there is no unified frontend or proxy service in front of Redis Cluster, the client
+// (in this case Envoy) must locally maintain the state of the Redis Cluster, specifically the
+// topology. A random node in the cluster is queried for the topology using the `CLUSTER SLOTS
+// command <https://redis.io/commands/cluster-slots>`_. This result is then stored locally, and
+// updated at user-configured intervals.
+//
+// Additionally, if
+// :ref:`enable_redirection<envoy_api_field_config.filter.network.redis_proxy.v2.RedisProxy.ConnPoolSettings.enable_redirection>`
+// is true, then moved and ask redirection errors from upstream servers will trigger a topology
+// refresh when they exceed a user-configured error threshold.
+//
+// Example:
+//
+// .. code-block:: yaml
+//
+//     name: name
+//     connect_timeout: 0.25s
+//     dns_lookup_family: V4_ONLY
+//     hosts:
+//     - socket_address:
+//       address: foo.bar.com
+//       port_value: 22120
+//     cluster_type:
+//     name: envoy.clusters.redis
+//     typed_config:
+//       "@type": type.googleapis.com/google.protobuf.Struct
+//       value:
+//         cluster_refresh_rate: 30s
+//         cluster_refresh_timeout: 0.5s
+//         redirect_refresh_interval: 10s
+//         redirect_refresh_threshold: 10
+// [#extension: envoy.clusters.redis]
+
+// [#next-free-field: 7]
+message RedisClusterConfig {
+  // Interval between successive topology refresh requests. If not set, this defaults to 5s.
+  google.protobuf.Duration cluster_refresh_rate = 1 [(validate.rules).duration = {gt {}}];
+
+  // Timeout for topology refresh request. If not set, this defaults to 3s.
+  google.protobuf.Duration cluster_refresh_timeout = 2 [(validate.rules).duration = {gt {}}];
+
+  // The minimum interval that must pass after triggering a topology refresh request before a new
+  // request can possibly be triggered again. Any errors received during one of these
+  // time intervals are ignored. If not set, this defaults to 5s.
+  google.protobuf.Duration redirect_refresh_interval = 3;
+
+  // The number of redirection errors that must be received before
+  // triggering a topology refresh request. If not set, this defaults to 5.
+  // If this is set to 0, topology refresh after redirect is disabled.
+  google.protobuf.UInt32Value redirect_refresh_threshold = 4;
+
+  // The number of failures that must be received before triggering a topology refresh request.
+  // If not set, this defaults to 0, which disables the topology refresh due to failure.
+  uint32 failure_refresh_threshold = 5;
+
+  // The number of hosts became degraded or unhealthy before triggering a topology refresh request.
+  // If not set, this defaults to 0, which disables the topology refresh due to degraded or
+  // unhealthy host.
+  uint32 host_degraded_refresh_threshold = 6;
+}

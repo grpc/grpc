@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package envoy.extensions.internal_redirect.previous_routes.v3;
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.internal_redirect.previous_routes.v3";
+option java_outer_classname = "PreviousRoutesConfigProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Previous routes internal redirect predicate]
+
+// An internal redirect predicate that rejects redirect targets that are pointing
+// to a route that has been followed by a previous redirect from the current route.
+// [#extension: envoy.internal_redirect_predicates.previous_routes]
+message PreviousRoutesConfig {
+}

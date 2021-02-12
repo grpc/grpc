@@ -1,0 +1,256 @@
+syntax = "proto3";
+
+package envoy.config.filter.accesslog.v2;
+
+import "envoy/api/v2/core/base.proto";
+import "envoy/api/v2/route/route_components.proto";
+import "envoy/type/percent.proto";
+
+import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.accesslog.v2";
+option java_outer_classname = "AccesslogProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.config.accesslog.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Common access log types]
+
+message AccessLog {
+  // The name of the access log implementation to instantiate. The name must
+  // match a statically registered access log. Current built-in loggers include:
+  //
+  // #. "envoy.access_loggers.file"
+  // #. "envoy.access_loggers.http_grpc"
+  // #. "envoy.access_loggers.tcp_grpc"
+  string name = 1;
+
+  // Filter which is used to determine if the access log needs to be written.
+  AccessLogFilter filter = 2;
+
+  // Custom configuration that depends on the access log being instantiated. Built-in
+  // configurations include:
+  //
+  // #. "envoy.access_loggers.file": :ref:`FileAccessLog
+  //    <envoy_api_msg_config.accesslog.v2.FileAccessLog>`
+  // #. "envoy.access_loggers.http_grpc": :ref:`HttpGrpcAccessLogConfig
+  //    <envoy_api_msg_config.accesslog.v2.HttpGrpcAccessLogConfig>`
+  // #. "envoy.access_loggers.tcp_grpc": :ref:`TcpGrpcAccessLogConfig
+  //    <envoy_api_msg_config.accesslog.v2.TcpGrpcAccessLogConfig>`
+  oneof config_type {
+    google.protobuf.Struct config = 3 [deprecated = true];
+
+    google.protobuf.Any typed_config = 4;
+  }
+}
+
+// [#next-free-field: 12]
+message AccessLogFilter {
+  oneof filter_specifier {
+    option (validate.required) = true;
+
+    // Status code filter.
+    StatusCodeFilter status_code_filter = 1;
+
+    // Duration filter.
+    DurationFilter duration_filter = 2;
+
+    // Not health check filter.
+    NotHealthCheckFilter not_health_check_filter = 3;
+
+    // Traceable filter.
+    TraceableFilter traceable_filter = 4;
+
+    // Runtime filter.
+    RuntimeFilter runtime_filter = 5;
+
+    // And filter.
+    AndFilter and_filter = 6;
+
+    // Or filter.
+    OrFilter or_filter = 7;
+
+    // Header filter.
+    HeaderFilter header_filter = 8;
+
+    // Response flag filter.
+    ResponseFlagFilter response_flag_filter = 9;
+
+    // gRPC status filter.
+    GrpcStatusFilter grpc_status_filter = 10;
+
+    // Extension filter.
+    ExtensionFilter extension_filter = 11;
+  }
+}
+
+// Filter on an integer comparison.
+message ComparisonFilter {
+  enum Op {
+    // =
+    EQ = 0;
+
+    // >=
+    GE = 1;
+
+    // <=
+    LE = 2;
+  }
+
+  // Comparison operator.
+  Op op = 1 [(validate.rules).enum = {defined_only: true}];
+
+  // Value to compare against.
+  api.v2.core.RuntimeUInt32 value = 2;
+}
+
+// Filters on HTTP response/status code.
+message StatusCodeFilter {
+  // Comparison.
+  ComparisonFilter comparison = 1 [(validate.rules).message = {required: true}];
+}
+
+// Filters on total request duration in milliseconds.
+message DurationFilter {
+  // Comparison.
+  ComparisonFilter comparison = 1 [(validate.rules).message = {required: true}];
+}
+
+// Filters for requests that are not health check requests. A health check
+// request is marked by the health check filter.
+message NotHealthCheckFilter {
+}
+
+// Filters for requests that are traceable. See the tracing overview for more
+// information on how a request becomes traceable.
+message TraceableFilter {
+}
+
+// Filters for random sampling of requests.
+message RuntimeFilter {
+  // Runtime key to get an optional overridden numerator for use in the *percent_sampled* field.
+  // If found in runtime, this value will replace the default numerator.
+  string runtime_key = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // The default sampling percentage. If not specified, defaults to 0% with denominator of 100.
+  type.FractionalPercent percent_sampled = 2;
+
+  // By default, sampling pivots on the header
+  // :ref:`x-request-id<config_http_conn_man_headers_x-request-id>` being present. If
+  // :ref:`x-request-id<config_http_conn_man_headers_x-request-id>` is present, the filter will
+  // consistently sample across multiple hosts based on the runtime key value and the value
+  // extracted from :ref:`x-request-id<config_http_conn_man_headers_x-request-id>`. If it is
+  // missing, or *use_independent_randomness* is set to true, the filter will randomly sample based
+  // on the runtime key value alone. *use_independent_randomness* can be used for logging kill
+  // switches within complex nested :ref:`AndFilter
+  // <envoy_api_msg_config.filter.accesslog.v2.AndFilter>` and :ref:`OrFilter
+  // <envoy_api_msg_config.filter.accesslog.v2.OrFilter>` blocks that are easier to reason about
+  // from a probability perspective (i.e., setting to true will cause the filter to behave like
+  // an independent random variable when composed within logical operator filters).
+  bool use_independent_randomness = 3;
+}
+
+// Performs a logical “and” operation on the result of each filter in filters.
+// Filters are evaluated sequentially and if one of them returns false, the
+// filter returns false immediately.
+message AndFilter {
+  repeated AccessLogFilter filters = 1 [(validate.rules).repeated = {min_items: 2}];
+}
+
+// Performs a logical “or” operation on the result of each individual filter.
+// Filters are evaluated sequentially and if one of them returns true, the
+// filter returns true immediately.
+message OrFilter {
+  repeated AccessLogFilter filters = 2 [(validate.rules).repeated = {min_items: 2}];
+}
+
+// Filters requests based on the presence or value of a request header.
+message HeaderFilter {
+  // Only requests with a header which matches the specified HeaderMatcher will pass the filter
+  // check.
+  api.v2.route.HeaderMatcher header = 1 [(validate.rules).message = {required: true}];
+}
+
+// Filters requests that received responses with an Envoy response flag set.
+// A list of the response flags can be found
+// in the access log formatter :ref:`documentation<config_access_log_format_response_flags>`.
+message ResponseFlagFilter {
+  // Only responses with the any of the flags listed in this field will be logged.
+  // This field is optional. If it is not specified, then any response flag will pass
+  // the filter check.
+  repeated string flags = 1 [(validate.rules).repeated = {
+    items {
+      string {
+        in: "LH"
+        in: "UH"
+        in: "UT"
+        in: "LR"
+        in: "UR"
+        in: "UF"
+        in: "UC"
+        in: "UO"
+        in: "NR"
+        in: "DI"
+        in: "FI"
+        in: "RL"
+        in: "UAEX"
+        in: "RLSE"
+        in: "DC"
+        in: "URX"
+        in: "SI"
+        in: "IH"
+        in: "DPE"
+      }
+    }
+  }];
+}
+
+// Filters gRPC requests based on their response status. If a gRPC status is not provided, the
+// filter will infer the status from the HTTP status code.
+message GrpcStatusFilter {
+  enum Status {
+    OK = 0;
+    CANCELED = 1;
+    UNKNOWN = 2;
+    INVALID_ARGUMENT = 3;
+    DEADLINE_EXCEEDED = 4;
+    NOT_FOUND = 5;
+    ALREADY_EXISTS = 6;
+    PERMISSION_DENIED = 7;
+    RESOURCE_EXHAUSTED = 8;
+    FAILED_PRECONDITION = 9;
+    ABORTED = 10;
+    OUT_OF_RANGE = 11;
+    UNIMPLEMENTED = 12;
+    INTERNAL = 13;
+    UNAVAILABLE = 14;
+    DATA_LOSS = 15;
+    UNAUTHENTICATED = 16;
+  }
+
+  // Logs only responses that have any one of the gRPC statuses in this field.
+  repeated Status statuses = 1 [(validate.rules).repeated = {items {enum {defined_only: true}}}];
+
+  // If included and set to true, the filter will instead block all responses with a gRPC status or
+  // inferred gRPC status enumerated in statuses, and allow all other responses.
+  bool exclude = 2;
+}
+
+// Extension filter is statically registered at runtime.
+message ExtensionFilter {
+  // The name of the filter implementation to instantiate. The name must
+  // match a statically registered filter.
+  string name = 1;
+
+  // Custom configuration that depends on the filter being instantiated.
+  oneof config_type {
+    google.protobuf.Struct config = 2 [deprecated = true];
+
+    google.protobuf.Any typed_config = 3;
+  }
+}

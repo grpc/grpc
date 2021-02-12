@@ -1,0 +1,153 @@
+syntax = "proto3";
+
+package envoy.admin.v2alpha;
+
+import "envoy/admin/v2alpha/metrics.proto";
+import "envoy/api/v2/core/address.proto";
+import "envoy/api/v2/core/base.proto";
+import "envoy/api/v2/core/health_check.proto";
+import "envoy/type/percent.proto";
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.admin.v2alpha";
+option java_outer_classname = "ClustersProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Clusters]
+
+// Admin endpoint uses this wrapper for `/clusters` to display cluster status information.
+// See :ref:`/clusters <operations_admin_interface_clusters>` for more information.
+message Clusters {
+  // Mapping from cluster name to each cluster's status.
+  repeated ClusterStatus cluster_statuses = 1;
+}
+
+// Details an individual cluster's current status.
+// [#next-free-field: 6]
+message ClusterStatus {
+  // Name of the cluster.
+  string name = 1;
+
+  // Denotes whether this cluster was added via API or configured statically.
+  bool added_via_api = 2;
+
+  // The success rate threshold used in the last interval.
+  // If
+  // :ref:`outlier_detection.split_external_local_origin_errors<envoy_api_field_cluster.OutlierDetection.split_external_local_origin_errors>`
+  // is *false*, all errors: externally and locally generated were used to calculate the threshold.
+  // If
+  // :ref:`outlier_detection.split_external_local_origin_errors<envoy_api_field_cluster.OutlierDetection.split_external_local_origin_errors>`
+  // is *true*, only externally generated errors were used to calculate the threshold.
+  // The threshold is used to eject hosts based on their success rate. See
+  // :ref:`Cluster outlier detection <arch_overview_outlier_detection>` documentation for details.
+  //
+  // Note: this field may be omitted in any of the three following cases:
+  //
+  // 1. There were not enough hosts with enough request volume to proceed with success rate based
+  //    outlier ejection.
+  // 2. The threshold is computed to be < 0 because a negative value implies that there was no
+  //    threshold for that interval.
+  // 3. Outlier detection is not enabled for this cluster.
+  type.Percent success_rate_ejection_threshold = 3;
+
+  // Mapping from host address to the host's current status.
+  repeated HostStatus host_statuses = 4;
+
+  // The success rate threshold used in the last interval when only locally originated failures were
+  // taken into account and externally originated errors were treated as success.
+  // This field should be interpreted only when
+  // :ref:`outlier_detection.split_external_local_origin_errors<envoy_api_field_cluster.OutlierDetection.split_external_local_origin_errors>`
+  // is *true*. The threshold is used to eject hosts based on their success rate.
+  // See :ref:`Cluster outlier detection <arch_overview_outlier_detection>` documentation for
+  // details.
+  //
+  // Note: this field may be omitted in any of the three following cases:
+  //
+  // 1. There were not enough hosts with enough request volume to proceed with success rate based
+  //    outlier ejection.
+  // 2. The threshold is computed to be < 0 because a negative value implies that there was no
+  //    threshold for that interval.
+  // 3. Outlier detection is not enabled for this cluster.
+  type.Percent local_origin_success_rate_ejection_threshold = 5;
+}
+
+// Current state of a particular host.
+// [#next-free-field: 10]
+message HostStatus {
+  // Address of this host.
+  api.v2.core.Address address = 1;
+
+  // List of stats specific to this host.
+  repeated SimpleMetric stats = 2;
+
+  // The host's current health status.
+  HostHealthStatus health_status = 3;
+
+  // Request success rate for this host over the last calculated interval.
+  // If
+  // :ref:`outlier_detection.split_external_local_origin_errors<envoy_api_field_cluster.OutlierDetection.split_external_local_origin_errors>`
+  // is *false*, all errors: externally and locally generated were used in success rate
+  // calculation. If
+  // :ref:`outlier_detection.split_external_local_origin_errors<envoy_api_field_cluster.OutlierDetection.split_external_local_origin_errors>`
+  // is *true*, only externally generated errors were used in success rate calculation.
+  // See :ref:`Cluster outlier detection <arch_overview_outlier_detection>` documentation for
+  // details.
+  //
+  // Note: the message will not be present if host did not have enough request volume to calculate
+  // success rate or the cluster did not have enough hosts to run through success rate outlier
+  // ejection.
+  type.Percent success_rate = 4;
+
+  // The host's weight. If not configured, the value defaults to 1.
+  uint32 weight = 5;
+
+  // The hostname of the host, if applicable.
+  string hostname = 6;
+
+  // The host's priority. If not configured, the value defaults to 0 (highest priority).
+  uint32 priority = 7;
+
+  // Request success rate for this host over the last calculated
+  // interval when only locally originated errors are taken into account and externally originated
+  // errors were treated as success.
+  // This field should be interpreted only when
+  // :ref:`outlier_detection.split_external_local_origin_errors<envoy_api_field_cluster.OutlierDetection.split_external_local_origin_errors>`
+  // is *true*.
+  // See :ref:`Cluster outlier detection <arch_overview_outlier_detection>` documentation for
+  // details.
+  //
+  // Note: the message will not be present if host did not have enough request volume to calculate
+  // success rate or the cluster did not have enough hosts to run through success rate outlier
+  // ejection.
+  type.Percent local_origin_success_rate = 8;
+
+  // locality of the host.
+  api.v2.core.Locality locality = 9;
+}
+
+// Health status for a host.
+// [#next-free-field: 7]
+message HostHealthStatus {
+  // The host is currently failing active health checks.
+  bool failed_active_health_check = 1;
+
+  // The host is currently considered an outlier and has been ejected.
+  bool failed_outlier_check = 2;
+
+  // The host is currently being marked as degraded through active health checking.
+  bool failed_active_degraded_check = 4;
+
+  // The host has been removed from service discovery, but is being stabilized due to active
+  // health checking.
+  bool pending_dynamic_removal = 5;
+
+  // The host has not yet been health checked.
+  bool pending_active_hc = 6;
+
+  // Health status as reported by EDS. Note: only HEALTHY and UNHEALTHY are currently supported
+  // here.
+  // [#comment:TODO(mrice32): pipe through remaining EDS health status possibilities.]
+  api.v2.core.HealthStatus eds_health_status = 3;
+}

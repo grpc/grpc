@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package envoy.config.listener.v4alpha;
+
+import "envoy/config/core/v4alpha/base.proto";
+
+import "google/protobuf/duration.proto";
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.config.listener.v4alpha";
+option java_outer_classname = "QuicConfigProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: QUIC listener Config]
+
+// Configuration specific to the QUIC protocol.
+// Next id: 5
+message QuicProtocolOptions {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.listener.v3.QuicProtocolOptions";
+
+  // Maximum number of streams that the client can negotiate per connection. 100
+  // if not specified.
+  google.protobuf.UInt32Value max_concurrent_streams = 1;
+
+  // Maximum number of milliseconds that connection will be alive when there is
+  // no network activity. 300000ms if not specified.
+  google.protobuf.Duration idle_timeout = 2;
+
+  // Connection timeout in milliseconds before the crypto handshake is finished.
+  // 20000ms if not specified.
+  google.protobuf.Duration crypto_handshake_timeout = 3;
+
+  // Runtime flag that controls whether the listener is enabled or not. If not specified, defaults
+  // to enabled.
+  core.v4alpha.RuntimeFeatureFlag enabled = 4;
+}

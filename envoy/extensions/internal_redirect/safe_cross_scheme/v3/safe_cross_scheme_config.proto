@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package envoy.extensions.internal_redirect.safe_cross_scheme.v3;
+
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.internal_redirect.safe_cross_scheme.v3";
+option java_outer_classname = "SafeCrossSchemeConfigProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: SafeCrossScheme internal redirect predicate]
+
+// An internal redirect predicate that checks the scheme between the
+// downstream url and the redirect target url and allows a) same scheme
+// redirect and b) safe cross scheme redirect, which means if the downstream
+// scheme is HTTPS, both HTTPS and HTTP redirect targets are allowed, but if the
+// downstream scheme is HTTP, only HTTP redirect targets are allowed.
+// [#extension:
+// envoy.internal_redirect_predicates.safe_cross_scheme]
+message SafeCrossSchemeConfig {
+}

@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package envoy.extensions.filters.network.sni_dynamic_forward_proxy.v3alpha;
+
+import "envoy/extensions/common/dynamic_forward_proxy/v3/dns_cache.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.filters.network.sni_dynamic_forward_proxy.v3alpha";
+option java_outer_classname = "SniDynamicForwardProxyProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).work_in_progress = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: SNI dynamic forward proxy]
+
+// Configuration for the SNI-based dynamic forward proxy filter. See the
+// :ref:`architecture overview <arch_overview_http_dynamic_forward_proxy>` for
+// more information. Note this filter must be configured along with
+// :ref:`TLS inspector listener filter <config_listener_filters_tls_inspector>`
+// to work.
+// [#extension: envoy.filters.network.sni_dynamic_forward_proxy]
+message FilterConfig {
+  // The DNS cache configuration that the filter will attach to. Note this
+  // configuration must match that of associated :ref:`dynamic forward proxy
+  // cluster configuration
+  // <envoy_api_field_extensions.clusters.dynamic_forward_proxy.v3.ClusterConfig.dns_cache_config>`.
+  common.dynamic_forward_proxy.v3.DnsCacheConfig dns_cache_config = 1
+      [(validate.rules).message = {required: true}];
+
+  oneof port_specifier {
+    // The port number to connect to the upstream.
+    uint32 port_value = 2 [(validate.rules).uint32 = {lte: 65535 gt: 0}];
+  }
+}

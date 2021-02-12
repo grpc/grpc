@@ -1,0 +1,32 @@
+syntax = "proto3";
+
+package envoy.admin.v4alpha;
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+
+option java_package = "io.envoyproxy.envoy.admin.v4alpha";
+option java_outer_classname = "MetricsProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = NEXT_MAJOR_VERSION_CANDIDATE;
+
+// [#protodoc-title: Metrics]
+
+// Proto representation of an Envoy Counter or Gauge value.
+message SimpleMetric {
+  option (udpa.annotations.versioning).previous_message_type = "envoy.admin.v3.SimpleMetric";
+
+  enum Type {
+    COUNTER = 0;
+    GAUGE = 1;
+  }
+
+  // Type of the metric represented.
+  Type type = 1;
+
+  // Current metric value.
+  uint64 value = 2;
+
+  // Name of the metric.
+  string name = 3;
+}

@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package envoy.extensions.compression.brotli.decompressor.v3;
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.extensions.compression.brotli.decompressor.v3";
+option java_outer_classname = "BrotliProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Brotli Decompressor]
+// [#extension: envoy.compression.brotli.decompressor]
+
+message Brotli {
+  // If true, disables "canny" ring buffer allocation strategy.
+  // Ring buffer is allocated according to window size, despite the real size of the content.
+  bool disable_ring_buffer_reallocation = 1;
+
+  // Value for decompressor's next output buffer. If not set, defaults to 4096.
+  google.protobuf.UInt32Value chunk_size = 2 [(validate.rules).uint32 = {lte: 65536 gte: 4096}];
+}

@@ -1,0 +1,48 @@
+syntax = "proto3";
+
+package envoy.config.filter.http.compressor.v2;
+
+import "envoy/api/v2/core/base.proto";
+
+import "google/protobuf/wrappers.proto";
+
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.http.compressor.v2";
+option java_outer_classname = "CompressorProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package =
+    "envoy.extensions.filters.http.compressor.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Compressor]
+
+// [#next-free-field: 6]
+message Compressor {
+  // Minimum response length, in bytes, which will trigger compression. The default value is 30.
+  google.protobuf.UInt32Value content_length = 1;
+
+  // Set of strings that allows specifying which mime-types yield compression; e.g.,
+  // application/json, text/html, etc. When this field is not defined, compression will be applied
+  // to the following mime-types: "application/javascript", "application/json",
+  // "application/xhtml+xml", "image/svg+xml", "text/css", "text/html", "text/plain", "text/xml"
+  // and their synonyms.
+  repeated string content_type = 2;
+
+  // If true, disables compression when the response contains an etag header. When it is false, the
+  // filter will preserve weak etags and remove the ones that require strong validation.
+  bool disable_on_etag_header = 3;
+
+  // If true, removes accept-encoding from the request headers before dispatching it to the upstream
+  // so that responses do not get compressed before reaching the filter.
+  // .. attention:
+  //
+  //    To avoid interfering with other compression filters in the same chain use this option in
+  //    the filter closest to the upstream.
+  bool remove_accept_encoding_header = 4;
+
+  // Runtime flag that controls whether the filter is enabled or not. If set to false, the
+  // filter will operate as a pass-through filter. If not specified, defaults to enabled.
+  api.v2.core.RuntimeFeatureFlag runtime_enabled = 5;
+}

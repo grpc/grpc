@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package envoy.service.accesslog.v3;
+
+import "envoy/config/core/v3/base.proto";
+import "envoy/data/accesslog/v3/accesslog.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.service.accesslog.v3";
+option java_outer_classname = "AlsProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: gRPC Access Log Service (ALS)]
+
+// Service for streaming access logs from Envoy to an access log server.
+service AccessLogService {
+  // Envoy will connect and send StreamAccessLogsMessage messages forever. It does not expect any
+  // response to be sent as nothing would be done in the case of failure. The server should
+  // disconnect if it expects Envoy to reconnect. In the future we may decide to add a different
+  // API for "critical" access logs in which Envoy will buffer access logs for some period of time
+  // until it gets an ACK so it could then retry. This API is designed for high throughput with the
+  // expectation that it might be lossy.
+  rpc StreamAccessLogs(stream StreamAccessLogsMessage) returns (StreamAccessLogsResponse) {
+  }
+}
+
+// Empty response for the StreamAccessLogs API. Will never be sent. See below.
+message StreamAccessLogsResponse {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.service.accesslog.v2.StreamAccessLogsResponse";
+}
+
+// Stream message for the StreamAccessLogs API. Envoy will open a stream to the server and stream
+// access logs without ever expecting a response.
+message StreamAccessLogsMessage {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.service.accesslog.v2.StreamAccessLogsMessage";
+
+  message Identifier {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.service.accesslog.v2.StreamAccessLogsMessage.Identifier";
+
+    // The node sending the access log messages over the stream.
+    config.core.v3.Node node = 1 [(validate.rules).message = {required: true}];
+
+    // The friendly name of the log configured in :ref:`CommonGrpcAccessLogConfig
+    // <envoy_api_msg_extensions.access_loggers.grpc.v3.CommonGrpcAccessLogConfig>`.
+    string log_name = 2 [(validate.rules).string = {min_len: 1}];
+  }
+
+  // Wrapper for batches of HTTP access log entries.
+  message HTTPAccessLogEntries {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.service.accesslog.v2.StreamAccessLogsMessage.HTTPAccessLogEntries";
+
+    repeated data.accesslog.v3.HTTPAccessLogEntry log_entry = 1
+        [(validate.rules).repeated = {min_items: 1}];
+  }
+
+  // Wrapper for batches of TCP access log entries.
+  message TCPAccessLogEntries {
+    option (udpa.annotations.versioning).previous_message_type =
+        "envoy.service.accesslog.v2.StreamAccessLogsMessage.TCPAccessLogEntries";
+
+    repeated data.accesslog.v3.TCPAccessLogEntry log_entry = 1
+        [(validate.rules).repeated = {min_items: 1}];
+  }
+
+  // Identifier data that will only be sent in the first message on the stream. This is effectively
+  // structured metadata and is a performance optimization.
+  Identifier identifier = 1;
+
+  // Batches of log entries of a single type. Generally speaking, a given stream should only
+  // ever include one type of log entry.
+  oneof log_entries {
+    option (validate.required) = true;
+
+    HTTPAccessLogEntries http_logs = 2;
+
+    TCPAccessLogEntries tcp_logs = 3;
+  }
+}

@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package envoy.service.discovery.v2;
+
+import "envoy/api/v2/discovery.proto";
+
+import "google/api/annotations.proto";
+
+import "envoy/annotations/resource.proto";
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+
+option java_package = "io.envoyproxy.envoy.service.discovery.v2";
+option java_outer_classname = "SdsProto";
+option java_multiple_files = true;
+option java_generic_services = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.service.secret.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Secret Discovery Service (SDS)]
+
+service SecretDiscoveryService {
+  option (envoy.annotations.resource).type = "envoy.api.v2.auth.Secret";
+
+  rpc DeltaSecrets(stream api.v2.DeltaDiscoveryRequest)
+      returns (stream api.v2.DeltaDiscoveryResponse) {
+  }
+
+  rpc StreamSecrets(stream api.v2.DiscoveryRequest) returns (stream api.v2.DiscoveryResponse) {
+  }
+
+  rpc FetchSecrets(api.v2.DiscoveryRequest) returns (api.v2.DiscoveryResponse) {
+    option (google.api.http).post = "/v2/discovery:secrets";
+    option (google.api.http).body = "*";
+  }
+}
+
+// [#not-implemented-hide:] Not configuration. Workaround c++ protobuf issue with importing
+// services: https://github.com/google/protobuf/issues/4221
+message SdsDummy {
+}

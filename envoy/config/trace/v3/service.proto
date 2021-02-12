@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package envoy.config.trace.v3;
+
+import "envoy/config/core/v3/grpc_service.proto";
+
+import "udpa/annotations/status.proto";
+import "udpa/annotations/versioning.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.trace.v3";
+option java_outer_classname = "ServiceProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = ACTIVE;
+
+// [#protodoc-title: Trace Service]
+
+// Configuration structure.
+message TraceServiceConfig {
+  option (udpa.annotations.versioning).previous_message_type =
+      "envoy.config.trace.v2.TraceServiceConfig";
+
+  // The upstream gRPC cluster that hosts the metrics service.
+  core.v3.GrpcService grpc_service = 1 [(validate.rules).message = {required: true}];
+}

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package envoy.config.trace.v2;
+
+import "google/protobuf/struct.proto";
+
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.trace.v2";
+option java_outer_classname = "DynamicOtProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Dynamically loadable OpenTracing tracer]
+
+// DynamicOtConfig is used to dynamically load a tracer from a shared library
+// that implements the `OpenTracing dynamic loading API
+// <https://github.com/opentracing/opentracing-cpp>`_.
+// [#extension: envoy.tracers.dynamic_ot]
+message DynamicOtConfig {
+  // Dynamic library implementing the `OpenTracing API
+  // <https://github.com/opentracing/opentracing-cpp>`_.
+  string library = 1 [(validate.rules).string = {min_bytes: 1}];
+
+  // The configuration to use when creating a tracer from the given dynamic
+  // library.
+  google.protobuf.Struct config = 2;
+}

@@ -1,0 +1,87 @@
+syntax = "proto3";
+
+package envoy.config.filter.fault.v2;
+
+import "envoy/type/percent.proto";
+
+import "google/protobuf/duration.proto";
+
+import "envoy/annotations/deprecation.proto";
+import "udpa/annotations/migrate.proto";
+import "udpa/annotations/status.proto";
+import "validate/validate.proto";
+
+option java_package = "io.envoyproxy.envoy.config.filter.fault.v2";
+option java_outer_classname = "FaultProto";
+option java_multiple_files = true;
+option (udpa.annotations.file_migrate).move_to_package = "envoy.extensions.filters.common.fault.v3";
+option (udpa.annotations.file_status).package_version_status = FROZEN;
+
+// [#protodoc-title: Common fault injection types]
+
+// Delay specification is used to inject latency into the
+// HTTP/gRPC/Mongo/Redis operation or delay proxying of TCP connections.
+// [#next-free-field: 6]
+message FaultDelay {
+  enum FaultDelayType {
+    // Unused and deprecated.
+    FIXED = 0;
+  }
+
+  // Fault delays are controlled via an HTTP header (if applicable). See the
+  // :ref:`HTTP fault filter <config_http_filters_fault_injection_http_header>` documentation for
+  // more information.
+  message HeaderDelay {
+  }
+
+  reserved 2;
+
+  // Unused and deprecated. Will be removed in the next release.
+  FaultDelayType type = 1 [deprecated = true, (envoy.annotations.disallowed_by_default) = true];
+
+  oneof fault_delay_secifier {
+    option (validate.required) = true;
+
+    // Add a fixed delay before forwarding the operation upstream. See
+    // https://developers.google.com/protocol-buffers/docs/proto3#json for
+    // the JSON/YAML Duration mapping. For HTTP/Mongo/Redis, the specified
+    // delay will be injected before a new request/operation. For TCP
+    // connections, the proxying of the connection upstream will be delayed
+    // for the specified period. This is required if type is FIXED.
+    google.protobuf.Duration fixed_delay = 3 [(validate.rules).duration = {gt {}}];
+
+    // Fault delays are controlled via an HTTP header (if applicable).
+    HeaderDelay header_delay = 5;
+  }
+
+  // The percentage of operations/connections/requests on which the delay will be injected.
+  type.FractionalPercent percentage = 4;
+}
+
+// Describes a rate limit to be applied.
+message FaultRateLimit {
+  // Describes a fixed/constant rate limit.
+  message FixedLimit {
+    // The limit supplied in KiB/s.
+    uint64 limit_kbps = 1 [(validate.rules).uint64 = {gte: 1}];
+  }
+
+  // Rate limits are controlled via an HTTP header (if applicable). See the
+  // :ref:`HTTP fault filter <config_http_filters_fault_injection_http_header>` documentation for
+  // more information.
+  message HeaderLimit {
+  }
+
+  oneof limit_type {
+    option (validate.required) = true;
+
+    // A fixed rate limit.
+    FixedLimit fixed_limit = 1;
+
+    // Rate limits are controlled via an HTTP header (if applicable).
+    HeaderLimit header_limit = 3;
+  }
+
+  // The percentage of operations/connections/requests on which the rate limit will be injected.
+  type.FractionalPercent percentage = 2;
+}
