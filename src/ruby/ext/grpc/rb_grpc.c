@@ -35,12 +35,12 @@
 #include "rb_call_credentials.h"
 #include "rb_channel.h"
 #include "rb_channel_credentials.h"
-#include "rb_xds_channel_credentials.h"
 #include "rb_compression_options.h"
 #include "rb_event_thread.h"
 #include "rb_loader.h"
 #include "rb_server.h"
 #include "rb_server_credentials.h"
+#include "rb_xds_channel_credentials.h"
 #include "rb_xds_server_credentials.h"
 
 static VALUE grpc_rb_cTimeVal = Qnil;

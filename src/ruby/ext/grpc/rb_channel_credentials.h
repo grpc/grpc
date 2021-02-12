@@ -19,8 +19,8 @@
 #ifndef GRPC_RB_CREDENTIALS_H_
 #define GRPC_RB_CREDENTIALS_H_
 
-#include <stdbool.h>
 #include <ruby/ruby.h>
+#include <stdbool.h>
 
 #include <grpc/grpc_security.h>
 

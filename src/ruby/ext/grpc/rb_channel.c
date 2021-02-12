@@ -31,10 +31,10 @@
 #include "rb_call.h"
 #include "rb_channel_args.h"
 #include "rb_channel_credentials.h"
-#include "rb_xds_channel_credentials.h"
 #include "rb_completion_queue.h"
 #include "rb_grpc.h"
 #include "rb_server.h"
+#include "rb_xds_channel_credentials.h"
 
 /* id_channel is the name of the hidden ivar that preserves a reference to the
  * channel on a call, so that calls are not GCed before their channel.  */
@@ -245,7 +245,7 @@ static VALUE grpc_rb_channel_init(int argc, VALUE* argv, VALUE self) {
     wrapper->credentials = credentials;
     if (grpc_rb_is_channel_credentials(credentials)) {
       creds = grpc_rb_get_wrapped_channel_credentials(credentials);
-    } else if (grpc_rb_is_xds_channel_credentials(credentials)){
+    } else if (grpc_rb_is_xds_channel_credentials(credentials)) {
       creds = grpc_rb_get_wrapped_xds_channel_credentials(credentials);
     } else {
       rb_raise(rb_eTypeError,

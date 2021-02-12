@@ -25,9 +25,9 @@
 
 #include "rb_call_credentials.h"
 #include "rb_channel_credentials.h"
-#include "rb_xds_channel_credentials.h"
 #include "rb_grpc.h"
 #include "rb_grpc_imports.generated.h"
+#include "rb_xds_channel_credentials.h"
 
 /* grpc_rb_cXdsChannelCredentials is the ruby class that proxies
    grpc_channel_credentials. */
@@ -77,10 +77,8 @@ static void grpc_rb_xds_channel_credentials_mark(void* p) {
 
 static rb_data_type_t grpc_rb_xds_channel_credentials_data_type = {
     "grpc_xds_channel_credentials",
-    {grpc_rb_xds_channel_credentials_mark,
-     grpc_rb_xds_channel_credentials_free,
-     GRPC_RB_MEMSIZE_UNAVAILABLE,
-     NULL},
+    {grpc_rb_xds_channel_credentials_mark, grpc_rb_xds_channel_credentials_free,
+     GRPC_RB_MEMSIZE_UNAVAILABLE, NULL},
     NULL,
     NULL,
 #ifdef RUBY_TYPED_FREE_IMMEDIATELY
@@ -104,7 +102,7 @@ static VALUE grpc_rb_xds_channel_credentials_alloc(VALUE cls) {
  * be called with grpc_channel_credentials objects that are not already
  * associated with any Ruby object. */
 VALUE grpc_rb_xds_wrap_channel_credentials(grpc_channel_credentials* c,
-                                       VALUE mark) {
+                                           VALUE mark) {
   VALUE rb_wrapper;
   grpc_rb_xds_channel_credentials* wrapper;
   if (c == NULL) {
@@ -135,7 +133,9 @@ static VALUE grpc_rb_xds_channel_credentials_init(VALUE self,
   grpc_channel_credentials* creds =
       grpc_xds_credentials_create(grpc_fallback_creds);
   if (creds == NULL) {
-    rb_raise(rb_eRuntimeError, "the call to grpc_xds_credentials_create() failed, could not create a credentials, not sure why");
+    rb_raise(rb_eRuntimeError,
+             "the call to grpc_xds_credentials_create() failed, could not "
+             "create a credentials, not sure why");
     return Qnil;
   }
 
@@ -149,8 +149,9 @@ static VALUE grpc_rb_xds_channel_credentials_init(VALUE self,
   return self;
 }
 
-// TODO: de-duplicate this code with the similar method in rb_channel_credentials.c, 
-// after putting ChannelCredentials and XdsChannelCredentials under a common parent class
+// TODO: de-duplicate this code with the similar method in
+// rb_channel_credentials.c, after putting ChannelCredentials and
+// XdsChannelCredentials under a common parent class
 static VALUE grpc_rb_xds_channel_credentials_compose(int argc, VALUE* argv,
                                                      VALUE self) {
   grpc_channel_credentials* creds;
