@@ -1,0 +1,162 @@
+syntax = "proto3";
+
+package tests.harness.cases;
+option go_package = "cases";
+
+import "validate/validate.proto";
+
+message FloatNone     { float val = 1; }
+message FloatConst    { float val = 1 [(validate.rules).float.const = 1.23]; }
+message FloatIn       { float val = 1 [(validate.rules).float = {in: [4.56, 7.89]}]; }
+message FloatNotIn    { float val = 1 [(validate.rules).float = {not_in: [0]}]; }
+message FloatLT       { float val = 1 [(validate.rules).float.lt = 0]; }
+message FloatLTE      { float val = 1 [(validate.rules).float.lte = 64]; }
+message FloatGT       { float val = 1 [(validate.rules).float.gt = 16]; }
+message FloatGTE      { float val = 1 [(validate.rules).float.gte = 8]; }
+message FloatGTLT     { float val = 1 [(validate.rules).float = {gt: 0, lt: 10}]; }
+message FloatExLTGT   { float val = 1 [(validate.rules).float = {lt: 0, gt: 10}]; }
+message FloatGTELTE   { float val = 1 [(validate.rules).float = {gte: 128, lte: 256}]; }
+message FloatExGTELTE { float val = 1 [(validate.rules).float = {lte: 128, gte: 256}]; }
+
+message DoubleNone     { double val = 1; }
+message DoubleConst    { double val = 1 [(validate.rules).double.const = 1.23]; }
+message DoubleIn       { double val = 1 [(validate.rules).double = {in: [4.56, 7.89]}]; }
+message DoubleNotIn    { double val = 1 [(validate.rules).double = {not_in: [0]}]; }
+message DoubleLT       { double val = 1 [(validate.rules).double.lt = 0]; }
+message DoubleLTE      { double val = 1 [(validate.rules).double.lte = 64]; }
+message DoubleGT       { double val = 1 [(validate.rules).double.gt = 16]; }
+message DoubleGTE      { double val = 1 [(validate.rules).double.gte = 8]; }
+message DoubleGTLT     { double val = 1 [(validate.rules).double = {gt: 0, lt: 10}]; }
+message DoubleExLTGT   { double val = 1 [(validate.rules).double = {lt: 0, gt: 10}]; }
+message DoubleGTELTE   { double val = 1 [(validate.rules).double = {gte: 128, lte: 256}]; }
+message DoubleExGTELTE { double val = 1 [(validate.rules).double = {lte: 128, gte: 256}]; }
+
+message Int32None     { int32 val = 1; }
+message Int32Const    { int32 val = 1 [(validate.rules).int32.const = 1]; }
+message Int32In       { int32 val = 1 [(validate.rules).int32 = {in: [2, 3]}]; }
+message Int32NotIn    { int32 val = 1 [(validate.rules).int32 = {not_in: [0]}]; }
+message Int32LT       { int32 val = 1 [(validate.rules).int32.lt = 0]; }
+message Int32LTE      { int32 val = 1 [(validate.rules).int32.lte = 64]; }
+message Int32GT       { int32 val = 1 [(validate.rules).int32.gt = 16]; }
+message Int32GTE      { int32 val = 1 [(validate.rules).int32.gte = 8]; }
+message Int32GTLT     { int32 val = 1 [(validate.rules).int32 = {gt: 0, lt: 10}]; }
+message Int32ExLTGT   { int32 val = 1 [(validate.rules).int32 = {lt: 0, gt: 10}]; }
+message Int32GTELTE   { int32 val = 1 [(validate.rules).int32 = {gte: 128, lte: 256}]; }
+message Int32ExGTELTE { int32 val = 1 [(validate.rules).int32 = {lte: 128, gte: 256}]; }
+
+message Int64None     { int64 val = 1; }
+message Int64Const    { int64 val = 1 [(validate.rules).int64.const = 1]; }
+message Int64In       { int64 val = 1 [(validate.rules).int64 = {in: [2, 3]}]; }
+message Int64NotIn    { int64 val = 1 [(validate.rules).int64 = {not_in: [0]}]; }
+message Int64LT       { int64 val = 1 [(validate.rules).int64.lt = 0]; }
+message Int64LTE      { int64 val = 1 [(validate.rules).int64.lte = 64]; }
+message Int64GT       { int64 val = 1 [(validate.rules).int64.gt = 16]; }
+message Int64GTE      { int64 val = 1 [(validate.rules).int64.gte = 8]; }
+message Int64GTLT     { int64 val = 1 [(validate.rules).int64 = {gt: 0, lt: 10}]; }
+message Int64ExLTGT   { int64 val = 1 [(validate.rules).int64 = {lt: 0, gt: 10}]; }
+message Int64GTELTE   { int64 val = 1 [(validate.rules).int64 = {gte: 128, lte: 256}]; }
+message Int64ExGTELTE { int64 val = 1 [(validate.rules).int64 = {lte: 128, gte: 256}]; }
+
+message UInt32None     { uint32 val = 1; }
+message UInt32Const    { uint32 val = 1 [(validate.rules).uint32.const = 1]; }
+message UInt32In       { uint32 val = 1 [(validate.rules).uint32 = {in: [2, 3]}]; }
+message UInt32NotIn    { uint32 val = 1 [(validate.rules).uint32 = {not_in: [0]}]; }
+message UInt32LT       { uint32 val = 1 [(validate.rules).uint32.lt = 5]; }
+message UInt32LTE      { uint32 val = 1 [(validate.rules).uint32.lte = 64]; }
+message UInt32GT       { uint32 val = 1 [(validate.rules).uint32.gt = 16]; }
+message UInt32GTE      { uint32 val = 1 [(validate.rules).uint32.gte = 8]; }
+message UInt32GTLT     { uint32 val = 1 [(validate.rules).uint32 = {gt: 5, lt: 10}]; }
+message UInt32ExLTGT   { uint32 val = 1 [(validate.rules).uint32 = {lt: 5, gt: 10}]; }
+message UInt32GTELTE   { uint32 val = 1 [(validate.rules).uint32 = {gte: 128, lte: 256}]; }
+message UInt32ExGTELTE { uint32 val = 1 [(validate.rules).uint32 = {lte: 128, gte: 256}]; }
+
+message UInt64None     { uint64 val = 1; }
+message UInt64Const    { uint64 val = 1 [(validate.rules).uint64.const = 1]; }
+message UInt64In       { uint64 val = 1 [(validate.rules).uint64 = {in: [2, 3]}]; }
+message UInt64NotIn    { uint64 val = 1 [(validate.rules).uint64 = {not_in: [0]}]; }
+message UInt64LT       { uint64 val = 1 [(validate.rules).uint64.lt = 5]; }
+message UInt64LTE      { uint64 val = 1 [(validate.rules).uint64.lte = 64]; }
+message UInt64GT       { uint64 val = 1 [(validate.rules).uint64.gt = 16]; }
+message UInt64GTE      { uint64 val = 1 [(validate.rules).uint64.gte = 8]; }
+message UInt64GTLT     { uint64 val = 1 [(validate.rules).uint64 = {gt: 5, lt: 10}]; }
+message UInt64ExLTGT   { uint64 val = 1 [(validate.rules).uint64 = {lt: 5, gt: 10}]; }
+message UInt64GTELTE   { uint64 val = 1 [(validate.rules).uint64 = {gte: 128, lte: 256}]; }
+message UInt64ExGTELTE { uint64 val = 1 [(validate.rules).uint64 = {lte: 128, gte: 256}]; }
+
+message SInt32None     { sint32 val = 1; }
+message SInt32Const    { sint32 val = 1 [(validate.rules).sint32.const = 1]; }
+message SInt32In       { sint32 val = 1 [(validate.rules).sint32 = {in: [2, 3]}]; }
+message SInt32NotIn    { sint32 val = 1 [(validate.rules).sint32 = {not_in: [0]}]; }
+message SInt32LT       { sint32 val = 1 [(validate.rules).sint32.lt = 0]; }
+message SInt32LTE      { sint32 val = 1 [(validate.rules).sint32.lte = 64]; }
+message SInt32GT       { sint32 val = 1 [(validate.rules).sint32.gt = 16]; }
+message SInt32GTE      { sint32 val = 1 [(validate.rules).sint32.gte = 8]; }
+message SInt32GTLT     { sint32 val = 1 [(validate.rules).sint32 = {gt: 0, lt: 10}]; }
+message SInt32ExLTGT   { sint32 val = 1 [(validate.rules).sint32 = {lt: 0, gt: 10}]; }
+message SInt32GTELTE   { sint32 val = 1 [(validate.rules).sint32 = {gte: 128, lte: 256}]; }
+message SInt32ExGTELTE { sint32 val = 1 [(validate.rules).sint32 = {lte: 128, gte: 256}]; }
+
+message SInt64None     { sint64 val = 1; }
+message SInt64Const    { sint64 val = 1 [(validate.rules).sint64.const = 1]; }
+message SInt64In       { sint64 val = 1 [(validate.rules).sint64 = {in: [2, 3]}]; }
+message SInt64NotIn    { sint64 val = 1 [(validate.rules).sint64 = {not_in: [0]}]; }
+message SInt64LT       { sint64 val = 1 [(validate.rules).sint64.lt = 0]; }
+message SInt64LTE      { sint64 val = 1 [(validate.rules).sint64.lte = 64]; }
+message SInt64GT       { sint64 val = 1 [(validate.rules).sint64.gt = 16]; }
+message SInt64GTE      { sint64 val = 1 [(validate.rules).sint64.gte = 8]; }
+message SInt64GTLT     { sint64 val = 1 [(validate.rules).sint64 = {gt: 0, lt: 10}]; }
+message SInt64ExLTGT   { sint64 val = 1 [(validate.rules).sint64 = {lt: 0, gt: 10}]; }
+message SInt64GTELTE   { sint64 val = 1 [(validate.rules).sint64 = {gte: 128, lte: 256}]; }
+message SInt64ExGTELTE { sint64 val = 1 [(validate.rules).sint64 = {lte: 128, gte: 256}]; }
+
+message Fixed32None     { fixed32 val = 1; }
+message Fixed32Const    { fixed32 val = 1 [(validate.rules).fixed32.const = 1]; }
+message Fixed32In       { fixed32 val = 1 [(validate.rules).fixed32 = {in: [2, 3]}]; }
+message Fixed32NotIn    { fixed32 val = 1 [(validate.rules).fixed32 = {not_in: [0]}]; }
+message Fixed32LT       { fixed32 val = 1 [(validate.rules).fixed32.lt = 5]; }
+message Fixed32LTE      { fixed32 val = 1 [(validate.rules).fixed32.lte = 64]; }
+message Fixed32GT       { fixed32 val = 1 [(validate.rules).fixed32.gt = 16]; }
+message Fixed32GTE      { fixed32 val = 1 [(validate.rules).fixed32.gte = 8]; }
+message Fixed32GTLT     { fixed32 val = 1 [(validate.rules).fixed32 = {gt: 5, lt: 10}]; }
+message Fixed32ExLTGT   { fixed32 val = 1 [(validate.rules).fixed32 = {lt: 5, gt: 10}]; }
+message Fixed32GTELTE   { fixed32 val = 1 [(validate.rules).fixed32 = {gte: 128, lte: 256}]; }
+message Fixed32ExGTELTE { fixed32 val = 1 [(validate.rules).fixed32 = {lte: 128, gte: 256}]; }
+
+message Fixed64None     { fixed64 val = 1; }
+message Fixed64Const    { fixed64 val = 1 [(validate.rules).fixed64.const = 1]; }
+message Fixed64In       { fixed64 val = 1 [(validate.rules).fixed64 = {in: [2, 3]}]; }
+message Fixed64NotIn    { fixed64 val = 1 [(validate.rules).fixed64 = {not_in: [0]}]; }
+message Fixed64LT       { fixed64 val = 1 [(validate.rules).fixed64.lt = 5]; }
+message Fixed64LTE      { fixed64 val = 1 [(validate.rules).fixed64.lte = 64]; }
+message Fixed64GT       { fixed64 val = 1 [(validate.rules).fixed64.gt = 16]; }
+message Fixed64GTE      { fixed64 val = 1 [(validate.rules).fixed64.gte = 8]; }
+message Fixed64GTLT     { fixed64 val = 1 [(validate.rules).fixed64 = {gt: 5, lt: 10}]; }
+message Fixed64ExLTGT   { fixed64 val = 1 [(validate.rules).fixed64 = {lt: 5, gt: 10}]; }
+message Fixed64GTELTE   { fixed64 val = 1 [(validate.rules).fixed64 = {gte: 128, lte: 256}]; }
+message Fixed64ExGTELTE { fixed64 val = 1 [(validate.rules).fixed64 = {lte: 128, gte: 256}]; }
+
+message SFixed32None     { sfixed32 val = 1; }
+message SFixed32Const    { sfixed32 val = 1 [(validate.rules).sfixed32.const = 1]; }
+message SFixed32In       { sfixed32 val = 1 [(validate.rules).sfixed32 = {in: [2, 3]}]; }
+message SFixed32NotIn    { sfixed32 val = 1 [(validate.rules).sfixed32 = {not_in: [0]}]; }
+message SFixed32LT       { sfixed32 val = 1 [(validate.rules).sfixed32.lt = 0]; }
+message SFixed32LTE      { sfixed32 val = 1 [(validate.rules).sfixed32.lte = 64]; }
+message SFixed32GT       { sfixed32 val = 1 [(validate.rules).sfixed32.gt = 16]; }
+message SFixed32GTE      { sfixed32 val = 1 [(validate.rules).sfixed32.gte = 8]; }
+message SFixed32GTLT     { sfixed32 val = 1 [(validate.rules).sfixed32 = {gt: 0, lt: 10}]; }
+message SFixed32ExLTGT   { sfixed32 val = 1 [(validate.rules).sfixed32 = {lt: 0, gt: 10}]; }
+message SFixed32GTELTE   { sfixed32 val = 1 [(validate.rules).sfixed32 = {gte: 128, lte: 256}]; }
+message SFixed32ExGTELTE { sfixed32 val = 1 [(validate.rules).sfixed32 = {lte: 128, gte: 256}]; }
+
+message SFixed64None     { sfixed64 val = 1; }
+message SFixed64Const    { sfixed64 val = 1 [(validate.rules).sfixed64.const = 1]; }
+message SFixed64In       { sfixed64 val = 1 [(validate.rules).sfixed64 = {in: [2, 3]}]; }
+message SFixed64NotIn    { sfixed64 val = 1 [(validate.rules).sfixed64 = {not_in: [0]}]; }
+message SFixed64LT       { sfixed64 val = 1 [(validate.rules).sfixed64.lt = 0]; }
+message SFixed64LTE      { sfixed64 val = 1 [(validate.rules).sfixed64.lte = 64]; }
+message SFixed64GT       { sfixed64 val = 1 [(validate.rules).sfixed64.gt = 16]; }
+message SFixed64GTE      { sfixed64 val = 1 [(validate.rules).sfixed64.gte = 8]; }
+message SFixed64GTLT     { sfixed64 val = 1 [(validate.rules).sfixed64 = {gt: 0, lt: 10}]; }
+message SFixed64ExLTGT   { sfixed64 val = 1 [(validate.rules).sfixed64 = {lt: 0, gt: 10}]; }
+message SFixed64GTELTE   { sfixed64 val = 1 [(validate.rules).sfixed64 = {gte: 128, lte: 256}]; }
+message SFixed64ExGTELTE { sfixed64 val = 1 [(validate.rules).sfixed64 = {lte: 128, gte: 256}]; }

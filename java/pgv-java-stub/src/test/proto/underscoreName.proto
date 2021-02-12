@@ -1,0 +1,18 @@
+syntax = "proto3";
+package io.envoyproxy.pgv.grpc;
+
+option java_multiple_files = true;
+option java_package = "io.envoyproxy.pgv.validate";
+import "validate/validate.proto";
+
+message MessageNameWith_Underscore {
+    string v = 1 [(validate.rules).string.min_len = 2];
+}
+
+message AnotherMessageNameWith_Underscore {
+    string v = 1 [(validate.rules).string.min_len = 2];
+}
+
+message MessageNameWith_Two_Underscore {
+    string v = 1 [(validate.rules).string.min_len = 2];
+}

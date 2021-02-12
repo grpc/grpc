@@ -1,0 +1,12 @@
+syntax = "proto3";
+
+package tests.harness.cases;
+option go_package = "cases";
+
+import "validate/validate.proto";
+import "google/protobuf/any.proto";
+
+message AnyNone     { google.protobuf.Any val = 1; }
+message AnyRequired { google.protobuf.Any val = 1 [(validate.rules).any.required = true]; }
+message AnyIn       { google.protobuf.Any val = 1 [(validate.rules).any = {in: ["type.googleapis.com/google.protobuf.Duration"]}];}
+message AnyNotIn    { google.protobuf.Any val = 1 [(validate.rules).any = {not_in: ["type.googleapis.com/google.protobuf.Timestamp"]}];}

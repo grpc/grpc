@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package io.envoyproxy.pgv.grpc;
+
+option java_multiple_files = true;
+option java_package = "io.envoyproxy.pgv.grpc.asubpackage";
+option java_outer_classname = "Ponycopter";
+
+import "validate/validate.proto";
+
+service Greeter {
+    rpc SayHello (HelloJKRequest) returns (HelloResponse) {}
+}
+
+message HelloJKRequest {
+    string name = 1 [(validate.rules).string.const = "World"];
+}
+
+message HelloResponse {
+    string message = 1;
+}

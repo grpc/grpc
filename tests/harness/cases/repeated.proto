@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package tests.harness.cases;
+option go_package = "cases";
+
+import "tests/harness/cases/other_package/embed.proto";
+
+import "validate/validate.proto";
+import "google/protobuf/duration.proto";
+
+message Embed { int64 val = 1 [(validate.rules).int64.gt = 0]; }
+enum AnEnum {
+  X = 0;
+  Y = 1;
+}
+
+message RepeatedNone      { repeated int64  val = 1; }
+message RepeatedEmbedNone { repeated Embed val = 1; }
+message RepeatedEmbedCrossPackageNone { repeated tests.harness.cases.other_package.Embed val = 1; }
+message RepeatedMin       { repeated Embed val = 1 [(validate.rules).repeated.min_items = 2]; }
+message RepeatedMax       { repeated double val = 1 [(validate.rules).repeated.max_items = 3]; }
+message RepeatedMinMax    { repeated sfixed32 val = 1 [(validate.rules).repeated = {min_items: 2, max_items: 4}]; }
+message RepeatedExact     { repeated uint32 val = 1 [(validate.rules).repeated = {min_items: 3, max_items: 3}]; }
+message RepeatedUnique    { repeated string val = 1 [(validate.rules).repeated.unique = true]; }
+message RepeatedItemRule  { repeated float val = 1 [(validate.rules).repeated.items.float.gt = 0]; }
+message RepeatedItemPattern  { repeated string val = 1 [(validate.rules).repeated.items.string.pattern = "(?i)^[a-z0-9]+$"]; }
+message RepeatedEmbedSkip { repeated Embed val = 1 [(validate.rules).repeated.items.message.skip = true]; }
+message RepeatedItemIn { repeated string val = 1 [(validate.rules).repeated.items.string = {in: ["foo", "bar"]}]; }
+message RepeatedItemNotIn { repeated string val = 1 [(validate.rules).repeated.items.string = {not_in: ["foo", "bar"]}]; }
+message RepeatedEnumIn { repeated AnEnum val = 1 [(validate.rules).repeated.items.enum = {in: [0]}]; }
+message RepeatedEnumNotIn { repeated AnEnum val = 1 [(validate.rules).repeated.items.enum = {not_in: [0]}]; }
+message RepeatedEmbeddedEnumIn { repeated AnotherInEnum val = 1 [(validate.rules).repeated.items.enum = {in: [0]}]; enum AnotherInEnum {A = 0; B = 1; }}
+message RepeatedEmbeddedEnumNotIn { repeated AnotherNotInEnum val = 1 [(validate.rules).repeated.items.enum = {not_in: [0]}]; enum AnotherNotInEnum {A = 0; B = 1; }}
+message RepeatedMinAndItemLen { repeated string val = 1 [(validate.rules).repeated = { items { string { len: 3 } }, min_items: 1 }]; }
+message RepeatedMinAndMaxItemLen { repeated string val = 1 [(validate.rules).repeated.min_items = 1, (validate.rules).repeated.max_items = 3]; }
+message RepeatedDuration { repeated google.protobuf.Duration val = 1 [(validate.rules).repeated = { items { duration { gte { nanos: 1000000}}}}]; }

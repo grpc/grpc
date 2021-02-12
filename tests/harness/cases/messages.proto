@@ -1,0 +1,35 @@
+syntax = "proto3";
+
+package tests.harness.cases;
+option go_package = "cases";
+
+import "tests/harness/cases/other_package/embed.proto";
+
+import "validate/validate.proto";
+
+message TestMsg {
+    string  const  = 1 [(validate.rules).string.const = "foo"];
+    TestMsg nested = 2;
+}
+
+message MessageNone {
+    NoneMsg val = 1;
+    message NoneMsg {}
+}
+
+message MessageDisabled {
+    option (validate.disabled) = true;
+    uint64 val = 1 [(validate.rules).uint64.gt = 123];
+}
+
+message MessageIgnored {
+    option (validate.ignored) = true;
+    uint64 val = 1 [(validate.rules).uint64.gt = 123];
+}
+
+message Message { TestMsg val = 1; }
+message MessageCrossPackage { tests.harness.cases.other_package.Embed val = 1; }
+message MessageSkip { TestMsg val = 1 [(validate.rules).message.skip = true];}
+message MessageRequired { TestMsg val = 1 [(validate.rules).message.required = true]; }
+
+message MessageWith3dInside {}

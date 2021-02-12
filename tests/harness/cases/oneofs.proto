@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package tests.harness.cases;
+option go_package = "cases";
+
+import "validate/validate.proto";
+
+message TestOneOfMsg {
+    bool val = 1 [(validate.rules).bool.const = true];
+}
+
+message OneOfNone {
+    oneof o {
+        string       x = 1;
+        int32        y = 2;
+    }
+}
+
+message OneOf {
+    oneof o {
+        string       x = 1 [(validate.rules).string.prefix = "foo"];
+        int32        y = 2 [(validate.rules).int32.gt = 0];
+        TestOneOfMsg z = 3;
+    }
+}
+
+message OneOfRequired {
+    oneof o {
+        option (validate.required) = true;
+
+        string       x = 1;
+        int32        y = 2;
+        int32        name_with_underscores = 3;
+        int32        under_and_1_number = 4;
+    }
+}

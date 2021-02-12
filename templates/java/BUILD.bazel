@@ -1,0 +1,36 @@
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
+
+go_library(
+    name = "go_default_library",
+    srcs = [
+        "any.go",
+        "bool.go",
+        "bytes.go",
+        "duration.go",
+        "enum.go",
+        "file.go",
+        "map.go",
+        "message.go",
+        "msg.go",
+        "none.go",
+        "num.go",
+        "oneof.go",
+        "register.go",
+        "repeated.go",
+        "required.go",
+        "string.go",
+        "timestamp.go",
+        "unimplemented.go",
+        "wrapper.go",
+    ],
+    importpath = "github.com/envoyproxy/protoc-gen-validate/templates/java",
+    visibility = ["//visibility:public"],
+    deps = [
+        "//templates/shared:go_default_library",
+        "@com_github_iancoleman_strcase//:go_default_library",
+        "@com_github_lyft_protoc_gen_star//:go_default_library",
+        "@com_github_lyft_protoc_gen_star//lang/go:go_default_library",
+        "@io_bazel_rules_go//proto/wkt:duration_go_proto",
+        "@io_bazel_rules_go//proto/wkt:timestamp_go_proto",
+    ],
+)

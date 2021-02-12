@@ -1,0 +1,47 @@
+syntax = "proto3";
+
+package tests.harness.cases;
+option go_package = "cases";
+
+import "validate/validate.proto";
+import "tests/harness/cases/other_package/embed.proto";
+
+enum TestEnum {
+    ZERO = 0;
+    ONE  = 1;
+    TWO  = 2;
+}
+
+enum TestEnumAlias {
+    option allow_alias = true;
+
+    A = 0;
+    B = 1;
+    C = 2;
+
+    ALPHA = 0;
+    BETA  = 1;
+    GAMMA = 2;
+}
+
+message EnumNone { TestEnum val = 1; }
+
+message EnumConst { TestEnum val = 1 [(validate.rules).enum.const = 2];}
+message EnumAliasConst { TestEnumAlias val = 1 [(validate.rules).enum.const = 2];}
+
+message EnumDefined { TestEnum val = 1 [(validate.rules).enum.defined_only = true];}
+message EnumAliasDefined { TestEnumAlias val = 1 [(validate.rules).enum.defined_only = true];}
+
+message EnumIn      { TestEnum val = 1 [(validate.rules).enum = { in: [0, 2]}];}
+message EnumAliasIn { TestEnumAlias val = 1 [(validate.rules).enum = { in: [0, 2]}];}
+
+message EnumNotIn      { TestEnum val = 1 [(validate.rules).enum = { not_in: [1]}];}
+message EnumAliasNotIn { TestEnumAlias val = 1 [(validate.rules).enum = { not_in: [1]}]; }
+
+message EnumExternal { other_package.Embed.Enumerated val = 1 [(validate.rules).enum.defined_only = true]; }
+
+message RepeatedEnumDefined { repeated TestEnum val = 1 [(validate.rules).repeated.items.enum.defined_only = true]; }
+message RepeatedExternalEnumDefined { repeated other_package.Embed.Enumerated val = 1 [(validate.rules).repeated.items.enum.defined_only = true]; }
+
+message MapEnumDefined { map<string, TestEnum> val = 1 [(validate.rules).map.values.enum.defined_only = true]; }
+message MapExternalEnumDefined { map<string, other_package.Embed.Enumerated> val = 1 [(validate.rules).map.values.enum.defined_only = true]; }
