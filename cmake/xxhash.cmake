@@ -18,7 +18,7 @@
 
 if(gRPC_XXHASH_PROVIDER STREQUAL "module")
 	if(NOT XXHASH_ROOT_DIR)
-		set(XXHASH_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xxhash)
+		set(XXHASH_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/xxhash/cmake_unofficial)
   endif()
   if(EXISTS "${XXHASH_ROOT_DIR}/CMakeLists.txt")
     # Explicitly disable BUILD_TESTING to avoid xxhash's CMakeLists.txt triggering https://github.com/grpc/grpc/issues/23586
