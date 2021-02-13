@@ -21,9 +21,10 @@ def main
   server_runner = ServerRunner.new(EchoServerImpl)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  _, client_pid = start_client('client_memory_usage_client.rb', server_port)
+  client_controller = ClientController.new(
+    'client_memory_usage_client.rb', server_port)
 
-  Process.wait(client_pid)
+  Process.wait(client_controller.client_pid)
 
   client_exit_code = $CHILD_STATUS
   if client_exit_code != 0
