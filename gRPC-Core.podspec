@@ -167,7 +167,13 @@ Pod::Spec.new do |s|
                       'include/grpc/support/sync_windows.h',
                       'include/grpc/support/thd_id.h',
                       'include/grpc/support/time.h',
-                      'include/grpc/support/workaround_list.h'
+                      'include/grpc/support/workaround_list.h',
+                      'third_party/xxhash/xxh3.h',
+                      'third_party/xxhash/xxh_x86dispatch.c',
+                      'third_party/xxhash/xxh_x86dispatch.h',
+                      'third_party/xxhash/xxhash.c',
+                      'third_party/xxhash/xxhash.h',
+                      'third_party/xxhash/xxhsum.c'
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
@@ -1356,7 +1362,13 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/upb.c',
                       'third_party/upb/upb/upb.h',
                       'third_party/upb/upb/upb.hpp',
-                      'third_party/upb/upb/upb.int.h'
+                      'third_party/upb/upb/upb.int.h',
+                      'third_party/xxhash/xxh3.h',
+                      'third_party/xxhash/xxh_x86dispatch.c',
+                      'third_party/xxhash/xxh_x86dispatch.h',
+                      'third_party/xxhash/xxhash.c',
+                      'third_party/xxhash/xxhash.h',
+                      'third_party/xxhash/xxhsum.c'
     ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
@@ -1915,7 +1927,13 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/text_encode.h',
                               'third_party/upb/upb/upb.h',
                               'third_party/upb/upb/upb.hpp',
-                              'third_party/upb/upb/upb.int.h'
+                              'third_party/upb/upb/upb.int.h',
+                              'third_party/xxhash/xxh3.h',
+                              'third_party/xxhash/xxh_x86dispatch.c',
+                              'third_party/xxhash/xxh_x86dispatch.h',
+                              'third_party/xxhash/xxhash.c',
+                              'third_party/xxhash/xxhash.h',
+                              'third_party/xxhash/xxhsum.c'
   end
 
   # CFStream is now default. Leaving this subspec only for compatibility purpose.
@@ -2107,5 +2125,8 @@ Pod::Spec.new do |s|
     find third_party/re2/re2/ third_party/re2/util/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g;s;#include "util/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/util/\\1"\\\n#else\\\n  #include  "util/\\1"\\\n#endif;g'
     find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g'
     find src/core/ third_party/re2/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find third_party/xxhash/ -type f \\( -name '*.h' -or -name '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).h";#if COCOAPODS==1\\\n  #include  "third_party/xxhash/\\1.h"\n#else\\\n  #include  "\\1.h"\\\n#endif;g'
+    find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).h";#if COCOAPODS==1\\\n  #include  "third_party/xxhash/\\1.h"\\\n#else\\\n  #include  "\\1.h"\\\n#endif;g'
+    find src/core/ third_party/xxhash/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end
