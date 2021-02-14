@@ -1445,7 +1445,7 @@ Pod::Spec.new do |s|
     find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g'
     find src/core/ third_party/re2/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
     find third_party/xxhash/ -type f \\( -name '*.h' -or -name '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).h";#if COCOAPODS==1\\\n  #include  "third_party/xxhash/\\1.h"\\\n#else\\\n  #include  "\\1.h"\\\n#endif;g'
-    find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).h";#if COCOAPODS==1\\\n  #include  "third_party/xxhash/\\1.h"\\\n#else\\\n  #include  "\\1.h"\\\n#endif;g'
+    find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "xxhash.h";#if COCOAPODS==1\\\n  #include  "third_party/xxhash/xxhash.h"\\\n#else\\\n  #include  "xxhash.h"\\\n#endif;g'
     find src/core/ third_party/xxhash/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end
