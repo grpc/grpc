@@ -99,18 +99,19 @@ class BuildExt(build_ext.build_ext):
     """Custom build_ext command."""
 
     def get_ext_filename(self, ext_name):
-      # since python3.5, python extensions' shared libraries use a suffix that corresponds to the value
-      # of sysconfig.get_config_var('EXT_SUFFIX') and contains info about the architecture the library targets.
-      # E.g. on x64 linux the suffix is ".cpython-XYZ-x86_64-linux-gnu.so"
-      # When crosscompiling python wheels, we need to be able to override this suffix
-      # so that the resulting file name matches the target architecture and we end up with a well-formed
-      # wheel.
-      filename = build_ext.build_ext.get_ext_filename(self, ext_name)
-      orig_ext_suffix = sysconfig.get_config_var('EXT_SUFFIX')
-      new_ext_suffix = os.getenv('GRPC_PYTHON_OVERRIDE_EXT_SUFFIX')
-      if new_ext_suffix and filename.endswith(orig_ext_suffix):
-        filename = filename[:-len(orig_ext_suffix)] + new_ext_suffix
-      return filename
+        # since python3.5, python extensions' shared libraries use a suffix that corresponds to the value
+        # of sysconfig.get_config_var('EXT_SUFFIX') and contains info about the architecture the library targets.
+        # E.g. on x64 linux the suffix is ".cpython-XYZ-x86_64-linux-gnu.so"
+        # When crosscompiling python wheels, we need to be able to override this suffix
+        # so that the resulting file name matches the target architecture and we end up with a well-formed
+        # wheel.
+        filename = build_ext.build_ext.get_ext_filename(self, ext_name)
+        orig_ext_suffix = sysconfig.get_config_var('EXT_SUFFIX')
+        new_ext_suffix = os.getenv('GRPC_PYTHON_OVERRIDE_EXT_SUFFIX')
+        if new_ext_suffix and filename.endswith(orig_ext_suffix):
+            filename = filename[:-len(orig_ext_suffix)] + new_ext_suffix
+        return filename
+
 
 # There are some situations (like on Windows) where CC, CFLAGS, and LDFLAGS are
 # entirely ignored/dropped/forgotten by distutils and its Cygwin/MinGW support.
@@ -262,25 +263,23 @@ def extension_modules():
         return extensions
 
 
-setuptools.setup(
-    name='grpcio-tools',
-    version=grpc_version.VERSION,
-    description='Protobuf code generator for gRPC',
-    long_description=open(_README_PATH, 'r').read(),
-    author='The gRPC Authors',
-    author_email='grpc-io@googlegroups.com',
-    url='https://grpc.io',
-    license='Apache License 2.0',
-    classifiers=CLASSIFIERS,
-    ext_modules=extension_modules(),
-    packages=setuptools.find_packages('.'),
-    install_requires=[
-        'protobuf>=3.5.0.post1, < 4.0dev',
-        'grpcio>={version}'.format(version=grpc_version.VERSION),
-        'setuptools',
-    ],
-    package_data=package_data(),
-    cmdclass={
-        'build_ext': BuildExt,
-    }
-)
+setuptools.setup(name='grpcio-tools',
+                 version=grpc_version.VERSION,
+                 description='Protobuf code generator for gRPC',
+                 long_description=open(_README_PATH, 'r').read(),
+                 author='The gRPC Authors',
+                 author_email='grpc-io@googlegroups.com',
+                 url='https://grpc.io',
+                 license='Apache License 2.0',
+                 classifiers=CLASSIFIERS,
+                 ext_modules=extension_modules(),
+                 packages=setuptools.find_packages('.'),
+                 install_requires=[
+                     'protobuf>=3.5.0.post1, < 4.0dev',
+                     'grpcio>={version}'.format(version=grpc_version.VERSION),
+                     'setuptools',
+                 ],
+                 package_data=package_data(),
+                 cmdclass={
+                     'build_ext': BuildExt,
+                 })
