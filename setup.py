@@ -66,6 +66,7 @@ if 'linux' in sys.platform:
 if 'openbsd' in sys.platform:
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
 RE2_INCLUDE = (os.path.join('third_party', 're2'),)
+XXHASH_INCLUDE = (os.path.join('third_party', 'xxhash'),)
 SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src',
                             'include'),)
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
@@ -137,6 +138,11 @@ BUILD_WITH_SYSTEM_CARES = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_CARES',
 # have the header files installed (in /usr/include/re2) and during
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_RE2 = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_RE2', False)
+
+# Export this variable to use the system installation of xxhash. You need to
+# have the header files installed (in /usr/include/xxhash) and during
+# runtime, the shared library must be installed
+BUILD_WITH_SYSTEM_XXHASH = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_XXHASH', False)
 
 # For local development use only: This skips building gRPC Core and its
 # dependencies, including protobuf and boringssl. This allows "incremental"
@@ -267,9 +273,13 @@ if BUILD_WITH_SYSTEM_RE2:
     CORE_C_FILES = filter(lambda x: 'third_party/re2' not in x, CORE_C_FILES)
     RE2_INCLUDE = (os.path.join('/usr', 'include', 're2'),)
 
+if BUILD_WITH_SYSTEM_XXHASH:
+    CORE_C_FILES = filter(lambda x: 'third_party/xxhash' not in x, CORE_C_FILES)
+    RE2_INCLUDE = (os.path.join('/usr', 'include', 'xxhash'),)
+
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
-                                 RE2_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
+                                 RE2_INCLUDE + XXHASH_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
                                  UPB_GRPC_GENERATED_INCLUDE +
                                  UPBDEFS_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE)
 
@@ -295,6 +305,8 @@ if BUILD_WITH_SYSTEM_CARES:
     EXTENSION_LIBRARIES += ('cares',)
 if BUILD_WITH_SYSTEM_RE2:
     EXTENSION_LIBRARIES += ('re2',)
+if BUILD_WITH_SYSTEM_XXHASH:
+    EXTENSION_LIBRARIES += ('xxhash',)
 
 DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []
