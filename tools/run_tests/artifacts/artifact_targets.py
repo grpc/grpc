@@ -383,7 +383,7 @@ def targets():
         PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x86', 'cp39-cp39'),
-        PythonArtifact('manylinux2014', 'aarch64', 'cp37-cp37'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp37-cp37m'),
         PythonArtifact('manylinux2014', 'aarch64', 'cp38-cp38'),
         PythonArtifact('manylinux2014', 'aarch64', 'cp39-cp39'),
         PythonArtifact('linux_extra', 'armv7', '2.7'),
