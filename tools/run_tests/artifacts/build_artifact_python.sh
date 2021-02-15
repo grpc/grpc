@@ -43,7 +43,8 @@ then
   WHEEL_PLAT_NAME_FLAG="--plat-name=$AUDITWHEEL_PLAT"
 
   # override the value of EXT_SUFFIX to make sure the crosscompiled .so files in the wheel have the correct filename suffix
-  export GRPC_PYTHON_OVERRIDE_EXT_SUFFIX="$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX").replace("-x86_64-linux-gnu.so", "-aarch64-linux-gnu.so"))')"
+  GRPC_PYTHON_OVERRIDE_EXT_SUFFIX="$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX").replace("-x86_64-linux-gnu.so", "-aarch64-linux-gnu.so"))')"
+  export GRPC_PYTHON_OVERRIDE_EXT_SUFFIX
 
   # Set to empty string to disable the option (see https://github.com/grpc/grpc/issues/24498)
   # TODO: enable ASM optimizations for crosscompiled wheels
@@ -57,6 +58,7 @@ ${SETARCH_CMD} "${PYTHON}" setup.py sdist
 
 # Wheel has a bug where directories don't get excluded.
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
+# shellcheck disable=SC2086
 ${SETARCH_CMD} "${PYTHON}" setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
@@ -95,6 +97,7 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
 
 # Build gRPC tools package binary distribution
+# shellcheck disable=SC2086
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
 
 if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
