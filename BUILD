@@ -36,6 +36,7 @@ load(
     "grpc_upb_proto_library",
     "python_config_settings",
 )
+load("@bazel_skylib//lib:selects.bzl", "selects")
 
 config_setting(
     name = "grpc_no_ares",
@@ -43,8 +44,31 @@ config_setting(
 )
 
 config_setting(
-    name = "grpc_no_xds",
+    name = "grpc_no_xds_define",
     values = {"define": "grpc_no_xds=true"},
+)
+
+config_setting(
+    name = "android",
+    values = {"crosstool_top": "//external:android/crosstool"},
+)
+
+config_setting(
+    name = "ios",
+    values = {"apple_platform_type": "ios"},
+)
+
+selects.config_setting_group(
+    name = "grpc_no_xds",
+    match_any = [
+        ":grpc_no_xds_define",
+        # In addition to disabling XDS support when --define=grpc_no_xds=true is
+        # specified, we also disable it on mobile platforms where it is not
+        # likely to be needed and where reducing the binary size is more
+        # important.
+        ":android",
+        ":ios",
+    ],
 )
 
 config_setting(
