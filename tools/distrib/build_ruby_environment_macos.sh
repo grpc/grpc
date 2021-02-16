@@ -34,7 +34,8 @@ patch "$CROSS_RUBY" << EOF
 +    '--disable-shared',
      '--disable-install-doc',
 +    '--without-gmp',
-     '--with-ext='
+     '--with-ext=',
+     'LDFLAGS=-pipe -s',
    ]
  
 @@ -151,6 +153,7 @@
