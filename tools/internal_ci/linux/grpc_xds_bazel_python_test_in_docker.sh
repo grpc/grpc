@@ -23,7 +23,7 @@ ${name}')
 cd /var/local/git/grpc
 
 VIRTUAL_ENV=$(mktemp -d)
-virtualenv "$VIRTUAL_ENV"
+virtualenv "$VIRTUAL_ENV" -p python3
 PYTHON="$VIRTUAL_ENV"/bin/python
 "$PYTHON" -m pip install --upgrade pip==19.3.1
 "$PYTHON" -m pip install --upgrade grpcio-tools google-api-python-client google-auth-httplib2 oauth2client
