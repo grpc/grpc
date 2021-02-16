@@ -142,7 +142,8 @@ BUILD_WITH_SYSTEM_RE2 = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_RE2', False)
 # Export this variable to use the system installation of xxhash. You need to
 # have the header files installed (in /usr/include/xxhash) and during
 # runtime, the shared library must be installed
-BUILD_WITH_SYSTEM_XXHASH = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_XXHASH', False)
+BUILD_WITH_SYSTEM_XXHASH = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_XXHASH',
+                                          False)
 
 # For local development use only: This skips building gRPC Core and its
 # dependencies, including protobuf and boringssl. This allows "incremental"
@@ -279,8 +280,8 @@ if BUILD_WITH_SYSTEM_XXHASH:
 
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
-                                 RE2_INCLUDE + XXHASH_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
-                                 UPB_GRPC_GENERATED_INCLUDE +
+                                 RE2_INCLUDE + XXHASH_INCLUDE + SSL_INCLUDE +
+                                 UPB_INCLUDE + UPB_GRPC_GENERATED_INCLUDE +
                                  UPBDEFS_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
