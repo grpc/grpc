@@ -56,10 +56,6 @@
 #include "src/core/lib/transport/status_metadata.h"
 #include "src/core/lib/uri/uri_parser.h"
 
-// Strong and weak refs.
-#define INTERNAL_REF_BITS 16
-#define STRONG_REF_MASK (~(gpr_atm)((1 << INTERNAL_REF_BITS) - 1))
-
 // Backoff parameters.
 #define GRPC_SUBCHANNEL_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define GRPC_SUBCHANNEL_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -747,67 +743,15 @@ void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
   }
 }
 
-Subchannel* Subchannel::Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  gpr_atm old_refs;
-  old_refs = RefMutate((1 << INTERNAL_REF_BITS),
-                       0 GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE("STRONG_REF"));
-  GPR_ASSERT((old_refs & STRONG_REF_MASK) != 0);
-  return this;
-}
-
-void Subchannel::Unref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  gpr_atm old_refs;
-  // add a weak ref and subtract a strong ref (atomically)
-  old_refs = RefMutate(
-      static_cast<gpr_atm>(1) - static_cast<gpr_atm>(1 << INTERNAL_REF_BITS),
-      1 GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE("STRONG_UNREF"));
-  if ((old_refs & STRONG_REF_MASK) == (1 << INTERNAL_REF_BITS)) {
-    Disconnect();
-  }
-  GRPC_SUBCHANNEL_WEAK_UNREF(this, "strong-unref");
-}
-
-Subchannel* Subchannel::WeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  gpr_atm old_refs;
-  old_refs = RefMutate(1, 0 GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE("WEAK_REF"));
-  GPR_ASSERT(old_refs != 0);
-  return this;
-}
-
 namespace {
 
+// TODO(apolcyn): do we need to use this?
 void subchannel_destroy(void* arg, grpc_error* /*error*/) {
   Subchannel* self = static_cast<Subchannel*>(arg);
   delete self;
 }
 
 }  // namespace
-
-void Subchannel::WeakUnref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  gpr_atm old_refs;
-  old_refs = RefMutate(-static_cast<gpr_atm>(1),
-                       1 GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE("WEAK_UNREF"));
-  if (old_refs == 1) {
-    ExecCtx::Run(DEBUG_LOCATION,
-                 GRPC_CLOSURE_CREATE(subchannel_destroy, this,
-                                     grpc_schedule_on_exec_ctx),
-                 GRPC_ERROR_NONE);
-  }
-}
-
-Subchannel* Subchannel::RefFromWeakRef() {
-  for (;;) {
-    gpr_atm old_refs = gpr_atm_acq_load(&ref_pair_);
-    if (old_refs >= (1 << INTERNAL_REF_BITS)) {
-      gpr_atm new_refs = old_refs + (1 << INTERNAL_REF_BITS);
-      if (gpr_atm_rel_cas(&ref_pair_, old_refs, new_refs)) {
-        return this;
-      }
-    } else {
-      return nullptr;
-    }
-  }
-}
 
 const char* Subchannel::GetTargetAddress() {
   const grpc_arg* addr_arg =
@@ -1123,7 +1067,7 @@ bool Subchannel::PublishTransportLocked() {
   return true;
 }
 
-void Subchannel::Disconnect() {
+void Subchannel::Orphan() {
   // The subchannel_pool is only used once here in this subchannel, so the
   // access can be outside of the lock.
   if (subchannel_pool_ != nullptr) {
@@ -1136,20 +1080,6 @@ void Subchannel::Disconnect() {
   connector_.reset();
   connected_subchannel_.reset();
   health_watcher_map_.ShutdownLocked();
-}
-
-gpr_atm Subchannel::RefMutate(
-    gpr_atm delta, int barrier GRPC_SUBCHANNEL_REF_MUTATE_EXTRA_ARGS) {
-  gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&ref_pair_, delta)
-                            : gpr_atm_no_barrier_fetch_add(&ref_pair_, delta);
-#ifndef NDEBUG
-  if (grpc_trace_subchannel_refcount.enabled()) {
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "SUBCHANNEL: %p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", this,
-            purpose, old_val, old_val + delta, reason);
-  }
-#endif
-  return old_val;
 }
 
 }  // namespace grpc_core
