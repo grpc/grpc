@@ -59,7 +59,7 @@ LABELS=$(echo "$PR_DATA" | jq -r '.labels | map(.name) | join(",")')
 
 set -x
 
-# git fetch origin
+git fetch origin
 
 BACKPORT_PRS=""
 for BACKPORT_BRANCH in $BACKPORT_BRANCHES; do
