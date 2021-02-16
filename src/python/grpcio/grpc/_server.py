@@ -326,9 +326,15 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.code = code
 
+    def code(self):
+        return self._state.code
+
     def set_details(self, details):
         with self._state.condition:
             self._state.details = _common.encode(details)
+
+    def details(self):
+        return self._state.details
 
     def _finalize_state(self):
         pass

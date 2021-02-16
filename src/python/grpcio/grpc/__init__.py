@@ -1237,6 +1237,24 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         """
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    def code(self):
+        """Accesses the value to be used as status code upon RPC completion.
+
+        Returns:
+          The StatusCode value for the RPC.
+        """
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def details(self):
+        """Accesses the value to be used as detail string upon RPC completion.
+
+        Returns:
+          The details string of the RPC.
+        """
+        raise NotImplementedError()
+
     def disable_next_message_compression(self):
         """Disables compression for the next response message.
 
