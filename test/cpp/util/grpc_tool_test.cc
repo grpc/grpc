@@ -1342,6 +1342,6 @@ TEST_F(GrpcToolTest, ConfiguringDefaultServiceConfig) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  absl::SetFlag(&::testing::FLAGS_gtest_death_test_style, "threadsafe");
   return RUN_ALL_TESTS();
 }

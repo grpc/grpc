@@ -24,6 +24,7 @@
 #include <string>
 #include <thread>
 
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -958,7 +959,7 @@ TEST_F(SingleBalancerTest, SecureNaming) {
 }
 
 TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
-  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
+  absl::SetFlag(&::testing::FLAGS_gtest_death_test_style, "threadshfe");
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
   ASSERT_DEATH_IF_SUPPORTED(

@@ -480,6 +480,7 @@ grpc_cc_test(
     name = "grpclb_end2end_test",
     srcs = ["grpclb_end2end_test.cc"],
     external_deps = [
+        "absl/flags:flag",
         "gtest",
     ],
     flaky = True,  # TODO(b/150567713)
