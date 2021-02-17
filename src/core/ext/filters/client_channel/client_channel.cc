@@ -1258,27 +1258,28 @@ grpc_error* DynamicTerminationFilterChannelData::Init(
 // control plane work_serializer.
 class ChannelData::SubchannelWrapper : public SubchannelInterface {
  public:
-  SubchannelWrapper(ChannelData* chand, Subchannel* subchannel,
+  SubchannelWrapper(ChannelData* chand, std::unique_ptr<SubchannelRef> subchannel_ref,
                     absl::optional<std::string> health_check_service_name)
       : SubchannelInterface(
             GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
                 ? "SubchannelWrapper"
                 : nullptr),
         chand_(chand),
-        subchannel_(subchannel),
+        subchannel_ref_(std::move(subchannel_ref)),
         health_check_service_name_(std::move(health_check_service_name)) {
+    Subchannel* subchannel = subchannel_ref_->subchannel();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: creating subchannel wrapper %p for subchannel %p",
-              chand, this, subchannel_);
+              chand, this, subchannel);
     }
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
-    auto* subchannel_node = subchannel_->channelz_node();
+    auto* subchannel_node = subchannel->channelz_node();
     if (subchannel_node != nullptr) {
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
+      auto it = chand_->subchannel_refcount_map_.find(subchannel);
       if (it == chand_->subchannel_refcount_map_.end()) {
         chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
-        it = chand_->subchannel_refcount_map_.emplace(subchannel_, 0).first;
+        it = chand_->subchannel_refcount_map_.emplace(subchannel, 0).first;
       }
       ++it->second;
     }
@@ -1286,15 +1287,16 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   }
 
   ~SubchannelWrapper() override {
+    Subchannel* subchannel = subchannel_ref_->subchannel();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
-              chand_, this, subchannel_);
+              chand_, this, subchannel);
     }
     chand_->subchannel_wrappers_.erase(this);
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
+      auto it = chand_->subchannel_refcount_map_.find(subchannel);
       GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
       --it->second;
       if (it->second == 0) {
@@ -1302,7 +1304,6 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         chand_->subchannel_refcount_map_.erase(it);
       }
     }
-    subchannel_->subchannel_pool()->UnrefSubchannel(subchannel_, "unref from LB");
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
@@ -1338,16 +1339,16 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     watcher_map_.erase(it);
   }
 
-  void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
+  void AttemptToConnect() override { subchannel_ref_->subchannel()->AttemptToConnect(); }
 
-  void ResetBackoff() override { subchannel_->ResetBackoff(); }
+  void ResetBackoff() override { subchannel_ref_->subchannel()->ResetBackoff(); }
 
   const grpc_channel_args* channel_args() override {
-    return subchannel_->channel_args();
+    return subchannel_ref_->subchannel()->channel_args();
   }
 
   void ThrottleKeepaliveTime(int new_keepalive_time) {
-    subchannel_->ThrottleKeepaliveTime(new_keepalive_time);
+    subchannel_ref_->subchannel()->ThrottleKeepaliveTime(new_keepalive_time);
   }
 
   void UpdateHealthCheckServiceName(
@@ -1361,6 +1362,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     }
     for (auto& p : watcher_map_) {
       WatcherWrapper*& watcher_wrapper = p.second;
+      Subchannel* subchannel = subchannel_ref_->subchannel();
       // Cancel the current watcher and create a new one using the new
       // health check service name.
       // TODO(roth): If there is not already an existing health watch
@@ -1372,10 +1374,10 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       // problem, we may be able to handle it by waiting for the new
       // watcher to report READY before we use it to replace the old one.
       WatcherWrapper* replacement = watcher_wrapper->MakeReplacement();
-      subchannel_->CancelConnectivityStateWatch(health_check_service_name_,
-                                                watcher_wrapper);
+      subchannel->CancelConnectivityStateWatch(health_check_service_name_,
+                                               watcher_wrapper);
       watcher_wrapper = replacement;
-      subchannel_->WatchConnectivityState(
+      subchannel->WatchConnectivityState(
           replacement->last_seen_state(), health_check_service_name,
           RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface>(
               replacement));
@@ -1436,7 +1438,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         gpr_log(GPR_INFO,
                 "chand=%p: connectivity change for subchannel wrapper %p "
                 "subchannel %p; hopping into work_serializer",
-                parent_->chand_, parent_.get(), parent_->subchannel_);
+                parent_->chand_, parent_.get(), parent_->subchannel_ref_->subchannel());
       }
       Ref().release();  // ref owned by lambda
       parent_->chand_->work_serializer_->Run(
@@ -1470,7 +1472,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                 "chand=%p: processing connectivity change in work serializer "
                 "for subchannel wrapper %p subchannel %p "
                 "watcher=%p",
-                parent_->chand_, parent_.get(), parent_->subchannel_,
+                parent_->chand_, parent_.get(), parent_->subchannel_ref()->subchannel_,
                 watcher_.get());
       }
       ConnectivityStateChange state_change = PopConnectivityStateChange();
@@ -1539,7 +1541,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   }
 
   ChannelData* chand_;
-  Subchannel* subchannel_;
+  std::unique_ptr<SubchannelRef> subchannel_ref_;
   absl::optional<std::string> health_check_service_name_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
