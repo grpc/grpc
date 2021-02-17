@@ -239,11 +239,11 @@ def grpc_deps():
         http_archive(
             name = "com_github_cyan4973_xxhash",
             build_file = "@com_github_grpc_grpc//third_party:xxhash.BUILD",
-            sha256 = "3de01e4f8c60d84907a2ce65b6528be999c0a9331be719ae3671102d0e1a5ccc",
-            strip_prefix = "xxHash-94e5f23e736f2bb67ebdf90727353e65344f9fc0",
+            sha256 = "9fb07cdd2f52e10087f248334eb88d6faef0841e716d96b3ac5ef06750e53126",
+            strip_prefix = "xxHash-aea11081f349893ec26f86ada22c66e828885083",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cyan4973/xxhash/archive/94e5f23e736f2bb67ebdf90727353e65344f9fc0.tar.gz",
-                "https://github.com/cyan4973/xxhash/archive/94e5f23e736f2bb67ebdf90727353e65344f9fc0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cyan4973/xxhash/archive/aea11081f349893ec26f86ada22c66e828885083.tar.gz",
+                "https://github.com/cyan4973/xxhash/archive/aea11081f349893ec26f86ada22c66e828885083.tar.gz",
             ],
         )
 
