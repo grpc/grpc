@@ -196,6 +196,7 @@ CompletionQueue* CompletionQueue::CallbackAlternativeCQ() {
 }
 
 void CompletionQueue::ReleaseCallbackAlternativeCQ(CompletionQueue* cq) {
+  (void)cq;
   GPR_DEBUG_ASSERT(cq == g_callback_alternative_cq.cq);
   g_callback_alternative_cq.Unref();
 }
