@@ -59,76 +59,23 @@ RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
 
 std::unique_ptr<SubchannelRef> GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
                                                      Subchannel* constructed) {
-  Subchannel* c = nullptr;
-  // Compare and swap (CAS) loop:
-  for (int attempt_count = 0; c == nullptr; attempt_count++) {
-    // Ref the shared map to have a local copy.
-    gpr_mu_lock(&mu_);
-    grpc_avl old_map = grpc_avl_ref(subchannel_map_, nullptr);
-    gpr_mu_unlock(&mu_);
-    // Check to see if a subchannel already exists.
-    c = static_cast<Subchannel*>(grpc_avl_get(old_map, key, nullptr));
-    if (c != nullptr) {
-      // The subchannel already exists. Try to reuse it.
-      c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "subchannel_register+reuse");
-      if (c != nullptr) {
-        GRPC_SUBCHANNEL_UNREF(constructed,
-                              "subchannel_register+found_existing");
-        // Exit the CAS loop without modifying the shared map.
-      } else {
-        // Reuse of the subchannel failed, so retry CAS loop
-        if (attempt_count >=
-            GRPC_REGISTER_SUBCHANNEL_CALM_DOWN_AFTER_ATTEMPTS) {
-          // GRPC_SUBCHANNEL_REF_FROM_WEAK_REF returning nullptr means that the
-          // subchannel we got is no longer valid and it's going to be removed
-          // from the AVL tree soon. Spinning here excesively here can actually
-          // prevent another thread from removing the subchannel, basically
-          // resulting in a live lock. See b/157516542 for more details.
-          // TODO(jtattermusch): the entire ref-counting mechanism for
-          // subchannels should be overhaulded, but the current workaround
-          // is fine for short-term.
-          // TODO(jtattermusch): gpr does not support thread yield operation,
-          // so a very short wait is the best we can do.
-          gpr_sleep_until(gpr_time_add(
-              gpr_now(GPR_CLOCK_REALTIME),
-              gpr_time_from_micros(GRPC_REGISTER_SUBCHANNEL_CALM_DOWN_MICROS,
-                                   GPR_TIMESPAN)));
-        }
-      }
-    } else {
-      // There hasn't been such subchannel. Add one.
-      // Note that we should ref the old map first because grpc_avl_add() will
-      // unref it while we still need to access it later.
-      grpc_avl new_map = grpc_avl_add(
-          grpc_avl_ref(old_map, nullptr), new SubchannelKey(*key),
-          GRPC_SUBCHANNEL_WEAK_REF(constructed, "subchannel_register+new"),
-          nullptr);
-      // Try to publish the change to the shared map. It may happen (but
-      // unlikely) that some other thread has changed the shared map, so compare
-      // to make sure it's unchanged before swapping. Retry if it's changed.
-      gpr_mu_lock(&mu_);
-      if (old_map.root == subchannel_map_.root) {
-        GPR_SWAP(grpc_avl, new_map, subchannel_map_);
-        c = constructed;
-      }
-      gpr_mu_unlock(&mu_);
-      grpc_avl_unref(new_map, nullptr);
-    }
-    grpc_avl_unref(old_map, nullptr);
-  }
-  return absl::make_unique<GlobalSubchannelPoolSubchannelRef>(this, c);
-}
-
-std::unique_ptr<SubchannelRef> GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
-  // Lock, and take a reference to the subchannel map.
-  // We don't need to do the search under a lock as AVL's are immutable.
   gpr_mu_lock(&mu_);
-  grpc_avl index = grpc_avl_ref(subchannel_map_, nullptr);
+  Subchannel* c = static_cast<Subchannel*>(grpc_avl_get(subchannel_map_, key, nullptr));
+  if (c != nullptr) {
+    // The subchannel already exists. Try to reuse it.
+    c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "subchannel_register+reuse");
+    if (c != nullptr) {
+      gpr_mu_unlock(&mu_);
+      return absl::make_unique<GlobalSubchannelPoolSubchannelRef>(Ref(), c);
+    }
+  }
+  gpr_log(GPR_DEBUG, "Add new subchannel to pool, target address: %s", constructed->GetTargetAddress());
+  subchannel_map_ = grpc_avl_add(
+      subchannel_map_, new SubchannelKey(*key),
+      GRPC_SUBCHANNEL_WEAK_REF(constructed, "subchannel_register+new"),
+      nullptr);
   gpr_mu_unlock(&mu_);
-  Subchannel* c = static_cast<Subchannel*>(grpc_avl_get(index, key, nullptr));
-  if (c != nullptr) c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "found_from_pool");
-  grpc_avl_unref(index, nullptr);
-  return c == nullptr ? nullptr : absl::make_unique<GlobalSubchannelPoolSubchannelRef>(this, c);
+  return absl::make_unique<GlobalSubchannelPoolSubchannelRef>(Ref(), constructed);
 }
 
 RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
@@ -146,31 +93,21 @@ GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::GlobalSubchannelPoolSub
 }
 
 GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::~GlobalSubchannelPoolSubchannelRef() {
+  gpr_mu_lock(&parent_->mu_);
+  SubchannelKey* key = subchannel_->key();
   GRPC_SUBCHANNEL_UNREF(subchannel_, "GlobalSubchannelPoolSubchannelRef+destroyed");
-  bool done = false;
-  // Compare and swap (CAS) loop:
-  while (!done) {
-    // Ref the shared map to have a local copy.
-    gpr_mu_lock(&parent_->mu_);
-    grpc_avl old_map = grpc_avl_ref(parent_->subchannel_map_, nullptr);
+  // The subchannel already exists. Try to reuse it.
+  subchannel_ = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(subchannel_, "GlobalSubchannelPoolSubchannelRef+check_for_remaining_refs");
+  if (subchannel_ != nullptr) {
+    // there are still other SubchannelRef's using this subchannel
+    GRPC_SUBCHANNEL_UNREF(subchannel_, "GlobalSubchannelPoolSubchannelRef+check_for_remaining_refs");
     gpr_mu_unlock(&parent_->mu_);
-    // Remove the subchannel.
-    // Note that we should ref the old map first because grpc_avl_remove() will
-    // unref it while we still need to access it later.
-    grpc_avl new_map =
-        grpc_avl_remove(grpc_avl_ref(old_map, nullptr), subchannel_->key(), nullptr);
-    // Try to publish the change to the shared map. It may happen (but
-    // unlikely) that some other thread has changed the shared map, so compare
-    // to make sure it's unchanged before swapping. Retry if it's changed.
-    gpr_mu_lock(&parent_->mu_);
-    if (old_map.root == parent_->subchannel_map_.root) {
-      GPR_SWAP(grpc_avl, new_map, parent_->subchannel_map_);
-      done = true;
-    }
-    gpr_mu_unlock(&parent_->mu_);
-    grpc_avl_unref(new_map, nullptr);
-    grpc_avl_unref(old_map, nullptr);
+    return;
   }
+  // TODO: is this safe to access? make key_ a field of SubchannelRef instead?
+  parent_->subchannel_map_ =
+        grpc_avl_remove(parent_->subchannel_map_, key, nullptr);
+  gpr_mu_unlock(&parent_->mu_);
 }
 
 namespace {

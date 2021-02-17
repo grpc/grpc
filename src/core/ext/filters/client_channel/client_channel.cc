@@ -1765,6 +1765,7 @@ class ChannelData::ClientChannelControlHelper
     grpc_channel_args_destroy(new_args);
     if (subchannel_ref == nullptr) return nullptr;
     // Make sure the subchannel has updated keepalive time.
+    GPR_ASSERT(subchannel_ref->subchannel() != nullptr);
     subchannel_ref->subchannel()->ThrottleKeepaliveTime(chand_->keepalive_time_);
     // Create and return wrapper for the subchannel.
     return MakeRefCounted<SubchannelWrapper>(

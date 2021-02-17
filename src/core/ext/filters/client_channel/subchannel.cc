@@ -714,11 +714,6 @@ std::unique_ptr<SubchannelRef> Subchannel::Create(
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
   GPR_ASSERT(subchannel_pool != nullptr);
-  std::unique_ptr<SubchannelRef> found = subchannel_pool->FindSubchannel(key);
-  if (found != nullptr) {
-    delete key;
-    return found;
-  }
   Subchannel* c = new Subchannel(key, std::move(connector), args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in

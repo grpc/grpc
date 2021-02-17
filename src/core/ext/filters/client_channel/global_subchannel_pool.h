@@ -47,7 +47,6 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   // Implements interface methods.
   std::unique_ptr<SubchannelRef> RegisterSubchannel(SubchannelKey* key,
                                  Subchannel* constructed) override;
-  std::unique_ptr<SubchannelRef> FindSubchannel(SubchannelKey* key) override;
 
   static long TestOnlyGlobalSubchannelPoolSize();
  private:

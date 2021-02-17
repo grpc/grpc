@@ -42,7 +42,6 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   // serializer.
   std::unique_ptr<SubchannelRef> RegisterSubchannel(SubchannelKey* key,
                                  Subchannel* constructed) override;
-  std::unique_ptr<SubchannelRef> FindSubchannel(SubchannelKey* key) override;
 
  private:
   class LocalSubchannelPoolSubchannelRef : public SubchannelRef {

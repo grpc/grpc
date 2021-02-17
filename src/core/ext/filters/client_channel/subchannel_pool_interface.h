@@ -63,8 +63,8 @@ class SubchannelKey {
 // subchannel pool, we need to make sure that strong refs are
 // manipulated atomically with pool registration and unregistration.
 //
-// Usage: \a FindSubchannel and \a RegisterSubchannel return \a SubchannelRef
-// objects, and the destruction of a \a SubchannelRef arranges for any
+// Usage: \a RegisterSubchannel returns \a SubchannelRef
+// object, and the destruction of a \a SubchannelRef arranges for any
 // subchannel pool unregistration that might be needed.
 class SubchannelRef{
  public:
@@ -89,10 +89,6 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   // (instead of update) any existing subchannel already registered with \a key.
   virtual std::unique_ptr<SubchannelRef> RegisterSubchannel(SubchannelKey* key,
                                          Subchannel* constructed) = 0;
-
-  // Finds the subchannel registered for the given subchannel key. Returns NULL
-  // if no such channel exists. Thread-safe.
-  virtual std::unique_ptr<SubchannelRef> FindSubchannel(SubchannelKey* key) = 0;
 
   // Creates a channel arg from \a subchannel pool.
   static grpc_arg CreateChannelArg(SubchannelPoolInterface* subchannel_pool);
