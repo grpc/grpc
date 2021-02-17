@@ -647,11 +647,9 @@ Subchannel::ConnectivityStateWatcherInterface::PopConnectivityStateChange() {
   return state_change;
 }
 
-Subchannel::Subchannel(SubchannelKey* key,
-                       OrphanablePtr<SubchannelConnector> connector,
+Subchannel::Subchannel(OrphanablePtr<SubchannelConnector> connector,
                        const grpc_channel_args* args)
-    : key_(key),
-      connector_(std::move(connector)),
+    : connector_(std::move(connector)),
       backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_ms_)) {
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
   gpr_atm_no_barrier_store(&ref_pair_, 1 << INTERNAL_REF_BITS);
@@ -704,22 +702,21 @@ Subchannel::~Subchannel() {
   grpc_channel_args_destroy(args_);
   connector_.reset();
   grpc_pollset_set_destroy(pollset_set_);
-  delete key_;
 }
 
 std::unique_ptr<SubchannelRef> Subchannel::Create(
     OrphanablePtr<SubchannelConnector> connector,
     const grpc_channel_args* args) {
-  SubchannelKey* key = new SubchannelKey(args);
+  SubchannelKey key(args);
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
   GPR_ASSERT(subchannel_pool != nullptr);
-  Subchannel* c = new Subchannel(key, std::move(connector), args);
+  Subchannel* c = new Subchannel(std::move(connector), args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
   // its key maps to a different subchannel.
-  return subchannel_pool->RegisterSubchannel(key, c);
+  return subchannel_pool->RegisterSubchannel(std::move(key), c);
 }
 
 void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {

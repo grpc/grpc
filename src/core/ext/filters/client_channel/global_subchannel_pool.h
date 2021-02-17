@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/container/btree_map.h"
+
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
@@ -34,8 +36,8 @@ namespace grpc_core {
 class GlobalSubchannelPool final : public SubchannelPoolInterface {
  public:
   // The ctor and dtor are not intended to use directly.
-  GlobalSubchannelPool();
-  ~GlobalSubchannelPool() override;
+  GlobalSubchannelPool() {}
+  ~GlobalSubchannelPool() override {};
 
   // Should be called exactly once at filter initialization time.
   static void Init();
@@ -46,30 +48,30 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   static RefCountedPtr<GlobalSubchannelPool> instance();
 
   // Implements interface methods.
-  std::unique_ptr<SubchannelRef> RegisterSubchannel(SubchannelKey* key,
+  std::unique_ptr<SubchannelRef> RegisterSubchannel(const SubchannelKey &key,
                                  Subchannel* constructed) override;
 
   static long TestOnlyGlobalSubchannelPoolSize();
  private:
   class GlobalSubchannelPoolSubchannelRef : public SubchannelRef {
    public:
-    GlobalSubchannelPoolSubchannelRef(RefCountedPtr<GlobalSubchannelPool> parent, Subchannel* subchannel);
-    ~GlobalSubchannelPoolSubchannelRef();
-    Subchannel* subchannel() { return subchannel_; }
+    GlobalSubchannelPoolSubchannelRef(RefCountedPtr<GlobalSubchannelPool> parent, Subchannel* subchannel, const SubchannelKey &key);
+    ~GlobalSubchannelPoolSubchannelRef() override;
+    Subchannel* subchannel() override { return subchannel_; }
    private:
     RefCountedPtr<GlobalSubchannelPool> parent_;
     Subchannel* subchannel_;
-    SubchannelKey* key_;
+    const SubchannelKey key_;
   };
 
   // The singleton instance. (It's a pointer to RefCountedPtr so that this
   // non-local static object can be trivially destructible.)
   static RefCountedPtr<GlobalSubchannelPool>* instance_;
 
-  // The vtable for subchannel operations in an AVL tree.
-  static const grpc_avl_vtable subchannel_avl_vtable_;
-  // A map from subchannel key to subchannel.
-  grpc_avl subchannel_map_;
+  // A map from subchannel key to subchannel. Note: a btree_map is used only
+  // because the underlying channel args in SubchannelKeys are comparable
+  // but not hashable.
+  absl::btree_map<SubchannelKey, Subchannel*> subchannel_map_;
   // To protect subchannel_map_.
   Mutex mu_;
 };

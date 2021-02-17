@@ -41,11 +41,12 @@ class SubchannelKey {
   // Copyable.
   SubchannelKey(const SubchannelKey& other);
   SubchannelKey& operator=(const SubchannelKey& other);
-  // Not movable.
-  SubchannelKey(SubchannelKey&&) = delete;
-  SubchannelKey& operator=(SubchannelKey&&) = delete;
+  // Movable
+  SubchannelKey(SubchannelKey&&);
+  SubchannelKey& operator=(SubchannelKey&&);
 
-  int Cmp(const SubchannelKey& other) const;
+  // for use in absl::btree_map
+  bool operator<(const SubchannelKey& other) const;
 
  private:
   // Initializes the subchannel key with the given \a args and the function to
@@ -87,7 +88,7 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   // Registers a subchannel against a key. Returns the subchannel registered
   // with \a key, which may be different from \a constructed because we reuse
   // (instead of update) any existing subchannel already registered with \a key.
-  virtual std::unique_ptr<SubchannelRef> RegisterSubchannel(SubchannelKey* key,
+  virtual std::unique_ptr<SubchannelRef> RegisterSubchannel(const SubchannelKey &key,
                                          Subchannel* constructed) = 0;
 
   // Creates a channel arg from \a subchannel pool.

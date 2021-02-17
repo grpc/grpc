@@ -213,7 +213,7 @@ class Subchannel {
   };
 
   // The ctor and dtor are not intended to use directly.
-  Subchannel(SubchannelKey* key, OrphanablePtr<SubchannelConnector> connector,
+  Subchannel(OrphanablePtr<SubchannelConnector> connector,
              const grpc_channel_args* args);
   ~Subchannel();
 
@@ -294,8 +294,6 @@ class Subchannel {
   static void GetAddressFromSubchannelAddressArg(const grpc_channel_args* args,
                                                  grpc_resolved_address* addr);
 
-  SubchannelKey* key() { return key_; }
-
  private:
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
   // the subchannel's state.
@@ -375,9 +373,6 @@ class Subchannel {
   gpr_atm RefMutate(gpr_atm delta,
                     int barrier GRPC_SUBCHANNEL_REF_MUTATE_EXTRA_ARGS);
 
-  // TODO(juanlishen): Consider using args_ as key_ directly.
-  // Subchannel key that identifies this subchannel in the subchannel pool.
-  SubchannelKey* key_;
   // Channel args.
   grpc_channel_args* args_;
   // pollset_set tracking who's interested in a connection being setup.

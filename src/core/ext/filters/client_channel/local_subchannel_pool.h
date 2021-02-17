@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/container/btree_map.h"
+
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
 namespace grpc_core {
@@ -34,30 +36,29 @@ namespace grpc_core {
 // Thread-unsafe.
 class LocalSubchannelPool final : public SubchannelPoolInterface {
  public:
-  LocalSubchannelPool();
-  ~LocalSubchannelPool() override;
+  LocalSubchannelPool() {}
+  ~LocalSubchannelPool() override {}
 
   // Implements interface methods.
   // Thread-unsafe. Intended to be invoked within the client_channel work
   // serializer.
-  std::unique_ptr<SubchannelRef> RegisterSubchannel(SubchannelKey* key,
+  std::unique_ptr<SubchannelRef> RegisterSubchannel(const SubchannelKey &key,
                                  Subchannel* constructed) override;
 
  private:
   class LocalSubchannelPoolSubchannelRef : public SubchannelRef {
    public:
-    LocalSubchannelPoolSubchannelRef(RefCountedPtr<LocalSubchannelPool> parent, Subchannel* subchannel);
-    ~LocalSubchannelPoolSubchannelRef();
-    Subchannel* subchannel() { return subchannel_; }
+    LocalSubchannelPoolSubchannelRef(RefCountedPtr<LocalSubchannelPool> parent, Subchannel* subchannel, const SubchannelKey &key);
+    ~LocalSubchannelPoolSubchannelRef() override;
+    Subchannel* subchannel() override { return subchannel_; }
    private:
     RefCountedPtr<LocalSubchannelPool> parent_;
     Subchannel* subchannel_;
+    const SubchannelKey key_;
   };
 
-  // The vtable for subchannel operations in an AVL tree.
-  static const grpc_avl_vtable subchannel_avl_vtable_;
   // A map from subchannel key to subchannel.
-  grpc_avl subchannel_map_;
+  absl::btree_map<SubchannelKey, Subchannel*> subchannel_map_;
 };
 
 }  // namespace grpc_core
