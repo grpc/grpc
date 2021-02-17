@@ -409,6 +409,9 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
     return true;
   }
 
+  static CompletionQueue* CallbackAlternativeCQ();
+  static void ReleaseCallbackAlternativeCQ(CompletionQueue* cq);
+
   grpc_completion_queue* cq_;  // owned
 
   gpr_atm avalanches_in_flight_;

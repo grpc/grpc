@@ -47,6 +47,7 @@
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/completion_queue.h"
@@ -917,7 +918,12 @@ Server::~Server() {
         value->Shutdown();
       }
       if (callback_cq_ != nullptr) {
-        callback_cq_->Shutdown();
+        if (grpc_iomgr_run_in_background()) {
+          // gRPC-core provides the backing needed for the preferred CQ type
+          callback_cq_->Shutdown();
+        } else {
+          CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq_);
+        }
         callback_cq_ = nullptr;
       }
     }
@@ -1237,7 +1243,12 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
   // Shutdown the callback CQ. The CQ is owned by its own shutdown tag, so it
   // will delete itself at true shutdown.
   if (callback_cq_ != nullptr) {
-    callback_cq_->Shutdown();
+    if (grpc_iomgr_run_in_background()) {
+      // gRPC-core provides the backing needed for the preferred CQ type
+      callback_cq_->Shutdown();
+    } else {
+      CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq_);
+    }
     callback_cq_ = nullptr;
   }
 
@@ -1309,13 +1320,19 @@ grpc::CompletionQueue* Server::CallbackCQ() {
   if (callback_cq_ != nullptr) {
     return callback_cq_;
   }
-  auto* shutdown_callback = new grpc::ShutdownCallback;
-  callback_cq_ = new grpc::CompletionQueue(grpc_completion_queue_attributes{
-      GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
-      shutdown_callback});
+  if (grpc_iomgr_run_in_background()) {
+    // gRPC-core provides the backing needed for the preferred CQ type
+    auto* shutdown_callback = new grpc::ShutdownCallback;
+    callback_cq_ = new grpc::CompletionQueue(grpc_completion_queue_attributes{
+        GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
+        shutdown_callback});
 
-  // Transfer ownership of the new cq to its own shutdown callback
-  shutdown_callback->TakeCQ(callback_cq_);
+    // Transfer ownership of the new cq to its own shutdown callback
+    shutdown_callback->TakeCQ(callback_cq_);
+  } else {
+    // Otherwise we need to use the alternative CQ variant
+    callback_cq_ = CompletionQueue::CallbackAlternativeCQ();
+  }
 
   return callback_cq_;
 }
