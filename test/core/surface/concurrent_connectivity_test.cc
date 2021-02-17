@@ -43,6 +43,7 @@
 
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 
 /* TODO(yashykt): When our macos testing infrastructure becomes good enough, we
  * wouldn't need to reduce the number of threads on MacOS */
@@ -87,6 +88,13 @@ void create_loop_destroy(void* addr) {
                  GRPC_OP_COMPLETE);
       /* check that the watcher from "watch state" was free'd */
       GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(chan) == 0);
+      long global_subchannel_pool_size = grpc_core::GlobalSubchannelPool::TestOnlyGlobalSubchannelPoolSize();
+      if (global_subchannel_pool_size > 1) {
+        gpr_log(GPR_ERROR, "global subchannel pool size: %ld, this suggests a bug because all channels in this "
+                "test should be using global subchannel sharing with equivalent channel args, and so all active "
+                "channels should be sharing the same subchannel", global_subchannel_pool_size);
+        GPR_ASSERT(0);
+      }
     }
     grpc_channel_destroy(chan);
     grpc_completion_queue_destroy(cq);

@@ -160,6 +160,14 @@ Subchannel* GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
 
 RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
 
+long GlobalSubchannelPool::TestOnlyGlobalSubchannelPoolSize() {
+  GlobalSubchannelPool* g = GlobalSubchannelPool::instance_->get();
+  gpr_mu_lock(&g->mu_);
+  long ret = grpc_avl_calculate_height(g->subchannel_map_.root);
+  gpr_mu_unlock(&g->mu_);
+  return ret;
+}
+
 namespace {
 
 void sck_avl_destroy(void* p, void* /*user_data*/) {

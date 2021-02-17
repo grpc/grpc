@@ -50,6 +50,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   void UnregisterSubchannel(SubchannelKey* key) override;
   Subchannel* FindSubchannel(SubchannelKey* key) override;
 
+  static long TestOnlyGlobalSubchannelPoolSize();
  private:
   // The singleton instance. (It's a pointer to RefCountedPtr so that this
   // non-local static object can be trivially destructible.)
