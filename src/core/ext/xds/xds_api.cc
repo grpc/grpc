@@ -763,7 +763,7 @@ void PopulateNode(const EncodingContext& context,
       PopulateMetadata(context, metadata, node->metadata.object_value());
     }
     if (!node->locality_region.empty() || !node->locality_zone.empty() ||
-        !node->locality_subzone.empty()) {
+        !node->locality_sub_zone.empty()) {
       envoy_config_core_v3_Locality* locality =
           envoy_config_core_v3_Node_mutable_locality(node_msg, context.arena);
       if (!node->locality_region.empty()) {
@@ -774,9 +774,9 @@ void PopulateNode(const EncodingContext& context,
         envoy_config_core_v3_Locality_set_zone(
             locality, StdStringToUpbString(node->locality_zone));
       }
-      if (!node->locality_subzone.empty()) {
+      if (!node->locality_sub_zone.empty()) {
         envoy_config_core_v3_Locality_set_sub_zone(
-            locality, StdStringToUpbString(node->locality_subzone));
+            locality, StdStringToUpbString(node->locality_sub_zone));
       }
     }
   }

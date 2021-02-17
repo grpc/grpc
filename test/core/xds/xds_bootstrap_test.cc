@@ -101,7 +101,7 @@ TEST_P(XdsBootstrapTest, Basic) {
       "    \"locality\": {"
       "      \"region\": \"milky_way\","
       "      \"zone\": \"sol_system\","
-      "      \"subzone\": \"earth\","
+      "      \"sub_zone\": \"earth\","
       "      \"ignore\": {}"
       "    },"
       "    \"metadata\": {"
@@ -126,7 +126,7 @@ TEST_P(XdsBootstrapTest, Basic) {
   EXPECT_EQ(bootstrap.node()->cluster, "bar");
   EXPECT_EQ(bootstrap.node()->locality_region, "milky_way");
   EXPECT_EQ(bootstrap.node()->locality_zone, "sol_system");
-  EXPECT_EQ(bootstrap.node()->locality_subzone, "earth");
+  EXPECT_EQ(bootstrap.node()->locality_sub_zone, "earth");
   ASSERT_EQ(bootstrap.node()->metadata.type(), Json::Type::OBJECT);
   EXPECT_THAT(bootstrap.node()->metadata.object_value(),
               ::testing::ElementsAre(
@@ -387,7 +387,7 @@ TEST_P(XdsBootstrapTest, LocalityFieldsWrongType) {
       "    \"locality\":{"
       "      \"region\":0,"
       "      \"zone\":0,"
-      "      \"subzone\":0"
+      "      \"sub_zone\":0"
       "    }"
       "  }"
       "}";
@@ -400,7 +400,7 @@ TEST_P(XdsBootstrapTest, LocalityFieldsWrongType) {
                                        "errors parsing \"locality\" object.*"
                                        "\"region\" field is not a string.*"
                                        "\"zone\" field is not a string.*"
-                                       "\"subzone\" field is not a string"));
+                                       "\"sub_zone\" field is not a string"));
   GRPC_ERROR_UNREF(error);
 }
 
