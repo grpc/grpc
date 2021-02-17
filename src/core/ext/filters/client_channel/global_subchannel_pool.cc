@@ -29,11 +29,9 @@ namespace grpc_core {
 
 GlobalSubchannelPool::GlobalSubchannelPool() {
   subchannel_map_ = grpc_avl_create(&subchannel_avl_vtable_);
-  gpr_mu_init(&mu_);
 }
 
 GlobalSubchannelPool::~GlobalSubchannelPool() {
-  gpr_mu_destroy(&mu_);
   grpc_avl_unref(subchannel_map_, nullptr);
 }
 
@@ -59,13 +57,12 @@ RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
 
 std::unique_ptr<SubchannelRef> GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
                                                      Subchannel* constructed) {
-  gpr_mu_lock(&mu_);
+  MutexLock lock(&mu_);
   Subchannel* c = static_cast<Subchannel*>(grpc_avl_get(subchannel_map_, key, nullptr));
   if (c != nullptr) {
     // The subchannel already exists. Try to reuse it.
     c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "subchannel_register+reuse");
     if (c != nullptr) {
-      gpr_mu_unlock(&mu_);
       return absl::make_unique<GlobalSubchannelPoolSubchannelRef>(Ref(), c);
     }
   }
@@ -74,7 +71,6 @@ std::unique_ptr<SubchannelRef> GlobalSubchannelPool::RegisterSubchannel(Subchann
       subchannel_map_, new SubchannelKey(*key),
       GRPC_SUBCHANNEL_WEAK_REF(constructed, "subchannel_register+new"),
       nullptr);
-  gpr_mu_unlock(&mu_);
   return absl::make_unique<GlobalSubchannelPoolSubchannelRef>(Ref(), constructed);
 }
 
@@ -82,9 +78,8 @@ RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
 
 long GlobalSubchannelPool::TestOnlyGlobalSubchannelPoolSize() {
   GlobalSubchannelPool* g = GlobalSubchannelPool::instance_->get();
-  gpr_mu_lock(&g->mu_);
+  MutexLock lock(&g->mu_);
   long ret = grpc_avl_calculate_height(g->subchannel_map_.root);
-  gpr_mu_unlock(&g->mu_);
   return ret;
 }
 
@@ -93,7 +88,7 @@ GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::GlobalSubchannelPoolSub
 }
 
 GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::~GlobalSubchannelPoolSubchannelRef() {
-  gpr_mu_lock(&parent_->mu_);
+  MutexLock lock(&parent_->mu_);
   SubchannelKey* key = subchannel_->key();
   GRPC_SUBCHANNEL_UNREF(subchannel_, "GlobalSubchannelPoolSubchannelRef+destroyed");
   // The subchannel already exists. Try to reuse it.
@@ -101,13 +96,11 @@ GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::~GlobalSubchannelPoolSu
   if (subchannel_ != nullptr) {
     // there are still other SubchannelRef's using this subchannel
     GRPC_SUBCHANNEL_UNREF(subchannel_, "GlobalSubchannelPoolSubchannelRef+check_for_remaining_refs");
-    gpr_mu_unlock(&parent_->mu_);
     return;
   }
   // TODO: is this safe to access? make key_ a field of SubchannelRef instead?
   parent_->subchannel_map_ =
         grpc_avl_remove(parent_->subchannel_map_, key, nullptr);
-  gpr_mu_unlock(&parent_->mu_);
 }
 
 namespace {
