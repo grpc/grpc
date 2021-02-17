@@ -47,7 +47,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   // Implements interface methods.
   Subchannel* RegisterSubchannel(SubchannelKey* key,
                                  Subchannel* constructed) override;
-  void UnregisterSubchannel(SubchannelKey* key) override;
+  void UnrefSubchannel(Subchannel* subchanel, const char* reason) override;
   Subchannel* FindSubchannel(SubchannelKey* key) override;
 
   static long TestOnlyGlobalSubchannelPoolSize();

@@ -42,7 +42,7 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   // serializer.
   Subchannel* RegisterSubchannel(SubchannelKey* key,
                                  Subchannel* constructed) override;
-  void UnregisterSubchannel(SubchannelKey* key) override;
+  void UnrefSubchannel(Subchannel* subchannel, const char* reason) override;
   Subchannel* FindSubchannel(SubchannelKey* key) override;
 
  private:

@@ -1302,7 +1302,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         chand_->subchannel_refcount_map_.erase(it);
       }
     }
-    GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB");
+    subchannel_->subchannel_pool()->UnrefSubchannel(subchannel_, "unref from LB");
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 

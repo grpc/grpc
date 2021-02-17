@@ -294,6 +294,10 @@ class Subchannel {
   static void GetAddressFromSubchannelAddressArg(const grpc_channel_args* args,
                                                  grpc_resolved_address* addr);
 
+  SubchannelPoolInterface* subchannel_pool() { return Subchannel_pool_; }
+
+  SubchannelKey* subchannel_key() { return key_; }
+
  private:
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
   // the subchannel's state.

@@ -119,7 +119,7 @@ Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
   return c;
 }
 
-void GlobalSubchannelPool::UnregisterSubchannel(SubchannelKey* key) {
+void GlobalSubchannelPool::UnrefSubchannel(Subchannel* subchannel, const char* reason) {
   bool done = false;
   // Compare and swap (CAS) loop:
   while (!done) {

@@ -50,7 +50,7 @@ Subchannel* LocalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
   return c;
 }
 
-void LocalSubchannelPool::UnregisterSubchannel(SubchannelKey* key) {
+void LocalSubchannelPool::UnrefSubchannel(Subchannel* subchannel, const char* reason) {
   subchannel_map_ = grpc_avl_remove(subchannel_map_, key, nullptr);
 }
 
