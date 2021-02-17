@@ -707,25 +707,24 @@ Subchannel::~Subchannel() {
   delete key_;
 }
 
-Subchannel* Subchannel::Create(OrphanablePtr<SubchannelConnector> connector,
-                               const grpc_channel_args* args) {
+std::unique_ptr<SubchannelRef> Subchannel::Create(
+    OrphanablePtr<SubchannelConnector> connector,
+    const grpc_channel_args* args) {
   SubchannelKey* key = new SubchannelKey(args);
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
   GPR_ASSERT(subchannel_pool != nullptr);
-  Subchannel* c = subchannel_pool->FindSubchannel(key);
-  if (c != nullptr) {
+  std::unique_ptr<SubchannelRef> found = subchannel_pool->FindSubchannel(key);
+  if (found != nullptr) {
     delete key;
-    return c;
+    return found;
   }
-  c = new Subchannel(key, std::move(connector), args);
+  Subchannel* c = new Subchannel(key, std::move(connector), args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
   // its key maps to a different subchannel.
-  Subchannel* registered = subchannel_pool->RegisterSubchannel(key, c);
-  if (registered == c) c->subchannel_pool_ = subchannel_pool->Ref();
-  return registered;
+  return subchannel_pool->RegisterSubchannel(key, c);
 }
 
 void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
@@ -1124,12 +1123,6 @@ bool Subchannel::PublishTransportLocked() {
 }
 
 void Subchannel::Disconnect() {
-  // The subchannel_pool is only used once here in this subchannel, so the
-  // access can be outside of the lock.
-  if (subchannel_pool_ != nullptr) {
-    subchannel_pool_->UnregisterSubchannel(key_);
-    subchannel_pool_.reset();
-  }
   MutexLock lock(&mu_);
   GPR_ASSERT(!disconnected_);
   disconnected_ = true;

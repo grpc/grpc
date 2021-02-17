@@ -57,6 +57,21 @@ class SubchannelKey {
   const grpc_channel_args* args_;
 };
 
+// Interface for a class that holds a strong ref over a subchannel. The purpose
+// of this class is to allow for subchannel pool implementations to control how
+// subchannel strong refs are manipulated. For example, when using the global
+// subchannel pool, we need to make sure that strong refs are
+// manipulated atomically with pool registration and unregistration.
+//
+// Usage: \a FindSubchannel and \a RegisterSubchannel return \a SubchannelRef
+// objects, and the destruction of a \a SubchannelRef arranges for any
+// subchannel pool unregistration that might be needed.
+class SubchannelRef{
+ public:
+  virtual ~SubchannelRef() {}
+  virtual Subchannel* subchannel() = 0;
+};
+
 // Interface for subchannel pool.
 // TODO(juanlishen): This refcounting mechanism may lead to memory leak.
 // To solve that, we should force polling to flush any pending callbacks, then
@@ -85,21 +100,6 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   // Gets the subchannel pool from the channel args.
   static SubchannelPoolInterface* GetSubchannelPoolFromChannelArgs(
       const grpc_channel_args* args);
-};
-
-// Interface for a class that holds a strong ref over a subchannel. The purpose
-// of this class is to allow for subchannel pool implementations to control how
-// subchannel strong refs are manipulated. For example, when using the global
-// subchannel pool, we need to make sure that strong refs are
-// manipulated atomically with pool registration and unregistration.
-//
-// Usage: \a FindSubchannel and \a RegisterSubchannel return \a SubchannelRef
-// objects, and the destruction of a \a SubchannelRef arranges for any
-// subchannel pool unregistration that might be needed.
-class SubchannelRef{
- public:
-  virtual ~SubchannelRef() {}
-  virtual Subchannel* subchannel() = 0;
 };
 
 }  // namespace grpc_core

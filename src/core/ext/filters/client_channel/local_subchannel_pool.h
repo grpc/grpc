@@ -47,10 +47,11 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
  private:
   class LocalSubchannelPoolSubchannelRef : public SubchannelRef {
    public:
-    LocalSubchannelPoolSubchannelRef(LocalSubchannelPool* parent, Subchannel* subchannel);
+    LocalSubchannelPoolSubchannelRef(RefCountedPtr<LocalSubchannelPool> parent, Subchannel* subchannel);
     ~LocalSubchannelPoolSubchannelRef();
     Subchannel* subchannel() { return subchannel_; }
    private:
+    RefCountedPtr<LocalSubchannelPool> parent_;
     Subchannel* subchannel_;
   };
 

@@ -45,20 +45,21 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   static RefCountedPtr<GlobalSubchannelPool> instance();
 
   // Implements interface methods.
-  Subchannel* RegisterSubchannel(SubchannelKey* key,
+  std::unique_ptr<SubchannelRef> RegisterSubchannel(SubchannelKey* key,
                                  Subchannel* constructed) override;
-  void UnrefSubchannel(Subchannel* subchanel, const char* reason) override;
-  Subchannel* FindSubchannel(SubchannelKey* key) override;
+  std::unique_ptr<SubchannelRef> FindSubchannel(SubchannelKey* key) override;
 
   static long TestOnlyGlobalSubchannelPoolSize();
  private:
   class GlobalSubchannelPoolSubchannelRef : public SubchannelRef {
    public:
-    GlobalSubchannelPoolSubchannelRef(GlobalSubchannelPool* parent, Subchannel* subchannel);
+    GlobalSubchannelPoolSubchannelRef(RefCountedPtr<GlobalSubchannelPool> parent, Subchannel* subchannel);
     ~GlobalSubchannelPoolSubchannelRef();
     Subchannel* subchannel() { return subchannel_; }
    private:
+    RefCountedPtr<GlobalSubchannelPool> parent_;
     Subchannel* subchannel_;
+    SubchannelKey* key_;
   };
 
   // The singleton instance. (It's a pointer to RefCountedPtr so that this

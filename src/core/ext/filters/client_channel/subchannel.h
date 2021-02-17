@@ -218,7 +218,7 @@ class Subchannel {
   ~Subchannel();
 
   // Creates a subchannel given \a connector and \a args.
-  static Subchannel* Create(OrphanablePtr<SubchannelConnector> connector,
+  static std::unique_ptr<SubchannelRef> Create(OrphanablePtr<SubchannelConnector> connector,
                             const grpc_channel_args* args);
 
   // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
@@ -294,9 +294,7 @@ class Subchannel {
   static void GetAddressFromSubchannelAddressArg(const grpc_channel_args* args,
                                                  grpc_resolved_address* addr);
 
-  SubchannelPoolInterface* subchannel_pool() { return Subchannel_pool_; }
-
-  SubchannelKey* subchannel_key() { return key_; }
+  SubchannelKey* key() { return key_; }
 
  private:
   // A linked list of ConnectivityStateWatcherInterfaces that are monitoring
@@ -377,8 +375,6 @@ class Subchannel {
   gpr_atm RefMutate(gpr_atm delta,
                     int barrier GRPC_SUBCHANNEL_REF_MUTATE_EXTRA_ARGS);
 
-  // The subchannel pool this subchannel is in.
-  RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   // TODO(juanlishen): Consider using args_ as key_ directly.
   // Subchannel key that identifies this subchannel in the subchannel pool.
   SubchannelKey* key_;

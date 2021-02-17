@@ -141,11 +141,11 @@ long GlobalSubchannelPool::TestOnlyGlobalSubchannelPoolSize() {
   return ret;
 }
 
-GlobalSubchannelPoolSubchannelRef::GlobalSubchannelPoolSubchannelRef(
-    GlobalSubchannelPool* parent, Subchannel* subchannel) : parent_(parent), subchannel_(subchannel) {
+GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::GlobalSubchannelPoolSubchannelRef(
+    RefCountedPtr<GlobalSubchannelPool> parent, Subchannel* subchannel) : parent_(std::move(parent)), subchannel_(subchannel) {
 }
 
-GlobalSubchannelPoolSubchannelRef::~GlobalSubchannelPoolSubchannelRef() {
+GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::~GlobalSubchannelPoolSubchannelRef() {
   GRPC_SUBCHANNEL_UNREF(subchannel_, "GlobalSubchannelPoolSubchannelRef+destroyed");
   bool done = false;
   // Compare and swap (CAS) loop:
@@ -163,7 +163,7 @@ GlobalSubchannelPoolSubchannelRef::~GlobalSubchannelPoolSubchannelRef() {
     // unlikely) that some other thread has changed the shared map, so compare
     // to make sure it's unchanged before swapping. Retry if it's changed.
     gpr_mu_lock(&parent_->mu_);
-    if (old_map.root == subchannel_map_.root) {
+    if (old_map.root == parent_->subchannel_map_.root) {
       GPR_SWAP(grpc_avl, new_map, parent_->subchannel_map_);
       done = true;
     }
