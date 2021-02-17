@@ -57,7 +57,7 @@ RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
   return *instance_;
 }
 
-Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
+std::unique_ptr<SubchannelRef> GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
                                                      Subchannel* constructed) {
   Subchannel* c = nullptr;
   // Compare and swap (CAS) loop:
@@ -116,37 +116,10 @@ Subchannel* GlobalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
     }
     grpc_avl_unref(old_map, nullptr);
   }
-  return c;
+  return absl::make_unique<GlobalSubchannelPoolSubchannelRef>(this, c);
 }
 
-void GlobalSubchannelPool::UnrefSubchannel(Subchannel* subchannel, const char* reason) {
-  bool done = false;
-  // Compare and swap (CAS) loop:
-  while (!done) {
-    // Ref the shared map to have a local copy.
-    gpr_mu_lock(&mu_);
-    grpc_avl old_map = grpc_avl_ref(subchannel_map_, nullptr);
-    gpr_mu_unlock(&mu_);
-    // Remove the subchannel.
-    // Note that we should ref the old map first because grpc_avl_remove() will
-    // unref it while we still need to access it later.
-    grpc_avl new_map =
-        grpc_avl_remove(grpc_avl_ref(old_map, nullptr), key, nullptr);
-    // Try to publish the change to the shared map. It may happen (but
-    // unlikely) that some other thread has changed the shared map, so compare
-    // to make sure it's unchanged before swapping. Retry if it's changed.
-    gpr_mu_lock(&mu_);
-    if (old_map.root == subchannel_map_.root) {
-      GPR_SWAP(grpc_avl, new_map, subchannel_map_);
-      done = true;
-    }
-    gpr_mu_unlock(&mu_);
-    grpc_avl_unref(new_map, nullptr);
-    grpc_avl_unref(old_map, nullptr);
-  }
-}
-
-Subchannel* GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
+std::unique_ptr<SubchannelRef> GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
   // Lock, and take a reference to the subchannel map.
   // We don't need to do the search under a lock as AVL's are immutable.
   gpr_mu_lock(&mu_);
@@ -155,7 +128,7 @@ Subchannel* GlobalSubchannelPool::FindSubchannel(SubchannelKey* key) {
   Subchannel* c = static_cast<Subchannel*>(grpc_avl_get(index, key, nullptr));
   if (c != nullptr) c = GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(c, "found_from_pool");
   grpc_avl_unref(index, nullptr);
-  return c;
+  return c == nullptr ? nullptr : absl::make_unique<GlobalSubchannelPoolSubchannelRef>(this, c);
 }
 
 RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
@@ -166,6 +139,38 @@ long GlobalSubchannelPool::TestOnlyGlobalSubchannelPoolSize() {
   long ret = grpc_avl_calculate_height(g->subchannel_map_.root);
   gpr_mu_unlock(&g->mu_);
   return ret;
+}
+
+GlobalSubchannelPoolSubchannelRef::GlobalSubchannelPoolSubchannelRef(
+    GlobalSubchannelPool* parent, Subchannel* subchannel) : parent_(parent), subchannel_(subchannel) {
+}
+
+GlobalSubchannelPoolSubchannelRef::~GlobalSubchannelPoolSubchannelRef() {
+  GRPC_SUBCHANNEL_UNREF(subchannel_, "GlobalSubchannelPoolSubchannelRef+destroyed");
+  bool done = false;
+  // Compare and swap (CAS) loop:
+  while (!done) {
+    // Ref the shared map to have a local copy.
+    gpr_mu_lock(&parent_->mu_);
+    grpc_avl old_map = grpc_avl_ref(parent_->subchannel_map_, nullptr);
+    gpr_mu_unlock(&parent_->mu_);
+    // Remove the subchannel.
+    // Note that we should ref the old map first because grpc_avl_remove() will
+    // unref it while we still need to access it later.
+    grpc_avl new_map =
+        grpc_avl_remove(grpc_avl_ref(old_map, nullptr), subchannel_->key(), nullptr);
+    // Try to publish the change to the shared map. It may happen (but
+    // unlikely) that some other thread has changed the shared map, so compare
+    // to make sure it's unchanged before swapping. Retry if it's changed.
+    gpr_mu_lock(&parent_->mu_);
+    if (old_map.root == subchannel_map_.root) {
+      GPR_SWAP(grpc_avl, new_map, parent_->subchannel_map_);
+      done = true;
+    }
+    gpr_mu_unlock(&parent_->mu_);
+    grpc_avl_unref(new_map, nullptr);
+    grpc_avl_unref(old_map, nullptr);
+  }
 }
 
 namespace {

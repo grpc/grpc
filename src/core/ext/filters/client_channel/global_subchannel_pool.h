@@ -52,6 +52,15 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
 
   static long TestOnlyGlobalSubchannelPoolSize();
  private:
+  class GlobalSubchannelPoolSubchannelRef : public SubchannelRef {
+   public:
+    GlobalSubchannelPoolSubchannelRef(GlobalSubchannelPool* parent, Subchannel* subchannel);
+    ~GlobalSubchannelPoolSubchannelRef();
+    Subchannel* subchannel() { return subchannel_; }
+   private:
+    Subchannel* subchannel_;
+  };
+
   // The singleton instance. (It's a pointer to RefCountedPtr so that this
   // non-local static object can be trivially destructible.)
   static RefCountedPtr<GlobalSubchannelPool>* instance_;

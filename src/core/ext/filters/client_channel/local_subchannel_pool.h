@@ -40,12 +40,20 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   // Implements interface methods.
   // Thread-unsafe. Intended to be invoked within the client_channel work
   // serializer.
-  Subchannel* RegisterSubchannel(SubchannelKey* key,
+  std::unique_ptr<SubchannelRef> RegisterSubchannel(SubchannelKey* key,
                                  Subchannel* constructed) override;
-  void UnrefSubchannel(Subchannel* subchannel, const char* reason) override;
-  Subchannel* FindSubchannel(SubchannelKey* key) override;
+  std::unique_ptr<SubchannelRef> FindSubchannel(SubchannelKey* key) override;
 
  private:
+  class LocalSubchannelPoolSubchannelRef : public SubchannelRef {
+   public:
+    LocalSubchannelPoolSubchannelRef(LocalSubchannelPool* parent, Subchannel* subchannel);
+    ~LocalSubchannelPoolSubchannelRef();
+    Subchannel* subchannel() { return subchannel_; }
+   private:
+    Subchannel* subchannel_;
+  };
+
   // The vtable for subchannel operations in an AVL tree.
   static const grpc_avl_vtable subchannel_avl_vtable_;
   // A map from subchannel key to subchannel.
