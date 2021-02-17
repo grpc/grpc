@@ -826,19 +826,19 @@ class ParameterizedClientInterceptorsEnd2endTest
 TEST_P(ParameterizedClientInterceptorsEnd2endTest,
        ClientInterceptorLoggingTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
-  // Add 20 dummy interceptors
+  // Add 20 phony interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = CreateClientChannel(std::move(creators));
   SendRPC(channel);
   LoggingInterceptor::VerifyCall(GetParam().rpc_type());
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
 INSTANTIATE_TEST_SUITE_P(ParameterizedClientInterceptorsEnd2end,
@@ -878,24 +878,24 @@ TEST_F(ClientInterceptorsEnd2endTest,
 
 TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorHijackingTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  // Add 20 dummy interceptors before hijacking interceptor
+  // Add 20 phony interceptors before hijacking interceptor
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   creators.push_back(absl::make_unique<HijackingInterceptorFactory>());
-  // Add 20 dummy interceptors after hijacking interceptor
+  // Add 20 phony interceptors after hijacking interceptor
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeCall(channel);
-  // Make sure only 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure only 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
 TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLogThenHijackTest) {
@@ -913,20 +913,20 @@ TEST_F(ClientInterceptorsEnd2endTest, ClientInterceptorLogThenHijackTest) {
 TEST_F(ClientInterceptorsEnd2endTest,
        ClientInterceptorHijackingMakesAnotherCallTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  // Add 5 dummy interceptors before hijacking interceptor
+  // Add 5 phony interceptors before hijacking interceptor
   creators.reserve(5);
   for (auto i = 0; i < 5; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   creators.push_back(
       std::unique_ptr<experimental::ClientInterceptorFactoryInterface>(
           new HijackingInterceptorMakesAnotherCallFactory()));
-  // Add 7 dummy interceptors after hijacking interceptor
+  // Add 7 phony interceptors after hijacking interceptor
   for (auto i = 0; i < 7; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = server_->experimental().InProcessChannelWithInterceptors(
       args, std::move(creators));
@@ -934,7 +934,7 @@ TEST_F(ClientInterceptorsEnd2endTest,
   MakeCall(channel);
   // Make sure all interceptors were run once, since the hijacking interceptor
   // makes an RPC on the intercepted channel
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 12);
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 12);
 }
 
 class ClientInterceptorsCallbackEnd2endTest : public ::testing::Test {
@@ -959,40 +959,40 @@ class ClientInterceptorsCallbackEnd2endTest : public ::testing::Test {
 TEST_F(ClientInterceptorsCallbackEnd2endTest,
        ClientInterceptorLoggingTestWithCallback) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
-  // Add 20 dummy interceptors
+  // Add 20 phony interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = server_->experimental().InProcessChannelWithInterceptors(
       args, std::move(creators));
   MakeCallbackCall(channel);
   LoggingInterceptor::VerifyUnaryCall();
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
 TEST_F(ClientInterceptorsCallbackEnd2endTest,
        ClientInterceptorFactoryAllowsNullptrReturn) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
-  // Add 20 dummy interceptors and 20 null interceptors
+  // Add 20 phony interceptors and 20 null interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
     creators.push_back(absl::make_unique<NullInterceptorFactory>());
   }
   auto channel = server_->experimental().InProcessChannelWithInterceptors(
       args, std::move(creators));
   MakeCallbackCall(channel);
   LoggingInterceptor::VerifyUnaryCall();
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
 class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
@@ -1016,38 +1016,38 @@ class ClientInterceptorsStreamingEnd2endTest : public ::testing::Test {
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
-  // Add 20 dummy interceptors
+  // Add 20 phony interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeClientStreamingCall(channel);
   LoggingInterceptor::VerifyClientStreamingCall();
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
-  // Add 20 dummy interceptors
+  // Add 20 phony interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeServerStreamingCall(channel);
   LoggingInterceptor::VerifyServerStreamingCall();
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingHijackingTest) {
@@ -1080,7 +1080,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingHijackingTest) {
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingHijackingTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(
@@ -1094,7 +1094,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ServerStreamingHijackingTest) {
 TEST_F(ClientInterceptorsStreamingEnd2endTest,
        AsyncCQServerStreamingHijackingTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(
@@ -1107,7 +1107,7 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest,
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingHijackingTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(
@@ -1119,20 +1119,20 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingHijackingTest) {
 
 TEST_F(ClientInterceptorsStreamingEnd2endTest, BidiStreamingTest) {
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
   creators.push_back(absl::make_unique<LoggingInterceptorFactory>());
-  // Add 20 dummy interceptors
+  // Add 20 phony interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeBidiStreamingCall(channel);
   LoggingInterceptor::VerifyBidiStreamingCall();
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
 }
 
 class ClientGlobalInterceptorEnd2endTest : public ::testing::Test {
@@ -1154,26 +1154,26 @@ class ClientGlobalInterceptorEnd2endTest : public ::testing::Test {
   std::unique_ptr<Server> server_;
 };
 
-TEST_F(ClientGlobalInterceptorEnd2endTest, DummyGlobalInterceptor) {
+TEST_F(ClientGlobalInterceptorEnd2endTest, PhonyGlobalInterceptor) {
   // We should ideally be registering a global interceptor only once per
   // process, but for the purposes of testing, it should be fine to modify the
   // registered global interceptor when there are no ongoing gRPC operations
-  DummyInterceptorFactory global_factory;
+  PhonyInterceptorFactory global_factory;
   experimental::RegisterGlobalClientInterceptorFactory(&global_factory);
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  // Add 20 dummy interceptors
+  // Add 20 phony interceptors
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeCall(channel);
-  // Make sure all 20 dummy interceptors were run with the global interceptor
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 21);
+  // Make sure all 20 phony interceptors were run with the global interceptor
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 21);
   experimental::TestOnlyResetGlobalClientInterceptorFactory();
 }
 
@@ -1184,20 +1184,20 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, LoggingGlobalInterceptor) {
   LoggingInterceptorFactory global_factory;
   experimental::RegisterGlobalClientInterceptorFactory(&global_factory);
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  // Add 20 dummy interceptors
+  // Add 20 phony interceptors
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeCall(channel);
   LoggingInterceptor::VerifyUnaryCall();
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
   experimental::TestOnlyResetGlobalClientInterceptorFactory();
 }
 
@@ -1208,19 +1208,19 @@ TEST_F(ClientGlobalInterceptorEnd2endTest, HijackingGlobalInterceptor) {
   HijackingInterceptorFactory global_factory;
   experimental::RegisterGlobalClientInterceptorFactory(&global_factory);
   ChannelArguments args;
-  DummyInterceptor::Reset();
+  PhonyInterceptor::Reset();
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       creators;
-  // Add 20 dummy interceptors
+  // Add 20 phony interceptors
   creators.reserve(20);
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(absl::make_unique<DummyInterceptorFactory>());
+    creators.push_back(absl::make_unique<PhonyInterceptorFactory>());
   }
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
   MakeCall(channel);
-  // Make sure all 20 dummy interceptors were run
-  EXPECT_EQ(DummyInterceptor::GetNumTimesRun(), 20);
+  // Make sure all 20 phony interceptors were run
+  EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 20);
   experimental::TestOnlyResetGlobalClientInterceptorFactory();
 }
 

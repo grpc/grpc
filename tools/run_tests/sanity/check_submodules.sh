@@ -31,7 +31,7 @@ cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
  73594cde8c9a52a102c4341c244c833aa61b9c06 third_party/bloaty (remotes/origin/wide-14-g73594cd)
  067cfd92f4d7da0edfa073b096d090b98a83b860 third_party/boringssl-with-bazel (remotes/origin/master-with-bazel)
  e982924acee7f7313b4baa4ee5ec000c5e373c30 third_party/cares/cares (cares-1_15_0)
- 9edfeb841b0f8e54816f0b81949f79104072072c third_party/envoy-api (remotes/origin/main)
+ 18b54850c9b7ba29a4ab67cbd7ed7eab7b0bbdb2 third_party/envoy-api (remotes/origin/main)
  82944da21578a53b74e547774cf62ed31a05b841 third_party/googleapis (common-protos-1_3_1-915-g80ed4d0bb)
  c9ccac7cb7345901884aabf5d1a786cfa6e2f397 third_party/googletest (6e2f397)
  15ae750151ac9341e5945eb38f8982d59fb99201 third_party/libuv (v1.34.0)

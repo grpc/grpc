@@ -69,8 +69,10 @@ def main(argv):
 
     if _CMD.value == 'run':
         logger.info('Run server, secure_mode=%s', _SECURE.value)
-        server_runner.run(test_port=xds_flags.SERVER_PORT.value,
-                          secure_mode=_SECURE.value)
+        server_runner.run(
+            test_port=xds_flags.SERVER_PORT.value,
+            maintenance_port=xds_flags.SERVER_MAINTENANCE_PORT.value,
+            secure_mode=_SECURE.value)
 
     elif _CMD.value == 'cleanup':
         logger.info('Cleanup server')

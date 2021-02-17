@@ -25,12 +25,12 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.36.0-dev")
+set(PACKAGE_VERSION       "1.37.0-dev")
 set(gRPC_CORE_VERSION     "15.0.0")
 set(gRPC_CORE_SOVERSION   "15")
-set(gRPC_CPP_VERSION      "1.36.0-dev")
+set(gRPC_CPP_VERSION      "1.37.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
-set(gRPC_CSHARP_VERSION   "2.36.0-dev")
+set(gRPC_CSHARP_VERSION   "2.37.0-dev")
 set(gRPC_CSHARP_SOVERSION "2")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
@@ -501,6 +501,9 @@ protobuf_generate_grpc_cpp(
 )
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/route.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/router.proto
 )
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/string.proto
@@ -1589,6 +1592,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c
   src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
+  src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
   src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
   src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c
@@ -1636,6 +1640,7 @@ add_library(grpc
   src/core/ext/upb-generated/udpa/annotations/status.upb.c
   src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/upb-generated/xds/core/v3/authority.upb.c
   src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c
@@ -1675,6 +1680,7 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c
@@ -1714,6 +1720,7 @@ add_library(grpc
   src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c
   src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c
   src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c
+  src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c
   src/core/ext/upbdefs-generated/validate/validate.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c
   src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c
@@ -1729,6 +1736,7 @@ add_library(grpc
   src/core/ext/xds/xds_certificate_provider.cc
   src/core/ext/xds/xds_client.cc
   src/core/ext/xds/xds_client_stats.cc
+  src/core/ext/xds/xds_http_filters.cc
   src/core/ext/xds/xds_server_config_fetcher.cc
   src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
@@ -15710,6 +15718,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h

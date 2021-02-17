@@ -14,9 +14,9 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 15.0.0
   csharp_major_version: 2
-  g_stands_for: gummybear
+  g_stands_for: gilded
   protobuf_version: 3.15.0-rc2
-  version: 1.36.0-dev
+  version: 1.37.0-dev
 targets:
 - name: check_epollexclusive
   build: tool
@@ -48,21 +48,6 @@ targets:
   - tools/codegen/core/gen_percent_encoding_tables.cc
   deps: []
   uses_polling: false
-vspackages:
-- linkage: static
-  name: grpc.dependencies.zlib
-  props: false
-  redist: true
-  version: 1.2.8.10
-- linkage: static
-  name: grpc.dependencies.openssl
-  props: true
-  redist: true
-  version: 1.0.204.1
-- name: gtest
-  props: false
-  redist: false
-  version: 1.7.0.1
 configs:
   asan:
     CC: clang

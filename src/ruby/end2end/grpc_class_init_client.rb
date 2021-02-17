@@ -70,7 +70,7 @@ def get_test_proc(grpc_class)
   case grpc_class
   when 'channel'
     return proc do
-      GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
+      GRPC::Core::Channel.new('phony_host', nil, :this_channel_is_insecure)
     end
   when 'server'
     return proc do

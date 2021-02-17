@@ -35,7 +35,7 @@ end
 def run_multiple_killed_watches(num_threads, sleep_time)
   channels = []
   num_threads.times do
-    ch = GRPC::Core::Channel.new('dummy_host',
+    ch = GRPC::Core::Channel.new('phony_host',
                                  nil, :this_channel_is_insecure)
     watch_state(ch, sleep_time)
     channels << ch

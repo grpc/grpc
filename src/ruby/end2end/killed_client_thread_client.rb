@@ -20,15 +20,17 @@
 require_relative './end2end_common'
 
 def main
+  parent_controller_port = ''
   server_port = ''
   OptionParser.new do |opts|
-    opts.on('--client_control_port=P', String) do
-      STDERR.puts 'client control port not used'
+    opts.on('--parent_controller_port=P', String) do |p|
+      parent_controller_port = p
     end
     opts.on('--server_port=P', String) do |p|
       server_port = p
     end
   end.parse!
+  report_controller_port_to_parent(parent_controller_port, 0)
 
   thd = Thread.new do
     stub = Echo::EchoServer::Stub.new("localhost:#{server_port}",

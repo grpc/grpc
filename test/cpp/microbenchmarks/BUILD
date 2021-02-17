@@ -357,6 +357,7 @@ grpc_cc_library(
 
 grpc_cc_test(
     name = "bm_callback_unary_ping_pong",
+    size = "large",
     srcs = [
         "bm_callback_unary_ping_pong.cc",
     ],

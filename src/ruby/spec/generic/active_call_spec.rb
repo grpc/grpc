@@ -198,11 +198,11 @@ describe GRPC::ActiveCall do
         deadline,
         started: false)
 
-      metadata = { key: 'dummy_val', other: 'other_val' }
+      metadata = { key: 'phony_val', other: 'other_val' }
       expect(@client_call.metadata_sent).to eq(false)
       @client_call.merge_metadata_to_send(metadata)
 
-      message = 'dummy message'
+      message = 'phony message'
 
       expect(call).to(
         receive(:run_batch)

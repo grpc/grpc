@@ -43,17 +43,6 @@
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-// MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
-// should be skipped based on a decision made at SetUp time. In particular, any
-// callback tests can only be run if the iomgr can run in the background or if
-// the transport is in-process.
-#define MAYBE_SKIP_TEST \
-  do {                  \
-    if (do_not_test_) { \
-      return;           \
-    }                   \
-  } while (0)
-
 namespace grpc {
 namespace testing {
 namespace {
@@ -95,15 +84,7 @@ class ContextAllocatorEnd2endTestBase
 
   ~ContextAllocatorEnd2endTestBase() override = default;
 
-  void SetUp() override {
-    GetParam().Log();
-    if (GetParam().protocol == Protocol::TCP) {
-      if (!grpc_iomgr_run_in_background()) {
-        do_not_test_ = true;
-        return;
-      }
-    }
-  }
+  void SetUp() override { GetParam().Log(); }
 
   void CreateServer(std::unique_ptr<grpc::ContextAllocator> context_allocator) {
     ServerBuilder builder;
@@ -185,7 +166,6 @@ class ContextAllocatorEnd2endTestBase
     }
   }
 
-  bool do_not_test_{false};
   int picked_port_{0};
   std::shared_ptr<Channel> channel_;
   std::unique_ptr<EchoTestService::Stub> stub_;
@@ -197,7 +177,6 @@ class ContextAllocatorEnd2endTestBase
 class DefaultContextAllocatorTest : public ContextAllocatorEnd2endTestBase {};
 
 TEST_P(DefaultContextAllocatorTest, SimpleRpc) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   CreateServer(nullptr);
   ResetStub();
@@ -239,7 +218,6 @@ class NullContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
 };
 
 TEST_P(NullContextAllocatorTest, UnaryRpc) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::atomic<int> allocation_count{0};
   std::atomic<int> deallocation_count{0};
@@ -290,7 +268,6 @@ class SimpleContextAllocatorTest : public ContextAllocatorEnd2endTestBase {
 };
 
 TEST_P(SimpleContextAllocatorTest, UnaryRpc) {
-  MAYBE_SKIP_TEST;
   const int kRpcCount = 10;
   std::atomic<int> allocation_count{0};
   std::atomic<int> deallocation_count{0};

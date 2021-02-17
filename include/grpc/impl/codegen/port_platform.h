@@ -366,6 +366,7 @@
 #define GPR_ARCH_32 1
 #endif /* _LP64 */
 #elif defined(__Fuchsia__)
+#define GRPC_ARES 0
 #define GPR_FUCHSIA 1
 #define GPR_ARCH_64 1
 #define GPR_PLATFORM_STRING "fuchsia"
@@ -387,6 +388,7 @@
 #define GPR_POSIX_TIME 1
 #define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
+#define GRPC_ROOT_PEM_PATH "/config/ssl/cert.pem"
 #else
 #error "Could not auto-detect platform"
 #endif

@@ -30,7 +30,7 @@ library, so we can build it in all environments */
 #ifdef GRPC_COMPILE_WITH_CRONET
 /* link with the real CRONET library in the build system */
 #else
-/* Dummy implementation of cronet API just to test for build-ability */
+/* Phony implementation of cronet API just to test for build-ability */
 bidirectional_stream* bidirectional_stream_create(
     stream_engine* /*engine*/, void* /*annotation*/,
     bidirectional_stream_callback* /*callback*/) {

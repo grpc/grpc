@@ -70,7 +70,7 @@ class CallInvokerClient extends Grpc\BaseStub
     $options = []
   ) {
     return $this->_simpleRequest(
-      '/dummy_method',
+      '/phony_method',
       $argument,
       [],
       $metadata,
@@ -209,7 +209,7 @@ class CallInvokerTest extends \PHPUnit\Framework\TestCase
         $unary_call = $client->UnaryCall($req);
 
         $event = $this->server->requestCall();
-        $this->assertSame('/dummy_method', $event->method);
+        $this->assertSame('/phony_method', $event->method);
         $server_call = $event->call;
         $event = $server_call->startBatch([
             Grpc\OP_SEND_INITIAL_METADATA => [],
