@@ -811,8 +811,9 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
     void* tag;
     bool ok;
     while (server_cq_->Next(&tag, &ok)) {
-      GPR_DEBUG_ASSERT(false);
-      gpr_log(GPR_ERROR, "SyncRequest seen during shutdown");
+      // Drain the item and don't do any work on it. It is possible to see this
+      // if there is an explicit call to Wait that is not part of the actual
+      // Shutdown.
     }
   }
 
