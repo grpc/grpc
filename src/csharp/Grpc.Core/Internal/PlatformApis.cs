@@ -45,6 +45,7 @@ namespace Grpc.Core.Internal
         static readonly bool isMacOSX;
         static readonly bool isWindows;
         static readonly bool isMono;
+        static readonly bool isNet5OrHigher;
         static readonly bool isNetCore;
         static readonly string unityApplicationPlatform;
         static readonly bool isXamarin;
@@ -57,12 +58,14 @@ namespace Grpc.Core.Internal
             isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
             isMacOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
             isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-            isNetCore =
 #if NETSTANDARD2_0
-                Environment.Version.Major >= 5 ||
-#endif
-                RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
+            isNet5OrHigher = Environment.Version.Major >= 5;
 #else
+            // assume that on .NET 5+, the netstandard2.0 TFM is going to be selected.
+            isNet5OrHigher = false;
+#endif
+            isNetCore = isNet5OrHigher || RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
+
             var platform = Environment.OSVersion.Platform;
 
             // PlatformID.MacOSX is never returned, commonly used trick is to identify Mac is by using uname.
@@ -117,7 +120,12 @@ namespace Grpc.Core.Internal
         public static bool IsXamarinAndroid => isXamarinAndroid;
 
         /// <summary>
-        /// true if running on .NET Core (CoreCLR), false otherwise.
+        /// true if running on .NET 5+, false otherwise.
+        /// </summary>
+        public static bool IsNet5OrHigher => isNet5OrHigher;
+
+        /// <summary>
+        /// true if running on .NET Core (CoreCLR) or NET 5+, false otherwise.
         /// </summary>
         public static bool IsNetCore => isNetCore;
 
