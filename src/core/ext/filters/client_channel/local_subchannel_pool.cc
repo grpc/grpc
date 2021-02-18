@@ -46,11 +46,11 @@ LocalSubchannelPool::LocalSubchannelPoolSubchannelRef::LocalSubchannelPoolSubcha
 
 LocalSubchannelPool::LocalSubchannelPoolSubchannelRef::~LocalSubchannelPoolSubchannelRef() {
   subchannel_.reset();
-  auto p = subchannel_map_.find(key);
-  GPR_ASSERT(p != subchannel_map_.end());
+  auto p = parent_->subchannel_map_.find(key_);
+  GPR_ASSERT(p != parent_->subchannel_map_.end());
   if (p->second->RefIfNonZero() == nullptr) {
     // nobody else using this subchannel, delete it from the pool
-    GPR_ASSERT(subchannel_map_.erase(p) == 1);
+    GPR_ASSERT(parent_->subchannel_map_.erase(p) == 1);
   }
 }
 

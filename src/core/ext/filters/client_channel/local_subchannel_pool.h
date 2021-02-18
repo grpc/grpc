@@ -50,7 +50,7 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
    public:
     LocalSubchannelPoolSubchannelRef(RefCountedPtr<LocalSubchannelPool> parent, RefCountedPtr<Subchannel> subchannel, const SubchannelKey &key);
     ~LocalSubchannelPoolSubchannelRef() override;
-    Subchannel* subchannel() override { return subchannel_; }
+    Subchannel* subchannel() override { return subchannel_.get(); }
    private:
     RefCountedPtr<LocalSubchannelPool> parent_;
     RefCountedPtr<Subchannel> subchannel_;

@@ -80,11 +80,11 @@ GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::~GlobalSubchannelPoolSu
   // TODO: remove inner brackets after making subchannel DualRefCounted
   MutexLock lock(&parent_->mu_);
   subchannel_.reset();
-  auto p = subchannel_map_.find(key_);
-  GPR_ASSERT(p != subchannel_map_.end());
+  auto p = parent_->subchannel_map_.find(key_);
+  GPR_ASSERT(p != parent_->subchannel_map_.end());
   if (p->RefIfNonZero() == nullptr) {
     // nobody else using this subchannel, delete it from the pool
-    GPR_ASSERT(subchannel_map_.erase(p) == 1);
+    GPR_ASSERT(parent_->subchannel_map_.erase(p) == 1);
   }
 }
 

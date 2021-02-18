@@ -57,7 +57,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
    public:
     GlobalSubchannelPoolSubchannelRef(RefCountedPtr<GlobalSubchannelPool> parent, RefCountedPtr<Subchannel> subchannel, const SubchannelKey &key);
     ~GlobalSubchannelPoolSubchannelRef() override;
-    Subchannel* subchannel() override { return subchannel_; }
+    Subchannel* subchannel() override { return subchannel_.get(); }
    private:
     RefCountedPtr<GlobalSubchannelPool> parent_;
     RefCountedPtr<Subchannel> subchannel_;
