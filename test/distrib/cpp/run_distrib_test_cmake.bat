@@ -57,6 +57,13 @@ cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 
+@rem Install xxhash
+mkdir third_party\xxhash\cmake\build
+pushd third_party\xxhash\cmake\build
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
+cmake --build . --config Release --target install || goto :error
+popd
+
 @rem Install zlib
 mkdir third_party\zlib\cmake\build
 pushd third_party\zlib\cmake\build
@@ -82,6 +89,7 @@ cmake ^
   -DgRPC_CARES_PROVIDER=package ^
   -DgRPC_PROTOBUF_PROVIDER=package ^
   -DgRPC_RE2_PROVIDER=package ^
+  -DgRPC_XXHASH_PROVIDER=package ^
   -DgRPC_SSL_PROVIDER=package ^
   -DgRPC_ZLIB_PROVIDER=package ^
   ../.. || goto :error
