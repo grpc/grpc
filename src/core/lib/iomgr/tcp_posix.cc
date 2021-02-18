@@ -905,6 +905,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error* error) {
 
 static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
                      grpc_closure* cb, bool urgent) {
+  (void)urgent;
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;
@@ -912,15 +913,11 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
+  absl::SleepFor(absl::Nanoseconds(500));
   if (tcp->is_first_read) {
     /* Endpoint read called for the very first time. Register read callback with
      * the polling engine */
     tcp->is_first_read = false;
-    notify_on_read(tcp);
-  } else if (!urgent && tcp->inq == 0) {
-    /* Upper layer asked to read more but we know there is no pending data
-     * to read from previous reads. So, wait for POLLIN.
-     */
     notify_on_read(tcp);
   } else {
     /* Not the first time. We may or may not have more bytes available. In any
