@@ -93,13 +93,14 @@ std::string BootstrapString(const XdsBootstrap& bootstrap) {
         "  locality={\n"
         "    region=\"%s\",\n"
         "    zone=\"%s\",\n"
-        "    subzone=\"%s\"\n"
+        "    sub_zone=\"%s\"\n"
         "  },\n"
         "  metadata=%s,\n"
         "},\n",
         bootstrap.node()->id, bootstrap.node()->cluster,
         bootstrap.node()->locality_region, bootstrap.node()->locality_zone,
-        bootstrap.node()->locality_subzone, bootstrap.node()->metadata.Dump()));
+        bootstrap.node()->locality_sub_zone,
+        bootstrap.node()->metadata.Dump()));
   }
   parts.push_back(absl::StrFormat(
       "servers=[\n"
@@ -455,13 +456,13 @@ grpc_error* XdsBootstrap::ParseLocality(Json* json) {
       node_->locality_zone = std::move(*it->second.mutable_string_value());
     }
   }
-  it = json->mutable_object()->find("subzone");
+  it = json->mutable_object()->find("sub_zone");
   if (it != json->mutable_object()->end()) {
     if (it->second.type() != Json::Type::STRING) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"subzone\" field is not a string"));
+          "\"sub_zone\" field is not a string"));
     } else {
-      node_->locality_subzone = std::move(*it->second.mutable_string_value());
+      node_->locality_sub_zone = std::move(*it->second.mutable_string_value());
     }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"locality\" object",

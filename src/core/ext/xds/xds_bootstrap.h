@@ -54,7 +54,7 @@ class XdsBootstrap {
     std::string cluster;
     std::string locality_region;
     std::string locality_zone;
-    std::string locality_subzone;
+    std::string locality_sub_zone;
     Json metadata;
   };
 
