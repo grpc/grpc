@@ -65,13 +65,14 @@ namespace Grpc.Core.Internal
             isNet5OrHigher = false;
 #endif
             isNetCore = isNet5OrHigher || RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
-
+#else
             var platform = Environment.OSVersion.Platform;
 
             // PlatformID.MacOSX is never returned, commonly used trick is to identify Mac is by using uname.
             isMacOSX = (platform == PlatformID.Unix && GetUname() == "Darwin");
             isLinux = (platform == PlatformID.Unix && !isMacOSX);
             isWindows = (platform == PlatformID.Win32NT || platform == PlatformID.Win32S || platform == PlatformID.Win32Windows);
+            isNet5OrHigher = false;
             isNetCore = false;
 #endif
             isMono = Type.GetType("Mono.Runtime") != null;
