@@ -37,7 +37,6 @@
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
 #include "src/core/ext/xds/xds_http_filters.h"
-#include "src/core/lib/security/authorization/matchers.h"
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/authorization/matchers.h"
 

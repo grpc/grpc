@@ -30,6 +30,7 @@ struct envoy_config_bootstrap_v3_ClusterManager_OutlierDetection;
 struct envoy_config_bootstrap_v3_Watchdogs;
 struct envoy_config_bootstrap_v3_Watchdog;
 struct envoy_config_bootstrap_v3_Watchdog_WatchdogAction;
+struct envoy_config_bootstrap_v3_FatalAction;
 struct envoy_config_bootstrap_v3_Runtime;
 struct envoy_config_bootstrap_v3_RuntimeLayer;
 struct envoy_config_bootstrap_v3_RuntimeLayer_DiskLayer;
@@ -46,6 +47,7 @@ typedef struct envoy_config_bootstrap_v3_ClusterManager_OutlierDetection envoy_c
 typedef struct envoy_config_bootstrap_v3_Watchdogs envoy_config_bootstrap_v3_Watchdogs;
 typedef struct envoy_config_bootstrap_v3_Watchdog envoy_config_bootstrap_v3_Watchdog;
 typedef struct envoy_config_bootstrap_v3_Watchdog_WatchdogAction envoy_config_bootstrap_v3_Watchdog_WatchdogAction;
+typedef struct envoy_config_bootstrap_v3_FatalAction envoy_config_bootstrap_v3_FatalAction;
 typedef struct envoy_config_bootstrap_v3_Runtime envoy_config_bootstrap_v3_Runtime;
 typedef struct envoy_config_bootstrap_v3_RuntimeLayer envoy_config_bootstrap_v3_RuntimeLayer;
 typedef struct envoy_config_bootstrap_v3_RuntimeLayer_DiskLayer envoy_config_bootstrap_v3_RuntimeLayer_DiskLayer;
@@ -62,6 +64,7 @@ extern const upb_msglayout envoy_config_bootstrap_v3_ClusterManager_OutlierDetec
 extern const upb_msglayout envoy_config_bootstrap_v3_Watchdogs_msginit;
 extern const upb_msglayout envoy_config_bootstrap_v3_Watchdog_msginit;
 extern const upb_msglayout envoy_config_bootstrap_v3_Watchdog_WatchdogAction_msginit;
+extern const upb_msglayout envoy_config_bootstrap_v3_FatalAction_msginit;
 extern const upb_msglayout envoy_config_bootstrap_v3_Runtime_msginit;
 extern const upb_msglayout envoy_config_bootstrap_v3_RuntimeLayer_msginit;
 extern const upb_msglayout envoy_config_bootstrap_v3_RuntimeLayer_DiskLayer_msginit;
@@ -87,7 +90,6 @@ struct envoy_type_v3_Percent;
 struct google_protobuf_Duration;
 struct google_protobuf_Struct;
 struct google_protobuf_UInt64Value;
-struct udpa_core_v1_ResourceLocator;
 extern const upb_msglayout envoy_config_cluster_v3_Cluster_msginit;
 extern const upb_msglayout envoy_config_core_v3_Address_msginit;
 extern const upb_msglayout envoy_config_core_v3_ApiConfigSource_msginit;
@@ -107,7 +109,6 @@ extern const upb_msglayout envoy_type_v3_Percent_msginit;
 extern const upb_msglayout google_protobuf_Duration_msginit;
 extern const upb_msglayout google_protobuf_Struct_msginit;
 extern const upb_msglayout google_protobuf_UInt64Value_msginit;
-extern const upb_msglayout udpa_core_v1_ResourceLocator_msginit;
 
 typedef enum {
   envoy_config_bootstrap_v3_Watchdog_WatchdogAction_UNKNOWN = 0,
@@ -137,6 +138,12 @@ UPB_INLINE envoy_config_bootstrap_v3_Bootstrap *envoy_config_bootstrap_v3_Bootst
 UPB_INLINE char *envoy_config_bootstrap_v3_Bootstrap_serialize(const envoy_config_bootstrap_v3_Bootstrap *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_bootstrap_v3_Bootstrap_msginit, arena, len);
 }
+
+typedef enum {
+  envoy_config_bootstrap_v3_Bootstrap_stats_flush_stats_flush_on_admin = 29,
+  envoy_config_bootstrap_v3_Bootstrap_stats_flush_NOT_SET = 0
+} envoy_config_bootstrap_v3_Bootstrap_stats_flush_oneofcases;
+UPB_INLINE envoy_config_bootstrap_v3_Bootstrap_stats_flush_oneofcases envoy_config_bootstrap_v3_Bootstrap_stats_flush_case(const envoy_config_bootstrap_v3_Bootstrap* msg) { return (envoy_config_bootstrap_v3_Bootstrap_stats_flush_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(116, 228), int32_t); }
 
 UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_has_node(const envoy_config_bootstrap_v3_Bootstrap *msg) { return _upb_hasbit(msg, 1); }
 UPB_INLINE const struct envoy_config_core_v3_Node* envoy_config_bootstrap_v3_Bootstrap_node(const envoy_config_bootstrap_v3_Bootstrap *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), const struct envoy_config_core_v3_Node*); }
@@ -184,6 +191,10 @@ UPB_INLINE const envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstance
 UPB_INLINE upb_strview const* envoy_config_bootstrap_v3_Bootstrap_node_context_params(const envoy_config_bootstrap_v3_Bootstrap *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(104, 208), len); }
 UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_has_watchdogs(const envoy_config_bootstrap_v3_Bootstrap *msg) { return _upb_hasbit(msg, 15); }
 UPB_INLINE const envoy_config_bootstrap_v3_Watchdogs* envoy_config_bootstrap_v3_Bootstrap_watchdogs(const envoy_config_bootstrap_v3_Bootstrap *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(84, 168), const envoy_config_bootstrap_v3_Watchdogs*); }
+UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_has_fatal_actions(const envoy_config_bootstrap_v3_Bootstrap *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(108, 216)); }
+UPB_INLINE const envoy_config_bootstrap_v3_FatalAction* const* envoy_config_bootstrap_v3_Bootstrap_fatal_actions(const envoy_config_bootstrap_v3_Bootstrap *msg, size_t *len) { return (const envoy_config_bootstrap_v3_FatalAction* const*)_upb_array_accessor(msg, UPB_SIZE(108, 216), len); }
+UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_has_stats_flush_on_admin(const envoy_config_bootstrap_v3_Bootstrap *msg) { return _upb_getoneofcase(msg, UPB_SIZE(116, 228)) == 29; }
+UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_stats_flush_on_admin(const envoy_config_bootstrap_v3_Bootstrap *msg) { return UPB_READ_ONEOF(msg, bool, UPB_SIZE(112, 224), UPB_SIZE(116, 228), 29, false); }
 
 UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_set_node(envoy_config_bootstrap_v3_Bootstrap *msg, struct envoy_config_core_v3_Node* value) {
   _upb_sethas(msg, 1);
@@ -448,6 +459,22 @@ UPB_INLINE struct envoy_config_bootstrap_v3_Watchdogs* envoy_config_bootstrap_v3
   }
   return sub;
 }
+UPB_INLINE envoy_config_bootstrap_v3_FatalAction** envoy_config_bootstrap_v3_Bootstrap_mutable_fatal_actions(envoy_config_bootstrap_v3_Bootstrap *msg, size_t *len) {
+  return (envoy_config_bootstrap_v3_FatalAction**)_upb_array_mutable_accessor(msg, UPB_SIZE(108, 216), len);
+}
+UPB_INLINE envoy_config_bootstrap_v3_FatalAction** envoy_config_bootstrap_v3_Bootstrap_resize_fatal_actions(envoy_config_bootstrap_v3_Bootstrap *msg, size_t len, upb_arena *arena) {
+  return (envoy_config_bootstrap_v3_FatalAction**)_upb_array_resize_accessor2(msg, UPB_SIZE(108, 216), len, UPB_SIZE(2, 3), arena);
+}
+UPB_INLINE struct envoy_config_bootstrap_v3_FatalAction* envoy_config_bootstrap_v3_Bootstrap_add_fatal_actions(envoy_config_bootstrap_v3_Bootstrap *msg, upb_arena *arena) {
+  struct envoy_config_bootstrap_v3_FatalAction* sub = (struct envoy_config_bootstrap_v3_FatalAction*)_upb_msg_new(&envoy_config_bootstrap_v3_FatalAction_msginit, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(108, 216), UPB_SIZE(2, 3), &sub, arena);
+  if (!ok) return NULL;
+  return sub;
+}
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_set_stats_flush_on_admin(envoy_config_bootstrap_v3_Bootstrap *msg, bool value) {
+  UPB_WRITE_ONEOF(msg, bool, UPB_SIZE(112, 224), value, UPB_SIZE(116, 228), 29);
+}
 
 /* envoy.config.bootstrap.v3.Bootstrap.StaticResources */
 
@@ -537,19 +564,17 @@ UPB_INLINE char *envoy_config_bootstrap_v3_Bootstrap_DynamicResources_serialize(
 }
 
 UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_DynamicResources_has_lds_config(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE const struct envoy_config_core_v3_ConfigSource* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_lds_config(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_ConfigSource*); }
+UPB_INLINE const struct envoy_config_core_v3_ConfigSource* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_lds_config(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct envoy_config_core_v3_ConfigSource*); }
 UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_DynamicResources_has_cds_config(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return _upb_hasbit(msg, 2); }
-UPB_INLINE const struct envoy_config_core_v3_ConfigSource* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_cds_config(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct envoy_config_core_v3_ConfigSource*); }
+UPB_INLINE const struct envoy_config_core_v3_ConfigSource* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_cds_config(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 48), const struct envoy_config_core_v3_ConfigSource*); }
 UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_DynamicResources_has_ads_config(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return _upb_hasbit(msg, 3); }
-UPB_INLINE const struct envoy_config_core_v3_ApiConfigSource* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_ads_config(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_config_core_v3_ApiConfigSource*); }
-UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_DynamicResources_has_lds_resources_locator(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return _upb_hasbit(msg, 4); }
-UPB_INLINE const struct udpa_core_v1_ResourceLocator* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_lds_resources_locator(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct udpa_core_v1_ResourceLocator*); }
-UPB_INLINE bool envoy_config_bootstrap_v3_Bootstrap_DynamicResources_has_cds_resources_locator(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return _upb_hasbit(msg, 5); }
-UPB_INLINE const struct udpa_core_v1_ResourceLocator* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_cds_resources_locator(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(20, 40), const struct udpa_core_v1_ResourceLocator*); }
+UPB_INLINE const struct envoy_config_core_v3_ApiConfigSource* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_ads_config(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(28, 56), const struct envoy_config_core_v3_ApiConfigSource*); }
+UPB_INLINE upb_strview envoy_config_bootstrap_v3_Bootstrap_DynamicResources_lds_resources_locator(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
+UPB_INLINE upb_strview envoy_config_bootstrap_v3_Bootstrap_DynamicResources_cds_resources_locator(const envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview); }
 
 UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_DynamicResources_set_lds_config(envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg, struct envoy_config_core_v3_ConfigSource* value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct envoy_config_core_v3_ConfigSource*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), struct envoy_config_core_v3_ConfigSource*) = value;
 }
 UPB_INLINE struct envoy_config_core_v3_ConfigSource* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_mutable_lds_config(envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg, upb_arena *arena) {
   struct envoy_config_core_v3_ConfigSource* sub = (struct envoy_config_core_v3_ConfigSource*)envoy_config_bootstrap_v3_Bootstrap_DynamicResources_lds_config(msg);
@@ -562,7 +587,7 @@ UPB_INLINE struct envoy_config_core_v3_ConfigSource* envoy_config_bootstrap_v3_B
 }
 UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_DynamicResources_set_cds_config(envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg, struct envoy_config_core_v3_ConfigSource* value) {
   _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct envoy_config_core_v3_ConfigSource*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 48), struct envoy_config_core_v3_ConfigSource*) = value;
 }
 UPB_INLINE struct envoy_config_core_v3_ConfigSource* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_mutable_cds_config(envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg, upb_arena *arena) {
   struct envoy_config_core_v3_ConfigSource* sub = (struct envoy_config_core_v3_ConfigSource*)envoy_config_bootstrap_v3_Bootstrap_DynamicResources_cds_config(msg);
@@ -575,7 +600,7 @@ UPB_INLINE struct envoy_config_core_v3_ConfigSource* envoy_config_bootstrap_v3_B
 }
 UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_DynamicResources_set_ads_config(envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg, struct envoy_config_core_v3_ApiConfigSource* value) {
   _upb_sethas(msg, 3);
-  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct envoy_config_core_v3_ApiConfigSource*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(28, 56), struct envoy_config_core_v3_ApiConfigSource*) = value;
 }
 UPB_INLINE struct envoy_config_core_v3_ApiConfigSource* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_mutable_ads_config(envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg, upb_arena *arena) {
   struct envoy_config_core_v3_ApiConfigSource* sub = (struct envoy_config_core_v3_ApiConfigSource*)envoy_config_bootstrap_v3_Bootstrap_DynamicResources_ads_config(msg);
@@ -586,31 +611,11 @@ UPB_INLINE struct envoy_config_core_v3_ApiConfigSource* envoy_config_bootstrap_v
   }
   return sub;
 }
-UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_DynamicResources_set_lds_resources_locator(envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg, struct udpa_core_v1_ResourceLocator* value) {
-  _upb_sethas(msg, 4);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct udpa_core_v1_ResourceLocator*) = value;
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_DynamicResources_set_lds_resources_locator(envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg, upb_strview value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
-UPB_INLINE struct udpa_core_v1_ResourceLocator* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_mutable_lds_resources_locator(envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg, upb_arena *arena) {
-  struct udpa_core_v1_ResourceLocator* sub = (struct udpa_core_v1_ResourceLocator*)envoy_config_bootstrap_v3_Bootstrap_DynamicResources_lds_resources_locator(msg);
-  if (sub == NULL) {
-    sub = (struct udpa_core_v1_ResourceLocator*)_upb_msg_new(&udpa_core_v1_ResourceLocator_msginit, arena);
-    if (!sub) return NULL;
-    envoy_config_bootstrap_v3_Bootstrap_DynamicResources_set_lds_resources_locator(msg, sub);
-  }
-  return sub;
-}
-UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_DynamicResources_set_cds_resources_locator(envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg, struct udpa_core_v1_ResourceLocator* value) {
-  _upb_sethas(msg, 5);
-  *UPB_PTR_AT(msg, UPB_SIZE(20, 40), struct udpa_core_v1_ResourceLocator*) = value;
-}
-UPB_INLINE struct udpa_core_v1_ResourceLocator* envoy_config_bootstrap_v3_Bootstrap_DynamicResources_mutable_cds_resources_locator(envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg, upb_arena *arena) {
-  struct udpa_core_v1_ResourceLocator* sub = (struct udpa_core_v1_ResourceLocator*)envoy_config_bootstrap_v3_Bootstrap_DynamicResources_cds_resources_locator(msg);
-  if (sub == NULL) {
-    sub = (struct udpa_core_v1_ResourceLocator*)_upb_msg_new(&udpa_core_v1_ResourceLocator_msginit, arena);
-    if (!sub) return NULL;
-    envoy_config_bootstrap_v3_Bootstrap_DynamicResources_set_cds_resources_locator(msg, sub);
-  }
-  return sub;
+UPB_INLINE void envoy_config_bootstrap_v3_Bootstrap_DynamicResources_set_cds_resources_locator(envoy_config_bootstrap_v3_Bootstrap_DynamicResources *msg, upb_strview value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview) = value;
 }
 
 /* envoy.config.bootstrap.v3.Bootstrap.CertificateProviderInstancesEntry */
@@ -1023,6 +1028,43 @@ UPB_INLINE void envoy_config_bootstrap_v3_Watchdog_WatchdogAction_set_event(envo
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
 }
 
+/* envoy.config.bootstrap.v3.FatalAction */
+
+UPB_INLINE envoy_config_bootstrap_v3_FatalAction *envoy_config_bootstrap_v3_FatalAction_new(upb_arena *arena) {
+  return (envoy_config_bootstrap_v3_FatalAction *)_upb_msg_new(&envoy_config_bootstrap_v3_FatalAction_msginit, arena);
+}
+UPB_INLINE envoy_config_bootstrap_v3_FatalAction *envoy_config_bootstrap_v3_FatalAction_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_config_bootstrap_v3_FatalAction *ret = envoy_config_bootstrap_v3_FatalAction_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_config_bootstrap_v3_FatalAction_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_config_bootstrap_v3_FatalAction *envoy_config_bootstrap_v3_FatalAction_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_config_bootstrap_v3_FatalAction *ret = envoy_config_bootstrap_v3_FatalAction_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_bootstrap_v3_FatalAction_msginit, arena, options))
+      ? ret : NULL;
+}
+UPB_INLINE char *envoy_config_bootstrap_v3_FatalAction_serialize(const envoy_config_bootstrap_v3_FatalAction *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_config_bootstrap_v3_FatalAction_msginit, arena, len);
+}
+
+UPB_INLINE bool envoy_config_bootstrap_v3_FatalAction_has_config(const envoy_config_bootstrap_v3_FatalAction *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_FatalAction_config(const envoy_config_bootstrap_v3_FatalAction *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_TypedExtensionConfig*); }
+
+UPB_INLINE void envoy_config_bootstrap_v3_FatalAction_set_config(envoy_config_bootstrap_v3_FatalAction *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct envoy_config_core_v3_TypedExtensionConfig*) = value;
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_bootstrap_v3_FatalAction_mutable_config(envoy_config_bootstrap_v3_FatalAction *msg, upb_arena *arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_bootstrap_v3_FatalAction_config(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_msg_new(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_bootstrap_v3_FatalAction_set_config(msg, sub);
+  }
+  return sub;
+}
+
 /* envoy.config.bootstrap.v3.Runtime */
 
 UPB_INLINE envoy_config_bootstrap_v3_Runtime *envoy_config_bootstrap_v3_Runtime_new(upb_arena *arena) {
@@ -1242,8 +1284,6 @@ UPB_INLINE char *envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_serialize(cons
 UPB_INLINE upb_strview envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_name(const envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
 UPB_INLINE bool envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_has_rtds_config(const envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer *msg) { return _upb_hasbit(msg, 1); }
 UPB_INLINE const struct envoy_config_core_v3_ConfigSource* envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_rtds_config(const envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_config_core_v3_ConfigSource*); }
-UPB_INLINE bool envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_has_rtds_resource_locator(const envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer *msg) { return _upb_hasbit(msg, 2); }
-UPB_INLINE const struct udpa_core_v1_ResourceLocator* envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_rtds_resource_locator(const envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct udpa_core_v1_ResourceLocator*); }
 
 UPB_INLINE void envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_set_name(envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
@@ -1258,19 +1298,6 @@ UPB_INLINE struct envoy_config_core_v3_ConfigSource* envoy_config_bootstrap_v3_R
     sub = (struct envoy_config_core_v3_ConfigSource*)_upb_msg_new(&envoy_config_core_v3_ConfigSource_msginit, arena);
     if (!sub) return NULL;
     envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_set_rtds_config(msg, sub);
-  }
-  return sub;
-}
-UPB_INLINE void envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_set_rtds_resource_locator(envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer *msg, struct udpa_core_v1_ResourceLocator* value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct udpa_core_v1_ResourceLocator*) = value;
-}
-UPB_INLINE struct udpa_core_v1_ResourceLocator* envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_mutable_rtds_resource_locator(envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer *msg, upb_arena *arena) {
-  struct udpa_core_v1_ResourceLocator* sub = (struct udpa_core_v1_ResourceLocator*)envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_rtds_resource_locator(msg);
-  if (sub == NULL) {
-    sub = (struct udpa_core_v1_ResourceLocator*)_upb_msg_new(&udpa_core_v1_ResourceLocator_msginit, arena);
-    if (!sub) return NULL;
-    envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_set_rtds_resource_locator(msg, sub);
   }
   return sub;
 }

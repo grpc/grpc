@@ -13,7 +13,6 @@
 #include "envoy/config/core/v3/base.upb.h"
 #include "envoy/type/matcher/v3/node.upb.h"
 #include "google/api/annotations.upb.h"
-#include "google/protobuf/struct.upb.h"
 #include "udpa/annotations/migrate.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"

@@ -12,7 +12,6 @@
 #include "envoy/config/core/v3/address.upb.h"
 #include "envoy/type/matcher/v3/string.upb.h"
 #include "google/protobuf/any.upb.h"
-#include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"

@@ -27,6 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
 #include "absl/strings/str_split.h"
 #include "envoy/config/cluster/v3/circuit_breaker.upb.h"
 #include "envoy/config/cluster/v3/cluster.upb.h"
@@ -42,12 +43,6 @@
 #include "envoy/config/endpoint/v3/load_report.upb.h"
 #include "envoy/config/listener/v3/api_listener.upb.h"
 #include "envoy/config/listener/v3/listener.upb.h"
-#include "envoy/config/listener/v3/listener.upbdefs.h"
-#include "envoy/config/listener/v3/listener_components.upb.h"
-#include "envoy/config/route/v3/route.upb.h"
-#include "envoy/config/route/v3/route.upbdefs.h"
-#include "envoy/config/route/v3/route_components.upb.h"
-#include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
 #include "envoy/config/listener/v3/listener.upbdefs.h"
 #include "envoy/config/listener/v3/listener_components.upb.h"
 #include "envoy/config/route/v3/route.upb.h"
@@ -833,9 +828,16 @@ inline Json SerializeToJson(upb_arena* arena, const upb_msg* msg,
       upb_json_encode(msg, m, ext_pool, 0, data, estimated_length + 1, &status);
   GPR_ASSERT(estimated_length == output_length);
   // Parse the string into JSON structs
+  // TODO(https://github.com/protocolbuffers/upb/issues/370): remove the hack
+  // after upb fixed the empty Any conversion bug.
+  // "httpFilters": [{"name": "router", "typedConfig": {
+  //    "@type":
+  //    "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router",
+  // }}]
+  std::string json_string = absl::StrReplaceAll(
+      absl::string_view(data, output_length), {{",}", "}"}});
   grpc_error* error = GRPC_ERROR_NONE;
-  Json parsed_json =
-      Json::Parse(absl::string_view(data, output_length), &error);
+  Json parsed_json = Json::Parse(json_string, &error);
   if (error != GRPC_ERROR_NONE) {
     errors->push_back(error);
     return "";
@@ -1838,8 +1840,9 @@ grpc_error* LdsResponseParse(
     }
     // Serialize into JSON and store it in the LdsUpdateMap
     Json parsed_json = SerializeToJson(
-        arena, listener, envoy_config_listener_v3_Listener_getmsgdef(symtab),
-        symtab, &errors);
+        context.arena, listener,
+        envoy_config_listener_v3_Listener_getmsgdef(context.symtab),
+        context.symtab, &errors);
     XdsApi::LdsResourceData& lds_resource_data =
         (*lds_update_map)[listener_name];
     XdsApi::LdsUpdate& lds_update = lds_resource_data.resource;
@@ -1934,9 +1937,9 @@ grpc_error* RdsResponseParse(
     }
     // Serialize into JSON and store it in the RdsUpdateMap
     Json parsed_json = SerializeToJson(
-        arena, route_config,
-        envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab), symtab,
-        &errors);
+        context.arena, route_config,
+        envoy_config_route_v3_RouteConfiguration_getmsgdef(context.symtab),
+        context.symtab, &errors);
     XdsApi::RdsResourceData& rds_resource_data =
         (*rds_update_map)[route_config_name];
     XdsApi::RdsUpdate& rds_update = rds_resource_data.resource;
@@ -2005,8 +2008,9 @@ grpc_error* CdsResponseParse(
     }
     // Serialize into JSON and store it in the CdsUpdateMap
     Json parsed_json = SerializeToJson(
-        arena, cluster, envoy_config_cluster_v3_Cluster_getmsgdef(symtab),
-        symtab, &errors);
+        context.arena, cluster,
+        envoy_config_cluster_v3_Cluster_getmsgdef(context.symtab),
+        context.symtab, &errors);
     XdsApi::CdsResourceData& cds_resource_data =
         (*cds_update_map)[cluster_name];
     XdsApi::CdsUpdate& cds_update = cds_resource_data.resource;
@@ -2455,9 +2459,10 @@ grpc_error* EdsResponseParse(
     }
     // Serialize into JSON and store it in the EdsUpdateMap
     Json parsed_json = SerializeToJson(
-        arena, cluster_load_assignment,
-        envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab),
-        symtab, &errors);
+        context.arena, cluster_load_assignment,
+        envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(
+            context.symtab),
+        context.symtab, &errors);
     XdsApi::EdsResourceData& eds_resource_data =
         (*eds_update_map)[eds_service_name];
     XdsApi::EdsUpdate& eds_update = eds_resource_data.resource;

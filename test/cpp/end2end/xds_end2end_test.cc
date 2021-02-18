@@ -68,6 +68,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
+#include "src/cpp/server/csds/csds.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
 #include "test/core/util/port.h"
@@ -85,6 +86,7 @@
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
@@ -2274,6 +2276,22 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     std::shared_ptr<AdsServiceImpl> ads_service_;
     std::shared_ptr<LrsServiceImpl> lrs_service_;
+  };
+
+  class AdminServerThread : public ServerThread {
+   public:
+    ~AdminServerThread() {}
+
+   private:
+    void RegisterAllServices(ServerBuilder* builder) override {
+      builder->RegisterService(&csds_service_);
+    };
+    void StartAllServices() override{};
+    void ShutdownAllServices() override{};
+
+    const char* Type() override { return "Admin"; }
+
+    grpc::xds::experimental::ClientStatusDiscoveryService csds_service_;
   };
 
   class LongRunningRpc {
@@ -8670,34 +8688,77 @@ TEST_P(BootstrapContentsFromEnvVarTest, Vanilla) {
   WaitForAllBackends();
 }
 
-using CsdsTest = BasicTest;
+class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
+ public:
+  ClientStatusDiscoveryServiceTest() : XdsEnd2endTest(1, 1) {}
 
-// TODO(lidiz) Once xDS protos are available to C++, change to use C++'s
-// surface API instead.
-TEST_P(CsdsTest, TestXdsClientJsonDump) {
+  void SetUp() {
+    XdsEnd2endTest::SetUp();
+    // The ServerThread picks port using PortSaver, but PortSaver will be reset
+    // in XdsEnd2endTest::SetUp(). So, the admin server thread must be created
+    // after the SetUp().
+    admin_server_thread_ = new AdminServerThread();
+    admin_server_thread_->Start();
+    std::string admin_server_address = absl::StrCat(
+        ipv6_only_ ? "[::1]:" : "127.0.0.1:", admin_server_thread_->port());
+    admin_channel_ = grpc::CreateChannel(
+        admin_server_address,
+        std::make_shared<SecureChannelCredentials>(
+            grpc_fake_transport_security_credentials_create()));
+    csds_stub_ =
+        envoy::service::status::v3::ClientStatusDiscoveryService::NewStub(
+            admin_channel_);
+  }
+
+  void TearDown() {
+    admin_server_thread_->Shutdown();
+    delete admin_server_thread_;
+    XdsEnd2endTest::TearDown();
+  }
+
+  const envoy::service::status::v3::ClientConfig& FetchClientConfig() {
+    ClientContext context;
+    envoy::service::status::v3::ClientStatusResponse response;
+    Status status = csds_stub_->FetchClientStatus(
+        &context, envoy::service::status::v3::ClientStatusRequest(), &response);
+    EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                             << " message=" << status.error_message();
+    GPR_ASSERT(response.config_size() == 1);
+    return std::move(response.config(0));
+  }
+
+ private:
+  AdminServerThread* admin_server_thread_;
+  std::shared_ptr<Channel> admin_channel_;
+  std::unique_ptr<
+      envoy::service::status::v3::ClientStatusDiscoveryService::Stub>
+      csds_stub_;
+};
+
+TEST_P(ClientStatusDiscoveryServiceTest, TestXdsClientJsonDump) {
   const size_t kNumRpcs = 5;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", {backends_[0]->port()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Send several RPCs to ensure the xDS setup works
   WaitForAllBackends();
+  CheckRpcSendOk(kNumRpcs);
+
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   constexpr char kClusterName2[] = "cluster_name_2";
   cluster.set_name(kClusterName2);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  grpc_error* error = GRPC_ERROR_NONE;
-  grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
-      grpc_core::XdsClient::GetOrCreate(&error);
-  ASSERT_TRUE(error == GRPC_ERROR_NONE);
-  CheckRpcSendOk(kNumRpcs);
-  std::string xds_json = xds_client->DumpClientConfigInJson();
-  gpr_log(GPR_INFO, "ANSWER!!! %s", xds_json.c_str());
+
+  const envoy::service::status::v3::ClientConfig& client_config =
+      FetchClientConfig();
+  // Ensure there are 4 xDS config: Listener, Route, Cluster, Endpoint
+  EXPECT_EQ(4, client_config.xds_config_size());
 }
 
 std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
@@ -8839,7 +8900,7 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, BootstrapContentsFromEnvVarTest,
                          &TestTypeName);
 
 // Run CSDS tests with RDS enabled and disabled.
-INSTANTIATE_TEST_SUITE_P(XdsTest, CsdsTest,
+INSTANTIATE_TEST_SUITE_P(XdsTest, ClientStatusDiscoveryServiceTest,
                          ::testing::Values(TestType(true, false, true),
                                            TestType(true, false, false)),
                          &TestTypeName);

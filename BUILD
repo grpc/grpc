@@ -2501,6 +2501,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpcpp_csds",
+    srcs = [
+        "src/cpp/server/csds/csds.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/csds/csds.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+    ],
+    deps = [
+        ":grpc++",
+        "//src/proto/grpc/testing/xds/v3:csds_proto",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
     name = "grpc++_test",
     srcs = [
         "src/cpp/client/channel_test_peer.cc",

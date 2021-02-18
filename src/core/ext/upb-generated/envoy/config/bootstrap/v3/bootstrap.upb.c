@@ -25,8 +25,6 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "udpa/core/v1/resource_locator.upb.h"
-#include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/migrate.upb.h"
 #include "udpa/annotations/security.upb.h"
 #include "udpa/annotations/status.upb.h"
@@ -35,12 +33,13 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_config_bootstrap_v3_Bootstrap_submsgs[18] = {
+static const upb_msglayout *const envoy_config_bootstrap_v3_Bootstrap_submsgs[19] = {
   &envoy_config_bootstrap_v3_Admin_msginit,
   &envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_msginit,
   &envoy_config_bootstrap_v3_Bootstrap_DynamicResources_msginit,
   &envoy_config_bootstrap_v3_Bootstrap_StaticResources_msginit,
   &envoy_config_bootstrap_v3_ClusterManager_msginit,
+  &envoy_config_bootstrap_v3_FatalAction_msginit,
   &envoy_config_bootstrap_v3_LayeredRuntime_msginit,
   &envoy_config_bootstrap_v3_Watchdog_msginit,
   &envoy_config_bootstrap_v3_Watchdogs_msginit,
@@ -56,38 +55,40 @@ static const upb_msglayout *const envoy_config_bootstrap_v3_Bootstrap_submsgs[18
   &google_protobuf_UInt64Value_msginit,
 };
 
-static const upb_msglayout_field envoy_config_bootstrap_v3_Bootstrap__fields[25] = {
-  {1, UPB_SIZE(28, 56), 1, 10, 11, 1},
+static const upb_msglayout_field envoy_config_bootstrap_v3_Bootstrap__fields[27] = {
+  {1, UPB_SIZE(28, 56), 1, 11, 11, 1},
   {2, UPB_SIZE(32, 64), 2, 3, 11, 1},
   {3, UPB_SIZE(36, 72), 3, 2, 11, 1},
   {4, UPB_SIZE(40, 80), 4, 4, 11, 1},
   {5, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {6, UPB_SIZE(88, 176), 0, 13, 11, 3},
-  {7, UPB_SIZE(44, 88), 5, 16, 11, 1},
-  {8, UPB_SIZE(48, 96), 6, 6, 11, 1},
-  {9, UPB_SIZE(52, 104), 7, 15, 11, 1},
+  {6, UPB_SIZE(88, 176), 0, 14, 11, 3},
+  {7, UPB_SIZE(44, 88), 5, 17, 11, 1},
+  {8, UPB_SIZE(48, 96), 6, 7, 11, 1},
+  {9, UPB_SIZE(52, 104), 7, 16, 11, 1},
   {12, UPB_SIZE(56, 112), 8, 0, 11, 1},
-  {13, UPB_SIZE(60, 120), 9, 12, 11, 1},
-  {14, UPB_SIZE(64, 128), 10, 8, 11, 1},
-  {15, UPB_SIZE(68, 136), 11, 14, 11, 1},
+  {13, UPB_SIZE(60, 120), 9, 13, 11, 1},
+  {14, UPB_SIZE(64, 128), 10, 9, 11, 1},
+  {15, UPB_SIZE(68, 136), 11, 15, 11, 1},
   {16, UPB_SIZE(2, 2), 0, 0, 8, 1},
-  {17, UPB_SIZE(72, 144), 12, 5, 11, 1},
+  {17, UPB_SIZE(72, 144), 12, 6, 11, 1},
   {18, UPB_SIZE(12, 24), 0, 0, 9, 1},
-  {19, UPB_SIZE(76, 152), 13, 17, 11, 1},
+  {19, UPB_SIZE(76, 152), 13, 18, 11, 1},
   {20, UPB_SIZE(3, 3), 0, 0, 8, 1},
-  {21, UPB_SIZE(92, 184), 0, 11, 11, 3},
-  {22, UPB_SIZE(96, 192), 0, 9, 11, 3},
-  {23, UPB_SIZE(80, 160), 14, 9, 11, 1},
+  {21, UPB_SIZE(92, 184), 0, 12, 11, 3},
+  {22, UPB_SIZE(96, 192), 0, 10, 11, 3},
+  {23, UPB_SIZE(80, 160), 14, 10, 11, 1},
   {24, UPB_SIZE(20, 40), 0, 0, 9, 1},
   {25, UPB_SIZE(100, 200), 0, 1, 11, _UPB_LABEL_MAP},
   {26, UPB_SIZE(104, 208), 0, 0, 9, 3},
-  {27, UPB_SIZE(84, 168), 15, 7, 11, 1},
+  {27, UPB_SIZE(84, 168), 15, 8, 11, 1},
+  {28, UPB_SIZE(108, 216), 0, 5, 11, 3},
+  {29, UPB_SIZE(112, 224), UPB_SIZE(-117, -229), 0, 8, 1},
 };
 
 const upb_msglayout envoy_config_bootstrap_v3_Bootstrap_msginit = {
   &envoy_config_bootstrap_v3_Bootstrap_submsgs[0],
   &envoy_config_bootstrap_v3_Bootstrap__fields[0],
-  UPB_SIZE(112, 224), 25, false, 255,
+  UPB_SIZE(120, 240), 27, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_bootstrap_v3_Bootstrap_StaticResources_submsgs[3] = {
@@ -108,24 +109,23 @@ const upb_msglayout envoy_config_bootstrap_v3_Bootstrap_StaticResources_msginit 
   UPB_SIZE(16, 24), 3, false, 255,
 };
 
-static const upb_msglayout *const envoy_config_bootstrap_v3_Bootstrap_DynamicResources_submsgs[3] = {
+static const upb_msglayout *const envoy_config_bootstrap_v3_Bootstrap_DynamicResources_submsgs[2] = {
   &envoy_config_core_v3_ApiConfigSource_msginit,
   &envoy_config_core_v3_ConfigSource_msginit,
-  &udpa_core_v1_ResourceLocator_msginit,
 };
 
 static const upb_msglayout_field envoy_config_bootstrap_v3_Bootstrap_DynamicResources__fields[5] = {
-  {1, UPB_SIZE(4, 8), 1, 1, 11, 1},
-  {2, UPB_SIZE(8, 16), 2, 1, 11, 1},
-  {3, UPB_SIZE(12, 24), 3, 0, 11, 1},
-  {5, UPB_SIZE(16, 32), 4, 2, 11, 1},
-  {6, UPB_SIZE(20, 40), 5, 2, 11, 1},
+  {1, UPB_SIZE(20, 40), 1, 1, 11, 1},
+  {2, UPB_SIZE(24, 48), 2, 1, 11, 1},
+  {3, UPB_SIZE(28, 56), 3, 0, 11, 1},
+  {5, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {6, UPB_SIZE(12, 24), 0, 0, 9, 1},
 };
 
 const upb_msglayout envoy_config_bootstrap_v3_Bootstrap_DynamicResources_msginit = {
   &envoy_config_bootstrap_v3_Bootstrap_DynamicResources_submsgs[0],
   &envoy_config_bootstrap_v3_Bootstrap_DynamicResources__fields[0],
-  UPB_SIZE(24, 48), 5, false, 255,
+  UPB_SIZE(32, 64), 5, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_bootstrap_v3_Bootstrap_CertificateProviderInstancesEntry_submsgs[1] = {
@@ -247,6 +247,20 @@ const upb_msglayout envoy_config_bootstrap_v3_Watchdog_WatchdogAction_msginit = 
   UPB_SIZE(16, 16), 2, false, 255,
 };
 
+static const upb_msglayout *const envoy_config_bootstrap_v3_FatalAction_submsgs[1] = {
+  &envoy_config_core_v3_TypedExtensionConfig_msginit,
+};
+
+static const upb_msglayout_field envoy_config_bootstrap_v3_FatalAction__fields[1] = {
+  {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
+};
+
+const upb_msglayout envoy_config_bootstrap_v3_FatalAction_msginit = {
+  &envoy_config_bootstrap_v3_FatalAction_submsgs[0],
+  &envoy_config_bootstrap_v3_FatalAction__fields[0],
+  UPB_SIZE(8, 16), 1, false, 255,
+};
+
 static const upb_msglayout *const envoy_config_bootstrap_v3_Runtime_submsgs[1] = {
   &google_protobuf_Struct_msginit,
 };
@@ -303,21 +317,19 @@ const upb_msglayout envoy_config_bootstrap_v3_RuntimeLayer_AdminLayer_msginit = 
   UPB_SIZE(0, 0), 0, false, 255,
 };
 
-static const upb_msglayout *const envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_submsgs[2] = {
+static const upb_msglayout *const envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_submsgs[1] = {
   &envoy_config_core_v3_ConfigSource_msginit,
-  &udpa_core_v1_ResourceLocator_msginit,
 };
 
-static const upb_msglayout_field envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer__fields[3] = {
+static const upb_msglayout_field envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer__fields[2] = {
   {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
   {2, UPB_SIZE(12, 24), 1, 0, 11, 1},
-  {3, UPB_SIZE(16, 32), 2, 1, 11, 1},
 };
 
 const upb_msglayout envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_msginit = {
   &envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer_submsgs[0],
   &envoy_config_bootstrap_v3_RuntimeLayer_RtdsLayer__fields[0],
-  UPB_SIZE(24, 48), 3, false, 255,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_bootstrap_v3_LayeredRuntime_submsgs[1] = {

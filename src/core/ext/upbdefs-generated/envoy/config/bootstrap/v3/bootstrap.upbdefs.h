@@ -71,6 +71,11 @@ UPB_INLINE const upb_msgdef *envoy_config_bootstrap_v3_Watchdog_WatchdogAction_g
   return upb_symtab_lookupmsg(s, "envoy.config.bootstrap.v3.Watchdog.WatchdogAction");
 }
 
+UPB_INLINE const upb_msgdef *envoy_config_bootstrap_v3_FatalAction_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.config.bootstrap.v3.FatalAction");
+}
+
 UPB_INLINE const upb_msgdef *envoy_config_bootstrap_v3_Runtime_getmsgdef(upb_symtab *s) {
   _upb_symtab_loaddefinit(s, &envoy_config_bootstrap_v3_bootstrap_proto_upbdefinit);
   return upb_symtab_lookupmsg(s, "envoy.config.bootstrap.v3.Runtime");

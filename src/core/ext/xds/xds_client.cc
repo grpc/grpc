@@ -2422,7 +2422,10 @@ std::string XdsClient::DumpClientConfigInJson() {
   };
   // Creates the ClientConfig message
   Json::Object client_config{
-      {"node", bootstrap_->raw_node()},
+      // TODO(lidiz): add node information once we have a proper bootstrap JSON
+      // Our existing Bootstrap file is not following ProtoBuf-JSON conversion
+      // guide.
+      // {"node", bootstrap_->raw_node()},
       {"xdsConfig",
        Json::Array{
            Json::Object{
