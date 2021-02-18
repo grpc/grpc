@@ -24,6 +24,7 @@
 #include "absl/container/btree_map.h"
 
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/ext/filters/client_channel/subchannel.h"
 
 namespace grpc_core {
 

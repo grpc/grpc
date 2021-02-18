@@ -53,7 +53,7 @@ std::unique_ptr<SubchannelRef> GlobalSubchannelPool::RegisterSubchannel(const Su
   auto p = subchannel_map_.find(key);
   if (p != subchannel_map_.end()) {
     // The subchannel already exists. Try to reuse it.
-    RefCountedPtr<Subchannel> c = p.second-RefIfNonZero();
+    RefCountedPtr<Subchannel> c = p->second->RefIfNonZero();
     if (c != nullptr) {
       return absl::make_unique<GlobalSubchannelPoolSubchannelRef>(Ref(), std::move(c), key);
     }
@@ -72,19 +72,18 @@ long GlobalSubchannelPool::TestOnlyGlobalSubchannelPoolSize() {
 }
 
 GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::GlobalSubchannelPoolSubchannelRef(
-    RefCountedPtr<GlobalSubchannelPool> parent, Subchannel* subchannel, const SubchannelKey &key)
+    RefCountedPtr<GlobalSubchannelPool> parent, RefCountedPtr<Subchannel> subchannel, const SubchannelKey &key)
   : parent_(std::move(parent)), subchannel_(subchannel), key_(key) {
 }
 
 GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::~GlobalSubchannelPoolSubchannelRef() {
   // TODO: remove inner brackets after making subchannel DualRefCounted
   MutexLock lock(&parent_->mu_);
-  subchannel_.reset();
-  auto p = parent_->subchannel_map_.find(key_);
-  GPR_ASSERT(p != parent_->subchannel_map_.end());
-  if (p->RefIfNonZero() == nullptr) {
+  Subchannel* c = subchannel_.get();
+  subchannel_.reset(); // release strong ref, pool still holds a weak ref
+  if (c->RefIfNonZero() == nullptr) {
     // nobody else using this subchannel, delete it from the pool
-    GPR_ASSERT(parent_->subchannel_map_.erase(p) == 1);
+    GPR_ASSERT(parent_->subchannel_map_.erase(key_) == 1);
   }
 }
 

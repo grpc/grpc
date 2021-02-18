@@ -25,6 +25,7 @@
 
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/ext/filters/client_channel/subchannel.h"
 
 namespace grpc_core {
 

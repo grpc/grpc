@@ -41,16 +41,15 @@ std::unique_ptr<SubchannelRef> LocalSubchannelPool::RegisterSubchannel(
 }
 
 LocalSubchannelPool::LocalSubchannelPoolSubchannelRef::LocalSubchannelPoolSubchannelRef(
-    RefCountedPtr<LocalSubchannelPool> parent, Subchannel* subchannel, const SubchannelKey &key)
+    RefCountedPtr<LocalSubchannelPool> parent, RefCountedPtr<Subchannel> subchannel, const SubchannelKey &key)
     : parent_(std::move(parent)), subchannel_(subchannel), key_(key) {}
 
 LocalSubchannelPool::LocalSubchannelPoolSubchannelRef::~LocalSubchannelPoolSubchannelRef() {
+  Subchannel* c = subchannel_.get(); // release strong ref, pool still holds a weak ref
   subchannel_.reset();
-  auto p = parent_->subchannel_map_.find(key_);
-  GPR_ASSERT(p != parent_->subchannel_map_.end());
-  if (p->second->RefIfNonZero() == nullptr) {
+  if (c->RefIfNonZero() == nullptr) {
     // nobody else using this subchannel, delete it from the pool
-    GPR_ASSERT(parent_->subchannel_map_.erase(p) == 1);
+    GPR_ASSERT(parent_->subchannel_map_.erase(key_) == 1);
   }
 }
 
