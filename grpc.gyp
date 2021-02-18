@@ -2001,6 +2001,9 @@
       'dependencies': [
       ],
       'sources': [
+        'third_party/xxhash/cli/xsum_os_specific.c',
+        'third_party/xxhash/cli/xsum_output.c',
+        'third_party/xxhash/cli/xsum_sanity_check.c',
         'third_party/xxhash/xxh_x86dispatch.c',
         'third_party/xxhash/xxhash.c',
         'third_party/xxhash/xxhsum.c',

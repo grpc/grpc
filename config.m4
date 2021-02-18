@@ -1004,6 +1004,9 @@ if test "$PHP_GRPC" != "no"; then
     third_party/upb/upb/table.c \
     third_party/upb/upb/text_encode.c \
     third_party/upb/upb/upb.c \
+    third_party/xxhash/cli/xsum_os_specific.c \
+    third_party/xxhash/cli/xsum_output.c \
+    third_party/xxhash/cli/xsum_sanity_check.c \
     third_party/xxhash/xxh_x86dispatch.c \
     third_party/xxhash/xxhash.c \
     third_party/xxhash/xxhsum.c \
@@ -1223,4 +1226,5 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/xxhash)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/xxhash/cli)
 fi

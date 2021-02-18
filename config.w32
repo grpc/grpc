@@ -970,6 +970,9 @@ if (PHP_GRPC != "no") {
     "third_party\\upb\\upb\\table.c " +
     "third_party\\upb\\upb\\text_encode.c " +
     "third_party\\upb\\upb\\upb.c " +
+    "third_party\\xxhash\\cli\\xsum_os_specific.c " +
+    "third_party\\xxhash\\cli\\xsum_output.c " +
+    "third_party\\xxhash\\cli\\xsum_sanity_check.c " +
     "third_party\\xxhash\\xxh_x86dispatch.c " +
     "third_party\\xxhash\\xxhash.c " +
     "third_party\\xxhash\\xxhsum.c " +
@@ -1317,6 +1320,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\xxhash");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\xxhash\\cli");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\zlib");
   _build_dirs = new Array();
   for (i = 0; i < build_dirs.length; i++) {
