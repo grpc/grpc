@@ -191,6 +191,10 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_idle/client_idle_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client_authority_filter.cc" role="src" />
@@ -337,6 +341,10 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c" role="src" />
@@ -515,6 +523,10 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c" role="src" />
@@ -631,6 +643,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_fetcher.cc" role="src" />
