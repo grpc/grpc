@@ -34,7 +34,7 @@ static void StreamingPingPongMsgSizeArgs(benchmark::internal::Benchmark* b) {
   b->Args({0, 1});
   b->Args({0, 2});
 
-  for (int msg_size = 1; msg_size <= 16 * 1024 * 1024; msg_size *= 8) {
+  for (int msg_size = 1; msg_size <= 128 * 1024 * 1024; msg_size *= 8) {
     b->Args({msg_size, 1});
     b->Args({msg_size, 2});
   }
