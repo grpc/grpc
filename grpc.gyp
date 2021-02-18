@@ -451,6 +451,7 @@
         'absl/container:inlined_vector',
         'absl/container:flat_hash_set',
         'absl/container:flat_hash_map',
+        'absl/container:btree',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
@@ -1084,6 +1085,7 @@
         'absl/status:status',
         'absl/container:inlined_vector',
         'absl/container:flat_hash_map',
+        'absl/container:btree',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
