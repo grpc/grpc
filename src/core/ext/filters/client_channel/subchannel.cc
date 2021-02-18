@@ -303,7 +303,7 @@ class Subchannel::ConnectedSubchannelStateWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
   // Must be instantiated while holding c->mu.
-  explicit ConnectedSubchannelStateWatcher(WeakRefCountedPtr<Subchannel> c) : subchannel_(c) {}
+  explicit ConnectedSubchannelStateWatcher(WeakRefCountedPtr<Subchannel> c) : subchannel_(std::move(c)) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
@@ -507,7 +507,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 //
 
 void Subchannel::HealthWatcherMap::AddWatcherLocked(
-    Subchannel* subchannel, grpc_connectivity_state initial_state,
+    WeakRefCountedPtr<Subchannel> subchannel, grpc_connectivity_state initial_state,
     const std::string& health_check_service_name,
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
   // If the health check service name is not already present in the map,
@@ -770,7 +770,7 @@ void Subchannel::WatchConnectivityState(
     watcher_list_.AddWatcherLocked(std::move(watcher));
   } else {
     health_watcher_map_.AddWatcherLocked(
-        this, initial_state, *health_check_service_name, std::move(watcher));
+        WeakRef(), initial_state, *health_check_service_name, std::move(watcher));
   }
 }
 
@@ -972,7 +972,7 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
     c->connecting_ = false;
     if (c->connecting_result_.transport != nullptr &&
         c->PublishTransportLocked()) {
-      c.release(); // transport was published, keep ref
+      c.release(); // ConnectedSubchannelStateWatcher stole weak ref
     } else if (!c->disconnected_) {
       gpr_log(GPR_INFO, "Connect failed: %s", grpc_error_string(error));
       c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
@@ -1030,8 +1030,7 @@ bool Subchannel::PublishTransportLocked() {
   if (channelz_node_ != nullptr) {
     channelz_node_->SetChildSocket(std::move(socket));
   }
-  // Start watching connected subchannel.
-  // Steal subchannel ref for connecting.
+  // Start watching connected subchannel. Steal ref from connecting.
   connected_subchannel_->StartWatch(
       pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(WeakRefCountedPtr<Subchannel>(this)));
   // Report initial state.

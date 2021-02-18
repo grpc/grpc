@@ -302,7 +302,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   class HealthWatcherMap {
    public:
     void AddWatcherLocked(
-        Subchannel* subchannel, grpc_connectivity_state initial_state,
+        WeakRefCountedPtr<Subchannel> subchannel, grpc_connectivity_state initial_state,
         const std::string& health_check_service_name,
         RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const std::string& health_check_service_name,
