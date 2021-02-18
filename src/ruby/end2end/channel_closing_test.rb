@@ -49,7 +49,7 @@ def main
     Process.kill('SIGKILL', client_controller.client_pid)
     Process.wait(client_controller.client_pid)
     STDERR.puts 'killed client child'
-    raise 'Timed out waiting for client process. It likely hangs when a ' \
+    raise 'Timed out waiting for client process. It likely freezes when a ' \
       'channel is closed while connectivity is watched'
   end
 

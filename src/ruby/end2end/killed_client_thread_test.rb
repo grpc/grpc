@@ -74,7 +74,7 @@ def main
     Process.wait(client_controller.client_pid)
     STDERR.puts 'killed client child'
     raise 'Timed out waiting for client process. ' \
-      'It likely hangs when killed while in the middle of an rpc'
+      'It likely freezes when killed while in the middle of an rpc'
   end
 
   client_exit_code = $CHILD_STATUS

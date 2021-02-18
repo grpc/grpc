@@ -45,7 +45,7 @@ def main
           Process.wait(client_pid)
           STDERR.puts 'killed client child'
           raise 'Timed out waiting for client process. ' \
-            'It likely hangs when the first constructed gRPC object has ' \
+            'It likely freezes when the first constructed gRPC object has ' \
             "type: #{grpc_class}"
         end
 
