@@ -54,6 +54,10 @@ void grpc_max_age_filter_init(void);
 void grpc_max_age_filter_shutdown(void);
 void grpc_message_size_filter_init(void);
 void grpc_message_size_filter_shutdown(void);
+namespace grpc_core {
+void FaultInjectionFilterInit(void);
+void FaultInjectionFilterShutdown(void);
+}  // namespace grpc_core
 void grpc_service_config_channel_arg_filter_init(void);
 void grpc_service_config_channel_arg_filter_shutdown(void);
 void grpc_client_authority_filter_init(void);
@@ -96,6 +100,8 @@ void grpc_register_built_in_plugins(void) {
                        grpc_max_age_filter_shutdown);
   grpc_register_plugin(grpc_message_size_filter_init,
                        grpc_message_size_filter_shutdown);
+  grpc_register_plugin(grpc_core::FaultInjectionFilterInit,
+                       grpc_core::FaultInjectionFilterShutdown);
   grpc_register_plugin(grpc_service_config_channel_arg_filter_init,
                        grpc_service_config_channel_arg_filter_shutdown);
   grpc_register_plugin(grpc_client_authority_filter_init,

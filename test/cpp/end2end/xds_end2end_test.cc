@@ -58,6 +58,7 @@
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -87,6 +88,7 @@
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
@@ -109,8 +111,11 @@ using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::Listener;
 using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
+using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
+using ::envoy::extensions::filters::network::http_connection_manager::v3::
+    HttpFilter;
 using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using ::envoy::type::matcher::v3::StringMatcher;
@@ -1301,6 +1306,14 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
 
 class TestType {
  public:
+  enum FilterConfigSetup {
+    // Set the fault injection filter directly from LDS
+    HTTPConnectionManagerOriginal,
+    // Enable the fault injection filter in LDS, but override the filter config
+    // in route.
+    RouteOverride,
+  };
+
   TestType& set_use_fake_resolver() {
     use_fake_resolver_ = true;
     return *this;
@@ -1326,11 +1339,19 @@ class TestType {
     return *this;
   }
 
+  TestType& set_filter_config_setup(const FilterConfigSetup& setup) {
+    filter_config_setup_ = setup;
+    return *this;
+  }
+
   bool use_fake_resolver() const { return use_fake_resolver_; }
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
   bool use_v2() const { return use_v2_; }
   bool use_xds_credentials() const { return use_xds_credentials_; }
+  const FilterConfigSetup& filter_config_setup() const {
+    return filter_config_setup_;
+  }
 
   std::string AsString() const {
     std::string retval = (use_fake_resolver_ ? "FakeResolver" : "XdsResolver");
@@ -1338,6 +1359,9 @@ class TestType {
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
     if (use_xds_credentials_) retval += "XdsCreds";
+    if (filter_config_setup_ == RouteOverride) {
+      retval += "FilterPerRouteOverride";
+    }
     return retval;
   }
 
@@ -1347,6 +1371,7 @@ class TestType {
   bool enable_rds_testing_ = false;
   bool use_v2_ = false;
   bool use_xds_credentials_ = false;
+  FilterConfigSetup filter_config_setup_ = HTTPConnectionManagerOriginal;
 };
 
 std::string ReadFile(const char* file_path) {
@@ -1715,6 +1740,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     bool wait_for_ready = false;
     bool server_fail = false;
     std::vector<std::pair<std::string, std::string>> metadata;
+    int client_cancel_after_us = 0;
+    bool skip_cancelled_check = false;
 
     RpcOptions() {}
 
@@ -1743,10 +1770,44 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       return *this;
     }
 
+    RpcOptions& set_skip_cancelled_check(bool rpc_skip_cancelled_check) {
+      skip_cancelled_check = rpc_skip_cancelled_check;
+      return *this;
+    }
+
     RpcOptions& set_metadata(
         std::vector<std::pair<std::string, std::string>> rpc_metadata) {
       metadata = std::move(rpc_metadata);
       return *this;
+    }
+
+    RpcOptions& set_client_cancel_after_us(int rpc_client_cancel_after_us) {
+      client_cancel_after_us = rpc_client_cancel_after_us;
+      return *this;
+    }
+
+    // Populates context and request.
+    void SetupRpc(ClientContext* context, EchoRequest* request) const {
+      for (const auto& item : metadata) {
+        context->AddMetadata(item.first, item.second);
+      }
+      if (timeout_ms != 0) {
+        context->set_deadline(
+            grpc_timeout_milliseconds_to_deadline(timeout_ms));
+      }
+      if (wait_for_ready) context->set_wait_for_ready(true);
+      request->set_message(kRequestMessage);
+      if (server_fail) {
+        request->mutable_param()->mutable_expected_error()->set_code(
+            GRPC_STATUS_FAILED_PRECONDITION);
+      }
+      if (client_cancel_after_us != 0) {
+        request->mutable_param()->set_client_cancel_after_us(
+            client_cancel_after_us);
+      }
+      if (skip_cancelled_check) {
+        request->mutable_param()->set_skip_cancelled_check(true);
+      }
     }
   };
 
@@ -1800,12 +1861,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   void SendRpcAndCount(int* num_total, int* num_ok, int* num_failure,
                        int* num_drops,
-                       const RpcOptions& rpc_options = RpcOptions()) {
+                       const RpcOptions& rpc_options = RpcOptions(),
+                       const char* drop_error_message =
+                           "Call dropped by load balancing policy") {
     const Status status = SendRpc(rpc_options);
     if (status.ok()) {
       ++*num_ok;
     } else {
-      if (status.error_message() == "Call dropped by load balancing policy") {
+      if (status.error_message() == drop_error_message) {
         ++*num_drops;
       } else {
         ++*num_failure;
@@ -1941,21 +2004,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                  EchoResponse* response = nullptr) {
     const bool local_response = (response == nullptr);
     if (local_response) response = new EchoResponse;
-    EchoRequest request;
     ClientContext context;
-    for (const auto& metadata : rpc_options.metadata) {
-      context.AddMetadata(metadata.first, metadata.second);
-    }
-    if (rpc_options.timeout_ms != 0) {
-      context.set_deadline(
-          grpc_timeout_milliseconds_to_deadline(rpc_options.timeout_ms));
-    }
-    if (rpc_options.wait_for_ready) context.set_wait_for_ready(true);
-    request.set_message(kRequestMessage);
-    if (rpc_options.server_fail) {
-      request.mutable_param()->mutable_expected_error()->set_code(
-          GRPC_STATUS_FAILED_PRECONDITION);
-    }
+    EchoRequest request;
+    rpc_options.SetupRpc(&context, &request);
     Status status;
     switch (rpc_options.service) {
       case SERVICE_ECHO:
@@ -2286,24 +2337,32 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   class LongRunningRpc {
    public:
-    void StartRpc(grpc::testing::EchoTestService::Stub* stub) {
-      sender_thread_ = std::thread([this, stub]() {
-        EchoResponse response;
+    void StartRpc(grpc::testing::EchoTestService::Stub* stub,
+                  const RpcOptions& rpc_options =
+                      RpcOptions().set_client_cancel_after_us(1 * 1000 *
+                                                              1000)) {
+      sender_thread_ = std::thread([this, stub, rpc_options]() {
         EchoRequest request;
-        request.mutable_param()->set_client_cancel_after_us(1 * 1000 * 1000);
-        request.set_message(kRequestMessage);
-        (void)stub->Echo(&context_, request, &response);
+        EchoResponse response;
+        rpc_options.SetupRpc(&context_, &request);
+        status_ = stub->Echo(&context_, request, &response);
       });
     }
 
     void CancelRpc() {
       context_.TryCancel();
-      sender_thread_.join();
+      if (sender_thread_.joinable()) sender_thread_.join();
+    }
+
+    Status GetStatus() {
+      if (sender_thread_.joinable()) sender_thread_.join();
+      return status_;
     }
 
    private:
     std::thread sender_thread_;
     ClientContext context_;
+    Status status_;
   };
 
   const size_t num_backends_;
@@ -8662,6 +8721,415 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
                                 kDropRateForThrottle * (1 + kErrorTolerance))));
 }
 
+class FaultInjectionTest : public XdsEnd2endTest {
+ public:
+  FaultInjectionTest() : XdsEnd2endTest(1, 1) {}
+
+  void SetUp() override {
+    XdsEnd2endTest::SetUp();
+    filter_config_setup_ = GetParam().filter_config_setup();
+  }
+
+  // Builds a Listener with Fault Injection filter config. If the http_fault is
+  // nullptr, then assign an empty filter config. This filter config is required
+  // to enable the fault injection features.
+  static Listener BuildListenerWithFaultInjection(
+      const HTTPFault& http_fault = HTTPFault()) {
+    HttpConnectionManager http_connection_manager;
+    Listener listener;
+    listener.set_name(kServerName);
+    HttpFilter* fault_filter = http_connection_manager.add_http_filters();
+    fault_filter->set_name("envoy.fault");
+    fault_filter->mutable_typed_config()->PackFrom(http_fault);
+    HttpFilter* router_filter = http_connection_manager.add_http_filters();
+    router_filter->set_name("router");
+    router_filter->mutable_typed_config()->PackFrom(
+        envoy::extensions::filters::http::router::v3::Router());
+    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+        http_connection_manager);
+    return listener;
+  }
+
+  RouteConfiguration BuildRouteConfigurationWithFaultInjection(
+      const HTTPFault& http_fault) {
+    // Package as Any
+    google::protobuf::Any filter_config;
+    filter_config.PackFrom(http_fault);
+    // Plug into the RouteConfiguration
+    RouteConfiguration new_route_config = default_route_config_;
+    auto* config_map = new_route_config.mutable_virtual_hosts(0)
+                           ->mutable_routes(0)
+                           ->mutable_typed_per_filter_config();
+    (*config_map)["envoy.fault"] = std::move(filter_config);
+    return new_route_config;
+  }
+
+  void SetFilterConfig(HTTPFault& http_fault) {
+    switch (filter_config_setup_) {
+      case TestType::FilterConfigSetup::RouteOverride: {
+        Listener listener = BuildListenerWithFaultInjection();
+        RouteConfiguration route =
+            BuildRouteConfigurationWithFaultInjection(http_fault);
+        SetListenerAndRouteConfiguration(0, listener, route);
+        break;
+      }
+      case TestType::FilterConfigSetup::HTTPConnectionManagerOriginal: {
+        Listener listener = BuildListenerWithFaultInjection(http_fault);
+        SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+      }
+    };
+  }
+
+ private:
+  TestType::FilterConfigSetup filter_config_setup_;
+};
+
+// Test to ensure the most basic fault injection config works.
+TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  const uint32_t kAbortPercentagePerHundred = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(kAbortPercentagePerHundred);
+  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  // Fire several RPCs, and expect all of them to be aborted.
+  CheckRpcSendFailure(5, RpcOptions().set_wait_for_ready(true),
+                      StatusCode::ABORTED);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Without the env, the fault injection won't be enabled.
+TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutEnv) {
+  const uint32_t kAbortPercentagePerHundred = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(kAbortPercentagePerHundred);
+  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  // Fire several RPCs, and expect all of them to pass.
+  CheckRpcSendOk(5, RpcOptions().set_wait_for_ready(true));
+}
+
+// Without the listener config, the fault injection won't be enabled.
+TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  const uint32_t kAbortPercentagePerHundred = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(kAbortPercentagePerHundred);
+  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  // Turn on fault injection
+  RouteConfiguration route =
+      BuildRouteConfigurationWithFaultInjection(http_fault);
+  SetListenerAndRouteConfiguration(0, default_listener_, route);
+  // Fire several RPCs, and expect all of them to be pass.
+  CheckRpcSendOk(5, RpcOptions().set_wait_for_ready(true));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  const size_t kNumRpcs = 100;
+  const uint32_t kAbortPercentagePerHundred = 50;
+  const double kAbortRate = kAbortPercentagePerHundred / 100.0;
+  const double kErrorTolerance = 0.2;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(kAbortPercentagePerHundred);
+  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  // Send kNumRpcs RPCs and count the aborts.
+  int num_total = 0, num_ok = 0, num_failure = 0, num_aborted = 0;
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_aborted,
+                    RpcOptions(), "Fault injected");
+  }
+  EXPECT_EQ(kNumRpcs, num_total);
+  EXPECT_EQ(0, num_failure);
+  // The abort rate should be roughly equal to the expectation.
+  const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
+  EXPECT_THAT(seen_abort_rate,
+              ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
+                               ::testing::Le(kAbortRate + kErrorTolerance)));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  const size_t kNumRpcs = 100;
+  const uint32_t kAbortPercentageCap = 100;
+  const uint32_t kAbortPercentage = 50;
+  const double kAbortRate = kAbortPercentage / 100.0;
+  const double kErrorTolerance = 0.2;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  http_fault.mutable_abort()->mutable_header_abort();
+  http_fault.mutable_abort()->mutable_percentage()->set_numerator(
+      kAbortPercentageCap);
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  // Send kNumRpcs RPCs and count the aborts.
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"x-envoy-fault-abort-grpc-request", "10"},
+      {"x-envoy-fault-abort-percentage", std::to_string(kAbortPercentage)},
+  };
+  int num_total = 0, num_ok = 0, num_failure = 0, num_aborted = 0;
+  RpcOptions options = RpcOptions().set_metadata(metadata);
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_aborted, options,
+                    "Fault injected");
+  }
+  EXPECT_EQ(kNumRpcs, num_total);
+  EXPECT_EQ(0, num_failure);
+  // The abort rate should be roughly equal to the expectation.
+  const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
+  EXPECT_THAT(seen_abort_rate,
+              ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
+                               ::testing::Le(kAbortRate + kErrorTolerance)));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  const size_t kNumRpcs = 100;
+  const uint32_t kFixedDelaySeconds = 100;
+  const uint32_t kRpcTimeoutMilliseconds = 10;  // 10 ms
+  const uint32_t kDelayPercentagePerHundred = 95;
+  const double kDelayRate = kDelayPercentagePerHundred / 100.0;
+  const double kErrorTolerance = 0.2;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  delay_percentage->set_numerator(kDelayPercentagePerHundred);
+  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
+  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  fixed_delay->set_seconds(kFixedDelaySeconds);
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  // Send kNumRpcs RPCs and count the delays.
+  int num_total = 0, num_ok = 0, num_delayed = 0, num_dropped = 0;
+  RpcOptions options = RpcOptions()
+                           .set_timeout_ms(kRpcTimeoutMilliseconds)
+                           .set_skip_cancelled_check(true);
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    SendRpcAndCount(&num_total, &num_ok, &num_delayed, &num_dropped, options);
+  }
+  EXPECT_EQ(kNumRpcs, num_total);
+  EXPECT_EQ(0, num_dropped);
+  // The delay rate should be roughly equal to the expectation.
+  const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
+  EXPECT_THAT(seen_delay_rate,
+              ::testing::AllOf(::testing::Ge(kDelayRate - kErrorTolerance),
+                               ::testing::Le(kDelayRate + kErrorTolerance)));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  const size_t kNumRpcs = 100;
+  const uint32_t kFixedDelayMilliseconds = 100000;  // 100 seconds
+  const uint32_t kRpcTimeoutMilliseconds = 10;      // 10 ms
+  const uint32_t kDelayPercentageCap = 100;
+  const uint32_t kDelayPercentage = 50;
+  const double kDelayRate = kDelayPercentage / 100.0;
+  const double kErrorTolerance = 0.2;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  http_fault.mutable_delay()->mutable_header_delay();
+  http_fault.mutable_delay()->mutable_percentage()->set_numerator(
+      kDelayPercentageCap);
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  // Send kNumRpcs RPCs and count the delays.
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"x-envoy-fault-delay-request", std::to_string(kFixedDelayMilliseconds)},
+      {"x-envoy-fault-delay-request-percentage",
+       std::to_string(kDelayPercentage)},
+  };
+  int num_total = 0, num_ok = 0, num_delayed = 0, num_dropped = 0;
+  RpcOptions options = RpcOptions()
+                           .set_metadata(metadata)
+                           .set_timeout_ms(kRpcTimeoutMilliseconds)
+                           .set_skip_cancelled_check(true);
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    SendRpcAndCount(&num_total, &num_ok, &num_delayed, &num_dropped, options);
+  }
+  // The delay rate should be roughly equal to the expectation.
+  const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
+  EXPECT_THAT(seen_delay_rate,
+              ::testing::AllOf(::testing::Ge(kDelayRate - kErrorTolerance),
+                               ::testing::Le(kDelayRate + kErrorTolerance)));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  const size_t kNumRpcs = 100;
+  const uint32_t kAbortPercentagePerHundred = 50;
+  const double kAbortRate = kAbortPercentagePerHundred / 100.0;
+  const uint32_t kFixedDelayNanos = 10 * 1000 * 1000;  // 10 ms
+  const double kErrorTolerance = 0.2;
+  const double kDelayTolerance = 0.1;  // System clock vs. our clock.
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(kAbortPercentagePerHundred);
+  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  delay_percentage->set_numerator(100);  // Always inject DELAY!
+  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
+  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  fixed_delay->set_nanos(kFixedDelayNanos);
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  // Send kNumRpcs RPCs and count the aborts.
+  int num_total = 0, num_ok = 0, num_failure = 0, num_aborted = 0;
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    auto t0 = system_clock::now();
+    SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_aborted,
+                    RpcOptions(), "Fault injected");
+    auto elapsed_nano_seconds =
+        std::chrono::duration_cast<std::chrono::nanoseconds>(
+            system_clock::now() - t0);
+    EXPECT_GT(elapsed_nano_seconds.count(),
+              kFixedDelayNanos * (1 - kDelayTolerance));
+  }
+  EXPECT_EQ(kNumRpcs, num_total);
+  EXPECT_EQ(0, num_failure);
+  // The abort rate should be roughly equal to the expectation.
+  const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
+  EXPECT_THAT(seen_abort_rate,
+              ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
+                               ::testing::Le(kAbortRate + kErrorTolerance)));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  const uint32_t kMaxFault = 10;
+  const uint32_t kNumRpcs = 30;  // kNumRpcs should be bigger than kMaxFault
+  const uint32_t kRpcTimeoutMs = 2000;     // 2 seconds
+  const uint32_t kLongDelaySeconds = 100;  // 100 seconds
+  const uint32_t kAlwaysDelayPercentage = 100;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  delay_percentage->set_numerator(
+      kAlwaysDelayPercentage);  // Always inject DELAY!
+  delay_percentage->set_denominator(FractionalPercent::HUNDRED);
+  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  fixed_delay->set_seconds(kLongDelaySeconds);
+  http_fault.mutable_max_active_faults()->set_value(kMaxFault);
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  // Sends a batch of long running RPCs with long timeout to consume all
+  // active faults quota.
+  int num_ok = 0, num_delayed = 0;
+  LongRunningRpc rpcs[kNumRpcs];
+  RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMs);
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    rpcs[i].StartRpc(stub_.get(), rpc_options);
+  }
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    Status status = rpcs[i].GetStatus();
+    if (status.ok()) {
+      ++num_ok;
+    } else {
+      EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, status.error_code());
+      ++num_delayed;
+    }
+  }
+  // Only kMaxFault number of RPC should be fault injected..
+  EXPECT_EQ(kMaxFault, num_delayed);
+  // Other RPCs should be ok.
+  EXPECT_EQ(kNumRpcs - kMaxFault, num_ok);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
 class BootstrapContentsFromEnvVarTest : public XdsEnd2endTest {
  public:
   BootstrapContentsFromEnvVarTest() : XdsEnd2endTest(4, 1, 100, false, true) {}
@@ -8808,6 +9276,16 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(
         TestType().set_enable_load_reporting(),
         TestType().set_enable_load_reporting().set_use_fake_resolver()),
+    &TestTypeName);
+
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, FaultInjectionTest,
+    ::testing::Values(
+        TestType(), TestType().set_enable_rds_testing(),
+        TestType().set_filter_config_setup(
+            TestType::FilterConfigSetup::RouteOverride),
+        TestType().set_enable_rds_testing().set_filter_config_setup(
+            TestType::FilterConfigSetup::RouteOverride)),
     &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, BootstrapContentsFromEnvVarTest,
