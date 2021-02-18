@@ -303,20 +303,12 @@ class Subchannel::ConnectedSubchannelStateWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
   // Must be instantiated while holding c->mu.
-  explicit ConnectedSubchannelStateWatcher(Subchannel* c) : subchannel_(c) {
-    // Steal subchannel ref for connecting.
-    GRPC_SUBCHANNEL_WEAK_REF(subchannel_, "state_watcher");
-    GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "connecting");
-  }
-
-  ~ConnectedSubchannelStateWatcher() override {
-    GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "state_watcher");
-  }
+  explicit ConnectedSubchannelStateWatcher(WeakRefCountedPtr<Subchannel> c) : subchannel_(c) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
-    Subchannel* c = subchannel_;
+    Subchannel* c = subchannel_.get();
     MutexLock lock(&c->mu_);
     switch (new_state) {
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
@@ -357,7 +349,7 @@ class Subchannel::ConnectedSubchannelStateWatcher
     }
   }
 
-  Subchannel* subchannel_;
+  WeakRefCountedPtr<Subchannel> subchannel_;
 };
 
 // Asynchronously notifies the \a watcher of a change in the connectvity state
@@ -366,7 +358,7 @@ class Subchannel::AsyncWatcherNotifierLocked {
  public:
   AsyncWatcherNotifierLocked(
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher,
-      Subchannel* subchannel, grpc_connectivity_state state,
+      WeakRefCountedPtr<Subchannel> subchannel, grpc_connectivity_state state,
       const absl::Status& status)
       : watcher_(std::move(watcher)) {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
@@ -424,19 +416,14 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
 class Subchannel::HealthWatcherMap::HealthWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
-  HealthWatcher(Subchannel* c, std::string health_check_service_name,
+  HealthWatcher(WeakRefCountedPtr<Subchannel> c, std::string health_check_service_name,
                 grpc_connectivity_state subchannel_state)
       : subchannel_(c),
         health_check_service_name_(std::move(health_check_service_name)),
         state_(subchannel_state == GRPC_CHANNEL_READY ? GRPC_CHANNEL_CONNECTING
                                                       : subchannel_state) {
-    GRPC_SUBCHANNEL_WEAK_REF(subchannel_, "health_watcher");
     // If the subchannel is already connected, start health checking.
     if (subchannel_state == GRPC_CHANNEL_READY) StartHealthCheckingLocked();
-  }
-
-  ~HealthWatcher() override {
-    GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "health_watcher");
   }
 
   const std::string& health_check_service_name() const {
@@ -507,7 +494,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
         subchannel_->pollset_set_, subchannel_->channelz_node_, Ref());
   }
 
-  Subchannel* subchannel_;
+  WeakRefCountedPtr<Subchannel> subchannel_;
   std::string health_check_service_name_;
   OrphanablePtr<HealthCheckClient> health_check_client_;
   grpc_connectivity_state state_;
@@ -738,68 +725,6 @@ void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {
   }
 }
 
-Subchannel* Subchannel::Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  gpr_atm old_refs;
-  old_refs = RefMutate((1 << INTERNAL_REF_BITS),
-                       0 GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE("STRONG_REF"));
-  GPR_ASSERT((old_refs & STRONG_REF_MASK) != 0);
-  return this;
-}
-
-void Subchannel::Unref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  gpr_atm old_refs;
-  // add a weak ref and subtract a strong ref (atomically)
-  old_refs = RefMutate(
-      static_cast<gpr_atm>(1) - static_cast<gpr_atm>(1 << INTERNAL_REF_BITS),
-      1 GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE("STRONG_UNREF"));
-  if ((old_refs & STRONG_REF_MASK) == (1 << INTERNAL_REF_BITS)) {
-    Disconnect();
-  }
-  GRPC_SUBCHANNEL_WEAK_UNREF(this, "strong-unref");
-}
-
-Subchannel* Subchannel::WeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  gpr_atm old_refs;
-  old_refs = RefMutate(1, 0 GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE("WEAK_REF"));
-  GPR_ASSERT(old_refs != 0);
-  return this;
-}
-
-namespace {
-
-void subchannel_destroy(void* arg, grpc_error* /*error*/) {
-  Subchannel* self = static_cast<Subchannel*>(arg);
-  delete self;
-}
-
-}  // namespace
-
-void Subchannel::WeakUnref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
-  gpr_atm old_refs;
-  old_refs = RefMutate(-static_cast<gpr_atm>(1),
-                       1 GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE("WEAK_UNREF"));
-  if (old_refs == 1) {
-    ExecCtx::Run(DEBUG_LOCATION,
-                 GRPC_CLOSURE_CREATE(subchannel_destroy, this,
-                                     grpc_schedule_on_exec_ctx),
-                 GRPC_ERROR_NONE);
-  }
-}
-
-Subchannel* Subchannel::RefFromWeakRef() {
-  for (;;) {
-    gpr_atm old_refs = gpr_atm_acq_load(&ref_pair_);
-    if (old_refs >= (1 << INTERNAL_REF_BITS)) {
-      gpr_atm new_refs = old_refs + (1 << INTERNAL_REF_BITS);
-      if (gpr_atm_rel_cas(&ref_pair_, old_refs, new_refs)) {
-        return this;
-      }
-    } else {
-      return nullptr;
-    }
-  }
-}
-
 const char* Subchannel::GetTargetAddress() {
   const grpc_arg* addr_arg =
       grpc_channel_args_find(args_, GRPC_ARG_SUBCHANNEL_ADDRESS);
@@ -880,6 +805,15 @@ void Subchannel::ResetBackoff() {
     backoff_begun_ = false;
     MaybeStartConnectingLocked();
   }
+}
+
+void Subchannel::Orphan() {
+  MutexLock lock(&mu_);
+  GPR_ASSERT(!disconnected_);
+  disconnected_ = true;
+  connector_.reset();
+  connected_subchannel_.reset();
+  health_watcher_map_.ShutdownLocked();
 }
 
 grpc_arg Subchannel::CreateSubchannelAddressArg(
@@ -975,7 +909,7 @@ void Subchannel::MaybeStartConnectingLocked() {
     return;
   }
   connecting_ = true;
-  GRPC_SUBCHANNEL_WEAK_REF(this, "connecting");
+  WeakRef().release(); // ref held by pending connect
   if (!backoff_begun_) {
     backoff_begun_ = true;
     ContinueConnectingLocked();
@@ -997,10 +931,8 @@ void Subchannel::MaybeStartConnectingLocked() {
 }
 
 void Subchannel::OnRetryAlarm(void* arg, grpc_error* error) {
-  Subchannel* c = static_cast<Subchannel*>(arg);
-  // TODO(soheilhy): Once subchannel refcounting is simplified, we can get use
-  //                 MutexLock instead of ReleasableMutexLock, here.
-  ReleasableMutexLock lock(&c->mu_);
+  WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
+  MutexLock lock(&c->mu_);
   c->have_retry_alarm_ = false;
   if (c->disconnected_) {
     error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Disconnected",
@@ -1014,10 +946,7 @@ void Subchannel::OnRetryAlarm(void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
     c->ContinueConnectingLocked();
-    lock.Release();
-  } else {
-    lock.Release();
-    GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
+    c.release(); // still connecting, keep ref around
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -1035,26 +964,21 @@ void Subchannel::ContinueConnectingLocked() {
 }
 
 void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
-  auto* c = static_cast<Subchannel*>(arg);
+  WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
   const grpc_channel_args* delete_channel_args =
       c->connecting_result_.channel_args;
-  GRPC_SUBCHANNEL_WEAK_REF(c, "on_connecting_finished");
   {
     MutexLock lock(&c->mu_);
     c->connecting_ = false;
     if (c->connecting_result_.transport != nullptr &&
         c->PublishTransportLocked()) {
-      // Do nothing, transport was published.
-    } else if (c->disconnected_) {
-      GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
-    } else {
+      c.release(); // transport was published, keep ref
+    } else if (!c->disconnected_) {
       gpr_log(GPR_INFO, "Connect failed: %s", grpc_error_string(error));
       c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     grpc_error_to_absl_status(error));
-      GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
     }
   }
-  GRPC_SUBCHANNEL_WEAK_UNREF(c, "on_connecting_finished");
   grpc_channel_args_destroy(delete_channel_args);
 }
 
@@ -1107,34 +1031,12 @@ bool Subchannel::PublishTransportLocked() {
     channelz_node_->SetChildSocket(std::move(socket));
   }
   // Start watching connected subchannel.
+  // Steal subchannel ref for connecting.
   connected_subchannel_->StartWatch(
-      pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(this));
+      pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(WeakRefCountedPtr<Subchannel>(this)));
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY, absl::Status());
   return true;
-}
-
-void Subchannel::Disconnect() {
-  MutexLock lock(&mu_);
-  GPR_ASSERT(!disconnected_);
-  disconnected_ = true;
-  connector_.reset();
-  connected_subchannel_.reset();
-  health_watcher_map_.ShutdownLocked();
-}
-
-gpr_atm Subchannel::RefMutate(
-    gpr_atm delta, int barrier GRPC_SUBCHANNEL_REF_MUTATE_EXTRA_ARGS) {
-  gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&ref_pair_, delta)
-                            : gpr_atm_no_barrier_fetch_add(&ref_pair_, delta);
-#ifndef NDEBUG
-  if (grpc_trace_subchannel_refcount.enabled()) {
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "SUBCHANNEL: %p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", this,
-            purpose, old_val, old_val + delta, reason);
-  }
-#endif
-  return old_val;
 }
 
 }  // namespace grpc_core
