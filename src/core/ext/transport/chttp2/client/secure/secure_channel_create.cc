@@ -43,7 +43,8 @@ namespace grpc_core {
 
 class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
  public:
-  std::unique_ptr<SubchannelRef> CreateSubchannel(const grpc_channel_args* args) override {
+  std::unique_ptr<SubchannelRef> CreateSubchannel(
+      const grpc_channel_args* args) override {
     grpc_channel_args* new_args = GetSecureNamingChannelArgs(args);
     if (new_args == nullptr) {
       gpr_log(GPR_ERROR,

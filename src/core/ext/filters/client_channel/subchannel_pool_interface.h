@@ -67,7 +67,7 @@ class SubchannelKey {
 // Usage: \a RegisterSubchannel returns \a SubchannelRef
 // object, and the destruction of a \a SubchannelRef arranges for any
 // subchannel pool unregistration that might be needed.
-class SubchannelRef{
+class SubchannelRef {
  public:
   virtual ~SubchannelRef() {}
   virtual Subchannel* subchannel() = 0;
@@ -89,7 +89,7 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
   // with \a key, which may be different from \a constructed because we reuse
   // (instead of update) any existing subchannel already registered with \a key.
   virtual std::unique_ptr<SubchannelRef> RegisterSubchannel(
-      const SubchannelKey &key, RefCountedPtr<Subchannel> constructed) = 0;
+      const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) = 0;
 
   // Creates a channel arg from \a subchannel pool.
   static grpc_arg CreateChannelArg(SubchannelPoolInterface* subchannel_pool);

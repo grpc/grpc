@@ -303,7 +303,8 @@ class Subchannel::ConnectedSubchannelStateWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
   // Must be instantiated while holding c->mu.
-  explicit ConnectedSubchannelStateWatcher(WeakRefCountedPtr<Subchannel> c) : subchannel_(std::move(c)) {}
+  explicit ConnectedSubchannelStateWatcher(WeakRefCountedPtr<Subchannel> c)
+      : subchannel_(std::move(c)) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
@@ -416,7 +417,8 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
 class Subchannel::HealthWatcherMap::HealthWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
-  HealthWatcher(WeakRefCountedPtr<Subchannel> c, std::string health_check_service_name,
+  HealthWatcher(WeakRefCountedPtr<Subchannel> c,
+                std::string health_check_service_name,
                 grpc_connectivity_state subchannel_state)
       : subchannel_(c),
         health_check_service_name_(std::move(health_check_service_name)),
@@ -436,7 +438,8 @@ class Subchannel::HealthWatcherMap::HealthWatcher
       grpc_connectivity_state initial_state,
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher) {
     if (state_ != initial_state) {
-      new AsyncWatcherNotifierLocked(watcher, subchannel_.get(), state_, status_);
+      new AsyncWatcherNotifierLocked(watcher, subchannel_.get(), state_,
+                                     status_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   }
@@ -507,7 +510,8 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 //
 
 void Subchannel::HealthWatcherMap::AddWatcherLocked(
-    WeakRefCountedPtr<Subchannel> subchannel, grpc_connectivity_state initial_state,
+    WeakRefCountedPtr<Subchannel> subchannel,
+    grpc_connectivity_state initial_state,
     const std::string& health_check_service_name,
     RefCountedPtr<ConnectivityStateWatcherInterface> watcher) {
   // If the health check service name is not already present in the map,
@@ -769,8 +773,9 @@ void Subchannel::WatchConnectivityState(
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   } else {
-    health_watcher_map_.AddWatcherLocked(
-        WeakRef(), initial_state, *health_check_service_name, std::move(watcher));
+    health_watcher_map_.AddWatcherLocked(WeakRef(), initial_state,
+                                         *health_check_service_name,
+                                         std::move(watcher));
   }
 }
 
@@ -909,7 +914,7 @@ void Subchannel::MaybeStartConnectingLocked() {
     return;
   }
   connecting_ = true;
-  WeakRef().release(); // ref held by pending connect
+  WeakRef().release();  // ref held by pending connect
   if (!backoff_begun_) {
     backoff_begun_ = true;
     ContinueConnectingLocked();
@@ -946,7 +951,7 @@ void Subchannel::OnRetryAlarm(void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
     c->ContinueConnectingLocked();
-    c.release(); // still connecting, keep ref around
+    c.release();  // still connecting, keep ref around
   }
   GRPC_ERROR_UNREF(error);
 }
@@ -972,7 +977,7 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
     c->connecting_ = false;
     if (c->connecting_result_.transport != nullptr &&
         c->PublishTransportLocked()) {
-      c.release(); // ConnectedSubchannelStateWatcher stole weak ref
+      c.release();  // ConnectedSubchannelStateWatcher stole weak ref
     } else if (!c->disconnected_) {
       gpr_log(GPR_INFO, "Connect failed: %s", grpc_error_string(error));
       c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
@@ -1032,7 +1037,8 @@ bool Subchannel::PublishTransportLocked() {
   }
   // Start watching connected subchannel. Steal ref from connecting.
   connected_subchannel_->StartWatch(
-      pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(WeakRefCountedPtr<Subchannel>(this)));
+      pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(
+                        WeakRefCountedPtr<Subchannel>(this)));
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY, absl::Status());
   return true;

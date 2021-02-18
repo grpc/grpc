@@ -47,20 +47,23 @@ RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
   return *instance_;
 }
 
-std::unique_ptr<SubchannelRef> GlobalSubchannelPool::RegisterSubchannel(const SubchannelKey &key,
-                                                     RefCountedPtr<Subchannel> constructed) {
+std::unique_ptr<SubchannelRef> GlobalSubchannelPool::RegisterSubchannel(
+    const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) {
   MutexLock lock(&mu_);
   auto p = subchannel_map_.find(key);
   if (p != subchannel_map_.end()) {
     // The subchannel already exists. Try to reuse it.
     RefCountedPtr<Subchannel> c = p->second->RefIfNonZero();
     if (c != nullptr) {
-      return absl::make_unique<GlobalSubchannelPoolSubchannelRef>(Ref(), std::move(c), key);
+      return absl::make_unique<GlobalSubchannelPoolSubchannelRef>(
+          Ref(), std::move(c), key);
     }
   }
-  gpr_log(GPR_DEBUG, "Add new subchannel to pool, target address: %s", constructed->GetTargetAddress());
+  gpr_log(GPR_DEBUG, "Add new subchannel to pool, target address: %s",
+          constructed->GetTargetAddress());
   subchannel_map_[key] = constructed->WeakRef();
-  return absl::make_unique<GlobalSubchannelPoolSubchannelRef>(Ref(), std::move(constructed), key);
+  return absl::make_unique<GlobalSubchannelPoolSubchannelRef>(
+      Ref(), std::move(constructed), key);
 }
 
 RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
@@ -71,16 +74,18 @@ long GlobalSubchannelPool::TestOnlyGlobalSubchannelPoolSize() {
   return g->subchannel_map_.size();
 }
 
-GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::GlobalSubchannelPoolSubchannelRef(
-    RefCountedPtr<GlobalSubchannelPool> parent, RefCountedPtr<Subchannel> subchannel, const SubchannelKey &key)
-  : parent_(std::move(parent)), subchannel_(subchannel), key_(key) {
-}
+GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::
+    GlobalSubchannelPoolSubchannelRef(
+        RefCountedPtr<GlobalSubchannelPool> parent,
+        RefCountedPtr<Subchannel> subchannel, const SubchannelKey& key)
+    : parent_(std::move(parent)), subchannel_(subchannel), key_(key) {}
 
-GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::~GlobalSubchannelPoolSubchannelRef() {
+GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::
+    ~GlobalSubchannelPoolSubchannelRef() {
   // TODO: remove inner brackets after making subchannel DualRefCounted
   MutexLock lock(&parent_->mu_);
   Subchannel* c = subchannel_.get();
-  subchannel_.reset(); // release strong ref, pool still holds a weak ref
+  subchannel_.reset();  // release strong ref, pool still holds a weak ref
   if (c->RefIfNonZero() == nullptr) {
     // nobody else using this subchannel, delete it from the pool
     GPR_ASSERT(parent_->subchannel_map_.erase(key_) == 1);

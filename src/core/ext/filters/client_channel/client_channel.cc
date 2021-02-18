@@ -1258,7 +1258,8 @@ grpc_error* DynamicTerminationFilterChannelData::Init(
 // control plane work_serializer.
 class ChannelData::SubchannelWrapper : public SubchannelInterface {
  public:
-  SubchannelWrapper(ChannelData* chand, std::unique_ptr<SubchannelRef> subchannel_ref,
+  SubchannelWrapper(ChannelData* chand,
+                    std::unique_ptr<SubchannelRef> subchannel_ref,
                     absl::optional<std::string> health_check_service_name)
       : SubchannelInterface(
             GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
@@ -1310,8 +1311,8 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   grpc_connectivity_state CheckConnectivityState() override {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     grpc_connectivity_state connectivity_state =
-        subchannel_ref_->subchannel()->CheckConnectivityState(health_check_service_name_,
-                                            &connected_subchannel);
+        subchannel_ref_->subchannel()->CheckConnectivityState(
+            health_check_service_name_, &connected_subchannel);
     MaybeUpdateConnectedSubchannel(std::move(connected_subchannel));
     return connectivity_state;
   }
@@ -1334,14 +1335,18 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       ConnectivityStateWatcherInterface* watcher) override {
     auto it = watcher_map_.find(watcher);
     GPR_ASSERT(it != watcher_map_.end());
-    subchannel_ref_->subchannel()->CancelConnectivityStateWatch(health_check_service_name_,
-                                              it->second);
+    subchannel_ref_->subchannel()->CancelConnectivityStateWatch(
+        health_check_service_name_, it->second);
     watcher_map_.erase(it);
   }
 
-  void AttemptToConnect() override { subchannel_ref_->subchannel()->AttemptToConnect(); }
+  void AttemptToConnect() override {
+    subchannel_ref_->subchannel()->AttemptToConnect();
+  }
 
-  void ResetBackoff() override { subchannel_ref_->subchannel()->ResetBackoff(); }
+  void ResetBackoff() override {
+    subchannel_ref_->subchannel()->ResetBackoff();
+  }
 
   const grpc_channel_args* channel_args() override {
     return subchannel_ref_->subchannel()->channel_args();
@@ -1438,7 +1443,8 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         gpr_log(GPR_INFO,
                 "chand=%p: connectivity change for subchannel wrapper %p "
                 "subchannel %p; hopping into work_serializer",
-                parent_->chand_, parent_.get(), parent_->subchannel_ref_->subchannel());
+                parent_->chand_, parent_.get(),
+                parent_->subchannel_ref_->subchannel());
       }
       Ref().release();  // ref owned by lambda
       parent_->chand_->work_serializer_->Run(
@@ -1472,8 +1478,8 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                 "chand=%p: processing connectivity change in work serializer "
                 "for subchannel wrapper %p subchannel %p "
                 "watcher=%p",
-                parent_->chand_, parent_.get(), parent_->subchannel_ref_->subchannel(),
-                watcher_.get());
+                parent_->chand_, parent_.get(),
+                parent_->subchannel_ref_->subchannel(), watcher_.get());
       }
       ConnectivityStateChange state_change = PopConnectivityStateChange();
       absl::optional<absl::Cord> keepalive_throttling =
@@ -1766,10 +1772,12 @@ class ChannelData::ClientChannelControlHelper
     if (subchannel_ref == nullptr) return nullptr;
     // Make sure the subchannel has updated keepalive time.
     GPR_ASSERT(subchannel_ref->subchannel() != nullptr);
-    subchannel_ref->subchannel()->ThrottleKeepaliveTime(chand_->keepalive_time_);
+    subchannel_ref->subchannel()->ThrottleKeepaliveTime(
+        chand_->keepalive_time_);
     // Create and return wrapper for the subchannel.
     return MakeRefCounted<SubchannelWrapper>(
-        chand_, std::move(subchannel_ref), std::move(health_check_service_name));
+        chand_, std::move(subchannel_ref),
+        std::move(health_check_service_name));
   }
 
   void UpdateState(

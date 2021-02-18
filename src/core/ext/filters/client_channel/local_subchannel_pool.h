@@ -23,8 +23,8 @@
 
 #include "absl/container/btree_map.h"
 
-#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
 namespace grpc_core {
 
@@ -43,15 +43,18 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   // Implements interface methods.
   // Thread-unsafe. Intended to be invoked within the client_channel work
   // serializer.
-  std::unique_ptr<SubchannelRef> RegisterSubchannel(const SubchannelKey &key,
-                                 RefCountedPtr<Subchannel> constructed) override;
+  std::unique_ptr<SubchannelRef> RegisterSubchannel(
+      const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
 
  private:
   class LocalSubchannelPoolSubchannelRef : public SubchannelRef {
    public:
-    LocalSubchannelPoolSubchannelRef(RefCountedPtr<LocalSubchannelPool> parent, RefCountedPtr<Subchannel> subchannel, const SubchannelKey &key);
+    LocalSubchannelPoolSubchannelRef(RefCountedPtr<LocalSubchannelPool> parent,
+                                     RefCountedPtr<Subchannel> subchannel,
+                                     const SubchannelKey& key);
     ~LocalSubchannelPoolSubchannelRef() override;
     Subchannel* subchannel() override { return subchannel_.get(); }
+
    private:
     RefCountedPtr<LocalSubchannelPool> parent_;
     RefCountedPtr<Subchannel> subchannel_;

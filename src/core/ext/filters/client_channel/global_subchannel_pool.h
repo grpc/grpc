@@ -23,9 +23,9 @@
 
 #include "absl/container/btree_map.h"
 
-#include "src/core/lib/gprpp/sync.h"
-#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+#include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {
 
@@ -38,7 +38,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
  public:
   // The ctor and dtor are not intended to use directly.
   GlobalSubchannelPool() {}
-  ~GlobalSubchannelPool() override {};
+  ~GlobalSubchannelPool() override{};
 
   // Should be called exactly once at filter initialization time.
   static void Init();
@@ -49,16 +49,20 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   static RefCountedPtr<GlobalSubchannelPool> instance();
 
   // Implements interface methods.
-  std::unique_ptr<SubchannelRef> RegisterSubchannel(const SubchannelKey &key,
-                                 RefCountedPtr<Subchannel> constructed) override;
+  std::unique_ptr<SubchannelRef> RegisterSubchannel(
+      const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
 
   static long TestOnlyGlobalSubchannelPoolSize();
+
  private:
   class GlobalSubchannelPoolSubchannelRef : public SubchannelRef {
    public:
-    GlobalSubchannelPoolSubchannelRef(RefCountedPtr<GlobalSubchannelPool> parent, RefCountedPtr<Subchannel> subchannel, const SubchannelKey &key);
+    GlobalSubchannelPoolSubchannelRef(
+        RefCountedPtr<GlobalSubchannelPool> parent,
+        RefCountedPtr<Subchannel> subchannel, const SubchannelKey& key);
     ~GlobalSubchannelPoolSubchannelRef() override;
     Subchannel* subchannel() override { return subchannel_.get(); }
+
    private:
     RefCountedPtr<GlobalSubchannelPool> parent_;
     RefCountedPtr<Subchannel> subchannel_;

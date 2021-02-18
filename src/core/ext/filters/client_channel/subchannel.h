@@ -194,8 +194,9 @@ class Subchannel : public DualRefCounted<Subchannel> {
   ~Subchannel();
 
   // Creates a subchannel given \a connector and \a args.
-  static std::unique_ptr<SubchannelRef> Create(OrphanablePtr<SubchannelConnector> connector,
-                            const grpc_channel_args* args);
+  static std::unique_ptr<SubchannelRef> Create(
+      OrphanablePtr<SubchannelConnector> connector,
+      const grpc_channel_args* args);
 
   // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
   // is larger than the subchannel's current keepalive time. The updated value
@@ -302,7 +303,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   class HealthWatcherMap {
    public:
     void AddWatcherLocked(
-        WeakRefCountedPtr<Subchannel> subchannel, grpc_connectivity_state initial_state,
+        WeakRefCountedPtr<Subchannel> subchannel,
+        grpc_connectivity_state initial_state,
         const std::string& health_check_service_name,
         RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const std::string& health_check_service_name,
