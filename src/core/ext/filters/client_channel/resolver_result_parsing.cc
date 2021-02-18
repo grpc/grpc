@@ -272,6 +272,128 @@ absl::optional<std::string> ParseHealthCheckConfig(const Json& field,
   return service_name;
 }
 
+uint32_t ParsePerMillionField(const Json& json, const char* name,
+                              std::vector<grpc_error*>* error_list) {
+  auto it = json.object_value().find(name);
+  if (it != json.object_value().end()) {
+    if (it->second.type() != Json::Type::NUMBER) {
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("field:", name, " error:should be of type number")
+              .c_str()));
+      return 0;
+    }
+    const uint32_t candidate =
+        gpr_parse_nonnegative_int(it->second.string_value().c_str());
+    if (candidate < 0) {
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("field:", name, " error:should be nonnegative number")
+              .c_str()));
+      return 0;
+    }
+    return GPR_MIN(candidate, 1000000);
+  }
+  return 0;
+}
+
+// TODO(lidiz) merge with new helpers in src/core/lib/json/json_util.h
+std::string ParseStringField(const Json& json, const char* name,
+                             std::vector<grpc_error*>* error_list) {
+  auto it = json.object_value().find(name);
+  if (it != json.object_value().end()) {
+    if (it->second.type() != Json::Type::STRING) {
+      error_list->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("field:", name, " error:should be of type string")
+              .c_str()));
+      return "";
+    }
+    return it->second.string_value().c_str();
+  }
+  return "";
+}
+
+std::unique_ptr<ClientChannelMethodParsedConfig::FaultInjectionPolicy>
+ParseFaultInjectionPolicy(const Json& json, grpc_error** error) {
+  GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  auto fault_injection_policy = absl::make_unique<
+      ClientChannelMethodParsedConfig::FaultInjectionPolicy>();
+  if (json.type() != Json::Type::OBJECT) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:faultInjectionPolicy error:should be of type object");
+    return nullptr;
+  }
+  std::vector<grpc_error*> error_list;
+  // Parse abort_per_million
+  fault_injection_policy->abort_per_million =
+      ParsePerMillionField(json, "abortPerMillion", &error_list);
+  // Parse abort_code
+  auto it = json.object_value().find("abortCode");
+  if (it != json.object_value().end()) {
+    if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:abortCode error:should be of type string"));
+    } else if (!grpc_status_code_from_string(
+                   it->second.string_value().c_str(),
+                   &(fault_injection_policy->abort_code))) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:abortCode error:failed to parse status code"));
+    }
+  }
+  // Parse abort_message
+  it = json.object_value().find("abortMessage");
+  if (it != json.object_value().end()) {
+    if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("field: abortMessage error:should be of type string")
+              .c_str()));
+    } else {
+      fault_injection_policy->abort_message = it->second.string_value();
+    }
+  } else {
+    fault_injection_policy->abort_message = "Fault injected";
+  }
+  // Parse abort_code_header
+  fault_injection_policy->abort_code_header =
+      ParseStringField(json, "abortCodeHeader", &error_list);
+  // Parse abort_per_million_header
+  fault_injection_policy->abort_per_million_header =
+      ParseStringField(json, "abortPerMillionHeader", &error_list);
+  // Parse delay_per_million
+  fault_injection_policy->delay_per_million =
+      ParsePerMillionField(json, "delayPerMillion", &error_list);
+  // Parse delay
+  it = json.object_value().find("delay");
+  if (it != json.object_value().end()) {
+    if (!ParseDurationFromJson(it->second, &fault_injection_policy->delay)) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:delay error:Failed parsing"));
+    };
+  }
+  // Parse delay_header
+  fault_injection_policy->delay_header =
+      ParseStringField(json, "delayHeader", &error_list);
+  // Parse delay_per_million_header
+  fault_injection_policy->delay_per_million_header =
+      ParseStringField(json, "delayPerMillionHeader", &error_list);
+  // Parse max_faults
+  it = json.object_value().find("maxFaults");
+  if (it != json.object_value().end()) {
+    if (it->second.type() != Json::Type::NUMBER) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:maxFaults error:should be of type number"));
+    } else {
+      fault_injection_policy->max_faults =
+          gpr_parse_nonnegative_int(it->second.string_value().c_str());
+      if (fault_injection_policy->max_faults < 0) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:maxFaults error:should be zero or positive"));
+      }
+    }
+  }
+  *error = GRPC_ERROR_CREATE_FROM_VECTOR("faultInjectionPolicy", &error_list);
+  return *error == GRPC_ERROR_NONE ? std::move(fault_injection_policy)
+                                   : nullptr;
+}
+
 }  // namespace
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
@@ -355,12 +477,14 @@ ClientChannelServiceConfigParser::ParseGlobalParams(
 
 std::unique_ptr<ServiceConfigParser::ParsedConfig>
 ClientChannelServiceConfigParser::ParsePerMethodParams(
-    const grpc_channel_args* /*args*/, const Json& json, grpc_error** error) {
+    const grpc_channel_args* args, const Json& json, grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   std::vector<grpc_error*> error_list;
   absl::optional<bool> wait_for_ready;
   grpc_millis timeout = 0;
   std::unique_ptr<ClientChannelMethodParsedConfig::RetryPolicy> retry_policy;
+  std::unique_ptr<ClientChannelMethodParsedConfig::FaultInjectionPolicy>
+      fault_injection_policy;
   // Parse waitForReady.
   auto it = json.object_value().find("waitForReady");
   if (it != json.object_value().end()) {
@@ -385,10 +509,23 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(
       error_list.push_back(error);
     }
   }
+  // Parse fault injection policy.
+  if (grpc_channel_args_find_bool(
+          args, GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG, false)) {
+    it = json.object_value().find("faultInjectionPolicy");
+    if (it != json.object_value().end()) {
+      grpc_error* error = GRPC_ERROR_NONE;
+      fault_injection_policy = ParseFaultInjectionPolicy(it->second, &error);
+      if (fault_injection_policy == nullptr) {
+        error_list.push_back(error);
+      }
+    }
+  }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel parser", &error_list);
   if (*error == GRPC_ERROR_NONE) {
     return absl::make_unique<ClientChannelMethodParsedConfig>(
-        timeout, wait_for_ready, std::move(retry_policy));
+        timeout, wait_for_ready, std::move(retry_policy),
+        std::move(fault_injection_policy));
   }
   return nullptr;
 }

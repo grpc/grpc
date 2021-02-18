@@ -97,3 +97,12 @@ const char* grpc_status_code_to_string(grpc_status_code status) {
       return "UNKNOWN";
   }
 }
+
+bool grpc_status_code_from_int(int status_int, grpc_status_code* status) {
+  if (status_int < GRPC_STATUS_OK || status_int > GRPC_STATUS_DATA_LOSS) {
+    *status = GRPC_STATUS_UNKNOWN;
+    return false;
+  }
+  *status = static_cast<grpc_status_code>(status_int);
+  return true;
+}
