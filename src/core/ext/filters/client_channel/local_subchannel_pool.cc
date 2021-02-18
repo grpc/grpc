@@ -25,20 +25,19 @@
 namespace grpc_core {
 
 std::unique_ptr<SubchannelRef> LocalSubchannelPool::RegisterSubchannel(
-    const SubchannelKey &key, Subchannel* constructed) {
+    const SubchannelKey &key, RefCountedPtr<Subchannel> constructed) {
   // Check to see if a subchannel already exists.
-  Subchannel* c;
   auto p = subchannel_map_.find(key);
+  RefCountedPtr<Subchannel> c;
   if (p != subchannel_map_.end()) {
     // The subchannel already exists. Reuse it.
-    c = GRPC_SUBCHANNEL_REF(p->second, "subchannel_register+reuse");
-    GRPC_SUBCHANNEL_UNREF(constructed, "subchannel_register+found_existing");
+    c = p->second->Ref();
   } else {
     // There hasn't been such subchannel. Add one.
-    c = constructed;
-    subchannel_map_[key] = c;
+    c = std::move(constructed);
+    subchannel_map_[key] = c->WeakRef();
   }
-  return absl::make_unique<LocalSubchannelPoolSubchannelRef>(Ref(), c, key);
+  return absl::make_unique<LocalSubchannelPoolSubchannelRef>(Ref(), std::move(c), key);
 }
 
 LocalSubchannelPool::LocalSubchannelPoolSubchannelRef::LocalSubchannelPoolSubchannelRef(
@@ -46,14 +45,13 @@ LocalSubchannelPool::LocalSubchannelPoolSubchannelRef::LocalSubchannelPoolSubcha
     : parent_(std::move(parent)), subchannel_(subchannel), key_(key) {}
 
 LocalSubchannelPool::LocalSubchannelPoolSubchannelRef::~LocalSubchannelPoolSubchannelRef() {
-  GRPC_SUBCHANNEL_UNREF(subchannel_, "LocalSubchannelPoolSubchannelRef+destroyed");
-  subchannel_ = GRPC_SUBCHANNEL_REF(subchannel_, "LocalSubchannelPoolSubchannelRef+check_for_remaining_refs");
-  if (subchannel_ != nullptr) {
-    GRPC_SUBCHANNEL_UNREF(subchannel_, "LocalSubchannelPoolSubchannelRef+check_for_remaining_refs");
-    return;
+  subchannel_.reset();
+  auto p = subchannel_map_.find(key);
+  GPR_ASSERT(p != subchannel_map_.end());
+  if (p->second->RefIfNonZero() == nullptr) {
+    // nobody else using this subchannel, delete it from the pool
+    GPR_ASSERT(subchannel_map_.erase(p) == 1);
   }
-  GPR_ASSERT(parent_->subchannel_map_.erase(key_) == 1);
-  GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "LocalSubchannelPoolSubchannelRef+destroyed");
 }
 
 }  // namespace grpc_core

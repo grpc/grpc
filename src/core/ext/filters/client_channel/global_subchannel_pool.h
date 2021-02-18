@@ -49,18 +49,18 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
 
   // Implements interface methods.
   std::unique_ptr<SubchannelRef> RegisterSubchannel(const SubchannelKey &key,
-                                 Subchannel* constructed) override;
+                                 RefCountedPtr<Subchannel> constructed) override;
 
   static long TestOnlyGlobalSubchannelPoolSize();
  private:
   class GlobalSubchannelPoolSubchannelRef : public SubchannelRef {
    public:
-    GlobalSubchannelPoolSubchannelRef(RefCountedPtr<GlobalSubchannelPool> parent, Subchannel* subchannel, const SubchannelKey &key);
+    GlobalSubchannelPoolSubchannelRef(RefCountedPtr<GlobalSubchannelPool> parent, RefCountedPtr<Subchannel> subchannel, const SubchannelKey &key);
     ~GlobalSubchannelPoolSubchannelRef() override;
     Subchannel* subchannel() override { return subchannel_; }
    private:
     RefCountedPtr<GlobalSubchannelPool> parent_;
-    Subchannel* subchannel_;
+    RefCountedPtr<Subchannel> subchannel_;
     const SubchannelKey key_;
   };
 
@@ -71,7 +71,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   // A map from subchannel key to subchannel. Note: a btree_map is used only
   // because the underlying channel args in SubchannelKeys are comparable
   // but not hashable.
-  absl::btree_map<SubchannelKey, Subchannel*> subchannel_map_;
+  absl::btree_map<SubchannelKey, WeakRefCountedPtr<Subchannel>> subchannel_map_;
   // To protect subchannel_map_.
   Mutex mu_;
 };
