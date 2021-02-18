@@ -8692,7 +8692,7 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
  public:
   ClientStatusDiscoveryServiceTest() : XdsEnd2endTest(1, 1) {}
 
-  void SetUp() {
+  void SetUp() override {
     XdsEnd2endTest::SetUp();
     // The ServerThread picks port using PortSaver, but PortSaver will be reset
     // in XdsEnd2endTest::SetUp(). So, the admin server thread must be created
@@ -8710,7 +8710,7 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
             admin_channel_);
   }
 
-  void TearDown() {
+  void TearDown() override {
     admin_server_thread_->Shutdown();
     delete admin_server_thread_;
     XdsEnd2endTest::TearDown();
@@ -8724,7 +8724,7 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
     EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                              << " message=" << status.error_message();
     GPR_ASSERT(response.config_size() == 1);
-    return std::move(response.config(0));
+    return response.config(0);
   }
 
  private:

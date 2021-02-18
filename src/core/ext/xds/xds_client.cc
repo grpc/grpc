@@ -1214,7 +1214,7 @@ void XdsClient::UpdatePerResourceStatesByParsedResult(
       UpdateResourceMetadataAcked(resource_metadata, result.version,
                                   update_time);
     }
-  } else if (result.resource_names_failed.size() != 0) {
+  } else if (!result.resource_names_failed.empty()) {
     // ADS update is rejected and the resource names in the failed update is
     // available.
     const std::string& details = grpc_error_string(result.parse_error);
@@ -2289,13 +2289,13 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
 }
 
 Json::Object XdsClient::CreateUpdateFailureStateJson(
-    const ResourceMetadata& resource_metdata) {
+    const ResourceMetadata& resource_metadata) {
   return {
       {"lastUpdateAttempt",
        gpr_format_timespec(grpc_millis_to_timespec(
-           resource_metdata.failed_update_time, GPR_CLOCK_REALTIME))},
-      {"details", resource_metdata.failed_details},
-      {"versionInfo", resource_metdata.failed_version},
+           resource_metadata.failed_update_time, GPR_CLOCK_REALTIME))},
+      {"details", resource_metadata.failed_details},
+      {"versionInfo", resource_metadata.failed_version},
   };
 }
 

@@ -34,20 +34,17 @@ namespace experimental {
 class ClientStatusDiscoveryService final
     : public envoy::service::status::v3::ClientStatusDiscoveryService::Service {
  public:
-  ClientStatusDiscoveryService() = default;
-  ~ClientStatusDiscoveryService() = default;
-
   // A streaming call that responds client status for each request.
-  Status StreamClientStatus(
-      ServerContext* context,
-      ServerReaderWriter<envoy::service::status::v3::ClientStatusResponse,
-                         envoy::service::status::v3::ClientStatusRequest>*
-          stream) override;
+  // Status StreamClientStatus(
+  //     ServerContext* context,
+  //     ServerReaderWriter<envoy::service::status::v3::ClientStatusResponse,
+  //                        envoy::service::status::v3::ClientStatusRequest>*
+  //         stream) override;
 
   // An unary call to fetch client status.
   Status FetchClientStatus(
-      ServerContext* context,
-      const envoy::service::status::v3::ClientStatusRequest* request,
+      ServerContext* /*unused*/,
+      const envoy::service::status::v3::ClientStatusRequest* /*request*/,
       envoy::service::status::v3::ClientStatusResponse* response) override;
 
  private:

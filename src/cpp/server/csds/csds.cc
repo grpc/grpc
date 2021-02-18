@@ -64,14 +64,14 @@ absl::Status ClientStatusDiscoveryService::DumpClientConfig(
   return absl::OkStatus();
 }
 
-Status ClientStatusDiscoveryService::StreamClientStatus(
-    ServerContext* context,
-    ServerReaderWriter<ClientStatusResponse, ClientStatusRequest>* stream) {
-  return Status::OK;
-}
+// Status ClientStatusDiscoveryService::StreamClientStatus(
+//     ServerContext* context,
+//     ServerReaderWriter<ClientStatusResponse, ClientStatusRequest>* stream) {
+//   return Status::OK;
+// }
 
 Status ClientStatusDiscoveryService::FetchClientStatus(
-    ServerContext* context, const ClientStatusRequest* request,
+    ServerContext* /*context*/, const ClientStatusRequest* /*request*/,
     ClientStatusResponse* response) {
   ClientConfig* client_config = response->add_config();
   absl::Status s = DumpClientConfig(client_config);
