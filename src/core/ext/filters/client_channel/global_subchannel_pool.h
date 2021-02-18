@@ -52,8 +52,6 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   std::unique_ptr<SubchannelRef> RegisterSubchannel(
       const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
 
-  static long TestOnlyGlobalSubchannelPoolSize();
-
  private:
   class GlobalSubchannelPoolSubchannelRef : public SubchannelRef {
    public:

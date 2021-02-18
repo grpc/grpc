@@ -41,7 +41,6 @@
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
-#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
@@ -88,10 +87,6 @@ void create_loop_destroy(void* addr) {
                  GRPC_OP_COMPLETE);
       /* check that the watcher from "watch state" was free'd */
       GPR_ASSERT(grpc_channel_num_external_connectivity_watchers(chan) == 0);
-      long global_subchannel_pool_size =
-          grpc_core::GlobalSubchannelPool::TestOnlyGlobalSubchannelPoolSize();
-      gpr_log(GPR_DEBUG, "global_subchannel_pool_size: %ld",
-              global_subchannel_pool_size);
     }
     grpc_channel_destroy(chan);
     grpc_completion_queue_destroy(cq);

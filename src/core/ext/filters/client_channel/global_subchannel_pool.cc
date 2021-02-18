@@ -68,12 +68,6 @@ std::unique_ptr<SubchannelRef> GlobalSubchannelPool::RegisterSubchannel(
 
 RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
 
-long GlobalSubchannelPool::TestOnlyGlobalSubchannelPoolSize() {
-  GlobalSubchannelPool* g = GlobalSubchannelPool::instance_->get();
-  MutexLock lock(&g->mu_);
-  return g->subchannel_map_.size();
-}
-
 GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::
     GlobalSubchannelPoolSubchannelRef(
         RefCountedPtr<GlobalSubchannelPool> parent,

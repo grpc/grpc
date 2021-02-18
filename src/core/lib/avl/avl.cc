@@ -60,18 +60,18 @@ static long node_height(grpc_avl_node* node) {
   return node == nullptr ? 0 : node->height;
 }
 
-long grpc_avl_calculate_height(grpc_avl_node* node) {
+#ifndef NDEBUG
+static long calculate_height(grpc_avl_node* node) {
   return node == nullptr ? 0
-                         : 1 + GPR_MAX(grpc_avl_calculate_height(node->left),
-                                       grpc_avl_calculate_height(node->right));
+                         : 1 + GPR_MAX(calculate_height(node->left),
+                                       calculate_height(node->right));
 }
 
-#ifndef NDEBUG
 static grpc_avl_node* assert_invariants(grpc_avl_node* n) {
   if (n == nullptr) return nullptr;
   assert_invariants(n->left);
   assert_invariants(n->right);
-  assert(grpc_avl_calculate_height(n) == n->height);
+  assert(calculate_height(n) == n->height);
   assert(labs(node_height(n->left) - node_height(n->right)) <= 1);
   return n;
 }

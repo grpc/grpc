@@ -90,7 +90,5 @@ void* grpc_avl_get(grpc_avl avl, void* key, void* user_data);
 int grpc_avl_maybe_get(grpc_avl avl, void* key, void** value, void* user_data);
 /** Return 1 if avl is empty, 0 otherwise */
 int grpc_avl_is_empty(grpc_avl avl);
-/** Exposed only for testing purposes. */
-long grpc_avl_calculate_height(grpc_avl_node* node);
 
 #endif /* GRPC_CORE_LIB_AVL_AVL_H */
