@@ -275,7 +275,7 @@ absl::StatusOr<std::map<std::string, Rbac::Policy>> ParseRulesArray(
     }
     policies[policy_name] = std::move(policy_or.value());
   }
-  return policies;
+  return std::move(policies);
 }
 
 absl::StatusOr<Rbac> ParseDenyRulesArray(const Json& json,
@@ -346,7 +346,7 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
     }
     rbac_policies.allow_policy = std::move(allow_policy_or.value());
   }
-  return rbac_policies;
+  return std::move(rbac_policies);
 }
 
 }  // namespace grpc_core
