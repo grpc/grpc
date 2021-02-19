@@ -220,7 +220,7 @@ absl::StatusOr<Rbac::Permission> ParseRequest(const Json& json) {
 }
 
 absl::StatusOr<Rbac::Policy> ParseRules(const Json& json) {
-  Rbac::Policy policy;
+  Rbac::Principal principals;
   auto it = json.object_value().find("source");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::OBJECT) {
@@ -228,10 +228,11 @@ absl::StatusOr<Rbac::Policy> ParseRules(const Json& json) {
     }
     auto peer_or = ParsePeer(it->second);
     if (!peer_or.ok()) return peer_or.status();
-    policy.principals = std::move(peer_or.value());
+    principals = std::move(peer_or.value());
   } else {
-    policy.principals = Rbac::Principal(Rbac::Principal::RuleType::ANY);
+    principals = Rbac::Principal(Rbac::Principal::RuleType::ANY);
   }
+  Rbac::Permission permissions;
   it = json.object_value().find("request");
   if (it != json.object_value().end()) {
     if (it->second.type() != Json::Type::OBJECT) {
@@ -239,11 +240,11 @@ absl::StatusOr<Rbac::Policy> ParseRules(const Json& json) {
     }
     auto request_or = ParseRequest(it->second);
     if (!request_or.ok()) return request_or.status();
-    policy.permissions = std::move(request_or.value());
+    permissions = std::move(request_or.value());
   } else {
-    policy.permissions = Rbac::Permission(Rbac::Permission::RuleType::ANY);
+    permissions = Rbac::Permission(Rbac::Permission::RuleType::ANY);
   }
-  return std::move(policy);
+  return Rbac::Policy(std::move(permissions), std::move(principals));
 }
 
 absl::StatusOr<std::map<std::string, Rbac::Policy>> ParseRulesArray(
@@ -274,7 +275,7 @@ absl::StatusOr<std::map<std::string, Rbac::Policy>> ParseRulesArray(
     }
     policies[policy_name] = std::move(policy_or.value());
   }
-  return std::move(policies);
+  return policies;
 }
 
 absl::StatusOr<Rbac> ParseDenyRulesArray(const Json& json,
@@ -345,7 +346,7 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
     }
     rbac_policies.allow_policy = std::move(allow_policy_or.value());
   }
-  return std::move(rbac_policies);
+  return rbac_policies;
 }
 
 }  // namespace grpc_core
