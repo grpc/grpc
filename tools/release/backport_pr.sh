@@ -25,11 +25,12 @@ ensure_command () {
 }
 
 display_usage () {
-  echo "USAGE: $0 PR_NUMBER GITHUB_USER BACKPORT_BRANCHES REVIEWERS [-c PER_BACKPORT_COMMAND]" >/dev/stderr
-  echo "   PR_NUMBER: The number for the PR to be backported." >/dev/stderr
+  echo "USAGE: $0 PR_ID GITHUB_USER BACKPORT_BRANCHES REVIEWERS [-c PER_BACKPORT_COMMAND]" >/dev/stderr
+  echo "   PR_ID: The ID of the PR to be backported." >/dev/stderr
   echo "   GITHUB_USER: Your GitHub username." >/dev/stderr
-  echo "   BACKPORT_BRANCHES: A space-separated list of branches to which to backport." >/dev/stderr
-  echo "   REVIEWERS: A comma-separated list of users add as reviewers and assignees." >/dev/stderr
+  echo "   BACKPORT_BRANCHES: A space-separated list of branches to which the " >/dev/stderr
+  echo "     source PR will be backported." >/dev/stderr
+  echo "   REVIEWERS: A comma-separated list of users to add as both reviewer and assignee." >/dev/stderr
   echo "   PER_BACKPORT_COMMAND : An optional command to run after cherrypicking the PR to the target branch." >/dev/stderr
   echo "     If you use this option, ensure your working directory is clean, as `git add -A` will be used to " >/dev/stderr
   echo "     incorporate any generated files. Try running `git clean -xdff` beforehand." >/dev/stderr
