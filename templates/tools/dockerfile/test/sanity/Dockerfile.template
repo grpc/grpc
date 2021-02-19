@@ -33,6 +33,9 @@
   RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
   RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml six
 
+  # Upgrade Python's YAML library
+  RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
+
   # Add buster-backports for more recent clang packages
   RUN echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/buster-backports.list
 
