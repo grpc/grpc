@@ -29,9 +29,8 @@ display_usage () {
 USAGE: $0 PR_ID GITHUB_USER BACKPORT_BRANCHES REVIEWERS [-c PER_BACKPORT_COMMAND]
    PR_ID: The ID of the PR to be backported.
    GITHUB_USER: Your GitHub username.
-   BACKPORT_BRANCHES: A space-separated list of branches to which the
-     source PR will be backported.
-   REVIEWERS: A comma-separated list of users to add as both reviewer and assignee. >/dev/stderr
+   BACKPORT_BRANCHES: A space-separated list of branches to which the source PR will be backported.
+   REVIEWERS: A comma-separated list of users to add as both reviewer and assignee.
    PER_BACKPORT_COMMAND : An optional command to run after cherrypicking the PR to the target branch.
      If you use this option, ensure your working directory is clean, as "git add -A" will be used to
      incorporate any generated files. Try running "git clean -xdff" beforehand.
@@ -51,7 +50,7 @@ if [ "$#" -lt "4" ]; then
   display_usage
 fi
 
-PR_NUMBER="$1"
+PR_ID="$1"
 GITHUB_USER="$2"
 BACKPORT_BRANCHES="$3"
 REVIEWERS="$4"
@@ -95,7 +94,7 @@ printf "\n"
 
 PR_DATA=$(curl -s -u "$GITHUB_USER:$GITHUB_TOKEN" \
           -H "Accept: application/vnd.github.v3+json" \
-          "https://api.github.com/repos/grpc/grpc/pulls/$PR_NUMBER")
+          "https://api.github.com/repos/grpc/grpc/pulls/$PR_ID")
 
 STATE=$(echo "$PR_DATA" | jq -r '.state')
 if [ "$STATE" != "open" ]; then
@@ -125,7 +124,7 @@ for BACKPORT_BRANCH in $BACKPORT_BRANCHES; do
 
   git checkout "origin/$BACKPORT_BRANCH"
 
-  BRANCH_NAME="backport_${PR_NUMBER}_to_${BACKPORT_BRANCH}"
+  BRANCH_NAME="backport_${PR_ID}_to_${BACKPORT_BRANCH}"
 
   # To make the script idempotent.
   git branch -D "$BRANCH_NAME" || true
@@ -147,7 +146,7 @@ for BACKPORT_BRANCH in $BACKPORT_BRANCHES; do
   fi
 
   BACKPORT_PR=$(hub pull-request -p -m "[Backport] $PR_TITLE" \
-                  -m "*Beep boop. This is an automatically generated backport of #${PR_NUMBER}.*" \
+                  -m "*Beep boop. This is an automatically generated backport of #${PR_ID}.*" \
                   -m "$PR_DESCRIPTION" \
                   -l "$LABELS" \
                   -b "$GITHUB_USER:$BACKPORT_BRANCH" \
