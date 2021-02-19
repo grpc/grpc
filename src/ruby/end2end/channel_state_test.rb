@@ -38,7 +38,7 @@ def main
     Process.wait(client_controller.client_pid)
     STDERR.puts 'killed client child'
     raise 'Timed out waiting for client process. ' \
-           'It likely hangs when ended abruptly'
+           'It likely freezes when ended abruptly'
   end
 
   # The interrupt in the child process should cause it to
