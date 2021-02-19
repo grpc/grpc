@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/container/btree_map.h"
-
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
@@ -62,7 +60,7 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   };
 
   // A map from subchannel key to subchannel.
-  absl::btree_map<SubchannelKey, WeakRefCountedPtr<Subchannel>> subchannel_map_;
+  std::map<SubchannelKey, WeakRefCountedPtr<Subchannel>> subchannel_map_;
 };
 
 }  // namespace grpc_core

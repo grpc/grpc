@@ -1156,7 +1156,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "absl/container:inlined_vector",
-        "absl/container:btree",
     ],
     language = "c++",
     deps = [

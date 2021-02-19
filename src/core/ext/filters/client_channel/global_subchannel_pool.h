@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/container/btree_map.h"
-
 #include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -71,10 +69,8 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   // non-local static object can be trivially destructible.)
   static RefCountedPtr<GlobalSubchannelPool>* instance_;
 
-  // A map from subchannel key to subchannel. Note: a btree_map is used only
-  // because the underlying channel args in SubchannelKeys are comparable
-  // but not hashable.
-  absl::btree_map<SubchannelKey, WeakRefCountedPtr<Subchannel>> subchannel_map_;
+  // A map from subchannel key to subchannel.
+  std::map<SubchannelKey, WeakRefCountedPtr<Subchannel>> subchannel_map_;
   // To protect subchannel_map_.
   Mutex mu_;
 };
