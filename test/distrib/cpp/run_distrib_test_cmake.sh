@@ -54,7 +54,7 @@ popd
 # Install xxhash 
 mkdir -p "third_party/xxhash/cmake/build"
 pushd "third_party/xxhash/cmake/build"
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
+cmake -DCMAKE_BUILD_TYPE=Release ../..
 make -j4 install
 popd
 

@@ -25,14 +25,22 @@ out = {}
 
 out['libs'] = [{
     #TODO @donnadionne: extracting the list of source files from bazel build to reduce duplication
-    'name': 'xxhash',
-    'build': 'private',
-    'language': 'c',
-    'secure': False,
-    'src': sorted(glob.glob('third_party/xxhash/*.c') +
-                  glob.glob('third_party/xxhash/cli/*.c')),
-    'headers': sorted(glob.glob('third_party/xxhash/*.h') +
-                      glob.glob('third_party/xxhash/cli/*.h')),
+    'name':
+        'xxhash',
+    'build':
+        'private',
+    'language':
+        'c',
+    'secure':
+        False,
+    'src':
+        sorted(
+            glob.glob('third_party/xxhash/*.c') +
+            glob.glob('third_party/xxhash/cli/*.c')),
+    'headers':
+        sorted(
+            glob.glob('third_party/xxhash/*.h') +
+            glob.glob('third_party/xxhash/cli/*.h')),
 }]
 
 print(yaml.dump(out))
