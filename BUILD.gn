@@ -1234,7 +1234,6 @@ config("grpc_config") {
         ":absl/container:inlined_vector",
         ":absl/container:flat_hash_set",
         ":absl/container:flat_hash_map",
-        ":absl/container:btree",
         "//third_party/cares",
         ":address_sorting",
     ]

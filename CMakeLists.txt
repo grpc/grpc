@@ -107,10 +107,8 @@ set(gRPC_ABSL_USED_TARGETS
   absl_base_internal
   absl_bind_front
   absl_bits
-  absl_btree
   absl_city
   absl_civil_time
-  absl_compare
   absl_compressed_tuple
   absl_config
   absl_container_common
@@ -2031,7 +2029,6 @@ target_link_libraries(grpc
   absl::inlined_vector
   absl::flat_hash_set
   absl::flat_hash_map
-  absl::btree
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc "-framework CoreFoundation")
@@ -2583,7 +2580,6 @@ target_link_libraries(grpc_unsecure
   absl::status
   absl::inlined_vector
   absl::flat_hash_map
-  absl::btree
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_unsecure "-framework CoreFoundation")

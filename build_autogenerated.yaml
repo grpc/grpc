@@ -1408,7 +1408,6 @@ libs:
   - absl/container:inlined_vector
   - absl/container:flat_hash_set
   - absl/container:flat_hash_map
-  - absl/container:btree
   baselib: true
   deps_linkage: static
   dll: true
@@ -2090,7 +2089,6 @@ libs:
   - absl/status:status
   - absl/container:inlined_vector
   - absl/container:flat_hash_map
-  - absl/container:btree
   baselib: true
   deps_linkage: static
   dll: true
