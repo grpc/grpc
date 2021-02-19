@@ -236,6 +236,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upbdefs-generated\\envoy\\config\\route\\v3\\scoped_route.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\config\\trace\\v3\\http_tracer.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\clusters\\aggregate\\v3\\cluster.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\common\\fault\\v3\\fault.upbdefs.c " +
+    "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\http\\fault\\v3\\fault.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\http\\router\\v3\\router.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\network\\http_connection_manager\\v3\\http_connection_manager.upbdefs.c " +
     "src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\transport_sockets\\tls\\v3\\cert.upbdefs.c " +
@@ -1162,7 +1164,12 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\clusters\\aggregate");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\clusters\\aggregate\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\common");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\common\\fault");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\common\\fault\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\http");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\http\\fault");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\http\\fault\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\http\\router");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\http\\router\\v3");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upbdefs-generated\\envoy\\extensions\\filters\\network");

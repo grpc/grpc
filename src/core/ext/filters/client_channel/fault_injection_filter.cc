@@ -68,6 +68,10 @@ inline bool UnderFraction(const uint32_t fraction_per_million) {
   return random_number < fraction_per_million;
 }
 
+int TranslatePercentageToPerMillion(int percentage, int denominator, int cap) {
+  return GPR_MAX(0, GPR_MIN(percentage * (1000000 / denominator), cap));
+}
+
 class FaultInjectionFilter {
  public:
   class ChannelData {
@@ -76,9 +80,14 @@ class FaultInjectionFilter {
                             grpc_channel_element_args* args);
     static void Destroy(grpc_channel_element* elem);
 
+    int index() const { return index_; }
+
    private:
     ChannelData() = default;
     ~ChannelData() = default;
+
+    // The relative index of instances of the same filter.
+    int index_;
   };
 
   class CallData {
@@ -87,8 +96,8 @@ class FaultInjectionFilter {
                             const grpc_call_element_args* args);
 
     static void Destroy(grpc_call_element* elem,
-                        const grpc_call_final_info* final_info,
-                        grpc_closure* then_schedule_closure);
+                        const grpc_call_final_info* /*final_info*/,
+                        grpc_closure* /*then_schedule_closure*/);
 
     static void StartTransportStreamOpBatch(
         grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
@@ -129,8 +138,10 @@ class FaultInjectionFilter {
 
     static void ResumeBatch(void* arg, grpc_error* error);
 
+    // Used to track the policy structs that needs to be destroyed in dtor.
+    int index_;
+    bool fi_policy_owned_;
     const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
-    bool fi_policy_owned_ = false;
     grpc_call_stack* owning_call_;
     Arena* arena_;
     CallCombiner* call_combiner_;
@@ -153,7 +164,9 @@ class FaultInjectionFilter {
 grpc_error* FaultInjectionFilter::ChannelData::Init(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   GPR_ASSERT(elem->filter == &grpc_fault_injection_filter);
-  new (elem->channel_data) FaultInjectionFilter::ChannelData();
+  auto* chand = new (elem->channel_data) FaultInjectionFilter::ChannelData();
+  chand->index_ =
+      grpc_channel_stack_filter_instance_number(args->channel_stack, elem);
   return GRPC_ERROR_NONE;
 }
 
@@ -209,12 +222,13 @@ grpc_error* FaultInjectionFilter::CallData::Init(
   auto* chand =
       static_cast<FaultInjectionFilter::ChannelData*>(elem->channel_data);
   auto* calld = new (elem->call_data) FaultInjectionFilter::CallData(args);
+  calld->index_ = chand->index();
   return GRPC_ERROR_NONE;
 }
 
 void FaultInjectionFilter::CallData::Destroy(
-    grpc_call_element* elem, const grpc_call_final_info* final_info,
-    grpc_closure* then_schedule_closure) {
+    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*then_schedule_closure*/) {
   auto* calld = static_cast<FaultInjectionFilter::CallData*>(elem->call_data);
   calld->~CallData();
 }
@@ -258,11 +272,13 @@ FaultInjectionFilter::CallData::CallData(const grpc_call_element_args* args)
   auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
           internal::ClientChannelServiceConfigParser::ParserIndex()));
-  fi_policy_ = method_params->fault_injection_policy();
+  fi_policy_ = method_params->fault_injection_policy(index_);
 }
 
 FaultInjectionFilter::CallData::~CallData() {
-  if (fi_policy_owned_) fi_policy_->~FaultInjectionPolicy();
+  if (fi_policy_owned_) {
+    fi_policy_->~FaultInjectionPolicy();
+  }
 }
 
 void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
@@ -271,9 +287,9 @@ void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
       nullptr;
   // Update the policy with values in initial metadata.
   if (!fi_policy_->abort_code_header.empty() ||
-      !fi_policy_->abort_per_million_header.empty() ||
+      !fi_policy_->abort_percentage_header.empty() ||
       !fi_policy_->delay_header.empty() ||
-      !fi_policy_->delay_per_million_header.empty()) {
+      !fi_policy_->delay_percentage_header.empty()) {
     // Defer the actual copy until the first matched header.
     auto maybe_copy_policy_func = [this, &copied_policy]() {
       if (copied_policy == nullptr) {
@@ -296,12 +312,14 @@ void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
         grpc_status_code_from_int(GetLinkedMetadatumValueInt(md),
                                   &copied_policy->abort_code);
       }
-      if (!fi_policy_->abort_per_million_header.empty() &&
+      if (!fi_policy_->abort_percentage_header.empty() &&
           (copied_policy == nullptr || copied_policy->abort_per_million == 0) &&
-          key == fi_policy_->abort_per_million_header) {
+          key == fi_policy_->abort_percentage_header) {
         maybe_copy_policy_func();
-        copied_policy->abort_per_million =
-            GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
+        copied_policy->abort_per_million = TranslatePercentageToPerMillion(
+            GetLinkedMetadatumValueInt(md),
+            fi_policy_->abort_percentage_denominator,
+            fi_policy_->abort_per_million);
       }
       if (!fi_policy_->delay_header.empty() &&
           (copied_policy == nullptr || copied_policy->delay == 0) &&
@@ -310,12 +328,14 @@ void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
         copied_policy->delay = static_cast<grpc_millis>(
             GPR_MAX(GetLinkedMetadatumValueInt64(md), 0));
       }
-      if (!fi_policy_->delay_per_million_header.empty() &&
+      if (!fi_policy_->delay_percentage_header.empty() &&
           (copied_policy == nullptr || copied_policy->delay_per_million == 0) &&
-          key == fi_policy_->delay_per_million_header) {
+          key == fi_policy_->delay_percentage_header) {
         maybe_copy_policy_func();
-        copied_policy->delay_per_million =
-            GPR_CLAMP(GetLinkedMetadatumValueInt(md), 0, 1000000);
+        copied_policy->delay_per_million = TranslatePercentageToPerMillion(
+            GetLinkedMetadatumValueInt(md),
+            fi_policy_->delay_percentage_denominator,
+            fi_policy_->delay_per_million);
       }
     }
     if (copied_policy != nullptr) fi_policy_ = copied_policy;

@@ -110,14 +110,12 @@ using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::Listener;
 using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
-using ::envoy::extensions::filters::network::http_connection_manager::v3::
-    HttpConnectionManager;
-using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 using ::envoy::extensions::filters::http::fault::v3::HTTPFault;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpConnectionManager;
 using ::envoy::extensions::filters::network::http_connection_manager::v3::
     HttpFilter;
+using ::envoy::extensions::transport_sockets::tls::v3::DownstreamTlsContext;
 using ::envoy::extensions::transport_sockets::tls::v3::UpstreamTlsContext;
 using ::envoy::type::matcher::v3::StringMatcher;
 using ::envoy::type::v3::FractionalPercent;
@@ -2022,9 +2020,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return listener;
   }
 
-  // Builds a Listener with Fault Injection filter config. If the http_fault
-  // is nullptr, then assign an empty filter config. This dummy config is
-  // required to enable the fault injection features.
+  // Builds a Listener with Fault Injection filter config. If the http_fault is
+  // nullptr, then assign an empty filter config. This filter config is required
+  // to enable the fault injection features.
   static Listener BuildListenerWithFaultInjection(
       const HTTPFault& http_fault = HTTPFault()) {
     HttpConnectionManager http_connection_manager;
