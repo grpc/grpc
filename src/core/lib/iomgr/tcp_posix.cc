@@ -913,7 +913,6 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
   grpc_slice_buffer_reset_and_unref_internal(incoming_buffer);
   grpc_slice_buffer_swap(incoming_buffer, &tcp->last_read_buffer);
   TCP_REF(tcp, "read");
-  absl::SleepFor(absl::Nanoseconds(500));
   if (tcp->is_first_read) {
     /* Endpoint read called for the very first time. Register read callback with
      * the polling engine */
