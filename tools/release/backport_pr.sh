@@ -25,18 +25,20 @@ ensure_command () {
 }
 
 display_usage () {
-  echo "USAGE: $0 PR_ID GITHUB_USER BACKPORT_BRANCHES REVIEWERS [-c PER_BACKPORT_COMMAND]" >/dev/stderr
-  echo "   PR_ID: The ID of the PR to be backported." >/dev/stderr
-  echo "   GITHUB_USER: Your GitHub username." >/dev/stderr
-  echo "   BACKPORT_BRANCHES: A space-separated list of branches to which the " >/dev/stderr
-  echo "     source PR will be backported." >/dev/stderr
-  echo "   REVIEWERS: A comma-separated list of users to add as both reviewer and assignee." >/dev/stderr
-  echo "   PER_BACKPORT_COMMAND : An optional command to run after cherrypicking the PR to the target branch." >/dev/stderr
-  echo "     If you use this option, ensure your working directory is clean, as `git add -A` will be used to " >/dev/stderr
-  echo "     incorporate any generated files. Try running `git clean -xdff` beforehand." >/dev/stderr
-  echo "" >/dev/stderr
-  echo "Example: $0 25456 gnossen \"v1.30.x v1.31.x v1.32.x v1.33.x v1.34.x v1.35.x v1.36.x\" \"menghanl,gnossen\"" >/dev/stderr
-  echo "Example: $0 25493 gnossen \"\$(seq 30 33 | xargs -n1 printf \"v1.%s.x \")\" \"menghanl\" -c ./tools/dockerfile/push_testing_images.sh" >/dev/stderr
+  cat << EOF >/dev/stderr
+USAGE: $0 PR_ID GITHUB_USER BACKPORT_BRANCHES REVIEWERS [-c PER_BACKPORT_COMMAND]
+   PR_ID: The ID of the PR to be backported.
+   GITHUB_USER: Your GitHub username.
+   BACKPORT_BRANCHES: A space-separated list of branches to which the
+     source PR will be backported.
+   REVIEWERS: A comma-separated list of users to add as both reviewer and assignee. >/dev/stderr
+   PER_BACKPORT_COMMAND : An optional command to run after cherrypicking the PR to the target branch.
+     If you use this option, ensure your working directory is clean, as "git add -A" will be used to
+     incorporate any generated files. Try running "git clean -xdff" beforehand.
+
+Example: $0 25456 gnossen "v1.30.x v1.31.x v1.32.x v1.33.x v1.34.x v1.35.x v1.36.x" "menghanl,gnossen"
+Example: $0 25493 gnossen "\$(seq 30 33 | xargs -n1 printf 'v1.%s.x ')" "menghanl" -c ./tools/dockerfile/push_testing_images.sh
+EOF
   exit 1
 }
 
