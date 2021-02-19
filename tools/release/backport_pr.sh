@@ -95,9 +95,10 @@ PR_DATA=$(curl -s -u "$GITHUB_USER:$GITHUB_TOKEN" \
           "https://api.github.com/repos/grpc/grpc/pulls/$PR_NUMBER")
 
 STATE=$(echo "$PR_DATA" | jq -r '.state')
-if [ "$STATE" == "merged" ]; then
+if [ "$STATE" != "open" ]; then
   TARGET_COMMITS=$(echo "$PR_DATA" | jq -r '.merge_commit_sha')
-  FETCH_HEAD_REF=$(echo "$PR_DATA" | jq -r '.head.repo.default_branch')
+  FETCH_HEAD_REF=$(echo "$PR_DATA" | jq -r '.base.ref')
+  SOURCE_REPO=$(echo "$PR_DATA" | jq -r '.base.repo.full_name')
 else
   COMMITS_URL=$(echo "$PR_DATA" | jq -r '.commits_url')
   COMMITS_DATA=$(curl -s -u "$GITHUB_USER:$GITHUB_TOKEN" \
@@ -105,8 +106,8 @@ else
                  "$COMMITS_URL")
   TARGET_COMMITS=$(echo "$COMMITS_DATA" | jq -r '. | map(.sha) | join(" ")')
   FETCH_HEAD_REF=$(echo "$PR_DATA" | jq -r '.head.sha')
+  SOURCE_REPO=$(echo "$PR_DATA" | jq -r '.head.repo.full_name')
 fi
-SOURCE_REPO=$(echo "$PR_DATA" | jq -r '.head.repo.full_name')
 PR_TITLE=$(echo "$PR_DATA" | jq -r '.title')
 PR_DESCRIPTION=$(echo "$PR_DATA" | jq -r '.body')
 LABELS=$(echo "$PR_DATA" | jq -r '.labels | map(.name) | join(",")')
