@@ -362,8 +362,10 @@ grpc_cc_test(
         "bm_callback_unary_ping_pong.cc",
     ],
     tags = [
+        "manual",
         "no_mac",
         "no_windows",
+        "notap",
     ],
     deps = [":callback_unary_ping_pong_h"],
 )
@@ -387,8 +389,10 @@ grpc_cc_test(
         "bm_callback_streaming_ping_pong.cc",
     ],
     tags = [
-        "no_mac",  # to emulate "excluded_poll_engines: poll"
+        "manual",
+        "no_mac",
         "no_windows",
+        "notap",
     ],
     deps = [":callback_streaming_ping_pong_h"],
 )

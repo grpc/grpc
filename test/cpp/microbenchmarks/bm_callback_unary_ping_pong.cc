@@ -31,7 +31,7 @@ namespace testing {
 // internal microbenchmarking tooling
 static void SweepSizesArgs(benchmark::internal::Benchmark* b) {
   b->Args({0, 0});
-  for (int i = 1; i <= 16 * 1024 * 1024; i *= 8) {
+  for (int i = 1; i <= 128 * 1024 * 1024; i *= 8) {
     // First argument is the message size of request
     // Second argument is the message size of response
     b->Args({i, 0});
