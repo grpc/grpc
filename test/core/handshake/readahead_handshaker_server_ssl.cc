@@ -59,8 +59,7 @@ class ReadAheadHandshaker : public Handshaker {
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override {
-    grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done,
-                       /*urgent=*/false);
+    grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done);
   }
 };
 

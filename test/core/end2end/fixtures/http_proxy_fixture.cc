@@ -308,7 +308,7 @@ static void on_client_read_done_locked(void* arg, grpc_error* error) {
   GRPC_CLOSURE_INIT(&conn->on_client_read_done, on_client_read_done, conn,
                     grpc_schedule_on_exec_ctx);
   grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_client_read_done, /*urgent=*/false);
+                     &conn->on_client_read_done);
 }
 
 static void on_client_read_done(void* arg, grpc_error* error) {
@@ -350,7 +350,7 @@ static void on_server_read_done_locked(void* arg, grpc_error* error) {
   GRPC_CLOSURE_INIT(&conn->on_server_read_done, on_server_read_done, conn,
                     grpc_schedule_on_exec_ctx);
   grpc_endpoint_read(conn->server_endpoint, &conn->server_read_buffer,
-                     &conn->on_server_read_done, /*urgent=*/false);
+                     &conn->on_server_read_done);
 }
 
 static void on_server_read_done(void* arg, grpc_error* error) {
@@ -380,11 +380,11 @@ static void on_write_response_done_locked(void* arg, grpc_error* error) {
   GRPC_CLOSURE_INIT(&conn->on_client_read_done, on_client_read_done, conn,
                     grpc_schedule_on_exec_ctx);
   grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_client_read_done, /*urgent=*/false);
+                     &conn->on_client_read_done);
   GRPC_CLOSURE_INIT(&conn->on_server_read_done, on_server_read_done, conn,
                     grpc_schedule_on_exec_ctx);
   grpc_endpoint_read(conn->server_endpoint, &conn->server_read_buffer,
-                     &conn->on_server_read_done, /*urgent=*/false);
+                     &conn->on_server_read_done);
 }
 
 static void on_write_response_done(void* arg, grpc_error* error) {
@@ -484,7 +484,7 @@ static void on_read_request_done_locked(void* arg, grpc_error* error) {
     GRPC_CLOSURE_INIT(&conn->on_read_request_done, on_read_request_done, conn,
                       grpc_schedule_on_exec_ctx);
     grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                       &conn->on_read_request_done, /*urgent=*/false);
+                       &conn->on_read_request_done);
     return;
   }
   // Make sure we got a CONNECT request.
@@ -579,7 +579,7 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
   GRPC_CLOSURE_INIT(&conn->on_read_request_done, on_read_request_done, conn,
                     grpc_schedule_on_exec_ctx);
   grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_read_request_done, /*urgent=*/false);
+                     &conn->on_read_request_done);
 }
 
 //

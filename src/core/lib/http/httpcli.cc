@@ -124,7 +124,7 @@ static void append_error(internal_request* req, grpc_error* error) {
 }
 
 static void do_read(internal_request* req) {
-  grpc_endpoint_read(req->ep, &req->incoming, &req->on_read, /*urgent=*/true);
+  grpc_endpoint_read(req->ep, &req->incoming, &req->on_read);
 }
 
 static void on_read(void* user_data, grpc_error* error) {

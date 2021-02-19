@@ -904,8 +904,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error* error) {
 }
 
 static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
-                     grpc_closure* cb, bool urgent) {
-  (void)urgent;
+                     grpc_closure* cb) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   GPR_ASSERT(tcp->read_cb == nullptr);
   tcp->read_cb = cb;

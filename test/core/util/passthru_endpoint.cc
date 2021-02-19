@@ -58,7 +58,7 @@ struct passthru_endpoint {
 };
 
 static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, bool /*urgent*/) {
+                    grpc_closure* cb) {
   half* m = reinterpret_cast<half*>(ep);
   gpr_mu_lock(&m->parent->mu);
   if (m->parent->shutdown) {
