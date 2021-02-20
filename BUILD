@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//tools/build_defs/csharp/mono:build_defs.bzl", "mono_cs_library")
+
 licenses(["notice"])
 
 exports_files([
@@ -493,6 +495,65 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc",
+    ],
+)
+
+package_group(
+    name = "csharp_visibility",
+    includes = [
+        "//third_party/unity/unity_runtime:unity_users",
+    ],
+    packages = [
+        "//googlex/proxy/...",
+    ],
+)
+
+mono_cs_library(
+    name = "Grpc.Core.Api",
+    srcs = glob(
+        include = [
+            "src/csharp/Grpc.Core.Api/**/*.cs",
+        ],
+        exclude = [
+            "src/csharp/**/*Test.cs",
+            "src/csharp/**/*Tests.cs",
+        ],
+    ),
+    cc_deps = [
+        ":grpc_csharp_ext",
+    ],
+    flags = [
+        "-unsafe",
+    ],
+    visibility = [
+        ":csharp_visibility",
+    ],
+    deps = [],
+)
+
+mono_cs_library(
+    name = "Grpc.Core",
+    srcs = glob(
+        include = [
+            "src/csharp/Grpc.Core/**/*.cs",
+        ],
+        exclude = [
+            "src/csharp/**/*Test.cs",
+            "src/csharp/**/*Tests.cs",
+        ],
+    ),
+    cc_deps = [
+        ":grpc_csharp_ext",
+    ],
+    flags = [
+        "-unsafe",
+    ],
+    visibility = [
+        ":csharp_visibility",
+    ],
+    deps = [
+        ":Grpc.Core.Api",
+        "//third_party/protobuf/csharp:GoogleProtobuf"
     ],
 )
 

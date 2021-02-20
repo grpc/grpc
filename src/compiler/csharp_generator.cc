@@ -25,9 +25,6 @@
 #include "src/compiler/csharp_generator.h"
 #include "src/compiler/csharp_generator_helpers.h"
 
-using google::protobuf::compiler::csharp::GetClassName;
-using google::protobuf::compiler::csharp::GetFileNamespace;
-using google::protobuf::compiler::csharp::GetReflectionClassName;
 using grpc::protobuf::Descriptor;
 using grpc::protobuf::FileDescriptor;
 using grpc::protobuf::MethodDescriptor;
@@ -41,6 +38,9 @@ using grpc_generator::METHODTYPE_CLIENT_STREAMING;
 using grpc_generator::METHODTYPE_NO_STREAMING;
 using grpc_generator::METHODTYPE_SERVER_STREAMING;
 using grpc_generator::StringReplace;
+using proto2::compiler::csharp::GetClassName;
+using proto2::compiler::csharp::GetFileNamespace;
+using proto2::compiler::csharp::GetReflectionClassName;
 using std::map;
 using std::vector;
 
@@ -195,7 +195,6 @@ std::string GetCSharpMethodType(MethodType method_type) {
     case METHODTYPE_BIDI_STREAMING:
       return "grpc::MethodType.DuplexStreaming";
   }
-  GOOGLE_LOG(FATAL) << "Can't get here.";
   return "";
 }
 
@@ -210,7 +209,6 @@ std::string GetCSharpServerMethodType(MethodType method_type) {
     case METHODTYPE_BIDI_STREAMING:
       return "grpc::DuplexStreamingServerMethod";
   }
-  GOOGLE_LOG(FATAL) << "Can't get here.";
   return "";
 }
 
@@ -257,7 +255,6 @@ std::string GetMethodReturnTypeClient(const MethodDescriptor* method) {
              GetClassName(method->input_type()) + ", " +
              GetClassName(method->output_type()) + ">";
   }
-  GOOGLE_LOG(FATAL) << "Can't get here.";
   return "";
 }
 
@@ -271,7 +268,6 @@ std::string GetMethodRequestParamServer(const MethodDescriptor* method) {
       return "grpc::IAsyncStreamReader<" + GetClassName(method->input_type()) +
              "> requestStream";
   }
-  GOOGLE_LOG(FATAL) << "Can't get here.";
   return "";
 }
 
@@ -285,7 +281,6 @@ std::string GetMethodReturnTypeServer(const MethodDescriptor* method) {
     case METHODTYPE_BIDI_STREAMING:
       return "global::System.Threading.Tasks.Task";
   }
-  GOOGLE_LOG(FATAL) << "Can't get here.";
   return "";
 }
 
@@ -299,7 +294,6 @@ std::string GetMethodResponseStreamMaybe(const MethodDescriptor* method) {
       return ", grpc::IServerStreamWriter<" +
              GetClassName(method->output_type()) + "> responseStream";
   }
-  GOOGLE_LOG(FATAL) << "Can't get here.";
   return "";
 }
 
@@ -633,7 +627,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
             "methodfield", GetMethodFieldName(method));
         break;
       default:
-        GOOGLE_LOG(FATAL) << "Can't get here.";
+        break;
     }
     out->Outdent();
     out->Print("}\n");
