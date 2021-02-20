@@ -49,12 +49,12 @@ SubchannelKey& SubchannelKey::operator=(const SubchannelKey& other) {
   return *this;
 }
 
-SubchannelKey::SubchannelKey(SubchannelKey&& other) {
+SubchannelKey::SubchannelKey(SubchannelKey&& other) noexcept {
   args_ = other.args_;
   other.args_ = nullptr;
 }
 
-SubchannelKey& SubchannelKey::operator=(SubchannelKey&& other) {
+SubchannelKey& SubchannelKey::operator=(SubchannelKey&& other) noexcept {
   args_ = other.args_;
   other.args_ = nullptr;
   return *this;

@@ -42,8 +42,8 @@ class SubchannelKey {
   SubchannelKey(const SubchannelKey& other);
   SubchannelKey& operator=(const SubchannelKey& other);
   // Movable
-  SubchannelKey(SubchannelKey&&);
-  SubchannelKey& operator=(SubchannelKey&&);
+  SubchannelKey(SubchannelKey&&) noexcept;
+  SubchannelKey& operator=(SubchannelKey&&) noexcept;
 
   // for use in absl::btree_map
   bool operator<(const SubchannelKey& other) const;

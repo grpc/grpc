@@ -707,7 +707,7 @@ std::unique_ptr<SubchannelRef> Subchannel::Create(
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
   // its key maps to a different subchannel.
-  return subchannel_pool->RegisterSubchannel(std::move(key), c);
+  return subchannel_pool->RegisterSubchannel(key, c);
 }
 
 void Subchannel::ThrottleKeepaliveTime(int new_keepalive_time) {

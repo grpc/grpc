@@ -76,7 +76,6 @@ GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::
 
 GlobalSubchannelPool::GlobalSubchannelPoolSubchannelRef::
     ~GlobalSubchannelPoolSubchannelRef() {
-  // TODO: remove inner brackets after making subchannel DualRefCounted
   MutexLock lock(&parent_->mu_);
   Subchannel* c = subchannel_.get();
   subchannel_.reset();  // release strong ref, pool still holds a weak ref

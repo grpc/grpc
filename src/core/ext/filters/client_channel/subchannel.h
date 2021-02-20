@@ -191,7 +191,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // The ctor and dtor are not intended to use directly.
   Subchannel(OrphanablePtr<SubchannelConnector> connector,
              const grpc_channel_args* args);
-  ~Subchannel();
+  ~Subchannel() override;
 
   // Creates a subchannel given \a connector and \a args.
   static std::unique_ptr<SubchannelRef> Create(
@@ -250,7 +250,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   void ResetBackoff();
 
   // Tears down any existing connection, and arranges for destruction
-  void Orphan();
+  void Orphan() override;
 
   // Returns a new channel arg encoding the subchannel address as a URI
   // string. Caller is responsible for freeing the string.
