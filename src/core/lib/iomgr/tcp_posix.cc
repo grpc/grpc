@@ -917,6 +917,11 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
      * the polling engine */
     tcp->is_first_read = false;
     notify_on_read(tcp);
+  } else if (tcp->inq == 0) {
+    /* Upper layer asked to read more but we know there is no pending data
+     * to read from previous reads. So, wait for POLLIN.
+     */
+    notify_on_read(tcp);
   } else {
     /* Not the first time. We may or may not have more bytes available. In any
      * case call tcp->read_done_closure (i.e tcp_handle_read()) which does the
