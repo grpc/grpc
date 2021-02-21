@@ -158,8 +158,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     void OnResourceDoesNotExist() override {
       gpr_log(GPR_ERROR,
               "ListenerWatcher:%p XdsClient reports requested listener does "
-              "not exist",
-              this);
+              "not exist; not serving on %s",
+              listening_address_.c_str(), this);
       if (have_resource_) {
         // The server has started listening already, so we need to gracefully
         // stop serving.
@@ -170,10 +170,6 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         serving_status_notifier_.on_serving_status_change(
             serving_status_notifier_.user_data, listening_address_.c_str(),
             GRPC_STATUS_NOT_FOUND, "Requested listener does not exist");
-      } else {
-        gpr_log(GPR_INFO,
-                "xDS Listener resource does not exist; not serving on %s",
-                listening_address_.c_str());
       }
     }
 
