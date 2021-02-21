@@ -48,11 +48,8 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   }
 
   std::unique_ptr<Server> BuildAndStart() override {
-    grpc_server_xds_status_notifier c_notifier;
-    c_notifier.on_serving_status_change = OnServingStatusChange;
-    c_notifier.user_data = notifier_;
-    grpc_server_config_fetcher* fetcher =
-        grpc_server_config_fetcher_xds_create(c_notifier);
+    grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(
+        {OnServingStatusChange, notifier_});
     if (fetcher == nullptr) return nullptr;
     set_fetcher(fetcher);
     return ServerBuilder::BuildAndStart();

@@ -7445,6 +7445,10 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
   // Invalid update does not lead to a change in the serving status.
   SetInvalidLdsUpdate();
+  // Sleep for a bit to make sure that the invalid update is propagated.
+  // TODO(yashykt): When we add OnWarning() as a status notification, we can
+  // wait on that instead of doing a sleep.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -7511,7 +7515,6 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
     ClientContext context;
     std::unique_ptr<ClientWriter<EchoRequest>> writer;
   } streaming_rpcs[kNumChannels];
-
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
