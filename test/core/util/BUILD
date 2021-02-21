@@ -126,6 +126,7 @@ grpc_cc_library(
         "absl/flags:flag",
         "gtest",
     ],
+    linkstatic = True,
     tags = ["no_windows"],
     deps = [
         ":grpc_test_util",

@@ -220,6 +220,7 @@ grpc_cc_library(
     external_deps = [
         "gtest",
     ],
+    linkstatic = True,
     deps = [
         ":interceptors_util",
         ":test_service_impl",
