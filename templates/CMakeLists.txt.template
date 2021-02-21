@@ -191,9 +191,6 @@
   set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
   set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
 
-  set(gRPC_XXHASH_PROVIDER "module" CACHE STRING "Provider of xxhash library")
-  set_property(CACHE gRPC_XXHASH_PROVIDER PROPERTY STRINGS "module" "package")
-
   set(gRPC_PROTOBUF_PROVIDER "module" CACHE STRING "Provider of protobuf library")
   set_property(CACHE gRPC_PROTOBUF_PROVIDER PROPERTY STRINGS "module" "package")
 
