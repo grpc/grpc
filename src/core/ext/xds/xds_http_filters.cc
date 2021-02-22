@@ -249,7 +249,7 @@ class XdsHttpFaultFilter : public XdsHttpFilterImpl {
               fault_delay);
       if (delay_duration != nullptr) {
         fault_injection_policy_json["delay"] = absl::StrFormat(
-            "%d/%09ds", google_protobuf_Duration_seconds(delay_duration),
+            "%d.%09ds", google_protobuf_Duration_seconds(delay_duration),
             google_protobuf_Duration_nanos(delay_duration));
       }
       // Set the headers if we enabled header delay injection control
