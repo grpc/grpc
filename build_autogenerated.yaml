@@ -1419,7 +1419,6 @@ libs:
   - absl/container:flat_hash_set
   - absl/container:flat_hash_map
   baselib: true
-  deps_linkage: static
   dll: true
   generate_plugin_registry: true
   secure: true
@@ -1435,7 +1434,6 @@ libs:
   - gpr
   - address_sorting
   - upb
-  deps_linkage: static
   dll: only
 - name: grpc_test_util
   build: private
@@ -2100,7 +2098,6 @@ libs:
   - absl/container:inlined_vector
   - absl/container:flat_hash_map
   baselib: true
-  deps_linkage: static
   dll: true
   generate_plugin_registry: true
   secure: false
@@ -5003,6 +5000,7 @@ targets:
   uses_polling: false
 - name: bm_callback_streaming_ping_pong
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/microbenchmarks/callback_streaming_ping_pong.h
@@ -5033,6 +5031,7 @@ targets:
   - posix
 - name: bm_callback_unary_ping_pong
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/microbenchmarks/callback_test_service.h
