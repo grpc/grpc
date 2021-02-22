@@ -82,9 +82,6 @@ baselib: boolean,         # this is a low level library that has system
 filegroups:               # list of filegroups to merge to that project
                           # note that this will be expanded automatically
 deps:                     # list of libraries this target depends on
-deps_linkage: "..."       # "static"  or "dynamic". Used by the Makefile only to
-                          # determine the way dependencies are linkned. Defaults
-                          # to "dynamic".
 dll: "..."                # see below.
 ```
 
