@@ -59,8 +59,6 @@ std::unique_ptr<SubchannelRef> GlobalSubchannelPool::RegisterSubchannel(
           Ref(), std::move(c), key);
     }
   }
-  gpr_log(GPR_DEBUG, "Add new subchannel to pool, target address: %s",
-          constructed->GetTargetAddress());
   subchannel_map_[key] = constructed->WeakRef();
   return absl::make_unique<GlobalSubchannelPoolSubchannelRef>(
       Ref(), std::move(constructed), key);
