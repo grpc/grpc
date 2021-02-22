@@ -1162,26 +1162,39 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
     XdsApi::Route::HashPolicy policy;
     policy.terminal =
         envoy_config_route_v3_RouteAction_HashPolicy_terminal(hash_policy);
-    if (envoy_config_route_v3_RouteAction_HashPolicy_has_header(hash_policy)) {
+    const envoy_config_route_v3_RouteAction_HashPolicy_Header* header =
+        envoy_config_route_v3_RouteAction_HashPolicy_header(hash_policy);
+    const envoy_config_route_v3_RouteAction_HashPolicy_FilterState*
+        filter_state =
+            envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
+                hash_policy);
+    if (header != nullptr) {
       policy.type = XdsApi::Route::HashPolicy::Type::HEADER;
-      const envoy_config_route_v3_RouteAction_HashPolicy_Header* header =
-          envoy_config_route_v3_RouteAction_HashPolicy_header(hash_policy);
       policy.header_name = UpbStringToStdString(
           envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
               header));
-      if (envoy_config_route_v3_RouteAction_HashPolicy_Header_has_regex_rewrite(
-              header)) {
-        const struct envoy_type_matcher_v3_RegexMatchAndSubstitute*
-            regex_rewrite =
-                envoy_config_route_v3_RouteAction_HashPolicy_Header_regex_rewrite(
-                    header);
-        if (envoy_type_matcher_v3_RegexMatchAndSubstitute_has_pattern(
-                regex_rewrite)) {
-          const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
-              envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
-                  regex_rewrite);
-          policy.regex = UpbStringToStdString(
-              envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
+      const struct envoy_type_matcher_v3_RegexMatchAndSubstitute*
+          regex_rewrite =
+              envoy_config_route_v3_RouteAction_HashPolicy_Header_regex_rewrite(
+                  header);
+      if (regex_rewrite != nullptr) {
+        const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
+            envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
+                regex_rewrite);
+        if (regex_matcher != nullptr) {
+          RE2::Options options;
+          policy.regex = absl::make_unique<RE2>(
+              UpbStringToStdString(
+                  envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
+              std::move(options));
+          if (!policy.regex->ok()) {
+            gpr_log(
+                GPR_DEBUG,
+                "RouteAction HashPolicy contains policy specifier Head with "
+                "RegexMatchAndSubstitution but RegexMatcher pattern does not "
+                "compile");
+            continue;
+          }
         } else {
           gpr_log(
               GPR_DEBUG,
@@ -1192,13 +1205,13 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
         policy.regex_substitution = UpbStringToStdString(
             envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
                 regex_rewrite));
+      } else {
+        gpr_log(GPR_DEBUG,
+                "RouteAction HashPolicy contains policy specifier Head with "
+                "RegexMatchAndSubstitution but Regex is missing");
+        continue;
       }
-    } else if (envoy_config_route_v3_RouteAction_HashPolicy_has_filter_state(
-                   hash_policy)) {
-      const envoy_config_route_v3_RouteAction_HashPolicy_FilterState*
-          filter_state =
-              envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
-                  hash_policy);
+    } else if (filter_state != nullptr) {
       std::string key = UpbStringToStdString(
           envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
               filter_state));

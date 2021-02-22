@@ -420,16 +420,10 @@ absl::optional<uint64_t> HeaderHashHelper(
   absl::optional<absl::string_view> value = GetMetadataValue(
       policy.header_name, initial_metadata, &concatenated_value);
   if (value.has_value()) {
-    if (!policy.regex.empty()) {
-      RE2::Options options;
-      auto regex_matcher = absl::make_unique<RE2>(policy.regex, options);
-      if (!regex_matcher->ok()) {
-        gpr_log(GPR_DEBUG, "Invalid regex string specified in header hash.");
-      } else {
-        std::string key(*value);
-        RE2::GlobalReplace(&key, *regex_matcher, policy.regex_substitution);
-        // TODO(donnadionne: return xx_hash(key);
-      }
+    if (policy.regex != nullptr) {
+      std::string key(*value);
+      RE2::GlobalReplace(&key, *(policy.regex), policy.regex_substitution);
+      // TODO(donnadionne: return xx_hash(key);
     } else {
       // TODO(donnadionne): return xx_hash(value.value())
     }

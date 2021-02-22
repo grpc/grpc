@@ -89,8 +89,14 @@ class XdsApi {
       // Fields used for type HEADER.
       std::string header_name;
       // TODO(donnadionne): double check this is correct
-      std::string regex;
+      std::unique_ptr<RE2> regex;
       std::string regex_substitution;
+
+      HashPolicy() {}
+      HashPolicy(const HashPolicy& other) {}
+      HashPolicy& operator=(const HashPolicy& other) { return *this; }
+      bool operator==(const HashPolicy& other) const { return true; }
+      std::string ToString() const {}
     };
 
     Matchers matchers;
