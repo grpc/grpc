@@ -155,6 +155,26 @@ std::string XdsApi::Route::Matchers::ToString() const {
   return absl::StrJoin(contents, "\n");
 }
 
+std::string XdsApi::Route::HashPolicy::ToString() const {
+  std::vector<std::string> contents;
+  switch (type) {
+    case Type::HEADER:
+      contents.push_back("type=HEADER");
+      break;
+    case Type::CHANNEL_ID:
+      contents.push_back("type=CHANNEL_ID");
+      break;
+  }
+  contents.push_back(
+      absl::StrFormat("terminal=%s", terminal ? "true" : "false"));
+  if (type == Type::HEADER) {
+    contents.push_back(absl::StrFormat(
+        "Header %s:/%s/%s", header_name,
+        (regex == nullptr) ? "" : regex->pattern(), regex_substitution));
+  }
+  return absl::StrJoin(contents, "\n");
+}
+
 std::string XdsApi::Route::ClusterWeight::ToString() const {
   return absl::StrFormat("{cluster=%s, weight=%d}", name, weight);
 }
@@ -162,6 +182,9 @@ std::string XdsApi::Route::ClusterWeight::ToString() const {
 std::string XdsApi::Route::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(matchers.ToString());
+  for (const HashPolicy& hash_policy : hash_policies) {
+    contents.push_back(hash_policy.ToString());
+  }
   if (!cluster_name.empty()) {
     contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
   }
@@ -1153,83 +1176,87 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
     }
   }
   // Get HashPolicy from RouteAction
-  size_t size = 0;
-  const envoy_config_route_v3_RouteAction_HashPolicy* const* hash_policies =
-      envoy_config_route_v3_RouteAction_hash_policy(route_action, &size);
-  for (size_t i = 0; i < size; ++i) {
-    const envoy_config_route_v3_RouteAction_HashPolicy* hash_policy =
-        hash_policies[i];
-    XdsApi::Route::HashPolicy policy;
-    policy.terminal =
-        envoy_config_route_v3_RouteAction_HashPolicy_terminal(hash_policy);
-    const envoy_config_route_v3_RouteAction_HashPolicy_Header* header =
-        envoy_config_route_v3_RouteAction_HashPolicy_header(hash_policy);
-    const envoy_config_route_v3_RouteAction_HashPolicy_FilterState*
-        filter_state =
-            envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
-                hash_policy);
-    if (header != nullptr) {
-      policy.type = XdsApi::Route::HashPolicy::Type::HEADER;
-      policy.header_name = UpbStringToStdString(
-          envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
-              header));
-      const struct envoy_type_matcher_v3_RegexMatchAndSubstitute*
-          regex_rewrite =
-              envoy_config_route_v3_RouteAction_HashPolicy_Header_regex_rewrite(
-                  header);
-      if (regex_rewrite != nullptr) {
-        const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
-            envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
-                regex_rewrite);
-        if (regex_matcher != nullptr) {
-          RE2::Options options;
-          policy.regex = absl::make_unique<RE2>(
-              UpbStringToStdString(
-                  envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
-              std::move(options));
-          if (!policy.regex->ok()) {
+  if (XdsRingHashEnabled()) {
+    size_t size = 0;
+    const envoy_config_route_v3_RouteAction_HashPolicy* const* hash_policies =
+        envoy_config_route_v3_RouteAction_hash_policy(route_action, &size);
+    for (size_t i = 0; i < size; ++i) {
+      const envoy_config_route_v3_RouteAction_HashPolicy* hash_policy =
+          hash_policies[i];
+      XdsApi::Route::HashPolicy policy;
+      policy.terminal =
+          envoy_config_route_v3_RouteAction_HashPolicy_terminal(hash_policy);
+      const envoy_config_route_v3_RouteAction_HashPolicy_Header* header =
+          envoy_config_route_v3_RouteAction_HashPolicy_header(hash_policy);
+      const envoy_config_route_v3_RouteAction_HashPolicy_FilterState*
+          filter_state =
+              envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
+                  hash_policy);
+      if (header != nullptr) {
+        policy.type = XdsApi::Route::HashPolicy::Type::HEADER;
+        policy.header_name = UpbStringToStdString(
+            envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
+                header));
+        const struct envoy_type_matcher_v3_RegexMatchAndSubstitute*
+            regex_rewrite =
+                envoy_config_route_v3_RouteAction_HashPolicy_Header_regex_rewrite(
+                    header);
+        if (regex_rewrite != nullptr) {
+          const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
+              envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
+                  regex_rewrite);
+          if (regex_matcher != nullptr) {
+            RE2::Options options;
+            policy.regex = absl::make_unique<RE2>(
+                UpbStringToStdString(
+                    envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
+                std::move(options));
+            if (!policy.regex->ok()) {
+              gpr_log(
+                  GPR_DEBUG,
+                  "RouteAction HashPolicy contains policy specifier Head with "
+                  "RegexMatchAndSubstitution but RegexMatcher pattern does not "
+                  "compile");
+              continue;
+            }
+          } else {
             gpr_log(
                 GPR_DEBUG,
                 "RouteAction HashPolicy contains policy specifier Head with "
-                "RegexMatchAndSubstitution but RegexMatcher pattern does not "
-                "compile");
+                "RegexMatchAndSubstitution but RegexMatcher pattern is "
+                "missing");
             continue;
           }
+          policy.regex_substitution = UpbStringToStdString(
+              envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
+                  regex_rewrite));
         } else {
-          gpr_log(
-              GPR_DEBUG,
-              "RouteAction HashPolicy contains policy specifier Head with "
-              "RegexMatchAndSubstitution but RegexMatcher pattern is missing");
+          gpr_log(GPR_DEBUG,
+                  "RouteAction HashPolicy contains policy specifier Head with "
+                  "RegexMatchAndSubstitution but Regex is missing");
           continue;
         }
-        policy.regex_substitution = UpbStringToStdString(
-            envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
-                regex_rewrite));
-      } else {
-        gpr_log(GPR_DEBUG,
-                "RouteAction HashPolicy contains policy specifier Head with "
-                "RegexMatchAndSubstitution but Regex is missing");
-        continue;
-      }
-    } else if (filter_state != nullptr) {
-      std::string key = UpbStringToStdString(
-          envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
-              filter_state));
-      if (key == "io.grpc.channel_id") {
-        policy.type = XdsApi::Route::HashPolicy::Type::CHANNEL_ID;
+      } else if (filter_state != nullptr) {
+        std::string key = UpbStringToStdString(
+            envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
+                filter_state));
+        if (key == "io.grpc.channel_id") {
+          policy.type = XdsApi::Route::HashPolicy::Type::CHANNEL_ID;
+        } else {
+          gpr_log(GPR_DEBUG,
+                  "RouteAction HashPolicy contains policy specifier "
+                  "FilterState but "
+                  "key is not io.grpc.channel_id.");
+          continue;
+        }
       } else {
         gpr_log(
             GPR_DEBUG,
-            "RouteAction HashPolicy contains policy specifier FilterState but "
-            "key is not io.grpc.channel_id.");
+            "RouteAction HashPolicy contains unsupported policy specifier.");
         continue;
       }
-    } else {
-      gpr_log(GPR_DEBUG,
-              "RouteAction HashPolicy contains unsupported policy specifier.");
-      continue;
+      route->hash_policies.emplace_back(std::move(policy));
     }
-    route->hash_policies.emplace_back(std::move(policy));
   }
   return GRPC_ERROR_NONE;
 }

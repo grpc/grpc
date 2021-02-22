@@ -89,14 +89,45 @@ class XdsApi {
       // Fields used for type HEADER.
       std::string header_name;
       // TODO(donnadionne): double check this is correct
-      std::unique_ptr<RE2> regex;
+      std::unique_ptr<RE2> regex = nullptr;
       std::string regex_substitution;
 
       HashPolicy() {}
-      HashPolicy(const HashPolicy& other) {}
-      HashPolicy& operator=(const HashPolicy& other) { return *this; }
-      bool operator==(const HashPolicy& other) const { return true; }
-      std::string ToString() const {}
+      HashPolicy(const HashPolicy& other) {
+        type = other.type;
+        header_name = other.header_name;
+        if (other.regex != nullptr) {
+          regex = absl::make_unique<RE2>(other.regex->pattern(),
+                                         other.regex->options());
+        }
+        regex_substitution = other.regex_substitution;
+      }
+      HashPolicy& operator=(const HashPolicy& other) {
+        type = other.type;
+        header_name = other.header_name;
+        if (other.regex != nullptr) {
+          regex = absl::make_unique<RE2>(other.regex->pattern(),
+                                         other.regex->options());
+        }
+        regex_substitution = other.regex_substitution;
+        return *this;
+      }
+      bool operator==(const HashPolicy& other) const {
+        if (type != other.type) return false;
+        if (type == Type::HEADER) {
+          if (regex == nullptr) {
+            if (other.regex != nullptr) {
+              return false;
+            }
+          } else {
+            return (header_name == other.header_name &&
+                    regex->pattern() == other.regex->pattern() &&
+                    regex_substitution == other.regex_substitution);
+          }
+        }
+        return true;
+      }
+      std::string ToString() const;
     };
 
     Matchers matchers;
