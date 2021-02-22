@@ -341,7 +341,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           // transport API.
           self->connection_->transport_.Store(
               reinterpret_cast<grpc_chttp2_transport*>(transport),
-              MemoryOrder::ACQ_REL);
+              MemoryOrder::RELEASE);
           self->Ref().release();  // Held by OnReceiveSettings().
           GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings,
                             self, grpc_schedule_on_exec_ctx);
