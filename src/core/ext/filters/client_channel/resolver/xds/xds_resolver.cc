@@ -24,6 +24,7 @@
 #include "re2/re2.h"
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
+#include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -36,7 +37,6 @@ namespace grpc_core {
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
 const char* kXdsClusterAttribute = "xds_cluster_name";
-const char* kXdsRequestHashAttribute = "xds_request_hash";
 
 namespace {
 
@@ -531,7 +531,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           entry.method_config->GetMethodParsedConfigVector(grpc_empty_slice());
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
-    call_config.call_attributes[kXdsRequestHashAttribute] =
+    call_config.call_attributes[kRequestRingHashAttribute] =
         absl::StrFormat("%" PRIu64, hash.value());
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
