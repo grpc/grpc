@@ -320,9 +320,6 @@ if asm_key:
 else:
     DEFINE_MACROS += (('OPENSSL_NO_ASM', 1),)
 
-if not DISABLE_LIBC_COMPATIBILITY:
-    DEFINE_MACROS += (('GPR_BACKWARDS_COMPATIBILITY_MODE', 1),)
-
 if "win32" in sys.platform:
     # TODO(zyc): Re-enable c-ares on x64 and x86 windows after fixing the
     # ares_library_init compilation issue

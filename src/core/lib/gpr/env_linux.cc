@@ -40,22 +40,7 @@
 
 char* gpr_getenv(const char* name) {
   char* result = nullptr;
-#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
-  typedef char* (*getenv_type)(const char*);
-  static getenv_type getenv_func = nullptr;
-  /* Check to see which getenv variant is supported (go from most
-   * to least secure) */
-  if (getenv_func == nullptr) {
-    const char* names[] = {"secure_getenv", "__secure_getenv", "getenv"};
-    for (size_t i = 0; i < GPR_ARRAY_SIZE(names); i++) {
-      getenv_func = (getenv_type)dlsym(RTLD_DEFAULT, names[i]);
-      if (getenv_func != nullptr) {
-        break;
-      }
-    }
-  }
-  result = getenv_func(name);
-#elif __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 17)
+#if __GLIBC__ > 2 || (__GLIBC__ == 2 && __GLIBC_MINOR__ >= 17)
   result = secure_getenv(name);
 #else
   result = getenv(name);

@@ -72,12 +72,7 @@ static gpr_timespec now_impl(gpr_clock_type clock_type) {
     gpr_precise_clock_now(&ret);
     return ret;
   } else {
-#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE) && defined(__linux__)
-    /* avoid ABI problems by invoking syscalls directly */
-    syscall(SYS_clock_gettime, clockid_for_gpr_clock[clock_type], &now);
-#else
     clock_gettime(clockid_for_gpr_clock[clock_type], &now);
-#endif
     return gpr_from_timespec(now, clock_type);
   }
 }

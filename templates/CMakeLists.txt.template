@@ -291,19 +291,16 @@
   set(CMAKE_C_FLAGS "<%text>${CMAKE_C_FLAGS} ${_gRPC_C_CXX_FLAGS}</%text>")
   set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS} ${_gRPC_C_CXX_FLAGS}</%text>")
 
+  if(_gRPC_PLATFORM_MAC)
+    # some C++11 constructs not supported before OS X 10.10
+    set(CMAKE_OSX_DEPLOYMENT_TARGET 10.10)
+  endif()
+
   if(gRPC_USE_PROTO_LITE)
     set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
     add_definitions("-DGRPC_USE_PROTO_LITE")
   else()
     set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf")
-  endif()
-
-  if(gRPC_BACKWARDS_COMPATIBILITY_MODE)
-    add_definitions(-DGPR_BACKWARDS_COMPATIBILITY_MODE)
-    if(_gRPC_PLATFORM_MAC)
-      # some C++11 constructs not supported before OS X 10.10
-      set(CMAKE_OSX_DEPLOYMENT_TARGET 10.10)
-    endif()
   endif()
 
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
