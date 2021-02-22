@@ -84,7 +84,7 @@ class SecurityHandshaker : public Handshaker {
   tsi_handshaker* handshaker_;
   RefCountedPtr<grpc_security_connector> connector_;
 
-  Mutex mu_;
+  Mutex* mu_;
 
   bool is_shutdown_ = false;
   // Endpoint and read buffer to destroy after a shutdown.
@@ -113,7 +113,8 @@ SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
       connector_(connector->Ref(DEBUG_LOCATION, "handshake")),
       handshake_buffer_size_(GRPC_INITIAL_HANDSHAKE_BUFFER_SIZE),
       handshake_buffer_(
-          static_cast<uint8_t*>(gpr_malloc(handshake_buffer_size_))) {
+          static_cast<uint8_t*>(gpr_malloc(handshake_buffer_size_))),
+      mu_(new Mutex()) {
   const grpc_arg* arg =
       grpc_channel_args_find(args, GRPC_ARG_TSI_MAX_FRAME_SIZE);
   if (arg != nullptr && arg->type == GRPC_ARG_INTEGER) {
@@ -126,6 +127,7 @@ SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
 }
 
 SecurityHandshaker::~SecurityHandshaker() {
+  delete mu_;
   tsi_handshaker_destroy(handshaker_);
   tsi_handshaker_result_destroy(handshaker_result_);
   if (endpoint_to_destroy_ != nullptr) {
@@ -200,7 +202,7 @@ void SecurityHandshaker::HandshakeFailedLocked(grpc_error* error) {
 }
 
 void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (error != GRPC_ERROR_NONE || is_shutdown_) {
     HandshakeFailedLocked(error);
     return;
@@ -343,7 +345,7 @@ void SecurityHandshaker::OnHandshakeNextDoneGrpcWrapper(
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
   RefCountedPtr<SecurityHandshaker> h(
       static_cast<SecurityHandshaker*>(user_data));
-  MutexLock lock(&h->mu_);
+  MutexLock lock(h->mu_);
   grpc_error* error = h->OnHandshakeNextDoneLocked(
       result, bytes_to_send, bytes_to_send_size, handshaker_result);
   if (error != GRPC_ERROR_NONE) {
@@ -389,7 +391,7 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
 void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn(void* arg,
                                                            grpc_error* error) {
   RefCountedPtr<SecurityHandshaker> h(static_cast<SecurityHandshaker*>(arg));
-  MutexLock lock(&h->mu_);
+  MutexLock lock(h->mu_);
   if (error != GRPC_ERROR_NONE || h->is_shutdown_) {
     h->HandshakeFailedLocked(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Handshake read failed", &error, 1));
@@ -423,7 +425,7 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler(
 void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
                                                      grpc_error* error) {
   RefCountedPtr<SecurityHandshaker> h(static_cast<SecurityHandshaker*>(arg));
-  MutexLock lock(&h->mu_);
+  MutexLock lock(h->mu_);
   if (error != GRPC_ERROR_NONE || h->is_shutdown_) {
     h->HandshakeFailedLocked(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Handshake write failed", &error, 1));
@@ -453,7 +455,7 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
 //
 
 void SecurityHandshaker::Shutdown(grpc_error* why) {
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   if (!is_shutdown_) {
     is_shutdown_ = true;
     tsi_handshaker_shutdown(handshaker_);
@@ -467,7 +469,7 @@ void SecurityHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                                      grpc_closure* on_handshake_done,
                                      HandshakerArgs* args) {
   auto ref = Ref();
-  MutexLock lock(&mu_);
+  MutexLock lock(mu_);
   args_ = args;
   on_handshake_done_ = on_handshake_done;
   size_t bytes_received_size = MoveReadBufferIntoHandshakeBuffer();
