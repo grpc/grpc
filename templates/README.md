@@ -117,13 +117,6 @@ should merge OpenSSL, protobuf or zlib inside that library. That effect depends
 on the `"language"` tag. OpenSSL and zlib are for `"c"` libraries, while
 protobuf is for `"c++"` ones.
 
-## The `"dll"` tag
-
-Currently only used by cmake. "true" means the project will be
-built with both static and dynamic runtimes. "false" means it'll only be built
-with static runtime. "only" means it'll only be built with the dll runtime.
-
-
 # The template system
 
 We're currently using the [mako templates](http://www.makotemplates.org/)
