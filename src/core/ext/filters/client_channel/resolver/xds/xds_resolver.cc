@@ -741,6 +741,10 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
   if (route_config_name_.empty()) {
     GPR_ASSERT(current_listener_.rds_update.has_value());
     OnRouteConfigUpdate(std::move(*current_listener_.rds_update));
+  } else {
+    // HCM may contain newer filter config. We need to propagate the update as
+    // config selector to the channel
+    GenerateResult();
   }
 }
 
