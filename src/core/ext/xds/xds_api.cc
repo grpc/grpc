@@ -1193,22 +1193,6 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
             envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
                 regex_rewrite));
       }
-    } else if (
-        envoy_config_route_v3_RouteAction_HashPolicy_has_connection_properties(
-            hash_policy)) {
-      const envoy_config_route_v3_RouteAction_HashPolicy_ConnectionProperties*
-          connection_properties =
-              envoy_config_route_v3_RouteAction_HashPolicy_connection_properties(
-                  hash_policy);
-      if (envoy_config_route_v3_RouteAction_HashPolicy_ConnectionProperties_source_ip(
-              connection_properties)) {
-        policy.type = XdsApi::Route::HashPolicy::Type::SOURCE_IP;
-      } else {
-        gpr_log(GPR_DEBUG,
-                "RouteAction HashPolicy contains policy specifier "
-                "ConnectionProperties but source_ip is set to false.");
-        continue;
-      }
     } else if (envoy_config_route_v3_RouteAction_HashPolicy_has_filter_state(
                    hash_policy)) {
       const envoy_config_route_v3_RouteAction_HashPolicy_FilterState*

@@ -83,7 +83,7 @@ class XdsApi {
     };
 
     struct HashPolicy {
-      enum Type { HEADER, SOURCE_IP, CHANNEL_ID };
+      enum Type { HEADER, CHANNEL_ID };
       Type type;
       bool terminal = false;
       // Fields used for type HEADER.

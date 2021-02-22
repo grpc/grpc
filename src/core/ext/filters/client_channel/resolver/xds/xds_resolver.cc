@@ -426,8 +426,8 @@ absl::optional<uint64_t> HeaderHashHelper(
       if (!regex_matcher->ok()) {
         gpr_log(GPR_DEBUG, "Invalid regex string specified in header hash.");
       } else {
-        std::string key;
-        RE2::Replace(&key, *regex_matcher, policy.regex_substitution);
+        std::string key(*value);
+        RE2::GlobalReplace(&key, *regex_matcher, policy.regex_substitution);
         // TODO(donnadionne: return xx_hash(key);
       }
     } else {
@@ -506,10 +506,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         case XdsApi::Route::HashPolicy::HEADER:
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
-        case XdsApi::Route::HashPolicy::SOURCE_IP:
-          // TODO(donnadionne): key = ? how to get the source ip as key?
-          // TODO(donnadionne): new_hash = xx_hash(key).
-          break;
         case XdsApi::Route::HashPolicy::CHANNEL_ID:
           key = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
           // TODO(donnadionne): new_hash = xx_hash(key).
@@ -521,7 +517,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         // Rotating the old value prevents duplicate hash rules from cancelling
         // each other out and preserves all of the entropy
         const uint64_t old_value =
-            hash ? ((hash.value() << 1) | (hash.value() >> 63)) : 0;
+            hash.has_value() ? ((hash.value() << 1) | (hash.value() >> 63)) : 0;
         hash = old_value ^ new_hash.value();
       }
       // If the policy is a terminal policy and a hash has been generated,
@@ -542,7 +538,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.call_attributes[kXdsRequestHashAttribute] =
-        absl::StrFormat("%" PRIu64 "", hash.value());
+        absl::StrFormat("%" PRIu64, hash.value());
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
       ExecCtx::Run(
