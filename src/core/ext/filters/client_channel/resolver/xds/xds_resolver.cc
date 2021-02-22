@@ -416,28 +416,25 @@ absl::optional<uint64_t> HeaderHashHelper(
     const XdsApi::Route::HashPolicy& policy,
     grpc_metadata_batch* initial_metadata) {
   GPR_ASSERT(policy.type == XdsApi::Route::HashPolicy::HEADER);
-  absl::optional<uint64_t> new_hash;
   std::string concatenated_value;
-  absl::optional<absl::string_view> value;
-  value = GetMetadataValue(policy.header_name, initial_metadata,
-                           &concatenated_value);
+  absl::optional<absl::string_view> value = GetMetadataValue(
+      policy.header_name, initial_metadata, &concatenated_value);
   if (value.has_value()) {
     if (!policy.regex.empty()) {
       RE2::Options options;
-      options.set_case_sensitive(true);
       auto regex_matcher = absl::make_unique<RE2>(policy.regex, options);
       if (!regex_matcher->ok()) {
         gpr_log(GPR_DEBUG, "Invalid regex string specified in header hash.");
       } else {
         std::string key;
         RE2::Replace(&key, *regex_matcher, policy.regex_substitution);
-        // TODO(donnadionne: new_hash = xx_hash(key);
+        // TODO(donnadionne: return xx_hash(key);
       }
     } else {
-      // TODO(donnadionne): new_hash = xx_hash(value.value())
+      // TODO(donnadionne): return xx_hash(value.value())
     }
   }
-  return new_hash;
+  return absl::nullopt;
 }
 
 bool UnderFraction(const uint32_t fraction_per_million) {
@@ -520,7 +517,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         default:
           GPR_ASSERT(0);
       }
-      if (new_hash) {
+      if (new_hash.has_value()) {
         // Rotating the old value prevents duplicate hash rules from cancelling
         // each other out and preserves all of the entropy
         const uint64_t old_value =
@@ -529,7 +526,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       }
       // If the policy is a terminal policy and a hash has been generated,
       // ignore the rest of the hash policies.
-      if (hash_policy.terminal && hash) {
+      if (hash_policy.terminal && hash.has_value()) {
         break;
       }
     }
