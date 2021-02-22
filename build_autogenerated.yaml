@@ -5003,6 +5003,7 @@ targets:
   uses_polling: false
 - name: bm_callback_streaming_ping_pong
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/microbenchmarks/callback_streaming_ping_pong.h
@@ -5033,6 +5034,7 @@ targets:
   - posix
 - name: bm_callback_unary_ping_pong
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/microbenchmarks/callback_test_service.h
