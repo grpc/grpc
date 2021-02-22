@@ -156,6 +156,8 @@ class XdsHttpFaultFilter : public XdsHttpFilterImpl {
         const_cast<char*>(GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG), 1);
     grpc_channel_args* new_args =
         grpc_channel_args_copy_and_add(args, &args_to_add, 1);
+    // Since this function takes the ownership of the channel args, it needs to
+    // deallocate the old ones to prevent leak.
     grpc_channel_args_destroy(args);
     return new_args;
   }

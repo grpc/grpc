@@ -139,7 +139,6 @@ class FaultInjectionFilter {
     static void ResumeBatch(void* arg, grpc_error* error);
 
     // Used to track the policy structs that needs to be destroyed in dtor.
-    int index_;
     bool fi_policy_owned_;
     const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
     grpc_call_stack* owning_call_;
@@ -222,7 +221,14 @@ grpc_error* FaultInjectionFilter::CallData::Init(
   auto* chand =
       static_cast<FaultInjectionFilter::ChannelData*>(elem->channel_data);
   auto* calld = new (elem->call_data) FaultInjectionFilter::CallData(args);
-  calld->index_ = chand->index();
+  // Fetch the fault injection policy from the service config, based on the
+  // relative index for which policy should this CallData use.
+  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+      args->context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
+      service_config_call_data->GetMethodParsedConfig(
+          internal::ClientChannelServiceConfigParser::ParserIndex()));
+  calld->fi_policy_ = method_params->fault_injection_policy(chand->index());
   return GRPC_ERROR_NONE;
 }
 
@@ -266,18 +272,12 @@ void FaultInjectionFilter::CallData::StartTransportStreamOpBatch(
 FaultInjectionFilter::CallData::CallData(const grpc_call_element_args* args)
     : owning_call_(args->call_stack),
       arena_(args->arena),
-      call_combiner_(args->call_combiner) {
-  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      args->context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-  auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
-      service_config_call_data->GetMethodParsedConfig(
-          internal::ClientChannelServiceConfigParser::ParserIndex()));
-  fi_policy_ = method_params->fault_injection_policy(index_);
-}
+      call_combiner_(args->call_combiner) {}
 
 FaultInjectionFilter::CallData::~CallData() {
   if (fi_policy_owned_) {
     fi_policy_->~FaultInjectionPolicy();
+    fi_policy_owned_ = false;
   }
 }
 
@@ -313,7 +313,6 @@ void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
                                   &copied_policy->abort_code);
       }
       if (!fi_policy_->abort_percentage_header.empty() &&
-          (copied_policy == nullptr || copied_policy->abort_per_million == 0) &&
           key == fi_policy_->abort_percentage_header) {
         maybe_copy_policy_func();
         copied_policy->abort_per_million = TranslatePercentageToPerMillion(
@@ -329,7 +328,6 @@ void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
             GPR_MAX(GetLinkedMetadatumValueInt64(md), 0));
       }
       if (!fi_policy_->delay_percentage_header.empty() &&
-          (copied_policy == nullptr || copied_policy->delay_per_million == 0) &&
           key == fi_policy_->delay_percentage_header) {
         maybe_copy_policy_func();
         copied_policy->delay_per_million = TranslatePercentageToPerMillion(
@@ -403,6 +401,8 @@ void FaultInjectionFilter::CallData::ResumeBatch(void* arg, grpc_error* error) {
   }
   // Lame the canceller
   calld->resume_batch_canceller_ = nullptr;
+  // Finish fault injection.
+  calld->FaultInjectionFinished();
   // Abort if needed.
   error = calld->MaybeAbort();
   if (error != GRPC_ERROR_NONE) {
@@ -410,8 +410,6 @@ void FaultInjectionFilter::CallData::ResumeBatch(void* arg, grpc_error* error) {
         calld->delayed_batch_, error, calld->call_combiner_);
     return;
   }
-  // Finish fault injection.
-  calld->FaultInjectionFinished();
   // Chain to the next filter.
   grpc_call_next_op(elem, calld->delayed_batch_);
 }
