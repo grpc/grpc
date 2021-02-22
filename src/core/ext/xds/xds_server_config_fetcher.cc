@@ -159,7 +159,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       gpr_log(GPR_ERROR,
               "ListenerWatcher:%p XdsClient reports requested listener does "
               "not exist; not serving on %s",
-              listening_address_.c_str(), this);
+              this, listening_address_.c_str());
       if (have_resource_) {
         // The server has started listening already, so we need to gracefully
         // stop serving.
