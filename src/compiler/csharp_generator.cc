@@ -236,62 +236,45 @@ std::string GetAccessLevel(bool internal_access) {
 }
 
 std::string GetMethodReturnTypeClient(const MethodDescriptor* method) {
-  switch (GetMethodType(method)) {
-    case METHODTYPE_NO_STREAMING:
-      return "grpc::AsyncUnaryCall<" +
-             GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
-    case METHODTYPE_CLIENT_STREAMING:
-      return "grpc::AsyncClientStreamingCall<" +
-             GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) + ", " +
-             GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
-    case METHODTYPE_SERVER_STREAMING:
-      return "grpc::AsyncServerStreamingCall<" +
-             GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
-    case METHODTYPE_BIDI_STREAMING:
+  if (method->client_streaming()) {
+    if (method->server_streaming()) {
       return "grpc::AsyncDuplexStreamingCall<" +
              GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) + ", " +
              GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
+    }
+    return "grpc::AsyncClientStreamingCall<" +
+           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) + ", " +
+           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
+  } else if (method->server_streaming()) {
+    return "grpc::AsyncServerStreamingCall<" +
+           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
   }
-  return "";
+  return "grpc::AsyncUnaryCall<" +
+         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
 }
 
 std::string GetMethodRequestParamServer(const MethodDescriptor* method) {
-  switch (GetMethodType(method)) {
-    case METHODTYPE_NO_STREAMING:
-    case METHODTYPE_SERVER_STREAMING:
-      return GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) + " request";
-    case METHODTYPE_CLIENT_STREAMING:
-    case METHODTYPE_BIDI_STREAMING:
-      return "grpc::IAsyncStreamReader<" +
-             GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) +
-             "> requestStream";
+  if (method->client_streaming()) {
+    return "grpc::IAsyncStreamReader<" +
+           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) +
+           "> requestStream";
   }
-  return "";
+  return GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) + " request";
 }
 
 std::string GetMethodReturnTypeServer(const MethodDescriptor* method) {
-  switch (GetMethodType(method)) {
-    case METHODTYPE_NO_STREAMING:
-    case METHODTYPE_CLIENT_STREAMING:
-      return "global::System.Threading.Tasks.Task<" +
-             GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
-    case METHODTYPE_SERVER_STREAMING:
-    case METHODTYPE_BIDI_STREAMING:
-      return "global::System.Threading.Tasks.Task";
+  if (method->server_streaming()) {
+    return "global::System.Threading.Tasks.Task";
   }
-  return "";
+  return "global::System.Threading.Tasks.Task<" +
+         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
 }
 
 std::string GetMethodResponseStreamMaybe(const MethodDescriptor* method) {
-  switch (GetMethodType(method)) {
-    case METHODTYPE_NO_STREAMING:
-    case METHODTYPE_CLIENT_STREAMING:
-      return "";
-    case METHODTYPE_SERVER_STREAMING:
-    case METHODTYPE_BIDI_STREAMING:
-      return ", grpc::IServerStreamWriter<" +
-             GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) +
-             "> responseStream";
+  if (method->server_streaming()) {
+    return ", grpc::IServerStreamWriter<" +
+           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) +
+           "> responseStream";
   }
   return "";
 }
@@ -520,9 +503,8 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
 
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
-    MethodType method_type = GetMethodType(method);
 
-    if (method_type == METHODTYPE_NO_STREAMING) {
+    if (!method->client_streaming() && !method->server_streaming()) {
       // unary calls have an extra synchronous stub method
       GenerateDocCommentClientMethod(out, method, true, false);
       out->Print(
@@ -564,7 +546,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
     }
 
     std::string method_name = method->name();
-    if (method_type == METHODTYPE_NO_STREAMING) {
+    if (!method->client_streaming() && !method->server_streaming()) {
       method_name += "Async";  // prevent name clash with synchronous method.
     }
     GenerateDocCommentClientMethod(out, method, false, false);
@@ -601,33 +583,30 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
         GetMethodReturnTypeClient(method));
     out->Print("{\n");
     out->Indent();
-    switch (GetMethodType(method)) {
-      case METHODTYPE_NO_STREAMING:
-        out->Print(
-            "return CallInvoker.AsyncUnaryCall($methodfield$, null, options, "
-            "request);\n",
-            "methodfield", GetMethodFieldName(method));
-        break;
-      case METHODTYPE_CLIENT_STREAMING:
-        out->Print(
-            "return CallInvoker.AsyncClientStreamingCall($methodfield$, null, "
-            "options);\n",
-            "methodfield", GetMethodFieldName(method));
-        break;
-      case METHODTYPE_SERVER_STREAMING:
-        out->Print(
-            "return CallInvoker.AsyncServerStreamingCall($methodfield$, null, "
-            "options, request);\n",
-            "methodfield", GetMethodFieldName(method));
-        break;
-      case METHODTYPE_BIDI_STREAMING:
-        out->Print(
-            "return CallInvoker.AsyncDuplexStreamingCall($methodfield$, null, "
-            "options);\n",
-            "methodfield", GetMethodFieldName(method));
-        break;
-      default:
-        break;
+    if (!method->client_streaming() && !method->server_streaming()) {
+      // Non-Streaming
+      out->Print(
+          "return CallInvoker.AsyncUnaryCall($methodfield$, null, options, "
+          "request);\n",
+          "methodfield", GetMethodFieldName(method));
+    } else if (method->client_streaming() && !method->server_streaming()) {
+      // Client Streaming Only
+      out->Print(
+          "return CallInvoker.AsyncClientStreamingCall($methodfield$, null, "
+          "options);\n",
+          "methodfield", GetMethodFieldName(method));
+    } else if (!method->client_streaming() && method->server_streaming()) {
+      // Server Streaming Only
+      out->Print(
+          "return CallInvoker.AsyncServerStreamingCall($methodfield$, null, "
+          "options, request);\n",
+          "methodfield", GetMethodFieldName(method));
+    } else {
+      // Bi-Directional Streaming
+      out->Print(
+          "return CallInvoker.AsyncDuplexStreamingCall($methodfield$, null, "
+          "options);\n",
+          "methodfield", GetMethodFieldName(method));
     }
     out->Outdent();
     out->Print("}\n");
