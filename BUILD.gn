@@ -1231,11 +1231,11 @@ config("grpc_config") {
         "src/core/tsi/transport_security_interface.h",
     ]
     deps = [
-        "//third_party/boringssl",
         "//third_party/zlib",
         ":gpr",
         ":address_sorting",
         ":upb",
+        "//third_party/boringssl",
         ":absl/types:optional",
         ":absl/strings:strings",
         ":absl/status:statusor",
@@ -1513,6 +1513,7 @@ config("grpc_config") {
         ":gpr",
         ":address_sorting",
         ":upb",
+        "//third_party/boringssl",
         ":absl/synchronization:synchronization",
     ]
     
