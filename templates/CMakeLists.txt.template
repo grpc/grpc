@@ -47,6 +47,13 @@
         ret.append(get_absl_dep(dep).replace("::", "_"))
     return ret
 
+  def is_shared_only_lib(lib_name):
+    """Returns True if only shared library should be generated."""
+    # grpc_csharp_ext is loaded by C# runtime and it
+    # only makes sense as a shared lib.
+    return lib_name in ['grpc_csharp_ext']
+
+
   def get_deps(target_dict):
     deps = []
     if target_dict.get('baselib', False) or target_dict['name'] == 'address_sorting':
@@ -516,7 +523,7 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
-  add_library(${lib.name}${' SHARED' if lib.get('dll', None) == 'only' else ''}
+  add_library(${lib.name}${' SHARED' if is_shared_only_lib(lib.name) else ''}
   % for src in lib.src:
   % if not proto_re.match(src):
     ${src}

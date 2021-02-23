@@ -1419,7 +1419,6 @@ libs:
   - absl/container:flat_hash_set
   - absl/container:flat_hash_map
   baselib: true
-  dll: true
   generate_plugin_registry: true
   secure: true
 - name: grpc_csharp_ext
@@ -1434,7 +1433,6 @@ libs:
   - gpr
   - address_sorting
   - upb
-  dll: only
 - name: grpc_test_util
   build: private
   language: c
@@ -2098,7 +2096,6 @@ libs:
   - absl/container:inlined_vector
   - absl/container:flat_hash_map
   baselib: true
-  dll: true
   generate_plugin_registry: true
   secure: false
 - name: benchmark_helpers
@@ -2381,7 +2378,6 @@ libs:
   - address_sorting
   - upb
   baselib: true
-  dll: true
 - name: grpc++_alts
   build: all
   language: c++
@@ -2733,7 +2729,6 @@ libs:
   - address_sorting
   - upb
   baselib: true
-  dll: true
   secure: false
 - name: grpc_plugin_support
   build: protoc
