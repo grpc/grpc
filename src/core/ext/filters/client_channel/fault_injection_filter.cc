@@ -139,7 +139,7 @@ class FaultInjectionFilter {
     static void ResumeBatch(void* arg, grpc_error* error);
 
     // Used to track the policy structs that needs to be destroyed in dtor.
-    bool fi_policy_owned_;
+    bool fi_policy_owned_ = false;
     const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
     grpc_call_stack* owning_call_;
     Arena* arena_;
