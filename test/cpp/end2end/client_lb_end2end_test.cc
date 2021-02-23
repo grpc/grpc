@@ -374,7 +374,7 @@ class ClientLbEnd2endTest : public ::testing::Test {
       grpc::internal::CondVar cond;
       thread_ = absl::make_unique<std::thread>(
           std::bind(&ServerData::Serve, this, server_host, &mu, &cond));
-      cond.WaitUntil(&mu, [this] { return server_ready_; });
+      grpc::internal::WaitUntil(&cond, &mu, [this] { return server_ready_; });
       server_ready_ = false;
       gpr_log(GPR_INFO, "server startup complete");
     }

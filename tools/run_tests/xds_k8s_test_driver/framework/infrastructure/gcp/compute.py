@@ -45,23 +45,37 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
 
     class HealthCheckProtocol(enum.Enum):
         TCP = enum.auto()
+        GRPC = enum.auto()
 
     class BackendServiceProtocol(enum.Enum):
         HTTP2 = enum.auto()
         GRPC = enum.auto()
 
-    def create_health_check_tcp(self,
-                                name,
-                                use_serving_port=False) -> GcpResource:
-        health_check_settings = {}
-        if use_serving_port:
-            health_check_settings['portSpecification'] = 'USE_SERVING_PORT'
+    def create_health_check(self,
+                            name: str,
+                            protocol: HealthCheckProtocol,
+                            *,
+                            port: Optional[int] = None) -> GcpResource:
+        if protocol is self.HealthCheckProtocol.TCP:
+            health_check_field = 'tcpHealthCheck'
+        elif protocol is self.HealthCheckProtocol.GRPC:
+            health_check_field = 'grpcHealthCheck'
+        else:
+            raise TypeError(f'Unexpected Health Check protocol: {protocol}')
 
-        return self._insert_resource(self.api.healthChecks(), {
-            'name': name,
-            'type': 'TCP',
-            'tcpHealthCheck': health_check_settings,
-        })
+        health_check_settings = {}
+        if port is None:
+            health_check_settings['portSpecification'] = 'USE_SERVING_PORT'
+        else:
+            health_check_settings['portSpecification'] = 'USE_FIXED_PORT'
+            health_check_settings['port'] = port
+
+        return self._insert_resource(
+            self.api.healthChecks(), {
+                'name': name,
+                'type': protocol.name,
+                health_check_field: health_check_settings,
+            })
 
     def delete_health_check(self, name):
         self._delete_resource(self.api.healthChecks(), 'healthCheck', name)

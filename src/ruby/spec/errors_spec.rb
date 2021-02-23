@@ -131,7 +131,7 @@ describe GRPC::BadStatus do
 
       error_msg = 'parse error: to_rpc_status failed'
       error_desc = '<Google::Protobuf::ParseError> ' \
-        'Error occurred during parsing: Invalid wire type'
+        'Error occurred during parsing'
 
       # Check that the parse error was logged correctly
       log_contents = @log_output.read

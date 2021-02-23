@@ -42,12 +42,10 @@ class TypeSmokeTest(unittest.TestCase):
         del completion_queue
 
     def testServerUpDown(self):
-        server = cygrpc.Server(set([
-            (
-                b'grpc.so_reuseport',
-                0,
-            ),
-        ]))
+        server = cygrpc.Server(set([(
+            b'grpc.so_reuseport',
+            0,
+        )]), False)
         del server
 
     def testChannelUpDown(self):
@@ -59,12 +57,10 @@ class TypeSmokeTest(unittest.TestCase):
                                              b'test plugin name!')
 
     def testServerStartNoExplicitShutdown(self):
-        server = cygrpc.Server([
-            (
-                b'grpc.so_reuseport',
-                0,
-            ),
-        ])
+        server = cygrpc.Server([(
+            b'grpc.so_reuseport',
+            0,
+        )], False)
         completion_queue = cygrpc.CompletionQueue()
         server.register_completion_queue(completion_queue)
         port = server.add_http2_port(b'[::]:0')
@@ -79,7 +75,7 @@ class TypeSmokeTest(unittest.TestCase):
                 b'grpc.so_reuseport',
                 0,
             ),
-        ])
+        ], False)
         server.add_http2_port(b'[::]:0')
         server.register_completion_queue(completion_queue)
         server.start()
@@ -97,12 +93,10 @@ class ServerClientMixin(object):
 
     def setUpMixin(self, server_credentials, client_credentials, host_override):
         self.server_completion_queue = cygrpc.CompletionQueue()
-        self.server = cygrpc.Server([
-            (
-                b'grpc.so_reuseport',
-                0,
-            ),
-        ])
+        self.server = cygrpc.Server([(
+            b'grpc.so_reuseport',
+            0,
+        )], False)
         self.server.register_completion_queue(self.server_completion_queue)
         if server_credentials:
             self.port = self.server.add_http2_port(b'[::]:0',

@@ -38,6 +38,7 @@
 #import "InteropTestsBlockCallbacks.h"
 
 #define TEST_TIMEOUT 32
+#define STREAMING_CALL_TEST_TIMEOUT 64
 
 static const int kTestRetries = 3;
 extern const char *kCFStreamVarName;
@@ -749,7 +750,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
     GRPCUnaryProtoCall *call = calls[i];
     [call start];
   }
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
 }
 
 - (void)concurrentRPCsWithErrors {
@@ -934,7 +935,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                            [expectation fulfill];
                                          }];
 
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
 }
 
 - (void)testServerStreamingRPC {
@@ -973,7 +974,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                           }
                         }];
 
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
 }
 
 - (void)testPingPongRPC {
@@ -1020,7 +1021,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                     [expectation fulfill];
                                   }
                                 }];
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
 }
 
 - (void)testPingPongRPCWithV2API {
@@ -1074,7 +1075,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call start];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
 }
 
 - (void)testPingPongRPCWithFlowControl {
@@ -1137,7 +1138,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call receiveNextMessage];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
 }
 
 - (void)testEmptyStreamRPC {
@@ -1466,7 +1467,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call start];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
 }
 
 - (void)testLoggingInterceptor {
@@ -1707,7 +1708,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call receiveNextMessage];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
   XCTAssertEqual(startCount, 1);
   XCTAssertEqual(writeDataCount, 4);
   XCTAssertEqual(finishCount, 1);
@@ -1820,7 +1821,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call receiveNextMessage];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
   XCTAssertEqual(startCount, 1);
   XCTAssertEqual(writeDataCount, 4);
   XCTAssertEqual(finishCount, 1);
@@ -2001,7 +2002,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call receiveNextMessage];
   [call writeMessage:request];
 
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
   XCTAssertEqual(startCount, 1);
   XCTAssertEqual(writeDataCount, 4);
   XCTAssertEqual(finishCount, 1);
