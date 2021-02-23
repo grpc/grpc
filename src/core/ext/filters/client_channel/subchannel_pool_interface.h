@@ -67,6 +67,12 @@ class SubchannelKey {
 // Usage: \a RegisterSubchannel returns \a SubchannelRef
 // object, and the destruction of a \a SubchannelRef arranges for any
 // subchannel pool unregistration that might be needed.
+//
+// Note that while the wrapped \a Subchannel may be accessed via \a
+// subchannel(), the wrapped \a Subchannel should never be Ref'd or Unref'd
+// directly, i.e. the \a SubchannelRef itself is the only entity that should
+// ever directly manipulate the subchannel's strong refs. It's fine to
+// manipulate weak refs, however.
 class SubchannelRef {
  public:
   virtual ~SubchannelRef() {}
