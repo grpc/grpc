@@ -49,4 +49,14 @@
   ::google::protobuf::compiler::ParseGeneratorParameter
 #endif
 
+#ifndef GRPC_CUSTOM_CSHARP_GETCLASSNAME
+#include <google/protobuf/compiler/csharp/csharp_names.h>
+#define GRPC_CUSTOM_CSHARP_GETCLASSNAME \
+  ::google3_proto_compat::compiler::csharp::GetClassName
+#define GRPC_CUSTOM_CSHARP_GETFILENAMESPACE \
+  ::google3_proto_compat::compiler::csharp::GetFileNamespace
+#define GRPC_CUSTOM_CSHARP_GETREFLECTIONCLASSNAME \
+  ::google3_proto_compat::compiler::csharp::GetReflectionClassName
+#endif
+
 #endif  // SRC_COMPILER_CONFIG_PROTOBUF_H
