@@ -732,6 +732,7 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
     }
     route_config_name_ = std::move(listener.route_config_name);
     if (!route_config_name_.empty()) {
+      current_virtual_host_.Clear();
       auto watcher = absl::make_unique<RouteConfigWatcher>(Ref());
       route_config_watcher_ = watcher.get();
       xds_client_->WatchRouteConfigData(route_config_name_, std::move(watcher));
