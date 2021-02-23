@@ -29,7 +29,6 @@
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/cmdline.h"
@@ -42,9 +41,9 @@ static gpr_timespec test_deadline(void) {
 typedef struct args_struct {
   gpr_event ev;
   grpc_resolved_addresses* addrs;
+  gpr_atm done_atm;
   gpr_mu* mu;
-  bool done;              // guarded by mu
-  grpc_pollset* pollset;  // guarded by mu
+  grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
 } args_struct;
 
@@ -57,7 +56,7 @@ void args_init(args_struct* args) {
   args->pollset_set = grpc_pollset_set_create();
   grpc_pollset_set_add_pollset(args->pollset_set, args->pollset);
   args->addrs = nullptr;
-  args->done = false;
+  gpr_atm_rel_store(&args->done_atm, 0);
 }
 
 void args_finish(args_struct* args) {
@@ -83,24 +82,24 @@ static grpc_millis n_sec_deadline(int seconds) {
 }
 
 static void poll_pollset_until_request_done(args_struct* args) {
+  grpc_core::ExecCtx exec_ctx;
   // Try to give enough time for c-ares to run through its retries
   // a few times if needed.
   grpc_millis deadline = n_sec_deadline(90);
   while (true) {
-    grpc_core::ExecCtx exec_ctx;
-    {
-      grpc_core::MutexLockForGprMu lock(args->mu);
-      if (args->done) {
-        break;
-      }
-      grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
-      gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, args->done, time_left);
-      GPR_ASSERT(time_left >= 0);
-      grpc_pollset_worker* worker = nullptr;
-      GRPC_LOG_IF_ERROR(
-          "pollset_work",
-          grpc_pollset_work(args->pollset, &worker, n_sec_deadline(1)));
+    bool done = gpr_atm_acq_load(&args->done_atm) != 0;
+    if (done) {
+      break;
     }
+    grpc_millis time_left = deadline - grpc_core::ExecCtx::Get()->Now();
+    gpr_log(GPR_DEBUG, "done=%d, time_left=%" PRId64, done, time_left);
+    GPR_ASSERT(time_left >= 0);
+    grpc_pollset_worker* worker = nullptr;
+    gpr_mu_lock(args->mu);
+    GRPC_LOG_IF_ERROR("pollset_work", grpc_pollset_work(args->pollset, &worker,
+                                                        n_sec_deadline(1)));
+    gpr_mu_unlock(args->mu);
+    grpc_core::ExecCtx::Get()->Flush();
   }
   gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
@@ -110,17 +109,19 @@ static void must_succeed(void* argsp, grpc_error* err) {
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);
   GPR_ASSERT(args->addrs->naddrs > 0);
-  grpc_core::MutexLockForGprMu lock(args->mu);
-  args->done = true;
+  gpr_atm_rel_store(&args->done_atm, 1);
+  gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+  gpr_mu_unlock(args->mu);
 }
 
 static void must_fail(void* argsp, grpc_error* err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err != GRPC_ERROR_NONE);
-  grpc_core::MutexLockForGprMu lock(args->mu);
-  args->done = true;
+  gpr_atm_rel_store(&args->done_atm, 1);
+  gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+  gpr_mu_unlock(args->mu);
 }
 
 // This test assumes the environment has an ipv6 loopback
@@ -132,9 +133,10 @@ static void must_succeed_with_ipv6_first(void* argsp, grpc_error* err) {
   const struct sockaddr* first_address =
       reinterpret_cast<const struct sockaddr*>(args->addrs->addrs[0].addr);
   GPR_ASSERT(first_address->sa_family == AF_INET6);
-  grpc_core::MutexLockForGprMu lock(args->mu);
-  args->done = true;
+  gpr_atm_rel_store(&args->done_atm, 1);
+  gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+  gpr_mu_unlock(args->mu);
 }
 
 static void must_succeed_with_ipv4_first(void* argsp, grpc_error* err) {
@@ -145,9 +147,10 @@ static void must_succeed_with_ipv4_first(void* argsp, grpc_error* err) {
   const struct sockaddr* first_address =
       reinterpret_cast<const struct sockaddr*>(args->addrs->addrs[0].addr);
   GPR_ASSERT(first_address->sa_family == AF_INET);
-  grpc_core::MutexLockForGprMu lock(args->mu);
-  args->done = true;
+  gpr_atm_rel_store(&args->done_atm, 1);
+  gpr_mu_lock(args->mu);
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
+  gpr_mu_unlock(args->mu);
 }
 
 static void test_localhost(void) {
