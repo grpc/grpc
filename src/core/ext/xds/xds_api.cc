@@ -486,18 +486,18 @@ std::string XdsApi::LdsUpdate::FilterChain::FilterChainMatch::ToString() const {
   contents.push_back(
       absl::StrCat("source_prefix_ranges={",
                    absl::StrJoin(source_prefix_ranges_content, ", "), "}"));
-  if (source_ports.size() > 0) {
+  if (!source_ports.empty()) {
     contents.push_back(
         absl::StrCat("source_ports={", absl::StrJoin(source_ports, ", "), "}"));
   }
-  if (server_names.size() > 0) {
+  if (!server_names.empty()) {
     contents.push_back(
         absl::StrCat("server_names={", absl::StrJoin(server_names, ", "), "}"));
   }
   if (!transport_protocol.empty()) {
     contents.push_back(absl::StrCat("transport_protocol=", transport_protocol));
   }
-  if (application_protocols.size() > 0) {
+  if (!application_protocols.empty()) {
     contents.push_back(absl::StrCat("application_protocols={",
                                     absl::StrJoin(application_protocols, ", "),
                                     "}"));
@@ -1778,7 +1778,7 @@ XdsApi::LdsUpdate::FilterChain::FilterChainMatch FilterChainMatchParse(
   auto* prefix_ranges = envoy_config_listener_v3_FilterChainMatch_prefix_ranges(
       filter_chain_match_proto, &size);
   filter_chain_match.prefix_ranges.reserve(size);
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     filter_chain_match.prefix_ranges.push_back(
         CidrRangeParse(prefix_ranges[i]));
   }
@@ -1790,19 +1790,19 @@ XdsApi::LdsUpdate::FilterChain::FilterChainMatch FilterChainMatchParse(
       envoy_config_listener_v3_FilterChainMatch_source_prefix_ranges(
           filter_chain_match_proto, &size);
   filter_chain_match.source_prefix_ranges.reserve(size);
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     filter_chain_match.source_prefix_ranges.push_back(
         CidrRangeParse(source_prefix_ranges[i]));
   }
   auto* source_ports = envoy_config_listener_v3_FilterChainMatch_source_ports(
       filter_chain_match_proto, &size);
   filter_chain_match.source_ports.reserve(size);
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     filter_chain_match.source_ports.push_back(source_ports[i]);
   }
   auto* server_names = envoy_config_listener_v3_FilterChainMatch_server_names(
       filter_chain_match_proto, &size);
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     filter_chain_match.server_names.push_back(
         UpbStringToStdString(server_names[i]));
   }
@@ -1812,7 +1812,7 @@ XdsApi::LdsUpdate::FilterChain::FilterChainMatch FilterChainMatchParse(
   auto* application_protocols =
       envoy_config_listener_v3_FilterChainMatch_application_protocols(
           filter_chain_match_proto, &size);
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     filter_chain_match.application_protocols.push_back(
         UpbStringToStdString(application_protocols[i]));
   }
@@ -1906,7 +1906,7 @@ grpc_error* LdsResponseParseServer(
         "Atleast one filter chain needed.");
   }
   lds_update->filter_chains.reserve(size);
-  for (int i = 0; i < size; i++) {
+  for (size_t i = 0; i < size; i++) {
     lds_update->filter_chains.push_back(
         FilterChainParse(context, filter_chains[0], &error));
     if (error != GRPC_ERROR_NONE) {
