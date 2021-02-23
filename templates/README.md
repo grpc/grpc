@@ -76,7 +76,6 @@ language: "...",          # the language tag; "c" or "c++"
 public_headers:           # list of public headers to install
 headers:                  # list of headers used by that target
 src:                      # list of files to compile
-secure: boolean,          # see below
 baselib: boolean,         # this is a low level library that has system
                           # dependencies
 filegroups:               # list of filegroups to merge to that project
@@ -98,16 +97,6 @@ Currently, the "`build`" tag have these meanings:
 All of the targets should always be present in the generated project file, if
 possible and applicable. But the build tag is what should group the targets
 together in a single build command.
-
-
-## The `"secure"` tag
-
-This means this target requires OpenSSL one way or another. The values can be
-`"yes"`, `"no"` and `"check"`. The default value is `"check"`. It means that
-the target requires OpenSSL, but that since the target depends on another one
-that is supposed to also import OpenSSL, the import should then be implicitely
-transitive. `"check"` should then only disable that target if OpenSSL hasn't
-been found or is unavailable.
 
 ## The `"baselib"` boolean
 

@@ -238,6 +238,8 @@ def _external_dep_name_from_bazel_dependency(bazel_dep):
         return 'upb'
     elif bazel_dep == '//external:benchmark':
         return 'benchmark'
+    elif bazel_dep == '//external:libssl':
+        return 'libssl'
     else:
         # all the other external deps such as protobuf, cares, zlib
         # don't need to be listed explicitly, they are handled automatically
@@ -627,24 +629,20 @@ def _detect_and_print_issues(build_yaml_like):
 # there are mostly extra properties that we weren't able to obtain from the bazel build
 # _TYPE: whether this is library, target or test
 # _RENAME: whether this target should be renamed to a different name (to match expectations of make and cmake builds)
-# NOTE: secure is 'check' by default, so setting secure = False below does matter
 _BUILD_EXTRA_METADATA = {
     'third_party/address_sorting:address_sorting': {
         'language': 'c',
         'build': 'all',
-        'secure': False,
         '_RENAME': 'address_sorting'
     },
     'gpr': {
         'language': 'c',
         'build': 'all',
-        'secure': False
     },
     'grpc': {
         'language': 'c',
         'build': 'all',
         'baselib': True,
-        'secure': True,
         'generate_plugin_registry': True
     },
     'grpc++': {
@@ -669,7 +667,6 @@ _BUILD_EXTRA_METADATA = {
         'language': 'c++',
         'build': 'all',
         'baselib': True,
-        'secure': False,
     },
     # TODO(jtattermusch): do we need to set grpc_csharp_ext's LDFLAGS for wrapping memcpy in the same way as in build.yaml?
     'grpc_csharp_ext': {
@@ -680,7 +677,6 @@ _BUILD_EXTRA_METADATA = {
         'language': 'c',
         'build': 'all',
         'baselib': True,
-        'secure': False,
         'generate_plugin_registry': True
     },
     'grpcpp_channelz': {
@@ -694,55 +690,47 @@ _BUILD_EXTRA_METADATA = {
     'src/compiler:grpc_plugin_support': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_RENAME': 'grpc_plugin_support'
     },
     'src/compiler:grpc_cpp_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_cpp_plugin'
     },
     'src/compiler:grpc_csharp_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_csharp_plugin'
     },
     'src/compiler:grpc_node_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_node_plugin'
     },
     'src/compiler:grpc_objective_c_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_objective_c_plugin'
     },
     'src/compiler:grpc_php_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_php_plugin'
     },
     'src/compiler:grpc_python_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_python_plugin'
     },
     'src/compiler:grpc_ruby_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_ruby_plugin'
     },
@@ -758,7 +746,6 @@ _BUILD_EXTRA_METADATA = {
     'test/core/util:grpc_test_util_unsecure': {
         'language': 'c',
         'build': 'private',
-        'secure': False,
         '_RENAME': 'grpc_test_util_unsecure'
     },
     # TODO(jtattermusch): consider adding grpc++_test_util_unsecure - it doesn't seem to be used by bazel build (don't forget to set secure: False)
@@ -777,13 +764,11 @@ _BUILD_EXTRA_METADATA = {
     'test/core/end2end:end2end_tests': {
         'language': 'c',
         'build': 'private',
-        'secure': True,
         '_RENAME': 'end2end_tests'
     },
     'test/core/end2end:end2end_nosec_tests': {
         'language': 'c',
         'build': 'private',
-        'secure': False,
         '_RENAME': 'end2end_nosec_tests'
     },
 
