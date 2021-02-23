@@ -135,8 +135,8 @@ is then passed to the template while rending it.
 ## The plugins
 
 The file build.json itself isn't passed straight to the template files. It is
-first processed and modified by a few plugins. For example, the `filegroups`
-expander is [a plugin](../tools/buildgen/plugins/expand_filegroups.py).
+first processed and modified by a few plugins. For example, the version
+expander is [a plugin](../tools/buildgen/plugins/expand_version.py).
 
 The structure of a plugin is simple. The plugin must defined the function
 `mako_plugin` that takes a Python dictionary. That dictionary represents the
