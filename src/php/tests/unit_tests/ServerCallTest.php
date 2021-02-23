@@ -20,7 +20,16 @@
 require_once(dirname(__FILE__) . '/../../lib/Grpc/ServerCallReader.php');
 require_once(dirname(__FILE__) . '/../../lib/Grpc/ServerCallWriter.php');
 require_once(dirname(__FILE__) . '/../../lib/Grpc/Status.php');
-require_once(dirname(__FILE__) . '/../../vendor/autoload.php');
+
+// load protobuf from third_party
+set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . '/../../../../third_party/protobuf/php/src/');
+
+spl_autoload_register(function ($className) {
+$classPath = str_replace('\\', DIRECTORY_SEPARATOR, $className);
+if (strpos($classPath, 'Google/Protobuf') === 0 || strpos($classPath, 'GPBMetadata/Google/Protobuf') === 0) {
+require_once($classPath . '.php');
+}
+});
 
 class StartBatchEvent
 {
