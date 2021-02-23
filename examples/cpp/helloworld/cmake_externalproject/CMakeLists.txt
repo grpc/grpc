@@ -117,6 +117,7 @@ ExternalProject_Add(grpc
 	-DgRPC_XXHASH_PROVIDER:STRING=package
 	-DxxHash_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/xxhash/lib/cmake/xxHash
 	-DxxHash_INCLUDE_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/xxhash/include
+	-DxxHash_LIB:STRING=${CMAKE_CURRENT_BINARY_DIR}/xxhash/lib/libxxhash.so
         -DgRPC_ZLIB_PROVIDER:STRING=package
         -DZLIB_ROOT:STRING=${CMAKE_CURRENT_BINARY_DIR}/zlib
         -DgRPC_ABSL_PROVIDER:STRING=package
@@ -147,6 +148,7 @@ ExternalProject_Add(helloworld
         -Dre2_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/re2/lib/cmake/re2
 	-DxxHash_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/xxhash/lib/cmake/xxHash
 	-DxxHash_INCLUDE_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/xxhash/include
+	-DxxHash_LIB:STRING=${CMAKE_CURRENT_BINARY_DIR}/xxhash/lib/libxxhash.so
         -DZLIB_ROOT:STRING=${CMAKE_CURRENT_BINARY_DIR}/zlib
         -Dabsl_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/absl/lib/cmake/absl
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
