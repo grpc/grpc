@@ -31,14 +31,7 @@ using grpc::protobuf::MethodDescriptor;
 using grpc::protobuf::ServiceDescriptor;
 using grpc::protobuf::io::Printer;
 using grpc::protobuf::io::StringOutputStream;
-using grpc_generator::GetMethodType;
-using grpc_generator::MethodType;
-using grpc_generator::METHODTYPE_BIDI_STREAMING;
-using grpc_generator::METHODTYPE_CLIENT_STREAMING;
-using grpc_generator::METHODTYPE_NO_STREAMING;
-using grpc_generator::METHODTYPE_SERVER_STREAMING;
 using grpc_generator::StringReplace;
-using std::map;
 using std::vector;
 
 namespace grpc_csharp_generator {
@@ -181,32 +174,29 @@ std::string GetServerClassName(const ServiceDescriptor* service) {
   return service->name() + "Base";
 }
 
-std::string GetCSharpMethodType(MethodType method_type) {
-  switch (method_type) {
-    case METHODTYPE_NO_STREAMING:
-      return "grpc::MethodType.Unary";
-    case METHODTYPE_CLIENT_STREAMING:
-      return "grpc::MethodType.ClientStreaming";
-    case METHODTYPE_SERVER_STREAMING:
-      return "grpc::MethodType.ServerStreaming";
-    case METHODTYPE_BIDI_STREAMING:
+std::string GetCSharpMethodType(const MethodDescriptor* method) {
+  if (method->client_streaming()) {
+    if (method->server_streaming()) {
       return "grpc::MethodType.DuplexStreaming";
+    }
+    return "grpc::MethodType.ClientStreaming";
+  } else if (method->server_streaming()) {
+    return "grpc::MethodType.ServerStreaming";
   }
-  return "";
+  return "grpc::MethodType.Unary";
 }
 
-std::string GetCSharpServerMethodType(MethodType method_type) {
-  switch (method_type) {
-    case METHODTYPE_NO_STREAMING:
-      return "grpc::UnaryServerMethod";
-    case METHODTYPE_CLIENT_STREAMING:
-      return "grpc::ClientStreamingServerMethod";
-    case METHODTYPE_SERVER_STREAMING:
-      return "grpc::ServerStreamingServerMethod";
-    case METHODTYPE_BIDI_STREAMING:
+std::string GetCSharpServerMethodType(const MethodDescriptor* method) {
+  if (method->client_streaming()) {
+    if (method->server_streaming()) {
       return "grpc::DuplexStreamingServerMethod";
+      ;
+    }
+    return "grpc::ClientStreamingServerMethod";
+  } else if (method->server_streaming()) {
+    return "grpc::ServerStreamingServerMethod";
   }
-  return "";
+  return "grpc::UnaryServerMethod";
 }
 
 std::string GetServiceNameFieldName() { return "__ServiceName"; }
@@ -386,8 +376,7 @@ void GenerateStaticMethodField(Printer* out, const MethodDescriptor* method) {
       GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()));
   out->Indent();
   out->Indent();
-  out->Print("$methodtype$,\n", "methodtype",
-             GetCSharpMethodType(GetMethodType(method)));
+  out->Print("$methodtype$,\n", "methodtype", GetCSharpMethodType(method));
   out->Print("$servicenamefield$,\n", "servicenamefield",
              GetServiceNameFieldName());
   out->Print("\"$methodname$\",\n", "methodname", method->name());
@@ -695,7 +684,7 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
         "new $servermethodtype$<$inputtype$, $outputtype$>("
         "serviceImpl.$methodname$));\n",
         "methodfield", GetMethodFieldName(method), "servermethodtype",
-        GetCSharpServerMethodType(GetMethodType(method)), "inputtype",
+        GetCSharpServerMethodType(method), "inputtype",
         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()), "outputtype",
         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()), "methodname",
         method->name());
