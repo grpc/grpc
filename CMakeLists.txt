@@ -3693,6 +3693,7 @@ target_link_libraries(grpc_plugin_support
   ${_gRPC_PROTOBUF_PROTOC_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::strings
 )
 
 foreach(_hdr

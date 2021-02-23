@@ -69,6 +69,7 @@ grpc_cc_library(
         "schema_interface.h",
     ],
     external_deps = [
+        "absl/strings",
         "protobuf_clib",
     ],
     language = "c++",
