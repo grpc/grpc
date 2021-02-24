@@ -22,10 +22,11 @@ require_relative './end2end_common'
 # middle of a blocking connectivity_state call.
 def main
   STDERR.puts 'sig_int_during_channel_watch_client.rb main'
+  parent_controller_port = ''
   server_port = ''
   OptionParser.new do |opts|
-    opts.on('--client_control_port=P', String) do
-      STDERR.puts 'client_control_port not used'
+    opts.on('--parent_controller_port=P', String) do |p|
+      parent_controller_port = p
     end
     opts.on('--server_port=P', String) do |p|
       server_port = p
@@ -34,16 +35,8 @@ def main
 
   trap('SIGINT') { exit 0 }
   STDERR.puts 'sig_int_during_channel_watch_client.rb: SIGINT trap has been set'
-  # First, notify the parent process that we're ready for a SIGINT by sending
-  # an RPC
-  begin
-    stub = Echo::EchoServer::Stub.new(
-      "localhost:#{server_port}", :this_channel_is_insecure)
-    stub.echo(ClientControl::DoEchoRpcRequest.new)
-  rescue => e
-    fail "received error:|#{e}| while sending an RPC to the parent process " \
-         'to indicate that the SIGINT trap has been set'
-  end
+  # notify the parent process that we're ready for signals
+  report_controller_port_to_parent(parent_controller_port, 0)
 
   thd = Thread.new do
     child_thread_channel = GRPC::Core::Channel.new("localhost:#{server_port}",

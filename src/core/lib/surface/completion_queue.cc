@@ -705,7 +705,7 @@ static void cq_end_op_for_next(
         6, (cq, tag, errmsg, done, done_arg, storage));
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures) &&
         error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_ERROR, "Operation failed: tag=%p, error=%s", tag, errmsg);
+      gpr_log(GPR_INFO, "Operation failed: tag=%p, error=%s", tag, errmsg);
     }
   }
   cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);

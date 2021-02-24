@@ -25,11 +25,12 @@ def main
   server_runner = ServerRunner.new(echo_service)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  control_stub, client_pid = start_client('./graceful_sig_stop_client.rb', server_port)
-  # use receipt of one RPC to indicate that the child process is
-  # ready
-  echo_service.wait_for_first_rpc_received(20)
-  cleanup(control_stub, client_pid, server_runner)
+  client_controller = ClientController.new(
+    './graceful_sig_stop_client.rb', server_port)
+  client_controller.stub.shutdown(ClientControl::Void.new)
+  Process.wait(client_controller.client_pid)
+  fail "client exit code: #{$CHILD_STATUS}" unless $CHILD_STATUS.to_i.zero?
+  server_runner.stop
 end
 
 main

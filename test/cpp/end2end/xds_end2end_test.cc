@@ -192,7 +192,7 @@ constexpr char kBootstrapFileV3[] =
     "    \"locality\": {\n"
     "      \"region\": \"corp\",\n"
     "      \"zone\": \"svl\",\n"
-    "      \"subzone\": \"mp3\"\n"
+    "      \"sub_zone\": \"mp3\"\n"
     "    }\n"
     "  },\n"
     "  \"certificate_providers\": {\n"
@@ -234,7 +234,7 @@ constexpr char kBootstrapFileV2[] =
     "    \"locality\": {\n"
     "      \"region\": \"corp\",\n"
     "      \"zone\": \"svl\",\n"
-    "      \"subzone\": \"mp3\"\n"
+    "      \"sub_zone\": \"mp3\"\n"
     "    }\n"
     "  }\n"
     "}\n";

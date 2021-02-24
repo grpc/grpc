@@ -894,7 +894,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
             locality_name_json["zone"] = locality_name->zone();
           }
           if (!locality_name->sub_zone().empty()) {
-            locality_name_json["subzone"] = locality_name->sub_zone();
+            locality_name_json["sub_zone"] = locality_name->sub_zone();
           }
           // Add weighted target entry.
           weighted_targets[locality_name->AsHumanReadableString()] =

@@ -72,10 +72,10 @@ _ADDITIONAL_TEST_CASES = [
 ]
 
 # Test cases that require the V3 API.  Skipped in older runs.
-_V3_TEST_CASES = set(['timeout'])
+_V3_TEST_CASES = frozenset(['timeout'])
 
 # Test cases that require the alpha API.  Skipped for stable API runs.
-_ALPHA_TEST_CASES = set(['timeout'])
+_ALPHA_TEST_CASES = frozenset(['timeout'])
 
 
 def parse_test_cases(arg):

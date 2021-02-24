@@ -66,7 +66,7 @@ RUN pip install virtualenv==16.7.9
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.15.0 twisted==17.5.0
 
 # Google Cloud platform API libraries
-RUN pip install --upgrade google-api-python-client oauth2client
+RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 #==================
 # Ruby dependencies
