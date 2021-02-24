@@ -138,21 +138,66 @@ bool XdsSecurityEnabled() {
 }
 
 //
-// XdsApi::Route
+// XdsApi::Route::HashPolicy
 //
 
-std::string XdsApi::Route::Matchers::ToString() const {
-  std::vector<std::string> contents;
-  contents.push_back(
-      absl::StrFormat("PathMatcher{%s}", path_matcher.ToString()));
-  for (const HeaderMatcher& header_matcher : header_matchers) {
-    contents.push_back(header_matcher.ToString());
+XdsApi::Route::HashPolicy::HashPolicy(const HashPolicy& other) {
+  type = other.type;
+  header_name = other.header_name;
+  if (other.regex != nullptr) {
+    regex =
+        absl::make_unique<RE2>(other.regex->pattern(), other.regex->options());
   }
-  if (fraction_per_million.has_value()) {
-    contents.push_back(absl::StrFormat("Fraction Per Million %d",
-                                       fraction_per_million.value()));
+  regex_substitution = other.regex_substitution;
+}
+
+XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
+    const HashPolicy& other) {
+  type = other.type;
+  header_name = other.header_name;
+  if (other.regex != nullptr) {
+    regex =
+        absl::make_unique<RE2>(other.regex->pattern(), other.regex->options());
   }
-  return absl::StrJoin(contents, "\n");
+  regex_substitution = other.regex_substitution;
+  return *this;
+}
+
+XdsApi::Route::HashPolicy::HashPolicy(HashPolicy&& other) {
+  type = other.type;
+  header_name = std::move(other.header_name);
+  if (other.regex != nullptr) {
+    regex = std::move(other.regex);
+  }
+  regex_substitution = std::move(other.regex_substitution);
+}
+
+XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
+    HashPolicy&& other) {
+  type = other.type;
+  header_name = std::move(other.header_name);
+  if (other.regex != nullptr) {
+    regex = std::move(other.regex);
+  }
+  regex_substitution = std::move(other.regex_substitution);
+  return *this;
+}
+
+bool XdsApi::Route::HashPolicy::HashPolicy::operator==(
+    const HashPolicy& other) const {
+  if (type != other.type) return false;
+  if (type == Type::HEADER) {
+    if (regex == nullptr) {
+      if (other.regex != nullptr) {
+        return false;
+      }
+    } else {
+      return (header_name == other.header_name &&
+              regex->pattern() == other.regex->pattern() &&
+              regex_substitution == other.regex_substitution);
+    }
+  }
+  return true;
 }
 
 std::string XdsApi::Route::HashPolicy::ToString() const {
@@ -171,6 +216,24 @@ std::string XdsApi::Route::HashPolicy::ToString() const {
     contents.push_back(absl::StrFormat(
         "Header %s:/%s/%s", header_name,
         (regex == nullptr) ? "" : regex->pattern(), regex_substitution));
+  }
+  return absl::StrJoin(contents, "\n");
+}
+
+//
+// XdsApi::Route
+//
+
+std::string XdsApi::Route::Matchers::ToString() const {
+  std::vector<std::string> contents;
+  contents.push_back(
+      absl::StrFormat("PathMatcher{%s}", path_matcher.ToString()));
+  for (const HeaderMatcher& header_matcher : header_matchers) {
+    contents.push_back(header_matcher.ToString());
+  }
+  if (fraction_per_million.has_value()) {
+    contents.push_back(absl::StrFormat("Fraction Per Million %d",
+                                       fraction_per_million.value()));
   }
   return absl::StrJoin(contents, "\n");
 }

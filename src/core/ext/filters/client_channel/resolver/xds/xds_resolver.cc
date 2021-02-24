@@ -422,7 +422,7 @@ absl::optional<uint64_t> HeaderHashHelper(
   if (value.has_value()) {
     if (policy.regex != nullptr) {
       std::string key(*value);
-      RE2::GlobalReplace(&key, *(policy.regex), policy.regex_substitution);
+      RE2::GlobalReplace(&key, *policy.regex, policy.regex_substitution);
       // TODO(donnadionne: return xx_hash(key);
     } else {
       // TODO(donnadionne): return xx_hash(value.value())
