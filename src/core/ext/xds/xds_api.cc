@@ -141,14 +141,14 @@ bool XdsSecurityEnabled() {
 // XdsApi::Route::HashPolicy
 //
 
-XdsApi::Route::HashPolicy::HashPolicy(const HashPolicy& other) {
-  type = other.type;
-  header_name = other.header_name;
+XdsApi::Route::HashPolicy::HashPolicy(const HashPolicy& other)
+    : type(other.type),
+      header_name(other.header_name),
+      regex_substitution(other.regex_substitution) {
   if (other.regex != nullptr) {
     regex =
         absl::make_unique<RE2>(other.regex->pattern(), other.regex->options());
   }
-  regex_substitution = other.regex_substitution;
 }
 
 XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
@@ -163,17 +163,17 @@ XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
   return *this;
 }
 
-XdsApi::Route::HashPolicy::HashPolicy(HashPolicy&& other) {
-  type = other.type;
-  header_name = std::move(other.header_name);
+XdsApi::Route::HashPolicy::HashPolicy(HashPolicy&& other) noexcept
+    : type(other.type),
+      header_name(std::move(other.header_name)),
+      regex_substitution(std::move(other.regex_substitution)) {
   if (other.regex != nullptr) {
     regex = std::move(other.regex);
   }
-  regex_substitution = std::move(other.regex_substitution);
 }
 
 XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
-    HashPolicy&& other) {
+    HashPolicy&& other) noexcept {
   type = other.type;
   header_name = std::move(other.header_name);
   if (other.regex != nullptr) {
@@ -192,9 +192,9 @@ bool XdsApi::Route::HashPolicy::HashPolicy::operator==(
         return false;
       }
     } else {
-      return (header_name == other.header_name &&
-              regex->pattern() == other.regex->pattern() &&
-              regex_substitution == other.regex_substitution);
+      return header_name == other.header_name &&
+             regex->pattern() == other.regex->pattern() &&
+             regex_substitution == other.regex_substitution;
     }
   }
   return true;
@@ -217,7 +217,7 @@ std::string XdsApi::Route::HashPolicy::ToString() const {
         "Header %s:/%s/%s", header_name,
         (regex == nullptr) ? "" : regex->pattern(), regex_substitution));
   }
-  return absl::StrJoin(contents, "\n");
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
 //
@@ -246,7 +246,7 @@ std::string XdsApi::Route::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(matchers.ToString());
   for (const HashPolicy& hash_policy : hash_policies) {
-    contents.push_back(hash_policy.ToString());
+    contents.push_back(absl::StrCat("hash_policy=", hash_policy.ToString()));
   }
   if (!cluster_name.empty()) {
     contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
@@ -1249,13 +1249,11 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
       XdsApi::Route::HashPolicy policy;
       policy.terminal =
           envoy_config_route_v3_RouteAction_HashPolicy_terminal(hash_policy);
-      const envoy_config_route_v3_RouteAction_HashPolicy_Header* header =
-          envoy_config_route_v3_RouteAction_HashPolicy_header(hash_policy);
+      const envoy_config_route_v3_RouteAction_HashPolicy_Header* header;
       const envoy_config_route_v3_RouteAction_HashPolicy_FilterState*
-          filter_state =
-              envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
-                  hash_policy);
-      if (header != nullptr) {
+          filter_state;
+      if ((header = envoy_config_route_v3_RouteAction_HashPolicy_header(
+               hash_policy)) != nullptr) {
         policy.type = XdsApi::Route::HashPolicy::Type::HEADER;
         policy.header_name = UpbStringToStdString(
             envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
@@ -1264,42 +1262,43 @@ grpc_error* RouteActionParse(const envoy_config_route_v3_Route* route_msg,
             regex_rewrite =
                 envoy_config_route_v3_RouteAction_HashPolicy_Header_regex_rewrite(
                     header);
-        if (regex_rewrite != nullptr) {
-          const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
-              envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
-                  regex_rewrite);
-          if (regex_matcher != nullptr) {
-            RE2::Options options;
-            policy.regex = absl::make_unique<RE2>(
-                UpbStringToStdString(
-                    envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
-                std::move(options));
-            if (!policy.regex->ok()) {
-              gpr_log(
-                  GPR_DEBUG,
-                  "RouteAction HashPolicy contains policy specifier Head with "
-                  "RegexMatchAndSubstitution but RegexMatcher pattern does not "
-                  "compile");
-              continue;
-            }
-          } else {
-            gpr_log(
-                GPR_DEBUG,
-                "RouteAction HashPolicy contains policy specifier Head with "
-                "RegexMatchAndSubstitution but RegexMatcher pattern is "
-                "missing");
-            continue;
-          }
-          policy.regex_substitution = UpbStringToStdString(
-              envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
-                  regex_rewrite));
-        } else {
-          gpr_log(GPR_DEBUG,
-                  "RouteAction HashPolicy contains policy specifier Head with "
-                  "RegexMatchAndSubstitution but Regex is missing");
+        if (regex_rewrite == nullptr) {
+          gpr_log(
+              GPR_DEBUG,
+              "RouteAction HashPolicy contains policy specifier Header with "
+              "RegexMatchAndSubstitution but Regex is missing");
           continue;
         }
-      } else if (filter_state != nullptr) {
+        const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
+            envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
+                regex_rewrite);
+        if (regex_matcher == nullptr) {
+          gpr_log(
+              GPR_DEBUG,
+              "RouteAction HashPolicy contains policy specifier Header with "
+              "RegexMatchAndSubstitution but RegexMatcher pattern is "
+              "missing");
+          continue;
+        }
+        RE2::Options options;
+        policy.regex = absl::make_unique<RE2>(
+            UpbStringToStdString(
+                envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
+            options);
+        if (!policy.regex->ok()) {
+          gpr_log(
+              GPR_DEBUG,
+              "RouteAction HashPolicy contains policy specifier Header with "
+              "RegexMatchAndSubstitution but RegexMatcher pattern does not "
+              "compile");
+          continue;
+        }
+        policy.regex_substitution = UpbStringToStdString(
+            envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
+                regex_rewrite));
+      } else if ((filter_state =
+                      envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
+                          hash_policy)) != nullptr) {
         std::string key = UpbStringToStdString(
             envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
                 filter_state));

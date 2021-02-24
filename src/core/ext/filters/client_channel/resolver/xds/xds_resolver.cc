@@ -490,8 +490,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         static_cast<XdsResolver*>(resolver_->Ref().release());
     ClusterState* cluster_state = it->second->Ref().release();
     // Generate a hash
-    gpr_log(GPR_INFO, "DONNA found hash policies %d",
-            entry.route.hash_policies.size());
     absl::optional<uint64_t> hash;
     for (const auto& hash_policy : entry.route.hash_policies) {
       absl::optional<uint64_t> new_hash;

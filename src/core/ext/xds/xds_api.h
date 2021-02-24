@@ -98,8 +98,8 @@ class XdsApi {
       HashPolicy& operator=(const HashPolicy& other);
 
       // Moveable.
-      HashPolicy(HashPolicy&& other);
-      HashPolicy& operator=(HashPolicy&& other);
+      HashPolicy(HashPolicy&& other) noexcept;
+      HashPolicy& operator=(HashPolicy&& other) noexcept;
 
       bool operator==(const HashPolicy& other) const;
       std::string ToString() const;
