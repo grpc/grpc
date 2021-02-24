@@ -47,7 +47,7 @@ struct FaultInjectionPolicy {
 class FaultInjectionMethodParsedConfig
     : public ServiceConfigParser::ParsedConfig {
  public:
-  FaultInjectionMethodParsedConfig(
+  explicit FaultInjectionMethodParsedConfig(
       std::vector<FaultInjectionPolicy> fault_injection_policies)
       : fault_injection_policies_(fault_injection_policies) {}
 

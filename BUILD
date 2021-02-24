@@ -1253,7 +1253,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
-    ]
+    ],
 )
 
 grpc_cc_library(
@@ -1274,8 +1274,8 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
-        "grpc_message_size_filter",
         "grpc_fault_injection_filter",
+        "grpc_message_size_filter",
     ],
 )
 
