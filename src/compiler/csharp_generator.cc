@@ -178,25 +178,28 @@ std::string GetCSharpMethodType(const MethodDescriptor* method) {
   if (method->client_streaming()) {
     if (method->server_streaming()) {
       return "grpc::MethodType.DuplexStreaming";
+    } else {
+      return "grpc::MethodType.ClientStreaming";
     }
-    return "grpc::MethodType.ClientStreaming";
   } else if (method->server_streaming()) {
     return "grpc::MethodType.ServerStreaming";
+  } else {
+    return "grpc::MethodType.Unary";
   }
-  return "grpc::MethodType.Unary";
 }
 
 std::string GetCSharpServerMethodType(const MethodDescriptor* method) {
   if (method->client_streaming()) {
     if (method->server_streaming()) {
       return "grpc::DuplexStreamingServerMethod";
-      ;
+    } else {
+      return "grpc::ClientStreamingServerMethod";
     }
-    return "grpc::ClientStreamingServerMethod";
   } else if (method->server_streaming()) {
     return "grpc::ServerStreamingServerMethod";
+  } else {
+    return "grpc::UnaryServerMethod";
   }
-  return "grpc::UnaryServerMethod";
 }
 
 std::string GetServiceNameFieldName() { return "__ServiceName"; }
@@ -231,16 +234,18 @@ std::string GetMethodReturnTypeClient(const MethodDescriptor* method) {
       return "grpc::AsyncDuplexStreamingCall<" +
              GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) + ", " +
              GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
+    } else {
+      return "grpc::AsyncClientStreamingCall<" +
+             GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) + ", " +
+             GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
     }
-    return "grpc::AsyncClientStreamingCall<" +
-           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) + ", " +
-           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
   } else if (method->server_streaming()) {
     return "grpc::AsyncServerStreamingCall<" +
            GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
+  } else {
+    return "grpc::AsyncUnaryCall<" +
+           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
   }
-  return "grpc::AsyncUnaryCall<" +
-         GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
 }
 
 std::string GetMethodRequestParamServer(const MethodDescriptor* method) {
@@ -492,7 +497,6 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
 
   for (int i = 0; i < service->method_count(); i++) {
     const MethodDescriptor* method = service->method(i);
-
     if (!method->client_streaming() && !method->server_streaming()) {
       // unary calls have an extra synchronous stub method
       GenerateDocCommentClientMethod(out, method, true, false);
