@@ -181,10 +181,12 @@ std::string GetCSharpMethodType(const MethodDescriptor* method) {
     } else {
       return "grpc::MethodType.ClientStreaming";
     }
-  } else if (method->server_streaming()) {
-    return "grpc::MethodType.ServerStreaming";
   } else {
-    return "grpc::MethodType.Unary";
+    if (method->server_streaming()) {
+      return "grpc::MethodType.ServerStreaming";
+    } else {
+      return "grpc::MethodType.Unary";
+    }
   }
 }
 
@@ -195,10 +197,12 @@ std::string GetCSharpServerMethodType(const MethodDescriptor* method) {
     } else {
       return "grpc::ClientStreamingServerMethod";
     }
-  } else if (method->server_streaming()) {
-    return "grpc::ServerStreamingServerMethod";
   } else {
-    return "grpc::UnaryServerMethod";
+    if (method->server_streaming()) {
+      return "grpc::ServerStreamingServerMethod";
+    } else {
+      return "grpc::UnaryServerMethod";
+    }
   }
 }
 
@@ -239,12 +243,14 @@ std::string GetMethodReturnTypeClient(const MethodDescriptor* method) {
              GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->input_type()) + ", " +
              GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
     }
-  } else if (method->server_streaming()) {
-    return "grpc::AsyncServerStreamingCall<" +
-           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
   } else {
-    return "grpc::AsyncUnaryCall<" +
-           GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
+    if (method->server_streaming()) {
+      return "grpc::AsyncServerStreamingCall<" +
+            GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
+    } else {
+      return "grpc::AsyncUnaryCall<" +
+            GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
+    }
   }
 }
 
