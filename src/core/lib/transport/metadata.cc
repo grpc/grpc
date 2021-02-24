@@ -596,7 +596,7 @@ static void* set_user_data(UserData* ud, void (*destroy_func)(void*),
   grpc_core::ReleasableMutexLock lock(&ud->mu_user_data);
   if (ud->destroy_user_data.Load(grpc_core::MemoryOrder::RELAXED)) {
     /* user data can only be set once */
-    lock.Release();
+    lock.Unlock();
     if (destroy_func != nullptr) {
       destroy_func(data);
     }

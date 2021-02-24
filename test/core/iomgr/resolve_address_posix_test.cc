@@ -97,7 +97,7 @@ static void actually_poll(void* argsp) {
   while (true) {
     grpc_core::ExecCtx exec_ctx;
     {
-      grpc_core::MutexLockForGprMu lock(args->mu);
+      grpc_core::MutexLock lock(args->mu);
       if (args->done) {
         break;
       }
@@ -123,7 +123,7 @@ static void must_succeed(void* argsp, grpc_error* err) {
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);
   GPR_ASSERT(args->addrs->naddrs > 0);
-  grpc_core::MutexLockForGprMu lock(args->mu);
+  grpc_core::MutexLock lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
@@ -131,7 +131,7 @@ static void must_succeed(void* argsp, grpc_error* err) {
 static void must_fail(void* argsp, grpc_error* err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err != GRPC_ERROR_NONE);
-  grpc_core::MutexLockForGprMu lock(args->mu);
+  grpc_core::MutexLock lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
