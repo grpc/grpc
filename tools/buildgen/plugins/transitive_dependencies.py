@@ -55,8 +55,12 @@ def mako_plugin(dictionary):
 
     for target_name, target_list in dictionary.items():
         for target in target_list:
-            if isinstance(target, dict) and 'deps' in target:
-                target['transitive_deps'] = transitive_deps(lib_map, target)
+            if isinstance(target, dict):
+                if 'deps' in target or target_name == 'libs':
+                    if not 'deps' in target:
+                        # make sure all the libs have the "deps" field populated
+                        target['deps'] = []
+                    target['transitive_deps'] = transitive_deps(lib_map, target)
 
     python_dependencies = dictionary.get('python_dependencies')
     python_dependencies['transitive_deps'] = transitive_deps(
