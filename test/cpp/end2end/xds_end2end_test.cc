@@ -2030,40 +2030,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return listener;
   }
 
-  // Builds a Listener with Fault Injection filter config. If the http_fault is
-  // nullptr, then assign an empty filter config. This filter config is required
-  // to enable the fault injection features.
-  static Listener BuildListenerWithFaultInjection(
-      const HTTPFault& http_fault = HTTPFault()) {
-    HttpConnectionManager http_connection_manager;
-    Listener listener;
-    listener.set_name(kServerName);
-    HttpFilter* fault_filter = http_connection_manager.add_http_filters();
-    fault_filter->set_name("envoy.fault");
-    fault_filter->mutable_typed_config()->PackFrom(http_fault);
-    HttpFilter* router_filter = http_connection_manager.add_http_filters();
-    router_filter->set_name("router");
-    router_filter->mutable_typed_config()->PackFrom(
-        envoy::extensions::filters::http::router::v3::Router());
-    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-        http_connection_manager);
-    return listener;
-  }
-
-  RouteConfiguration BuildRouteConfigurationWithFaultInjection(
-      const HTTPFault& http_fault) {
-    // Package as Any
-    google::protobuf::Any filter_config;
-    filter_config.PackFrom(http_fault);
-    // Plug into the RouteConfiguration
-    RouteConfiguration new_route_config = default_route_config_;
-    auto* config_map = new_route_config.mutable_virtual_hosts(0)
-                           ->mutable_routes(0)
-                           ->mutable_typed_per_filter_config();
-    (*config_map)["envoy.fault"] = std::move(filter_config);
-    return new_route_config;
-  }
-
   ClusterLoadAssignment BuildEdsResource(
       const AdsServiceImpl::EdsResourceArgs& args,
       const char* eds_service_name = kDefaultEdsServiceName) {
@@ -8755,6 +8721,40 @@ class FaultInjectionTest : public XdsEnd2endTest {
 
   std::vector<FilterConfigSetup> all_filter_config_setup() const {
     return all_filter_config_setup_;
+  }
+
+  // Builds a Listener with Fault Injection filter config. If the http_fault is
+  // nullptr, then assign an empty filter config. This filter config is required
+  // to enable the fault injection features.
+  static Listener BuildListenerWithFaultInjection(
+      const HTTPFault& http_fault = HTTPFault()) {
+    HttpConnectionManager http_connection_manager;
+    Listener listener;
+    listener.set_name(kServerName);
+    HttpFilter* fault_filter = http_connection_manager.add_http_filters();
+    fault_filter->set_name("envoy.fault");
+    fault_filter->mutable_typed_config()->PackFrom(http_fault);
+    HttpFilter* router_filter = http_connection_manager.add_http_filters();
+    router_filter->set_name("router");
+    router_filter->mutable_typed_config()->PackFrom(
+        envoy::extensions::filters::http::router::v3::Router());
+    listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+        http_connection_manager);
+    return listener;
+  }
+
+  RouteConfiguration BuildRouteConfigurationWithFaultInjection(
+      const HTTPFault& http_fault) {
+    // Package as Any
+    google::protobuf::Any filter_config;
+    filter_config.PackFrom(http_fault);
+    // Plug into the RouteConfiguration
+    RouteConfiguration new_route_config = default_route_config_;
+    auto* config_map = new_route_config.mutable_virtual_hosts(0)
+                           ->mutable_routes(0)
+                           ->mutable_typed_per_filter_config();
+    (*config_map)["envoy.fault"] = std::move(filter_config);
+    return new_route_config;
   }
 
   void SetFilterConfig(FilterConfigSetup setup, HTTPFault& http_fault) {

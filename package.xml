@@ -102,8 +102,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/dynamic_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/dynamic_filters.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/fault_injection_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/fault_injection_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/global_subchannel_pool.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/global_subchannel_pool.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health_check_client.cc" role="src" />
@@ -193,6 +191,10 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_idle/client_idle_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/fault_injection_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/service_config_parser.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/fault_injection/service_config_parser.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client/http_client_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/http/client_authority_filter.cc" role="src" />
@@ -641,6 +643,8 @@
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_client_stats.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/xds/xds_http_fault_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_http_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/xds/xds_server_config_fetcher.cc" role="src" />

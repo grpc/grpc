@@ -21,8 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <vector>
-
 #include "absl/types/optional.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy.h"
@@ -35,10 +33,6 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/exec_ctx.h"  // for grpc_millis
 #include "src/core/lib/json/json.h"
-
-// Channel arg key for enabling parsing fault injection via method config.
-#define GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG \
-  "grpc.parse_fault_injection_method_config"
 
 namespace grpc_core {
 namespace internal {
@@ -95,48 +89,23 @@ class ClientChannelMethodParsedConfig
     StatusCodeSet retryable_status_codes;
   };
 
-  struct FaultInjectionPolicy {
-    uint32_t abort_per_million = 0;
-    grpc_status_code abort_code = GRPC_STATUS_OK;
-    std::string abort_message;
-    std::string abort_code_header;
-    std::string abort_percentage_header;
-    uint32_t abort_percentage_denominator;
-
-    uint32_t delay_per_million = 0;
-    grpc_millis delay = 0;
-    std::string delay_header;
-    std::string delay_percentage_header;
-    uint32_t delay_percentage_denominator;
-
-    // By default, the max allowed active faults are unlimited.
-    uint32_t max_faults = std::numeric_limits<uint32_t>::max();
-  };
-
-  ClientChannelMethodParsedConfig(
-      grpc_millis timeout, const absl::optional<bool>& wait_for_ready,
-      std::unique_ptr<RetryPolicy> retry_policy,
-      std::unique_ptr<std::vector<FaultInjectionPolicy> >
-          fault_injection_policies)
+  ClientChannelMethodParsedConfig(grpc_millis timeout,
+                                  const absl::optional<bool>& wait_for_ready,
+                                  std::unique_ptr<RetryPolicy> retry_policy)
       : timeout_(timeout),
         wait_for_ready_(wait_for_ready),
-        retry_policy_(std::move(retry_policy)),
-        fault_injection_policies_(std::move(fault_injection_policies)) {}
+        retry_policy_(std::move(retry_policy)) {}
 
   grpc_millis timeout() const { return timeout_; }
 
   absl::optional<bool> wait_for_ready() const { return wait_for_ready_; }
 
   const RetryPolicy* retry_policy() const { return retry_policy_.get(); }
-  const FaultInjectionPolicy* fault_injection_policy(int index) const {
-    return &fault_injection_policies_->at(index);
-  }
 
  private:
   grpc_millis timeout_ = 0;
   absl::optional<bool> wait_for_ready_;
   std::unique_ptr<RetryPolicy> retry_policy_;
-  std::unique_ptr<std::vector<FaultInjectionPolicy> > fault_injection_policies_;
 };
 
 class ClientChannelServiceConfigParser : public ServiceConfigParser::Parser {

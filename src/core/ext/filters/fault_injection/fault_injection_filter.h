@@ -1,5 +1,5 @@
 //
-// Copyright 2020 gRPC authors.
+// Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -14,12 +14,17 @@
 // limitations under the License.
 //
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_FAULT_INJECTION_FILTER_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_FAULT_INJECTION_FILTER_H
+#ifndef GRPC_CORE_EXT_FILTERS_FAULT_INJECTION_FAULT_INJECTION_FILTER_H
+#define GRPC_CORE_EXT_FILTERS_FAULT_INJECTION_FAULT_INJECTION_FILTER_H
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/fault_injection/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
+
+// Channel arg key for enabling parsing fault injection via method config.
+#define GRPC_ARG_PARSE_FAULT_INJECTION_METHOD_CONFIG \
+  "grpc.parse_fault_injection_method_config"
 
 namespace grpc_core {
 
@@ -27,8 +32,8 @@ namespace grpc_core {
 // of the ordinary channel stack. The fault injection filter fetches fault
 // injection policy from the method config of service config returned by the
 // resolver, and enforces the fault injection policy.
-extern const grpc_channel_filter grpc_fault_injection_filter;
+extern const grpc_channel_filter FaultInjectionFilterVtable;
 
 }  // namespace grpc_core
 
-#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_FAULT_INJECTION_FILTER_H
+#endif  // GRPC_CORE_EXT_FILTERS_FAULT_INJECTION_FAULT_INJECTION_FILTER_H

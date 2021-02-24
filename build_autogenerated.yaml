@@ -393,7 +393,6 @@ libs:
   - src/core/ext/filters/client_channel/config_selector.h
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/dynamic_filters.h
-  - src/core/ext/filters/client_channel/fault_injection_filter.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_connect_handshaker.h
@@ -433,6 +432,8 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/deadline/deadline_filter.h
+  - src/core/ext/filters/fault_injection/fault_injection_filter.h
+  - src/core/ext/filters/fault_injection/service_config_parser.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
   - src/core/ext/filters/http/message_compress/message_compress_filter.h
@@ -651,6 +652,7 @@ libs:
   - src/core/ext/xds/xds_channel_args.h
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_stats.h
+  - src/core/ext/xds/xds_http_fault_filter.h
   - src/core/ext/xds/xds_http_filters.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
@@ -888,7 +890,6 @@ libs:
   - src/core/ext/filters/client_channel/client_channel_plugin.cc
   - src/core/ext/filters/client_channel/config_selector.cc
   - src/core/ext/filters/client_channel/dynamic_filters.cc
-  - src/core/ext/filters/client_channel/fault_injection_filter.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -939,6 +940,8 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_idle/client_idle_filter.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
+  - src/core/ext/filters/fault_injection/fault_injection_filter.cc
+  - src/core/ext/filters/fault_injection/service_config_parser.cc
   - src/core/ext/filters/http/client/http_client_filter.cc
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
@@ -1165,6 +1168,7 @@ libs:
   - src/core/ext/xds/xds_certificate_provider.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_stats.cc
+  - src/core/ext/xds/xds_http_fault_filter.cc
   - src/core/ext/xds/xds_http_filters.cc
   - src/core/ext/xds/xds_server_config_fetcher.cc
   - src/core/lib/avl/avl.cc
@@ -1588,7 +1592,6 @@ libs:
   - src/core/ext/filters/client_channel/config_selector.h
   - src/core/ext/filters/client_channel/connector.h
   - src/core/ext/filters/client_channel/dynamic_filters.h
-  - src/core/ext/filters/client_channel/fault_injection_filter.h
   - src/core/ext/filters/client_channel/global_subchannel_pool.h
   - src/core/ext/filters/client_channel/health/health_check_client.h
   - src/core/ext/filters/client_channel/http_connect_handshaker.h
@@ -1625,6 +1628,8 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/deadline/deadline_filter.h
+  - src/core/ext/filters/fault_injection/fault_injection_filter.h
+  - src/core/ext/filters/fault_injection/service_config_parser.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
   - src/core/ext/filters/http/message_compress/message_compress_filter.h
@@ -1832,7 +1837,6 @@ libs:
   - src/core/ext/filters/client_channel/client_channel_plugin.cc
   - src/core/ext/filters/client_channel/config_selector.cc
   - src/core/ext/filters/client_channel/dynamic_filters.cc
-  - src/core/ext/filters/client_channel/fault_injection_filter.cc
   - src/core/ext/filters/client_channel/global_subchannel_pool.cc
   - src/core/ext/filters/client_channel/health/health_check_client.cc
   - src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -1877,6 +1881,8 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_idle/client_idle_filter.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
+  - src/core/ext/filters/fault_injection/fault_injection_filter.cc
+  - src/core/ext/filters/fault_injection/service_config_parser.cc
   - src/core/ext/filters/http/client/http_client_filter.cc
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
@@ -5015,6 +5021,7 @@ targets:
   uses_polling: false
 - name: bm_callback_streaming_ping_pong
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/microbenchmarks/callback_streaming_ping_pong.h
@@ -5045,6 +5052,7 @@ targets:
   - posix
 - name: bm_callback_unary_ping_pong
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/microbenchmarks/callback_test_service.h

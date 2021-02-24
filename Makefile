@@ -1044,7 +1044,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/client_channel_plugin.cc \
     src/core/ext/filters/client_channel/config_selector.cc \
     src/core/ext/filters/client_channel/dynamic_filters.cc \
-    src/core/ext/filters/client_channel/fault_injection_filter.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
@@ -1095,6 +1094,8 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/filters/fault_injection/fault_injection_filter.cc \
+    src/core/ext/filters/fault_injection/service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
@@ -1321,6 +1322,7 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_certificate_provider.cc \
     src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_stats.cc \
+    src/core/ext/xds/xds_http_fault_filter.cc \
     src/core/ext/xds/xds_http_filters.cc \
     src/core/ext/xds/xds_server_config_fetcher.cc \
     src/core/lib/avl/avl.cc \
@@ -1711,7 +1713,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/client_channel_plugin.cc \
     src/core/ext/filters/client_channel/config_selector.cc \
     src/core/ext/filters/client_channel/dynamic_filters.cc \
-    src/core/ext/filters/client_channel/fault_injection_filter.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
@@ -1756,6 +1757,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/filters/fault_injection/fault_injection_filter.cc \
+    src/core/ext/filters/fault_injection/service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
@@ -2842,6 +2845,7 @@ src/core/ext/xds/xds_bootstrap.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_certificate_provider.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client_stats.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_http_fault_filter.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_filters.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_server_config_fetcher.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)

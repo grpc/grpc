@@ -1101,7 +1101,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/client_channel_plugin.cc",
         "src/core/ext/filters/client_channel/config_selector.cc",
         "src/core/ext/filters/client_channel/dynamic_filters.cc",
-        "src/core/ext/filters/client_channel/fault_injection_filter.cc",
         "src/core/ext/filters/client_channel/global_subchannel_pool.cc",
         "src/core/ext/filters/client_channel/health/health_check_client.cc",
         "src/core/ext/filters/client_channel/http_connect_handshaker.cc",
@@ -1131,7 +1130,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/config_selector.h",
         "src/core/ext/filters/client_channel/connector.h",
         "src/core/ext/filters/client_channel/dynamic_filters.h",
-        "src/core/ext/filters/client_channel/fault_injection_filter.h",
         "src/core/ext/filters/client_channel/global_subchannel_pool.h",
         "src/core/ext/filters/client_channel/health/health_check_client.h",
         "src/core/ext/filters/client_channel/http_connect_handshaker.h",
@@ -1242,6 +1240,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_fault_injection_filter",
+    srcs = [
+        "src/core/ext/filters/fault_injection/fault_injection_filter.cc",
+        "src/core/ext/filters/fault_injection/service_config_parser.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/fault_injection/fault_injection_filter.h",
+        "src/core/ext/filters/fault_injection/service_config_parser.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ]
+)
+
+grpc_cc_library(
     name = "grpc_http_filters",
     srcs = [
         "src/core/ext/filters/http/client/http_client_filter.cc",
@@ -1260,6 +1275,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_message_size_filter",
+        "grpc_fault_injection_filter",
     ],
 )
 
@@ -1377,6 +1393,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_certificate_provider.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
+        "src/core/ext/xds/xds_http_fault_filter.cc",
         "src/core/ext/xds/xds_http_filters.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
@@ -1391,6 +1408,7 @@ grpc_cc_library(
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
+        "src/core/ext/xds/xds_http_fault_filter.h",
         "src/core/ext/xds/xds_http_filters.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],

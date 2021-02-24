@@ -1,5 +1,5 @@
 //
-// Copyright 2020 gRPC authors.
+// Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,32 +16,34 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/fault_injection_filter.h"
+#include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
 
 #include "absl/strings/numbers.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_call_data.h"
+#include "src/core/ext/filters/fault_injection/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/transport/status_conversion.h"
 
 namespace grpc_core {
-
-using internal::ClientChannelMethodParsedConfig;
-using internal::ClientChannelServiceConfigParser;
 
 TraceFlag grpc_fault_injection_filter_trace(false, "fault_injection_filter");
 
 namespace {
 
 Atomic<uint32_t> g_active_faults{0};
+static_assert(
+    std::is_trivially_destructible<Atomic<uint32_t>>::value,
+    "the active fault counter needs to have a trivially destructible type");
 
 inline int GetLinkedMetadatumValueInt(grpc_linked_mdelem* md) {
   int res;
@@ -83,7 +85,7 @@ class FaultInjectionFilter {
     int index() const { return index_; }
 
    private:
-    ChannelData() = default;
+    ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args);
     ~ChannelData() = default;
 
     // The relative index of instances of the same filter.
@@ -105,7 +107,8 @@ class FaultInjectionFilter {
    private:
     class ResumeBatchCanceller;
 
-    explicit CallData(const grpc_call_element_args* args);
+    CallData(FaultInjectionFilter::ChannelData* chand,
+             const grpc_call_element_args* args);
     ~CallData();
 
     void DecideWhetherToInjectFaults(grpc_metadata_batch* initial_metadata);
@@ -140,7 +143,7 @@ class FaultInjectionFilter {
 
     // Used to track the policy structs that needs to be destroyed in dtor.
     bool fi_policy_owned_ = false;
-    const ClientChannelMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
+    const FaultInjectionPolicy* fi_policy_;
     grpc_call_stack* owning_call_;
     Arena* arena_;
     CallCombiner* call_combiner_;
@@ -162,10 +165,8 @@ class FaultInjectionFilter {
 
 grpc_error* FaultInjectionFilter::ChannelData::Init(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
-  GPR_ASSERT(elem->filter == &grpc_fault_injection_filter);
-  auto* chand = new (elem->channel_data) FaultInjectionFilter::ChannelData();
-  chand->index_ =
-      grpc_channel_stack_filter_instance_number(args->channel_stack, elem);
+  GPR_ASSERT(elem->filter == &FaultInjectionFilterVtable);
+  new (elem->channel_data) FaultInjectionFilter::ChannelData(elem, args);
   return GRPC_ERROR_NONE;
 }
 
@@ -175,7 +176,11 @@ void FaultInjectionFilter::ChannelData::Destroy(grpc_channel_element* elem) {
   chand->~ChannelData();
 }
 
-// CallData
+FaultInjectionFilter::ChannelData::ChannelData(grpc_channel_element* elem,
+                                               grpc_channel_element_args* args)
+    : index_(grpc_channel_stack_filter_instance_number(args->channel_stack,
+                                                       elem)) {}
+
 class FaultInjectionFilter::CallData::ResumeBatchCanceller {
  public:
   explicit ResumeBatchCanceller(grpc_call_element* elem) : elem_(elem) {
@@ -220,15 +225,7 @@ grpc_error* FaultInjectionFilter::CallData::Init(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   auto* chand =
       static_cast<FaultInjectionFilter::ChannelData*>(elem->channel_data);
-  auto* calld = new (elem->call_data) FaultInjectionFilter::CallData(args);
-  // Fetch the fault injection policy from the service config, based on the
-  // relative index for which policy should this CallData use.
-  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      args->context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-  auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
-      service_config_call_data->GetMethodParsedConfig(
-          internal::ClientChannelServiceConfigParser::ParserIndex()));
-  calld->fi_policy_ = method_params->fault_injection_policy(chand->index());
+  new (elem->call_data) FaultInjectionFilter::CallData(chand, args);
   return GRPC_ERROR_NONE;
 }
 
@@ -269,22 +266,33 @@ void FaultInjectionFilter::CallData::StartTransportStreamOpBatch(
   grpc_call_next_op(elem, batch);
 }
 
-FaultInjectionFilter::CallData::CallData(const grpc_call_element_args* args)
+FaultInjectionFilter::CallData::CallData(
+    FaultInjectionFilter::ChannelData* chand,
+    const grpc_call_element_args* args)
     : owning_call_(args->call_stack),
       arena_(args->arena),
-      call_combiner_(args->call_combiner) {}
+      call_combiner_(args->call_combiner) {
+  // Fetch the fault injection policy from the service config, based on the
+  // relative index for which policy should this CallData use.
+  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+      args->context[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  auto* method_params = static_cast<FaultInjectionMethodParsedConfig*>(
+      service_config_call_data->GetMethodParsedConfig(
+          FaultInjectionServiceConfigParser::ParserIndex()));
+  fi_policy_ = method_params->fault_injection_policy(chand->index());
+}
 
 FaultInjectionFilter::CallData::~CallData() {
   if (fi_policy_owned_) {
     fi_policy_->~FaultInjectionPolicy();
+    // TODO(lidiz) The ~CallData will be invoked twice, investigate how.
     fi_policy_owned_ = false;
   }
 }
 
 void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
     grpc_metadata_batch* initial_metadata) {
-  ClientChannelMethodParsedConfig::FaultInjectionPolicy* copied_policy =
-      nullptr;
+  FaultInjectionPolicy* copied_policy = nullptr;
   // Update the policy with values in initial metadata.
   if (!fi_policy_->abort_code_header.empty() ||
       !fi_policy_->abort_percentage_header.empty() ||
@@ -293,9 +301,7 @@ void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
     // Defer the actual copy until the first matched header.
     auto maybe_copy_policy_func = [this, &copied_policy]() {
       if (copied_policy == nullptr) {
-        copied_policy =
-            arena_->New<ClientChannelMethodParsedConfig::FaultInjectionPolicy>(
-                *fi_policy_);
+        copied_policy = arena_->New<FaultInjectionPolicy>(*fi_policy_);
       }
     };
     for (grpc_linked_mdelem* md = initial_metadata->list.head; md != nullptr;
@@ -396,7 +402,7 @@ void FaultInjectionFilter::CallData::ResumeBatch(void* arg, grpc_error* error) {
     return;
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
-    gpr_log(GPR_INFO, "chand %p calld %p: Resuming delayed stream op batch %p",
+    gpr_log(GPR_INFO, "chand=%p calld=%p: Resuming delayed stream op batch %p",
             elem->channel_data, calld, calld->delayed_batch_);
   }
   // Lame the canceller
@@ -416,7 +422,7 @@ void FaultInjectionFilter::CallData::ResumeBatch(void* arg, grpc_error* error) {
 
 }  // namespace
 
-extern const grpc_channel_filter grpc_fault_injection_filter = {
+extern const grpc_channel_filter FaultInjectionFilterVtable = {
     FaultInjectionFilter::CallData::StartTransportStreamOpBatch,
     grpc_channel_next_op,
     sizeof(FaultInjectionFilter::CallData),
@@ -431,3 +437,9 @@ extern const grpc_channel_filter grpc_fault_injection_filter = {
 };
 
 }  // namespace grpc_core
+
+void grpc_fault_injection_filter_init(void) {
+  grpc_core::FaultInjectionServiceConfigParser::Register();
+}
+
+void grpc_fault_injection_filter_shutdown(void) {}
