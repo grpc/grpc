@@ -84,13 +84,11 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
-  GPR_ASSERT(absl::GetFlag(FLAGS_server_port));
-  const int host_port_buf_size = 1024;
-  char host_port[host_port_buf_size];
-  snprintf(host_port, host_port_buf_size, "%s:%d",
-           absl::GetFlag(FLAGS_server_host).c_str(),
-           absl::GetFlag(FLAGS_server_port));
-
+  std::string host_port = absl::GetFlag(FLAGS_server_host);
+  int32_t port = absl::GetFlag(FLAGS_server_port);
+  if (port != 0) {
+    host_port = absl::StrCat(host_port, ":", std::to_string(port));
+  }
   std::shared_ptr<CallCredentials> creds;
   if (test_case == "compute_engine_creds") {
     creds = absl::GetFlag(FLAGS_custom_credentials_type) ==
