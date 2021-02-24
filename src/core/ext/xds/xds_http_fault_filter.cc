@@ -49,35 +49,6 @@ const char* kXdsHttpFaultFilterConfigName =
 
 namespace {
 
-absl::StatusOr<uint32_t> FractionPercentParseToPerMillion(
-    const envoy_type_v3_FractionalPercent* fraction) {
-  if (fraction != nullptr) {
-    uint32_t numerator = envoy_type_v3_FractionalPercent_numerator(fraction);
-    const auto denominator =
-        static_cast<envoy_type_v3_FractionalPercent_DenominatorType>(
-            envoy_type_v3_FractionalPercent_denominator(fraction));
-    // Normalize to million.
-    switch (denominator) {
-      case envoy_type_v3_FractionalPercent_HUNDRED:
-        numerator *= 10000;
-        break;
-      case envoy_type_v3_FractionalPercent_TEN_THOUSAND:
-        numerator *= 100;
-        break;
-      case envoy_type_v3_FractionalPercent_MILLION:
-        break;
-      default:
-        return absl::InvalidArgumentError("unknown denominator type");
-    }
-    if (numerator > 1000000) {
-      return absl::InvalidArgumentError(absl::StrCat(
-          "invalid fraction percent: ", numerator, "/", denominator));
-    }
-    return numerator;
-  }
-  return 0;
-}
-
 uint32_t GetDenominator(const envoy_type_v3_FractionalPercent* fraction) {
   if (fraction != nullptr) {
     const auto denominator =
@@ -110,10 +81,9 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
   // directly used later by service config. In this way, we can validate the
   // filter configs, and NACK if needed. It also allows the service config to
   // function independently without xDS, but not the other way around.
-  // NOTE(lidiz): please refer to
-  // ClientChannelMethodParsedConfig::FaultInjectionPolicy for ground truth
+  // NOTE(lidiz): please refer to FaultInjectionPolicy for ground truth
   // definitions, located at:
-  // src/core/ext/filters/client_channel/resolver_result_parsing.cc
+  // src/core/ext/filters/fault_injection/service_config_parser.h
   Json::Object fault_injection_policy_json;
   // Section 1: Parse the abort injection config
   const auto* fault_abort =
@@ -155,13 +125,8 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
     auto* percent =
         envoy_extensions_filters_http_fault_v3_FaultAbort_percentage(
             fault_abort);
-    absl::StatusOr<uint32_t> fraction_parse_result =
-        FractionPercentParseToPerMillion(percent);
-    if (!fraction_parse_result.ok()) {
-      return fraction_parse_result.status();
-    }
-    fault_injection_policy_json["abortPerMillion"] =
-        Json(*fraction_parse_result);
+    fault_injection_policy_json["abortPercentageNumerator"] =
+        Json(envoy_type_v3_FractionalPercent_numerator(percent));
     fault_injection_policy_json["abortPercentageDenominator"] =
         Json(GetDenominator(percent));
   }
@@ -190,13 +155,8 @@ absl::StatusOr<Json> ParseHttpFaultIntoJson(upb_strview serialized_http_fault,
     auto* percent =
         envoy_extensions_filters_common_fault_v3_FaultDelay_percentage(
             fault_delay);
-    absl::StatusOr<uint32_t> fraction_parse_result =
-        FractionPercentParseToPerMillion(percent);
-    if (!fraction_parse_result.ok()) {
-      return fraction_parse_result.status();
-    }
-    fault_injection_policy_json["delayPerMillion"] =
-        Json(*fraction_parse_result);
+    fault_injection_policy_json["delayPercentageNumerator"] =
+        Json(envoy_type_v3_FractionalPercent_numerator(percent));
     fault_injection_policy_json["delayPercentageDenominator"] =
         Json(GetDenominator(percent));
   }

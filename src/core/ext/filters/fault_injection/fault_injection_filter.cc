@@ -54,6 +54,15 @@ inline int GetLinkedMetadatumValueInt(grpc_linked_mdelem* md) {
   }
 }
 
+inline uint32_t GetLinkedMetadatumValueUnsignedInt(grpc_linked_mdelem* md) {
+  uint32_t res;
+  if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)), &res)) {
+    return res;
+  } else {
+    return -1;
+  }
+}
+
 inline int64_t GetLinkedMetadatumValueInt64(grpc_linked_mdelem* md) {
   int64_t res;
   if (absl::SimpleAtoi(StringViewFromSlice(GRPC_MDVALUE(md->md)), &res)) {
@@ -63,15 +72,13 @@ inline int64_t GetLinkedMetadatumValueInt64(grpc_linked_mdelem* md) {
   }
 }
 
-inline bool UnderFraction(const uint32_t fraction_per_million) {
-  if (fraction_per_million == 0) return false;
-  // Generate a random number in [0, 1000000).
-  const uint32_t random_number = rand() % 1000000;
-  return random_number < fraction_per_million;
-}
-
-int TranslatePercentageToPerMillion(int percentage, int denominator, int cap) {
-  return GPR_MAX(0, GPR_MIN(percentage * (1000000 / denominator), cap));
+inline bool UnderFraction(const uint32_t numerator,
+                          const uint32_t denominator) {
+  if (numerator <= 0) return false;
+  if (numerator >= denominator) return true;
+  // Generate a random number in [0, denominator).
+  const uint32_t random_number = rand() % denominator;
+  return random_number < numerator;
 }
 
 class FaultInjectionFilter {
@@ -225,7 +232,12 @@ grpc_error* FaultInjectionFilter::CallData::Init(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   auto* chand =
       static_cast<FaultInjectionFilter::ChannelData*>(elem->channel_data);
-  new (elem->call_data) FaultInjectionFilter::CallData(chand, args);
+  auto* calld =
+      new (elem->call_data) FaultInjectionFilter::CallData(chand, args);
+  if (calld->fi_policy_ == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "failed to find fault injection policy");
+  }
   return GRPC_ERROR_NONE;
 }
 
@@ -239,6 +251,14 @@ void FaultInjectionFilter::CallData::Destroy(
 void FaultInjectionFilter::CallData::StartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   auto* calld = static_cast<FaultInjectionFilter::CallData*>(elem->call_data);
+  if (calld->fi_policy_ == nullptr) {
+    grpc_transport_stream_op_batch_finish_with_failure(
+        batch,
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "invalid fault injection call data"),
+        calld->call_combiner_);
+    return;
+  }
   // There should only be one send_initial_metdata op, and fault injection also
   // only need to be enforced once.
   if (batch->send_initial_metadata) {
@@ -279,7 +299,9 @@ FaultInjectionFilter::CallData::CallData(
   auto* method_params = static_cast<FaultInjectionMethodParsedConfig*>(
       service_config_call_data->GetMethodParsedConfig(
           FaultInjectionServiceConfigParser::ParserIndex()));
-  fi_policy_ = method_params->fault_injection_policy(chand->index());
+  if (method_params != nullptr) {
+    fi_policy_ = method_params->fault_injection_policy(chand->index());
+  }
 }
 
 FaultInjectionFilter::CallData::~CallData() {
@@ -321,10 +343,9 @@ void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
       if (!fi_policy_->abort_percentage_header.empty() &&
           key == fi_policy_->abort_percentage_header) {
         maybe_copy_policy_func();
-        copied_policy->abort_per_million = TranslatePercentageToPerMillion(
-            GetLinkedMetadatumValueInt(md),
-            fi_policy_->abort_percentage_denominator,
-            fi_policy_->abort_per_million);
+        copied_policy->abort_percentage_numerator =
+            GPR_MIN(GetLinkedMetadatumValueUnsignedInt(md),
+                    fi_policy_->abort_percentage_numerator);
       }
       if (!fi_policy_->delay_header.empty() &&
           (copied_policy == nullptr || copied_policy->delay == 0) &&
@@ -336,19 +357,20 @@ void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
       if (!fi_policy_->delay_percentage_header.empty() &&
           key == fi_policy_->delay_percentage_header) {
         maybe_copy_policy_func();
-        copied_policy->delay_per_million = TranslatePercentageToPerMillion(
-            GetLinkedMetadatumValueInt(md),
-            fi_policy_->delay_percentage_denominator,
-            fi_policy_->delay_per_million);
+        copied_policy->delay_percentage_numerator =
+            GPR_MIN(GetLinkedMetadatumValueUnsignedInt(md),
+                    fi_policy_->delay_percentage_numerator);
       }
     }
     if (copied_policy != nullptr) fi_policy_ = copied_policy;
   }
   // Roll the dice
-  delay_request_ =
-      fi_policy_->delay != 0 && UnderFraction(fi_policy_->delay_per_million);
+  delay_request_ = fi_policy_->delay != 0 &&
+                   UnderFraction(fi_policy_->delay_percentage_numerator,
+                                 fi_policy_->abort_percentage_denominator);
   abort_request_ = fi_policy_->abort_code != GRPC_STATUS_OK &&
-                   UnderFraction(fi_policy_->abort_per_million);
+                   UnderFraction(fi_policy_->abort_percentage_numerator,
+                                 fi_policy_->abort_percentage_denominator);
   if (!delay_request_ && !abort_request_) {
     if (copied_policy != nullptr) copied_policy->~FaultInjectionPolicy();
     // No fault injection for this call

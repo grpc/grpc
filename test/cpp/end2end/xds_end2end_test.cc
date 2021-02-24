@@ -8828,6 +8828,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutEnv) {
 
 // Without the listener config, the fault injection won't be enabled.
 TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const uint32_t kAbortPercentagePerHundred = 100;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -8850,6 +8851,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
   SetListenerAndRouteConfiguration(0, default_listener_, route);
   // Fire several RPCs, and expect all of them to be pass.
   CheckRpcSendOk(5, RpcOptions().set_wait_for_ready(true));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
@@ -9090,8 +9092,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const uint32_t kMaxFault = 10;
   const uint32_t kNumRpcs = 30;  // kNumRpcs should be bigger than kMaxFault
-  const uint32_t kRPCRunningMilliseconds = 2000;  // 2 seconds
-  const uint32_t kLongDelaySeconds = 100;         // 100 seconds
+  const uint32_t kRpcTimeoutMs = 2000;     // 2 seconds
+  const uint32_t kLongDelaySeconds = 100;  // 100 seconds
   const uint32_t kAlwaysDelayPercentage = 100;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -9117,8 +9119,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
     // active faults quota.
     int num_ok = 0, num_delayed = 0;
     LongRunningRpc rpcs[kNumRpcs];
-    RpcOptions rpc_options =
-        RpcOptions().set_timeout_ms(kRPCRunningMilliseconds);
+    RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMs);
     for (size_t i = 0; i < kNumRpcs; ++i) {
       rpcs[i].StartRpc(stub_.get(), rpc_options);
     }
