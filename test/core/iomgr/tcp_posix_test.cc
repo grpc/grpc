@@ -193,8 +193,7 @@ static void read_cb(void* user_data, grpc_error* error) {
     gpr_mu_unlock(g_mu);
   } else {
     gpr_mu_unlock(g_mu);
-    grpc_endpoint_read(state->ep, &state->incoming, &state->read_cb,
-                       /*urgent=*/false);
+    grpc_endpoint_read(state->ep, &state->incoming, &state->read_cb);
   }
 }
 
@@ -231,7 +230,7 @@ static void read_test(size_t num_bytes, size_t slice_size) {
   grpc_slice_buffer_init(&state.incoming);
   GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
-  grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false);
+  grpc_endpoint_read(ep, &state.incoming, &state.read_cb);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
@@ -282,7 +281,7 @@ static void large_read_test(size_t slice_size) {
   grpc_slice_buffer_init(&state.incoming);
   GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
-  grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false);
+  grpc_endpoint_read(ep, &state.incoming, &state.read_cb);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {
@@ -521,7 +520,7 @@ static void release_fd_test(size_t num_bytes, size_t slice_size) {
   grpc_slice_buffer_init(&state.incoming);
   GRPC_CLOSURE_INIT(&state.read_cb, read_cb, &state, grpc_schedule_on_exec_ctx);
 
-  grpc_endpoint_read(ep, &state.incoming, &state.read_cb, /*urgent=*/false);
+  grpc_endpoint_read(ep, &state.incoming, &state.read_cb);
 
   gpr_mu_lock(g_mu);
   while (state.read_bytes < state.target_read_bytes) {

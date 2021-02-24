@@ -255,7 +255,7 @@ static void on_read(void* user_data, grpc_error* error) {
 }
 
 static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
-                          grpc_closure* cb, bool urgent) {
+                          grpc_closure* cb) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   ep->read_cb = cb;
   ep->read_buffer = slices;
@@ -269,7 +269,7 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     return;
   }
 
-  grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read, urgent);
+  grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read);
 }
 
 static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,

@@ -160,8 +160,7 @@ void HttpConnectHandshaker::OnWriteDone(void* arg, grpc_error* error) {
         handshaker->args_->endpoint, handshaker->args_->read_buffer,
         GRPC_CLOSURE_INIT(&handshaker->response_read_closure_,
                           &HttpConnectHandshaker::OnReadDoneScheduler,
-                          handshaker, grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+                          handshaker, grpc_schedule_on_exec_ctx));
   }
 }
 
@@ -236,8 +235,7 @@ void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error* error) {
         handshaker->args_->endpoint, handshaker->args_->read_buffer,
         GRPC_CLOSURE_INIT(&handshaker->response_read_closure_,
                           &HttpConnectHandshaker::OnReadDoneScheduler,
-                          handshaker, grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+                          handshaker, grpc_schedule_on_exec_ctx));
     return;
   }
   // Make sure we got a 2xx response.
