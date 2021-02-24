@@ -246,10 +246,10 @@ std::string GetMethodReturnTypeClient(const MethodDescriptor* method) {
   } else {
     if (method->server_streaming()) {
       return "grpc::AsyncServerStreamingCall<" +
-            GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
+             GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
     } else {
       return "grpc::AsyncUnaryCall<" +
-            GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
+             GRPC_CUSTOM_CSHARP_GETCLASSNAME(method->output_type()) + ">";
     }
   }
 }
