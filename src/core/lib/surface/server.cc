@@ -318,7 +318,8 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
 // advance or queue up any incoming RPC for later match. Instead, MatchOrQueue
 // will call out to an allocation function passed in at the construction of the
 // object. These request matchers are designed for the C++ callback API, so they
-// only support 1 completion queue (passed in at the constructor).
+// only support 1 completion queue (passed in at the constructor). They are also
+// used for the sync API.
 class Server::AllocatingRequestMatcherBase : public RequestMatcherInterface {
  public:
   AllocatingRequestMatcherBase(Server* server, grpc_completion_queue* cq)
@@ -370,15 +371,25 @@ class Server::AllocatingRequestMatcherBatch
 
   void MatchOrQueue(size_t /*start_request_queue_index*/,
                     CallData* calld) override {
-    BatchCallAllocation call_info = allocator_();
-    GPR_ASSERT(server()->ValidateServerRequest(
-                   cq(), static_cast<void*>(call_info.tag), nullptr, nullptr) ==
-               GRPC_CALL_OK);
-    RequestedCall* rc = new RequestedCall(
-        static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
-        call_info.initial_metadata, call_info.details);
-    calld->SetState(CallData::CallState::ACTIVATED);
-    calld->Publish(cq_idx(), rc);
+    server()->shutdown_blocking_refs_.fetch_add(1, std::memory_order_acq_rel);
+    if (!server()->shutdown_flag_.load(std::memory_order_acquire)) {
+      BatchCallAllocation call_info = allocator_();
+      GPR_ASSERT(server()->ValidateServerRequest(
+                     cq(), static_cast<void*>(call_info.tag), nullptr,
+                     nullptr) == GRPC_CALL_OK);
+      RequestedCall* rc = new RequestedCall(
+          static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
+          call_info.initial_metadata, call_info.details);
+      calld->SetState(CallData::CallState::ACTIVATED);
+      calld->Publish(cq_idx(), rc);
+    } else {
+      calld->FailCallCreation();
+    }
+    if (server()->shutdown_blocking_refs_.fetch_sub(
+            1, std::memory_order_acq_rel) == 1) {
+      MutexLock lock(&server()->mu_global_);
+      server()->MaybeFinishShutdown();
+    }
   }
 
  private:
@@ -398,15 +409,26 @@ class Server::AllocatingRequestMatcherRegistered
 
   void MatchOrQueue(size_t /*start_request_queue_index*/,
                     CallData* calld) override {
-    RegisteredCallAllocation call_info = allocator_();
-    GPR_ASSERT(server()->ValidateServerRequest(
-                   cq(), call_info.tag, call_info.optional_payload,
-                   registered_method_) == GRPC_CALL_OK);
-    RequestedCall* rc = new RequestedCall(
-        call_info.tag, call_info.cq, call_info.call, call_info.initial_metadata,
-        registered_method_, call_info.deadline, call_info.optional_payload);
-    calld->SetState(CallData::CallState::ACTIVATED);
-    calld->Publish(cq_idx(), rc);
+    server()->shutdown_blocking_refs_.fetch_add(1, std::memory_order_acq_rel);
+    if (!server()->shutdown_flag_.load(std::memory_order_acquire)) {
+      RegisteredCallAllocation call_info = allocator_();
+      GPR_ASSERT(server()->ValidateServerRequest(
+                     cq(), call_info.tag, call_info.optional_payload,
+                     registered_method_) == GRPC_CALL_OK);
+      RequestedCall* rc =
+          new RequestedCall(call_info.tag, call_info.cq, call_info.call,
+                            call_info.initial_metadata, registered_method_,
+                            call_info.deadline, call_info.optional_payload);
+      calld->SetState(CallData::CallState::ACTIVATED);
+      calld->Publish(cq_idx(), rc);
+    } else {
+      calld->FailCallCreation();
+    }
+    if (server()->shutdown_blocking_refs_.fetch_sub(
+            1, std::memory_order_acq_rel) == 1) {
+      MutexLock lock(&server()->mu_global_);
+      server()->MaybeFinishShutdown();
+    }
   }
 
  private:
@@ -717,6 +739,12 @@ void Server::MaybeFinishShutdown() {
     KillPendingWorkLocked(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
   }
+  if (shutdown_blocking_refs_.load(std::memory_order_acquire) != 0) {
+    gpr_log(GPR_DEBUG,
+            "Waiting for in-progress requests to complete before shutting down "
+            "server");
+    return;
+  }
   if (!channels_.empty() || listeners_destroyed_ < listeners_.size()) {
     if (gpr_time_cmp(gpr_time_sub(gpr_now(GPR_CLOCK_REALTIME),
                                   last_shutdown_message_time_),
@@ -815,7 +843,9 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
       KillPendingWorkLocked(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
     }
-    MaybeFinishShutdown();
+    if (shutdown_blocking_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+      MaybeFinishShutdown();
+    }
   }
   // Shutdown listeners.
   for (auto& listener : listeners_) {

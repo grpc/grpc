@@ -388,6 +388,10 @@ class Server : public InternallyRefCounted<Server> {
   std::unique_ptr<RequestMatcherInterface> unregistered_request_matcher_;
 
   std::atomic_bool shutdown_flag_{false};
+  // Don't complete the shutdown until there are no blocking refs. Start with 1
+  // ref released during shutdown call, but also take a ref while the server
+  // needs to remain alive, e.g., during AllocatingRequestMatcher use.
+  std::atomic_int shutdown_blocking_refs_{1};
   bool shutdown_published_ = false;
   std::vector<ShutdownTag> shutdown_tags_;
 
