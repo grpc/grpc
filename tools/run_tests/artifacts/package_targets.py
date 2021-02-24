@@ -113,7 +113,7 @@ class RubyPackage:
 
     def build_jobspec(self):
         return create_docker_jobspec(
-            self.name, 'tools/dockerfile/grpc_artifact_linux_x64',
+            self.name, 'tools/dockerfile/grpc_artifact_centos6_x64',
             'tools/run_tests/artifacts/build_package_ruby.sh')
 
 
@@ -129,7 +129,7 @@ class PythonPackage:
 
     def build_jobspec(self):
         return create_docker_jobspec(
-            self.name, 'tools/dockerfile/grpc_artifact_linux_x64',
+            self.name, 'tools/dockerfile/grpc_artifact_centos6_x64',
             'tools/run_tests/artifacts/build_package_python.sh')
 
 
@@ -145,7 +145,7 @@ class PHPPackage:
 
     def build_jobspec(self):
         return create_docker_jobspec(
-            self.name, 'tools/dockerfile/grpc_artifact_linux_x64',
+            self.name, 'tools/dockerfile/grpc_artifact_centos6_x64',
             'tools/run_tests/artifacts/build_package_php.sh')
 
 
