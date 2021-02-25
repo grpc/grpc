@@ -313,7 +313,6 @@ def grpc_deps():
             name = "envoy_api",
             sha256 = "4423bef0ab15053dca0f723cbdaf4b48ab145e9d8158f02e33028c66fb1d20e0",
             strip_prefix = "data-plane-api-18b54850c9b7ba29a4ab67cbd7ed7eab7b0bbdb2",
-            workspace_file = "@com_github_grpc_grpc//third_party:envoy-api.WORKSPACE",
             urls = [
                 "https://github.com/envoyproxy/data-plane-api/archive/18b54850c9b7ba29a4ab67cbd7ed7eab7b0bbdb2.tar.gz",
             ],
