@@ -97,6 +97,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "xxhash",
+        actual = "@com_github_cyan4973_xxhash//:xxhash",
+    )
+
+    native.bind(
         name = "grpc_cpp_plugin",
         actual = "@com_github_grpc_grpc//src/compiler:grpc_cpp_plugin",
     )
@@ -227,6 +232,18 @@ def grpc_deps():
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/re2/archive/aecba11114cf1fac5497aeb844b6966106de3eb6.tar.gz",
                 "https://github.com/google/re2/archive/aecba11114cf1fac5497aeb844b6966106de3eb6.tar.gz",
+            ],
+        )
+
+    if "com_github_cyan4973_xxhash" not in native.existing_rules():
+        http_archive(
+            name = "com_github_cyan4973_xxhash",
+            build_file = "@com_github_grpc_grpc//third_party:xxhash.BUILD",
+            sha256 = "9fb07cdd2f52e10087f248334eb88d6faef0841e716d96b3ac5ef06750e53126",
+            strip_prefix = "xxHash-aea11081f349893ec26f86ada22c66e828885083",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cyan4973/xxhash/archive/aea11081f349893ec26f86ada22c66e828885083.tar.gz",
+                "https://github.com/cyan4973/xxhash/archive/aea11081f349893ec26f86ada22c66e828885083.tar.gz",
             ],
         )
 

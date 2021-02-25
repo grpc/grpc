@@ -1817,6 +1817,9 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
     ],
+    external_deps = [
+        "xxhash",
+    ],
     language = "c++",
     deps = [
         "grpc_base",
