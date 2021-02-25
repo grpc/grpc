@@ -28,8 +28,7 @@ namespace grpc_core {
 
 namespace {
 
-std::string g_traffic_director_uri =
-    "directpath-trafficdirector.googleapis.com";
+char* g_traffic_director_uri_override;
 
 class GoogleCloud2ProdResolver : public Resolver {
  public:
@@ -311,11 +310,16 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
         {"TRAFFICDIRECTOR_DIRECTPATH_C2P_IPV6_CAPABLE", true},
     };
   }
+  std::string server_uri = "directpath-trafficdirector.googleapis.com";
+  if (g_traffic_director_uri_override != nullptr &&
+      strlen(g_traffic_director_uri_override) > 0) {
+    server_uri = std::string(g_traffic_director_uri_override);
+  }
   Json bootstrap = Json::Object{
       {"xds_servers",
        Json::Array{
            Json::Object{
-               {"server_uri", g_traffic_director_uri},
+               {"server_uri", g_traffic_director_uri_override},
                {"channel_creds",
                 Json::Array{
                     Json::Object{
@@ -368,14 +372,13 @@ void GoogleCloud2ProdResolverInit() {
   ResolverRegistry::Builder::RegisterResolverFactory(
       absl::make_unique<GoogleCloud2ProdResolverFactory>());
   // Allow the TD server uri to be overridden for testing purposes.
-  UniquePtr<char> traffic_director_uri_override(
-      gpr_getenv("GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI"));
-  if (traffic_director_uri_override != nullptr &&
-      strlen(traffic_director_uri_override.get()) > 0) {
-    g_traffic_director_uri = std::string(traffic_director_uri_override.get());
-  }
+  g_traffic_director_uri_override =
+      gpr_getenv("GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI");
 }
 
-void GoogleCloud2ProdResolverShutdown() {}
+void GoogleCloud2ProdResolverShutdown() {
+  gpr_free(g_traffic_director_uri_override);
+  g_traffic_director_uri_override = nullptr;
+}
 
 }  // namespace grpc_core
