@@ -89,7 +89,7 @@ static void poll_pollset_until_request_done(args_struct* args) {
   while (true) {
     grpc_core::ExecCtx exec_ctx;
     {
-      grpc_core::MutexLock lock(args->mu);
+      grpc_core::MutexLockForGprMu lock(args->mu);
       if (args->done) {
         break;
       }
@@ -110,7 +110,7 @@ static void must_succeed(void* argsp, grpc_error* err) {
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);
   GPR_ASSERT(args->addrs->naddrs > 0);
-  grpc_core::MutexLock lock(args->mu);
+  grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
@@ -118,7 +118,7 @@ static void must_succeed(void* argsp, grpc_error* err) {
 static void must_fail(void* argsp, grpc_error* err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err != GRPC_ERROR_NONE);
-  grpc_core::MutexLock lock(args->mu);
+  grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
@@ -132,7 +132,7 @@ static void must_succeed_with_ipv6_first(void* argsp, grpc_error* err) {
   const struct sockaddr* first_address =
       reinterpret_cast<const struct sockaddr*>(args->addrs->addrs[0].addr);
   GPR_ASSERT(first_address->sa_family == AF_INET6);
-  grpc_core::MutexLock lock(args->mu);
+  grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
@@ -145,7 +145,7 @@ static void must_succeed_with_ipv4_first(void* argsp, grpc_error* err) {
   const struct sockaddr* first_address =
       reinterpret_cast<const struct sockaddr*>(args->addrs->addrs[0].addr);
   GPR_ASSERT(first_address->sa_family == AF_INET);
-  grpc_core::MutexLock lock(args->mu);
+  grpc_core::MutexLockForGprMu lock(args->mu);
   args->done = true;
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
