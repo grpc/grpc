@@ -45,7 +45,7 @@ typedef struct mock_endpoint {
 } mock_endpoint;
 
 static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb) {
+                    grpc_closure* cb, bool /*urgent*/) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
