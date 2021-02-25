@@ -248,6 +248,7 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
   auto handshake_mgr =
       handshake_mgr_;  // Hold additional ref to handshake_mgr_ to perform
                        // DoHandshake outside the critical region.
+  bool shutting_down = false;
   {
     MutexLock lock(&connection_->listener_->mu_);
     // If the listener's stopped serving, then shutdown the handshake early.
@@ -255,14 +256,19 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
         !connection_->listener_->is_serving_) {
       handshake_mgr_->Shutdown(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Listener stopped serving"));
+      shutting_down = true;
     } else {
       connection_->listener_->connections_.insert(connection_.get());
       connection_->handshaking_state_ = OrphanablePtr<HandshakingState>(this);
     }
   }
-  Ref().release();  // Held by OnHandshakeDone()
-  handshake_mgr->DoHandshake(endpoint, args, deadline_, acceptor_,
-                             OnHandshakeDone, this);
+  if (shutting_down) {
+    Unref();
+  } else {
+    Ref().release();  // Held by OnHandshakeDone()
+    handshake_mgr->DoHandshake(endpoint, args, deadline_, acceptor_,
+                               OnHandshakeDone, this);
+  }
 }
 
 Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
