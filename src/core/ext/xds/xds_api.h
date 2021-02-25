@@ -36,7 +36,6 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/security/authorization/matchers.h"
 
 namespace grpc_core {
@@ -45,10 +44,6 @@ namespace grpc_core {
 // removed once this feature is fully integration-tested and enabled by
 // default.
 bool XdsSecurityEnabled();
-
-// TODO(lidiz): This will be removed once the fault injection feature is
-// fully integration-tested and enabled by default.
-bool XdsFaultInjectionEnabled();
 
 class XdsClient;
 
@@ -63,15 +58,12 @@ class XdsApi {
     int64_t seconds = 0;
     int32_t nanos = 0;
     bool operator==(const Duration& other) const {
-      return seconds == other.seconds && nanos == other.nanos;
+      return (seconds == other.seconds && nanos == other.nanos);
     }
     std::string ToString() const {
       return absl::StrFormat("Duration seconds: %ld, nanos %d", seconds, nanos);
     }
   };
-
-  using TypedPerFilterConfig =
-      std::map<std::string, XdsHttpFilterImpl::FilterConfig>;
 
   // TODO(donnadionne): When we can use absl::variant<>, consider using that
   // for: PathMatcher, HeaderMatcher, cluster_name and weighted_clusters
@@ -83,9 +75,9 @@ class XdsApi {
       absl::optional<uint32_t> fraction_per_million;
 
       bool operator==(const Matchers& other) const {
-        return path_matcher == other.path_matcher &&
-               header_matchers == other.header_matchers &&
-               fraction_per_million == other.fraction_per_million;
+        return (path_matcher == other.path_matcher &&
+                header_matchers == other.header_matchers &&
+                fraction_per_million == other.fraction_per_million);
       }
       std::string ToString() const;
     };
@@ -99,11 +91,8 @@ class XdsApi {
     struct ClusterWeight {
       std::string name;
       uint32_t weight;
-      TypedPerFilterConfig typed_per_filter_config;
-
       bool operator==(const ClusterWeight& other) const {
-        return name == other.name && weight == other.weight &&
-               typed_per_filter_config == other.typed_per_filter_config;
+        return (name == other.name && weight == other.weight);
       }
       std::string ToString() const;
     };
@@ -114,13 +103,11 @@ class XdsApi {
     // not set.
     absl::optional<Duration> max_stream_duration;
 
-    TypedPerFilterConfig typed_per_filter_config;
-
     bool operator==(const Route& other) const {
-      return matchers == other.matchers && cluster_name == other.cluster_name &&
-             weighted_clusters == other.weighted_clusters &&
-             max_stream_duration == other.max_stream_duration &&
-             typed_per_filter_config == other.typed_per_filter_config;
+      return (matchers == other.matchers &&
+              cluster_name == other.cluster_name &&
+              weighted_clusters == other.weighted_clusters &&
+              max_stream_duration == other.max_stream_duration);
     }
     std::string ToString() const;
   };
@@ -129,11 +116,9 @@ class XdsApi {
     struct VirtualHost {
       std::vector<std::string> domains;
       std::vector<Route> routes;
-      TypedPerFilterConfig typed_per_filter_config;
 
       bool operator==(const VirtualHost& other) const {
-        return domains == other.domains && routes == other.routes &&
-               typed_per_filter_config == other.typed_per_filter_config;
+        return domains == other.domains && routes == other.routes;
       }
     };
 
@@ -229,24 +214,11 @@ class XdsApi {
     // Present only if it is inlined in the LDS response.
     absl::optional<RdsUpdate> rds_update;
 
-    struct HttpFilter {
-      std::string name;
-      XdsHttpFilterImpl::FilterConfig config;
-
-      bool operator==(const HttpFilter& other) const {
-        return name == other.name && config == other.config;
-      }
-
-      std::string ToString() const;
-    };
-    std::vector<HttpFilter> http_filters;
-
     bool operator==(const LdsUpdate& other) const {
       return downstream_tls_context == other.downstream_tls_context &&
              route_config_name == other.route_config_name &&
              rds_update == other.rds_update &&
-             http_max_stream_duration == other.http_max_stream_duration &&
-             http_filters == other.http_filters;
+             http_max_stream_duration == other.http_max_stream_duration;
     }
 
     std::string ToString() const;
@@ -425,7 +397,7 @@ class XdsApi {
     std::set<std::string> resource_names_failed;
   };
   AdsParseResult ParseAdsResponse(
-      const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
+      const grpc_slice& encoded_response,
       const std::set<absl::string_view>& expected_listener_names,
       const std::set<absl::string_view>& expected_route_configuration_names,
       const std::set<absl::string_view>& expected_cluster_names,
