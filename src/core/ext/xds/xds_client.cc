@@ -38,7 +38,6 @@
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
-#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -1162,8 +1161,7 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
   recv_message_payload_ = nullptr;
   // Parse and validate the response.
   XdsApi::AdsParseResult result = xds_client()->api_.ParseAdsResponse(
-      chand()->server_, response_slice,
-      ResourceNamesForRequest(XdsApi::kLdsTypeUrl),
+      response_slice, ResourceNamesForRequest(XdsApi::kLdsTypeUrl),
       ResourceNamesForRequest(XdsApi::kRdsTypeUrl),
       ResourceNamesForRequest(XdsApi::kCdsTypeUrl),
       ResourceNamesForRequest(XdsApi::kEdsTypeUrl));
@@ -2198,17 +2196,13 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
 // accessors for global state
 //
 
-void XdsClientGlobalInit() {
-  g_mu = new Mutex;
-  XdsHttpFilterRegistry::Init();
-}
+void XdsClientGlobalInit() { g_mu = new Mutex; }
 
 void XdsClientGlobalShutdown() {
   delete g_mu;
   g_mu = nullptr;
   gpr_free(g_fallback_bootstrap_config);
   g_fallback_bootstrap_config = nullptr;
-  XdsHttpFilterRegistry::Shutdown();
 }
 
 RefCountedPtr<XdsClient> XdsClient::GetOrCreate(grpc_error** error) {
