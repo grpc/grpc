@@ -107,6 +107,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
         listener_->args_ = args;
         listener_->is_serving_ = true;
         if (!listener_->shutdown_) return;  // Already started listening.
+        listener_->shutdown_ = false;
       }
       int port_temp;
       grpc_error* error = grpc_tcp_server_add_port(
@@ -131,14 +132,14 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     Chttp2ServerListener* listener_;
   };
 
-  class ActiveConnection : public RefCounted<ActiveConnection> {
+  class ActiveConnection : public InternallyRefCounted<ActiveConnection> {
    public:
     class HandshakingState : public InternallyRefCounted<HandshakingState> {
      public:
       HandshakingState(ActiveConnection* connection,
                        grpc_pollset* accepting_pollset,
                        grpc_tcp_server_acceptor* acceptor,
-                       grpc_channel_args* args, grpc_endpoint* endpoint);
+                       grpc_endpoint* endpoint);
 
       ~HandshakingState() override;
 
@@ -150,7 +151,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       static void OnTimeout(void* arg, grpc_error* error);
       static void OnReceiveSettings(void* arg, grpc_error* error);
       static void OnHandshakeDone(void* arg, grpc_error* error);
-      RefCountedPtr<ActiveConnection> connection_;
+      OrphanablePtr<ActiveConnection> connection_;
       grpc_pollset* const accepting_pollset_;
       grpc_tcp_server_acceptor* const acceptor_;
       RefCountedPtr<HandshakeManager> handshake_mgr_;
@@ -165,8 +166,10 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     ActiveConnection(Chttp2ServerListener* listener,
                      grpc_pollset* accepting_pollset,
                      grpc_tcp_server_acceptor* acceptor,
-                     grpc_channel_args* args, grpc_endpoint* endpoint);
+                     grpc_endpoint* endpoint);
     ~ActiveConnection() override;
+
+    void Orphan() override { Unref(); }
 
     void StopServingLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Chttp2ServerListener::mu_);
@@ -178,7 +181,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     // does not go away before we expect.
     Chttp2ServerListener* const listener_;
     grpc_chttp2_transport* transport_
-        ABSL_GUARDED_BY(&Chttp2ServerListener::mu_);
+        ABSL_GUARDED_BY(&Chttp2ServerListener::mu_) = nullptr;
     OrphanablePtr<HandshakingState> handshaking_state_
         ABSL_GUARDED_BY(&Chttp2ServerListener::mu_);
     grpc_closure on_close_;
@@ -193,10 +196,6 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   static void OnAccept(void* arg, grpc_endpoint* tcp,
                        grpc_pollset* accepting_pollset,
                        grpc_tcp_server_acceptor* acceptor);
-
-  // Starts the handshake. Returns true on success, false otherwise.
-  bool StartHandshake(grpc_endpoint* tcp, grpc_pollset* accepting_pollset,
-                      grpc_tcp_server_acceptor* acceptor);
 
   static void TcpServerShutdownComplete(void* arg, grpc_error* error);
 
@@ -231,18 +230,21 @@ grpc_millis GetConnectionDeadline(const grpc_channel_args* args) {
 
 Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
     ActiveConnection* connection, grpc_pollset* accepting_pollset,
-    grpc_tcp_server_acceptor* acceptor, grpc_channel_args* args,
-    grpc_endpoint* endpoint)
+    grpc_tcp_server_acceptor* acceptor, grpc_endpoint* endpoint)
     : connection_(connection),
       accepting_pollset_(accepting_pollset),
       acceptor_(acceptor),
       handshake_mgr_(MakeRefCounted<HandshakeManager>()),
-      deadline_(GetConnectionDeadline(args)),
       interested_parties_(grpc_pollset_set_create()) {
   grpc_tcp_server_ref(
       connection_->listener_
           ->tcp_server_);  // Held for the duration for the handshake
   grpc_pollset_set_add_pollset(interested_parties_, accepting_pollset_);
+  grpc_channel_args* args = nullptr;
+  {
+    MutexLock lock(&connection_->listener_->mu_);
+    args = grpc_channel_args_copy(connection_->listener_->args_);
+  }
   HandshakerRegistry::AddHandshakers(HANDSHAKER_SERVER, args,
                                      interested_parties_, handshake_mgr_.get());
   auto handshake_mgr =
@@ -264,11 +266,24 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
   }
   if (shutting_down) {
     Unref();
+    grpc_endpoint_shutdown(endpoint, GRPC_ERROR_NONE);
+    grpc_endpoint_destroy(endpoint);
+    gpr_free(acceptor_);
   } else {
+    grpc_resource_user* resource_user =
+        connection_->listener_->server_->default_resource_user();
+    if (resource_user != nullptr &&
+        !grpc_resource_user_safe_alloc(resource_user,
+                                       GRPC_RESOURCE_QUOTA_CHANNEL_SIZE)) {
+      gpr_log(GPR_ERROR,
+              "Memory quota exhausted, rejecting connection, no handshaking.");
+    }
     Ref().release();  // Held by OnHandshakeDone()
+    deadline_ = GetConnectionDeadline(args);
     handshake_mgr->DoHandshake(endpoint, args, deadline_, acceptor_,
                                OnHandshakeDone, this);
   }
+  grpc_channel_args_destroy(args);
 }
 
 Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
@@ -445,13 +460,12 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
 
 Chttp2ServerListener::ActiveConnection::ActiveConnection(
     Chttp2ServerListener* listener, grpc_pollset* accepting_pollset,
-    grpc_tcp_server_acceptor* acceptor, grpc_channel_args* args,
-    grpc_endpoint* endpoint)
+    grpc_tcp_server_acceptor* acceptor, grpc_endpoint* endpoint)
     : listener_(listener) {
   grpc_tcp_server_ref(listener_->tcp_server_);
   // Deletes itself when done.
   new ActiveConnection::HandshakingState(this, accepting_pollset, acceptor,
-                                         args, endpoint);
+                                         endpoint);
 }
 
 Chttp2ServerListener::ActiveConnection::~ActiveConnection() {
@@ -595,6 +609,7 @@ void Chttp2ServerListener::Start(
     {
       MutexLock lock(&mu_);
       is_serving_ = true;
+      shutdown_ = false;
     }
     StartListening();
   }
@@ -602,8 +617,6 @@ void Chttp2ServerListener::Start(
 
 void Chttp2ServerListener::StartListening() {
   grpc_tcp_server_start(tcp_server_, &server_->pollsets(), OnAccept, this);
-  MutexLock lock(&mu_);
-  shutdown_ = false;
 }
 
 void Chttp2ServerListener::StopServingLocked() {
@@ -619,38 +632,12 @@ void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
   on_destroy_done_ = on_destroy_done;
 }
 
-bool Chttp2ServerListener::StartHandshake(grpc_endpoint* tcp,
-                                          grpc_pollset* accepting_pollset,
-                                          grpc_tcp_server_acceptor* acceptor) {
-  grpc_channel_args* args = nullptr;
-  {
-    MutexLock lock(&mu_);
-    if (!is_serving_ || shutdown_) return false;
-    grpc_resource_user* resource_user = server_->default_resource_user();
-    if (resource_user != nullptr &&
-        !grpc_resource_user_safe_alloc(resource_user,
-                                       GRPC_RESOURCE_QUOTA_CHANNEL_SIZE)) {
-      gpr_log(GPR_ERROR,
-              "Memory quota exhausted, rejecting connection, no handshaking.");
-      return false;
-    }
-    args = grpc_channel_args_copy(args_);
-  }
-  // Deletes itself when done.
-  new ActiveConnection(this, accepting_pollset, acceptor, args, tcp);
-  grpc_channel_args_destroy(args);
-  return true;
-}
-
 void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
                                     grpc_pollset* accepting_pollset,
                                     grpc_tcp_server_acceptor* acceptor) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
-  if (!self->StartHandshake(tcp, accepting_pollset, acceptor)) {
-    grpc_endpoint_shutdown(tcp, GRPC_ERROR_NONE);
-    grpc_endpoint_destroy(tcp);
-    gpr_free(acceptor);
-  }
+  // Deletes itself when done
+  new ActiveConnection(self, accepting_pollset, acceptor, tcp);
 }
 
 void Chttp2ServerListener::TcpServerShutdownComplete(void* arg,
