@@ -28,8 +28,6 @@ namespace grpc_core {
 
 namespace {
 
-char* g_traffic_director_uri_override;
-
 class GoogleCloud2ProdResolver : public Resolver {
  public:
   explicit GoogleCloud2ProdResolver(ResolverArgs args);
@@ -310,16 +308,18 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
         {"TRAFFICDIRECTOR_DIRECTPATH_C2P_IPV6_CAPABLE", true},
     };
   }
-  std::string server_uri = "directpath-trafficdirector.googleapis.com";
-  if (g_traffic_director_uri_override != nullptr &&
-      strlen(g_traffic_director_uri_override) > 0) {
-    server_uri = std::string(g_traffic_director_uri_override);
-  }
+  // Allow the TD server uri to be overridden for testing purposes.
+  UniquePtr<char> override_server(
+      gpr_getenv("GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI"));
+  const char* server_uri =
+      override_server != nullptr && strlen(override_server.get()) > 0
+          ? override_server.get()
+          : "directpath-trafficdirector.googleapis.com";
   Json bootstrap = Json::Object{
       {"xds_servers",
        Json::Array{
            Json::Object{
-               {"server_uri", g_traffic_director_uri_override},
+               {"server_uri", server_uri},
                {"channel_creds",
                 Json::Array{
                     Json::Object{
@@ -366,19 +366,12 @@ void GoogleCloud2ProdResolverInit() {
   UniquePtr<char> value(gpr_getenv("GRPC_EXPERIMENTAL_GOOGLE_C2P_RESOLVER"));
   bool parsed_value;
   bool parse_succeeded = gpr_parse_bool_value(value.get(), &parsed_value);
-  if (!parse_succeeded || !parsed_value) {
-    return;
+  if (parse_succeeded && parsed_value) {
+    ResolverRegistry::Builder::RegisterResolverFactory(
+        absl::make_unique<GoogleCloud2ProdResolverFactory>());
   }
-  ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<GoogleCloud2ProdResolverFactory>());
-  // Allow the TD server uri to be overridden for testing purposes.
-  g_traffic_director_uri_override =
-      gpr_getenv("GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI");
 }
 
-void GoogleCloud2ProdResolverShutdown() {
-  gpr_free(g_traffic_director_uri_override);
-  g_traffic_director_uri_override = nullptr;
-}
+void GoogleCloud2ProdResolverShutdown() {}
 
 }  // namespace grpc_core
