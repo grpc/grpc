@@ -175,7 +175,6 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
   {
     MutexLock lock(&mu_);
     GPR_ASSERT(index_ == 0);
-    GPR_ASSERT(!is_shutdown_);
     // Construct handshaker args.  These will be passed through all
     // handshakers and eventually be freed by the on_handshake_done callback.
     args_.endpoint = endpoint;

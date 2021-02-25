@@ -6964,7 +6964,22 @@ class XdsEnabledServerStatusNotificationTest : public XdsServerSecurityTest {
  protected:
   void SetValidLdsUpdate() { SetLdsUpdate("", "", "", "", false); }
 
-  void SetInvalidLdsUpdate() { SetLdsUpdate("", "", "unknown", "", false); }
+  void SetInvalidLdsUpdate() {
+    // Set LDS update without root provider instance.
+    Listener listener;
+    listener.set_name(absl::StrCat(
+        "grpc/server?xds.resource.listening_address=",
+        ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+    auto* socket_address = listener.mutable_address()->mutable_socket_address();
+    socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+    socket_address->set_port_value(backends_[0]->port());
+    auto* filter_chain = listener.add_filter_chains();
+    auto* transport_socket = filter_chain->mutable_transport_socket();
+    transport_socket->set_name("envoy.transport_sockets.tls");
+    DownstreamTlsContext downstream_tls_context;
+    transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+    balancers_[0]->ads_service()->SetLdsResource(listener);
+  }
 
   void UnsetLdsUpdate() {
     balancers_[0]->ads_service()->UnsetResource(
@@ -6997,10 +7012,16 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
   // Invalid update does not lead to a change in the serving status.
   SetInvalidLdsUpdate();
-  // Sleep for a bit to make sure that the invalid update is propagated.
-  // TODO(yashykt): When we add OnWarning() as a status notification, we can
-  // wait on that instead of doing a sleep.
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+  constexpr int kRetryCount = 100;
+  auto response_state = balancers_[0]->ads_service()->lds_response_state();
+  for (int i = 0; i < kRetryCount &&
+                  response_state.state != AdsServiceImpl::ResponseState::NACKED;
+       i++) {
+    // Sleep for a bit for the invalid update is propagated.
+    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+    response_state = balancers_[0]->ads_service()->lds_response_state();
+  }
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
@@ -8449,8 +8470,9 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerSecurityTest,
 
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerStatusNotificationTest,
-                         ::testing::Values(TestType(false, false, false, false,
-                                                    true)),
+                         ::testing::Values(TestType()
+                                               .set_use_fake_resolver()
+                                               .set_use_xds_credentials()),
                          &TestTypeName);
 
 // EDS could be tested with or without XdsResolver, but the tests would
