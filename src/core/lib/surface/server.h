@@ -92,7 +92,7 @@ class Server : public InternallyRefCounted<Server> {
   explicit Server(const grpc_channel_args* args);
   ~Server() override;
 
-  void Orphan() override;
+  void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
 
   const grpc_channel_args* channel_args() const { return channel_args_; }
   grpc_resource_user* default_resource_user() const {
@@ -114,7 +114,7 @@ class Server : public InternallyRefCounted<Server> {
     config_fetcher_ = std::move(config_fetcher);
   }
 
-  bool HasOpenConnections();
+  bool HasOpenConnections() ABSL_LOCKS_EXCLUDED(mu_global_);
 
   // Adds a listener to the server.  When the server starts, it will call
   // the listener's Start() method, and when it shuts down, it will orphan
@@ -122,7 +122,7 @@ class Server : public InternallyRefCounted<Server> {
   void AddListener(OrphanablePtr<ListenerInterface> listener);
 
   // Starts listening for connections.
-  void Start();
+  void Start() ABSL_LOCKS_EXCLUDED(mu_global_);
 
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
@@ -160,9 +160,10 @@ class Server : public InternallyRefCounted<Server> {
       grpc_completion_queue* cq_bound_to_call,
       grpc_completion_queue* cq_for_notification, void* tag_new);
 
-  void ShutdownAndNotify(grpc_completion_queue* cq, void* tag);
+  void ShutdownAndNotify(grpc_completion_queue* cq, void* tag)
+      ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
-  void CancelAllCalls();
+  void CancelAllCalls() ABSL_LOCKS_EXCLUDED(mu_global_);
 
  private:
   struct RequestedCall;
@@ -209,7 +210,7 @@ class Server : public InternallyRefCounted<Server> {
     static void AcceptStream(void* arg, grpc_transport* /*transport*/,
                              const void* transport_server_data);
 
-    void Destroy();
+    void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
 
     static void FinishDestroy(void* arg, grpc_error* error);
 
@@ -345,9 +346,11 @@ class Server : public InternallyRefCounted<Server> {
   void FailCall(size_t cq_idx, RequestedCall* rc, grpc_error* error);
   grpc_call_error QueueRequestedCall(size_t cq_idx, RequestedCall* rc);
 
-  void MaybeFinishShutdown();
+  void MaybeFinishShutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_)
+      ABSL_LOCKS_EXCLUDED(mu_call_);
 
-  void KillPendingWorkLocked(grpc_error* error);
+  void KillPendingWorkLocked(grpc_error* error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_call_);
 
   static grpc_call_error ValidateServerRequest(
       grpc_completion_queue* cq_for_notification, void* tag,
@@ -394,8 +397,8 @@ class Server : public InternallyRefCounted<Server> {
   // server should not notify on shutdown until the counter is 0 (shutdown is
   // called and there are no requests that are accepted but not started).
   std::atomic_int shutdown_refs_{1};
-  bool shutdown_published_ = false;
-  std::vector<ShutdownTag> shutdown_tags_;
+  bool shutdown_published_ ABSL_GUARDED_BY(mu_global_) = false;
+  std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
 
   // Take a shutdown ref for a request (increment by 2) and return if shutdown
   // has already been called.
@@ -413,7 +416,7 @@ class Server : public InternallyRefCounted<Server> {
       MaybeFinishShutdown();
     }
   }
-  void ShutdownUnrefOnShutdownCall() {
+  void ShutdownUnrefOnShutdownCall() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) {
     if (shutdown_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
       MaybeFinishShutdown();
     }
