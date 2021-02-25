@@ -77,19 +77,25 @@ std::string Rbac::CidrRange::ToString() const {
 
 Rbac::Permission::Permission(
     Permission::RuleType type,
-    std::vector<std::unique_ptr<Permission>> permissions)
-    : type(type), permissions(std::move(permissions)) {}
-Rbac::Permission::Permission(Permission::RuleType type) : type(type) {}
+    std::vector<std::unique_ptr<Permission>> permissions, bool not_rule)
+    : type(type), permissions(std::move(permissions)), not_rule(not_rule) {}
+Rbac::Permission::Permission(Permission::RuleType type, bool not_rule)
+    : type(type), not_rule(not_rule) {}
 Rbac::Permission::Permission(Permission::RuleType type,
-                             HeaderMatcher header_matcher)
-    : type(type), header_matcher(std::move(header_matcher)) {}
+                             HeaderMatcher header_matcher, bool not_rule)
+    : type(type),
+      header_matcher(std::move(header_matcher)),
+      not_rule(not_rule) {}
 Rbac::Permission::Permission(Permission::RuleType type,
-                             StringMatcher string_matcher)
-    : type(type), string_matcher(std::move(string_matcher)) {}
-Rbac::Permission::Permission(Permission::RuleType type, CidrRange ip)
-    : type(type), ip(std::move(ip)) {}
-Rbac::Permission::Permission(Permission::RuleType type, int port)
-    : type(type), port(port) {}
+                             StringMatcher string_matcher, bool not_rule)
+    : type(type),
+      string_matcher(std::move(string_matcher)),
+      not_rule(not_rule) {}
+Rbac::Permission::Permission(Permission::RuleType type, CidrRange ip,
+                             bool not_rule)
+    : type(type), ip(std::move(ip)), not_rule(not_rule) {}
+Rbac::Permission::Permission(Permission::RuleType type, int port, bool not_rule)
+    : type(type), port(port), not_rule(not_rule) {}
 
 Rbac::Permission::Permission(Rbac::Permission&& other) noexcept
     : type(other.type), not_rule(other.not_rule) {
@@ -188,17 +194,24 @@ std::string Rbac::Permission::ToString() const {
 //
 
 Rbac::Principal::Principal(Principal::RuleType type,
-                           std::vector<std::unique_ptr<Principal>> principals)
-    : type(type), principals(std::move(principals)) {}
-Rbac::Principal::Principal(Principal::RuleType type) : type(type) {}
+                           std::vector<std::unique_ptr<Principal>> principals,
+                           bool not_rule)
+    : type(type), principals(std::move(principals)), not_rule(not_rule) {}
+Rbac::Principal::Principal(Principal::RuleType type, bool not_rule)
+    : type(type), not_rule(not_rule) {}
 Rbac::Principal::Principal(Principal::RuleType type,
-                           StringMatcher string_matcher)
-    : type(type), string_matcher(std::move(string_matcher)) {}
-Rbac::Principal::Principal(Principal::RuleType type, CidrRange ip)
-    : type(type), ip(std::move(ip)) {}
+                           StringMatcher string_matcher, bool not_rule)
+    : type(type),
+      string_matcher(std::move(string_matcher)),
+      not_rule(not_rule) {}
+Rbac::Principal::Principal(Principal::RuleType type, CidrRange ip,
+                           bool not_rule)
+    : type(type), ip(std::move(ip)), not_rule(not_rule) {}
 Rbac::Principal::Principal(Principal::RuleType type,
-                           HeaderMatcher header_matcher)
-    : type(type), header_matcher(std::move(header_matcher)) {}
+                           HeaderMatcher header_matcher, bool not_rule)
+    : type(type),
+      header_matcher(std::move(header_matcher)),
+      not_rule(not_rule) {}
 
 Rbac::Principal::Principal(Rbac::Principal&& other) noexcept
     : type(other.type), not_rule(other.not_rule) {

@@ -60,17 +60,20 @@ struct Rbac {
     Permission() = default;
     // For AND/OR RuleType.
     Permission(Permission::RuleType type,
-               std::vector<std::unique_ptr<Permission>> permissions);
+               std::vector<std::unique_ptr<Permission>> permissions,
+               bool not_rule = false);
     // For ANY RuleType.
-    explicit Permission(Permission::RuleType type);
+    explicit Permission(Permission::RuleType type, bool not_rule = false);
     // For HEADER RuleType.
-    Permission(Permission::RuleType type, HeaderMatcher header_matcher);
+    Permission(Permission::RuleType type, HeaderMatcher header_matcher,
+               bool not_rule = false);
     // For PATH/REQ_SERVER_NAME RuleType.
-    Permission(Permission::RuleType type, StringMatcher string_matcher);
+    Permission(Permission::RuleType type, StringMatcher string_matcher,
+               bool not_rule = false);
     // For DEST_IP RuleType.
-    Permission(Permission::RuleType type, CidrRange ip);
+    Permission(Permission::RuleType type, CidrRange ip, bool not_rule = false);
     // For DEST_PORT RuleType.
-    Permission(Permission::RuleType type, int port);
+    Permission(Permission::RuleType type, int port, bool not_rule = false);
 
     Permission(Permission&& other) noexcept;
     Permission& operator=(Permission&& other) noexcept;
@@ -103,15 +106,18 @@ struct Rbac {
     Principal() = default;
     // For AND/OR RuleType.
     Principal(Principal::RuleType type,
-              std::vector<std::unique_ptr<Principal>> principals);
+              std::vector<std::unique_ptr<Principal>> principals,
+              bool not_rule = false);
     // For ANY RuleType.
-    explicit Principal(Principal::RuleType type);
+    explicit Principal(Principal::RuleType type, bool not_rule = false);
     // For PRINCIPAL_NAME/PATH RuleType.
-    Principal(Principal::RuleType type, StringMatcher string_matcher);
+    Principal(Principal::RuleType type, StringMatcher string_matcher,
+              bool not_rule = false);
     // For SOURCE_IP/DIRECT_REMOTE_IP/REMOTE_IP RuleType.
-    Principal(Principal::RuleType type, CidrRange ip);
+    Principal(Principal::RuleType type, CidrRange ip, bool not_rule = false);
     // For HEADER RuleType.
-    Principal(Principal::RuleType type, HeaderMatcher header_matcher);
+    Principal(Principal::RuleType type, HeaderMatcher header_matcher,
+              bool not_rule = false);
 
     Principal(Principal&& other) noexcept;
     Principal& operator=(Principal&& other) noexcept;
