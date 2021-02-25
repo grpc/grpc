@@ -131,7 +131,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     Chttp2ServerListener* listener_;
   };
 
-  class ActiveConnection : public InternallyRefCounted<ActiveConnection> {
+  class ActiveConnection : public RefCounted<ActiveConnection> {
    public:
     class HandshakingState : public RefCounted<HandshakingState> {
      public:
@@ -146,7 +146,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       static void OnTimeout(void* arg, grpc_error* error);
       static void OnReceiveSettings(void* arg, grpc_error* error);
       static void OnHandshakeDone(void* arg, grpc_error* error);
-      OrphanablePtr<ActiveConnection> connection_;
+      RefCountedPtr<ActiveConnection> connection_;
       grpc_pollset* const accepting_pollset_;
       grpc_tcp_server_acceptor* const acceptor_;
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
@@ -162,10 +162,6 @@ class Chttp2ServerListener : public Server::ListenerInterface {
                      grpc_tcp_server_acceptor* acceptor,
                      grpc_channel_args* args, grpc_endpoint* endpoint);
     ~ActiveConnection() override;
-
-    void Orphan() override {
-      Unref();
-    }
 
     // The analyzer is not able to recognize that mu_ being held is the same as
     // listener_->mu_
@@ -281,9 +277,8 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout(
     {
       MutexLock lock(&self->connection_->listener_->mu_);
       transport = self->connection_->transport_.Load(MemoryOrder::RELAXED);
-    }    
-    grpc_transport_perform_op(
-        &transport->base, op);
+    }
+    grpc_transport_perform_op(&transport->base, op);
   }
   self->Unref();
 }
@@ -359,18 +354,27 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           self->Ref().release();  // Held by OnReceiveSettings().
           GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings,
                             self, grpc_schedule_on_exec_ctx);
-          // Refs helds by OnClose()
-          self->connection_->Ref().release();
-          grpc_tcp_server_ref(self->connection_->listener_->tcp_server_);
-          GRPC_CHTTP2_REF_TRANSPORT(
-              self->connection_->transport_.Load(MemoryOrder::RELAXED),
-              "on close");
-          GRPC_CLOSURE_INIT(&self->connection_->on_close_,
-                            ActiveConnection::OnClose, self->connection_.get(),
-                            grpc_schedule_on_exec_ctx);
-          grpc_chttp2_transport_start_reading(transport, args->read_buffer,
-                                              &self->on_receive_settings_,
-                                              &self->connection_->on_close_);
+          // If the listener hsa been configured with a config fetcher, we need
+          // to watch on the transport being closed so that we can an updated
+          // list of active connections.
+          if (self->connection_->listener_->config_fetcher_watcher_ !=
+              nullptr) {
+            // Refs helds by OnClose()
+            self->connection_->Ref().release();
+            GRPC_CHTTP2_REF_TRANSPORT(
+                self->connection_->transport_.Load(MemoryOrder::RELAXED),
+                "on close");
+            GRPC_CLOSURE_INIT(
+                &self->connection_->on_close_, ActiveConnection::OnClose,
+                self->connection_.get(), grpc_schedule_on_exec_ctx);
+            grpc_chttp2_transport_start_reading(transport, args->read_buffer,
+                                                &self->on_receive_settings_,
+                                                &self->connection_->on_close_);
+          } else {
+            grpc_chttp2_transport_start_reading(transport, args->read_buffer,
+                                                &self->on_receive_settings_,
+                                                nullptr);
+          }
           grpc_channel_args_destroy(args->args);
           self->Ref().release();  // Held by OnTimeout().
           GRPC_CHTTP2_REF_TRANSPORT(
@@ -414,6 +418,7 @@ Chttp2ServerListener::ActiveConnection::ActiveConnection(
     : listener_(listener) {
   {
     MutexLock lock(&listener_->mu_);
+    grpc_tcp_server_ref(listener_->tcp_server_);
     grpc_tcp_server_ref(
         listener_->tcp_server_);  // Ref held by HandshakingState.
     listener_->connections_.insert(this);
@@ -431,7 +436,7 @@ Chttp2ServerListener::ActiveConnection::~ActiveConnection() {
     if (is_serving_) {
       listener_->connections_.erase(this);
     }
-  }  
+  }
   grpc_tcp_server_unref(listener_->tcp_server_);
 }
 
@@ -458,7 +463,7 @@ void Chttp2ServerListener::ActiveConnection::OnClose(void* arg,
   {
     MutexLock lock(&self->listener_->mu_);
     transport = self->transport_.Load(MemoryOrder::RELAXED);
-  }  
+  }
   GRPC_CHTTP2_UNREF_TRANSPORT(transport, "on close");
   self->Unref();
 }
