@@ -267,14 +267,14 @@ namespace Grpc.Tools
 
         /// <summary>
         /// Generated code directory. The generator property determines the language.
-        /// Switch: --GEN-out= (for different generators GEN).
+        /// Switch: --GEN_out= (for different generators GEN, e.g. --csharp_out).
         /// </summary>
         [Required]
         public string OutputDir { get; set; }
 
         /// <summary>
         /// Codegen options. See also OptionsFromMetadata.
-        /// Switch: --GEN_out= (for different generators GEN).
+        /// Switch: --GEN_opt= (for different generators GEN, e.g. --csharp_opt).
         /// </summary>
         public string[] OutputOptions { get; set; }
 

@@ -18,7 +18,6 @@
 
 #include "src/core/ext/filters/client_channel/dynamic_filters.h"
 
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/surface/lame_client.h"
 
@@ -161,16 +160,12 @@ RefCountedPtr<DynamicFilters> DynamicFilters::Create(
   // Attempt to create channel stack from requested filters.
   auto p = CreateChannelStack(args, std::move(filters));
   if (p.second != GRPC_ERROR_NONE) {
-    // Channel stack creation failed with requested filters.
-    // Create with lame filter instead.
+    // Initial pass failed.  Create with lame filter.
     grpc_error* error = p.second;
-    grpc_arg error_arg = MakeLameClientErrorArg(error);
-    grpc_channel_args* new_args =
-        grpc_channel_args_copy_and_add(args, &error_arg, 1);
-    GRPC_ERROR_UNREF(error);
-    p = CreateChannelStack(new_args, {&grpc_lame_filter});
+    p = CreateChannelStack(args, {&grpc_lame_filter});
     GPR_ASSERT(p.second == GRPC_ERROR_NONE);
-    grpc_channel_args_destroy(new_args);
+    grpc_channel_element* elem = grpc_channel_stack_element(p.first, 0);
+    SetLameFilterError(elem, error);
   }
   return MakeRefCounted<DynamicFilters>(p.first);
 }

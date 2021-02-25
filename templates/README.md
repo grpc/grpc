@@ -82,9 +82,6 @@ baselib: boolean,         # this is a low level library that has system
 filegroups:               # list of filegroups to merge to that project
                           # note that this will be expanded automatically
 deps:                     # list of libraries this target depends on
-deps_linkage: "..."       # "static"  or "dynamic". Used by the Makefile only to
-                          # determine the way dependencies are linkned. Defaults
-                          # to "dynamic".
 dll: "..."                # see below.
 ```
 
@@ -120,13 +117,6 @@ should merge OpenSSL, protobuf or zlib inside that library. That effect depends
 on the `"language"` tag. OpenSSL and zlib are for `"c"` libraries, while
 protobuf is for `"c++"` ones.
 
-## The `"dll"` tag
-
-Currently only used by cmake. "true" means the project will be
-built with both static and dynamic runtimes. "false" means it'll only be built
-with static runtime. "only" means it'll only be built with the dll runtime.
-
-
 # The template system
 
 We're currently using the [mako templates](http://www.makotemplates.org/)
@@ -145,8 +135,8 @@ is then passed to the template while rending it.
 ## The plugins
 
 The file build.json itself isn't passed straight to the template files. It is
-first processed and modified by a few plugins. For example, the `filegroups`
-expander is [a plugin](../tools/buildgen/plugins/expand_filegroups.py).
+first processed and modified by a few plugins. For example, the version
+expander is [a plugin](../tools/buildgen/plugins/expand_version.py).
 
 The structure of a plugin is simple. The plugin must defined the function
 `mako_plugin` that takes a Python dictionary. That dictionary represents the

@@ -45,6 +45,7 @@ namespace Grpc.Core.Internal
         static readonly bool isMacOSX;
         static readonly bool isWindows;
         static readonly bool isMono;
+        static readonly bool isNet5OrHigher;
         static readonly bool isNetCore;
         static readonly string unityApplicationPlatform;
         static readonly bool isXamarin;
@@ -57,11 +58,13 @@ namespace Grpc.Core.Internal
             isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
             isMacOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
             isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-            isNetCore =
 #if NETSTANDARD2_0
-                Environment.Version.Major >= 5 ||
+            isNet5OrHigher = Environment.Version.Major >= 5;
+#else
+            // assume that on .NET 5+, the netstandard2.0 TFM is going to be selected.
+            isNet5OrHigher = false;
 #endif
-                RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
+            isNetCore = isNet5OrHigher || RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
 #else
             var platform = Environment.OSVersion.Platform;
 
@@ -69,6 +72,7 @@ namespace Grpc.Core.Internal
             isMacOSX = (platform == PlatformID.Unix && GetUname() == "Darwin");
             isLinux = (platform == PlatformID.Unix && !isMacOSX);
             isWindows = (platform == PlatformID.Win32NT || platform == PlatformID.Win32S || platform == PlatformID.Win32Windows);
+            isNet5OrHigher = false;
             isNetCore = false;
 #endif
             isMono = Type.GetType("Mono.Runtime") != null;
@@ -117,7 +121,12 @@ namespace Grpc.Core.Internal
         public static bool IsXamarinAndroid => isXamarinAndroid;
 
         /// <summary>
-        /// true if running on .NET Core (CoreCLR), false otherwise.
+        /// true if running on .NET 5+, false otherwise.
+        /// </summary>
+        public static bool IsNet5OrHigher => isNet5OrHigher;
+
+        /// <summary>
+        /// true if running on .NET Core (CoreCLR) or NET 5+, false otherwise.
         /// </summary>
         public static bool IsNetCore => isNetCore;
 

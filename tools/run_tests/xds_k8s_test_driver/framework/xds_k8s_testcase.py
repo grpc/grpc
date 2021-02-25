@@ -457,9 +457,6 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
                        1,
                        msg="Client channel must have exactly one subchannel "
                        "in state TRANSIENT_FAILURE.")
-        sockets = list(
-            test_client.channelz.list_subchannels_sockets(subchannels[0]))
-        self.assertEmpty(sockets, msg="Client subchannel must have no sockets")
 
     @staticmethod
     def getConnectedSockets(

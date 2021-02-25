@@ -2557,10 +2557,9 @@ static void read_action_locked(void* tp, grpc_error* error) {
 }
 
 static void continue_read_action_locked(grpc_chttp2_transport* t) {
-  const bool urgent = t->goaway_error != GRPC_ERROR_NONE;
   GRPC_CLOSURE_INIT(&t->read_action_locked, read_action, t,
                     grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent);
+  grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked);
   grpc_chttp2_act_on_flowctl_action(t->flow_control->MakeAction(), t, nullptr);
 }
 
@@ -2574,9 +2573,7 @@ void schedule_bdp_ping_locked(grpc_chttp2_transport* t) {
                         grpc_schedule_on_exec_ctx),
       GRPC_CLOSURE_INIT(&t->finish_bdp_ping_locked, finish_bdp_ping, t,
                         grpc_schedule_on_exec_ctx));
-  // TODO(yashykt): Enabling this causes internal b/168345569. Re-enable once
-  // fixed.
-  // grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_BDP_PING);
+  grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_BDP_PING);
 }
 
 static void start_bdp_ping(void* tp, grpc_error* error) {

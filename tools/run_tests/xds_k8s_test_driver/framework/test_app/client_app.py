@@ -160,7 +160,8 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                     try:
                         subchannel = self.find_subchannel_with_state(
                             channel, state, **rpc_params)
-                        logger.info('Found subchannel in state %s: %s', state,
+                        logger.info('Found subchannel in state %s: %s',
+                                    _ChannelzChannelState.Name(state),
                                     subchannel)
                     except self.NotFound as e:
                         # Otherwise, keep searching.

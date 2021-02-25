@@ -26,11 +26,9 @@
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/xds/xds_client.h"
-#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/surface/lame_client.h"
 #include "src/core/lib/transport/timeout_encoding.h"
 
 namespace grpc_core {
@@ -137,7 +135,9 @@ class XdsResolver : public Resolver {
 
   class XdsConfigSelector : public ConfigSelector {
    public:
-    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver, grpc_error** error);
+    XdsConfigSelector(RefCountedPtr<XdsResolver> resolver,
+                      const std::vector<XdsApi::Route>& routes,
+                      grpc_error* error);
     ~XdsConfigSelector() override;
 
     const char* name() const override { return "XdsConfigSelector"; }
@@ -151,41 +151,26 @@ class XdsResolver : public Resolver {
 
     CallConfig GetCallConfig(GetCallConfigArgs args) override;
 
-    std::vector<const grpc_channel_filter*> GetFilters() override {
-      return filters_;
-    }
-
-    grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) override;
-
    private:
     struct Route {
-      struct ClusterWeightState {
-        uint32_t range_end;
-        absl::string_view cluster;
-        RefCountedPtr<ServiceConfig> method_config;
-
-        bool operator==(const ClusterWeightState& other) const;
-      };
-
       XdsApi::Route route;
+      absl::InlinedVector<std::pair<uint32_t, absl::string_view>, 2>
+          weighted_cluster_state;
       RefCountedPtr<ServiceConfig> method_config;
-      absl::InlinedVector<ClusterWeightState, 2> weighted_cluster_state;
-
-      bool operator==(const Route& other) const;
+      bool operator==(const Route& other) const {
+        return route == other.route &&
+               weighted_cluster_state == other.weighted_cluster_state;
+      }
     };
     using RouteTable = std::vector<Route>;
 
     void MaybeAddCluster(const std::string& name);
-    grpc_error* CreateMethodConfig(
-        const XdsApi::Route& route,
-        const XdsApi::Route::ClusterWeight* cluster_weight,
-        RefCountedPtr<ServiceConfig>* method_config);
+    grpc_error* CreateMethodConfig(RefCountedPtr<ServiceConfig>* method_config,
+                                   const XdsApi::Route& route);
 
     RefCountedPtr<XdsResolver> resolver_;
     RouteTable route_table_;
     std::map<absl::string_view, RefCountedPtr<ClusterState>> clusters_;
-    std::vector<const grpc_channel_filter*> filters_;
-    grpc_error* filter_error_ = GRPC_ERROR_NONE;
   };
 
   void OnListenerUpdate(XdsApi::LdsUpdate listener);
@@ -202,20 +187,13 @@ class XdsResolver : public Resolver {
   std::string server_name_;
   const grpc_channel_args* args_;
   grpc_pollset_set* interested_parties_;
-
   RefCountedPtr<XdsClient> xds_client_;
-
   XdsClient::ListenerWatcherInterface* listener_watcher_ = nullptr;
-  // This will not contain the RouteConfiguration, even if it comes with the
-  // LDS response; instead, the relevant VirtualHost from the
-  // RouteConfiguration will be saved in current_virtual_host_.
-  XdsApi::LdsUpdate current_listener_;
-
   std::string route_config_name_;
   XdsClient::RouteConfigWatcherInterface* route_config_watcher_ = nullptr;
-  XdsApi::RdsUpdate::VirtualHost current_virtual_host_;
-
   ClusterState::ClusterStateMap cluster_state_map_;
+  std::vector<XdsApi::Route> current_update_;
+  XdsApi::Duration http_max_stream_duration_;
 };
 
 //
@@ -283,34 +261,12 @@ void XdsResolver::Notifier::RunInWorkSerializer(grpc_error* error) {
 }
 
 //
-// XdsResolver::XdsConfigSelector::Route
-//
-
-bool MethodConfigsEqual(const ServiceConfig* sc1, const ServiceConfig* sc2) {
-  if (sc1 == nullptr) return sc2 == nullptr;
-  if (sc2 == nullptr) return false;
-  return sc1->json_string() == sc2->json_string();
-}
-
-bool XdsResolver::XdsConfigSelector::Route::ClusterWeightState::operator==(
-    const ClusterWeightState& other) const {
-  return range_end == other.range_end && cluster == other.cluster &&
-         MethodConfigsEqual(method_config.get(), other.method_config.get());
-}
-
-bool XdsResolver::XdsConfigSelector::Route::operator==(
-    const Route& other) const {
-  return route == other.route &&
-         weighted_cluster_state == other.weighted_cluster_state &&
-         MethodConfigsEqual(method_config.get(), other.method_config.get());
-}
-
-//
 // XdsResolver::XdsConfigSelector
 //
 
 XdsResolver::XdsConfigSelector::XdsConfigSelector(
-    RefCountedPtr<XdsResolver> resolver, grpc_error** error)
+    RefCountedPtr<XdsResolver> resolver,
+    const std::vector<XdsApi::Route>& routes, grpc_error* error)
     : resolver_(std::move(resolver)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] creating XdsConfigSelector %p",
@@ -325,8 +281,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
   // weighted_cluster_state field points to the memory in the route field, so
   // moving the entry in a reallocation will cause the string_view to point to
   // invalid data.
-  route_table_.reserve(resolver_->current_virtual_host_.routes.size());
-  for (auto& route : resolver_->current_virtual_host_.routes) {
+  route_table_.reserve(routes.size());
+  for (auto& route : routes) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
       gpr_log(GPR_INFO, "[xds_resolver %p] XdsConfigSelector %p: route: %s",
               resolver_.get(), this, route.ToString().c_str());
@@ -338,95 +294,27 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     // one.
     if (!route.max_stream_duration.has_value()) {
       route_entry.route.max_stream_duration =
-          resolver_->current_listener_.http_max_stream_duration;
+          resolver_->http_max_stream_duration_;
     }
+    error = CreateMethodConfig(&route_entry.method_config, route_entry.route);
     if (route.weighted_clusters.empty()) {
-      *error = CreateMethodConfig(route_entry.route, nullptr,
-                                  &route_entry.method_config);
       MaybeAddCluster(route.cluster_name);
     } else {
       uint32_t end = 0;
       for (const auto& weighted_cluster : route_entry.route.weighted_clusters) {
-        Route::ClusterWeightState cluster_weight_state;
-        *error = CreateMethodConfig(route_entry.route, &weighted_cluster,
-                                    &cluster_weight_state.method_config);
-        if (*error != GRPC_ERROR_NONE) return;
-        end += weighted_cluster.weight;
-        cluster_weight_state.range_end = end;
-        cluster_weight_state.cluster = weighted_cluster.name;
-        route_entry.weighted_cluster_state.push_back(
-            std::move(cluster_weight_state));
         MaybeAddCluster(weighted_cluster.name);
+        end += weighted_cluster.weight;
+        route_entry.weighted_cluster_state.emplace_back(end,
+                                                        weighted_cluster.name);
       }
     }
   }
-  // Populate filter list.
-  if (XdsFaultInjectionEnabled()) {
-    bool found_router = false;
-    for (const auto& http_filter : resolver_->current_listener_.http_filters) {
-      // Stop at the router filter.  It's a no-op for us, and we ignore
-      // anything that may come after it, for compatibility with Envoy.
-      if (http_filter.config.config_proto_type_name ==
-          kXdsHttpRouterFilterConfigName) {
-        found_router = true;
-        break;
-      }
-      // Find filter.  This is guaranteed to succeed, because it's checked
-      // at config validation time in the XdsApi code.
-      const XdsHttpFilterImpl* filter_impl =
-          XdsHttpFilterRegistry::GetFilterForType(
-              http_filter.config.config_proto_type_name);
-      GPR_ASSERT(filter_impl != nullptr);
-      // Add C-core filter to list.
-      filters_.push_back(filter_impl->channel_filter());
-    }
-    // For compatibility with Envoy, if the router filter is not
-    // configured, we fail all RPCs.
-    if (!found_router) {
-      filter_error_ = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "no xDS HTTP router filter configured"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-      filters_.push_back(&grpc_lame_filter);
-    }
-  }
-}
-
-XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
-    gpr_log(GPR_INFO, "[xds_resolver %p] destroying XdsConfigSelector %p",
-            resolver_.get(), this);
-  }
-  clusters_.clear();
-  resolver_->MaybeRemoveUnusedClusters();
-  GRPC_ERROR_UNREF(filter_error_);
-}
-
-const XdsHttpFilterImpl::FilterConfig* FindFilterConfigOverride(
-    const std::string& instance_name,
-    const XdsApi::RdsUpdate::VirtualHost& vhost, const XdsApi::Route& route,
-    const XdsApi::Route::ClusterWeight* cluster_weight) {
-  // Check ClusterWeight, if any.
-  if (cluster_weight != nullptr) {
-    auto it = cluster_weight->typed_per_filter_config.find(instance_name);
-    if (it != cluster_weight->typed_per_filter_config.end()) return &it->second;
-  }
-  // Check Route.
-  auto it = route.typed_per_filter_config.find(instance_name);
-  if (it != route.typed_per_filter_config.end()) return &it->second;
-  // Check VirtualHost.
-  it = vhost.typed_per_filter_config.find(instance_name);
-  if (it != vhost.typed_per_filter_config.end()) return &it->second;
-  // Not found.
-  return nullptr;
 }
 
 grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
-    const XdsApi::Route& route,
-    const XdsApi::Route::ClusterWeight* cluster_weight,
-    RefCountedPtr<ServiceConfig>* method_config) {
+    RefCountedPtr<ServiceConfig>* method_config, const XdsApi::Route& route) {
+  grpc_error* error = GRPC_ERROR_NONE;
   std::vector<std::string> fields;
-  // Set timeout.
   if (route.max_stream_duration.has_value() &&
       (route.max_stream_duration->seconds != 0 ||
        route.max_stream_duration->nanos != 0)) {
@@ -434,50 +322,6 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
                                         route.max_stream_duration->seconds,
                                         route.max_stream_duration->nanos));
   }
-  // Handle xDS HTTP filters.
-  std::map<std::string, std::vector<std::string>> per_filter_configs;
-  grpc_channel_args* args = grpc_channel_args_copy(resolver_->args_);
-  for (const auto& http_filter : resolver_->current_listener_.http_filters) {
-    // Stop at the router filter.  It's a no-op for us, and we ignore
-    // anything that may come after it, for compatibility with Envoy.
-    if (http_filter.config.config_proto_type_name ==
-        kXdsHttpRouterFilterConfigName) {
-      break;
-    }
-    // Find filter.  This is guaranteed to succeed, because it's checked
-    // at config validation time in the XdsApi code.
-    const XdsHttpFilterImpl* filter_impl =
-        XdsHttpFilterRegistry::GetFilterForType(
-            http_filter.config.config_proto_type_name);
-    GPR_ASSERT(filter_impl != nullptr);
-    // Allow filter to add channel args that may affect service config
-    // parsing.
-    args = filter_impl->ModifyChannelArgs(args);
-    // Find config override, if any.
-    const XdsHttpFilterImpl::FilterConfig* config_override =
-        FindFilterConfigOverride(http_filter.name,
-                                 resolver_->current_virtual_host_, route,
-                                 cluster_weight);
-    // Generate service config for filter.
-    auto method_config_field =
-        filter_impl->GenerateServiceConfig(http_filter.config, config_override);
-    if (!method_config_field.ok()) {
-      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("failed to generate method config for HTTP filter ",
-                       http_filter.name, ": ",
-                       method_config_field.status().ToString())
-              .c_str());
-    }
-    per_filter_configs[method_config_field->service_config_field_name]
-        .push_back(method_config_field->element);
-  }
-  for (const auto& p : per_filter_configs) {
-    fields.emplace_back(absl::StrCat("    \"", p.first, "\": [\n",
-                                     absl::StrJoin(p.second, ",\n"),
-                                     "\n    ]"));
-  }
-  // Construct service config.
-  grpc_error* error = GRPC_ERROR_NONE;
   if (!fields.empty()) {
     std::string json = absl::StrCat(
         "{\n"
@@ -489,20 +333,19 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
         absl::StrJoin(fields, ",\n"),
         "\n  } ]\n"
         "}");
-    *method_config = ServiceConfig::Create(args, json.c_str(), &error);
+    *method_config =
+        ServiceConfig::Create(resolver_->args_, json.c_str(), &error);
   }
-  grpc_channel_args_destroy(args);
   return error;
 }
 
-grpc_channel_args* XdsResolver::XdsConfigSelector::ModifyChannelArgs(
-    grpc_channel_args* args) {
-  if (filter_error_ == GRPC_ERROR_NONE) return args;
-  grpc_arg error_arg = MakeLameClientErrorArg(filter_error_);
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args, &error_arg, 1);
-  grpc_channel_args_destroy(args);
-  return new_args;
+XdsResolver::XdsConfigSelector::~XdsConfigSelector() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
+    gpr_log(GPR_INFO, "[xds_resolver %p] destroying XdsConfigSelector %p",
+            resolver_.get(), this);
+  }
+  clusters_.clear();
+  resolver_->MaybeRemoveUnusedClusters();
 }
 
 void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
@@ -594,15 +437,13 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     // Found a route match
     absl::string_view cluster_name;
-    RefCountedPtr<ServiceConfig> method_config;
     if (entry.route.weighted_clusters.empty()) {
       cluster_name = entry.route.cluster_name;
-      method_config = entry.method_config;
     } else {
       const uint32_t key =
           rand() %
           entry.weighted_cluster_state[entry.weighted_cluster_state.size() - 1]
-              .range_end;
+              .first;
       // Find the index in weighted clusters corresponding to key.
       size_t mid = 0;
       size_t start_index = 0;
@@ -610,9 +451,9 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       size_t index = 0;
       while (end_index > start_index) {
         mid = (start_index + end_index) / 2;
-        if (entry.weighted_cluster_state[mid].range_end > key) {
+        if (entry.weighted_cluster_state[mid].first > key) {
           end_index = mid;
-        } else if (entry.weighted_cluster_state[mid].range_end < key) {
+        } else if (entry.weighted_cluster_state[mid].first < key) {
           start_index = mid + 1;
         } else {
           index = mid + 1;
@@ -620,9 +461,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         }
       }
       if (index == 0) index = start_index;
-      GPR_ASSERT(entry.weighted_cluster_state[index].range_end > key);
-      cluster_name = entry.weighted_cluster_state[index].cluster;
-      method_config = entry.weighted_cluster_state[index].method_config;
+      GPR_ASSERT(entry.weighted_cluster_state[index].first > key);
+      cluster_name = entry.weighted_cluster_state[index].second;
     }
     auto it = clusters_.find(cluster_name);
     GPR_ASSERT(it != clusters_.end());
@@ -630,10 +470,10 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         static_cast<XdsResolver*>(resolver_->Ref().release());
     ClusterState* cluster_state = it->second->Ref().release();
     CallConfig call_config;
-    if (method_config != nullptr) {
+    if (entry.method_config != nullptr) {
+      call_config.service_config = entry.method_config;
       call_config.method_configs =
-          method_config->GetMethodParsedConfigVector(grpc_empty_slice());
-      call_config.service_config = std::move(method_config);
+          entry.method_config->GetMethodParsedConfigVector(grpc_empty_slice());
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.on_call_committed = [resolver, cluster_state]() {
@@ -737,10 +577,10 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
       xds_client_->WatchRouteConfigData(route_config_name_, std::move(watcher));
     }
   }
-  current_listener_ = std::move(listener);
+  http_max_stream_duration_ = listener.http_max_stream_duration;
   if (route_config_name_.empty()) {
-    GPR_ASSERT(current_listener_.rds_update.has_value());
-    OnRouteConfigUpdate(std::move(*current_listener_.rds_update));
+    GPR_ASSERT(listener.rds_update.has_value());
+    OnRouteConfigUpdate(std::move(*listener.rds_update));
   }
 }
 
@@ -758,8 +598,8 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
             .c_str()));
     return;
   }
-  // Save the virtual host in the resolver.
-  current_virtual_host_ = std::move(*vhost);
+  // Save the list of routes in the resolver.
+  current_update_ = std::move(vhost->routes);
   // Send a new result to the channel.
   GenerateResult();
 }
@@ -778,7 +618,7 @@ void XdsResolver::OnResourceDoesNotExist() {
           "[xds_resolver %p] LDS/RDS resource does not exist -- clearing "
           "update and returning empty service config",
           this);
-  current_virtual_host_.routes.clear();
+  current_update_.clear();
   Result result;
   result.service_config =
       ServiceConfig::Create(args_, "{}", &result.service_config_error);
@@ -820,11 +660,12 @@ grpc_error* XdsResolver::CreateServiceConfig(
 }
 
 void XdsResolver::GenerateResult() {
-  if (current_virtual_host_.routes.empty()) return;
+  if (current_update_.empty()) return;
   // First create XdsConfigSelector, which may add new entries to the cluster
   // state map, and then CreateServiceConfig for LB policies.
   grpc_error* error = GRPC_ERROR_NONE;
-  auto config_selector = MakeRefCounted<XdsConfigSelector>(Ref(), &error);
+  auto config_selector =
+      MakeRefCounted<XdsConfigSelector>(Ref(), current_update_, error);
   if (error != GRPC_ERROR_NONE) {
     OnError(error);
     return;

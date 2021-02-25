@@ -303,10 +303,13 @@ asm_key = ''
 if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
     LINUX_X86_64 = 'linux-x86_64'
     LINUX_ARM = 'linux-arm'
+    LINUX_AARCH64 = 'linux-aarch64'
     if LINUX_X86_64 == util.get_platform():
         asm_key = 'crypto_linux_x86_64'
     elif LINUX_ARM == util.get_platform():
         asm_key = 'crypto_linux_arm'
+    elif LINUX_AARCH64 == util.get_platform():
+        asm_key = 'crypto_linux_aarch64'
     elif "mac" in util.get_platform() and "x86_64" in util.get_platform():
         asm_key = 'crypto_mac_x86_64'
     else:

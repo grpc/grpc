@@ -102,8 +102,7 @@ static void done_write(void* /*arg*/, grpc_error* error) {
 
 static void done_writing_settings_frame(void* /* arg */, grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
-  grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
-                     /*urgent=*/false);
+  grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read);
 }
 
 static void handle_write() {
@@ -140,8 +139,7 @@ static void handle_read(void* /*arg*/, grpc_error* error) {
       !state.http2_response) {
     handle_write();
   } else {
-    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
-                       /*urgent=*/false);
+    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read);
   }
 }
 
@@ -168,8 +166,7 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
     grpc_endpoint_write(state.tcp, &state.outgoing_buffer,
                         &on_writing_settings_frame, nullptr);
   } else {
-    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
-                       /*urgent=*/false);
+    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read);
   }
 }
 

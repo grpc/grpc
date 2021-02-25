@@ -297,7 +297,11 @@ grpc_error* grpc_chttp2_data_parser_parse(void* /*parser*/,
   }
 
   if (is_last && s->received_last_frame) {
-    grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
+    grpc_chttp2_mark_stream_closed(
+        t, s, true, false,
+        t->is_client ? GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                           "Data frame with END_STREAM flag received")
+                     : GRPC_ERROR_NONE);
   }
 
   return GRPC_ERROR_NONE;
