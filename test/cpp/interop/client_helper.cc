@@ -87,7 +87,7 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
   std::string host_port = absl::GetFlag(FLAGS_server_host);
   int32_t port = absl::GetFlag(FLAGS_server_port);
   if (port != 0) {
-    host_port = absl::StrCat(host_port, ":", std::to_string(port));
+    absl::StrAppend(&host_port, ":", std::to_string(port));
   }
   std::shared_ptr<CallCredentials> creds;
   if (test_case == "compute_engine_creds") {
