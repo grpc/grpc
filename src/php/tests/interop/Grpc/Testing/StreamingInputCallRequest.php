@@ -55,7 +55,7 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      * Optional input payload sent along with the request.
      *
      * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
-     * @return \Grpc\Testing\Payload
+     * @return \Grpc\Testing\Payload|null
      */
     public function getPayload()
     {
@@ -94,7 +94,7 @@ class StreamingInputCallRequest extends \Google\Protobuf\Internal\Message
      * the request's compression status.
      *
      * Generated from protobuf field <code>.grpc.testing.BoolValue expect_compressed = 2;</code>
-     * @return \Grpc\Testing\BoolValue
+     * @return \Grpc\Testing\BoolValue|null
      */
     public function getExpectCompressed()
     {
