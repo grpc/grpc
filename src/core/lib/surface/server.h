@@ -387,13 +387,41 @@ class Server : public InternallyRefCounted<Server> {
   // Request matcher for unregistered methods.
   std::unique_ptr<RequestMatcherInterface> unregistered_request_matcher_;
 
-  std::atomic_bool shutdown_flag_{false};
-  // Don't complete the shutdown until there are no blocking refs. Start with 1
-  // ref released during shutdown call, but also take a ref while the server
-  // needs to remain alive, e.g., during AllocatingRequestMatcher use.
-  std::atomic_int shutdown_blocking_refs_{1};
+  // The shutdown refs counter tracks whether or not shutdown has been called
+  // and whether there are any AllocatingRequestMatcher requests that have been
+  // accepted but not yet started (+2 on each one). If shutdown has been called,
+  // the lowest bit will be 0 (defaults to 1) and the counter will be even. The
+  // server should not notify on shutdown until the counter is 0 (shutdown is
+  // called and there are no requests that are accepted but not started).
+  std::atomic_int shutdown_refs_{1};
   bool shutdown_published_ = false;
   std::vector<ShutdownTag> shutdown_tags_;
+
+  // Take a shutdown ref for a request (increment by 2) and return if shutdown
+  // has already been called.
+  bool ShutdownRefOnRequest() {
+    int old_value = shutdown_refs_.fetch_add(2, std::memory_order_acq_rel);
+    return (old_value & 1) != 0;
+  }
+
+  // Decrement the shutdown ref counter by either 1 (for shutdown call) or 2
+  // (for in-flight request) and possibly call MaybeFinishShutdown if
+  // appropriate.
+  void ShutdownUnrefOnRequest() {
+    if (shutdown_refs_.fetch_sub(2, std::memory_order_acq_rel) == 2) {
+      MutexLock lock(&mu_global_);
+      MaybeFinishShutdown();
+    }
+  }
+  void ShutdownUnrefOnShutdownCall() {
+    if (shutdown_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+      MaybeFinishShutdown();
+    }
+  }
+
+  bool ShutdownCalled() const {
+    return (shutdown_refs_.load(std::memory_order_acquire) & 1) == 0;
+  }
 
   std::list<ChannelData*> channels_;
 
