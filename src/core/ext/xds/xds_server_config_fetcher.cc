@@ -139,17 +139,20 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     }
 
     void OnError(grpc_error* error) override {
-      gpr_log(GPR_ERROR, "ListenerWatcher:%p XdsClient reports error: %s", this,
-              grpc_error_string(error));
-      if (!have_resource_) {
+      if (have_resource_) {
+        gpr_log(GPR_ERROR,
+                "ListenerWatcher:%p XdsClient reports error: %s for %s", this,
+                grpc_error_string(error), listening_address_.c_str());
+      } else {
         if (serving_status_notifier_.on_serving_status_change != nullptr) {
           serving_status_notifier_.on_serving_status_change(
               serving_status_notifier_.user_data, listening_address_.c_str(),
               GRPC_STATUS_UNAVAILABLE, grpc_error_string(error));
         } else {
-          gpr_log(GPR_INFO,
-                  "error obtaining xDS Listener resource; not serving on %s",
-                  listening_address_.c_str());
+          gpr_log(GPR_ERROR,
+                  "ListenerWatcher:%p error obtaining xDS Listener resource; "
+                  "not serving on %s",
+                  this, listening_address_.c_str());
         }
       }
       GRPC_ERROR_UNREF(error);

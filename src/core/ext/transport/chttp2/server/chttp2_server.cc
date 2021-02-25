@@ -178,9 +178,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     // A ref is held to listener_->tcp_server_ to make sure that the listener_
     // does not go away before we expect.
     Chttp2ServerListener* const listener_;
-    // Guarding with atomics instead of mutex to avoid running into deadlocks.
-    // It is updated once with Release semantics when the handshake succeeds.
-    Atomic<grpc_chttp2_transport*> transport_;
+    Atomic<grpc_chttp2_transport*> transport_ ABSL_GUARDED_BY(listener_->mu_);
     OrphanablePtr<HandshakingState> handshaking_state_
         ABSL_GUARDED_BY(listener_->mu_);
     grpc_closure on_close_;
@@ -621,7 +619,6 @@ void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
 bool Chttp2ServerListener::StartHandshake(grpc_endpoint* tcp,
                                           grpc_pollset* accepting_pollset,
                                           grpc_tcp_server_acceptor* acceptor) {
-  RefCountedPtr<HandshakeManager> handshake_mgr;
   grpc_channel_args* args = nullptr;
   {
     MutexLock lock(&mu_);
