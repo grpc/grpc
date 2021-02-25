@@ -645,14 +645,12 @@ _BUILD_EXTRA_METADATA = {
         'build': 'all',
         'baselib': True,
         'secure': True,
-        'dll': True,
         'generate_plugin_registry': True
     },
     'grpc++': {
         'language': 'c++',
         'build': 'all',
         'baselib': True,
-        'dll': True
     },
     'grpc++_alts': {
         'language': 'c++',
@@ -672,20 +670,17 @@ _BUILD_EXTRA_METADATA = {
         'build': 'all',
         'baselib': True,
         'secure': False,
-        'dll': True
     },
     # TODO(jtattermusch): do we need to set grpc_csharp_ext's LDFLAGS for wrapping memcpy in the same way as in build.yaml?
     'grpc_csharp_ext': {
         'language': 'c',
         'build': 'all',
-        'dll': 'only'
     },
     'grpc_unsecure': {
         'language': 'c',
         'build': 'all',
         'baselib': True,
         'secure': False,
-        'dll': True,
         'generate_plugin_registry': True
     },
     'grpcpp_channelz': {
