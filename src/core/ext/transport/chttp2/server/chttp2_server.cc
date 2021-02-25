@@ -175,6 +175,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Chttp2ServerListener::mu_);
 
    private:
+    void InitializeOnCloseLocked()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Chttp2ServerListener::mu_);
     static void OnClose(void* arg, grpc_error* error);
 
     // A ref is held to listener_->tcp_server_ to make sure that the listener_
@@ -254,8 +256,7 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
   {
     MutexLock lock(&connection_->listener_->mu_);
     // If the listener's stopped serving, then shutdown the handshake early.
-    if (connection_->listener_->shutdown_ ||
-        !connection_->listener_->is_serving_) {
+    if (connection_->listener_->shutdown_ || !connection_->is_serving_) {
       handshake_mgr_->Shutdown(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Listener stopped serving"));
       shutting_down = true;
@@ -402,13 +403,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           // list of active connections.
           if (self->connection_->listener_->config_fetcher_watcher_ !=
               nullptr) {
-            // Refs helds by OnClose()
-            self->connection_->Ref().release();
-            GRPC_CHTTP2_REF_TRANSPORT(self->connection_->transport_,
-                                      "on close");
-            GRPC_CLOSURE_INIT(
-                &self->connection_->on_close_, ActiveConnection::OnClose,
-                self->connection_.get(), grpc_schedule_on_exec_ctx);
+            self->connection_->InitializeOnCloseLocked();
             grpc_chttp2_transport_start_reading(transport, args->read_buffer,
                                                 &self->on_receive_settings_,
                                                 &self->connection_->on_close_);
@@ -492,6 +487,14 @@ void Chttp2ServerListener::ActiveConnection::StopServingLocked() {
         "Server is stopping to serve requests.");
     grpc_transport_perform_op(&transport_->base, op);
   }
+}
+
+void Chttp2ServerListener::ActiveConnection::InitializeOnCloseLocked() {
+  // Refs helds by OnClose()
+  Ref().release();
+  GRPC_CHTTP2_REF_TRANSPORT(transport_, "on close");
+  GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
+                    grpc_schedule_on_exec_ctx);
 }
 
 void Chttp2ServerListener::ActiveConnection::OnClose(void* arg,
