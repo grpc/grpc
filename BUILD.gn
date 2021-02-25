@@ -1513,6 +1513,7 @@ config("grpc_config") {
         ":gpr",
         ":address_sorting",
         ":upb",
+        ":absl/synchronization:synchronization",
     ]
     
     public_configs = [

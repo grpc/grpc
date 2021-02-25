@@ -2784,6 +2784,7 @@ target_link_libraries(grpc++
   gpr
   address_sorting
   upb
+  absl::synchronization
 )
 
 foreach(_hdr
@@ -3446,6 +3447,7 @@ target_link_libraries(grpc++_unsecure
   gpr
   address_sorting
   upb
+  absl::synchronization
 )
 
 foreach(_hdr

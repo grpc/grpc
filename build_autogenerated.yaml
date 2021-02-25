@@ -2377,6 +2377,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - absl/synchronization:synchronization
   baselib: true
 - name: grpc++_alts
   build: all
@@ -2728,6 +2729,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - absl/synchronization:synchronization
   baselib: true
   secure: false
 - name: grpc_plugin_support
