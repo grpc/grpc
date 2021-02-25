@@ -14,15 +14,13 @@
 // limitations under the License.
 //
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/filters/fault_injection/fault_injection_filter.h"
-
-#include "absl/strings/numbers.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
 
+#include "absl/strings/numbers.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_call_data.h"
 #include "src/core/ext/filters/fault_injection/service_config_parser.h"
@@ -81,117 +79,121 @@ inline bool UnderFraction(const uint32_t numerator,
   return random_number < numerator;
 }
 
-class FaultInjectionFilter {
+class ChannelData {
  public:
-  class ChannelData {
-   public:
-    static grpc_error* Init(grpc_channel_element* elem,
-                            grpc_channel_element_args* args);
-    static void Destroy(grpc_channel_element* elem);
+  static grpc_error* Init(grpc_channel_element* elem,
+                          grpc_channel_element_args* args);
+  static void Destroy(grpc_channel_element* elem);
 
-    int index() const { return index_; }
+  int index() const { return index_; }
 
-   private:
-    ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args);
-    ~ChannelData() = default;
+ private:
+  ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args);
+  ~ChannelData() = default;
 
-    // The relative index of instances of the same filter.
-    int index_;
-  };
+  // The relative index of instances of the same filter.
+  int index_;
+};
 
-  class CallData {
-   public:
-    static grpc_error* Init(grpc_call_element* elem,
-                            const grpc_call_element_args* args);
+class CallData {
+ public:
+  static grpc_error* Init(grpc_call_element* elem,
+                          const grpc_call_element_args* args);
 
-    static void Destroy(grpc_call_element* elem,
-                        const grpc_call_final_info* /*final_info*/,
-                        grpc_closure* /*then_schedule_closure*/);
+  static void Destroy(grpc_call_element* elem,
+                      const grpc_call_final_info* /*final_info*/,
+                      grpc_closure* /*then_schedule_closure*/);
 
-    static void StartTransportStreamOpBatch(
-        grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
+  static void StartTransportStreamOpBatch(
+      grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
 
-   private:
-    class ResumeBatchCanceller;
+ private:
+  class ResumeBatchCanceller;
 
-    CallData(FaultInjectionFilter::ChannelData* chand,
-             const grpc_call_element_args* args);
-    ~CallData();
+  CallData(grpc_call_element* elem, const grpc_call_element_args* args);
+  ~CallData();
 
-    void DecideWhetherToInjectFaults(grpc_metadata_batch* initial_metadata);
+  void DecideWhetherToInjectFaults(grpc_metadata_batch* initial_metadata);
 
-    // Checks if current active faults exceed the allowed max faults.
-    bool HaveActiveFaultsQuota(bool increment);
+  // Checks if current active faults exceed the allowed max faults.
+  bool HaveActiveFaultsQuota(bool increment);
 
-    // Returns true if this RPC needs to be delayed. If so, this call will be
-    // counted as an active fault.
-    bool MaybeDelay();
+  // Returns true if this RPC needs to be delayed. If so, this call will be
+  // counted as an active fault.
+  bool MaybeDelay();
 
-    // Returns the aborted RPC status if this RPC needs to be aborted. If so,
-    // this call will be counted as an active fault. Otherwise, it returns
-    // GRPC_ERROR_NONE.
-    // If this call is already been delay injected, skip the active faults
-    // quota check.
-    grpc_error* MaybeAbort();
+  // Returns the aborted RPC status if this RPC needs to be aborted. If so,
+  // this call will be counted as an active fault. Otherwise, it returns
+  // GRPC_ERROR_NONE.
+  // If this call is already been delay injected, skip the active faults
+  // quota check.
+  grpc_error* MaybeAbort();
 
-    // Delays the stream operations batch.
-    void DelayBatch(grpc_call_element* elem,
-                    grpc_transport_stream_op_batch* batch);
+  // Delays the stream operations batch.
+  void DelayBatch(grpc_call_element* elem,
+                  grpc_transport_stream_op_batch* batch);
 
-    // Cancels the delay timer.
-    void CancelDelayTimer() { grpc_timer_cancel(&delay_timer_); }
+  // Cancels the delay timer.
+  void CancelDelayTimer() { grpc_timer_cancel(&delay_timer_); }
 
-    // Finishes the fault injection, should only be called once.
-    void FaultInjectionFinished() {
-      g_active_faults.FetchSub(1, MemoryOrder::RELAXED);
-    }
+  // Finishes the fault injection, should only be called once.
+  void FaultInjectionFinished() {
+    g_active_faults.FetchSub(1, MemoryOrder::RELAXED);
+  }
 
-    static void ResumeBatch(void* arg, grpc_error* error);
+  // This is a callback that will be invoked after the delay timer is up.
+  static void ResumeBatch(void* arg, grpc_error* error);
 
-    // Used to track the policy structs that needs to be destroyed in dtor.
-    bool fi_policy_owned_ = false;
-    const FaultInjectionPolicy* fi_policy_;
-    grpc_call_stack* owning_call_;
-    Arena* arena_;
-    CallCombiner* call_combiner_;
+  // This is a callback invoked upon completion of recv_trailing_metadata.
+  // Injects the abort_error_ to the recv_trailing_metadata batch if needed.
+  static void HijackedRecvTrailingMetadataReady(void* arg, grpc_error*);
 
-    // Indicates whether we are doing a delay and/or an abort for this call.
-    bool delay_request_ = false;
-    bool abort_request_ = false;
+  // Used to track the policy structs that needs to be destroyed in dtor.
+  bool fi_policy_owned_ = false;
+  const FaultInjectionMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
+  grpc_call_stack* owning_call_;
+  Arena* arena_;
+  CallCombiner* call_combiner_;
 
-    // Delay states
-    grpc_timer delay_timer_;
-    ResumeBatchCanceller* resume_batch_canceller_;
-    grpc_transport_stream_op_batch* delayed_batch_;
-    // Protects the asynchronous delay, resume, and cancellation.
-    Mutex delay_mu_;
-  };
+  // Indicates whether we are doing a delay and/or an abort for this call.
+  bool delay_request_ = false;
+  bool abort_request_ = false;
+
+  // Delay states
+  grpc_timer delay_timer_;
+  ResumeBatchCanceller* resume_batch_canceller_;
+  grpc_transport_stream_op_batch* delayed_batch_;
+  // Abort states
+  grpc_error* abort_error_ = GRPC_ERROR_NONE;
+  grpc_closure recv_trailing_metadata_ready_;
+  grpc_closure* original_recv_trailing_metadata_ready_;
+  // Protects the asynchronous delay, resume, and cancellation.
+  Mutex delay_mu_;
 };
 
 // ChannelData
 
-grpc_error* FaultInjectionFilter::ChannelData::Init(
-    grpc_channel_element* elem, grpc_channel_element_args* args) {
+grpc_error* ChannelData::Init(grpc_channel_element* elem,
+                              grpc_channel_element_args* args) {
   GPR_ASSERT(elem->filter == &FaultInjectionFilterVtable);
-  new (elem->channel_data) FaultInjectionFilter::ChannelData(elem, args);
+  new (elem->channel_data) ChannelData(elem, args);
   return GRPC_ERROR_NONE;
 }
 
-void FaultInjectionFilter::ChannelData::Destroy(grpc_channel_element* elem) {
-  auto* chand =
-      static_cast<FaultInjectionFilter::ChannelData*>(elem->channel_data);
+void ChannelData::Destroy(grpc_channel_element* elem) {
+  auto* chand = static_cast<ChannelData*>(elem->channel_data);
   chand->~ChannelData();
 }
 
-FaultInjectionFilter::ChannelData::ChannelData(grpc_channel_element* elem,
-                                               grpc_channel_element_args* args)
+ChannelData::ChannelData(grpc_channel_element* elem,
+                         grpc_channel_element_args* args)
     : index_(grpc_channel_stack_filter_instance_number(args->channel_stack,
                                                        elem)) {}
 
-class FaultInjectionFilter::CallData::ResumeBatchCanceller {
+class CallData::ResumeBatchCanceller {
  public:
   explicit ResumeBatchCanceller(grpc_call_element* elem) : elem_(elem) {
-    auto* calld = static_cast<FaultInjectionFilter::CallData*>(elem->call_data);
+    auto* calld = static_cast<CallData*>(elem->call_data);
     GRPC_CALL_STACK_REF(calld->owning_call_, "ResumeBatchCanceller");
     GRPC_CLOSURE_INIT(&closure_, &Cancel, this, grpc_schedule_on_exec_ctx);
     calld->call_combiner_->SetNotifyOnCancel(&closure_);
@@ -200,10 +202,8 @@ class FaultInjectionFilter::CallData::ResumeBatchCanceller {
  private:
   static void Cancel(void* arg, grpc_error* error) {
     auto* self = static_cast<ResumeBatchCanceller*>(arg);
-    auto* chand = static_cast<FaultInjectionFilter::ChannelData*>(
-        self->elem_->channel_data);
-    auto* calld =
-        static_cast<FaultInjectionFilter::CallData*>(self->elem_->call_data);
+    auto* chand = static_cast<ChannelData*>(self->elem_->channel_data);
+    auto* calld = static_cast<CallData*>(self->elem_->call_data);
     MutexLock lock(&calld->delay_mu_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
       gpr_log(GPR_INFO,
@@ -228,12 +228,9 @@ class FaultInjectionFilter::CallData::ResumeBatchCanceller {
   grpc_closure closure_;
 };
 
-grpc_error* FaultInjectionFilter::CallData::Init(
-    grpc_call_element* elem, const grpc_call_element_args* args) {
-  auto* chand =
-      static_cast<FaultInjectionFilter::ChannelData*>(elem->channel_data);
-  auto* calld =
-      new (elem->call_data) FaultInjectionFilter::CallData(chand, args);
+grpc_error* CallData::Init(grpc_call_element* elem,
+                           const grpc_call_element_args* args) {
+  auto* calld = new (elem->call_data) CallData(elem, args);
   if (calld->fi_policy_ == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "failed to find fault injection policy");
@@ -241,24 +238,27 @@ grpc_error* FaultInjectionFilter::CallData::Init(
   return GRPC_ERROR_NONE;
 }
 
-void FaultInjectionFilter::CallData::Destroy(
-    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
-    grpc_closure* /*then_schedule_closure*/) {
-  auto* calld = static_cast<FaultInjectionFilter::CallData*>(elem->call_data);
+void CallData::Destroy(grpc_call_element* elem,
+                       const grpc_call_final_info* /*final_info*/,
+                       grpc_closure* /*then_schedule_closure*/) {
+  auto* calld = static_cast<CallData*>(elem->call_data);
   calld->~CallData();
 }
 
-void FaultInjectionFilter::CallData::StartTransportStreamOpBatch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  auto* calld = static_cast<FaultInjectionFilter::CallData*>(elem->call_data);
-  if (calld->fi_policy_ == nullptr) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        batch,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "invalid fault injection call data"),
-        calld->call_combiner_);
-    return;
+void CallData::HijackedRecvTrailingMetadataReady(void* arg, grpc_error* error) {
+  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
+  auto* calld = static_cast<CallData*>(elem->call_data);
+  if (calld->abort_error_ != GRPC_ERROR_NONE) {
+    error = grpc_error_add_child(GRPC_ERROR_REF(error),
+                                 GRPC_ERROR_REF(calld->abort_error_));
+    Closure::Run(DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
+                 error);
   }
+}
+
+void CallData::StartTransportStreamOpBatch(
+    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+  auto* calld = static_cast<CallData*>(elem->call_data);
   // There should only be one send_initial_metdata op, and fault injection also
   // only need to be enforced once.
   if (batch->send_initial_metadata) {
@@ -277,8 +277,19 @@ void FaultInjectionFilter::CallData::StartTransportStreamOpBatch(
     }
     grpc_error* abort_error = calld->MaybeAbort();
     if (abort_error != GRPC_ERROR_NONE) {
-      grpc_transport_stream_op_batch_finish_with_failure(batch, abort_error,
-                                                         calld->call_combiner_);
+      calld->abort_error_ = abort_error;
+      grpc_transport_stream_op_batch_finish_with_failure(
+          batch, GRPC_ERROR_REF(calld->abort_error_), calld->call_combiner_);
+      return;
+    }
+  } else {
+    if (batch->recv_trailing_metadata) {
+      batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+          &calld->recv_trailing_metadata_ready_;
+    }
+    if (calld->abort_error_ != GRPC_ERROR_NONE) {
+      grpc_transport_stream_op_batch_finish_with_failure(
+          batch, GRPC_ERROR_REF(calld->abort_error_), calld->call_combiner_);
       return;
     }
   }
@@ -286,12 +297,11 @@ void FaultInjectionFilter::CallData::StartTransportStreamOpBatch(
   grpc_call_next_op(elem, batch);
 }
 
-FaultInjectionFilter::CallData::CallData(
-    FaultInjectionFilter::ChannelData* chand,
-    const grpc_call_element_args* args)
+CallData::CallData(grpc_call_element* elem, const grpc_call_element_args* args)
     : owning_call_(args->call_stack),
       arena_(args->arena),
       call_combiner_(args->call_combiner) {
+  auto* chand = static_cast<ChannelData*>(elem->channel_data);
   // Fetch the fault injection policy from the service config, based on the
   // relative index for which policy should this CallData use.
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
@@ -302,19 +312,24 @@ FaultInjectionFilter::CallData::CallData(
   if (method_params != nullptr) {
     fi_policy_ = method_params->fault_injection_policy(chand->index());
   }
+  GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
+                    HijackedRecvTrailingMetadataReady, elem,
+                    grpc_schedule_on_exec_ctx);
 }
 
-FaultInjectionFilter::CallData::~CallData() {
+CallData::~CallData() {
   if (fi_policy_owned_) {
     fi_policy_->~FaultInjectionPolicy();
-    // TODO(lidiz) The ~CallData will be invoked twice, investigate how.
-    fi_policy_owned_ = false;
+  }
+  if (abort_error_ != GRPC_ERROR_NONE) {
+    GRPC_ERROR_UNREF(abort_error_);
   }
 }
 
-void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
+void CallData::DecideWhetherToInjectFaults(
     grpc_metadata_batch* initial_metadata) {
-  FaultInjectionPolicy* copied_policy = nullptr;
+  FaultInjectionMethodParsedConfig::FaultInjectionPolicy* copied_policy =
+      nullptr;
   // Update the policy with values in initial metadata.
   if (!fi_policy_->abort_code_header.empty() ||
       !fi_policy_->abort_percentage_header.empty() ||
@@ -323,7 +338,9 @@ void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
     // Defer the actual copy until the first matched header.
     auto maybe_copy_policy_func = [this, &copied_policy]() {
       if (copied_policy == nullptr) {
-        copied_policy = arena_->New<FaultInjectionPolicy>(*fi_policy_);
+        copied_policy =
+            arena_->New<FaultInjectionMethodParsedConfig::FaultInjectionPolicy>(
+                *fi_policy_);
       }
     };
     for (grpc_linked_mdelem* md = initial_metadata->list.head; md != nullptr;
@@ -379,7 +396,7 @@ void FaultInjectionFilter::CallData::DecideWhetherToInjectFaults(
   }
 }
 
-bool FaultInjectionFilter::CallData::HaveActiveFaultsQuota(bool increment) {
+bool CallData::HaveActiveFaultsQuota(bool increment) {
   if (g_active_faults.Load(MemoryOrder::ACQUIRE) >= fi_policy_->max_faults) {
     return false;
   }
@@ -387,14 +404,14 @@ bool FaultInjectionFilter::CallData::HaveActiveFaultsQuota(bool increment) {
   return true;
 }
 
-bool FaultInjectionFilter::CallData::MaybeDelay() {
+bool CallData::MaybeDelay() {
   if (delay_request_) {
     return HaveActiveFaultsQuota(true);
   }
   return false;
 }
 
-grpc_error* FaultInjectionFilter::CallData::MaybeAbort() {
+grpc_error* CallData::MaybeAbort() {
   if (abort_request_ && (delay_request_ || HaveActiveFaultsQuota(false))) {
     return grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(fi_policy_->abort_message.c_str()),
@@ -403,8 +420,8 @@ grpc_error* FaultInjectionFilter::CallData::MaybeAbort() {
   return GRPC_ERROR_NONE;
 }
 
-void FaultInjectionFilter::CallData::DelayBatch(
-    grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
+void CallData::DelayBatch(grpc_call_element* elem,
+                          grpc_transport_stream_op_batch* batch) {
   MutexLock lock(&delay_mu_);
   delayed_batch_ = batch;
   resume_batch_canceller_ = new ResumeBatchCanceller(elem);
@@ -414,9 +431,9 @@ void FaultInjectionFilter::CallData::DelayBatch(
   grpc_timer_init(&delay_timer_, resume_time, &batch->handler_private.closure);
 }
 
-void FaultInjectionFilter::CallData::ResumeBatch(void* arg, grpc_error* error) {
+void CallData::ResumeBatch(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  auto* calld = static_cast<FaultInjectionFilter::CallData*>(elem->call_data);
+  auto* calld = static_cast<CallData*>(elem->call_data);
   MutexLock lock(&calld->delay_mu_);
   // Cancelled or canceller has already run
   if (error == GRPC_ERROR_CANCELLED ||
@@ -445,23 +462,23 @@ void FaultInjectionFilter::CallData::ResumeBatch(void* arg, grpc_error* error) {
 }  // namespace
 
 extern const grpc_channel_filter FaultInjectionFilterVtable = {
-    FaultInjectionFilter::CallData::StartTransportStreamOpBatch,
+    CallData::StartTransportStreamOpBatch,
     grpc_channel_next_op,
-    sizeof(FaultInjectionFilter::CallData),
-    FaultInjectionFilter::CallData::Init,
+    sizeof(CallData),
+    CallData::Init,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    FaultInjectionFilter::CallData::Destroy,
-    sizeof(FaultInjectionFilter::ChannelData),
-    FaultInjectionFilter::ChannelData::Init,
-    FaultInjectionFilter::ChannelData::Destroy,
+    CallData::Destroy,
+    sizeof(ChannelData),
+    ChannelData::Init,
+    ChannelData::Destroy,
     grpc_channel_next_get_info,
     "fault_injection_filter",
 };
 
-}  // namespace grpc_core
-
-void grpc_fault_injection_filter_init(void) {
+void FaultInjectionFilterInit(void) {
   grpc_core::FaultInjectionServiceConfigParser::Register();
 }
 
-void grpc_fault_injection_filter_shutdown(void) {}
+void FaultInjectionFilterShutdown(void) {}
+
+}  // namespace grpc_core

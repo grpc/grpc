@@ -1084,6 +1084,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_inproc",
+        "grpc_fault_injection_filter",
         "grpc_workaround_cronet_compression_filter",
         "grpc_server_backward_compatibility",
     ],
@@ -1274,7 +1275,6 @@ grpc_cc_library(
     language = "c++",
     deps = [
         "grpc_base",
-        "grpc_fault_injection_filter",
         "grpc_message_size_filter",
     ],
 )
@@ -1425,6 +1425,7 @@ grpc_cc_library(
         "grpc_authorization_engine",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_fault_injection_filter",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
         "udpa_type_upb",

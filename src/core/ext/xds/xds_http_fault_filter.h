@@ -35,11 +35,11 @@ class XdsHttpFaultFilter : public XdsHttpFilterImpl {
   void PopulateSymtab(upb_symtab* symtab) const override;
 
   // Overrides the GenerateFilterConfig method
-  absl::StatusOr<XdsHttpFilterImpl::FilterConfig> GenerateFilterConfig(
+  absl::StatusOr<FilterConfig> GenerateFilterConfig(
       upb_strview serialized_filter_config, upb_arena* arena) const override;
 
   // Overrides the GenerateFilterConfigOverride method
-  absl::StatusOr<XdsHttpFilterImpl::FilterConfig> GenerateFilterConfigOverride(
+  absl::StatusOr<FilterConfig> GenerateFilterConfigOverride(
       upb_strview serialized_filter_config, upb_arena* arena) const override;
 
   // Overrides the channel_filter method
@@ -49,11 +49,9 @@ class XdsHttpFaultFilter : public XdsHttpFilterImpl {
   grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) const override;
 
   // Overrides the GenerateServiceConfig method
-  absl::StatusOr<XdsHttpFilterImpl::ServiceConfigJsonEntry>
-  GenerateServiceConfig(
-      const XdsHttpFilterImpl::FilterConfig& hcm_filter_config,
-      const XdsHttpFilterImpl::FilterConfig* filter_config_override)
-      const override;
+  absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
+      const FilterConfig& hcm_filter_config,
+      const FilterConfig* filter_config_override) const override;
 };
 
 }  // namespace grpc_core
