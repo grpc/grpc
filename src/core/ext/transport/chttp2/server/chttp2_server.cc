@@ -161,7 +161,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
                      grpc_pollset* accepting_pollset,
                      grpc_tcp_server_acceptor* acceptor,
                      grpc_channel_args* args, grpc_endpoint* endpoint);
-    ~ActiveConnection();
+    ~ActiveConnection() override;
 
     void Orphan() override {
       Unref();
