@@ -29,7 +29,7 @@ cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
  6f9d96a1f41439ac172ee2ef7ccd8edf0e5d068c third_party/abseil-cpp (heads/master)
  090faecb454fbd6e6e17a75ef8146acb037118d4 third_party/benchmark (v1.5.0)
  73594cde8c9a52a102c4341c244c833aa61b9c06 third_party/bloaty (remotes/origin/wide-14-g73594cd)
- 067cfd92f4d7da0edfa073b096d090b98a83b860 third_party/boringssl-with-bazel (remotes/origin/master-with-bazel)
+ 1a7359455220f7010def8c63f7c7e041ce6707c6 third_party/boringssl-with-bazel (remotes/origin/master-with-bazel)
  e982924acee7f7313b4baa4ee5ec000c5e373c30 third_party/cares/cares (cares-1_15_0)
  18b54850c9b7ba29a4ab67cbd7ed7eab7b0bbdb2 third_party/envoy-api (remotes/origin/main)
  82944da21578a53b74e547774cf62ed31a05b841 third_party/googleapis (common-protos-1_3_1-915-g80ed4d0bb)
