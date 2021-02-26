@@ -270,10 +270,10 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
     }
   }
   if (shutting_down) {
-    Unref();
     grpc_endpoint_shutdown(endpoint, GRPC_ERROR_NONE);
     grpc_endpoint_destroy(endpoint);
     gpr_free(acceptor_);
+    Unref();
   } else {
     grpc_resource_user* resource_user =
         connection_->listener_->server_->default_resource_user();
