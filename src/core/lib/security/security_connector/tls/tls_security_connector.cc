@@ -318,9 +318,12 @@ int TlsChannelSecurityConnector::cmp(
 bool TlsChannelSecurityConnector::check_call_host(
     absl::string_view host, grpc_auth_context* auth_context,
     grpc_closure* /*on_call_host_checked*/, grpc_error** error) {
-  return grpc_ssl_check_call_host(host, target_name_.c_str(),
-                                  overridden_target_name_.c_str(), auth_context,
-                                  error);
+  if (options_->server_verification_option() == GRPC_TLS_SERVER_VERIFICATION) {
+    return grpc_ssl_check_call_host(host, target_name_.c_str(),
+                                    overridden_target_name_.c_str(),
+                                    auth_context, error);
+  }
+  return true;
 }
 
 void TlsChannelSecurityConnector::cancel_check_call_host(
