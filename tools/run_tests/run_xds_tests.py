@@ -1414,14 +1414,15 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
             extra_backend_instances + more_extra_backend_instances,
             _WAIT_FOR_STATS_SEC)
 
-        # Make all calls keep-open.
+        # Make all calls keep-open. Set a large timeout to avoid RPCs
+        # closed by DEADLINE_EXCEEDED.
         configure_client([
             messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
             messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL
         ], [(messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
              'rpc-behavior', 'keep-open'),
             (messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL,
-             'rpc-behavior', 'keep-open')])
+             'rpc-behavior', 'keep-open')], timeout_sec=3600)
         wait_until_rpcs_in_flight(
             'UNARY_CALL', (_WAIT_FOR_BACKEND_SEC +
                            int(extra_backend_service_max_requests / args.qps)),
