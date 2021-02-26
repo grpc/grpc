@@ -466,12 +466,14 @@ std::string XdsApi::LdsUpdate::FilterChain::FilterChainMatch::ToString() const {
   if (destination_port != 0) {
     contents.push_back(absl::StrCat("destination_port=", destination_port));
   }
-  std::vector<std::string> prefix_ranges_content;
-  for (const auto& range : prefix_ranges) {
-    prefix_ranges_content.push_back(range.ToString());
+  if (!prefix_ranges.empty()) {
+    std::vector<std::string> prefix_ranges_content;
+    for (const auto& range : prefix_ranges) {
+      prefix_ranges_content.push_back(range.ToString());
+    }
+    contents.push_back(absl::StrCat(
+        "prefix_ranges={", absl::StrJoin(prefix_ranges_content, ", "), "}"));
   }
-  contents.push_back(absl::StrCat(
-      "prefix_ranges={", absl::StrJoin(prefix_ranges_content, ", "), "}"));
   if (source_type == XdsApi::LdsUpdate::FilterChain::FilterChainMatch::
                          ConnectionSourceType::kSameIpOrLoopback) {
     contents.push_back("source_type=SAME_IP_OR_LOOPBACK");
@@ -479,13 +481,15 @@ std::string XdsApi::LdsUpdate::FilterChain::FilterChainMatch::ToString() const {
                                 ConnectionSourceType::kExternal) {
     contents.push_back("source_type=EXTERNAL");
   }
-  std::vector<std::string> source_prefix_ranges_content;
-  for (const auto& range : source_prefix_ranges) {
-    source_prefix_ranges_content.push_back(range.ToString());
+  if (!source_prefix_ranges.empty()) {
+    std::vector<std::string> source_prefix_ranges_content;
+    for (const auto& range : source_prefix_ranges) {
+      source_prefix_ranges_content.push_back(range.ToString());
+    }
+    contents.push_back(
+        absl::StrCat("source_prefix_ranges={",
+                     absl::StrJoin(source_prefix_ranges_content, ", "), "}"));
   }
-  contents.push_back(
-      absl::StrCat("source_prefix_ranges={",
-                   absl::StrJoin(source_prefix_ranges_content, ", "), "}"));
   if (!source_ports.empty()) {
     contents.push_back(
         absl::StrCat("source_ports={", absl::StrJoin(source_ports, ", "), "}"));
@@ -1896,6 +1900,9 @@ grpc_error* LdsResponseParseServer(
     XdsApi::LdsUpdate* lds_update) {
   lds_update->type = XdsApi::LdsUpdate::ListenerType::kTcpListener;
   grpc_error* error = GRPC_ERROR_NONE;
+  // TODO(yashykt): As part of this, we'll need to refactor the code to process
+  // the HttpConnectionManager config so that it is shared with the client-side
+  // parsing.
   size_t size = 0;
   auto* filter_chains =
       envoy_config_listener_v3_Listener_filter_chains(listener, &size);
@@ -1903,7 +1910,7 @@ grpc_error* LdsResponseParseServer(
   // implementation is in
   if (size == 0) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Atleast one filter chain needed.");
+        "At least one filter chain needed.");
   }
   lds_update->filter_chains.reserve(size);
   for (size_t i = 0; i < size; i++) {
