@@ -57,6 +57,13 @@ cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 
+@rem Install xxhash
+mkdir third_party\xxhash\cmake_unofficial\cmake\build
+pushd third_party\xxhash\cmake_unofficial\cmake\build
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
+cmake --build . --config Release --target install || goto :error
+popd
+
 @rem Install zlib
 mkdir third_party\zlib\cmake\build
 pushd third_party\zlib\cmake\build
