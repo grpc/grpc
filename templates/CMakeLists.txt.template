@@ -753,7 +753,7 @@
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "gpr openssl"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "hash", "upb", "cares", "z"] + list_absl_lib_files_for("grpc"))}"
+    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "xxhash", "upb", "cares", "z"] + list_absl_lib_files_for("grpc"))}"
     ""
     "grpc.pc")
 
