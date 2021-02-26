@@ -144,6 +144,7 @@ ExternalProject_Add(helloworld
         -DProtobuf_DIR:PATH=${_FINDPACKAGE_PROTOBUF_CONFIG_DIR}
         -Dc-ares_DIR:PATH=${CMAKE_CURRENT_BINARY_DIR}/c-ares/lib/cmake/c-ares
         -Dre2_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/re2/lib/cmake/re2
+        -DxxHash_INCLUDE_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/xxhash/include
         -DZLIB_ROOT:STRING=${CMAKE_CURRENT_BINARY_DIR}/zlib
         -Dabsl_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/absl/lib/cmake/absl
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
