@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: gummybear
   protobuf_version: 3.14.0
-  version: 1.36.0
+  version: 1.36.1
 targets:
 - name: check_epollexclusive
   build: tool

@@ -89,7 +89,7 @@ g_stands_for = "gummybear"  # @unused
 
 core_version = "15.0.0"  # @unused
 
-version = "1.36.0"  # @unused
+version = "1.36.1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
