@@ -721,8 +721,7 @@ void Server::FailCall(size_t cq_idx, RequestedCall* rc, grpc_error* error) {
 // Before calling MaybeFinishShutdown(), we must hold mu_global_ and not
 // hold mu_call_.
 void Server::MaybeFinishShutdown() {
-  if (shutdown_refs_.load(std::memory_order_acquire) != 0 ||
-      shutdown_published_) {
+  if (!ShutdownReady() || shutdown_published_) {
     return;
   }
   {
@@ -816,7 +815,7 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
       return;
     }
     shutdown_tags_.emplace_back(tag, cq);
-    if ((shutdown_refs_.load(std::memory_order_acquire) & 1) == 0) {
+    if (ShutdownCalled()) {
       return;
     }
     last_shutdown_message_time_ = gpr_now(GPR_CLOCK_REALTIME);

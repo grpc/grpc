@@ -361,6 +361,39 @@ class Server : public InternallyRefCounted<Server> {
 
   std::vector<grpc_channel*> GetChannelsLocked() const;
 
+  // Take a shutdown ref for a request (increment by 2) and return if shutdown
+  // has already been called.
+  bool ShutdownRefOnRequest() {
+    int old_value = shutdown_refs_.FetchAdd(2, MemoryOrder::ACQ_REL);
+    return (old_value & 1) != 0;
+  }
+
+  // Decrement the shutdown ref counter by either 1 (for shutdown call) or 2
+  // (for in-flight request) and possibly call MaybeFinishShutdown if
+  // appropriate.
+  void ShutdownUnrefOnRequest() ABSL_LOCKS_EXCLUDED(mu_global_) {
+    if (shutdown_refs_.FetchSub(2, MemoryOrder::ACQ_REL) == 2) {
+      MutexLock lock(&mu_global_);
+      MaybeFinishShutdown();
+    }
+  }
+  void ShutdownUnrefOnShutdownCall() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) {
+    if (shutdown_refs_.FetchSub(1, MemoryOrder::ACQ_REL) == 1) {
+      MaybeFinishShutdown();
+    }
+  }
+
+  bool ShutdownCalled() const {
+    return (shutdown_refs_.Load(MemoryOrder::ACQUIRE) & 1) == 0;
+  }
+
+  // Returns whether there are no more shutdown refs, which means that shutdown
+  // has been called and all accepted requests have been published if using an
+  // AllocatingRequestMatcher.
+  bool ShutdownReady() const {
+    return shutdown_refs_.Load(MemoryOrder::ACQUIRE) == 0;
+  }
+
   grpc_channel_args* const channel_args_;
   grpc_resource_user* default_resource_user_ = nullptr;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
@@ -396,35 +429,9 @@ class Server : public InternallyRefCounted<Server> {
   // the lowest bit will be 0 (defaults to 1) and the counter will be even. The
   // server should not notify on shutdown until the counter is 0 (shutdown is
   // called and there are no requests that are accepted but not started).
-  std::atomic_int shutdown_refs_{1};
+  Atomic<int> shutdown_refs_{1};
   bool shutdown_published_ ABSL_GUARDED_BY(mu_global_) = false;
   std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
-
-  // Take a shutdown ref for a request (increment by 2) and return if shutdown
-  // has already been called.
-  bool ShutdownRefOnRequest() {
-    int old_value = shutdown_refs_.fetch_add(2, std::memory_order_acq_rel);
-    return (old_value & 1) != 0;
-  }
-
-  // Decrement the shutdown ref counter by either 1 (for shutdown call) or 2
-  // (for in-flight request) and possibly call MaybeFinishShutdown if
-  // appropriate.
-  void ShutdownUnrefOnRequest() {
-    if (shutdown_refs_.fetch_sub(2, std::memory_order_acq_rel) == 2) {
-      MutexLock lock(&mu_global_);
-      MaybeFinishShutdown();
-    }
-  }
-  void ShutdownUnrefOnShutdownCall() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) {
-    if (shutdown_refs_.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      MaybeFinishShutdown();
-    }
-  }
-
-  bool ShutdownCalled() const {
-    return (shutdown_refs_.load(std::memory_order_acquire) & 1) == 0;
-  }
 
   std::list<ChannelData*> channels_;
 
