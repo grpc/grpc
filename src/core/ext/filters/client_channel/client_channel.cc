@@ -2297,7 +2297,7 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked() {
         server_name_, retry_throttle_config.value().max_milli_tokens,
         retry_throttle_config.value().milli_token_ratio);
   }
-  // Construct per-LB filter stack.
+  // Construct dynamic filter stack.
   std::vector<const grpc_channel_filter*> filters =
       config_selector->GetFilters();
   filters.push_back(&kDynamicTerminationFilterVtable);
@@ -2312,6 +2312,7 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked() {
   }
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       channel_args_, args_to_add.data(), args_to_add.size());
+  new_args = config_selector->ModifyChannelArgs(new_args);
   RefCountedPtr<DynamicFilters> dynamic_filters =
       DynamicFilters::Create(new_args, std::move(filters));
   GPR_ASSERT(dynamic_filters != nullptr);

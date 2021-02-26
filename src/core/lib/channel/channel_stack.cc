@@ -81,6 +81,18 @@ grpc_channel_element* grpc_channel_stack_last_element(
   return grpc_channel_stack_element(channel_stack, channel_stack->count - 1);
 }
 
+size_t grpc_channel_stack_filter_instance_number(
+    grpc_channel_stack* channel_stack, grpc_channel_element* elem) {
+  size_t num_found = 0;
+  for (size_t i = 0; i < channel_stack->count; ++i) {
+    grpc_channel_element* element =
+        grpc_channel_stack_element(channel_stack, i);
+    if (element == elem) break;
+    if (element->filter == elem->filter) ++num_found;
+  }
+  return num_found;
+}
+
 grpc_call_element* grpc_call_stack_element(grpc_call_stack* call_stack,
                                            size_t index) {
   return CALL_ELEMS_FROM_STACK(call_stack) + index;
