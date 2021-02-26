@@ -16812,7 +16812,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lre2 -lxxhash -lupb -lcares -lz -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_city -labsl_statusor -labsl_bad_variant_access -labsl_status -labsl_cord -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_bad_optional_access -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_city -labsl_statusor -labsl_bad_variant_access -labsl_status -labsl_cord -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_bad_optional_access -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc.pc")
 
