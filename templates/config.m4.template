@@ -67,4 +67,5 @@
     % for dir in dirs:
     PHP_ADD_BUILD_DIR($ext_builddir/${dir})
     % endfor
+    PHP_ADD_BUILD_DIR(&ext_builddir/third_party/xxhash)
   fi

@@ -1219,4 +1219,5 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
+  PHP_ADD_BUILD_DIR(&ext_builddir/third_party/xxhash)
 fi
