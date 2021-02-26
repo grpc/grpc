@@ -12,4 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(_gRPC_XXHASH_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/xxhash")
+if(gRPC_XXHASH_PROVIDER STREQUAL "module")
+  set(_gRPC_XXHASH_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/xxhash")
+elseif(gRPC_XXHASH_PROVIDER STREQUAL "package")
+  set(_gRPC_XXHASH_INCLUDE_DIR ${xxHash_INCLUDE_DIR})
+endif()

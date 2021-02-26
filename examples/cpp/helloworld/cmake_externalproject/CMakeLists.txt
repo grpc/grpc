@@ -71,6 +71,15 @@ ExternalProject_Add(re2
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/re2
 )
 
+# Builds xxhash project from the git submodule.
+ExternalProject_Add(xxhash
+  PREFIX xxhash
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/xxhash/cmake_unofficial"
+  CMAKE_CACHE_ARGS
+        -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE
+        -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/xxhash
+)
+
 # Builds zlib project from the git submodule.
 ExternalProject_Add(zlib
   PREFIX zlib
@@ -105,6 +114,8 @@ ExternalProject_Add(grpc
         -DProtobuf_DIR:PATH=${_FINDPACKAGE_PROTOBUF_CONFIG_DIR}
         -DgRPC_RE2_PROVIDER:STRING=package
         -Dre2_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/re2/lib/cmake/re2
+	-DgRPC_XXHASH_PROVIDER:STRING=package
+	-DxxHash_INCLUDE_DIR:STRING=${CMAKE_CURRENT_BINARY_DIR}/xxhash/include
         -DgRPC_ZLIB_PROVIDER:STRING=package
         -DZLIB_ROOT:STRING=${CMAKE_CURRENT_BINARY_DIR}/zlib
         -DgRPC_ABSL_PROVIDER:STRING=package
@@ -114,7 +125,7 @@ ExternalProject_Add(grpc
         -DgRPC_SSL_PROVIDER:STRING=package
         ${_CMAKE_ARGS_OPENSSL_ROOT_DIR}
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/grpc
-  DEPENDS c-ares protobuf re2 zlib absl
+  DEPENDS c-ares protobuf re2 xxhash zlib absl
 )
 
 # Build the helloworld projects itself using a CMakeLists.txt that assumes all the dependencies
