@@ -182,10 +182,14 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     // A ref is held to listener_->tcp_server_ to make sure that the listener_
     // does not go away before we expect.
     Chttp2ServerListener* const listener_;
-    grpc_chttp2_transport* transport_
-        ABSL_GUARDED_BY(&Chttp2ServerListener::mu_) = nullptr;
+    // Set by HandshakingState before the handshaking begins and reset when
+    // handshaking is done.
     OrphanablePtr<HandshakingState> handshaking_state_
         ABSL_GUARDED_BY(&Chttp2ServerListener::mu_);
+    // Set by HandshakingState when handshaking is done and a valid transport is
+    // created.
+    grpc_chttp2_transport* transport_
+        ABSL_GUARDED_BY(&Chttp2ServerListener::mu_) = nullptr;
     grpc_closure on_close_;
     bool is_serving_ ABSL_GUARDED_BY(&Chttp2ServerListener::mu_) = true;
   };
@@ -279,8 +283,9 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
       gpr_log(GPR_ERROR,
               "Memory quota exhausted, rejecting connection, no handshaking.");
     }
-    Ref().release();  // Held by OnHandshakeDone()
     deadline_ = GetConnectionDeadline(args);
+    // We are not taking an additional ref for OnHandshakeDone since we already
+    // have a ref store in ActiveConnection which serves the same purpose.
     handshake_mgr->DoHandshake(endpoint, args, deadline_, acceptor_,
                                OnHandshakeDone, this);
   }
@@ -331,9 +336,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout(
 void Chttp2ServerListener::ActiveConnection::HandshakingState::
     OnReceiveSettings(void* arg, grpc_error* error) {
   HandshakingState* self = static_cast<HandshakingState*>(arg);
-  if (error == GRPC_ERROR_NONE) {
-    grpc_timer_cancel(&self->timer_);
-  }
+  grpc_timer_cancel(&self->timer_);
   self->Unref();
 }
 
@@ -398,7 +401,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           self->Ref().release();  // Held by OnReceiveSettings().
           GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings,
                             self, grpc_schedule_on_exec_ctx);
-          // If the listener hsa been configured with a config fetcher, we need
+          // If the listener has been configured with a config fetcher, we need
           // to watch on the transport being closed so that we can an updated
           // list of active connections.
           if (self->connection_->listener_->config_fetcher_watcher_ !=
@@ -446,7 +449,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   handshake_mgr.reset();
   gpr_free(self->acceptor_);
   grpc_tcp_server_unref(self->connection_->listener_->tcp_server_);
-  self->Unref();
 }
 
 //
