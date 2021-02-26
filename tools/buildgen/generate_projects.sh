@@ -20,7 +20,7 @@ export TEST=${TEST:-false}
 
 YAML_OK=$(python3 -c "import yaml; print(yaml.__version__.split('.') >= ['5', '4', '1'])")
 
-if [[ ${YAML_OK} != "True" ]]; then
+if [[ "${YAML_OK}" != "True" ]]; then
   python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 fi
 
