@@ -270,8 +270,8 @@ if BUILD_WITH_SYSTEM_RE2:
 
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
-                                 RE2_INCLUDE + XXHASH_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
-                                 UPB_GRPC_GENERATED_INCLUDE +
+                                 RE2_INCLUDE + XXHASH_INCLUDE + SSL_INCLUDE +
+                                 UPB_INCLUDE + UPB_GRPC_GENERATED_INCLUDE +
                                  UPBDEFS_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE)
 
 EXTENSION_LIBRARIES = ()

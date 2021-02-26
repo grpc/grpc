@@ -167,7 +167,8 @@ Pod::Spec.new do |s|
                       'include/grpc/support/sync_windows.h',
                       'include/grpc/support/thd_id.h',
                       'include/grpc/support/time.h',
-                      'include/grpc/support/workaround_list.h'
+                      'include/grpc/support/workaround_list.h',
+                      'third_party/xxhash/xxhash.h'
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
@@ -2107,5 +2108,7 @@ Pod::Spec.new do |s|
     find third_party/re2/re2/ third_party/re2/util/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g;s;#include "util/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/util/\\1"\\\n#else\\\n  #include  "util/\\1"\\\n#endif;g'
     find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g'
     find src/core/ third_party/re2/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "xxhash.h";#if COCOAPODS==1\\\n  #include  "third_party/xxhash/xxhash.h"\\\n#else\\\n  #include  "xxhash.h"\\\n#endif;g'
+    find src/core/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end
