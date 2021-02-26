@@ -194,7 +194,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   ~Subchannel() override;
 
   // Creates a subchannel given \a connector and \a args.
-  static std::unique_ptr<SubchannelRef> Create(
+  static RefCountedPtr<Subchannel> Create(
       OrphanablePtr<SubchannelConnector> connector,
       const grpc_channel_args* args);
 

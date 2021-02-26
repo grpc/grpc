@@ -24,7 +24,7 @@
 
 namespace grpc_core {
 
-std::unique_ptr<SubchannelRef> LocalSubchannelPool::RegisterSubchannel(
+RefCountedPtr<Subchannel> LocalSubchannelPool::RegisterSubchannel(
     const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) {
   // Check to see if a subchannel already exists.
   auto p = subchannel_map_.find(key);
@@ -37,24 +37,16 @@ std::unique_ptr<SubchannelRef> LocalSubchannelPool::RegisterSubchannel(
     c = std::move(constructed);
     subchannel_map_[key] = c->WeakRef();
   }
-  return absl::make_unique<LocalSubchannelPoolSubchannelRef>(Ref(),
-                                                             std::move(c), key);
+  return c;
 }
 
-LocalSubchannelPool::LocalSubchannelPoolSubchannelRef::
-    LocalSubchannelPoolSubchannelRef(RefCountedPtr<LocalSubchannelPool> parent,
-                                     RefCountedPtr<Subchannel> subchannel,
-                                     const SubchannelKey& key)
-    : parent_(std::move(parent)), subchannel_(subchannel), key_(key) {}
-
-LocalSubchannelPool::LocalSubchannelPoolSubchannelRef::
-    ~LocalSubchannelPoolSubchannelRef() {
-  Subchannel* c =
-      subchannel_.get();  // release strong ref, pool still holds a weak ref
-  subchannel_.reset();
-  if (c->RefIfNonZero() == nullptr) {
-    // nobody else using this subchannel, delete it from the pool
-    GPR_ASSERT(parent_->subchannel_map_.erase(key_) == 1);
+void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key, Subchannel* c) {
+  auto it = subchannel_map_.find(key);
+  GPR_ASSERT(it != subchannel_map_.end());
+  // delete only if key hasn't been re-registered to a different subchannel
+  // between strong-unreffing and unregistration of c.
+  if (it.second.get() == c) {
+    GPR_ASSERT(subchannel_map_.erase(key_) == 1);
   }
 }
 

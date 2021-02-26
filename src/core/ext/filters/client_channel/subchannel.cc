@@ -695,7 +695,7 @@ Subchannel::~Subchannel() {
   grpc_pollset_set_destroy(pollset_set_);
 }
 
-std::unique_ptr<SubchannelRef> Subchannel::Create(
+RefCountedPtr<Subchannel> Subchannel::Create(
     OrphanablePtr<SubchannelConnector> connector,
     const grpc_channel_args* args) {
   SubchannelKey key(args);

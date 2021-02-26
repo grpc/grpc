@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -47,24 +46,10 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   static RefCountedPtr<GlobalSubchannelPool> instance();
 
   // Implements interface methods.
-  std::unique_ptr<SubchannelRef> RegisterSubchannel(
+  RefCountedPtr<Subchannel> RegisterSubchannel(
       const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
 
  private:
-  class GlobalSubchannelPoolSubchannelRef : public SubchannelRef {
-   public:
-    GlobalSubchannelPoolSubchannelRef(
-        RefCountedPtr<GlobalSubchannelPool> parent,
-        RefCountedPtr<Subchannel> subchannel, const SubchannelKey& key);
-    ~GlobalSubchannelPoolSubchannelRef() override;
-    Subchannel* subchannel() override { return subchannel_.get(); }
-
-   private:
-    RefCountedPtr<GlobalSubchannelPool> parent_;
-    RefCountedPtr<Subchannel> subchannel_;
-    const SubchannelKey key_;
-  };
-
   // The singleton instance. (It's a pointer to RefCountedPtr so that this
   // non-local static object can be trivially destructible.)
   static RefCountedPtr<GlobalSubchannelPool>* instance_;

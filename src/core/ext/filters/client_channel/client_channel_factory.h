@@ -32,8 +32,7 @@ class ClientChannelFactory {
   virtual ~ClientChannelFactory() = default;
 
   // Creates a subchannel with the specified args.
-  virtual std::unique_ptr<SubchannelRef> CreateSubchannel(
-      const grpc_channel_args* args) = 0;
+  virtual Subchannel* CreateSubchannel(const grpc_channel_args* args) = 0;
 
   // Returns a channel arg containing the specified factory.
   static grpc_arg CreateChannelArg(ClientChannelFactory* factory);

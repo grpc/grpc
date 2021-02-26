@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/subchannel.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
 namespace grpc_core {
@@ -41,24 +40,10 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   // Implements interface methods.
   // Thread-unsafe. Intended to be invoked within the client_channel work
   // serializer.
-  std::unique_ptr<SubchannelRef> RegisterSubchannel(
+  RefCountedPtr<Subchannel> RegisterSubchannel(
       const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
 
  private:
-  class LocalSubchannelPoolSubchannelRef : public SubchannelRef {
-   public:
-    LocalSubchannelPoolSubchannelRef(RefCountedPtr<LocalSubchannelPool> parent,
-                                     RefCountedPtr<Subchannel> subchannel,
-                                     const SubchannelKey& key);
-    ~LocalSubchannelPoolSubchannelRef() override;
-    Subchannel* subchannel() override { return subchannel_.get(); }
-
-   private:
-    RefCountedPtr<LocalSubchannelPool> parent_;
-    RefCountedPtr<Subchannel> subchannel_;
-    const SubchannelKey key_;
-  };
-
   // A map from subchannel key to subchannel.
   std::map<SubchannelKey, WeakRefCountedPtr<Subchannel>> subchannel_map_;
 };
