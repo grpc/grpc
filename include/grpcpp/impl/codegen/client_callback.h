@@ -27,6 +27,7 @@
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/impl/codegen/sync.h>
 
 namespace grpc {
 class Channel;
@@ -472,7 +473,7 @@ class ClientCallbackReaderWriterImpl
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
-  void StartCall() override {
+  void StartCall() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     // This call initiates two batches, plus any backlog, each with a callback
     // 1. Send initial metadata (unless corked) + recv initial metadata
     // 2. Any read backlog
@@ -521,7 +522,7 @@ class ClientCallbackReaderWriterImpl
     call_.PerformOps(&read_ops_);
   }
 
-  void Write(const Request* msg, ::grpc::WriteOptions options) override {
+  void Write(const Request* msg, ::grpc::WriteOptions options) ABSL_LOCKS_EXCLUDED(start_mu_) override {
     if (options.is_last_message()) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
@@ -544,7 +545,7 @@ class ClientCallbackReaderWriterImpl
     }
     call_.PerformOps(&write_ops_);
   }
-  void WritesDone() override {
+  void WritesDone() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     writes_done_ops_.ClientSendClose();
     writes_done_tag_.Set(
         call_.call(),
@@ -685,7 +686,7 @@ class ClientCallbackReaderWriterImpl
     bool writes_done_ops = false;
     bool read_ops = false;
   };
-  StartCallBacklog backlog_ /* GUARDED_BY(start_mu_) */;
+  StartCallBacklog backlog_ ABSL_GUARDED_BY(start_mu_);
 
   // Minimum of 3 callbacks to pre-register for start ops, StartCall, and finish
   std::atomic<intptr_t> callbacks_outstanding_{3};
@@ -843,7 +844,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
   struct StartCallBacklog {
     bool read_ops = false;
   };
-  StartCallBacklog backlog_ /* GUARDED_BY(start_mu_) */;
+  StartCallBacklog backlog_ ABSL_GUARDED_BY(start_mu_);
 
   // Minimum of 2 callbacks to pre-register for start and finish
   std::atomic<intptr_t> callbacks_outstanding_{2};
@@ -884,7 +885,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
-  void StartCall() override {
+  void StartCall() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     // This call initiates two batches, plus any backlog, each with a callback
     // 1. Send initial metadata (unless corked) + recv initial metadata
     // 2. Any backlog
@@ -916,7 +917,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
     this->MaybeFinish(/*from_reaction=*/false);
   }
 
-  void Write(const Request* msg, ::grpc::WriteOptions options) override {
+  void Write(const Request* msg, ::grpc::WriteOptions options) ABSL_LOCKS_EXCLUDED(start_mu_) override {
     if (GPR_UNLIKELY(options.is_last_message())) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
@@ -941,7 +942,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
     call_.PerformOps(&write_ops_);
   }
 
-  void WritesDone() override {
+  void WritesDone() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     writes_done_ops_.ClientSendClose();
     writes_done_tag_.Set(
         call_.call(),
@@ -1070,7 +1071,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
     bool write_ops = false;
     bool writes_done_ops = false;
   };
-  StartCallBacklog backlog_ /* GUARDED_BY(start_mu_) */;
+  StartCallBacklog backlog_ ABSL_GUARDED_BY(start_mu_);
 
   // Minimum of 3 callbacks to pre-register for start ops, StartCall, and finish
   std::atomic<intptr_t> callbacks_outstanding_{3};
