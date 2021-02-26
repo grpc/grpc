@@ -149,7 +149,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
      private:
       static void OnTimeout(void* arg, grpc_error* error);
-      static void OnReceiveSettings(void* arg, grpc_error* error);
+      static void OnReceiveSettings(void* arg, grpc_error* /* error */);
       static void OnHandshakeDone(void* arg, grpc_error* error);
       OrphanablePtr<ActiveConnection> connection_;
       grpc_pollset* const accepting_pollset_;
@@ -334,7 +334,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout(
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::
-    OnReceiveSettings(void* arg, grpc_error* error) {
+    OnReceiveSettings(void* arg, grpc_error* /* error */) {
   HandshakingState* self = static_cast<HandshakingState*>(arg);
   grpc_timer_cancel(&self->timer_);
   self->Unref();
@@ -344,6 +344,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
     void* arg, grpc_error* error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   HandshakingState* self = static_cast<HandshakingState*>(args->user_data);
+  OrphanablePtr<HandshakingState> handshaking_state_ref;
   RefCountedPtr<HandshakeManager> handshake_mgr;
   {
     MutexLock lock(&self->connection_->listener_->mu_);
@@ -438,13 +439,12 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
         connection_cleanup_fn();
       }
     }
-    // Avoid calling the destructor of HandshakeManager from within the critical
-    // region.
-    handshake_mgr = std::move(self->handshake_mgr_);
-    self->handshake_mgr_.reset();
     // Since the handshake manager is done, the connection no longer needs to
     // shutdown the handshake when the listener needs to stop serving.
-    self->connection_->handshaking_state_.reset();
+    // Avoid calling the destructor of HandshakeManager and HandshakingState
+    // from within the critical region.
+    handshake_mgr = std::move(self->handshake_mgr_);
+    handshaking_state_ref = std::move(self->connection_->handshaking_state_);
   }
   handshake_mgr.reset();
   gpr_free(self->acceptor_);
