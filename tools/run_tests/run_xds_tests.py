@@ -1422,7 +1422,8 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
         ], [(messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
              'rpc-behavior', 'keep-open'),
             (messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL,
-             'rpc-behavior', 'keep-open')], timeout_sec=3600)
+             'rpc-behavior', 'keep-open')],
+                         timeout_sec=3600)
         wait_until_rpcs_in_flight(
             'UNARY_CALL', (_WAIT_FOR_BACKEND_SEC +
                            int(extra_backend_service_max_requests / args.qps)),
