@@ -80,6 +80,18 @@ def get_test_proc(grpc_class)
     return proc do
       GRPC::Core::ChannelCredentials.new
     end
+  when 'xds_channel_credentials'
+    return proc do
+      GRPC::Core::XdsChannelCredentials.new(GRPC::Core::ChannelCredentials.new)
+    end
+  when 'server_credentials'
+    return proc do
+      GRPC::Core::ServerCredentials.new
+    end
+  when 'xds_server_credentials'
+    return proc do
+      GRPC::Core::XdsServerCredentials.new(GRPC::Core::ServerCredentials.new)
+    end
   when 'call_credentials'
     return proc do
       GRPC::Core::CallCredentials.new(proc { |noop| noop })

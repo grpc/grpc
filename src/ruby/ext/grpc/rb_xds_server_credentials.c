@@ -42,7 +42,7 @@ typedef struct grpc_rb_xds_server_credentials {
 } grpc_rb_xds_server_credentials;
 
 /* Destroys the server credentials instances. */
-static void grpc_rb_xds_server_credentials_free(void* p) {
+static void grpc_rb_xds_server_credentials_free_internal(void* p) {
   grpc_rb_xds_server_credentials* wrapper = NULL;
   if (p == NULL) {
     return;
@@ -59,13 +59,18 @@ static void grpc_rb_xds_server_credentials_free(void* p) {
   xfree(p);
 }
 
+/* Destroys the server credentials instances. */
+static void grpc_rb_xds_server_credentials_free(void* p) {
+  grpc_rb_xds_server_credentials_free_internal(p);
+  grpc_ruby_shutdown();
+}
+
 /* Protects the mark object from GC */
 static void grpc_rb_xds_server_credentials_mark(void* p) {
-  grpc_rb_xds_server_credentials* wrapper = NULL;
   if (p == NULL) {
     return;
   }
-  wrapper = (grpc_rb_xds_server_credentials*)p;
+  grpc_rb_xds_server_credentials* wrapper = (grpc_rb_xds_server_credentials*)p;
 
   /* If it's not already cleaned up, mark the mark object */
   if (wrapper->mark != Qnil) {
@@ -85,9 +90,9 @@ static const rb_data_type_t grpc_rb_xds_server_credentials_data_type = {
 };
 
 /* Allocates ServerCredential instances.
-
    Provides safe initial defaults for the instance fields. */
 static VALUE grpc_rb_xds_server_credentials_alloc(VALUE cls) {
+  grpc_ruby_init();
   grpc_rb_xds_server_credentials* wrapper =
       ALLOC(grpc_rb_xds_server_credentials);
   wrapper->wrapped = NULL;
@@ -102,10 +107,8 @@ static ID id_fallback_creds;
 /*
   call-seq:
     creds = ServerCredentials.new(fallback_creds)
-
     fallback_creds: (ServerCredentials) fallback credentials to create
                     XDS credentials.
-
     Initializes ServerCredential instances. */
 static VALUE grpc_rb_xds_server_credentials_init(VALUE self,
                                                  VALUE fallback_creds) {
@@ -117,10 +120,9 @@ static VALUE grpc_rb_xds_server_credentials_init(VALUE self,
   creds = grpc_xds_server_credentials_create(grpc_fallback_creds);
 
   if (creds == NULL) {
-    rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
+    rb_raise(rb_eRuntimeError, "the call to grpc_xds_server_credentials_create() failed, could not create a credentials, see https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for debugging tips");
     return Qnil;
   }
-
   TypedData_Get_Struct(self, grpc_rb_xds_server_credentials,
                        &grpc_rb_xds_server_credentials_data_type, wrapper);
   wrapper->wrapped = creds;

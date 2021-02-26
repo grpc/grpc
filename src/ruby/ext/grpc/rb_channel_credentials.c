@@ -180,7 +180,7 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
                                         NULL, NULL);
   }
   if (creds == NULL) {
-    rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
+    rb_raise(rb_eRuntimeError, "the call to grpc_ssl_credentials_create() failed, could not create a credentials, see https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for debugging tips");
     return Qnil;
   }
   wrapper->wrapped = creds;

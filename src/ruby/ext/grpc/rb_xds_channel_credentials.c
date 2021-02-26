@@ -103,12 +103,11 @@ static VALUE grpc_rb_xds_channel_credentials_alloc(VALUE cls) {
  * associated with any Ruby object. */
 VALUE grpc_rb_xds_wrap_channel_credentials(grpc_channel_credentials* c,
                                            VALUE mark) {
-  VALUE rb_wrapper;
   grpc_rb_xds_channel_credentials* wrapper;
   if (c == NULL) {
     return Qnil;
   }
-  rb_wrapper =
+  VALUE rb_wrapper =
       grpc_rb_xds_channel_credentials_alloc(grpc_rb_cXdsChannelCredentials);
   TypedData_Get_Struct(rb_wrapper, grpc_rb_xds_channel_credentials,
                        &grpc_rb_xds_channel_credentials_data_type, wrapper);
@@ -135,7 +134,7 @@ static VALUE grpc_rb_xds_channel_credentials_init(VALUE self,
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError,
              "the call to grpc_xds_credentials_create() failed, could not "
-             "create a credentials, not sure why");
+             "create a credentials, , see https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for debugging tips");
     return Qnil;
   }
 
