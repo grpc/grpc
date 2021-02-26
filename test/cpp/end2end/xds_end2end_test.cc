@@ -260,25 +260,6 @@ void WriteBootstrapFiles() {
   g_bootstrap_file_v2 = bootstrap_file;
 }
 
-// Helper class to minimize the number of unique ports we use for this test.
-class PortSaver {
- public:
-  int GetPort() {
-    if (idx_ >= ports_.size()) {
-      ports_.push_back(grpc_pick_unused_port_or_die());
-    }
-    return ports_[idx_++];
-  }
-
-  void Reset() { idx_ = 0; }
-
- private:
-  std::vector<int> ports_;
-  size_t idx_ = 0;
-};
-
-PortSaver* g_port_saver = nullptr;
-
 template <typename ServiceType>
 class CountedService : public ServiceType {
  public:
@@ -1540,6 +1521,15 @@ const grpc_arg_pointer_vtable
 
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
+  // TODO(roth): We currently set the number of backends and number of
+  // balancers on a per-test-suite basis, not a per-test-case basis.
+  // However, not every individual test case in a given test suite uses
+  // the same number of backends or balancers, so we wind up having to
+  // set the numbers for the test suite to the max number needed by any
+  // one test case in that test suite.  This results in starting more
+  // servers (and using more ports) than we actually need.  When we have
+  // time, change each test to directly start the number of backends and
+  // balancers that it needs, so that we aren't wasting resources.
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
                  int client_load_reporting_interval_seconds = 100,
                  bool use_xds_enabled_server = false,
@@ -1560,12 +1550,44 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                                            ? g_bootstrap_file_v2
                                            : g_bootstrap_file_v3);
     }
-    g_port_saver->Reset();
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
                                  &localhost_resolves_to_ipv6);
     ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
+    // Initialize default xDS resources.
+    // Construct LDS resource.
+    default_listener_.set_name(kServerName);
+    // Construct RDS resource.
+    default_route_config_.set_name(kDefaultRouteConfigurationName);
+    auto* virtual_host = default_route_config_.add_virtual_hosts();
+    virtual_host->add_domains("*");
+    auto* route = virtual_host->add_routes();
+    route->mutable_match()->set_prefix("");
+    route->mutable_route()->set_cluster(kDefaultClusterName);
+    // Construct CDS resource.
+    default_cluster_.set_name(kDefaultClusterName);
+    default_cluster_.set_type(Cluster::EDS);
+    auto* eds_config = default_cluster_.mutable_eds_cluster_config();
+    eds_config->mutable_eds_config()->mutable_ads();
+    eds_config->set_service_name(kDefaultEdsServiceName);
+    default_cluster_.set_lb_policy(Cluster::ROUND_ROBIN);
+    if (GetParam().enable_load_reporting()) {
+      default_cluster_.mutable_lrs_server()->mutable_self();
+    }
+    // Start the load balancers.
+    for (size_t i = 0; i < num_balancers_; ++i) {
+      balancers_.emplace_back(
+          new BalancerServerThread(GetParam().enable_load_reporting()
+                                       ? client_load_reporting_interval_seconds_
+                                       : 0));
+      balancers_.back()->Start();
+      // Initialize resources.
+      SetListenerAndRouteConfiguration(i, default_listener_,
+                                       default_route_config_);
+      balancers_.back()->ads_service()->SetCdsResource(default_cluster_);
+    }
+    // Initialize XdsClient state.
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     // Inject xDS channel response generator.
@@ -1593,43 +1615,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // ensures that each test can independently set the global channel
     // args for the xDS channel.
     grpc_core::internal::UnsetGlobalXdsClientForTest();
-    // Initialize default xDS resources.
-    // Construct LDS resource.
-    default_listener_.set_name(kServerName);
-    // Construct RDS resource.
-    default_route_config_.set_name(kDefaultRouteConfigurationName);
-    auto* virtual_host = default_route_config_.add_virtual_hosts();
-    virtual_host->add_domains("*");
-    auto* route = virtual_host->add_routes();
-    route->mutable_match()->set_prefix("");
-    route->mutable_route()->set_cluster(kDefaultClusterName);
-    // Construct CDS resource.
-    default_cluster_.set_name(kDefaultClusterName);
-    default_cluster_.set_type(Cluster::EDS);
-    auto* eds_config = default_cluster_.mutable_eds_cluster_config();
-    eds_config->mutable_eds_config()->mutable_ads();
-    eds_config->set_service_name(kDefaultEdsServiceName);
-    default_cluster_.set_lb_policy(Cluster::ROUND_ROBIN);
-    if (GetParam().enable_load_reporting()) {
-      default_cluster_.mutable_lrs_server()->mutable_self();
-    }
     // Start the backends.
     for (size_t i = 0; i < num_backends_; ++i) {
       backends_.emplace_back(new BackendServerThread(use_xds_enabled_server_));
       backends_.back()->Start();
     }
-    // Start the load balancers.
-    for (size_t i = 0; i < num_balancers_; ++i) {
-      balancers_.emplace_back(
-          new BalancerServerThread(GetParam().enable_load_reporting()
-                                       ? client_load_reporting_interval_seconds_
-                                       : 0));
-      balancers_.back()->Start();
-      // Initialize resources.
-      SetListenerAndRouteConfiguration(i, default_listener_,
-                                       default_route_config_);
-      balancers_.back()->ads_service()->SetCdsResource(default_cluster_);
-    }
+    // Create channel and stub.
     ResetStub();
   }
 
@@ -2100,7 +2091,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   class ServerThread {
    public:
     explicit ServerThread(bool use_xds_enabled_server = false)
-        : port_(g_port_saver->GetPort()),
+        : port_(grpc_pick_unused_port_or_die()),
           use_xds_enabled_server_(use_xds_enabled_server) {}
     virtual ~ServerThread(){};
 
@@ -2458,7 +2449,7 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
   const size_t kNumUnreachableServers = 5;
   std::vector<int> ports;
   for (size_t i = 0; i < kNumUnreachableServers; ++i) {
-    ports.push_back(g_port_saver->GetPort());
+    ports.push_back(grpc_pick_unused_port_or_die());
   }
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", ports},
@@ -4614,16 +4605,16 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   AdsServiceImpl::EdsResourceArgs args3({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -4746,7 +4737,7 @@ TEST_P(LdsRdsTest, XdsRoutingXdsTimeoutDisabled) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration new_route_config = default_route_config_;
@@ -4784,7 +4775,7 @@ TEST_P(LdsRdsTest, XdsRoutingHttpTimeoutDisabled) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   // Construct listener.
   auto listener = default_listener_;
@@ -4827,13 +4818,13 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -4924,7 +4915,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   HttpConnectionManager http_connection_manager;
@@ -4963,7 +4954,7 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto t0 = system_clock::now();
@@ -8365,7 +8356,6 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::WriteBootstrapFiles();
-  grpc::testing::g_port_saver = new grpc::testing::PortSaver();
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
