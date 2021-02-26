@@ -45,7 +45,6 @@ class SubchannelKey {
   SubchannelKey(SubchannelKey&&) noexcept;
   SubchannelKey& operator=(SubchannelKey&&) noexcept;
 
-  // for use in std::map
   bool operator<(const SubchannelKey& other) const;
 
  private:
@@ -70,11 +69,15 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
                        : nullptr) {}
   ~SubchannelPoolInterface() override {}
 
+  virtual RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) = 0;
+
   // Registers a subchannel against a key. Returns the subchannel registered
   // with \a key, which may be different from \a constructed because we reuse
   // (instead of update) any existing subchannel already registered with \a key.
   virtual RefCountedPtr<Subchannel> RegisterSubchannel(
       const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) = 0;
+
+  virtual void UnregisterSubchannel(const SubchannelKey& key, Subchannel* subchannel) = 0;
 
   // Creates a channel arg from \a subchannel pool.
   static grpc_arg CreateChannelArg(SubchannelPoolInterface* subchannel_pool);

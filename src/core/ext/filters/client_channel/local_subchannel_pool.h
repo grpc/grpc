@@ -40,9 +40,12 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   // Implements interface methods.
   // Thread-unsafe. Intended to be invoked within the client_channel work
   // serializer.
+  RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key);
+
   RefCountedPtr<Subchannel> RegisterSubchannel(
       const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
 
+  void RefCountedPtr<Subchannel> UnregisterSubchannel(const SubchannelKey& key, Subchannel* c);
  private:
   // A map from subchannel key to subchannel.
   std::map<SubchannelKey, WeakRefCountedPtr<Subchannel>> subchannel_map_;

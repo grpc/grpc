@@ -144,7 +144,8 @@ class SubchannelCall {
 // different from the SubchannelInterface that is exposed to LB policy
 // implementations.  The client channel provides an adaptor class
 // (SubchannelWrapper) that "converts" between the two.
-class Subchannel : public DualRefCounted<Subchannel> {
+class Subchannel : public DualRefCounted<Subchannel>(
+    GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel" : nullptr) {
  public:
   class ConnectivityStateWatcherInterface
       : public RefCounted<ConnectivityStateWatcherInterface> {
@@ -340,18 +341,17 @@ class Subchannel : public DualRefCounted<Subchannel> {
   static void OnConnectingFinished(void* arg, grpc_error* error);
   bool PublishTransportLocked();
 
+  // The subchannel pool this subchannel is in.
+  RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
+  // TODO(juanlishen): Consider using args_ as key_ directly.
+  // Subchannel key that identifies this subchannel in the subchannel pool.
+  SubchannelKey* key_;
   // Channel args.
   grpc_channel_args* args_;
   // pollset_set tracking who's interested in a connection being setup.
   grpc_pollset_set* pollset_set_;
   // Protects the other members.
   Mutex mu_;
-  // Refcount
-  //    - lower INTERNAL_REF_BITS bits are for internal references:
-  //      these do not keep the subchannel open.
-  //    - upper remaining bits are for public references: these do
-  //      keep the subchannel open
-  gpr_atm ref_pair_;
 
   // Connection states.
   OrphanablePtr<SubchannelConnector> connector_;

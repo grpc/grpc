@@ -26,18 +26,13 @@ namespace grpc_core {
 
 RefCountedPtr<Subchannel> LocalSubchannelPool::RegisterSubchannel(
     const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) {
-  // Check to see if a subchannel already exists.
-  auto p = subchannel_map_.find(key);
-  RefCountedPtr<Subchannel> c;
-  if (p != subchannel_map_.end()) {
-    // The subchannel already exists. Reuse it.
-    c = p->second->Ref();
-  } else {
-    // There hasn't been such subchannel. Add one.
-    c = std::move(constructed);
-    subchannel_map_[key] = c->WeakRef();
+  auto it  = subchannel_map_.find(key);
+  if (it != subchannel_map_.end()) {
+    auto existing = it->second->RefIfNonZero();
+    if (existing) return existing;
   }
-  return c;
+  subchannel_map_[key] = constructed->WeakRef();
+  return constructed;
 }
 
 void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key, Subchannel* c) {
@@ -46,7 +41,7 @@ void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key, Subchan
   // delete only if key hasn't been re-registered to a different subchannel
   // between strong-unreffing and unregistration of c.
   if (it.second.get() == c) {
-    GPR_ASSERT(subchannel_map_.erase(key_) == 1);
+    GPR_ASSERT(subchannel_map_.erase(key) == 1);
   }
 }
 

@@ -418,14 +418,13 @@ class Subchannel::HealthWatcherMap::HealthWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
   HealthWatcher(WeakRefCountedPtr<Subchannel> c,
-                std::string health_check_service_name,
-                grpc_connectivity_state subchannel_state)
-      : subchannel_(c),
+                std::string health_check_service_name)
+      : subchannel_(std::move(c)),
         health_check_service_name_(std::move(health_check_service_name)),
-        state_(subchannel_state == GRPC_CHANNEL_READY ? GRPC_CHANNEL_CONNECTING
-                                                      : subchannel_state) {
+        state_(subchannel_->state_ == GRPC_CHANNEL_READY ? GRPC_CHANNEL_CONNECTING
+                                                         : subchannel_->state_) {
     // If the subchannel is already connected, start health checking.
-    if (subchannel_state == GRPC_CHANNEL_READY) StartHealthCheckingLocked();
+    if (subchannel_->state_ == GRPC_CHANNEL_READY) StartHealthCheckingLocked();
   }
 
   const std::string& health_check_service_name() const {
@@ -520,7 +519,7 @@ void Subchannel::HealthWatcherMap::AddWatcherLocked(
   HealthWatcher* health_watcher;
   if (it == map_.end()) {
     auto w = MakeOrphanable<HealthWatcher>(
-        subchannel, health_check_service_name, subchannel->state_);
+        std::move(subchannel), health_check_service_name);
     health_watcher = w.get();
     map_.emplace(health_check_service_name, std::move(w));
   } else {

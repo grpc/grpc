@@ -46,9 +46,12 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   static RefCountedPtr<GlobalSubchannelPool> instance();
 
   // Implements interface methods.
+  RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key);
+
   RefCountedPtr<Subchannel> RegisterSubchannel(
       const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
 
+  void RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key, Subchannel* c);
  private:
   // The singleton instance. (It's a pointer to RefCountedPtr so that this
   // non-local static object can be trivially destructible.)
