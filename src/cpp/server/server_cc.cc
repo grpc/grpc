@@ -549,8 +549,8 @@ class Server::CallbackRequest final
     if (has_request_payload_ && request_payload_) {
       grpc_byte_buffer_destroy(request_payload_);
     }
-    if (server_->context_allocator() == nullptr || ctx_alloc_by_default_) {
-      delete ctx_;
+    if (ctx_alloc_by_default_ || server_->context_allocator() == nullptr) {
+      default_ctx_.Destroy();
     }
     server_->UnrefWithPossibleNotify();
   }
@@ -669,8 +669,8 @@ class Server::CallbackRequest final
     data->call = &call_;
     data->initial_metadata = &request_metadata_;
     if (ctx_ == nullptr) {
-      // TODO(ddyihai): allocate the context with grpc_call_arena_alloc.
-      ctx_ = new ServerContextType();
+      default_ctx_.Init();
+      ctx_ = &*default_ctx_;
       ctx_alloc_by_default_ = true;
     }
     ctx_->set_context_allocator(server->context_allocator());
@@ -692,6 +692,7 @@ class Server::CallbackRequest final
   bool ctx_alloc_by_default_ = false;
   CallbackCallTag tag_;
   ServerContextType* ctx_ = nullptr;
+  grpc_core::ManualConstructor<ServerContextType> default_ctx_;
   grpc::internal::InterceptorBatchMethodsImpl interceptor_methods_;
 };
 
