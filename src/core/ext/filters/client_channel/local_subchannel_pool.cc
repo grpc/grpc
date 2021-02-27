@@ -41,9 +41,16 @@ void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
   GPR_ASSERT(it != subchannel_map_.end());
   // delete only if key hasn't been re-registered to a different subchannel
   // between strong-unreffing and unregistration of c.
-  if (it.second.get() == c) {
+  if (it->second.get() == c) {
     GPR_ASSERT(subchannel_map_.erase(key) == 1);
   }
+}
+
+RefCountedPtr<Subchannel> LocalSubchannelPool::FindSubchannel(
+    const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) {
+  auto it = subchannel_map_.find(key);
+  if (it == subchannel_map_.end()) return nullptr;
+  return it->second->Ref();
 }
 
 }  // namespace grpc_core

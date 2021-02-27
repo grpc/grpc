@@ -47,22 +47,13 @@ RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
   return *instance_;
 }
 
-RefCountedPtr<Subchannel> GlobalSubchannelPool::FindSubchannel(
-    const SubchannelKey& key) {
-  MutexLock lock(&mu_);
-  auto it = subchannel_map_.find(key);
-  if (it == subchannel_map_.end()) return nullptr;
-  return it->second->RefIfNonZero();
-}
-
 RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
     const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) {
   MutexLock lock(&mu_);
   auto it = subchannel_map_.find(key);
   if (it != subchannel_map_.end()) {
-    // The subchannel already exists. Try to reuse it.
-    RefCountedPtr<Subchannel> c = p->second->RefIfNonZero();
-    if (c != nullptr) return c;
+    RefCountedPtr<Subchannel> existing = it->second->RefIfNonZero();
+    if (existing != nullptr) return existing;
   }
   subchannel_map_[key] = constructed->WeakRef();
   return constructed;
@@ -74,11 +65,19 @@ void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
                                                 Subchannel* c) {
   MutexLock lock(&mu_);
   auto it = subchannel_map_.find(key);
-  GPR_ASSERT(it != subchannel_map_.end());
-  if (it.second == c) {
-    // nobody else using this subchannel, delete it from the pool
-    GPR_ASSERT(subchannel_map_.erase(key) == 1);
+  // delete only if key hasn't been re-registered to a different subchannel
+  // between strong-unreffing and unregistration of c.
+  if (it != subchannel_map_.end() && it->second.get() == c) {
+    subchannel_map_.erase(it);
   }
+}
+
+RefCountedPtr<Subchannel> GlobalSubchannelPool::FindSubchannel(
+    const SubchannelKey& key) {
+  MutexLock lock(&mu_);
+  auto it = subchannel_map_.find(key);
+  if (it == subchannel_map_.end()) return nullptr;
+  return it->second->RefIfNonZero();
 }
 
 }  // namespace grpc_core
