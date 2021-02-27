@@ -146,6 +146,14 @@ class PythonArtifact:
             environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.py_version)
             if self.arch == 'aarch64':
                 environ['GRPC_SKIP_TWINE_CHECK'] = 'TRUE'
+                # when crosscompiling, we need to force statically linking libstdc++
+                # otherwise libstdc++ symbols would be too new and the resulting
+                # wheel wouldn't pass the auditwheel check.
+                # This is needed because C core won't build with GCC 4.8 that's
+                # included in the default dockcross toolchain and we needed
+                # to opt into using a slighly newer version of GCC.
+                environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
+
             else:
                 # only run auditwheel if we're not crosscompiling
                 environ['GRPC_RUN_AUDITWHEEL_REPAIR'] = 'TRUE'
