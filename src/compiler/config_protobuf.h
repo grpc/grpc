@@ -52,7 +52,7 @@
 #ifndef GRPC_CUSTOM_CSHARP_GETCLASSNAME
 #include <google/protobuf/compiler/csharp/csharp_names.h>
 #define GRPC_CUSTOM_CSHARP_GETCLASSNAME \
-  ::ggoogle::protobuf::compiler::csharp::GetClassName
+  ::google::protobuf::compiler::csharp::GetClassName
 #define GRPC_CUSTOM_CSHARP_GETFILENAMESPACE \
   ::google::protobuf::compiler::csharp::GetFileNamespace
 #define GRPC_CUSTOM_CSHARP_GETREFLECTIONCLASSNAME \
