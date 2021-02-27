@@ -26,7 +26,7 @@ namespace grpc_core {
 
 RefCountedPtr<Subchannel> LocalSubchannelPool::RegisterSubchannel(
     const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) {
-  auto it  = subchannel_map_.find(key);
+  auto it = subchannel_map_.find(key);
   if (it != subchannel_map_.end()) {
     auto existing = it->second->RefIfNonZero();
     if (existing) return existing;
@@ -35,7 +35,8 @@ RefCountedPtr<Subchannel> LocalSubchannelPool::RegisterSubchannel(
   return constructed;
 }
 
-void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key, Subchannel* c) {
+void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
+                                               Subchannel* c) {
   auto it = subchannel_map_.find(key);
   GPR_ASSERT(it != subchannel_map_.end());
   // delete only if key hasn't been re-registered to a different subchannel

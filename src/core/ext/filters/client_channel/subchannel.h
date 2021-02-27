@@ -144,8 +144,10 @@ class SubchannelCall {
 // different from the SubchannelInterface that is exposed to LB policy
 // implementations.  The client channel provides an adaptor class
 // (SubchannelWrapper) that "converts" between the two.
-class Subchannel : public DualRefCounted<Subchannel>(
-    GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel" : nullptr) {
+class Subchannel
+    : public DualRefCounted<Subchannel>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel"
+                                                                  : nullptr) {
  public:
   class ConnectivityStateWatcherInterface
       : public RefCounted<ConnectivityStateWatcherInterface> {
@@ -190,7 +192,7 @@ class Subchannel : public DualRefCounted<Subchannel>(
   };
 
   // The ctor and dtor are not intended to use directly.
-  Subchannel(OrphanablePtr<SubchannelConnector> connector,
+  Subchannel(SubchannelKey* key, OrphanablePtr<SubchannelConnector> connector,
              const grpc_channel_args* args);
   ~Subchannel() override;
 

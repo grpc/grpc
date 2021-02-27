@@ -48,7 +48,7 @@ RefCountedPtr<GlobalSubchannelPool> GlobalSubchannelPool::instance() {
 }
 
 RefCountedPtr<Subchannel> GlobalSubchannelPool::FindSubchannel(
-     const SubchannelKey& key) {
+    const SubchannelKey& key) {
   MutexLock lock(&mu_);
   auto it = subchannel_map_.find(key);
   if (it == subchannel_map_.end()) return nullptr;
@@ -58,7 +58,7 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::FindSubchannel(
 RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
     const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) {
   MutexLock lock(&mu_);
-  auto it  = subchannel_map_.find(key);
+  auto it = subchannel_map_.find(key);
   if (it != subchannel_map_.end()) {
     // The subchannel already exists. Try to reuse it.
     RefCountedPtr<Subchannel> c = p->second->RefIfNonZero();
@@ -70,7 +70,8 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
 
 RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
 
-void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key, Subchannel* c) {
+void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
+                                                Subchannel* c) {
   MutexLock lock(&mu_);
   auto it = subchannel_map_.find(key);
   GPR_ASSERT(it != subchannel_map_.end());

@@ -45,7 +45,9 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   RefCountedPtr<Subchannel> RegisterSubchannel(
       const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
 
-  void RefCountedPtr<Subchannel> UnregisterSubchannel(const SubchannelKey& key, Subchannel* c);
+  void RefCountedPtr<Subchannel> UnregisterSubchannel(const SubchannelKey& key,
+                                                      Subchannel* c);
+
  private:
   // A map from subchannel key to subchannel.
   std::map<SubchannelKey, WeakRefCountedPtr<Subchannel>> subchannel_map_;
