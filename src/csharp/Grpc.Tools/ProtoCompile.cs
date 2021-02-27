@@ -279,6 +279,12 @@ namespace Grpc.Tools
         public string[] OutputOptions { get; set; }
 
         /// <summary>
+        /// Additional arguments that will be passed unmodified to protoc (and before any file names).
+        /// For example, "--experimental_allow_proto3_optional"
+        /// </summary>
+        public string[] AdditionalProtocArguments { get; set; }
+
+        /// <summary>
         /// Full path to the gRPC plugin executable. If specified, gRPC generation
         /// is enabled for the files.
         /// Switch: --plugin=protoc-gen-grpc=
@@ -428,6 +434,15 @@ namespace Grpc.Tools
             }
             cmd.AddSwitchMaybe("dependency_out", DependencyOut);
             cmd.AddSwitchMaybe("error_format", "msvs");
+
+            if (AdditionalProtocArguments != null)
+            {
+                foreach (var additionalProtocOption in AdditionalProtocArguments)
+                {
+                    cmd.AddArg(additionalProtocOption);
+                }
+            }
+
             foreach (var proto in Protobuf)
             {
                 cmd.AddArg(proto.ItemSpec);
