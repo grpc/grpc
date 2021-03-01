@@ -42,7 +42,7 @@ void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
   // the client channel's work serializer, any subchannel created by
   // RegisterSubchannel will be deleted from the map in UnregisterSubchannel.
   GPR_ASSERT(it != subchannel_map_.end());
-  GPR_ASSERT(it->second == c);
+  GPR_ASSERT(it->second == subchannel);
   subchannel_map_.erase(it);
 }
 
