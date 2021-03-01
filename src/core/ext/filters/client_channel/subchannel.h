@@ -145,9 +145,7 @@ class SubchannelCall {
 // implementations.  The client channel provides an adaptor class
 // (SubchannelWrapper) that "converts" between the two.
 class Subchannel
-    : public DualRefCounted<Subchannel>(
-          GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel"
-                                                                  : nullptr) {
+    : public DualRefCounted<Subchannel> {
  public:
   class ConnectivityStateWatcherInterface
       : public RefCounted<ConnectivityStateWatcherInterface> {

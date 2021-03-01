@@ -641,11 +641,13 @@ Subchannel::ConnectivityStateWatcherInterface::PopConnectivityStateChange() {
 Subchannel::Subchannel(SubchannelKey* key,
                        OrphanablePtr<SubchannelConnector> connector,
                        const grpc_channel_args* args)
-    : key_(key),
+    : DualRefCounted<Subchannel>(
+          GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel"
+                                                                  : nullptr),
+      key_(key),
       connector_(std::move(connector)),
       backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_ms_)) {
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
-  gpr_atm_no_barrier_store(&ref_pair_, 1 << INTERNAL_REF_BITS);
   pollset_set_ = grpc_pollset_set_create();
   grpc_resolved_address* addr =
       static_cast<grpc_resolved_address*>(gpr_malloc(sizeof(*addr)));
@@ -705,17 +707,17 @@ RefCountedPtr<Subchannel> Subchannel::Create(
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
   GPR_ASSERT(subchannel_pool != nullptr);
-  Subchannel* c = subchannel_pool->FindSubchannel(*key);
+  RefCountedPtr<Subchannel> c = subchannel_pool->FindSubchannel(*key);
   if (c != nullptr) {
     delete key;
     return c;
   }
-  c = new Subchannel(key, std::move(connector), args);
+  c = MakeRefCounted<Subchannel>(key, std::move(connector), args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
   // its key maps to a different subchannel.
-  Subchannel* registered = subchannel_pool->RegisterSubchannel(*key, c);
+  RefCountedPtr<Subchannel> registered = subchannel_pool->RegisterSubchannel(*key, c);
   if (registered == c) c->subchannel_pool_ = subchannel_pool->Ref();
   return registered;
 }
@@ -826,7 +828,7 @@ void Subchannel::Orphan() {
   // The subchannel_pool is only used once here in this subchannel, so the
   // access can be outside of the lock.
   if (subchannel_pool_ != nullptr) {
-    subchannel_pool_->UnregisterSubchannel(key_);
+    subchannel_pool_->UnregisterSubchannel(*key_, this);
     subchannel_pool_.reset();
   }
   MutexLock lock(&mu_);

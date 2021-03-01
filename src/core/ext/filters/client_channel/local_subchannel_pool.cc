@@ -29,7 +29,7 @@ RefCountedPtr<Subchannel> LocalSubchannelPool::RegisterSubchannel(
   auto it = subchannel_map_.find(key);
   if (it != subchannel_map_.end()) {
     auto existing = it->second->RefIfNonZero();
-    if (existing) return existing;
+    if (existing != nullptr) return existing;
   }
   subchannel_map_[key] = constructed->WeakRef();
   return constructed;
@@ -47,7 +47,7 @@ void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
 }
 
 RefCountedPtr<Subchannel> LocalSubchannelPool::FindSubchannel(
-    const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) {
+    const SubchannelKey& key) {
   auto it = subchannel_map_.find(key);
   if (it == subchannel_map_.end()) return nullptr;
   return it->second->Ref();

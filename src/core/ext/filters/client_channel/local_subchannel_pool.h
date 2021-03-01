@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <map>
+
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 
 namespace grpc_core {
@@ -42,8 +44,7 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   // serializer.
   RefCountedPtr<Subchannel> RegisterSubchannel(
       const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
-  void RefCountedPtr<Subchannel> UnregisterSubchannel(const SubchannelKey& key,
-                                                      Subchannel* c) override;
+  void UnregisterSubchannel(const SubchannelKey& key, Subchannel* c) override;
   RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) override;
 
  private:

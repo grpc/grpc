@@ -1270,15 +1270,15 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: creating subchannel wrapper %p for subchannel %p",
-              chand, this, subchannel_);
+              chand, this, subchannel_.get());
     }
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
+      auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
       if (it == chand_->subchannel_refcount_map_.end()) {
         chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
-        it = chand_->subchannel_refcount_map_.emplace(subchannel_, 0).first;
+        it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0).first;
       }
       ++it->second;
     }
@@ -1289,12 +1289,12 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
-              chand_, this, subchannel_);
+              chand_, this, subchannel_.get());
     }
     chand_->subchannel_wrappers_.erase(this);
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
+      auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
       GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
       --it->second;
       if (it->second == 0) {
@@ -1435,7 +1435,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         gpr_log(GPR_INFO,
                 "chand=%p: connectivity change for subchannel wrapper %p "
                 "subchannel %p; hopping into work_serializer",
-                parent_->chand_, parent_.get(), parent_->subchannel_);
+                parent_->chand_, parent_.get(), parent_->subchannel_.get());
       }
       Ref().release();  // ref owned by lambda
       parent_->chand_->work_serializer_->Run(
@@ -1469,7 +1469,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                 "chand=%p: processing connectivity change in work serializer "
                 "for subchannel wrapper %p subchannel %p "
                 "watcher=%p",
-                parent_->chand_, parent_.get(), parent_->subchannel_,
+                parent_->chand_, parent_.get(), parent_->subchannel_.get(),
                 watcher_.get());
       }
       ConnectivityStateChange state_change = PopConnectivityStateChange();
