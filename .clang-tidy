@@ -42,7 +42,6 @@ Checks: '-*,
   -bugprone-unhandled-self-assignment,
   -google-readability-avoid-underscore-in-googletest-name,
   -google-upgrade-googletest-case,
-  -modernize-make-unique,
   -performance-no-automatic-move'
 WarningsAsErrors: '*'
 CheckOptions:
