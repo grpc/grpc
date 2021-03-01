@@ -23,9 +23,9 @@ curl https://raw.githubusercontent.com/rake-compiler/rake-compiler/v1.1.1/tasks/
 
 # See https://github.com/grpc/grpc/issues/12161 for verconf.h patch details
 patch "$CROSS_RUBY" << EOF
---- cross-ruby.rake	2018-04-10 11:32:16.000000000 -0700
-+++ patched	2018-04-10 11:40:25.000000000 -0700
-@@ -133,8 +133,10 @@
+--- cross-ruby.rake	2021-03-01 15:49:42.771235714 -0800
++++ patched	2021-03-01 15:48:35.387078412 -0800
+@@ -111,8 +111,10 @@
      "--host=#{MINGW_HOST}",
      "--target=#{MINGW_TARGET}",
      "--build=#{RUBY_BUILD}",
@@ -37,10 +37,9 @@ patch "$CROSS_RUBY" << EOF
      '--with-ext=',
      'LDFLAGS=-pipe -s',
    ]
- 
-@@ -151,6 +153,7 @@
+@@ -130,6 +132,7 @@
  # make
- file "#{USER_HOME}/builds/#{MINGW_HOST}/#{RUBY_CC_VERSION}/ruby.exe" => ["#{USER_HOME}/builds/#{MINGW_HOST}/#{RUBY_CC_VERSION}/Makefile"] do |t|
+ file "#{build_dir}/ruby.exe" => ["#{build_dir}/Makefile"] do |t|
    chdir File.dirname(t.prerequisites.first) do
 +    sh "test -s verconf.h || rm -f verconf.h"  # if verconf.h has size 0, make sure it gets re-built by make
      sh MAKE
