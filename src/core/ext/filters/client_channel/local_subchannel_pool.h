@@ -49,7 +49,7 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
 
  private:
   // A map from subchannel key to subchannel.
-  std::map<SubchannelKey, WeakRefCountedPtr<Subchannel>> subchannel_map_;
+  std::map<SubchannelKey, Subchannel*> subchannel_map_;
 };
 
 }  // namespace grpc_core

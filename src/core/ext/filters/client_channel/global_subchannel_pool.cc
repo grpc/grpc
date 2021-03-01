@@ -55,7 +55,7 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
     RefCountedPtr<Subchannel> existing = it->second->RefIfNonZero();
     if (existing != nullptr) return existing;
   }
-  subchannel_map_[key] = constructed->WeakRef();
+  subchannel_map_[key] = constructed.get();
   return constructed;
 }
 
@@ -67,7 +67,7 @@ void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
   auto it = subchannel_map_.find(key);
   // delete only if key hasn't been re-registered to a different subchannel
   // between strong-unreffing and unregistration of c.
-  if (it != subchannel_map_.end() && it->second.get() == c) {
+  if (it != subchannel_map_.end() && it->second == c) {
     subchannel_map_.erase(it);
   }
 }

@@ -717,7 +717,8 @@ RefCountedPtr<Subchannel> Subchannel::Create(
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
   // its key maps to a different subchannel.
-  RefCountedPtr<Subchannel> registered = subchannel_pool->RegisterSubchannel(*key, c);
+  RefCountedPtr<Subchannel> registered =
+      subchannel_pool->RegisterSubchannel(*key, c);
   if (registered == c) c->subchannel_pool_ = subchannel_pool->Ref();
   return registered;
 }

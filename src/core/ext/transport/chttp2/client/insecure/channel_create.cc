@@ -37,7 +37,8 @@ namespace grpc_core {
 
 class Chttp2InsecureClientChannelFactory : public ClientChannelFactory {
  public:
-  RefCountedPtr<Subchannel> CreateSubchannel(const grpc_channel_args* args) override {
+  RefCountedPtr<Subchannel> CreateSubchannel(
+      const grpc_channel_args* args) override {
     grpc_channel_args* new_args =
         grpc_default_authority_add_if_not_present(args);
     RefCountedPtr<Subchannel> s =

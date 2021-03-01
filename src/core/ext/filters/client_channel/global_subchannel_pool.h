@@ -51,8 +51,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   RefCountedPtr<Subchannel> RegisterSubchannel(
       const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
   void UnregisterSubchannel(const SubchannelKey& key, Subchannel* c) override;
-  RefCountedPtr<Subchannel> FindSubchannel(
-      const SubchannelKey& key) override;
+  RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) override;
 
  private:
   // The singleton instance. (It's a pointer to RefCountedPtr so that this
@@ -60,7 +59,7 @@ class GlobalSubchannelPool final : public SubchannelPoolInterface {
   static RefCountedPtr<GlobalSubchannelPool>* instance_;
 
   // A map from subchannel key to subchannel.
-  std::map<SubchannelKey, WeakRefCountedPtr<Subchannel>> subchannel_map_;
+  std::map<SubchannelKey, Subchannel*> subchannel_map_;
   // To protect subchannel_map_.
   Mutex mu_;
 };

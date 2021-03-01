@@ -144,8 +144,7 @@ class SubchannelCall {
 // different from the SubchannelInterface that is exposed to LB policy
 // implementations.  The client channel provides an adaptor class
 // (SubchannelWrapper) that "converts" between the two.
-class Subchannel
-    : public DualRefCounted<Subchannel> {
+class Subchannel : public DualRefCounted<Subchannel> {
  public:
   class ConnectivityStateWatcherInterface
       : public RefCounted<ConnectivityStateWatcherInterface> {

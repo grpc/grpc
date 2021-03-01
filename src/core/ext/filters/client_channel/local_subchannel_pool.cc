@@ -27,23 +27,23 @@ namespace grpc_core {
 RefCountedPtr<Subchannel> LocalSubchannelPool::RegisterSubchannel(
     const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) {
   auto it = subchannel_map_.find(key);
-  if (it != subchannel_map_.end()) {
-    auto existing = it->second->RefIfNonZero();
-    if (existing != nullptr) return existing;
-  }
-  subchannel_map_[key] = constructed->WeakRef();
+  // Because this pool is only accessed under the client channel's work
+  // serializer, and because FindSubchannel is checked before invoking
+  // RegisterSubchannel, no such subchannel should exist in the map.
+  GPR_ASSERT(it == subchannel_map_.end());
+  subchannel_map_[key] = constructed.get();
   return constructed;
 }
 
 void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
                                                Subchannel* c) {
   auto it = subchannel_map_.find(key);
+  // Because Subchannel::Orphan this subchannel pool are only called under
+  // the client channel's work serializer, any subchannel created by
+  // RegisterSubchannel will be deleted from the map in UnregisterSubchannel.
   GPR_ASSERT(it != subchannel_map_.end());
-  // delete only if key hasn't been re-registered to a different subchannel
-  // between strong-unreffing and unregistration of c.
-  if (it->second.get() == c) {
-    GPR_ASSERT(subchannel_map_.erase(key) == 1);
-  }
+  GPR_ASSERT(it->second == c);
+  subchannel_map_.erase(it);
 }
 
 RefCountedPtr<Subchannel> LocalSubchannelPool::FindSubchannel(

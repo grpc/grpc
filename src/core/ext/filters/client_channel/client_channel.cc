@@ -1278,7 +1278,8 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
       if (it == chand_->subchannel_refcount_map_.end()) {
         chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
-        it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0).first;
+        it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0)
+                 .first;
       }
       ++it->second;
     }
