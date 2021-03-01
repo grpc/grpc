@@ -18,7 +18,7 @@ import os
 import sys
 import types
 import importlib.util
-from typing import Any, Union, Dict, List
+from typing import Any, Union, Mapping, List
 
 
 def import_python_module(path: str) -> types.ModuleType:
@@ -34,7 +34,7 @@ def import_python_module(path: str) -> types.ModuleType:
 class Bunch(dict):
     """Allows dot-accessible dictionaries."""
 
-    def __init__(self, d: Dict):
+    def __init__(self, d: Mapping):
         dict.__init__(self, d)
         self.__dict__.update(d)
 
@@ -54,7 +54,7 @@ def to_bunch(var: Any) -> Any:
         return var
 
 
-def merge_json(dst: Union[Dict, List], add: Union[Dict, List]) -> None:
+def merge_json(dst: Union[Mapping, List], add: Union[Mapping, List]) -> None:
     """Merges JSON objects recursively."""
     if isinstance(dst, dict) and isinstance(add, dict):
         for k, v in add.items():

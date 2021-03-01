@@ -77,8 +77,6 @@ def preprocess_build_files() -> _utils.Bunch:
     for py_file in sorted(glob.glob('tools/buildgen/plugins/*.py')):
         plugin = _utils.import_python_module(py_file)
         plugin.mako_plugin(build_spec)
-    # Writes to a merged file
-    print('args.output_merged', args.output_merged)
     if args.output_merged:
         with open(args.output_merged, 'w') as f:
             f.write(yaml.dump(build_spec))
@@ -90,11 +88,11 @@ def generate_template_render_jobs(templates: List[str]) -> List[jobset.JobSpec]:
     """Generate JobSpecs for each one of the template rendering work."""
     jobs = []
     base_cmd = [sys.executable, 'tools/buildgen/_mako_renderer.py']
-    for template in reversed(sorted(templates)):
+    for template in sorted(templates, reverse=True):
         root, f = os.path.split(template)
         if os.path.splitext(f)[1] == '.template':
             out_dir = args.base + root[len('templates'):]
-            out = out_dir + '/' + os.path.splitext(f)[0]
+            out = os.path.join(out_dir, os.path.splitext(f)[0])
             if not os.path.exists(out_dir):
                 os.makedirs(out_dir)
             cmd = base_cmd[:]
