@@ -241,7 +241,7 @@ class ClientCallbackEnd2endTest
             cv.notify_one();
 #if GRPC_ALLOW_EXCEPTIONS
             if (maybe_except) {
-              throw - 1;
+              throw -1;
             }
 #else
             GPR_ASSERT(!maybe_except);

@@ -41,7 +41,7 @@ class ExceptingServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   Status Echo(ServerContext* /*server_context*/, const EchoRequest* /*request*/,
               EchoResponse* /*response*/) override {
-    throw - 1;
+    throw -1;
   }
   Status RequestStream(ServerContext* /*context*/,
                        ServerReader<EchoRequest>* /*reader*/,
