@@ -1900,6 +1900,23 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_insecure_credentials",
+    srcs = [
+        "src/core/lib/security/credentials/insecure/insecure_credentials.cc",
+        "src/core/lib/security/security_connector/insecure/insecure_security_connector.cc",
+        "src/core/tsi/local_transport_security.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/security_connector/insecure/insecure_security_connector.h",
+        "src/core/tsi/local_transport_security.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_secure_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_local_credentials",
     srcs = [
         "src/core/lib/security/credentials/local/local_credentials.cc",
@@ -2207,6 +2224,7 @@ grpc_cc_library(
         "grpc_google_default_credentials",
         "grpc_httpcli_security_connector",
         "grpc_iam_credentials",
+        "grpc_insecure_credentials",
         "grpc_jwt_credentials",
         "grpc_local_credentials",
         "grpc_oauth2_credentials",
