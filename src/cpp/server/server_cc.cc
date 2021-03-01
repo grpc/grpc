@@ -356,17 +356,18 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
   }
 
   ~SyncRequest() override {
+    // The destructor should only cleanup those objects created in the
+    // constructor, since some paths may or may not actually go through the
+    // Run stage where other objects are allocated.
     if (has_request_payload_ && request_payload_) {
       grpc_byte_buffer_destroy(request_payload_);
     }
-    wrapped_call_.Destroy();
-    ctx_.Destroy();
-
     if (call_details_ != nullptr) {
       grpc_call_details_destroy(call_details_);
       delete call_details_;
     }
     grpc_metadata_array_destroy(&request_metadata_);
+    server_->UnrefWithPossibleNotify();
   }
 
   bool FinalizeResult(void** /*tag*/, bool* status) override {
@@ -424,26 +425,35 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
   }
 
   void ContinueRunAfterInterception() {
-    {
-      ctx_->ctx.BeginCompletionOp(&*wrapped_call_, nullptr, nullptr);
-      global_callbacks_->PreSynchronousRequest(&ctx_->ctx);
-      auto* handler = resources_ ? method_->handler()
-                                 : server_->resource_exhausted_handler_.get();
-      handler->RunHandler(grpc::internal::MethodHandler::HandlerParameter(
-          &*wrapped_call_, &ctx_->ctx, deserialized_request_, request_status_,
-          nullptr, nullptr));
-      global_callbacks_->PostSynchronousRequest(&ctx_->ctx);
+    ctx_->ctx.BeginCompletionOp(&*wrapped_call_, nullptr, nullptr);
+    global_callbacks_->PreSynchronousRequest(&ctx_->ctx);
+    auto* handler = resources_ ? method_->handler()
+                               : server_->resource_exhausted_handler_.get();
+    handler->RunHandler(grpc::internal::MethodHandler::HandlerParameter(
+        &*wrapped_call_, &ctx_->ctx, deserialized_request_, request_status_,
+        nullptr, nullptr));
+    global_callbacks_->PostSynchronousRequest(&ctx_->ctx);
 
-      cq_.Shutdown();
+    cq_.Shutdown();
 
-      grpc::internal::CompletionQueueTag* op_tag =
-          ctx_->ctx.GetCompletionOpTag();
-      cq_.TryPluck(op_tag, gpr_inf_future(GPR_CLOCK_REALTIME));
+    grpc::internal::CompletionQueueTag* op_tag = ctx_->ctx.GetCompletionOpTag();
+    cq_.TryPluck(op_tag, gpr_inf_future(GPR_CLOCK_REALTIME));
 
-      /* Ensure the cq_ is shutdown */
-      grpc::PhonyTag ignored_tag;
-      GPR_ASSERT(cq_.Pluck(&ignored_tag) == false);
-    }
+    // Ensure the cq_ is shutdown
+    grpc::PhonyTag ignored_tag;
+    GPR_ASSERT(cq_.Pluck(&ignored_tag) == false);
+
+    // Cleanup structures allocated during Run/ContinueRunAfterInterception
+    wrapped_call_.Destroy();
+    ctx_.Destroy();
+
+    delete this;
+  }
+
+  // For requests that must be only cleaned up but not actually Run
+  void Cleanup() {
+    cq_.Shutdown();
+    grpc_call_unref(call_);
     delete this;
   }
 
@@ -459,6 +469,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
 
   template <class CallAllocation>
   void CommonSetup(CallAllocation* data) {
+    server_->Ref();
     grpc_metadata_array_init(&request_metadata_);
     data->tag = static_cast<void*>(this);
     data->call = &call_;
@@ -473,7 +484,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
   grpc_call_details* call_details_ = nullptr;
   gpr_timespec deadline_;
   grpc_metadata_array request_metadata_;
-  grpc_byte_buffer* request_payload_;
+  grpc_byte_buffer* request_payload_ = nullptr;
   grpc::CompletionQueue cq_;
   grpc::Status request_status_;
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
@@ -812,9 +823,9 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
     void* tag;
     bool ok;
     while (server_cq_->Next(&tag, &ok)) {
-      // Drain the item and don't do any work on it. It is possible to see this
-      // if there is an explicit call to Wait that is not part of the actual
-      // Shutdown.
+      // This problem can arise if the server CQ gets a request queued to it
+      // before it gets shutdown but then pulls it after shutdown.
+      static_cast<SyncRequest*>(tag)->Cleanup();
     }
   }
 
@@ -1228,6 +1239,9 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
   // Else in case of SHUTDOWN or GOT_EVENT, it means that the server has
   // successfully shutdown
 
+  // Drop the shutdown ref and wait for all other refs to drop as well.
+  UnrefAndWaitLocked();
+
   // Shutdown all ThreadManagers. This will try to gracefully stop all the
   // threads in the ThreadManagers (once they process any inflight requests)
   for (const auto& value : sync_req_mgrs_) {
@@ -1238,9 +1252,6 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
   for (const auto& value : sync_req_mgrs_) {
     value->Wait();
   }
-
-  // Drop the shutdown ref and wait for all other refs to drop as well.
-  UnrefAndWaitLocked();
 
   // Shutdown the callback CQ. The CQ is owned by its own shutdown tag, so it
   // will delete itself at true shutdown.

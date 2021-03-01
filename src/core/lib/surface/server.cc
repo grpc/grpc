@@ -318,7 +318,8 @@ class Server::RealRequestMatcher : public RequestMatcherInterface {
 // advance or queue up any incoming RPC for later match. Instead, MatchOrQueue
 // will call out to an allocation function passed in at the construction of the
 // object. These request matchers are designed for the C++ callback API, so they
-// only support 1 completion queue (passed in at the constructor).
+// only support 1 completion queue (passed in at the constructor). They are also
+// used for the sync API.
 class Server::AllocatingRequestMatcherBase : public RequestMatcherInterface {
  public:
   AllocatingRequestMatcherBase(Server* server, grpc_completion_queue* cq)
@@ -370,15 +371,20 @@ class Server::AllocatingRequestMatcherBatch
 
   void MatchOrQueue(size_t /*start_request_queue_index*/,
                     CallData* calld) override {
-    BatchCallAllocation call_info = allocator_();
-    GPR_ASSERT(server()->ValidateServerRequest(
-                   cq(), static_cast<void*>(call_info.tag), nullptr, nullptr) ==
-               GRPC_CALL_OK);
-    RequestedCall* rc = new RequestedCall(
-        static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
-        call_info.initial_metadata, call_info.details);
-    calld->SetState(CallData::CallState::ACTIVATED);
-    calld->Publish(cq_idx(), rc);
+    if (server()->ShutdownRefOnRequest()) {
+      BatchCallAllocation call_info = allocator_();
+      GPR_ASSERT(server()->ValidateServerRequest(
+                     cq(), static_cast<void*>(call_info.tag), nullptr,
+                     nullptr) == GRPC_CALL_OK);
+      RequestedCall* rc = new RequestedCall(
+          static_cast<void*>(call_info.tag), call_info.cq, call_info.call,
+          call_info.initial_metadata, call_info.details);
+      calld->SetState(CallData::CallState::ACTIVATED);
+      calld->Publish(cq_idx(), rc);
+    } else {
+      calld->FailCallCreation();
+    }
+    server()->ShutdownUnrefOnRequest();
   }
 
  private:
@@ -398,15 +404,21 @@ class Server::AllocatingRequestMatcherRegistered
 
   void MatchOrQueue(size_t /*start_request_queue_index*/,
                     CallData* calld) override {
-    RegisteredCallAllocation call_info = allocator_();
-    GPR_ASSERT(server()->ValidateServerRequest(
-                   cq(), call_info.tag, call_info.optional_payload,
-                   registered_method_) == GRPC_CALL_OK);
-    RequestedCall* rc = new RequestedCall(
-        call_info.tag, call_info.cq, call_info.call, call_info.initial_metadata,
-        registered_method_, call_info.deadline, call_info.optional_payload);
-    calld->SetState(CallData::CallState::ACTIVATED);
-    calld->Publish(cq_idx(), rc);
+    if (server()->ShutdownRefOnRequest()) {
+      RegisteredCallAllocation call_info = allocator_();
+      GPR_ASSERT(server()->ValidateServerRequest(
+                     cq(), call_info.tag, call_info.optional_payload,
+                     registered_method_) == GRPC_CALL_OK);
+      RequestedCall* rc =
+          new RequestedCall(call_info.tag, call_info.cq, call_info.call,
+                            call_info.initial_metadata, registered_method_,
+                            call_info.deadline, call_info.optional_payload);
+      calld->SetState(CallData::CallState::ACTIVATED);
+      calld->Publish(cq_idx(), rc);
+    } else {
+      calld->FailCallCreation();
+    }
+    server()->ShutdownUnrefOnRequest();
   }
 
  private:
@@ -709,7 +721,7 @@ void Server::FailCall(size_t cq_idx, RequestedCall* rc, grpc_error* error) {
 // Before calling MaybeFinishShutdown(), we must hold mu_global_ and not
 // hold mu_call_.
 void Server::MaybeFinishShutdown() {
-  if (!shutdown_flag_.load(std::memory_order_acquire) || shutdown_published_) {
+  if (!ShutdownReady() || shutdown_published_) {
     return;
   }
   {
@@ -803,19 +815,18 @@ void Server::ShutdownAndNotify(grpc_completion_queue* cq, void* tag) {
       return;
     }
     shutdown_tags_.emplace_back(tag, cq);
-    if (shutdown_flag_.load(std::memory_order_acquire)) {
+    if (ShutdownCalled()) {
       return;
     }
     last_shutdown_message_time_ = gpr_now(GPR_CLOCK_REALTIME);
     broadcaster.FillChannelsLocked(GetChannelsLocked());
-    shutdown_flag_.store(true, std::memory_order_release);
     // Collect all unregistered then registered calls.
     {
       MutexLock lock(&mu_call_);
       KillPendingWorkLocked(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
     }
-    MaybeFinishShutdown();
+    ShutdownUnrefOnShutdownCall();
   }
   // Shutdown listeners.
   for (auto& listener : listeners_) {
@@ -847,8 +858,7 @@ void Server::CancelAllCalls() {
 void Server::Orphan() {
   {
     MutexLock lock(&mu_global_);
-    GPR_ASSERT(shutdown_flag_.load(std::memory_order_acquire) ||
-               listeners_.empty());
+    GPR_ASSERT(ShutdownCalled() || listeners_.empty());
     GPR_ASSERT(listeners_destroyed_ == listeners_.size());
   }
   if (default_resource_user_ != nullptr) {
@@ -895,7 +905,7 @@ grpc_call_error Server::ValidateServerRequestAndCq(
 }
 
 grpc_call_error Server::QueueRequestedCall(size_t cq_idx, RequestedCall* rc) {
-  if (shutdown_flag_.load(std::memory_order_acquire)) {
+  if (ShutdownCalled()) {
     FailCall(cq_idx, rc,
              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
     return GRPC_CALL_OK;
@@ -1064,7 +1074,7 @@ void Server::ChannelData::InitTransport(RefCountedPtr<Server> server,
   op->set_accept_stream_fn = AcceptStream;
   op->set_accept_stream_user_data = this;
   op->start_connectivity_watch = MakeOrphanable<ConnectivityWatcher>(this);
-  if (server_->shutdown_flag_.load(std::memory_order_acquire)) {
+  if (server_->ShutdownCalled()) {
     op->disconnect_with_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown");
   }
@@ -1280,8 +1290,7 @@ void Server::CallData::PublishNewRpc(void* arg, grpc_error* error) {
   auto* chand = static_cast<Server::ChannelData*>(call_elem->channel_data);
   RequestMatcherInterface* rm = calld->matcher_;
   Server* server = rm->server();
-  if (error != GRPC_ERROR_NONE ||
-      server->shutdown_flag_.load(std::memory_order_acquire)) {
+  if (error != GRPC_ERROR_NONE || server->ShutdownCalled()) {
     calld->state_.Store(CallState::ZOMBIED, MemoryOrder::RELAXED);
     calld->KillZombie();
     return;
@@ -1305,7 +1314,7 @@ void Server::CallData::KillZombie() {
 
 void Server::CallData::StartNewRpc(grpc_call_element* elem) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
-  if (server_->shutdown_flag_.load(std::memory_order_acquire)) {
+  if (server_->ShutdownCalled()) {
     state_.Store(CallState::ZOMBIED, MemoryOrder::RELAXED);
     KillZombie();
     return;
