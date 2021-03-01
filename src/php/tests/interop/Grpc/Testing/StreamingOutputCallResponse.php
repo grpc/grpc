@@ -41,7 +41,7 @@ class StreamingOutputCallResponse extends \Google\Protobuf\Internal\Message
      * Payload to increase response size.
      *
      * Generated from protobuf field <code>.grpc.testing.Payload payload = 1;</code>
-     * @return \Grpc\Testing\Payload
+     * @return \Grpc\Testing\Payload|null
      */
     public function getPayload()
     {
