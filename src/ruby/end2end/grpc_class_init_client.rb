@@ -86,11 +86,26 @@ def get_test_proc(grpc_class)
     end
   when 'server_credentials'
     return proc do
-      GRPC::Core::ServerCredentials.new
+      test_root = File.join(File.dirname(__FILE__), '..', 'spec', 'testdata')
+      GRPC.logger.info("test root: #{test_root}")
+      files = ['ca.pem', 'server1.key', 'server1.pem']
+      creds = files.map { |f| File.open(File.join(test_root, f)).read }
+      GRPC::Core::ServerCredentials.new(
+        creds[0],
+        [{ private_key: creds[1], cert_chain: creds[2] }],
+        true)
     end
   when 'xds_server_credentials'
     return proc do
-      GRPC::Core::XdsServerCredentials.new(GRPC::Core::ServerCredentials.new)
+      test_root = File.join(File.dirname(__FILE__), '..', 'spec', 'testdata')
+      GRPC.logger.info("test root: #{test_root}")
+      files = ['ca.pem', 'server1.key', 'server1.pem']
+      creds = files.map { |f| File.open(File.join(test_root, f)).read }
+      GRPC::Core::XdsServerCredentials.new(
+        GRPC::Core::ServerCredentials.new(
+          creds[0],
+          [{ private_key: creds[1], cert_chain: creds[2] }],
+          true))
     end
   when 'call_credentials'
     return proc do
