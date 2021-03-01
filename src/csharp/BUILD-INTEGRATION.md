@@ -105,6 +105,39 @@ button](https://stackoverflow.com/a/9770061). Click on it, and choose "Add as
 link". If you do not select this option, Visual Studio will copy files to the
 project directory instead.
 
+#### My .proto files have same filename in different folders
+
+Starting from Grpc.Tools version 2.31, protocol buffers compilation preserves original folder structure for generated files. Eg.
+
+- `../ProjectFolder/Protos/v2/http.proto`
+- `../ProjectFolder/Protos/v3/http.proto`
+
+Will result in:
+
+- `../ProjectFolder/obj/CONFIGURATION/FRAMEWORK/Protos/v2/Greet.cs`
+- `../ProjectFolder/obj/CONFIGURATION/FRAMEWORK/Protos/v2/GreetGrpc.cs`
+- `../ProjectFolder/obj/CONFIGURATION/FRAMEWORK/Protos/v3/Greet.cs`
+- `../ProjectFolder/obj/CONFIGURATION/FRAMEWORK/Protos/v3/GreetGrpc.cs`
+
+This feature resolves problems we have faced in large projects. Moreover, There is now also a project-wide new option Protobuf_ProtoRoot to define the fallback ProtoRoot. If the ProtoRoot is set, this also reduces the amount of problems that lead to duplicates. Eg.
+
+```xml
+  <ItemGroup>
+    <Protobuf Include="Protos\v2\greet.proto" ProtoRoot="Protos" />
+  </ItemGroup>
+```
+
+Before Grpc.Tools version 2.31 all .proto files were compiled into `obj` directory, flattening relative paths. For proto files with duplicated names it cause following errors `NETSDK1022 Duplicate 'Compile' items were included. [...]` or `MSB3105 [...] Duplicate items are not supported by the "Sources" parameter`. The workaround for this problem was introducing relative paths in your `obj` folder, by manipulating output path. Eg. 
+
+```xml
+  <ItemGroup>
+    <Protobuf Include="Protos/v2/http.proto" OutputDir="$(Protobuf_OutputPath)%(RelativeDir)"  />
+    <Protobuf Include="Protos/v3/http.proto" OutputDir="$(Protobuf_OutputPath)%(RelativeDir)"  />
+  </ItemGroup>
+```
+
+__Note, this was a workaround approach, we recommend updating Grpc.Tools to the latest version.__
+
 ### I just want to generate proto and gRPC C# sources from my .proto files (no C# compile)
 
 Suppose you want to place generated files right beside each respective source

@@ -1023,9 +1023,9 @@ void Subchannel::OnRetryAlarm(void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
     c->ContinueConnectingLocked();
-    lock.Unlock();
+    lock.Release();
   } else {
-    lock.Unlock();
+    lock.Release();
     GRPC_SUBCHANNEL_WEAK_UNREF(c, "connecting");
   }
   GRPC_ERROR_UNREF(error);
