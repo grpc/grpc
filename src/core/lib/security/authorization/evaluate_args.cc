@@ -74,7 +74,7 @@ std::multimap<absl::string_view, absl::string_view> EvaluateArgs::GetHeaders()
 }
 
 absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
-    const std::string& target_key, std::string* concatenated_value) const {
+    absl::string_view target_key, std::string* concatenated_value) const {
   if (metadata_ == nullptr) {
     return absl::nullopt;
   }

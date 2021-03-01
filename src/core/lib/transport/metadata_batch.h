@@ -82,7 +82,7 @@ void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
                                    const grpc_slice& value);
 
 /** Returns metadata value(s) for the specified key. If more than one value is
- * found, concatenates them into a single string. */
+    found, concatenates them into a single string. */
 absl::optional<absl::string_view> grpc_metadata_batch_get_value(
     grpc_metadata_batch* initial_metadata, absl::string_view target_key,
     std::string* concatenated_value);
