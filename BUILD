@@ -1842,12 +1842,11 @@ grpc_cc_library(
     ],
 )
 
-
 grpc_cc_library(
     name = "grpc_secure_base",
     srcs = [
         "src/core/lib/security/context/security_context.cc",
-        "src/core/lib/security/credentials/composite/composite_credentials.cc", 
+        "src/core/lib/security/credentials/composite/composite_credentials.cc",
         "src/core/lib/security/credentials/credentials.cc",
         "src/core/lib/security/credentials/credentials_metadata.cc",
         "src/core/lib/security/credentials/plugin/plugin_credentials.cc",
@@ -1859,7 +1858,7 @@ grpc_cc_library(
         "src/core/lib/security/transport/tsi_error.cc",
         "src/core/tsi/transport_security.cc",
         "src/core/tsi/transport_security_grpc.cc",
-        ],
+    ],
     hdrs = [
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
@@ -1884,15 +1883,15 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_fake_credentials",
     srcs = [
-          "src/core/lib/security/credentials/fake/fake_credentials.cc",
-          "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
-          "src/core/tsi/fake_transport_security.cc",
+        "src/core/lib/security/credentials/fake/fake_credentials.cc",
+        "src/core/lib/security/security_connector/fake/fake_security_connector.cc",
+        "src/core/tsi/fake_transport_security.cc",
     ],
     hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/lib/security/credentials/fake/fake_credentials.h",
         "src/core/lib/security/security_connector/fake/fake_security_connector.h",
         "src/core/tsi/fake_transport_security.h",
-        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
     ],
     language = "c++",
     deps = [
@@ -1903,9 +1902,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_local_credentials",
     srcs = [
-          "src/core/lib/security/credentials/local/local_credentials.cc",
-          "src/core/lib/security/security_connector/local/local_security_connector.cc",
-          "src/core/tsi/local_transport_security.cc",
+        "src/core/lib/security/credentials/local/local_credentials.cc",
+        "src/core/lib/security/security_connector/local/local_security_connector.cc",
+        "src/core/tsi/local_transport_security.cc",
     ],
     hdrs = [
         "src/core/lib/security/credentials/local/local_credentials.h",
@@ -1914,14 +1913,17 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "grpc_secure_base",
         "grpc_client_channel",
+        "grpc_secure_base",
     ],
 )
 
 grpc_cc_library(
     name = "grpc_alts_credentials",
     srcs = [
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c",
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c",
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c",
         "src/core/lib/security/credentials/alts/alts_credentials.cc",
         "src/core/lib/security/credentials/alts/check_gcp_environment.cc",
         "src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc",
@@ -1931,9 +1933,6 @@ grpc_cc_library(
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc",
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc",
         "src/core/lib/security/security_connector/alts/alts_security_connector.cc",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c",
         "src/core/tsi/alts/crypt/aes_gcm.cc",
         "src/core/tsi/alts/crypt/gsec.cc",
         "src/core/tsi/alts/frame_protector/alts_counter.cc",
@@ -1955,13 +1954,13 @@ grpc_cc_library(
         "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc",
     ],
     hdrs = [
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h",
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h",
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/alts/check_gcp_environment.h",
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h",
         "src/core/lib/security/security_connector/alts/alts_security_connector.h",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h",
-        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h",
         "src/core/tsi/alts/crypt/gsec.h",
         "src/core/tsi/alts/frame_protector/alts_counter.h",
         "src/core/tsi/alts/frame_protector/alts_crypter.h",
@@ -1979,24 +1978,24 @@ grpc_cc_library(
         "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h",
         "src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h",
         "src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h",
-        "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h", 
-    ],
-    language = "c++",
-    deps = [
-      "grpc_secure_base",
+        "src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h",
     ],
     external_deps = [
         "libssl",
         "upb_lib",
         "upb_lib_descriptor",
     ],
+    language = "c++",
+    deps = [
+        "grpc_secure_base",
+    ],
 )
 
 grpc_cc_library(
     name = "grpc_ssl_credentials",
     srcs = [
-          "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
-          "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc",
+        "src/core/lib/security/credentials/ssl/ssl_credentials.cc",
+        "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc",
     ],
     hdrs = [
         "src/core/lib/security/credentials/ssl/ssl_credentials.h",
@@ -2012,12 +2011,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_google_default_credentials",
     srcs = [
-          "src/core/lib/security/credentials/google_default/google_default_credentials.cc",
-          "src/core/lib/security/credentials/google_default/credentials_generic.cc",
+        "src/core/lib/security/credentials/google_default/credentials_generic.cc",
+        "src/core/lib/security/credentials/google_default/google_default_credentials.cc",
     ],
     hdrs = [
-          "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
-          "src/core/lib/security/credentials/google_default/google_default_credentials.h",
+        "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
+        "src/core/lib/security/credentials/google_default/google_default_credentials.h",
     ],
     language = "c++",
     deps = [
@@ -2037,7 +2036,7 @@ grpc_cc_library(
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc",
         "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc",
-        "src/core/lib/security/credentials/tls/tls_credentials.cc",  
+        "src/core/lib/security/credentials/tls/tls_credentials.cc",
         "src/core/lib/security/security_connector/tls/tls_security_connector.cc",
     ],
     hdrs = [
@@ -2081,6 +2080,9 @@ grpc_cc_library(
         "src/core/lib/security/credentials/jwt/jwt_verifier.h",
         "src/core/tsi/ssl_types.h",
     ],
+    external_deps = [
+        "libssl",
+    ],
     language = "c++",
     deps = [
         "grpc_credentials_util",
@@ -2119,68 +2121,68 @@ grpc_cc_library(
         "src/core/lib/security/credentials/external/file_external_account_credentials.h",
         "src/core/lib/security/credentials/external/url_external_account_credentials.h",
     ],
+    external_deps = [
+        "libssl",
+    ],
     language = "c++",
     deps = [
         "grpc_credentials_util",
         "grpc_oauth2_credentials",
         "grpc_secure_base",
     ],
-    external_deps = [
-        "libssl",
-    ],
 )
 
 grpc_cc_library(
-  name = "grpc_credentials_util",
-  srcs = [
+    name = "grpc_credentials_util",
+    srcs = [
         "src/core/lib/security/credentials/tls/tls_utils.cc",
         "src/core/lib/security/security_connector/load_system_roots_fallback.cc",
         "src/core/lib/security/security_connector/load_system_roots_linux.cc",
         "src/core/lib/security/util/json_util.cc",
-  ],
-  hdrs = [
-      "src/core/lib/security/credentials/tls/tls_utils.h",
-      "src/core/lib/security/security_connector/load_system_roots.h",
-      "src/core/lib/security/security_connector/load_system_roots_linux.h",
-      "src/core/lib/security/util/json_util.h",
-  ],
-  language = "c++", 
-  deps = [
-    "grpc_secure_base",
-  ],
+    ],
+    hdrs = [
+        "src/core/lib/security/credentials/tls/tls_utils.h",
+        "src/core/lib/security/security_connector/load_system_roots.h",
+        "src/core/lib/security/security_connector/load_system_roots_linux.h",
+        "src/core/lib/security/util/json_util.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_secure_base",
+    ],
 )
 
 grpc_cc_library(
-  name = "grpc_ssl_transport_security",
-  srcs = [
+    name = "grpc_ssl_transport_security",
+    srcs = [
         "src/core/lib/security/security_connector/ssl_utils.cc",
         "src/core/lib/security/security_connector/ssl_utils_config.cc",
-        "src/core/tsi/ssl_transport_security.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.cc",
         "src/core/tsi/ssl/session_cache/ssl_session_openssl.cc",
-  ],
-  hdrs = [
+        "src/core/tsi/ssl_transport_security.cc",
+    ],
+    hdrs = [
         "src/core/lib/security/security_connector/ssl_utils.h",
         "src/core/lib/security/security_connector/ssl_utils_config.h",
-        "src/core/tsi/ssl_transport_security.h",
-        "src/core/tsi/ssl_types.h",
         "src/core/tsi/ssl/session_cache/ssl_session.h",
         "src/core/tsi/ssl/session_cache/ssl_session_cache.h",
-  ],
-  language = "c++",
-  deps = [
-    "grpc_credentials_util",
-    "grpc_secure_base",
-    "grpc_transport_chttp2_alpn",
-  ],
-  external_deps = [
+        "src/core/tsi/ssl_transport_security.h",
+        "src/core/tsi/ssl_types.h",
+    ],
+    external_deps = [
         "libssl",
-  ],
+    ],
+    language = "c++",
+    deps = [
+        "grpc_credentials_util",
+        "grpc_secure_base",
+        "grpc_transport_chttp2_alpn",
+    ],
 )
 
 grpc_cc_library(
-    name = "grpc_httpcli_security_connector", 
+    name = "grpc_httpcli_security_connector",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
     ],
