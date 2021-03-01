@@ -134,7 +134,9 @@ static VALUE grpc_rb_xds_channel_credentials_init(VALUE self,
   if (creds == NULL) {
     rb_raise(rb_eRuntimeError,
              "the call to grpc_xds_credentials_create() failed, could not "
-             "create a credentials, , see https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for debugging tips");
+             "create a credentials, , see "
+             "https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for "
+             "debugging tips");
     return Qnil;
   }
 

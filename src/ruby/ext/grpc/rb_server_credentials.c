@@ -208,7 +208,11 @@ static VALUE grpc_rb_server_credentials_init(VALUE self, VALUE pem_root_certs,
   }
   xfree(key_cert_pairs);
   if (creds == NULL) {
-    rb_raise(rb_eRuntimeError, "the call to grpc_ssl_server_credentials_create_ex() failed, could not create a credentials, see https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for debugging tips");
+    rb_raise(rb_eRuntimeError,
+             "the call to grpc_ssl_server_credentials_create_ex() failed, "
+             "could not create a credentials, see "
+             "https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for "
+             "debugging tips");
     return Qnil;
   }
   wrapper->wrapped = creds;

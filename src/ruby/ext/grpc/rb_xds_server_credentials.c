@@ -120,7 +120,11 @@ static VALUE grpc_rb_xds_server_credentials_init(VALUE self,
   creds = grpc_xds_server_credentials_create(grpc_fallback_creds);
 
   if (creds == NULL) {
-    rb_raise(rb_eRuntimeError, "the call to grpc_xds_server_credentials_create() failed, could not create a credentials, see https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for debugging tips");
+    rb_raise(rb_eRuntimeError,
+             "the call to grpc_xds_server_credentials_create() failed, could "
+             "not create a credentials, see "
+             "https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for "
+             "debugging tips");
     return Qnil;
   }
   TypedData_Get_Struct(self, grpc_rb_xds_server_credentials,
