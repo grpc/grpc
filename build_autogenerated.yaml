@@ -797,7 +797,6 @@ libs:
   - src/core/lib/security/credentials/xds/xds_credentials.h
   - src/core/lib/security/security_connector/alts/alts_security_connector.h
   - src/core/lib/security/security_connector/fake/fake_security_connector.h
-  - src/core/lib/security/security_connector/insecure/insecure_security_connector.h
   - src/core/lib/security/security_connector/load_system_roots.h
   - src/core/lib/security/security_connector/load_system_roots_linux.h
   - src/core/lib/security/security_connector/local/local_security_connector.h
@@ -1306,7 +1305,6 @@ libs:
   - src/core/lib/security/credentials/google_default/credentials_generic.cc
   - src/core/lib/security/credentials/google_default/google_default_credentials.cc
   - src/core/lib/security/credentials/iam/iam_credentials.cc
-  - src/core/lib/security/credentials/insecure/insecure_credentials.cc
   - src/core/lib/security/credentials/jwt/json_token.cc
   - src/core/lib/security/credentials/jwt/jwt_credentials.cc
   - src/core/lib/security/credentials/jwt/jwt_verifier.cc
@@ -1322,7 +1320,6 @@ libs:
   - src/core/lib/security/credentials/xds/xds_credentials.cc
   - src/core/lib/security/security_connector/alts/alts_security_connector.cc
   - src/core/lib/security/security_connector/fake/fake_security_connector.cc
-  - src/core/lib/security/security_connector/insecure/insecure_security_connector.cc
   - src/core/lib/security/security_connector/load_system_roots_fallback.cc
   - src/core/lib/security/security_connector/load_system_roots_linux.cc
   - src/core/lib/security/security_connector/local/local_security_connector.cc
@@ -2382,10 +2379,28 @@ libs:
   build: all
   language: c++
   public_headers:
+  - include/grpc/grpc_security.h
   - include/grpcpp/security/alts_context.h
   - include/grpcpp/security/alts_util.h
-  headers: []
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - src/cpp/common/alts_context.cc
   - src/cpp/common/alts_util.cc
   deps:
@@ -2830,8 +2845,38 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/transport_security.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/alts_counter_test.cc
   deps:
@@ -2844,8 +2889,38 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/transport_security.cc
   - test/core/tsi/alts/crypt/aes_gcm_test.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   deps:
@@ -2858,8 +2933,38 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/transport_security.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/alts_crypter_test.cc
   deps:
@@ -2872,9 +2977,78 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.h
+  - src/core/tsi/alts/handshaker/alts_shared_resource.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/local_transport_security.h
+  - src/core/tsi/ssl/session_cache/ssl_session.h
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/alts/crypt/gsec_test_util.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  - src/core/tsi/alts/handshaker/alts_shared_resource.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  - src/core/tsi/ssl_transport_security.cc
+  - src/core/tsi/transport_security.cc
+  - src/core/tsi/transport_security_grpc.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
   - test/core/tsi/transport_security_test_lib.cc
@@ -2888,8 +3062,38 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/transport_security.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
   deps:
@@ -2902,8 +3106,77 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.h
+  - src/core/tsi/alts/handshaker/alts_shared_resource.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/local_transport_security.h
+  - src/core/tsi/ssl/session_cache/ssl_session.h
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  - src/core/tsi/alts/handshaker/alts_shared_resource.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  - src/core/tsi/ssl_transport_security.cc
+  - src/core/tsi/transport_security.cc
+  - src/core/tsi/transport_security_grpc.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   deps:
@@ -2916,8 +3189,38 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/transport_security.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
   deps:
@@ -2929,8 +3232,77 @@ targets:
 - name: alts_security_connector_test
   build: test
   language: c
-  headers: []
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.h
+  - src/core/tsi/alts/handshaker/alts_shared_resource.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/local_transport_security.h
+  - src/core/tsi/ssl/session_cache/ssl_session.h
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  - src/core/tsi/alts/handshaker/alts_shared_resource.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  - src/core/tsi/ssl_transport_security.cc
+  - src/core/tsi/transport_security.cc
+  - src/core/tsi/transport_security_grpc.cc
   - test/core/security/alts_security_connector_test.cc
   deps:
   - grpc_test_util
@@ -2942,8 +3314,77 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.h
+  - src/core/tsi/alts/handshaker/alts_shared_resource.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/local_transport_security.h
+  - src/core/tsi/ssl/session_cache/ssl_session.h
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  - src/core/tsi/alts/handshaker/alts_shared_resource.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  - src/core/tsi/ssl_transport_security.cc
+  - src/core/tsi/transport_security.cc
+  - src/core/tsi/transport_security_grpc.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   - test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
   deps:
@@ -2956,8 +3397,77 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.h
+  - src/core/tsi/alts/handshaker/alts_shared_resource.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/local_transport_security.h
+  - src/core/tsi/ssl/session_cache/ssl_session.h
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  - src/core/tsi/alts/handshaker/alts_shared_resource.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  - src/core/tsi/ssl_transport_security.cc
+  - src/core/tsi/transport_security.cc
+  - src/core/tsi/transport_security_grpc.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   - test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
   deps:
@@ -2970,8 +3480,38 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/transport_security.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
   deps:
@@ -3173,8 +3713,25 @@ targets:
 - name: check_gcp_environment_linux_test
   build: test
   language: c
-  headers: []
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - test/core/security/check_gcp_environment_linux_test.cc
   deps:
   - grpc_test_util
@@ -3185,8 +3742,25 @@ targets:
 - name: check_gcp_environment_windows_test
   build: test
   language: c
-  headers: []
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - test/core/security/check_gcp_environment_windows_test.cc
   deps:
   - grpc_test_util
@@ -3448,8 +4022,77 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.h
+  - src/core/tsi/alts/handshaker/alts_shared_resource.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/local_transport_security.h
+  - src/core/tsi/ssl/session_cache/ssl_session.h
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  - src/core/tsi/alts/handshaker/alts_shared_resource.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  - src/core/tsi/ssl_transport_security.cc
+  - src/core/tsi/transport_security.cc
+  - src/core/tsi/transport_security_grpc.cc
   - test/core/tsi/fake_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
@@ -3570,8 +4213,38 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/alts/crypt/gsec_test_util.h
   src:
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/transport_security.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/frame_handler_test.cc
   deps:
@@ -3597,8 +4270,25 @@ targets:
 - name: grpc_alts_credentials_options_test
   build: test
   language: c
-  headers: []
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - test/core/security/grpc_alts_credentials_options_test.cc
   deps:
   - grpc_test_util
@@ -4323,8 +5013,77 @@ targets:
   build: test
   language: c
   headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.h
+  - src/core/tsi/alts/handshaker/alts_shared_resource.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/local_transport_security.h
+  - src/core/tsi/ssl/session_cache/ssl_session.h
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   - test/core/tsi/transport_security_test_lib.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  - src/core/tsi/alts/handshaker/alts_shared_resource.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  - src/core/tsi/ssl_transport_security.cc
+  - src/core/tsi/transport_security.cc
+  - src/core/tsi/transport_security_grpc.cc
   - test/core/tsi/ssl_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
@@ -4595,8 +5354,25 @@ targets:
 - name: transport_security_common_api_test
   build: test
   language: c
-  headers: []
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
   deps:
   - grpc_test_util
@@ -4726,11 +5502,28 @@ targets:
   build: test
   language: c++
   headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
   - test/core/end2end/cq_verifier.h
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h
   src:
   - test/core/tsi/alts/fake_handshaker/handshaker.proto
   - test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   - test/core/end2end/cq_verifier.cc
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
   - test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
@@ -6334,8 +7127,77 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.h
+  - src/core/tsi/alts/handshaker/alts_shared_resource.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/local_transport_security.h
+  - src/core/tsi/ssl/session_cache/ssl_session.h
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  - src/core/tsi/alts/handshaker/alts_shared_resource.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  - src/core/tsi/ssl_transport_security.cc
+  - src/core/tsi/transport_security.cc
+  - src/core/tsi/transport_security_grpc.cc
   - test/core/end2end/h2_ssl_session_reuse_test.cc
   deps:
   - end2end_tests
@@ -7757,8 +8619,77 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
+  - src/core/lib/security/credentials/alts/check_gcp_environment.h
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
+  - src/core/tsi/alts/crypt/gsec.h
+  - src/core/tsi/alts/frame_protector/alts_counter.h
+  - src/core/tsi/alts/frame_protector/alts_crypter.h
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.h
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.h
+  - src/core/tsi/alts/frame_protector/frame_handler.h
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.h
+  - src/core/tsi/alts/handshaker/alts_shared_resource.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.h
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.h
+  - src/core/tsi/alts/handshaker/transport_security_common_api.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.h
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h
+  - src/core/tsi/fake_transport_security.h
+  - src/core/tsi/local_transport_security.h
+  - src/core/tsi/ssl/session_cache/ssl_session.h
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.h
+  - src/core/tsi/ssl_transport_security.h
+  - src/core/tsi/ssl_types.h
+  - src/core/tsi/transport_security.h
+  - src/core/tsi/transport_security_grpc.h
+  - src/core/tsi/transport_security_interface.h
   src:
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  - src/core/lib/security/credentials/alts/check_gcp_environment.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
+  - src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
+  - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
+  - src/core/tsi/alts/crypt/aes_gcm.cc
+  - src/core/tsi/alts/crypt/gsec.cc
+  - src/core/tsi/alts/frame_protector/alts_counter.cc
+  - src/core/tsi/alts/frame_protector/alts_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_frame_protector.cc
+  - src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
+  - src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
+  - src/core/tsi/alts/frame_protector/frame_handler.cc
+  - src/core/tsi/alts/handshaker/alts_handshaker_client.cc
+  - src/core/tsi/alts/handshaker/alts_shared_resource.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
+  - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
+  - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
+  - src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
+  - src/core/tsi/fake_transport_security.cc
+  - src/core/tsi/local_transport_security.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_cache.cc
+  - src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
+  - src/core/tsi/ssl_transport_security.cc
+  - src/core/tsi/transport_security.cc
+  - src/core/tsi/transport_security_grpc.cc
   - test/core/security/tls_security_connector_test.cc
   deps:
   - grpc_test_util

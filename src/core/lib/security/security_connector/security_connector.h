@@ -30,7 +30,6 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-#include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_security_connector_refcount;
@@ -43,6 +42,7 @@ typedef enum { GRPC_SECURITY_OK = 0, GRPC_SECURITY_ERROR } grpc_security_status;
     transport security mechanism and check the resulting trusted peer.  */
 
 #define GRPC_ARG_SECURITY_CONNECTOR "grpc.security_connector"
+#define GRPC_SSL_URL_SCHEME "https"
 
 class grpc_security_connector
     : public grpc_core::RefCounted<grpc_security_connector> {
