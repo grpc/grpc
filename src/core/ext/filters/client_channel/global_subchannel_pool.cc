@@ -62,12 +62,12 @@ RefCountedPtr<Subchannel> GlobalSubchannelPool::RegisterSubchannel(
 RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
 
 void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
-                                                Subchannel* c) {
+                                                Subchannel* subchannel) {
   MutexLock lock(&mu_);
   auto it = subchannel_map_.find(key);
   // delete only if key hasn't been re-registered to a different subchannel
   // between strong-unreffing and unregistration of c.
-  if (it != subchannel_map_.end() && it->second == c) {
+  if (it != subchannel_map_.end() && it->second == subchannel) {
     subchannel_map_.erase(it);
   }
 }

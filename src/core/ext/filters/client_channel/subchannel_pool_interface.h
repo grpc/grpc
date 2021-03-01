@@ -77,7 +77,7 @@ class SubchannelPoolInterface : public RefCounted<SubchannelPoolInterface> {
 
   // Removes the registered subchannel found by \a key.
   virtual void UnregisterSubchannel(const SubchannelKey& key,
-                                    Subchannel* c) = 0;
+                                    Subchannel* subchannel) = 0;
 
   // Finds the subchannel registered for the given subchannel key. Returns NULL
   // if no such channel exists. Thread-safe.

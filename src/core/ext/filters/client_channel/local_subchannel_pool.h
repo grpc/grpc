@@ -44,7 +44,8 @@ class LocalSubchannelPool final : public SubchannelPoolInterface {
   // serializer.
   RefCountedPtr<Subchannel> RegisterSubchannel(
       const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) override;
-  void UnregisterSubchannel(const SubchannelKey& key, Subchannel* c) override;
+  void UnregisterSubchannel(const SubchannelKey& key,
+                            Subchannel* subchannel) override;
   RefCountedPtr<Subchannel> FindSubchannel(const SubchannelKey& key) override;
 
  private:

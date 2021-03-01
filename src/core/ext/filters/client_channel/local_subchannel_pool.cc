@@ -36,7 +36,7 @@ RefCountedPtr<Subchannel> LocalSubchannelPool::RegisterSubchannel(
 }
 
 void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
-                                               Subchannel* c) {
+                                               Subchannel* subchannel) {
   auto it = subchannel_map_.find(key);
   // Because Subchannel::Orphan this subchannel pool are only called under
   // the client channel's work serializer, any subchannel created by
