@@ -31,7 +31,20 @@ Checks: '-*,
   readability-inconsistent-declaration-parameter-name,
   readability-redundant-control-flow,
   readability-redundant-smartptr-get,
-  readability-string-compare'
+  readability-string-compare,
+
+  -abseil-string-find-str-contains,
+  -bugprone-branch-clone,
+  -bugprone-infinite-loop,
+  -bugprone-not-null-terminated-result,
+  -bugprone-reserved-identifier,
+  -bugprone-signed-char-misuse,
+  -bugprone-sizeof-expression,
+  -bugprone-unhandled-self-assignment,
+  -google-readability-avoid-underscore-in-googletest-name,
+  -google-upgrade-googletest-case,
+  -modernize-make-unique,
+  -performance-no-automatic-move'
 WarningsAsErrors: '*'
 CheckOptions:
   - key:    readability-function-size.StatementThreshold
