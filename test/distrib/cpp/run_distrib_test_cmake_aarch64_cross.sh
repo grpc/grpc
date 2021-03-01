@@ -20,9 +20,6 @@ cd "$(dirname "$0")/../../.."
 # Install openssl (to use instead of boringssl)
 apt-get update && apt-get install -y libssl-dev
 
-# Install arm cross-compiler
-apt-get update && apt-get install -y g++-6-arm-linux-gnueabihf
-
 # Install CMake 3.16
 apt-get update && apt-get install -y wget
 wget -q -O cmake-linux.sh https://github.com/Kitware/CMake/releases/download/v3.16.1/cmake-3.16.1-Linux-x86_64.sh
@@ -46,10 +43,10 @@ popd
 # Write a toolchain file to use for cross-compiling.
 cat > /tmp/toolchain.cmake <<'EOT'
 SET(CMAKE_SYSTEM_NAME Linux)
-SET(CMAKE_SYSTEM_PROCESSOR arm)
+SET(CMAKE_SYSTEM_PROCESSOR aarch64)
 set(CMAKE_STAGING_PREFIX /tmp/stage)
-set(CMAKE_C_COMPILER /usr/bin/arm-linux-gnueabihf-gcc-6)
-set(CMAKE_CXX_COMPILER /usr/bin/arm-linux-gnueabihf-g++-6)
+set(CMAKE_C_COMPILER /usr/bin/aarch64-linux-gnu-gcc-6)
+set(CMAKE_CXX_COMPILER /usr/bin/aarch64-linux-gnu-g++-6)
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)

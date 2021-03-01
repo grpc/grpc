@@ -243,7 +243,7 @@ $ cmake ../.. -DCMAKE_TOOLCHAIN_FILE=path/to/file
 $ make
 ```
 
-[Cross-compile example](test/distrib/cpp/run_distrib_test_cmake_arm_cross.sh)
+[Cross-compile example](test/distrib/cpp/run_distrib_test_cmake_aarch64_cross.sh)
 
 ## Building with make on UNIX systems (deprecated)
 
