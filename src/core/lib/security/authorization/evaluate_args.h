@@ -40,6 +40,7 @@ class EvaluateArgs {
   absl::string_view GetHost() const;
   absl::string_view GetMethod() const;
   std::multimap<absl::string_view, absl::string_view> GetHeaders() const;
+  // Gets metadata value(s) from grpc_metadata_batch for the specified key.
   absl::optional<absl::string_view> GetHeaderValue(
       const std::string& target_key, std::string* concatenated_value) const;
   absl::string_view GetLocalAddress() const;
