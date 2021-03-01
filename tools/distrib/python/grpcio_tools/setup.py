@@ -81,6 +81,7 @@ BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 BUILD_WITH_STATIC_LIBSTDCXX = os.environ.get(
     'GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX', False)
 
+
 def check_linker_need_libatomic():
     """Test if linker on system needs libatomic."""
     code_test = (b'#include <atomic>\n' +
