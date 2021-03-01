@@ -33,7 +33,6 @@ Checks: '-*,
   readability-redundant-smartptr-get,
   readability-string-compare,
 
-  -abseil-string-find-str-contains,
   -bugprone-branch-clone,
   -bugprone-infinite-loop,
   -bugprone-not-null-terminated-result,
