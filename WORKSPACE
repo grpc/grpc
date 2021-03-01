@@ -6,16 +6,6 @@ grpc_deps()
 
 grpc_test_only_deps()
 
-# Initialize Google APIs with only C++ and Python targets
-load("@com_google_googleapis//:repository_rules.bzl", "switched_rules_by_language")
-
-switched_rules_by_language(
-    name = "com_google_googleapis_imports",
-    cc = True,
-    grpc = True,
-    python = True,
-)
-
 load("//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
 
 grpc_extra_deps()
