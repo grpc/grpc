@@ -1174,6 +1174,14 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         """
         raise NotImplementedError()
 
+    def trailing_metadata(self):
+        """Access value to be used as trailing metadata upon RPC completion.
+
+        Returns:
+          The trailing :term:`metadata` for the RPC.
+        """
+        raise NotImplementedError()
+
     @abc.abstractmethod
     def abort(self, code, details):
         """Raises an exception to terminate the RPC with a non-OK status.
@@ -1237,7 +1245,6 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         """
         raise NotImplementedError()
 
-    @abc.abstractmethod
     def code(self):
         """Accesses the value to be used as status code upon RPC completion.
 
@@ -1246,7 +1253,6 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
         """
         raise NotImplementedError()
 
-    @abc.abstractmethod
     def details(self):
         """Accesses the value to be used as detail string upon RPC completion.
 

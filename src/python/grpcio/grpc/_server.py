@@ -305,6 +305,9 @@ class _Context(grpc.ServicerContext):
         with self._state.condition:
             self._state.trailing_metadata = trailing_metadata
 
+    def trailing_metadata(self):
+        return self._state.trailing_metadata
+
     def abort(self, code, details):
         # treat OK like other invalid arguments: fail the RPC
         if code == grpc.StatusCode.OK:
