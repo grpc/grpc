@@ -478,8 +478,6 @@ grpc_cc_library(
     language = "c++",
     standalone = True,
     deps = [
-        "alts_upb",
-        "alts_util",
         "grpc++",
     ],
 )
