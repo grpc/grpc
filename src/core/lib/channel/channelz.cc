@@ -20,6 +20,7 @@
 
 #include "src/core/lib/channel/channelz.h"
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/strip.h"
 
 #include <grpc/grpc.h>
@@ -348,10 +349,10 @@ Json SocketNode::Security::Tls::RenderJson() {
     data["other_name"] = name;
   }
   if (!local_certificate.empty()) {
-    data["local_certificate"] = local_certificate;
+    data["local_certificate"] = absl::Base64Escape(local_certificate);
   }
   if (!remote_certificate.empty()) {
-    data["remote_certificate"] = remote_certificate;
+    data["remote_certificate"] = absl::Base64Escape(remote_certificate);
   }
   return data;
 }
@@ -361,14 +362,22 @@ Json SocketNode::Security::Tls::RenderJson() {
 //
 
 Json SocketNode::Security::RenderJson() {
+  Json::Object data;
   switch (type) {
     case ModelType::kUnset:
-      return Json::Object();
+      break;
     case ModelType::kTls:
-      return tls->RenderJson();
+      if (tls) {
+        data["tls"] = tls->RenderJson();
+      }
+      break;
     case ModelType::kOther:
-      return *other;
+      if (other) {
+        data["other"] = tls->RenderJson();
+      }
+      break;
   }
+  return data;
 }
 
 namespace {
@@ -538,7 +547,8 @@ Json SocketNode::RenderJson() {
        }},
       {"data", std::move(data)},
   };
-  if(security_ != nullptr && security_->type != SocketNode::Security::ModelType::kUnset) {
+  if (security_ != nullptr &&
+      security_->type != SocketNode::Security::ModelType::kUnset) {
     object["security"] = security_->RenderJson();
   }
   PopulateSocketAddressJson(&object, "remote", remote_.c_str());
