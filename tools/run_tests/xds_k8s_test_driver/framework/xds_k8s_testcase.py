@@ -340,26 +340,28 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         server_tls, client_tls = server_security.tls, client_security.tls
 
         # Confirm regular TLS: server local cert == client remote cert
-        self.assertNotEmpty(server_tls.local_certificate,
-                            msg="(mTLS) Server local certificate is missing")
+        # TODO(yashykt): Re-enable when Core's channelz exposes local certs.
+        # self.assertNotEmpty(server_tls.local_certificate,
+        #                     msg="(mTLS) Server local certificate is missing")
         self.assertNotEmpty(client_tls.remote_certificate,
                             msg="(mTLS) Client remote certificate is missing")
-        self.assertEqual(
-            server_tls.local_certificate,
-            client_tls.remote_certificate,
-            msg="(mTLS) Server local certificate must match client's "
-            "remote certificate")
+        # self.assertEqual(
+        #     server_tls.local_certificate,
+        #     client_tls.remote_certificate,
+        #     msg="(mTLS) Server local certificate must match client's "
+        #     "remote certificate")
 
         # mTLS: server remote cert == client local cert
         self.assertNotEmpty(server_tls.remote_certificate,
                             msg="(mTLS) Server remote certificate is missing")
-        self.assertNotEmpty(client_tls.local_certificate,
-                            msg="(mTLS) Client local certificate is missing")
-        self.assertEqual(
-            server_tls.remote_certificate,
-            client_tls.local_certificate,
-            msg="(mTLS) Server remote certificate must match client's "
-            "local certificate")
+        # TODO(yashykt): Re-enable when Core's channelz exposes local certs.
+        # self.assertNotEmpty(client_tls.local_certificate,
+        #                     msg="(mTLS) Client local certificate is missing")
+        # self.assertEqual(
+        #     server_tls.remote_certificate,
+        #     client_tls.local_certificate,
+        #     msg="(mTLS) Server remote certificate must match client's "
+        #     "local certificate")
 
     def assertSecurityTls(self, client_security: grpc_channelz.Security,
                           server_security: grpc_channelz.Security):
@@ -372,14 +374,15 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         server_tls, client_tls = server_security.tls, client_security.tls
 
         # Regular TLS: server local cert == client remote cert
-        self.assertNotEmpty(server_tls.local_certificate,
-                            msg="(TLS) Server local certificate is missing")
+        # TODO(yashykt): Re-enable when Core's channelz exposes local certs.
+        # self.assertNotEmpty(server_tls.local_certificate,
+        #                     msg="(TLS) Server local certificate is missing")
         self.assertNotEmpty(client_tls.remote_certificate,
                             msg="(TLS) Client remote certificate is missing")
-        self.assertEqual(server_tls.local_certificate,
-                         client_tls.remote_certificate,
-                         msg="(TLS) Server local certificate must match client "
-                         "remote certificate")
+        # self.assertEqual(server_tls.local_certificate,
+        #                  client_tls.remote_certificate,
+        #                  msg="(TLS) Server local certificate must match client "
+        #                  "remote certificate")
 
         # mTLS must not be used
         self.assertEmpty(
