@@ -7473,8 +7473,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
   for (int i = 0; i < kRetryCount &&
                   response_state.state != AdsServiceImpl::ResponseState::NACKED;
        i++) {
-    // Sleep for a bit for the invalid update is propagated.
-    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+    SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
     response_state = balancers_[0]->ads_service()->lds_response_state();
   }
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
