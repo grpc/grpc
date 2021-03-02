@@ -137,7 +137,8 @@ class Client {
     grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 3000;
     while (true) {
       EventState state;
-      grpc_endpoint_read(endpoint_, &read_buffer, state.closure());
+      grpc_endpoint_read(endpoint_, &read_buffer, state.closure(),
+                         /*urgent=*/true);
       if (!PollUntilDone(&state, deadline)) {
         retval = false;
         break;

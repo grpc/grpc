@@ -33,6 +33,24 @@ export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS
 mkdir -p "${ARTIFACTS_OUT}"
 ARTIFACT_DIR="$PWD/${ARTIFACTS_OUT}"
 
+# check whether we are crosscompiling. AUDITWHEEL_ARCH is set by the dockcross docker image.
+if [ "$AUDITWHEEL_ARCH" == "aarch64" ]
+then
+  # when crosscompiling for aarch64, --plat-name needs to be set explicitly
+  # to end up with correctly named wheel file
+  # the value should be manylinuxABC_ARCH and dockcross docker image
+  # conveniently provides the value in the AUDITWHEEL_PLAT env
+  WHEEL_PLAT_NAME_FLAG="--plat-name=$AUDITWHEEL_PLAT"
+
+  # override the value of EXT_SUFFIX to make sure the crosscompiled .so files in the wheel have the correct filename suffix
+  GRPC_PYTHON_OVERRIDE_EXT_SUFFIX="$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX").replace("-x86_64-linux-gnu.so", "-aarch64-linux-gnu.so"))')"
+  export GRPC_PYTHON_OVERRIDE_EXT_SUFFIX
+
+  # Set to empty string to disable the option (see https://github.com/grpc/grpc/issues/24498)
+  # TODO: enable ASM optimizations for crosscompiled wheels
+  export GRPC_BUILD_WITH_BORING_SSL_ASM=""
+fi
+
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
 # inexplicable reason).
@@ -40,7 +58,8 @@ ${SETARCH_CMD} "${PYTHON}" setup.py sdist
 
 # Wheel has a bug where directories don't get excluded.
 # https://bitbucket.org/pypa/wheel/issues/99/cannot-exclude-directory
-${SETARCH_CMD} "${PYTHON}" setup.py bdist_wheel
+# shellcheck disable=SC2086
+${SETARCH_CMD} "${PYTHON}" setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
 
 GRPCIO_STRIP_TEMPDIR=$(mktemp -d)
 GRPCIO_TAR_GZ_LIST=( dist/grpcio-*.tar.gz )
@@ -78,9 +97,10 @@ mv "${GRPCIO_STRIPPED_TAR_GZ}" "${GRPCIO_TAR_GZ}"
 ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py sdist
 
 # Build gRPC tools package binary distribution
-${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_wheel
+# shellcheck disable=SC2086
+${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_wheel $WHEEL_PLAT_NAME_FLAG
 
-if [ "$GRPC_BUILD_MANYLINUX_WHEEL" != "" ]
+if [ "$GRPC_RUN_AUDITWHEEL_REPAIR" != "" ]
 then
   for wheel in dist/*.whl; do
     "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
@@ -136,12 +156,15 @@ then
   cp -r src/python/grpcio_status/dist/* "$ARTIFACT_DIR"
 fi
 
-# Ensure the generated artifacts are valid.
-"${PYTHON}" -m pip install virtualenv
-"${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==16.7.9 && "${PYTHON}" -m virtualenv venv; }
-venv/bin/python -m pip install "twine<=2.0"
-venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
-rm -rf venv/
+if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
+then
+  # Ensure the generated artifacts are valid.
+  "${PYTHON}" -m pip install virtualenv
+  "${PYTHON}" -m virtualenv venv || { "${PYTHON}" -m pip install virtualenv==16.7.9 && "${PYTHON}" -m virtualenv venv; }
+  venv/bin/python -m pip install "twine<=2.0"
+  venv/bin/python -m twine check dist/* tools/distrib/python/grpcio_tools/dist/*
+  rm -rf venv/
+fi
 
 cp -r dist/* "$ARTIFACT_DIR"
 cp -r tools/distrib/python/grpcio_tools/dist/* "$ARTIFACT_DIR"
