@@ -87,7 +87,6 @@ def get_test_proc(grpc_class)
   when 'server_credentials'
     return proc do
       test_root = File.join(File.dirname(__FILE__), '..', 'spec', 'testdata')
-      GRPC.logger.info("test root: #{test_root}")
       files = ['ca.pem', 'server1.key', 'server1.pem']
       creds = files.map { |f| File.open(File.join(test_root, f)).read }
       GRPC::Core::ServerCredentials.new(
@@ -98,7 +97,6 @@ def get_test_proc(grpc_class)
   when 'xds_server_credentials'
     return proc do
       test_root = File.join(File.dirname(__FILE__), '..', 'spec', 'testdata')
-      GRPC.logger.info("test root: #{test_root}")
       files = ['ca.pem', 'server1.key', 'server1.pem']
       creds = files.map { |f| File.open(File.join(test_root, f)).read }
       GRPC::Core::XdsServerCredentials.new(

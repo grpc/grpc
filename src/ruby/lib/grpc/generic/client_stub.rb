@@ -44,7 +44,7 @@ module GRPC
       unless creds.is_a?(Core::ChannelCredentials) ||
              creds.is_a?(Core::XdsChannelCredentials) ||
              creds.is_a?(Symbol)
-        fail(TypeError, '!ChannelCredentials or Symbol')
+        fail(TypeError, 'creds is not a ChannelCredentials, XdsChannelCredentials, or Symbol')
       end
       Core::Channel.new(host, channel_args, creds)
     end
