@@ -197,20 +197,40 @@ cdef class _ServicerContext:
     def set_trailing_metadata(self, object metadata):
         self._rpc_state.trailing_metadata = tuple(metadata)
 
+    def get_trailing_metadata(self):
+        return self._rpc_state.trailing_metadata
+
+    trailing_metadata = property(get_trailing_metadata, set_trailing_metadata)
+
     def invocation_metadata(self):
         return self._rpc_state.invocation_metadata()
 
     def set_code(self, object code):
         self._rpc_state.status_code = get_status_code(code)
 
+    def get_code(self):
+        return self._rpc_state.status_code
+
+    code = property(get_code, set_code)
+
     def set_details(self, str details):
         self._rpc_state.status_details = details
+
+    def get_details(self):
+        return self._rpc_state.status_details
+
+    details = property(get_details, set_details)
 
     def set_compression(self, object compression):
         if self._rpc_state.metadata_sent:
             raise RuntimeError('Compression setting must be specified before sending initial metadata')
         else:
             self._rpc_state.compression_algorithm = compression
+
+    def get_compression(self):
+        return self._rpc_state.compression_algorithm
+
+    compression = property(get_compression, set_compression)
 
     def disable_next_message_compression(self):
         self._rpc_state.disable_next_compression = True
