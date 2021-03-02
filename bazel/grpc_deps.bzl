@@ -93,7 +93,7 @@ def grpc_deps():
 
     native.bind(
         name = "re2",
-        actual = "@com_github_google_re2//:re2",
+        actual = "@com_googlesource_code_re2//:re2",
     )
 
     native.bind(
@@ -219,9 +219,9 @@ def grpc_deps():
             ],
         )
 
-    if "com_github_google_re2" not in native.existing_rules():
+    if "com_googlesource_code_re2" not in native.existing_rules():
         http_archive(
-            name = "com_github_google_re2",
+            name = "com_googlesource_code_re2",
             sha256 = "9f385e146410a8150b6f4cb1a57eab7ec806ced48d427554b1e754877ff26c3e",
             strip_prefix = "re2-aecba11114cf1fac5497aeb844b6966106de3eb6",
             urls = [
@@ -321,10 +321,10 @@ def grpc_deps():
     if "io_bazel_rules_go" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_go",
-            sha256 = "a82a352bffae6bee4e95f68a8d80a70e87f42c4741e6a448bec11998fcc82329",
+            sha256 = "dbf5a9ef855684f84cac2e7ae7886c5a001d4f66ae23f6904da0faaaef0d61fc",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_go/releases/download/0.18.5/rules_go-0.18.5.tar.gz",
-                "https://github.com/bazelbuild/rules_go/releases/download/0.18.5/rules_go-0.18.5.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.24.11/rules_go-v0.24.11.tar.gz",
+                "https://github.com/bazelbuild/rules_go/releases/download/v0.24.11/rules_go-v0.24.11.tar.gz",
             ],
         )
 
@@ -359,6 +359,42 @@ def grpc_deps():
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/libuv/libuv/archive/15ae750151ac9341e5945eb38f8982d59fb99201.tar.gz",
                 "https://github.com/libuv/libuv/archive/15ae750151ac9341e5945eb38f8982d59fb99201.tar.gz",
             ],
+        )
+
+    if "com_google_googleapis" not in native.existing_rules():
+        http_archive(
+            name = "com_google_googleapis",
+            sha256 = "a45019af4d3290f02eaeb1ce10990166978c807cb33a9692141a076ba46d1405",
+            strip_prefix = "googleapis-82944da21578a53b74e547774cf62ed31a05b841",
+            urls = [
+                "https://github.com/googleapis/googleapis/archive/82944da21578a53b74e547774cf62ed31a05b841.tar.gz",
+            ],
+        )
+
+    if "bazel_gazelle" not in native.existing_rules():
+        http_archive(
+            name = "bazel_gazelle",
+            sha256 = "d987004a72697334a095bbaa18d615804a28280201a50ed6c234c40ccc41e493",
+            strip_prefix = "bazel-gazelle-0.19.1",
+            urls = [
+                "https://github.com/bazelbuild/bazel-gazelle/archive/v0.19.1.tar.gz",
+            ],
+        )
+
+    if "opencensus_proto" not in native.existing_rules():
+        http_archive(
+            name = "opencensus_proto",
+            sha256 = "b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0",
+            strip_prefix = "opencensus-proto-0.3.0/src",
+            urls = ["https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz"],
+        )
+
+    if "com_envoyproxy_protoc_gen_validate" not in native.existing_rules():
+        http_archive(
+            name = "com_envoyproxy_protoc_gen_validate",
+            sha256 = "e368733c9fb7f8489591ffaf269170d7658cc0cd1ee322b601512b769446d3c8",
+            strip_prefix = "protoc-gen-validate-278964a8052f96a2f514add0298098f63fb7f47f",
+            urls = ["https://github.com/envoyproxy/protoc-gen-validate/archive/278964a8052f96a2f514add0298098f63fb7f47f.tar.gz"],
         )
 
     grpc_python_deps()
