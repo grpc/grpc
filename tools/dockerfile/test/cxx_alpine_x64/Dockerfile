@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM alpine:3.9
+FROM alpine:3.11
 
 # Install Git and basic packages.
 RUN apk update && apk add \
@@ -30,9 +30,8 @@ RUN apk update && apk add \
   make \
   perl \
   strace \
-  python-dev \
-  py-pip \
-  py-yaml \
+  python2-dev \
+  py2-pip \
   unzip \
   wget \
   zip
@@ -40,10 +39,11 @@ RUN apk update && apk add \
 # Install Python packages from PyPI
 RUN pip install --upgrade pip==19.3.1
 RUN pip install virtualenv
-RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.0.post1 six==1.15.0 twisted==17.5.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.15.0 twisted==17.5.0
+RUN pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 
 # Google Cloud platform API libraries
-RUN pip install --upgrade google-api-python-client
+RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
 RUN mkdir /var/local/jenkins
