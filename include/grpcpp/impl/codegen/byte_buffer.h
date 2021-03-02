@@ -41,8 +41,7 @@ class CallbackUnaryHandler;
 template <class RequestType, class ResponseType>
 class CallbackServerStreamingHandler;
 template <class RequestType>
-void* UnaryDeserializeHelper(grpc_byte_buffer*, ::grpc::Status*,
-                             RequestType*);
+void* UnaryDeserializeHelper(grpc_byte_buffer*, ::grpc::Status*, RequestType*);
 template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
 template <::grpc::StatusCode code>
