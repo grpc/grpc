@@ -187,7 +187,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
   grpc_slice_buffer_init(&read_one_slice);
   while (read_slices.length < kBufferSize) {
     init_event_closure(&read_done, &read);
-    grpc_endpoint_read(ep_, &read_one_slice, &read_done, /*urgent=*/false);
+    grpc_endpoint_read(ep_, &read_one_slice, &read_done);
     XCTAssertEqual([self waitForEvent:&read timeout:kReadTimeout], YES);
     XCTAssertEqual(reinterpret_cast<grpc_error *>(read), GRPC_ERROR_NONE);
     grpc_slice_buffer_move_into(&read_one_slice, &read_slices);
@@ -218,7 +218,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
   grpc_slice_buffer_init(&read_slices);
   init_event_closure(&read_done, &read);
-  grpc_endpoint_read(ep_, &read_slices, &read_done, /*urgent=*/false);
+  grpc_endpoint_read(ep_, &read_slices, &read_done);
 
   grpc_slice_buffer_init(&write_slices);
   slice = grpc_slice_from_static_buffer(write_buffer, kBufferSize);
@@ -267,7 +267,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
   init_event_closure(&read_done, &read);
   grpc_slice_buffer_init(&read_slices);
-  grpc_endpoint_read(ep_, &read_slices, &read_done, /*urgent=*/false);
+  grpc_endpoint_read(ep_, &read_slices, &read_done);
 
   grpc_slice_buffer_init(&write_slices);
   slice = grpc_slice_from_static_buffer(write_buffer, kBufferSize);
@@ -306,7 +306,7 @@ static bool compare_slice_buffer_with_buffer(grpc_slice_buffer *slices, const ch
 
   init_event_closure(&read_done, &read);
   grpc_slice_buffer_init(&read_slices);
-  grpc_endpoint_read(ep_, &read_slices, &read_done, /*urgent=*/false);
+  grpc_endpoint_read(ep_, &read_slices, &read_done);
 
   struct linger so_linger;
   so_linger.l_onoff = 1;

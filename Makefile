@@ -2299,7 +2299,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
 
-PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
 
@@ -2351,7 +2350,6 @@ LIBRE2_SRC = \
     third_party/re2/util/rune.cc \
     third_party/re2/util/strutil.cc \
 
-PUBLIC_HEADERS_C += \
 
 LIBRE2_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBRE2_SRC))))
 
@@ -2390,7 +2388,6 @@ LIBUPB_SRC = \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
     src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c \
 
-PUBLIC_HEADERS_C += \
 
 LIBUPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUPB_SRC))))
 
@@ -2448,7 +2445,6 @@ LIBZ_SRC = \
     third_party/zlib/uncompr.c \
     third_party/zlib/zutil.c \
 
-PUBLIC_HEADERS_C += \
 
 LIBZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBZ_SRC))))
 
@@ -2526,7 +2522,6 @@ LIBARES_SRC = \
     third_party/cares/cares/inet_ntop.c \
     third_party/cares/cares/windows_port.c \
 
-PUBLIC_HEADERS_C += \
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 

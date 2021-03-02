@@ -211,9 +211,14 @@ class ClientCallbackUnary {
 // activated by calling StartCall, possibly after initiating StartRead,
 // StartWrite, or AddHold operations on the streaming object. Note that none of
 // the classes are pure; all reactions have a default empty reaction so that the
-// user class only needs to override those classes that it cares about.
+// user class only needs to override those reactions that it cares about.
 // The reactor must be passed to the stub invocation before any of the below
-// operations can be called.
+// operations can be called and its reactions will be invoked by the library in
+// response to the completion of various operations. Reactions must not include
+// blocking operations (such as blocking I/O, starting synchronous RPCs, or
+// waiting on condition variables). Reactions may be invoked concurrently,
+// except that OnDone is called after all others (assuming proper API usage).
+// The reactor may not be deleted until OnDone is called.
 
 /// \a ClientBidiReactor is the interface for a bidirectional streaming RPC.
 template <class Request, class Response>

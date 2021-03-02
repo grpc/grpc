@@ -19,6 +19,7 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
@@ -307,11 +308,18 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
         {"TRAFFICDIRECTOR_DIRECTPATH_C2P_IPV6_CAPABLE", true},
     };
   }
+  // Allow the TD server uri to be overridden for testing purposes.
+  UniquePtr<char> override_server(
+      gpr_getenv("GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI"));
+  const char* server_uri =
+      override_server != nullptr && strlen(override_server.get()) > 0
+          ? override_server.get()
+          : "directpath-trafficdirector.googleapis.com";
   Json bootstrap = Json::Object{
       {"xds_servers",
        Json::Array{
            Json::Object{
-               {"server_uri", "directpath-trafficdirector.googleapis.com"},
+               {"server_uri", server_uri},
                {"channel_creds",
                 Json::Array{
                     Json::Object{
@@ -354,8 +362,14 @@ class GoogleCloud2ProdResolverFactory : public ResolverFactory {
 }  // namespace
 
 void GoogleCloud2ProdResolverInit() {
-  ResolverRegistry::Builder::RegisterResolverFactory(
-      absl::make_unique<GoogleCloud2ProdResolverFactory>());
+  // TODO(roth): Remove env var protection once this code is proven stable.
+  UniquePtr<char> value(gpr_getenv("GRPC_EXPERIMENTAL_GOOGLE_C2P_RESOLVER"));
+  bool parsed_value;
+  bool parse_succeeded = gpr_parse_bool_value(value.get(), &parsed_value);
+  if (parse_succeeded && parsed_value) {
+    ResolverRegistry::Builder::RegisterResolverFactory(
+        absl::make_unique<GoogleCloud2ProdResolverFactory>());
+  }
 }
 
 void GoogleCloud2ProdResolverShutdown() {}

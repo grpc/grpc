@@ -47,9 +47,9 @@ typedef struct {
 } trickle_endpoint;
 
 static void te_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb, bool urgent) {
+                    grpc_closure* cb) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
-  grpc_endpoint_read(te->wrapped, slices, cb, urgent);
+  grpc_endpoint_read(te->wrapped, slices, cb);
 }
 
 static void maybe_call_write_cb_locked(trickle_endpoint* te) {

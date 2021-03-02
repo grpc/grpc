@@ -256,7 +256,12 @@ class ServerCallbackReaderWriter : public internal::ServerCallbackCall {
 // by the user, returned as the output parameter of the method handler for a
 // callback method. Note that none of the classes are pure; all reactions have a
 // default empty reaction so that the user class only needs to override those
-// classes that it cares about.
+// reactions that it cares about. The reaction methods will be invoked by the
+// library in response to the completion of various operations. Reactions must
+// not include blocking operations (such as blocking I/O, starting synchronous
+// RPCs, or waiting on condition variables). Reactions may be invoked
+// concurrently, except that OnDone is called after all others (assuming proper
+// API usage). The reactor may not be deleted until OnDone is called.
 
 /// \a ServerBidiReactor is the interface for a bidirectional streaming RPC.
 template <class Request, class Response>

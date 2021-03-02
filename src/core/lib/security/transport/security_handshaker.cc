@@ -296,8 +296,7 @@ grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
         GRPC_CLOSURE_INIT(
             &on_handshake_data_received_from_peer_,
             &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
-            this, grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+            this, grpc_schedule_on_exec_ctx));
     return error;
   }
   if (result != TSI_OK) {
@@ -329,8 +328,7 @@ grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
         GRPC_CLOSURE_INIT(
             &on_handshake_data_received_from_peer_,
             &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
-            this, grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+            this, grpc_schedule_on_exec_ctx));
   } else {
     // Handshake has finished, check peer and so on.
     error = CheckPeerLocked();
@@ -436,8 +434,7 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
         GRPC_CLOSURE_INIT(
             &h->on_handshake_data_received_from_peer_,
             &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
-            h.get(), grpc_schedule_on_exec_ctx),
-        /*urgent=*/true);
+            h.get(), grpc_schedule_on_exec_ctx));
   } else {
     error = h->CheckPeerLocked();
     if (error != GRPC_ERROR_NONE) {
