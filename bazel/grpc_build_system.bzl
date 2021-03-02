@@ -78,7 +78,8 @@ def grpc_cc_library(
         alwayslink = 0,
         data = [],
         use_cfstream = False,
-        tags = []):
+        tags = [],
+        linkstatic = False):
     copts = []
     if use_cfstream:
         copts = if_mac(["-DGRPC_CFSTREAM"])
@@ -122,6 +123,7 @@ def grpc_cc_library(
         alwayslink = alwayslink,
         data = data,
         tags = tags,
+        linkstatic = linkstatic,
     )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):

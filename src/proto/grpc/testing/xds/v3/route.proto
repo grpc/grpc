@@ -23,6 +23,7 @@ import "src/proto/grpc/testing/xds/v3/regex.proto";
 import "src/proto/grpc/testing/xds/v3/percent.proto";
 import "src/proto/grpc/testing/xds/v3/range.proto";
 
+import "google/protobuf/any.proto";
 import "google/protobuf/duration.proto";
 import "google/protobuf/wrappers.proto";
 
@@ -64,6 +65,13 @@ message VirtualHost {
   // The list of routes that will be matched, in order, for incoming requests.
   // The first route that matches will be used.
   repeated Route routes = 3;
+
+  // The per_filter_config field can be used to provide virtual host-specific
+  // configurations for filters. The key should match the filter name, such as
+  // *envoy.filters.http.buffer* for the HTTP buffer filter. Use of this field is filter
+  // specific; see the :ref:`HTTP filter documentation <config_http_filters>`
+  // for if and how it is utilized.
+  map<string, google.protobuf.Any> typed_per_filter_config = 15;
 }
 
 // A route is both a specification of how to match a request as well as an indication of what to do
@@ -88,6 +96,13 @@ message Route {
     // Return a redirect.
     RedirectAction redirect = 3;
   }
+
+  // The typed_per_filter_config field can be used to provide route-specific
+  // configurations for filters. The key should match the filter name, such as
+  // *envoy.filters.http.buffer* for the HTTP buffer filter. Use of this field is filter
+  // specific; see the :ref:`HTTP filter documentation <config_http_filters>` for
+  // if and how it is utilized.
+  map<string, google.protobuf.Any> typed_per_filter_config = 13;
 }
 
 // Compared to the :ref:`cluster <envoy_api_field_config.route.v3.RouteAction.cluster>` field that specifies a
@@ -108,6 +123,13 @@ message WeightedCluster {
     // the choice of an upstream cluster is determined by its weight. The sum of weights across all
     // entries in the clusters array must add up to the total_weight, which defaults to 100.
     google.protobuf.UInt32Value weight = 2;
+
+    // The per_filter_config field can be used to provide weighted cluster-specific
+    // configurations for filters. The key should match the filter name, such as
+    // *envoy.filters.http.buffer* for the HTTP buffer filter. Use of this field is filter
+    // specific; see the :ref:`HTTP filter documentation <config_http_filters>`
+    // for if and how it is utilized.
+    map<string, google.protobuf.Any> typed_per_filter_config = 10;
   }
 
   // Specifies one or more upstream clusters associated with the route.
@@ -333,4 +355,14 @@ message RouteConfiguration {
 }
 
 message RedirectAction {
+}
+
+message FilterConfig {
+  // The filter config.
+  google.protobuf.Any config = 1;
+
+  // If true, the filter is optional, meaning that if the client does
+  // not support the specified filter, it may ignore the map entry rather
+  // than rejecting the config.
+  bool is_optional = 2;
 }

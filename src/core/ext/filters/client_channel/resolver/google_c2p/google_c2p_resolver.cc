@@ -308,11 +308,18 @@ void GoogleCloud2ProdResolver::StartXdsResolver() {
         {"TRAFFICDIRECTOR_DIRECTPATH_C2P_IPV6_CAPABLE", true},
     };
   }
+  // Allow the TD server uri to be overridden for testing purposes.
+  UniquePtr<char> override_server(
+      gpr_getenv("GRPC_TEST_ONLY_GOOGLE_C2P_RESOLVER_TRAFFIC_DIRECTOR_URI"));
+  const char* server_uri =
+      override_server != nullptr && strlen(override_server.get()) > 0
+          ? override_server.get()
+          : "directpath-trafficdirector.googleapis.com";
   Json bootstrap = Json::Object{
       {"xds_servers",
        Json::Array{
            Json::Object{
-               {"server_uri", "directpath-trafficdirector.googleapis.com"},
+               {"server_uri", server_uri},
                {"channel_creds",
                 Json::Array{
                     Json::Object{
