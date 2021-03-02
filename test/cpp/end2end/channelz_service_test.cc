@@ -175,6 +175,11 @@ std::shared_ptr<grpc::ServerCredentials> GetServerCredentials(
   return grpc::experimental::TlsServerCredentials(options);
 }
 
+std::string RemoveWhitespaces(std::string input) {
+  input.erase(remove_if(input.begin(), input.end(), isspace), input.end());
+  return input;
+}
+
 class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
  public:
   ChannelzServerTest() {}
@@ -677,8 +682,9 @@ TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
         EXPECT_TRUE(get_socket_resp.socket().has_security());
         EXPECT_TRUE(get_socket_resp.socket().security().has_tls());
         EXPECT_EQ(
-            get_socket_resp.socket().security().tls().remote_certificate(),
-            ReadFile(kServerCertPath));
+            RemoveWhitespaces(
+                get_socket_resp.socket().security().tls().remote_certificate()),
+            RemoveWhitespaces(ReadFile(kServerCertPath)));
         break;
     }
   }
@@ -740,9 +746,11 @@ TEST_P(ChannelzServerTest, StreamingRPC) {
     case CredentialsType::kMtls:
       EXPECT_TRUE(get_socket_response.socket().has_security());
       EXPECT_TRUE(get_socket_response.socket().security().has_tls());
-      EXPECT_EQ(
-          get_socket_response.socket().security().tls().remote_certificate(),
-          ReadFile(kServerCertPath));
+      EXPECT_EQ(RemoveWhitespaces(get_socket_response.socket()
+                                      .security()
+                                      .tls()
+                                      .remote_certificate()),
+                RemoveWhitespaces(ReadFile(kServerCertPath)));
       break;
   }
 }
@@ -788,9 +796,11 @@ TEST_P(ChannelzServerTest, GetServerSocketsTest) {
       EXPECT_TRUE(get_socket_response.socket().has_security());
       EXPECT_TRUE(get_socket_response.socket().security().has_tls());
       if (GetParam() == CredentialsType::kMtls) {
-        EXPECT_EQ(
-            get_socket_response.socket().security().tls().remote_certificate(),
-            ReadFile(kClientCertPath));
+        EXPECT_EQ(RemoveWhitespaces(get_socket_response.socket()
+                                        .security()
+                                        .tls()
+                                        .remote_certificate()),
+                  RemoveWhitespaces(ReadFile(kClientCertPath)));
       } else {
         EXPECT_TRUE(get_socket_response.socket()
                         .security()
