@@ -77,8 +77,8 @@ void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter& param,
 /// A helper function with reduced templating to do deserializing.
 
 template <class RequestType>
-void* UnaryDeserializeHelper(grpc_byte_buffer* req,
-                             ::grpc::Status* status, RequestType* request) {
+void* UnaryDeserializeHelper(grpc_byte_buffer* req, ::grpc::Status* status,
+                             RequestType* request) {
   ::grpc::ByteBuffer buf;
   buf.set_buffer(req);
   *status = ::grpc::SerializationTraits<RequestType>::Deserialize(
