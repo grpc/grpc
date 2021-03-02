@@ -263,7 +263,7 @@ class XdsApi {
           kAny = 0,
           kSameIpOrLoopback,
           kExternal
-        } source_type;
+        } source_type = ConnectionSourceType::kAny;
 
         std::vector<CidrRange> source_prefix_ranges;
         std::vector<uint32_t> source_ports;
