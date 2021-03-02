@@ -37,7 +37,7 @@ class EvalArgsMockEndpoint {
   }
   grpc_endpoint* base() const { return const_cast<grpc_endpoint*>(&base_); }
   static void Read(grpc_endpoint* /*ep*/, grpc_slice_buffer* /*slices*/,
-                   grpc_closure* /*cb*/) {}
+                   grpc_closure* /*cb*/, bool /*unused*/) {}
   static void Write(grpc_endpoint* /*ep*/, grpc_slice_buffer* /*slices*/,
                     grpc_closure* /*cb*/, void* /*unused*/) {}
   static void AddToPollset(grpc_endpoint* /*ep*/, grpc_pollset* /*unused*/) {}

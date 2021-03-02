@@ -254,7 +254,7 @@ static void CFStreamReadAllocationDone(void* arg, grpc_error* error) {
 }
 
 static void CFStreamRead(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                         grpc_closure* cb) {
+                         grpc_closure* cb, bool urgent) {
   CFStreamEndpoint* ep_impl = reinterpret_cast<CFStreamEndpoint*>(ep);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CFStream endpoint:%p read (%p, %p) length:%zu", ep_impl,

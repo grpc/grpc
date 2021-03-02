@@ -121,7 +121,8 @@ struct read_and_write_test_state {
 static void read_scheduler(void* data, grpc_error* /* error */) {
   struct read_and_write_test_state* state =
       static_cast<struct read_and_write_test_state*>(data);
-  grpc_endpoint_read(state->read_ep, &state->incoming, &state->done_read);
+  grpc_endpoint_read(state->read_ep, &state->incoming, &state->done_read,
+                     /*urgent=*/false);
 }
 
 static void read_and_write_test_read_handler(void* data, grpc_error* error) {
@@ -242,7 +243,8 @@ static void read_and_write_test(grpc_endpoint_test_config config,
   read_and_write_test_write_handler(&state, GRPC_ERROR_NONE);
   grpc_core::ExecCtx::Get()->Flush();
 
-  grpc_endpoint_read(state.read_ep, &state.incoming, &state.done_read);
+  grpc_endpoint_read(state.read_ep, &state.incoming, &state.done_read,
+                     /*urgent=*/false);
   if (shutdown) {
     gpr_log(GPR_DEBUG, "shutdown read");
     grpc_endpoint_shutdown(
@@ -307,14 +309,16 @@ static void multiple_shutdown_test(grpc_endpoint_test_config config) {
   grpc_endpoint_add_to_pollset(f.client_ep, g_pollset);
   grpc_endpoint_read(f.client_ep, &slice_buffer,
                      GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
-                                         grpc_schedule_on_exec_ctx));
+                                         grpc_schedule_on_exec_ctx),
+                     /*urgent=*/false);
   wait_for_fail_count(&fail_count, 0);
   grpc_endpoint_shutdown(f.client_ep,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test Shutdown"));
   wait_for_fail_count(&fail_count, 1);
   grpc_endpoint_read(f.client_ep, &slice_buffer,
                      GRPC_CLOSURE_CREATE(inc_on_failure, &fail_count,
-                                         grpc_schedule_on_exec_ctx));
+                                         grpc_schedule_on_exec_ctx),
+                     /*urgent=*/false);
   wait_for_fail_count(&fail_count, 2);
   grpc_slice_buffer_add(&slice_buffer, grpc_slice_from_copied_string("a"));
   grpc_endpoint_write(f.client_ep, &slice_buffer,
