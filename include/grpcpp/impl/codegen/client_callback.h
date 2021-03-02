@@ -110,6 +110,8 @@ class CallbackUnaryCallImpl {
 // Base class for public API classes.
 class ClientReactor {
  public:
+  virtual ~ClientReactor() = default;
+
   /// Called by the library when all operations associated with this RPC have
   /// completed and all Holds have been removed. OnDone provides the RPC status
   /// outcome for both successful and failed RPCs. If it is never called on an
