@@ -60,8 +60,9 @@ popd
 
 # Just before installing gRPC, wipe out contents of all the submodules to simulate
 # a standalone build from an archive
+# TODO(lidiz) re-enable it once we include the xDS protos in our release archive.
 # shellcheck disable=SC2016
-git submodule foreach 'cd $toplevel; rm -rf $name'
+# git submodule foreach 'cd $toplevel; rm -rf $name'
 
 # Install gRPC
 mkdir -p "cmake/build"

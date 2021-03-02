@@ -76,23 +76,21 @@
 #include "test/cpp/end2end/test_service_impl.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 
-#include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/listener.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
+#include "envoy/api/v2/discovery.grpc.pb.h"
+#include "envoy/config/cluster/v3/cluster.pb.h"
+#include "envoy/config/endpoint/v3/endpoint.pb.h"
+#include "envoy/config/listener/v3/listener.pb.h"
+#include "envoy/config/route/v3/route.pb.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.pb.h"
+#include "envoy/extensions/filters/http/router/v3/router.pb.h"
+#include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.pb.h"
+#include "envoy/service/discovery/v2/ads.grpc.pb.h"
+#include "envoy/service/discovery/v3/ads.grpc.pb.h"
+#include "envoy/service/discovery/v3/discovery.grpc.pb.h"
+#include "envoy/service/load_stats/v2/lrs.grpc.pb.h"
+#include "envoy/service/load_stats/v3/lrs.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
@@ -102,10 +100,10 @@ using std::chrono::system_clock;
 
 using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::cluster::v3::Cluster;
-using ::envoy::config::cluster::v3::CustomClusterType;
-using ::envoy::config::cluster::v3::RoutingPriority;
+using ::envoy::config::cluster::v3::Cluster_CustomClusterType;
+using ::envoy::config::core::v3::HealthStatus;
+using ::envoy::config::core::v3::RoutingPriority;
 using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
-using ::envoy::config::endpoint::v3::HealthStatus;
 using ::envoy::config::listener::v3::Listener;
 using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
@@ -5921,7 +5919,7 @@ TEST_P(CdsTest, AggregateClusterType) {
   balancers_[0]->ads_service()->SetCdsResource(new_cluster2);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -5969,7 +5967,7 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kNewCluster1Name);
@@ -6025,7 +6023,7 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
   // Create Aggregate Cluster
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters(kLogicalDNSClusterName);
@@ -6074,7 +6072,7 @@ TEST_P(CdsTest, LogicalDNSClusterTypeDisabled) {
 // the feature is not yet supported.
 TEST_P(CdsTest, AggregateClusterTypeDisabled) {
   auto cluster = default_cluster_;
-  CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
+  Cluster_CustomClusterType* custom_cluster = cluster.mutable_cluster_type();
   custom_cluster->set_name("envoy.clusters.aggregate");
   ClusterConfig cluster_config;
   cluster_config.add_clusters("cluster1");

@@ -269,6 +269,9 @@ if(WIN32)
   set(_gRPC_BASELIB_LIBRARIES wsock32 ws2_32 crypt32)
 endif()
 
+# Create directory for proto source files
+set(_gRPC_PROTO_SRCS_DIR ${CMAKE_BINARY_DIR}/protos)
+file(MAKE_DIRECTORY ${_gRPC_PROTO_SRCS_DIR})
 # Create directory for generated .proto files
 set(_gRPC_PROTO_GENS_DIR ${CMAKE_BINARY_DIR}/gens)
 file(MAKE_DIRECTORY ${_gRPC_PROTO_GENS_DIR})
@@ -279,49 +282,53 @@ file(MAKE_DIRECTORY ${_gRPC_PROTO_GENS_DIR})
 #   Add custom commands to process ``.proto`` files to C++ using protoc and
 #   GRPC plugin::
 #
-#     protobuf_generate_grpc_cpp [<ARGN>...]
+#     protobuf_generate_grpc_cpp <FILE_LOCATION> <IMPORT_PATH>
 #
-#   ``ARGN``
-#     ``.proto`` files
+#   ``FILE_LOCATION``
+#     The relative path of the ``.proto`` file to the project root
+#   ``IMPORT_PATH``
+#     The proto import path that itself expected to be placed in
 #
-function(protobuf_generate_grpc_cpp)
-  if(NOT ARGN)
+function(protobuf_generate_grpc_cpp FILE_LOCATION IMPORT_PATH)
+  if(NOT FILE_LOCATION)
     message(SEND_ERROR "Error: PROTOBUF_GENERATE_GRPC_CPP() called without any proto files")
     return()
   endif()
 
   set(_protobuf_include_path -I . -I ${_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR})
-  foreach(FIL ${ARGN})
-    get_filename_component(ABS_FIL ${FIL} ABSOLUTE)
-    get_filename_component(FIL_WE ${FIL} NAME_WE)
-    file(RELATIVE_PATH REL_FIL ${CMAKE_CURRENT_SOURCE_DIR} ${ABS_FIL})
-    get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
-    set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
+  # compute the relative path
+  get_filename_component(ABS_FIL ${_gRPC_PROTO_SRCS_DIR}/${IMPORT_PATH} ABSOLUTE)
+  get_filename_component(FIL_WE ${_gRPC_PROTO_SRCS_DIR}/${IMPORT_PATH} NAME_WE)
+  file(RELATIVE_PATH REL_FIL ${_gRPC_PROTO_SRCS_DIR} ${ABS_FIL})
+  get_filename_component(REL_DIR ${REL_FIL} DIRECTORY)
+  set(RELFIL_WE "${REL_DIR}/${FIL_WE}")
+  # copy the proto file to a centralized location
+  file(MAKE_DIRECTORY ${_gRPC_PROTO_SRCS_DIR}/${REL_DIR})
+  file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${FILE_LOCATION} DESTINATION ${_gRPC_PROTO_SRCS_DIR}/${REL_DIR})
 
-    #if cross-compiling, find host plugin
-    if(CMAKE_CROSSCOMPILING)
-      find_program(_gRPC_CPP_PLUGIN grpc_cpp_plugin)
-    else()
-      set(_gRPC_CPP_PLUGIN $<TARGET_FILE:grpc_cpp_plugin>)
-    endif()
+  #if cross-compiling, find host plugin
+  if(CMAKE_CROSSCOMPILING)
+    find_program(_gRPC_CPP_PLUGIN grpc_cpp_plugin)
+  else()
+    set(_gRPC_CPP_PLUGIN $<TARGET_FILE:grpc_cpp_plugin>)
+  endif()
 
-    add_custom_command(
-      OUTPUT "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"
-             "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"
-             "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"
-             "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"
-             "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"
-      COMMAND ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
-      ARGS --grpc_out=generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}
-           --cpp_out=${_gRPC_PROTO_GENS_DIR}
-           --plugin=protoc-gen-grpc=${_gRPC_CPP_PLUGIN}
-           ${_protobuf_include_path}
-           ${REL_FIL}
-      DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} grpc_cpp_plugin
-      WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-      COMMENT "Running gRPC C++ protocol buffer compiler on ${FIL}"
-      VERBATIM)
-  endforeach()
+  add_custom_command(
+    OUTPUT "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.cc"
+            "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.grpc.pb.h"
+            "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}_mock.grpc.pb.h"
+            "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.cc"
+            "${_gRPC_PROTO_GENS_DIR}/${RELFIL_WE}.pb.h"
+    COMMAND ${_gRPC_PROTOBUF_PROTOC_EXECUTABLE}
+    ARGS --grpc_out=generate_mock_code=true:${_gRPC_PROTO_GENS_DIR}
+          --cpp_out=${_gRPC_PROTO_GENS_DIR}
+          --plugin=protoc-gen-grpc=${_gRPC_CPP_PLUGIN}
+          ${_protobuf_include_path}
+          ${REL_FIL}
+    DEPENDS ${ABS_FIL} ${_gRPC_PROTOBUF_PROTOC} grpc_cpp_plugin
+    WORKING_DIRECTORY ${_gRPC_PROTO_SRCS_DIR}
+    COMMENT "Running gRPC C++ protocol buffer compiler for ${IMPORT_PATH}"
+    VERBATIM)
 endfunction()
 
 # These options allow users to enable or disable the building of the various
@@ -377,145 +384,562 @@ add_custom_target(tools
   DEPENDS tools_c tools_cxx)
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/channelz/channelz.proto
+  src/proto/grpc/channelz/channelz.proto src/proto/grpc/channelz/channelz.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/core/stats.proto
+  src/proto/grpc/core/stats.proto src/proto/grpc/core/stats.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/health/v1/health.proto
+  src/proto/grpc/health/v1/health.proto src/proto/grpc/health/v1/health.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/lb/v1/load_balancer.proto
+  src/proto/grpc/lb/v1/load_balancer.proto src/proto/grpc/lb/v1/load_balancer.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/reflection/v1alpha/reflection.proto
+  src/proto/grpc/reflection/v1alpha/reflection.proto src/proto/grpc/reflection/v1alpha/reflection.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/status/status.proto
+  src/proto/grpc/status/status.proto src/proto/grpc/status/status.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/benchmark_service.proto
+  src/proto/grpc/testing/benchmark_service.proto src/proto/grpc/testing/benchmark_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/control.proto
+  src/proto/grpc/testing/control.proto src/proto/grpc/testing/control.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  src/proto/grpc/testing/duplicate/echo_duplicate.proto src/proto/grpc/testing/duplicate/echo_duplicate.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
+  src/proto/grpc/testing/echo.proto src/proto/grpc/testing/echo.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
+  src/proto/grpc/testing/echo_messages.proto src/proto/grpc/testing/echo_messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
+  src/proto/grpc/testing/empty.proto src/proto/grpc/testing/empty.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  src/proto/grpc/testing/messages.proto src/proto/grpc/testing/messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/payloads.proto
+  src/proto/grpc/testing/payloads.proto src/proto/grpc/testing/payloads.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/report_qps_scenario_service.proto
+  src/proto/grpc/testing/report_qps_scenario_service.proto src/proto/grpc/testing/report_qps_scenario_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/simple_messages.proto
+  src/proto/grpc/testing/simple_messages.proto src/proto/grpc/testing/simple_messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/stats.proto
+  src/proto/grpc/testing/stats.proto src/proto/grpc/testing/stats.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
+  src/proto/grpc/testing/test.proto src/proto/grpc/testing/test.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/worker_service.proto
+  src/proto/grpc/testing/worker_service.proto src/proto/grpc/testing/worker_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/ads_for_test.proto
+  src/proto/grpc/testing/xds/orca_load_report_for_test.proto src/proto/grpc/testing/xds/orca_load_report_for_test.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/cds_for_test.proto
+  test/core/tsi/alts/fake_handshaker/handshaker.proto test/core/tsi/alts/fake_handshaker/handshaker.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/eds_for_test.proto
+  test/core/tsi/alts/fake_handshaker/transport_security_common.proto test/core/tsi/alts/fake_handshaker/transport_security_common.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/lds_rds_for_test.proto
+  third_party/envoy-api/envoy/annotations/deprecation.proto envoy/annotations/deprecation.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/lrs_for_test.proto
+  third_party/envoy-api/envoy/annotations/resource.proto envoy/annotations/resource.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/orca_load_report_for_test.proto
+  third_party/envoy-api/envoy/api/v2/auth/cert.proto envoy/api/v2/auth/cert.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/address.proto
+  third_party/envoy-api/envoy/api/v2/auth/common.proto envoy/api/v2/auth/common.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/ads.proto
+  third_party/envoy-api/envoy/api/v2/auth/secret.proto envoy/api/v2/auth/secret.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
+  third_party/envoy-api/envoy/api/v2/auth/tls.proto envoy/api/v2/auth/tls.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/base.proto
+  third_party/envoy-api/envoy/api/v2/cds.proto envoy/api/v2/cds.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/cluster.proto
+  third_party/envoy-api/envoy/api/v2/cluster.proto envoy/api/v2/cluster.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/config_source.proto
+  third_party/envoy-api/envoy/api/v2/cluster/circuit_breaker.proto envoy/api/v2/cluster/circuit_breaker.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/discovery.proto
+  third_party/envoy-api/envoy/api/v2/cluster/filter.proto envoy/api/v2/cluster/filter.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/endpoint.proto
+  third_party/envoy-api/envoy/api/v2/cluster/outlier_detection.proto envoy/api/v2/cluster/outlier_detection.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/http_connection_manager.proto
+  third_party/envoy-api/envoy/api/v2/core/address.proto envoy/api/v2/core/address.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/listener.proto
+  third_party/envoy-api/envoy/api/v2/core/backoff.proto envoy/api/v2/core/backoff.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/load_report.proto
+  third_party/envoy-api/envoy/api/v2/core/base.proto envoy/api/v2/core/base.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/lrs.proto
+  third_party/envoy-api/envoy/api/v2/core/config_source.proto envoy/api/v2/core/config_source.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/percent.proto
+  third_party/envoy-api/envoy/api/v2/core/event_service_config.proto envoy/api/v2/core/event_service_config.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/protocol.proto
+  third_party/envoy-api/envoy/api/v2/core/grpc_method_list.proto envoy/api/v2/core/grpc_method_list.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/range.proto
+  third_party/envoy-api/envoy/api/v2/core/grpc_service.proto envoy/api/v2/core/grpc_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/regex.proto
+  third_party/envoy-api/envoy/api/v2/core/health_check.proto envoy/api/v2/core/health_check.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/route.proto
+  third_party/envoy-api/envoy/api/v2/core/http_uri.proto envoy/api/v2/core/http_uri.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/router.proto
+  third_party/envoy-api/envoy/api/v2/core/protocol.proto envoy/api/v2/core/protocol.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/string.proto
+  third_party/envoy-api/envoy/api/v2/core/socket_option.proto envoy/api/v2/core/socket_option.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/v3/tls.proto
+  third_party/envoy-api/envoy/api/v2/discovery.proto envoy/api/v2/discovery.proto
 )
 protobuf_generate_grpc_cpp(
-  test/core/tsi/alts/fake_handshaker/handshaker.proto
+  third_party/envoy-api/envoy/api/v2/eds.proto envoy/api/v2/eds.proto
 )
 protobuf_generate_grpc_cpp(
-  test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+  third_party/envoy-api/envoy/api/v2/endpoint.proto envoy/api/v2/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/endpoint/endpoint.proto envoy/api/v2/endpoint/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/endpoint/endpoint_components.proto envoy/api/v2/endpoint/endpoint_components.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/endpoint/load_report.proto envoy/api/v2/endpoint/load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/lds.proto envoy/api/v2/lds.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/listener.proto envoy/api/v2/listener.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/listener/listener.proto envoy/api/v2/listener/listener.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/listener/listener_components.proto envoy/api/v2/listener/listener_components.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/listener/quic_config.proto envoy/api/v2/listener/quic_config.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/listener/udp_listener_config.proto envoy/api/v2/listener/udp_listener_config.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/rds.proto envoy/api/v2/rds.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/route.proto envoy/api/v2/route.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/route/route.proto envoy/api/v2/route/route.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/route/route_components.proto envoy/api/v2/route/route_components.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/scoped_route.proto envoy/api/v2/scoped_route.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/api/v2/srds.proto envoy/api/v2/srds.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/accesslog/v3/accesslog.proto envoy/config/accesslog/v3/accesslog.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/cluster/aggregate/v2alpha/cluster.proto envoy/config/cluster/aggregate/v2alpha/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/cluster/v3/circuit_breaker.proto envoy/config/cluster/v3/circuit_breaker.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/cluster/v3/cluster.proto envoy/config/cluster/v3/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/cluster/v3/filter.proto envoy/config/cluster/v3/filter.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/cluster/v3/outlier_detection.proto envoy/config/cluster/v3/outlier_detection.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/address.proto envoy/config/core/v3/address.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/backoff.proto envoy/config/core/v3/backoff.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/base.proto envoy/config/core/v3/base.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/config_source.proto envoy/config/core/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/event_service_config.proto envoy/config/core/v3/event_service_config.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/extension.proto envoy/config/core/v3/extension.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/grpc_method_list.proto envoy/config/core/v3/grpc_method_list.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/grpc_service.proto envoy/config/core/v3/grpc_service.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/health_check.proto envoy/config/core/v3/health_check.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/http_uri.proto envoy/config/core/v3/http_uri.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/protocol.proto envoy/config/core/v3/protocol.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/proxy_protocol.proto envoy/config/core/v3/proxy_protocol.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/socket_option.proto envoy/config/core/v3/socket_option.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/core/v3/substitution_format_string.proto envoy/config/core/v3/substitution_format_string.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/endpoint/v3/endpoint.proto envoy/config/endpoint/v3/endpoint.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/endpoint/v3/endpoint_components.proto envoy/config/endpoint/v3/endpoint_components.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/endpoint/v3/load_report.proto envoy/config/endpoint/v3/load_report.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/filter/accesslog/v2/accesslog.proto envoy/config/filter/accesslog/v2/accesslog.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/filter/http/router/v2/router.proto envoy/config/filter/http/router/v2/router.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/listener/v2/api_listener.proto envoy/config/listener/v2/api_listener.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/listener/v3/api_listener.proto envoy/config/listener/v3/api_listener.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/listener/v3/listener.proto envoy/config/listener/v3/listener.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/listener/v3/listener_components.proto envoy/config/listener/v3/listener_components.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/listener/v3/quic_config.proto envoy/config/listener/v3/quic_config.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/listener/v3/udp_default_writer_config.proto envoy/config/listener/v3/udp_default_writer_config.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/listener/v3/udp_gso_batch_writer_config.proto envoy/config/listener/v3/udp_gso_batch_writer_config.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/listener/v3/udp_listener_config.proto envoy/config/listener/v3/udp_listener_config.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/route/v3/route.proto envoy/config/route/v3/route.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/route/v3/route_components.proto envoy/config/route/v3/route_components.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/route/v3/scoped_route.proto envoy/config/route/v3/scoped_route.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v2/datadog.proto envoy/config/trace/v2/datadog.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v2/dynamic_ot.proto envoy/config/trace/v2/dynamic_ot.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v2/http_tracer.proto envoy/config/trace/v2/http_tracer.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v2/lightstep.proto envoy/config/trace/v2/lightstep.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v2/opencensus.proto envoy/config/trace/v2/opencensus.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v2/service.proto envoy/config/trace/v2/service.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v2/trace.proto envoy/config/trace/v2/trace.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v2/zipkin.proto envoy/config/trace/v2/zipkin.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v2alpha/xray.proto envoy/config/trace/v2alpha/xray.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v3/datadog.proto envoy/config/trace/v3/datadog.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v3/dynamic_ot.proto envoy/config/trace/v3/dynamic_ot.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v3/http_tracer.proto envoy/config/trace/v3/http_tracer.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v3/lightstep.proto envoy/config/trace/v3/lightstep.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v3/opencensus.proto envoy/config/trace/v3/opencensus.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v3/service.proto envoy/config/trace/v3/service.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v3/skywalking.proto envoy/config/trace/v3/skywalking.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v3/trace.proto envoy/config/trace/v3/trace.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v3/xray.proto envoy/config/trace/v3/xray.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/config/trace/v3/zipkin.proto envoy/config/trace/v3/zipkin.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/extensions/clusters/aggregate/v3/cluster.proto envoy/extensions/clusters/aggregate/v3/cluster.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/extensions/filters/http/router/v3/router.proto envoy/extensions/filters/http/router/v3/router.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/cert.proto envoy/extensions/transport_sockets/tls/v3/cert.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/common.proto envoy/extensions/transport_sockets/tls/v3/common.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/secret.proto envoy/extensions/transport_sockets/tls/v3/secret.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/extensions/transport_sockets/tls/v3/tls.proto envoy/extensions/transport_sockets/tls/v3/tls.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/service/discovery/v2/ads.proto envoy/service/discovery/v2/ads.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/service/discovery/v2/hds.proto envoy/service/discovery/v2/hds.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/service/discovery/v2/rtds.proto envoy/service/discovery/v2/rtds.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/service/discovery/v2/sds.proto envoy/service/discovery/v2/sds.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/service/discovery/v3/ads.proto envoy/service/discovery/v3/ads.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/service/discovery/v3/discovery.proto envoy/service/discovery/v3/discovery.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/service/load_stats/v2/lrs.proto envoy/service/load_stats/v2/lrs.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/service/load_stats/v3/lrs.proto envoy/service/load_stats/v3/lrs.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/hash_policy.proto envoy/type/hash_policy.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/http.proto envoy/type/http.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/http_status.proto envoy/type/http_status.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/metadata.proto envoy/type/matcher/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/node.proto envoy/type/matcher/node.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/number.proto envoy/type/matcher/number.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/path.proto envoy/type/matcher/path.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/regex.proto envoy/type/matcher/regex.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/string.proto envoy/type/matcher/string.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/struct.proto envoy/type/matcher/struct.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/v3/http_inputs.proto envoy/type/matcher/v3/http_inputs.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/v3/metadata.proto envoy/type/matcher/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/v3/node.proto envoy/type/matcher/v3/node.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/v3/number.proto envoy/type/matcher/v3/number.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/v3/path.proto envoy/type/matcher/v3/path.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/v3/regex.proto envoy/type/matcher/v3/regex.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/v3/string.proto envoy/type/matcher/v3/string.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/v3/struct.proto envoy/type/matcher/v3/struct.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/v3/value.proto envoy/type/matcher/v3/value.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/matcher/value.proto envoy/type/matcher/value.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/metadata/v2/metadata.proto envoy/type/metadata/v2/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/metadata/v3/metadata.proto envoy/type/metadata/v3/metadata.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/percent.proto envoy/type/percent.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/range.proto envoy/type/range.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/semantic_version.proto envoy/type/semantic_version.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/token_bucket.proto envoy/type/token_bucket.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/tracing/v2/custom_tag.proto envoy/type/tracing/v2/custom_tag.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/tracing/v3/custom_tag.proto envoy/type/tracing/v3/custom_tag.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/v3/hash_policy.proto envoy/type/v3/hash_policy.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/v3/http.proto envoy/type/v3/http.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/v3/http_status.proto envoy/type/v3/http_status.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/v3/percent.proto envoy/type/v3/percent.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/v3/range.proto envoy/type/v3/range.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/v3/ratelimit_unit.proto envoy/type/v3/ratelimit_unit.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/v3/semantic_version.proto envoy/type/v3/semantic_version.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/envoy-api/envoy/type/v3/token_bucket.proto envoy/type/v3/token_bucket.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/googleapis/google/api/annotations.proto google/api/annotations.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/googleapis/google/api/http.proto google/api/http.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/googleapis/google/api/httpbody.proto google/api/httpbody.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/googleapis/google/rpc/status.proto google/rpc/status.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/opencensus-proto/src/opencensus/proto/trace/v1/trace_config.proto opencensus/proto/trace/v1/trace_config.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/protoc-gen-validate/validate/validate.proto validate/validate.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/udpa/udpa/annotations/migrate.proto udpa/annotations/migrate.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/udpa/udpa/annotations/security.proto udpa/annotations/security.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/udpa/udpa/annotations/sensitive.proto udpa/annotations/sensitive.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/udpa/udpa/annotations/status.proto udpa/annotations/status.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/udpa/udpa/annotations/versioning.proto udpa/annotations/versioning.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/udpa/xds/core/v3/authority.proto xds/core/v3/authority.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/udpa/xds/core/v3/collection_entry.proto xds/core/v3/collection_entry.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/udpa/xds/core/v3/context_params.proto xds/core/v3/context_params.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/udpa/xds/core/v3/resource.proto xds/core/v3/resource.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/udpa/xds/core/v3/resource_locator.proto xds/core/v3/resource_locator.proto
+)
+protobuf_generate_grpc_cpp(
+  third_party/udpa/xds/core/v3/resource_name.proto xds/core/v3/resource_name.proto
 )
 
 if(gRPC_BUILD_TESTS)
@@ -1155,10 +1579,6 @@ target_include_directories(end2end_nosec_tests
 target_link_libraries(end2end_nosec_tests
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -1290,10 +1710,6 @@ target_link_libraries(end2end_tests
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -1377,14 +1793,14 @@ target_include_directories(gpr
 )
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::optional
-  absl::time
-  absl::synchronization
-  absl::strings
-  absl::str_format
-  absl::status
-  absl::memory
   absl::base
+  absl::memory
+  absl::status
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
 )
 if(_gRPC_PLATFORM_ANDROID)
   target_link_libraries(gpr
@@ -2027,16 +2443,13 @@ target_link_libraries(grpc
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
-  address_sorting
-  upb
-  absl::optional
-  absl::strings
-  absl::statusor
-  absl::status
-  absl::bind_front
-  absl::inlined_vector
-  absl::flat_hash_set
   absl::flat_hash_map
+  absl::inlined_vector
+  absl::statusor
+  upb
+  address_sorting
+  absl::flat_hash_set
+  absl::bind_front
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc "-framework CoreFoundation")
@@ -2111,9 +2524,6 @@ target_include_directories(grpc_csharp_ext
 target_link_libraries(grpc_csharp_ext
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -2177,11 +2587,8 @@ target_include_directories(grpc_test_util
 target_link_libraries(grpc_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
-  gpr
-  address_sorting
-  upb
-  absl::symbolize
   absl::stacktrace
+  absl::symbolize
   absl::failure_signal_handler
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -2248,11 +2655,8 @@ target_include_directories(grpc_test_util_unsecure
 target_link_libraries(grpc_test_util_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_unsecure
-  gpr
-  address_sorting
-  upb
-  absl::symbolize
   absl::stacktrace
+  absl::symbolize
   absl::failure_signal_handler
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -2580,14 +2984,11 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
-  address_sorting
-  upb
-  absl::optional
-  absl::strings
-  absl::statusor
-  absl::status
-  absl::inlined_vector
   absl::flat_hash_map
+  absl::inlined_vector
+  absl::statusor
+  upb
+  address_sorting
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_unsecure "-framework CoreFoundation")
@@ -2680,14 +3081,10 @@ target_include_directories(benchmark_helpers
 target_link_libraries(benchmark_helpers
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util_unsecure
   grpc++_unsecure
-  grpc_unsecure
-  grpc++_test_config
-  gpr
-  address_sorting
-  upb
   ${_gRPC_BENCHMARK_LIBRARIES}
+  grpc_test_util_unsecure
+  grpc++_test_config
 )
 
 endif()
@@ -2781,9 +3178,6 @@ target_link_libraries(grpc++
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
-  gpr
-  address_sorting
-  upb
 )
 
 foreach(_hdr
@@ -3028,10 +3422,6 @@ target_link_libraries(grpc++_alts
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 foreach(_hdr
@@ -3092,10 +3482,6 @@ target_link_libraries(grpc++_error_details
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 foreach(_hdr
@@ -3162,10 +3548,6 @@ target_link_libraries(grpc++_reflection
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 foreach(_hdr
@@ -3234,10 +3616,6 @@ target_link_libraries(grpc++_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 foreach(_hdr
@@ -3354,12 +3732,8 @@ target_include_directories(grpc++_test_util
 target_link_libraries(grpc++_test_util
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
   absl::flags
 )
 
@@ -3443,9 +3817,6 @@ target_link_libraries(grpc++_unsecure
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_unsecure
-  gpr
-  address_sorting
-  upb
 )
 
 foreach(_hdr
@@ -3761,10 +4132,6 @@ target_link_libraries(grpcpp_channelz
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 foreach(_hdr
@@ -3973,10 +4340,6 @@ target_include_directories(algorithm_test
 target_link_libraries(algorithm_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4003,10 +4366,6 @@ target_include_directories(alloc_test
 target_link_libraries(alloc_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4033,10 +4392,6 @@ target_include_directories(alpn_test
 target_link_libraries(alpn_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4064,10 +4419,6 @@ target_include_directories(alts_counter_test
 target_link_libraries(alts_counter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4095,10 +4446,6 @@ target_include_directories(alts_crypt_test
 target_link_libraries(alts_crypt_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4126,10 +4473,6 @@ target_include_directories(alts_crypter_test
 target_link_libraries(alts_crypter_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4158,10 +4501,6 @@ target_include_directories(alts_frame_protector_test
 target_link_libraries(alts_frame_protector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4189,10 +4528,6 @@ target_include_directories(alts_grpc_record_protocol_test
 target_link_libraries(alts_grpc_record_protocol_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4220,10 +4555,6 @@ target_include_directories(alts_handshaker_client_test
 target_link_libraries(alts_handshaker_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4251,10 +4582,6 @@ target_include_directories(alts_iovec_record_protocol_test
 target_link_libraries(alts_iovec_record_protocol_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4281,10 +4608,6 @@ target_include_directories(alts_security_connector_test
 target_link_libraries(alts_security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4312,10 +4635,6 @@ target_include_directories(alts_tsi_handshaker_test
 target_link_libraries(alts_tsi_handshaker_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4343,10 +4662,6 @@ target_include_directories(alts_tsi_utils_test
 target_link_libraries(alts_tsi_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4374,10 +4689,6 @@ target_include_directories(alts_zero_copy_grpc_protector_test
 target_link_libraries(alts_zero_copy_grpc_protector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4404,10 +4715,6 @@ target_include_directories(arena_test
 target_link_libraries(arena_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4434,10 +4741,6 @@ target_include_directories(auth_context_test
 target_link_libraries(auth_context_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4464,10 +4767,6 @@ target_include_directories(avl_test
 target_link_libraries(avl_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4494,10 +4793,6 @@ target_include_directories(b64_test
 target_link_libraries(b64_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4525,10 +4820,6 @@ target_include_directories(bad_server_response_test
 target_link_libraries(bad_server_response_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4557,10 +4848,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(bad_ssl_alpn_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -4590,10 +4877,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(bad_ssl_cert_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -4621,10 +4904,6 @@ target_include_directories(bin_decoder_test
 target_link_libraries(bin_decoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4651,10 +4930,6 @@ target_include_directories(bin_encoder_test
 target_link_libraries(bin_encoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4681,10 +4956,6 @@ target_include_directories(buffer_list_test
 target_link_libraries(buffer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4711,10 +4982,6 @@ target_include_directories(channel_args_test
 target_link_libraries(channel_args_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4741,10 +5008,6 @@ target_include_directories(channel_create_test
 target_link_libraries(channel_create_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4771,10 +5034,6 @@ target_include_directories(channel_stack_builder_test
 target_link_libraries(channel_stack_builder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4801,10 +5060,6 @@ target_include_directories(channel_stack_test
 target_link_libraries(channel_stack_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4831,10 +5086,6 @@ target_include_directories(check_gcp_environment_linux_test
 target_link_libraries(check_gcp_environment_linux_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4861,10 +5112,6 @@ target_include_directories(check_gcp_environment_windows_test
 target_link_libraries(check_gcp_environment_windows_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4892,10 +5139,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(client_ssl_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -4923,10 +5166,6 @@ target_include_directories(cmdline_test
 target_link_libraries(cmdline_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -4954,10 +5193,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(combiner_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -4985,10 +5220,6 @@ target_include_directories(completion_queue_threading_test
 target_link_libraries(completion_queue_threading_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5015,10 +5246,6 @@ target_include_directories(compression_test
 target_link_libraries(compression_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5045,10 +5272,6 @@ target_include_directories(concurrent_connectivity_test
 target_link_libraries(concurrent_connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5076,10 +5299,6 @@ target_include_directories(connection_refused_test
 target_link_libraries(connection_refused_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5106,10 +5325,6 @@ target_include_directories(cpu_test
 target_link_libraries(cpu_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5136,10 +5351,6 @@ target_include_directories(dns_resolver_connectivity_using_ares_test
 target_link_libraries(dns_resolver_connectivity_using_ares_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5166,10 +5377,6 @@ target_include_directories(dns_resolver_connectivity_using_native_test
 target_link_libraries(dns_resolver_connectivity_using_native_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5196,10 +5403,6 @@ target_include_directories(dns_resolver_cooldown_test
 target_link_libraries(dns_resolver_cooldown_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5226,10 +5429,6 @@ target_include_directories(dns_resolver_test
 target_link_libraries(dns_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5258,10 +5457,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(dualstack_socket_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -5290,10 +5485,6 @@ target_include_directories(endpoint_pair_test
 target_link_libraries(endpoint_pair_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5320,10 +5511,6 @@ target_include_directories(env_test
 target_link_libraries(env_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5351,10 +5538,6 @@ target_include_directories(error_test
 target_link_libraries(error_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5382,10 +5565,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(ev_epollex_linux_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -5413,10 +5592,6 @@ target_include_directories(fake_resolver_test
 target_link_libraries(fake_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5444,10 +5619,6 @@ target_include_directories(fake_transport_security_test
 target_link_libraries(fake_transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5475,10 +5646,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fd_conservation_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -5507,10 +5674,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fd_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -5543,10 +5706,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fling_stream_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -5579,10 +5738,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fling_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -5611,10 +5766,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(fork_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -5646,10 +5797,6 @@ target_include_directories(format_request_test
 target_link_libraries(format_request_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5677,10 +5824,6 @@ target_include_directories(frame_handler_test
 target_link_libraries(frame_handler_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5708,10 +5851,6 @@ target_include_directories(goaway_server_test
 target_link_libraries(goaway_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5738,10 +5877,6 @@ target_include_directories(grpc_alts_credentials_options_test
 target_link_libraries(grpc_alts_credentials_options_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5768,10 +5903,6 @@ target_include_directories(grpc_byte_buffer_reader_test
 target_link_libraries(grpc_byte_buffer_reader_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5798,10 +5929,6 @@ target_include_directories(grpc_completion_queue_test
 target_link_libraries(grpc_completion_queue_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5828,10 +5955,6 @@ target_include_directories(grpc_ipv6_loopback_available_test
 target_link_libraries(grpc_ipv6_loopback_available_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5860,10 +5983,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(handshake_server_with_readahead_handshaker_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -5892,10 +6011,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(handshake_verify_peer_options_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -5923,10 +6038,6 @@ target_include_directories(histogram_test
 target_link_libraries(histogram_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5953,10 +6064,6 @@ target_include_directories(host_port_test
 target_link_libraries(host_port_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -5983,10 +6090,6 @@ target_include_directories(hpack_encoder_test
 target_link_libraries(hpack_encoder_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6013,10 +6116,6 @@ target_include_directories(hpack_parser_test
 target_link_libraries(hpack_parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6043,10 +6142,6 @@ target_include_directories(hpack_table_test
 target_link_libraries(hpack_table_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6078,10 +6173,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(httpcli_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -6114,10 +6205,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(httpscli_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -6145,11 +6232,6 @@ target_include_directories(inproc_callback_test
 target_link_libraries(inproc_callback_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
-  grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6177,10 +6259,6 @@ target_include_directories(invalid_call_argument_test
 target_link_libraries(invalid_call_argument_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6207,10 +6285,6 @@ target_include_directories(json_token_test
 target_link_libraries(json_token_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6237,10 +6311,6 @@ target_include_directories(jwt_verifier_test
 target_link_libraries(jwt_verifier_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6268,10 +6338,6 @@ target_include_directories(lame_client_test
 target_link_libraries(lame_client_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6298,10 +6364,6 @@ target_include_directories(load_file_test
 target_link_libraries(load_file_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6328,10 +6390,6 @@ target_include_directories(manual_constructor_test
 target_link_libraries(manual_constructor_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6358,10 +6416,6 @@ target_include_directories(message_compress_test
 target_link_libraries(message_compress_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6388,10 +6442,6 @@ target_include_directories(metadata_test
 target_link_libraries(metadata_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6418,10 +6468,6 @@ target_include_directories(minimal_stack_is_minimal_test
 target_link_libraries(minimal_stack_is_minimal_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6448,10 +6494,6 @@ target_include_directories(mpmcqueue_test
 target_link_libraries(mpmcqueue_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6479,10 +6521,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(mpscq_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -6511,10 +6549,6 @@ target_include_directories(multiple_server_queues_test
 target_link_libraries(multiple_server_queues_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6541,10 +6575,6 @@ target_include_directories(murmur_hash_test
 target_link_libraries(murmur_hash_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6572,10 +6602,6 @@ target_include_directories(no_server_test
 target_link_libraries(no_server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6602,10 +6628,6 @@ target_include_directories(num_external_connectivity_watchers_test
 target_link_libraries(num_external_connectivity_watchers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6632,10 +6654,6 @@ target_include_directories(parse_address_test
 target_link_libraries(parse_address_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6663,10 +6681,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(parse_address_with_named_scope_id_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -6698,10 +6712,6 @@ target_include_directories(parser_test
 target_link_libraries(parser_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6728,10 +6738,6 @@ target_include_directories(percent_encoding_test
 target_link_libraries(percent_encoding_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6758,10 +6764,6 @@ target_include_directories(public_headers_must_be_c89
 target_link_libraries(public_headers_must_be_c89
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6789,10 +6791,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(resolve_address_using_ares_resolver_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -6820,10 +6818,6 @@ target_include_directories(resolve_address_using_ares_resolver_test
 target_link_libraries(resolve_address_using_ares_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6851,10 +6845,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(resolve_address_using_native_resolver_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -6882,10 +6872,6 @@ target_include_directories(resolve_address_using_native_resolver_test
 target_link_libraries(resolve_address_using_native_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6912,10 +6898,6 @@ target_include_directories(resource_quota_test
 target_link_libraries(resource_quota_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6942,10 +6924,6 @@ target_include_directories(secure_channel_create_test
 target_link_libraries(secure_channel_create_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -6973,10 +6951,6 @@ target_include_directories(secure_endpoint_test
 target_link_libraries(secure_endpoint_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7003,10 +6977,6 @@ target_include_directories(security_connector_test
 target_link_libraries(security_connector_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7033,10 +7003,6 @@ target_include_directories(sequential_connectivity_test
 target_link_libraries(sequential_connectivity_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7065,10 +7031,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_ssl_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -7096,10 +7058,6 @@ target_include_directories(server_test
 target_link_libraries(server_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7126,10 +7084,6 @@ target_include_directories(slice_buffer_test
 target_link_libraries(slice_buffer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7156,10 +7110,6 @@ target_include_directories(slice_string_helpers_test
 target_link_libraries(slice_string_helpers_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7186,10 +7136,6 @@ target_include_directories(sockaddr_resolver_test
 target_link_libraries(sockaddr_resolver_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7216,10 +7162,6 @@ target_include_directories(sockaddr_utils_test
 target_link_libraries(sockaddr_utils_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7247,10 +7189,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(socket_utils_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -7278,10 +7216,6 @@ target_include_directories(spinlock_test
 target_link_libraries(spinlock_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7308,10 +7242,6 @@ target_include_directories(ssl_credentials_test
 target_link_libraries(ssl_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7340,10 +7270,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(ssl_transport_security_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -7371,10 +7297,6 @@ target_include_directories(status_conversion_test
 target_link_libraries(status_conversion_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7401,10 +7323,6 @@ target_include_directories(stream_compression_test
 target_link_libraries(stream_compression_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7431,10 +7349,6 @@ target_include_directories(stream_map_test
 target_link_libraries(stream_map_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7461,10 +7375,6 @@ target_include_directories(stream_owned_slice_test
 target_link_libraries(stream_owned_slice_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7491,10 +7401,6 @@ target_include_directories(string_test
 target_link_libraries(string_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7521,10 +7427,6 @@ target_include_directories(sync_test
 target_link_libraries(sync_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7552,10 +7454,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_client_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -7585,10 +7483,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -7617,10 +7511,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(tcp_server_posix_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -7648,10 +7538,6 @@ target_include_directories(test_core_gpr_time_test
 target_link_libraries(test_core_gpr_time_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7678,10 +7564,6 @@ target_include_directories(test_core_security_credentials_test
 target_link_libraries(test_core_security_credentials_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7708,10 +7590,6 @@ target_include_directories(test_core_slice_slice_test
 target_link_libraries(test_core_slice_slice_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7738,10 +7616,6 @@ target_include_directories(thd_test
 target_link_libraries(thd_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7768,10 +7642,6 @@ target_include_directories(threadpool_test
 target_link_libraries(threadpool_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7798,10 +7668,6 @@ target_include_directories(time_averaged_stats_test
 target_link_libraries(time_averaged_stats_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7828,10 +7694,6 @@ target_include_directories(timeout_encoding_test
 target_link_libraries(timeout_encoding_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7858,10 +7720,6 @@ target_include_directories(timer_heap_test
 target_link_libraries(timer_heap_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7888,10 +7746,6 @@ target_include_directories(timer_list_test
 target_link_libraries(timer_list_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7918,10 +7772,6 @@ target_include_directories(tls_test
 target_link_libraries(tls_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7948,10 +7798,6 @@ target_include_directories(transport_security_common_api_test
 target_link_libraries(transport_security_common_api_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -7978,10 +7824,6 @@ target_include_directories(transport_security_test
 target_link_libraries(transport_security_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -8009,10 +7851,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(udp_server_test
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -8040,10 +7878,6 @@ target_include_directories(useful_test
 target_link_libraries(useful_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -8070,10 +7904,6 @@ target_include_directories(varint_test
 target_link_libraries(varint_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -8108,14 +7938,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(address_sorting_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc++_test_util
-    grpc_test_util
-    grpc++
     grpc++_test_config
-    grpc
-    gpr
-    address_sorting
-    upb
+    grpc++_test_util
   )
 
 
@@ -8154,13 +7978,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(address_sorting_test_unsecure
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util_unsecure
     grpc++_unsecure
-    grpc_unsecure
+    grpc_test_util_unsecure
     grpc++_test_config
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -8196,12 +8016,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(alarm_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util_unsecure
     grpc++_unsecure
-    grpc_unsecure
-    gpr
-    address_sorting
-    upb
+    grpc_test_util_unsecure
   )
 
 
@@ -8249,10 +8065,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
     grpc++
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -8287,14 +8099,8 @@ target_include_directories(alts_util_test
 target_link_libraries(alts_util_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
   grpc++_alts
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc++_test_util
 )
 
 
@@ -8349,12 +8155,6 @@ target_link_libraries(async_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -8389,12 +8189,6 @@ target_link_libraries(auth_property_iterator_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -8429,10 +8223,6 @@ target_link_libraries(authorization_engine_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -8467,10 +8257,6 @@ target_link_libraries(aws_request_signer_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -8505,10 +8291,6 @@ target_link_libraries(backoff_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -8545,10 +8327,6 @@ target_link_libraries(bad_streaming_id_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -8585,10 +8363,6 @@ target_link_libraries(badreq_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -8624,10 +8398,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -8664,14 +8434,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -8708,14 +8470,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -8752,14 +8506,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -8796,14 +8542,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -8844,14 +8582,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -8892,14 +8622,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -8936,14 +8658,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -8980,14 +8694,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9024,14 +8730,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9068,14 +8766,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9112,14 +8802,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9156,14 +8838,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9200,14 +8874,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9244,14 +8910,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9288,14 +8946,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9332,14 +8982,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
     absl::flags
   )
 
@@ -9377,14 +9019,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9421,14 +9055,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9465,14 +9091,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9509,14 +9127,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9553,14 +9163,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     benchmark_helpers
-    grpc_test_util_unsecure
-    grpc++_unsecure
-    grpc_unsecure
-    grpc++_test_config
-    gpr
-    address_sorting
-    upb
-    ${_gRPC_BENCHMARK_LIBRARIES}
   )
 
 
@@ -9596,12 +9198,6 @@ target_link_libraries(byte_buffer_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -9636,10 +9232,6 @@ target_link_libraries(byte_stream_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -9675,14 +9267,8 @@ target_include_directories(cancel_ares_query_test
 target_link_libraries(cancel_ares_query_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  grpc_test_util
-  grpc++
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc++_test_util
 )
 
 
@@ -9717,10 +9303,6 @@ target_link_libraries(certificate_provider_registry_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -9755,10 +9337,6 @@ target_link_libraries(certificate_provider_store_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -9806,12 +9384,6 @@ target_link_libraries(cfstream_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -9845,12 +9417,8 @@ target_include_directories(channel_arguments_test
 target_link_libraries(channel_arguments_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -9884,12 +9452,8 @@ target_include_directories(channel_filter_test
 target_link_libraries(channel_filter_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -9928,12 +9492,8 @@ target_include_directories(channel_trace_test
 target_link_libraries(channel_trace_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -9967,12 +9527,8 @@ target_include_directories(channelz_registry_test
 target_link_libraries(channelz_registry_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -10021,12 +9577,6 @@ target_link_libraries(channelz_service_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpcpp_channelz
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10065,12 +9615,8 @@ target_include_directories(channelz_test
 target_link_libraries(channelz_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -10127,13 +9673,6 @@ target_link_libraries(cli_call_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
-  absl::flags
 )
 
 
@@ -10182,12 +9721,6 @@ target_link_libraries(client_callback_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10244,12 +9777,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
-    grpc_test_util
-    grpc++
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -10299,12 +9826,6 @@ target_link_libraries(client_interceptors_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10362,12 +9883,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
-    grpc_test_util
-    grpc++
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -10402,12 +9917,8 @@ target_include_directories(codegen_test_full
 target_link_libraries(codegen_test_full
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -10441,12 +9952,8 @@ target_include_directories(codegen_test_minimal
 target_link_libraries(codegen_test_minimal
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -10483,10 +9990,6 @@ target_link_libraries(connection_prefix_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10521,10 +10024,6 @@ target_link_libraries(connectivity_state_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10572,12 +10071,6 @@ target_link_libraries(context_allocator_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10612,10 +10105,6 @@ target_link_libraries(context_list_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10663,12 +10152,6 @@ target_link_libraries(delegating_channel_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10703,12 +10186,6 @@ target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10743,10 +10220,6 @@ target_link_libraries(dual_ref_counted_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10783,10 +10256,6 @@ target_link_libraries(duplicate_header_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10838,14 +10307,8 @@ target_include_directories(end2end_test
 target_link_libraries(end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
   grpc++_test
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc++_test_util
 )
 
 
@@ -10889,11 +10352,6 @@ target_link_libraries(error_details_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_error_details
   grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10928,10 +10386,6 @@ target_link_libraries(evaluate_args_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -10966,10 +10420,6 @@ target_link_libraries(eventmanager_libuv_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -11005,12 +10455,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
-    absl::symbolize
-    absl::stacktrace
   )
 
 
@@ -11058,12 +10502,6 @@ target_link_libraries(exception_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -11098,10 +10536,6 @@ target_link_libraries(file_watcher_certificate_provider_factory_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -11152,12 +10586,6 @@ target_link_libraries(filter_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -11205,12 +10633,6 @@ target_link_libraries(flaky_network_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -11261,12 +10683,6 @@ target_link_libraries(generic_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -11302,10 +10718,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -11341,10 +10753,6 @@ target_link_libraries(global_config_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -11380,10 +10788,6 @@ target_link_libraries(google_mesh_ca_certificate_provider_factory_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -11428,12 +10832,8 @@ target_link_libraries(grpc_cli
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
-  grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
+  grpc++_test_config
 )
 
 
@@ -11734,10 +11134,6 @@ target_link_libraries(grpc_tls_certificate_distributor_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -11772,10 +11168,6 @@ target_link_libraries(grpc_tls_certificate_provider_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -11810,10 +11202,6 @@ target_link_libraries(grpc_tls_credentials_options_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -11866,15 +11254,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(grpc_tool_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc++_test_util
     grpc++_reflection
-    grpc_test_util
-    grpc++
-    grpc
-    gpr
-    address_sorting
-    upb
-    absl::flags
+    grpc++_test_util
   )
 
 
@@ -11914,12 +11295,6 @@ target_link_libraries(grpclb_api_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -11976,12 +11351,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
-    grpc_test_util
-    grpc++
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -12017,11 +11386,6 @@ target_link_libraries(h2_ssl_session_reuse_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   end2end_tests
-  grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12058,10 +11422,6 @@ target_link_libraries(head_of_line_blocking_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12098,10 +11458,6 @@ target_link_libraries(headers_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12158,12 +11514,6 @@ target_link_libraries(health_service_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12209,15 +11559,8 @@ target_include_directories(http2_client
 target_link_libraries(http2_client
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  grpc_test_util
-  grpc++
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
-  absl::flags
+  grpc++_test_util
 )
 
 
@@ -12269,12 +11612,6 @@ target_link_libraries(hybrid_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12309,10 +11646,6 @@ target_link_libraries(init_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12349,10 +11682,6 @@ target_link_libraries(initial_settings_frame_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12387,10 +11716,6 @@ target_link_libraries(insecure_security_connector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12439,15 +11764,8 @@ target_include_directories(interop_client
 target_link_libraries(interop_client
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  grpc_test_util
-  grpc++
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
-  absl::flags
+  grpc++_test_util
 )
 
 
@@ -12496,14 +11814,7 @@ target_link_libraries(interop_server
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
-  absl::flags
 )
 
 
@@ -12538,15 +11849,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(interop_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc++_test_util
-    grpc_test_util
-    grpc++
     grpc++_test_config
-    grpc
-    gpr
-    address_sorting
-    upb
-    absl::flags
+    grpc++_test_util
   )
 
 
@@ -12582,10 +11886,6 @@ target_link_libraries(json_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12622,10 +11922,6 @@ target_link_libraries(large_metadata_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12663,12 +11959,8 @@ target_include_directories(lb_get_cpu_stats_test
 target_link_libraries(lb_get_cpu_stats_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -12703,12 +11995,8 @@ target_include_directories(lb_load_data_store_test
 target_link_libraries(lb_load_data_store_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -12743,10 +12031,6 @@ target_link_libraries(linux_system_roots_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12781,10 +12065,6 @@ target_link_libraries(log_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12819,10 +12099,6 @@ target_link_libraries(matchers_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12870,12 +12146,6 @@ target_link_libraries(message_allocator_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -12925,14 +12195,8 @@ target_include_directories(mock_test
 target_link_libraries(mock_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
   grpc++_test
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc++_test_util
 )
 
 
@@ -12979,12 +12243,6 @@ target_link_libraries(nonblocking_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -13018,12 +12276,8 @@ target_include_directories(noop-benchmark
 target_link_libraries(noop-benchmark
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
   ${_gRPC_BENCHMARK_LIBRARIES}
+  grpc_test_util
 )
 
 
@@ -13058,10 +12312,6 @@ target_link_libraries(orphanable_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -13098,10 +12348,6 @@ target_link_libraries(out_of_bounds_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -13136,10 +12382,6 @@ target_link_libraries(pid_controller_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -13187,12 +12429,6 @@ target_link_libraries(port_sharing_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -13244,14 +12480,8 @@ target_include_directories(proto_server_reflection_test
 target_link_libraries(proto_server_reflection_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
   grpc++_reflection
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc++_test_util
 )
 
 
@@ -13285,12 +12515,8 @@ target_include_directories(proto_utils_test
 target_link_libraries(proto_utils_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -13370,15 +12596,8 @@ target_include_directories(qps_json_driver
 target_link_libraries(qps_json_driver
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  grpc_test_util
-  grpc++
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
-  absl::flags
+  grpc++_test_util
 )
 
 
@@ -13450,15 +12669,8 @@ target_include_directories(qps_worker
 target_link_libraries(qps_worker
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  grpc_test_util
-  grpc++
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
-  absl::flags
+  grpc++_test_util
 )
 
 
@@ -13510,12 +12722,6 @@ target_link_libraries(raw_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -13550,10 +12756,6 @@ target_link_libraries(ref_counted_ptr_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -13588,10 +12790,6 @@ target_link_libraries(ref_counted_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -13627,10 +12825,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -13666,10 +12860,6 @@ target_link_libraries(retry_throttle_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -13704,12 +12894,6 @@ target_link_libraries(secure_auth_context_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -13761,12 +12945,6 @@ target_link_libraries(server_builder_plugin_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -13813,12 +12991,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util_unsecure
     grpc++_unsecure
-    grpc_unsecure
-    gpr
-    address_sorting
-    upb
+    grpc_test_util_unsecure
   )
 
 
@@ -13866,12 +13040,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_builder_with_socket_mutator_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util_unsecure
     grpc++_unsecure
-    grpc_unsecure
-    gpr
-    address_sorting
-    upb
+    grpc_test_util_unsecure
   )
 
 
@@ -13907,10 +13077,6 @@ target_link_libraries(server_chttp2_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -13944,14 +13110,8 @@ target_include_directories(server_context_test_spouse_test
 target_link_libraries(server_context_test_spouse_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
   grpc++_test
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc++_test_util
 )
 
 
@@ -13998,12 +13158,6 @@ target_link_libraries(server_early_return_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14052,12 +13206,6 @@ target_link_libraries(server_interceptors_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14094,10 +13242,6 @@ target_link_libraries(server_registered_method_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14144,12 +13288,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(server_request_call_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util_unsecure
     grpc++_unsecure
-    grpc_unsecure
-    gpr
-    address_sorting
-    upb
+    grpc_test_util_unsecure
   )
 
 
@@ -14202,12 +13342,6 @@ target_link_libraries(service_config_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14242,10 +13376,6 @@ target_link_libraries(service_config_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14280,10 +13410,6 @@ target_link_libraries(settings_timeout_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14334,12 +13460,6 @@ target_link_libraries(shutdown_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14376,10 +13496,6 @@ target_link_libraries(simple_request_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14415,11 +13531,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
-    absl::symbolize
   )
 
 
@@ -14455,10 +13566,6 @@ target_link_libraries(stat_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14493,10 +13600,6 @@ target_link_libraries(static_metadata_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14531,10 +13634,6 @@ target_link_libraries(stats_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14569,10 +13668,6 @@ target_link_libraries(status_metadata_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14607,10 +13702,6 @@ target_link_libraries(status_util_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14647,10 +13738,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -14703,12 +13790,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
-    grpc_test_util
-    grpc++
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -14743,12 +13824,8 @@ target_include_directories(string_ref_test
 target_link_libraries(string_ref_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -14782,12 +13859,8 @@ target_include_directories(test_cpp_client_credentials_test
 target_link_libraries(test_cpp_client_credentials_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -14821,12 +13894,8 @@ target_include_directories(test_cpp_server_credentials_test
 target_link_libraries(test_cpp_server_credentials_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -14861,12 +13930,6 @@ target_link_libraries(test_cpp_util_slice_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14901,12 +13964,6 @@ target_link_libraries(test_cpp_util_time_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -14940,14 +13997,8 @@ target_include_directories(thread_manager_test
 target_link_libraries(thread_manager_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  grpc_test_util
-  grpc++
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc++_test_util
 )
 
 
@@ -14999,12 +14050,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
-    grpc_test_util
-    grpc++
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -15040,12 +14085,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
   target_link_libraries(time_jump_test
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
-    grpc_test_util
     grpc++
-    grpc
-    gpr
-    address_sorting
-    upb
+    grpc_test_util
   )
 
 
@@ -15081,10 +14122,6 @@ target_link_libraries(time_util_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -15118,12 +14155,8 @@ target_include_directories(timer_test
 target_link_libraries(timer_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc_test_util
 )
 
 
@@ -15158,10 +14191,6 @@ target_link_libraries(tls_security_connector_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -15196,14 +14225,8 @@ target_include_directories(too_many_pings_test
 target_link_libraries(too_many_pings_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc++_test_util
-  grpc_test_util
-  grpc++
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
+  grpc++_test_util
 )
 
 
@@ -15240,10 +14263,6 @@ target_link_libraries(unknown_frame_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -15278,10 +14297,6 @@ target_link_libraries(uri_parser_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -15318,10 +14333,6 @@ target_link_libraries(window_overflow_bad_client_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -15357,10 +14368,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc_test_util
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -15431,12 +14438,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++
-    grpc
-    gpr
-    address_sorting
-    upb
-    absl::symbolize
     absl::stacktrace
+    absl::symbolize
     absl::failure_signal_handler
   )
 
@@ -15473,10 +14476,6 @@ target_link_libraries(xds_bootstrap_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -15511,10 +14510,6 @@ target_link_libraries(xds_certificate_provider_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -15562,12 +14557,6 @@ target_link_libraries(xds_credentials_end2end_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_util
-  grpc_test_util
-  grpc++
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -15602,10 +14591,6 @@ target_link_libraries(xds_credentials_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
-  grpc
-  gpr
-  address_sorting
-  upb
 )
 
 
@@ -15614,10 +14599,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(xds_end2end_test
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
@@ -15630,106 +14611,662 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/cds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/cds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lds_rds_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lds_rds_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/address.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/ads.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/listener.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/load_report.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/lrs.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/protocol.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/range.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/regex.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.cc
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
-    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/deprecation.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/annotations/resource.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/cert.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/cert.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/cert.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/cert.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/common.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/common.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/common.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/common.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/secret.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/secret.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/secret.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/secret.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/tls.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/tls.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/tls.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/auth/tls.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cds.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cds.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cds.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cds.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster/circuit_breaker.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster/circuit_breaker.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster/circuit_breaker.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster/circuit_breaker.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster/filter.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster/filter.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster/filter.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster/filter.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster/outlier_detection.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster/outlier_detection.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster/outlier_detection.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/cluster/outlier_detection.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/address.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/backoff.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/backoff.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/backoff.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/backoff.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/base.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/base.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/base.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/base.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/config_source.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/config_source.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/config_source.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/config_source.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/event_service_config.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/event_service_config.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/event_service_config.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/event_service_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/grpc_method_list.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/grpc_method_list.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/grpc_method_list.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/grpc_method_list.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/grpc_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/grpc_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/grpc_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/grpc_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/health_check.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/http_uri.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/http_uri.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/http_uri.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/http_uri.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/protocol.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/protocol.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/protocol.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/protocol.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/socket_option.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/socket_option.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/socket_option.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/core/socket_option.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/discovery.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/discovery.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/discovery.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/discovery.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/eds.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/eds.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/eds.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/eds.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint/endpoint.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint/endpoint.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint/endpoint.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint/endpoint.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint/endpoint_components.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint/endpoint_components.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint/endpoint_components.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint/endpoint_components.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint/load_report.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint/load_report.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint/load_report.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/endpoint/load_report.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/lds.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/lds.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/lds.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/lds.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/listener.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/listener.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/listener.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/listener.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/listener_components.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/listener_components.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/listener_components.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/listener_components.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/quic_config.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/quic_config.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/quic_config.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/quic_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/udp_listener_config.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/udp_listener_config.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/udp_listener_config.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/listener/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/rds.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/rds.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/rds.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/rds.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/route.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/route.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/route.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/route.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/route/route.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/route/route.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/route/route.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/route/route.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/route/route_components.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/route/route_components.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/route/route_components.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/route/route_components.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/scoped_route.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/scoped_route.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/scoped_route.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/scoped_route.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/srds.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/srds.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/srds.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/api/v2/srds.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/accesslog/v3/accesslog.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/accesslog/v3/accesslog.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/accesslog/v3/accesslog.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/accesslog/v3/accesslog.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/aggregate/v2alpha/cluster.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/aggregate/v2alpha/cluster.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/aggregate/v2alpha/cluster.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/aggregate/v2alpha/cluster.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/circuit_breaker.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/circuit_breaker.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/circuit_breaker.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/circuit_breaker.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/cluster.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/cluster.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/cluster.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/cluster.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/filter.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/filter.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/filter.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/filter.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/outlier_detection.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/outlier_detection.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/outlier_detection.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/cluster/v3/outlier_detection.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/address.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/backoff.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/backoff.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/backoff.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/backoff.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/base.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/base.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/base.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/base.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/config_source.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/config_source.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/config_source.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/config_source.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/event_service_config.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/event_service_config.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/event_service_config.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/event_service_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/extension.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/extension.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/extension.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/extension.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/grpc_method_list.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/grpc_method_list.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/grpc_method_list.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/grpc_method_list.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/grpc_service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/grpc_service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/grpc_service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/grpc_service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/health_check.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/health_check.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/health_check.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/health_check.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/http_uri.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/http_uri.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/http_uri.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/http_uri.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/protocol.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/protocol.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/protocol.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/protocol.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/proxy_protocol.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/proxy_protocol.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/proxy_protocol.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/proxy_protocol.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/socket_option.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/substitution_format_string.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/substitution_format_string.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/substitution_format_string.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/core/v3/substitution_format_string.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint_components.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint_components.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint_components.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/endpoint_components.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/endpoint/v3/load_report.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/filter/accesslog/v2/accesslog.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/filter/accesslog/v2/accesslog.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/filter/accesslog/v2/accesslog.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/filter/accesslog/v2/accesslog.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/filter/http/router/v2/router.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/filter/http/router/v2/router.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/filter/http/router/v2/router.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/filter/http/router/v2/router.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/filter/network/http_connection_manager/v2/http_connection_manager.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v2/api_listener.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v2/api_listener.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v2/api_listener.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v2/api_listener.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/api_listener.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/api_listener.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/api_listener.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/api_listener.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener_components.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener_components.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener_components.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/listener_components.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/quic_config.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/quic_config.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/quic_config.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/quic_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_default_writer_config.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_default_writer_config.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_default_writer_config.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_default_writer_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_gso_batch_writer_config.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_gso_batch_writer_config.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_gso_batch_writer_config.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_gso_batch_writer_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/listener/v3/udp_listener_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route_components.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route_components.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route_components.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/route_components.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/route/v3/scoped_route.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/datadog.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/datadog.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/datadog.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/datadog.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/dynamic_ot.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/dynamic_ot.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/dynamic_ot.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/dynamic_ot.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/http_tracer.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/http_tracer.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/http_tracer.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/http_tracer.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/lightstep.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/lightstep.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/lightstep.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/lightstep.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/opencensus.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/opencensus.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/opencensus.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/opencensus.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/trace.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/trace.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/trace.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/trace.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/zipkin.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/zipkin.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/zipkin.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2/zipkin.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2alpha/xray.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2alpha/xray.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2alpha/xray.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v2alpha/xray.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/datadog.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/datadog.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/datadog.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/datadog.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/dynamic_ot.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/dynamic_ot.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/dynamic_ot.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/dynamic_ot.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/http_tracer.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/http_tracer.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/http_tracer.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/http_tracer.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/lightstep.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/opencensus.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/service.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/service.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/service.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/service.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/skywalking.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/skywalking.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/skywalking.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/skywalking.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/trace.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/trace.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/trace.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/trace.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/xray.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/xray.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/xray.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/xray.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/zipkin.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/zipkin.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/zipkin.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/config/trace/v3/zipkin.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/clusters/aggregate/v3/cluster.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/clusters/aggregate/v3/cluster.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/clusters/aggregate/v3/cluster.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/clusters/aggregate/v3/cluster.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/router/v3/router.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/router/v3/router.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/router/v3/router.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/http/router/v3/router.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/cert.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/cert.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/cert.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/cert.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/common.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/common.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/common.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/common.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/secret.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/secret.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/secret.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/secret.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/extensions/transport_sockets/tls/v3/tls.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/ads.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/ads.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/ads.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/ads.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/hds.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/hds.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/hds.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/hds.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/rtds.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/rtds.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/rtds.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/rtds.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/sds.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/sds.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/sds.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v2/sds.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/ads.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/discovery.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/discovery.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/discovery.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/discovery/v3/discovery.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/load_stats/v2/lrs.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/load_stats/v2/lrs.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/load_stats/v2/lrs.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/load_stats/v2/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/load_stats/v3/lrs.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/load_stats/v3/lrs.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/load_stats/v3/lrs.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/service/load_stats/v3/lrs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/hash_policy.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/hash_policy.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/hash_policy.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/hash_policy.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/http.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/http.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/http.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/http.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/http_status.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/http_status.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/http_status.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/http_status.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/metadata.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/metadata.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/metadata.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/metadata.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/node.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/node.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/node.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/node.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/number.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/number.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/number.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/number.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/path.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/path.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/path.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/path.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/regex.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/regex.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/regex.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/regex.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/string.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/string.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/string.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/string.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/struct.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/struct.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/struct.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/struct.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/http_inputs.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/http_inputs.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/http_inputs.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/http_inputs.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/metadata.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/metadata.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/metadata.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/metadata.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/node.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/node.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/node.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/node.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/number.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/number.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/number.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/number.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/path.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/path.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/path.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/path.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/regex.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/regex.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/regex.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/regex.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/string.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/string.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/string.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/string.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/struct.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/struct.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/struct.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/struct.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/value.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/value.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/value.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/v3/value.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/value.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/value.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/value.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/matcher/value.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/metadata/v2/metadata.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/metadata/v2/metadata.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/metadata/v2/metadata.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/metadata/v2/metadata.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/metadata/v3/metadata.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/metadata/v3/metadata.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/metadata/v3/metadata.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/metadata/v3/metadata.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/percent.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/percent.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/percent.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/percent.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/range.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/range.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/range.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/range.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/semantic_version.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/semantic_version.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/semantic_version.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/semantic_version.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/token_bucket.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/token_bucket.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/token_bucket.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/token_bucket.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/tracing/v2/custom_tag.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/tracing/v2/custom_tag.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/tracing/v2/custom_tag.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/tracing/v2/custom_tag.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/tracing/v3/custom_tag.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/tracing/v3/custom_tag.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/tracing/v3/custom_tag.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/tracing/v3/custom_tag.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/hash_policy.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/hash_policy.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/hash_policy.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/hash_policy.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/http.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/http.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/http.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/http.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/http_status.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/http_status.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/http_status.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/http_status.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/percent.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/percent.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/percent.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/percent.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/range.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/range.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/range.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/range.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/ratelimit_unit.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/semantic_version.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/token_bucket.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/token_bucket.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/token_bucket.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/envoy/type/v3/token_bucket.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/google/api/annotations.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/google/api/http.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/google/api/http.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/google/api/httpbody.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/google/rpc/status.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/opencensus/proto/trace/v1/trace_config.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/validate/validate.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/validate/validate.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/migrate.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/migrate.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/migrate.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/migrate.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/security.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/security.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/security.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/security.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/sensitive.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/sensitive.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/sensitive.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/sensitive.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/status.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/status.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/status.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/status.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/versioning.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/versioning.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/versioning.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/udpa/annotations/versioning.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/authority.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/authority.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/authority.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/authority.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/collection_entry.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/collection_entry.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/collection_entry.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/collection_entry.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/context_params.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/context_params.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/context_params.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/context_params.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_locator.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_locator.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_locator.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_locator.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/xds/core/v3/resource_name.grpc.pb.h
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds_end2end_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
@@ -15758,12 +15295,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTOBUF_LIBRARIES}
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_test_util
-    grpc_test_util
-    grpc++
-    grpc
-    gpr
-    address_sorting
-    upb
   )
 
 
@@ -15810,13 +15341,9 @@ target_include_directories(xds_interop_client
 target_link_libraries(xds_interop_client
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
+  grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -15863,13 +15390,9 @@ target_include_directories(xds_interop_server
 target_link_libraries(xds_interop_server
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
   grpc++
+  grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -15907,10 +15430,6 @@ target_link_libraries(alts_credentials_fuzzer_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -15948,10 +15467,6 @@ target_link_libraries(client_fuzzer_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -15989,10 +15504,6 @@ target_link_libraries(hpack_parser_fuzzer_test_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -16030,10 +15541,6 @@ target_link_libraries(http_request_fuzzer_test_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -16071,10 +15578,6 @@ target_link_libraries(http_response_fuzzer_test_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -16112,10 +15615,6 @@ target_link_libraries(json_fuzzer_test_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -16153,10 +15652,6 @@ target_link_libraries(nanopb_fuzzer_response_test_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -16194,10 +15689,6 @@ target_link_libraries(nanopb_fuzzer_serverlist_test_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -16235,10 +15726,6 @@ target_link_libraries(percent_decode_fuzzer_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -16276,10 +15763,6 @@ target_link_libraries(percent_encode_fuzzer_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -16317,10 +15800,6 @@ target_link_libraries(server_fuzzer_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -16358,10 +15837,6 @@ target_link_libraries(ssl_server_fuzzer_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -16399,10 +15874,6 @@ target_link_libraries(uri_fuzzer_test_one_entry
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++_test_config
-  grpc
-  gpr
-  address_sorting
-  upb
   absl::flags
 )
 
@@ -16467,7 +15938,7 @@ generate_pkgconfig(
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
   ""
-  "-lgpr -labsl_status -labsl_cord -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_bad_optional_access -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgpr -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_status -labsl_cord -labsl_str_format_internal -labsl_bad_optional_access -labsl_symbolize -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "gpr.pc")
 
@@ -16477,7 +15948,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_city -labsl_statusor -labsl_bad_variant_access -labsl_status -labsl_cord -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_bad_optional_access -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_statusor -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_status -labsl_cord -labsl_str_format_internal -labsl_bad_optional_access -labsl_symbolize -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc.pc")
 
@@ -16487,7 +15958,7 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr"
-  "-lgrpc_unsecure -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_city -labsl_statusor -labsl_bad_variant_access -labsl_status -labsl_cord -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_bad_optional_access -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc_unsecure -labsl_statusor -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_status -labsl_cord -labsl_str_format_internal -labsl_bad_optional_access -labsl_symbolize -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc_unsecure.pc")
 
@@ -16497,7 +15968,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
   "grpc"
-  "-lgrpc++ -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_city -labsl_statusor -labsl_bad_variant_access -labsl_status -labsl_cord -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_bad_optional_access -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc++ -labsl_statusor -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_status -labsl_cord -labsl_str_format_internal -labsl_bad_optional_access -labsl_symbolize -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc++.pc")
 
@@ -16507,6 +15978,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_city -labsl_statusor -labsl_bad_variant_access -labsl_status -labsl_cord -labsl_str_format_internal -labsl_synchronization -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_stacktrace -labsl_debugging_internal -labsl_malloc_internal -labsl_time -labsl_time_zone -labsl_civil_time -labsl_strings -labsl_strings_internal -labsl_throw_delegate -labsl_int128 -labsl_base -labsl_spinlock_wait -labsl_bad_optional_access -labsl_raw_logging_internal -labsl_log_severity"
+  "-lgrpc++_unsecure -labsl_statusor -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_status -labsl_cord -labsl_str_format_internal -labsl_bad_optional_access -labsl_symbolize -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc++_unsecure.pc")
