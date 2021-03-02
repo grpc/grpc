@@ -65,6 +65,7 @@ _GRPC_DEP_NAMES = [
     'build_bazel_apple_support',
     'libuv',
     'com_github_google_re2',
+    'com_github_cyan4973_xxhash',
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
