@@ -35,8 +35,6 @@ grpc_cc_test(
     deps = [
         ":alts_handshaker_service_api_test_lib",
         "//:grpc",
-        "//:tsi",
-        "//:tsi_interface",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -50,7 +48,6 @@ grpc_cc_test(
         "//:gpr",
         "//:gpr_base",
         "//:grpc",
-        "//:tsi",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -62,7 +59,6 @@ grpc_cc_test(
     deps = [
         ":alts_handshaker_service_api_test_lib",
         "//:grpc",
-        "//:tsi",
         "//test/core/util:grpc_test_util",
     ],
 )

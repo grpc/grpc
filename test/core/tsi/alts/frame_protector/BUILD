@@ -52,8 +52,6 @@ grpc_cc_test(
         "//:alts_frame_protector",
         "//:gpr",
         "//:grpc",
-        "//:tsi",
-        "//:tsi_interface",
         "//test/core/tsi:transport_security_test_lib",
         "//test/core/tsi/alts/crypt:alts_crypt_test_util",
         "//test/core/util:grpc_test_util",

@@ -1877,7 +1877,9 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
+        "gpr",
         "grpc_base",
+        "grpc_trace",
     ],
 )
 

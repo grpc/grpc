@@ -4194,16 +4194,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(alts_frame_protector_test
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
   src/core/tsi/alts/crypt/aes_gcm.cc
   src/core/tsi/alts/crypt/gsec.cc
   src/core/tsi/alts/frame_protector/alts_counter.cc
@@ -4213,24 +4203,12 @@ add_executable(alts_frame_protector_test
   src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
   src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
   src/core/tsi/alts/frame_protector/frame_handler.cc
-  src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  src/core/tsi/alts/handshaker/alts_shared_resource.cc
-  src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
-  src/core/tsi/alts/handshaker/alts_tsi_utils.cc
-  src/core/tsi/alts/handshaker/transport_security_common_api.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
   src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
-  src/core/tsi/fake_transport_security.cc
-  src/core/tsi/local_transport_security.cc
-  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
-  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
-  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security.cc
-  src/core/tsi/transport_security_grpc.cc
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
   test/core/tsi/transport_security_test_lib.cc
@@ -4319,33 +4297,7 @@ add_executable(alts_handshaker_client_test
   src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/tsi/alts/crypt/aes_gcm.cc
-  src/core/tsi/alts/crypt/gsec.cc
-  src/core/tsi/alts/frame_protector/alts_counter.cc
-  src/core/tsi/alts/frame_protector/alts_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_frame_protector.cc
-  src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
-  src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/frame_handler.cc
-  src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  src/core/tsi/alts/handshaker/alts_shared_resource.cc
-  src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
-  src/core/tsi/alts/handshaker/alts_tsi_utils.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
-  src/core/tsi/fake_transport_security.cc
-  src/core/tsi/local_transport_security.cc
-  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
-  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
-  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  src/core/tsi/ssl_transport_security.cc
-  src/core/tsi/transport_security.cc
-  src/core/tsi/transport_security_grpc.cc
   test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
 )
@@ -4423,43 +4375,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(alts_security_connector_test
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/tsi/alts/crypt/aes_gcm.cc
-  src/core/tsi/alts/crypt/gsec.cc
-  src/core/tsi/alts/frame_protector/alts_counter.cc
-  src/core/tsi/alts/frame_protector/alts_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_frame_protector.cc
-  src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
-  src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/frame_handler.cc
-  src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  src/core/tsi/alts/handshaker/alts_shared_resource.cc
-  src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
-  src/core/tsi/alts/handshaker/alts_tsi_utils.cc
-  src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
-  src/core/tsi/fake_transport_security.cc
-  src/core/tsi/local_transport_security.cc
-  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
-  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
-  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  src/core/tsi/ssl_transport_security.cc
-  src/core/tsi/transport_security.cc
-  src/core/tsi/transport_security_grpc.cc
   test/core/security/alts_security_connector_test.cc
 )
 
@@ -4500,33 +4415,7 @@ add_executable(alts_tsi_handshaker_test
   src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/tsi/alts/crypt/aes_gcm.cc
-  src/core/tsi/alts/crypt/gsec.cc
-  src/core/tsi/alts/frame_protector/alts_counter.cc
-  src/core/tsi/alts/frame_protector/alts_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_frame_protector.cc
-  src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
-  src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/frame_handler.cc
-  src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  src/core/tsi/alts/handshaker/alts_shared_resource.cc
-  src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
-  src/core/tsi/alts/handshaker/alts_tsi_utils.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
-  src/core/tsi/fake_transport_security.cc
-  src/core/tsi/local_transport_security.cc
-  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
-  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
-  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  src/core/tsi/ssl_transport_security.cc
-  src/core/tsi/transport_security.cc
-  src/core/tsi/transport_security_grpc.cc
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
 )
@@ -4568,33 +4457,7 @@ add_executable(alts_tsi_utils_test
   src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/tsi/alts/crypt/aes_gcm.cc
-  src/core/tsi/alts/crypt/gsec.cc
-  src/core/tsi/alts/frame_protector/alts_counter.cc
-  src/core/tsi/alts/frame_protector/alts_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_frame_protector.cc
-  src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
-  src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/frame_handler.cc
-  src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  src/core/tsi/alts/handshaker/alts_shared_resource.cc
-  src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
-  src/core/tsi/alts/handshaker/alts_tsi_utils.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
-  src/core/tsi/fake_transport_security.cc
-  src/core/tsi/local_transport_security.cc
-  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
-  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
-  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  src/core/tsi/ssl_transport_security.cc
-  src/core/tsi/transport_security.cc
-  src/core/tsi/transport_security_grpc.cc
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
 )
@@ -5099,17 +4962,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(check_gcp_environment_linux_test
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/tsi/alts/handshaker/transport_security_common_api.cc
   test/core/security/check_gcp_environment_linux_test.cc
 )
 
@@ -5140,17 +4992,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(check_gcp_environment_windows_test
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/tsi/alts/handshaker/transport_security_common_api.cc
   test/core/security/check_gcp_environment_windows_test.cc
 )
 
@@ -5733,43 +5574,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(fake_transport_security_test
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/tsi/alts/crypt/aes_gcm.cc
-  src/core/tsi/alts/crypt/gsec.cc
-  src/core/tsi/alts/frame_protector/alts_counter.cc
-  src/core/tsi/alts/frame_protector/alts_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_frame_protector.cc
-  src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
-  src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/frame_handler.cc
-  src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  src/core/tsi/alts/handshaker/alts_shared_resource.cc
-  src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
-  src/core/tsi/alts/handshaker/alts_tsi_utils.cc
-  src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
-  src/core/tsi/fake_transport_security.cc
-  src/core/tsi/local_transport_security.cc
-  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
-  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
-  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  src/core/tsi/ssl_transport_security.cc
-  src/core/tsi/transport_security.cc
-  src/core/tsi/transport_security_grpc.cc
   test/core/tsi/fake_transport_security_test.cc
   test/core/tsi/transport_security_test_lib.cc
 )
@@ -6080,17 +5884,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(grpc_alts_credentials_options_test
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/tsi/alts/handshaker/transport_security_common_api.cc
   test/core/security/grpc_alts_credentials_options_test.cc
 )
 
@@ -7692,43 +7485,6 @@ if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(ssl_transport_security_test
-    src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-    src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-    src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-    src/core/lib/security/credentials/alts/check_gcp_environment.cc
-    src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-    src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-    src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-    src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-    src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-    src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-    src/core/tsi/alts/crypt/aes_gcm.cc
-    src/core/tsi/alts/crypt/gsec.cc
-    src/core/tsi/alts/frame_protector/alts_counter.cc
-    src/core/tsi/alts/frame_protector/alts_crypter.cc
-    src/core/tsi/alts/frame_protector/alts_frame_protector.cc
-    src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
-    src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
-    src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
-    src/core/tsi/alts/frame_protector/frame_handler.cc
-    src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-    src/core/tsi/alts/handshaker/alts_shared_resource.cc
-    src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
-    src/core/tsi/alts/handshaker/alts_tsi_utils.cc
-    src/core/tsi/alts/handshaker/transport_security_common_api.cc
-    src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
-    src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
-    src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
-    src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
-    src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
-    src/core/tsi/fake_transport_security.cc
-    src/core/tsi/local_transport_security.cc
-    src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
-    src/core/tsi/ssl/session_cache/ssl_session_cache.cc
-    src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-    src/core/tsi/ssl_transport_security.cc
-    src/core/tsi/transport_security.cc
-    src/core/tsi/transport_security_grpc.cc
     test/core/tsi/ssl_transport_security_test.cc
     test/core/tsi/transport_security_test_lib.cc
   )
@@ -12421,43 +12177,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(h2_ssl_session_reuse_test
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/tsi/alts/crypt/aes_gcm.cc
-  src/core/tsi/alts/crypt/gsec.cc
-  src/core/tsi/alts/frame_protector/alts_counter.cc
-  src/core/tsi/alts/frame_protector/alts_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_frame_protector.cc
-  src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
-  src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/frame_handler.cc
-  src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  src/core/tsi/alts/handshaker/alts_shared_resource.cc
-  src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
-  src/core/tsi/alts/handshaker/alts_tsi_utils.cc
-  src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
-  src/core/tsi/fake_transport_security.cc
-  src/core/tsi/local_transport_security.cc
-  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
-  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
-  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  src/core/tsi/ssl_transport_security.cc
-  src/core/tsi/transport_security.cc
-  src/core/tsi/transport_security_grpc.cc
   test/core/end2end/h2_ssl_session_reuse_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15599,43 +15318,6 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(tls_security_connector_test
-  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  src/core/lib/security/credentials/alts/check_gcp_environment.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_linux.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_no_op.cc
-  src/core/lib/security/credentials/alts/check_gcp_environment_windows.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
-  src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/tsi/alts/crypt/aes_gcm.cc
-  src/core/tsi/alts/crypt/gsec.cc
-  src/core/tsi/alts/frame_protector/alts_counter.cc
-  src/core/tsi/alts/frame_protector/alts_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_frame_protector.cc
-  src/core/tsi/alts/frame_protector/alts_record_protocol_crypter_common.cc
-  src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc
-  src/core/tsi/alts/frame_protector/frame_handler.cc
-  src/core/tsi/alts/handshaker/alts_handshaker_client.cc
-  src/core/tsi/alts/handshaker/alts_shared_resource.cc
-  src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc
-  src/core/tsi/alts/handshaker/alts_tsi_utils.cc
-  src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_common.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol.cc
-  src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.cc
-  src/core/tsi/fake_transport_security.cc
-  src/core/tsi/local_transport_security.cc
-  src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
-  src/core/tsi/ssl/session_cache/ssl_session_cache.cc
-  src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
-  src/core/tsi/ssl_transport_security.cc
-  src/core/tsi/transport_security.cc
-  src/core/tsi/transport_security_grpc.cc
   test/core/security/tls_security_connector_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
