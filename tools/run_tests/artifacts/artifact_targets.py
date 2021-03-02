@@ -144,8 +144,24 @@ class PythonArtifact:
             environ['PYTHON'] = '/opt/python/{}/bin/python'.format(
                 self.py_version)
             environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.py_version)
-            environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
-            environ['GRPC_BUILD_MANYLINUX_WHEEL'] = 'TRUE'
+            if self.arch == 'aarch64':
+                environ['GRPC_SKIP_TWINE_CHECK'] = 'TRUE'
+                # when crosscompiling, we need to force statically linking libstdc++
+                # otherwise libstdc++ symbols would be too new and the resulting
+                # wheel wouldn't pass the auditwheel check.
+                # This is needed because C core won't build with GCC 4.8 that's
+                # included in the default dockcross toolchain and we needed
+                # to opt into using a slighly newer version of GCC.
+                environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
+
+            else:
+                # only run auditwheel if we're not crosscompiling
+                environ['GRPC_RUN_AUDITWHEEL_REPAIR'] = 'TRUE'
+                # only build the packages that depend on grpcio-tools
+                # if we're not crosscompiling.
+                # - they require protoc to run on current architecture
+                # - they only have sdist packages anyway, so it's useless to build them again
+                environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
             return create_docker_jobspec(
                 self.name,
                 # NOTE(rbellevi): Do *not* update this without also ensuring the
@@ -375,6 +391,9 @@ def targets():
         PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x86', 'cp39-cp39'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp37-cp37m'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp38-cp38'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp39-cp39'),
         PythonArtifact('linux_extra', 'armv7', '2.7'),
         PythonArtifact('linux_extra', 'armv7', '3.5'),
         PythonArtifact('linux_extra', 'armv7', '3.6'),

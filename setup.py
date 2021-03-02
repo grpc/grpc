@@ -138,6 +138,16 @@ BUILD_WITH_SYSTEM_CARES = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_CARES',
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_RE2 = os.environ.get('GRPC_PYTHON_BUILD_SYSTEM_RE2', False)
 
+# Export this variable to force building the python extension with a statically linked libstdc++.
+# At least on linux, this is normally not needed as we can build manylinux-compatible wheels on linux just fine
+# without statically linking libstdc++ (which leads to a slight increase in the wheel size).
+# This option is useful when crosscompiling wheels for aarch64 where
+# it's difficult to ensure that the crosscompilation toolchain has a high-enough version
+# of GCC (we require >4.9) but still uses old-enough libstdc++ symbols.
+# TODO(jtattermusch): remove this workaround once issues with crosscompiler version are resolved.
+BUILD_WITH_STATIC_LIBSTDCXX = os.environ.get(
+    'GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX', False)
+
 # For local development use only: This skips building gRPC Core and its
 # dependencies, including protobuf and boringssl. This allows "incremental"
 # compilation by first building gRPC Core using make, then building only the
@@ -238,6 +248,9 @@ if EXTRA_ENV_LINK_ARGS is None:
 
 EXTRA_COMPILE_ARGS = shlex.split(EXTRA_ENV_COMPILE_ARGS)
 EXTRA_LINK_ARGS = shlex.split(EXTRA_ENV_LINK_ARGS)
+
+if BUILD_WITH_STATIC_LIBSTDCXX:
+    EXTRA_LINK_ARGS.append('-static-libstdc++')
 
 CYTHON_EXTENSION_PACKAGE_NAMES = ()
 
