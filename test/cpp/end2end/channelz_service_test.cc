@@ -19,6 +19,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
+#include <grpc/grpc_security.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -32,6 +33,11 @@
 #include "absl/memory/memory.h"
 
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/iomgr/load_file.h"
+#include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/lib/slice/slice_utils.h"
+#include "src/cpp/client/secure_credentials.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -103,9 +109,73 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
   std::vector<std::unique_ptr<::grpc::testing::EchoTestService::Stub>> stubs_;
 };
 
-}  // namespace
+enum class CredentialsType {
+  kInsecure = 0,
+  kTls = 1,
+  kMtls = 2,
+};
 
-class ChannelzServerTest : public ::testing::TestWithParam<const char*> {
+constexpr char kCaCertPath[] = "src/core/tsi/test_creds/ca.pem";
+constexpr char kServerCertPath[] = "src/core/tsi/test_creds/server1.pem";
+constexpr char kServerKeyPath[] = "src/core/tsi/test_creds/server1.key";
+constexpr char kClientCertPath[] = "src/core/tsi/test_creds/client.pem";
+constexpr char kClientKeyPath[] = "src/core/tsi/test_creds/client.key";
+
+std::string ReadFile(const char* file_path) {
+  grpc_slice slice;
+  GPR_ASSERT(
+      GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_path, 0, &slice)));
+  std::string file_contents(grpc_core::StringViewFromSlice(slice));
+  grpc_slice_unref(slice);
+  return file_contents;
+}
+
+grpc_core::PemKeyCertPairList ReadTlsIdentityPair(const char* key_path,
+                                                  const char* cert_path) {
+  return grpc_core::PemKeyCertPairList{
+      grpc_core::PemKeyCertPair(ReadFile(key_path), ReadFile(cert_path))};
+}
+
+std::shared_ptr<grpc::ChannelCredentials> GetChannelCredentials(
+    CredentialsType type, ChannelArguments* args) {
+  if (type == CredentialsType::kInsecure) {
+    return InsecureChannelCredentials();
+  }
+  args->SetSslTargetNameOverride("foo.test.google.fr");
+  // TODO(yashykt): Switch to using C++ API once b/173823806 is fixed.
+  grpc_tls_credentials_options* options = grpc_tls_credentials_options_create();
+  grpc_tls_credentials_options_set_certificate_provider(
+      options,
+      grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
+          ReadFile(kCaCertPath),
+          ReadTlsIdentityPair(kClientKeyPath, kClientCertPath))
+          .get());
+  if (type == CredentialsType::kMtls) {
+    grpc_tls_credentials_options_watch_identity_key_cert_pairs(options);
+  }
+  grpc_tls_credentials_options_watch_root_certs(options);
+  return std::make_shared<SecureChannelCredentials>(
+      grpc_tls_credentials_create(options));
+}
+
+std::shared_ptr<grpc::ServerCredentials> GetServerCredentials(
+    CredentialsType type) {
+  if (type == CredentialsType::kInsecure) {
+    return InsecureServerCredentials();
+  }
+  std::vector<experimental::IdentityKeyCertPair> identity_key_cert_pairs = {
+      {ReadFile(kServerKeyPath), ReadFile(kServerCertPath)}};
+  auto certificate_provider =
+      std::make_shared<grpc::experimental::StaticDataCertificateProvider>(
+          ReadFile(kCaCertPath), identity_key_cert_pairs);
+  grpc::experimental::TlsServerCredentialsOptions options(certificate_provider);
+  options.watch_root_certs();
+  options.watch_identity_key_cert_pairs();
+  options.set_cert_request_type(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+  return grpc::experimental::TlsServerCredentials(options);
+}
+
+class ChannelzServerTest : public ::testing::TestWithParam<CredentialsType> {
  public:
   ChannelzServerTest() {}
   static void SetUpTestCase() {
@@ -122,9 +192,8 @@ class ChannelzServerTest : public ::testing::TestWithParam<const char*> {
     proxy_port_ = grpc_pick_unused_port_or_die();
     ServerBuilder proxy_builder;
     std::string proxy_server_address = "localhost:" + to_string(proxy_port_);
-    proxy_builder.AddListeningPort(
-        proxy_server_address,
-        GetCredentialsProvider()->GetServerCredentials(GetParam()));
+    proxy_builder.AddListeningPort(proxy_server_address,
+                                   GetServerCredentials(GetParam()));
     // forces channelz and channel tracing to be enabled.
     proxy_builder.AddChannelArgument(GRPC_ARG_ENABLE_CHANNELZ, 1);
     proxy_builder.AddChannelArgument(
@@ -142,9 +211,8 @@ class ChannelzServerTest : public ::testing::TestWithParam<const char*> {
       ServerBuilder backend_builder;
       std::string backend_server_address =
           "localhost:" + to_string(backends_[i].port);
-      backend_builder.AddListeningPort(
-          backend_server_address,
-          GetCredentialsProvider()->GetServerCredentials(GetParam()));
+      backend_builder.AddListeningPort(backend_server_address,
+                                       GetServerCredentials(GetParam()));
       backends_[i].service = absl::make_unique<TestServiceImpl>();
       // ensure that the backend itself has channelz disabled.
       backend_builder.AddChannelArgument(GRPC_ARG_ENABLE_CHANNELZ, 0);
@@ -157,8 +225,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<const char*> {
       args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 1);
       args.SetInt(GRPC_ARG_MAX_CHANNEL_TRACE_EVENT_MEMORY_PER_NODE, 1024);
       std::shared_ptr<Channel> channel_to_backend = ::grpc::CreateCustomChannel(
-          backend_server_address,
-          GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args),
+          backend_server_address, GetChannelCredentials(GetParam(), &args),
           args);
       proxy_service_.AddChannelToBackend(channel_to_backend);
     }
@@ -170,9 +237,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<const char*> {
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
     std::shared_ptr<Channel> channel = ::grpc::CreateCustomChannel(
-        target,
-        GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args),
-        args);
+        target, GetChannelCredentials(GetParam(), &args), args);
     channelz_stub_ = grpc::channelz::v1::Channelz::NewStub(channel);
     echo_stub_ = grpc::testing::EchoTestService::NewStub(channel);
   }
@@ -185,9 +250,7 @@ class ChannelzServerTest : public ::testing::TestWithParam<const char*> {
     // This ensures that gRPC will not do connection sharing.
     args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, true);
     std::shared_ptr<Channel> channel = ::grpc::CreateCustomChannel(
-        target,
-        GetCredentialsProvider()->GetChannelCredentials(GetParam(), &args),
-        args);
+        target, GetChannelCredentials(GetParam(), &args), args);
     return grpc::testing::EchoTestService::NewStub(channel);
   }
 
@@ -605,6 +668,19 @@ TEST_P(ChannelzServerTest, ManySubchannelsAndSockets) {
     // calls succeeded == messages received.
     EXPECT_EQ(get_subchannel_resp.subchannel().data().calls_succeeded(),
               get_socket_resp.socket().data().messages_received());
+    switch (GetParam()) {
+      case CredentialsType::kInsecure:
+        EXPECT_FALSE(get_socket_resp.socket().has_security());
+        break;
+      case CredentialsType::kTls:
+      case CredentialsType::kMtls:
+        EXPECT_TRUE(get_socket_resp.socket().has_security());
+        EXPECT_TRUE(get_socket_resp.socket().security().has_tls());
+        EXPECT_EQ(
+            get_socket_resp.socket().security().tls().remote_certificate(),
+            ReadFile(kServerCertPath));
+        break;
+    }
   }
 }
 
@@ -656,6 +732,19 @@ TEST_P(ChannelzServerTest, StreamingRPC) {
   EXPECT_EQ(get_socket_response.socket().data().messages_sent(), kNumMessages);
   EXPECT_EQ(get_socket_response.socket().data().messages_received(),
             kNumMessages);
+  switch (GetParam()) {
+    case CredentialsType::kInsecure:
+      EXPECT_FALSE(get_socket_response.socket().has_security());
+      break;
+    case CredentialsType::kTls:
+    case CredentialsType::kMtls:
+      EXPECT_TRUE(get_socket_response.socket().has_security());
+      EXPECT_TRUE(get_socket_response.socket().security().has_tls());
+      EXPECT_EQ(
+          get_socket_response.socket().security().tls().remote_certificate(),
+          ReadFile(kServerCertPath));
+      break;
+  }
 }
 
 TEST_P(ChannelzServerTest, GetServerSocketsTest) {
@@ -681,6 +770,36 @@ TEST_P(ChannelzServerTest, GetServerSocketsTest) {
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_server_sockets_response.socket_ref_size(), 1);
   EXPECT_TRUE(get_server_sockets_response.socket_ref(0).name().find("http"));
+  // Get the socket to verify security information.
+  GetSocketRequest get_socket_request;
+  GetSocketResponse get_socket_response;
+  ClientContext get_socket_context;
+  get_socket_request.set_socket_id(
+      get_server_sockets_response.socket_ref(0).socket_id());
+  s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
+                                &get_socket_response);
+  EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  switch (GetParam()) {
+    case CredentialsType::kInsecure:
+      EXPECT_FALSE(get_socket_response.socket().has_security());
+      break;
+    case CredentialsType::kTls:
+    case CredentialsType::kMtls:
+      EXPECT_TRUE(get_socket_response.socket().has_security());
+      EXPECT_TRUE(get_socket_response.socket().security().has_tls());
+      if (GetParam() == CredentialsType::kMtls) {
+        EXPECT_EQ(
+            get_socket_response.socket().security().tls().remote_certificate(),
+            ReadFile(kClientCertPath));
+      } else {
+        EXPECT_TRUE(get_socket_response.socket()
+                        .security()
+                        .tls()
+                        .remote_certificate()
+                        .empty());
+      }
+      break;
+  }
 }
 
 TEST_P(ChannelzServerTest, GetServerSocketsPaginationTest) {
@@ -782,9 +901,11 @@ TEST_P(ChannelzServerTest, GetServerListenSocketsTest) {
 }
 
 INSTANTIATE_TEST_SUITE_P(ChannelzServer, ChannelzServerTest,
-                         ::testing::ValuesIn(std::vector<const char*>(
-                             {kInsecureCredentialsType, kTlsCredentialsType})));
+                         ::testing::ValuesIn(std::vector<CredentialsType>(
+                             {CredentialsType::kInsecure, CredentialsType::kTls,
+                              CredentialsType::kMtls})));
 
+}  // namespace
 }  // namespace testing
 }  // namespace grpc
 

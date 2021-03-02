@@ -206,6 +206,11 @@ RefCountedPtr<channelz::SocketNode::Security>
 MakeChannelzSecurityFromAuthContext(grpc_auth_context* auth_context) {
   RefCountedPtr<channelz::SocketNode::Security> security =
       MakeRefCounted<channelz::SocketNode::Security>();
+  // TODO(yashykt): Currently, we are assuming TLS by default and are only able
+  // to fill in the remote certificate but we should ideally be able to fill in
+  // other fields in
+  // https://github.com/grpc/grpc/blob/fcd43e90304862a823316b224ee733d17a8cfd90/src/proto/grpc/channelz/channelz.proto#L326
+  // from grpc_auth_context.
   security->type = channelz::SocketNode::Security::ModelType::kTls;
   security->tls = absl::make_optional<channelz::SocketNode::Security::Tls>();
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
