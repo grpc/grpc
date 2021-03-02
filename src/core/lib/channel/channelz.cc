@@ -538,6 +538,9 @@ Json SocketNode::RenderJson() {
        }},
       {"data", std::move(data)},
   };
+  if(security_ != nullptr && security_->type != SocketNode::Security::ModelType::kUnset) {
+    object["security"] = security_->RenderJson();
+  }
   PopulateSocketAddressJson(&object, "remote", remote_.c_str());
   PopulateSocketAddressJson(&object, "local", local_.c_str());
   return object;
