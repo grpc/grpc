@@ -238,7 +238,7 @@ def _remove_completed_rpcs(futures: Mapping[int, grpc.Future],
     done = []
     for future_id, (future, method) in futures.items():
         if future.done():
-            _on_rpc_done(future_id, future, method, args.print_response)
+            _on_rpc_done(future_id, future, method, bool(args.print_response))
             done.append(future_id)
     for rpc_id in done:
         del futures[rpc_id]
@@ -260,7 +260,8 @@ class _ChannelConfiguration:
 
     def __init__(self, method: str, metadata: Sequence[Tuple[str,
                                                              str]], qps: int,
-                 server: str, rpc_timeout_sec: int, print_response: bool):
+                 server: str, rpc_timeout_sec: int, print_response: bool,
+                 secure_mode: bool):
         # condition is signalled when a change is made to the config.
         self.condition = threading.Condition()
 
@@ -270,13 +271,20 @@ class _ChannelConfiguration:
         self.server = server
         self.rpc_timeout_sec = rpc_timeout_sec
         self.print_response = print_response
-
+        self.secure_mode = secure_mode
 
 def _run_single_channel(config: _ChannelConfiguration) -> None:
     global _global_rpc_id  # pylint: disable=global-statement
     with config.condition:
         server = config.server
-    with grpc.insecure_channel(server) as channel:
+    channel = None
+    if config.secure_mode:
+        fallback_creds = grpc.experimental.insecure_channel_credentials()
+        channel_creds = grpc.xds_channel_credentials(fallback_creds)
+        channel = grpc.secure_channel(server, channel_creds)
+    else:
+        channel = grpc.insecure_channel(server)
+    with channel:
         stub = test_pb2_grpc.TestServiceStub(channel)
         futures: Dict[int, Tuple[grpc.Future, str]] = {}
         while not _stop_event.is_set():
@@ -383,7 +391,7 @@ def _run(args: argparse.Namespace, methods: Sequence[str],
             qps = 0
         channel_config = _ChannelConfiguration(
             method, per_method_metadata.get(method, []), qps, args.server,
-            args.rpc_timeout_sec, args.print_response)
+            args.rpc_timeout_sec, bool(args.print_response), bool(args.secure_mode))
         channel_configs[method] = channel_config
         method_handles.append(_MethodHandle(args.num_channels, channel_config))
     _global_server = grpc.server(futures.ThreadPoolExecutor())
@@ -431,8 +439,8 @@ if __name__ == "__main__":
         type=int,
         help="The number of channels from which to send requests.")
     parser.add_argument("--print_response",
-                        default=False,
-                        action="store_true",
+                        default="False",
+                        type=str,
                         help="Write RPC response to STDOUT.")
     parser.add_argument(
         "--qps",
@@ -451,6 +459,11 @@ if __name__ == "__main__":
         default=50052,
         type=int,
         help="The port on which to expose the peer distribution stats service.")
+    parser.add_argument(
+        "--secure_mode",
+        default="False",
+        type=str,
+        help="If specified, uses xDS credentials to connect to the server.")
     parser.add_argument('--verbose',
                         help='verbose log output',
                         default=False,

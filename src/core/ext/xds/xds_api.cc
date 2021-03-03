@@ -1299,7 +1299,7 @@ grpc_error* RouteActionParse(const EncodingContext& context,
       cluster.weight = google_protobuf_UInt32Value_value(weight);
       if (cluster.weight == 0) continue;
       sum_of_weights += cluster.weight;
-      if ((XdsSecurityEnabled() || XdsFaultInjectionEnabled()) &&
+      if ((XdsSecurityEnabled() && XdsFaultInjectionEnabled()) &&
           context.use_v3) {
         grpc_error* error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_WeightedCluster_ClusterWeight,
@@ -1380,7 +1380,7 @@ grpc_error* RouteConfigParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("VirtualHost has no domains");
     }
     // Parse typed_per_filter_config.
-    if ((XdsSecurityEnabled() || XdsFaultInjectionEnabled()) &&
+    if ((XdsSecurityEnabled() && XdsFaultInjectionEnabled()) &&
         context.use_v3) {
       grpc_error* error = ParseTypedPerFilterConfig<
           envoy_config_route_v3_VirtualHost,
@@ -1422,7 +1422,7 @@ grpc_error* RouteConfigParse(
       error = RouteActionParse(context, routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
-      if ((XdsSecurityEnabled() || XdsFaultInjectionEnabled()) &&
+      if ((XdsSecurityEnabled() && XdsFaultInjectionEnabled()) &&
           context.use_v3) {
         grpc_error* error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_Route,
@@ -1587,7 +1587,7 @@ grpc_error* LdsResponseParseClient(
     }
   }
   // Parse filters.
-  if ((XdsSecurityEnabled() || XdsFaultInjectionEnabled()) && context.use_v3) {
+  if ((XdsSecurityEnabled() && XdsFaultInjectionEnabled()) && context.use_v3) {
     size_t num_filters = 0;
     const auto* http_filters =
         envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(

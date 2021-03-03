@@ -34,6 +34,10 @@ spec:
         env:
           - name: GRPC_XDS_BOOTSTRAP
             value: "/tmp/grpc-xds/td-grpc-bootstrap.json"
+          - name: GRPC_VERBOSITY
+            value: "DEBUG"
+          - name: GRPC_TRACE
+            value: "xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb"
         volumeMounts:
           - mountPath: /tmp/grpc-xds/
             name: grpc-td-conf
