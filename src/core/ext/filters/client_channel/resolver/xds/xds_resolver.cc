@@ -518,29 +518,6 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   }
 }
 
-absl::optional<absl::string_view> GetMetadataValue(
-    const std::string& target_key, grpc_metadata_batch* initial_metadata,
-    std::string* concatenated_value) {
-  // Find all values for the specified key.
-  GPR_DEBUG_ASSERT(initial_metadata != nullptr);
-  absl::InlinedVector<absl::string_view, 1> values;
-  for (grpc_linked_mdelem* md = initial_metadata->list.head; md != nullptr;
-       md = md->next) {
-    absl::string_view key = StringViewFromSlice(GRPC_MDKEY(md->md));
-    absl::string_view value = StringViewFromSlice(GRPC_MDVALUE(md->md));
-    if (target_key == key) values.push_back(value);
-  }
-  // If none found, no match.
-  if (values.empty()) return absl::nullopt;
-  // If exactly one found, return it as-is.
-  if (values.size() == 1) return values.front();
-  // If more than one found, concatenate the values, using
-  // *concatenated_values as a temporary holding place for the
-  // concatenated string.
-  *concatenated_value = absl::StrJoin(values, ",");
-  return *concatenated_value;
-}
-
 bool HeaderMatchHelper(const HeaderMatcher& header_matcher,
                        grpc_metadata_batch* initial_metadata) {
   std::string concatenated_value;
@@ -554,8 +531,8 @@ bool HeaderMatchHelper(const HeaderMatcher& header_matcher,
   } else if (header_matcher.name() == "content-type") {
     value = "application/grpc";
   } else {
-    value = GetMetadataValue(header_matcher.name(), initial_metadata,
-                             &concatenated_value);
+    value = grpc_metadata_batch_get_value(
+        initial_metadata, header_matcher.name(), &concatenated_value);
   }
   return header_matcher.Match(value);
 }

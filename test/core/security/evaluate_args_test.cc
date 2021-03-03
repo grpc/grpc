@@ -72,6 +72,7 @@ TEST(EvaluateArgsMetadataTest, HandlesNullMetadata) {
   EXPECT_EQ(eval_args.GetMethod(), nullptr);
   EXPECT_EQ(eval_args.GetHost(), nullptr);
   EXPECT_THAT(eval_args.GetHeaders(), ::testing::ElementsAre());
+  EXPECT_EQ(eval_args.GetHeaderValue("some_key", nullptr), absl::nullopt);
 }
 
 TEST(EvaluateArgsMetadataTest, HandlesEmptyMetadata) {
@@ -82,6 +83,7 @@ TEST(EvaluateArgsMetadataTest, HandlesEmptyMetadata) {
   EXPECT_EQ(eval_args.GetMethod(), nullptr);
   EXPECT_EQ(eval_args.GetHost(), nullptr);
   EXPECT_THAT(eval_args.GetHeaders(), ::testing::ElementsAre());
+  EXPECT_EQ(eval_args.GetHeaderValue("some_key", nullptr), absl::nullopt);
   grpc_metadata_batch_destroy(&metadata);
 }
 
@@ -167,6 +169,28 @@ TEST(EvaluateArgsMetadataTest, GetHeadersSuccess) {
       ::testing::UnorderedElementsAre(
           ::testing::Pair(StringViewFromSlice(GRPC_MDSTR_HOST), kHost),
           ::testing::Pair(StringViewFromSlice(GRPC_MDSTR_PATH), kPath)));
+  grpc_metadata_batch_destroy(&metadata);
+  grpc_shutdown();
+}
+
+TEST(EvaluateArgsMetadataTest, GetHeaderValueSuccess) {
+  grpc_init();
+  const char* kKey = "some_key";
+  const char* kValue = "some_value";
+  grpc_metadata_batch metadata;
+  grpc_metadata_batch_init(&metadata);
+  grpc_linked_mdelem storage;
+  storage.md = grpc_mdelem_from_slices(
+      grpc_slice_intern(grpc_slice_from_static_string(kKey)),
+      grpc_slice_intern(grpc_slice_from_static_string(kValue)));
+  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage),
+            GRPC_ERROR_NONE);
+  EvaluateArgs eval_args(&metadata, nullptr, nullptr);
+  std::string concatenated_value;
+  absl::optional<absl::string_view> value =
+      eval_args.GetHeaderValue(kKey, &concatenated_value);
+  ASSERT_TRUE(value.has_value());
+  EXPECT_EQ(value.value(), kValue);
   grpc_metadata_batch_destroy(&metadata);
   grpc_shutdown();
 }
