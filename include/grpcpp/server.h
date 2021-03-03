@@ -300,8 +300,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // the ref count are the running state of the server (take a ref at start and
   // drop it at shutdown) and each running callback RPC.
   void Ref();
-  void UnrefWithPossibleNotify() /* LOCKS_EXCLUDED(mu_) */;
-  void UnrefAndWaitLocked() /* EXCLUSIVE_LOCKS_REQUIRED(mu_) */;
+  void UnrefWithPossibleNotify() ABSL_LOCKS_EXCLUDED(mu_);
+  void UnrefAndWaitLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::vector<std::shared_ptr<internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
@@ -378,7 +378,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // with this server (if any). It is set on the first call to CallbackCQ().
   // It is _not owned_ by the server; ownership belongs with its internal
   // shutdown callback tag (invoked when the CQ is fully shutdown).
-  CompletionQueue* callback_cq_ /* GUARDED_BY(mu_) */ = nullptr;
+  CompletionQueue* callback_cq_ ABSL_GUARDED_BY(mu_) = nullptr;
 
   // List of CQs passed in by user that must be Shutdown only after Server is
   // Shutdown.  Even though this is only used with NDEBUG, instantiate it in all
