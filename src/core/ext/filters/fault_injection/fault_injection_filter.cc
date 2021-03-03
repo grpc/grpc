@@ -318,6 +318,8 @@ CallData::CallData(grpc_call_element* elem, const grpc_call_element_args* args)
 }
 
 CallData::~CallData() {
+  // Destroy may have a race with resume canceller on deallocating lock itself.
+  MutexLock lock(&delay_mu_);
   if (fi_policy_owned_) {
     fi_policy_->~FaultInjectionPolicy();
   }
