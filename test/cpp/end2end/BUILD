@@ -552,9 +552,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    args = [
-        "--gtest_filter=*Fault*",
-    ],
 )
 
 grpc_cc_test(
