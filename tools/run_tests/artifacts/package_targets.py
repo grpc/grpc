@@ -128,9 +128,14 @@ class PythonPackage:
         return []
 
     def build_jobspec(self):
+        # since the python package build does very little, we can use virtually
+        # any image that has new-enough python, so reusing one of the images used
+        # for artifact building seems natural.
         return create_docker_jobspec(
-            self.name, 'tools/dockerfile/grpc_artifact_centos6_x64',
-            'tools/run_tests/artifacts/build_package_python.sh')
+            self.name,
+            'tools/dockerfile/grpc_artifact_python_manylinux2014_x64',
+            'tools/run_tests/artifacts/build_package_python.sh',
+            environ={'PYTHON': '/opt/python/cp39-cp39/bin/python'})
 
 
 class PHPPackage:
