@@ -66,7 +66,7 @@ void GlobalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
   MutexLock lock(&mu_);
   auto it = subchannel_map_.find(key);
   // delete only if key hasn't been re-registered to a different subchannel
-  // between strong-unreffing and unregistration of c.
+  // between strong-unreffing and unregistration of subchannel.
   if (it != subchannel_map_.end() && it->second == subchannel) {
     subchannel_map_.erase(it);
   }

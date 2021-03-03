@@ -976,7 +976,9 @@ void Subchannel::OnRetryAlarm(void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE) {
     gpr_log(GPR_INFO, "Failed to connect to channel, retrying");
     c->ContinueConnectingLocked();
-    c.release();  // still connecting, keep ref around
+    // Still connecting, keep ref around. Note that this stolen ref won't
+    // be dropped without first acquiring c->mu_.
+    c.release();
   }
   GRPC_ERROR_UNREF(error);
 }
