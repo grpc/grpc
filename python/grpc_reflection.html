@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gRPC Reflection &#8212; gRPC Python 1.35.0 documentation</title>
+    <title>gRPC Reflection &#8212; gRPC Python 1.36.1 documentation</title>
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -31,7 +31,7 @@
 
 
 
-<p class="blurb">1.35.0</p>
+<p class="blurb">1.36.1</p>
 
 
 
@@ -106,11 +106,11 @@
 <p>Reference implementation for reflection in gRPC Python.</p>
 <dl class="py class">
 <dt id="grpc_reflection.v1alpha.reflection.ReflectionServicer">
-<em class="property">class </em><code class="sig-prename descclassname">grpc_reflection.v1alpha.reflection.</code><code class="sig-name descname">ReflectionServicer</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_names</span></em>, <em class="sig-param"><span class="n">pool</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#ReflectionServicer"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer" title="Permalink to this definition">¶</a></dt>
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">grpc_reflection.v1alpha.reflection.</span></code><code class="sig-name descname"><span class="pre">ReflectionServicer</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#ReflectionServicer"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer" title="Permalink to this definition">¶</a></dt>
 <dd><p>Servicer handling RPCs for service statuses.</p>
 <dl class="py method">
 <dt id="grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo">
-<code class="sig-name descname">ServerReflectionInfo</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">request_iterator</span></em>, <em class="sig-param"><span class="n">context</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#ReflectionServicer.ServerReflectionInfo"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo" title="Permalink to this definition">¶</a></dt>
+<code class="sig-name descname"><span class="pre">ServerReflectionInfo</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">request_iterator</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">context</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#ReflectionServicer.ServerReflectionInfo"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.ReflectionServicer.ServerReflectionInfo" title="Permalink to this definition">¶</a></dt>
 <dd><p>The reflection service is structured as a bidirectional stream, ensuring
 all related requests go to a single server.</p>
 </dd></dl>
@@ -119,7 +119,7 @@ all related requests go to a single server.</p>
 
 <dl class="py function">
 <dt id="grpc_reflection.v1alpha.reflection.enable_server_reflection">
-<code class="sig-prename descclassname">grpc_reflection.v1alpha.reflection.</code><code class="sig-name descname">enable_server_reflection</code><span class="sig-paren">(</span><em class="sig-param"><span class="n">service_names</span></em>, <em class="sig-param"><span class="n">server</span></em>, <em class="sig-param"><span class="n">pool</span><span class="o">=</span><span class="default_value">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#enable_server_reflection"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.enable_server_reflection" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">grpc_reflection.v1alpha.reflection.</span></code><code class="sig-name descname"><span class="pre">enable_server_reflection</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">service_names</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">server</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pool</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc_reflection/v1alpha/reflection.html#enable_server_reflection"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc_reflection.v1alpha.reflection.enable_server_reflection" title="Permalink to this definition">¶</a></dt>
 <dd><p>Enables server reflection on a server.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.35.0</span>
+   &#160;<span id="projectnumber">1.36.1</span>
    </div>
   </td>
  </tr>
@@ -117,6 +117,8 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_server_streaming_call.html">ServerStreamingCall</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Represents an active call that sends a single message and then gets a stream of responses.  <a href="class_grpc_1_1_server_streaming_call.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_status.html">Status</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_timeval.html">Timeval</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">class <a class="el" href="class_grpc_1_1_timeval.html" title="class Timeval">Timeval</a>  <a href="class_grpc_1_1_timeval.html#details">More...</a><br /></td></tr>
@@ -255,7 +257,9 @@ Variables</h2></td></tr>
 <div class="textblock"><p>Class <a class="el" href="class_grpc_1_1_abstract_call.html">AbstractCall</a>. </p>
 <p>This is an experimental and incomplete implementation of gRPC server for PHP.</p>
 <p>APIs are <em>definitely</em> going to be changed.</p>
-<p>DO NOT USE in production. Class <a class="el" href="class_grpc_1_1_rpc_server.html">RpcServer</a> </p>
+<p>DO NOT USE in production. Class <a class="el" href="class_grpc_1_1_rpc_server.html">RpcServer</a></p>
+<p>APIs are <em>definitely</em> going to be changed.</p>
+<p>DO NOT USE in production. Class <a class="el" href="class_grpc_1_1_status.html">Status</a> </p>
 </div><h2 class="groupheader">Variable Documentation</h2>
 <a id="a6f12e0a446b5933efeb43bb0f33f2de4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6f12e0a446b5933efeb43bb0f33f2de4">&#9670;&nbsp;</a></span>CALL_ERROR</h2>
@@ -899,7 +903,7 @@ Variables</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Unknown error. </p>
-<p>An example of where this error may be returned is if a Status value received from another address space belongs to an error-space that is not known in this address space. Also errors raised by APIs that do not return enough error information may be converted to this error. </p>
+<p>An example of where this error may be returned is if a <a class="el" href="class_grpc_1_1_status.html">Status</a> value received from another address space belongs to an error-space that is not known in this address space. Also errors raised by APIs that do not return enough error information may be converted to this error. </p>
 
 </div>
 </div>
@@ -940,7 +944,7 @@ Variables</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 22 2021 01:32:17 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 3 2021 19:20:18 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

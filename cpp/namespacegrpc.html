@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.35.0</span>
+   &#160;<span id="projectnumber">1.36.1</span>
    </div>
   </td>
  </tr>
@@ -190,6 +190,9 @@ Data Structures</h2></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_completion_queue.html">CompletionQueue</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A thin wrapper around <a class="el" href="grpc__types_8h.html#a895faab0e6035445750e43482651ba2f">grpc_completion_queue</a> (see src/core/lib/surface/completion_queue.h).  <a href="classgrpc_1_1_completion_queue.html#details">More...</a><br /></td></tr>
+<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_context_allocator.html">ContextAllocator</a></td></tr>
+<tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">A <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> allows users to use the contents of the <a class="el" href="classgrpc_1_1_callback_server_context.html">CallbackServerContext</a> or GenericCallbackServerContext structure for the callback API.  <a href="classgrpc_1_1_context_allocator.html#details">More...</a><br /></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_core_codegen.html">CoreCodegen</a></td></tr>
 <tr class="memdesc:"><td class="mdescLeft">&#160;</td><td class="mdescRight">Implementation of the core codegen interface.  <a href="classgrpc_1_1_core_codegen.html#details">More...</a><br /></td></tr>
@@ -496,6 +499,9 @@ Functions</h2></td></tr>
 <tr class="separator:a72a5e2e0be4aa041cb587bea339589d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a823c6a4b19ffc71fb33e90154ee2ad07"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a823c6a4b19ffc71fb33e90154ee2ad07">MetadataCredentialsFromPlugin</a> (std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_metadata_credentials_plugin.html">MetadataCredentialsPlugin</a> &gt; plugin)</td></tr>
 <tr class="separator:a823c6a4b19ffc71fb33e90154ee2ad07"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4597f5765148bd5bc141bcb778907a1f"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a4597f5765148bd5bc141bcb778907a1f">ExternalAccountCredentials</a> (const grpc::string &amp;json_string, const std::vector&lt; grpc::string &gt; &amp;scopes)</td></tr>
+<tr class="memdesc:a4597f5765148bd5bc141bcb778907a1f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds External Account credentials.  <a href="namespacegrpc.html#a4597f5765148bd5bc141bcb778907a1f">More...</a><br /></td></tr>
+<tr class="separator:a4597f5765148bd5bc141bcb778907a1f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a58c19329766a61e325450888aacef0ad"><td class="memItemLeft" align="right" valign="top">std::shared_ptr&lt; <a class="el" href="classgrpc_1_1_server_credentials.html">ServerCredentials</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a58c19329766a61e325450888aacef0ad">SslServerCredentials</a> (const <a class="el" href="structgrpc_1_1_ssl_server_credentials_options.html">grpc::SslServerCredentialsOptions</a> &amp;options)</td></tr>
 <tr class="memdesc:a58c19329766a61e325450888aacef0ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Builds SSL <a class="el" href="classgrpc_1_1_server_credentials.html" title="Wrapper around grpc_server_credentials, a way to authenticate a server.">ServerCredentials</a> given SSL specific options.  <a href="namespacegrpc.html#a58c19329766a61e325450888aacef0ad">More...</a><br /></td></tr>
 <tr class="separator:a58c19329766a61e325450888aacef0ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -990,6 +996,37 @@ Variables</h2></td></tr>
 
 <p>Enable/disable the default health checking service. </p>
 <p>This applies to all C++ servers created afterwards. For each server, user can override the default with a <a class="el" href="classgrpc_1_1_health_check_service_server_builder_option.html">HealthCheckServiceServerBuilderOption</a>. NOT thread safe. </p>
+
+</div>
+</div>
+<a id="a4597f5765148bd5bc141bcb778907a1f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4597f5765148bd5bc141bcb778907a1f">&#9670;&nbsp;</a></span>ExternalAccountCredentials()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">std::shared_ptr&lt;<a class="el" href="classgrpc_1_1_call_credentials.html">CallCredentials</a>&gt; grpc::ExternalAccountCredentials </td>
+          <td>(</td>
+          <td class="paramtype">const grpc::string &amp;&#160;</td>
+          <td class="paramname"><em>json_string</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::vector&lt; grpc::string &gt; &amp;&#160;</td>
+          <td class="paramname"><em>scopes</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Builds External Account credentials. </p>
+<p>json_string is the JSON string containing the credentials options. scopes contains the scopes to be binded with the credentials. </p>
 
 </div>
 </div>
@@ -1870,7 +1907,7 @@ template&lt;class ProtoBufferWriter , class T &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 3 2021 19:17:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

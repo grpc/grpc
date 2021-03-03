@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.35.0</span>
+   &#160;<span id="projectnumber">1.36.1</span>
    </div>
   </td>
  </tr>
@@ -79,14 +79,14 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aec9c69861997289db3efd2abb5d0f58c"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_interceptor.html#aec9c69861997289db3efd2abb5d0f58c">interceptUnaryUnary</a> ( $method, $argument, $deserialize, array $metadata=[], array $options=[], $continuation)</td></tr>
-<tr class="separator:aec9c69861997289db3efd2abb5d0f58c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a795ddc43e1701df83b01731d7cbd6b04"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_interceptor.html#a795ddc43e1701df83b01731d7cbd6b04">interceptStreamUnary</a> ( $method, $deserialize, array $metadata=[], array $options=[], $continuation)</td></tr>
-<tr class="separator:a795ddc43e1701df83b01731d7cbd6b04"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a209c18987ef9abed720b658b803bb1cb"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_interceptor.html#a209c18987ef9abed720b658b803bb1cb">interceptUnaryStream</a> ( $method, $argument, $deserialize, array $metadata=[], array $options=[], $continuation)</td></tr>
-<tr class="separator:a209c18987ef9abed720b658b803bb1cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4c6b68d9d0a4c7f26b838cee67de9fba"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_interceptor.html#a4c6b68d9d0a4c7f26b838cee67de9fba">interceptStreamStream</a> ( $method, $deserialize, array $metadata=[], array $options=[], $continuation)</td></tr>
-<tr class="separator:a4c6b68d9d0a4c7f26b838cee67de9fba"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad5be9dff122fb7deda65621de274267e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_interceptor.html#ad5be9dff122fb7deda65621de274267e">interceptUnaryUnary</a> ( $method, $argument, $deserialize, $continuation, array $metadata=[], array $options=[])</td></tr>
+<tr class="separator:ad5be9dff122fb7deda65621de274267e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab8a381279249e91313395a5ee174951f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_interceptor.html#ab8a381279249e91313395a5ee174951f">interceptStreamUnary</a> ( $method, $deserialize, $continuation, array $metadata=[], array $options=[])</td></tr>
+<tr class="separator:ab8a381279249e91313395a5ee174951f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afe75564510d738e1f0c01a0c103c9236"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_interceptor.html#afe75564510d738e1f0c01a0c103c9236">interceptUnaryStream</a> ( $method, $argument, $deserialize, $continuation, array $metadata=[], array $options=[])</td></tr>
+<tr class="separator:afe75564510d738e1f0c01a0c103c9236"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5ecd46cde9453e5654184a0b1a94de5e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_interceptor.html#a5ecd46cde9453e5654184a0b1a94de5e">interceptStreamStream</a> ( $method, $deserialize, $continuation, array $metadata=[], array $options=[])</td></tr>
+<tr class="separator:a5ecd46cde9453e5654184a0b1a94de5e"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
@@ -144,8 +144,8 @@ Static Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a4c6b68d9d0a4c7f26b838cee67de9fba"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4c6b68d9d0a4c7f26b838cee67de9fba">&#9670;&nbsp;</a></span>interceptStreamStream()</h2>
+<a id="a5ecd46cde9453e5654184a0b1a94de5e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5ecd46cde9453e5654184a0b1a94de5e">&#9670;&nbsp;</a></span>interceptStreamStream()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -165,6 +165,12 @@ Static Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>$continuation</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">array&#160;</td>
           <td class="paramname"><em>$metadata</em> = <code>[]</code>, </td>
         </tr>
@@ -172,13 +178,7 @@ Static Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">array&#160;</td>
-          <td class="paramname"><em>$options</em> = <code>[]</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname"><em>$continuation</em>&#160;</td>
+          <td class="paramname"><em>$options</em> = <code>[]</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -190,8 +190,8 @@ Static Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a795ddc43e1701df83b01731d7cbd6b04"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a795ddc43e1701df83b01731d7cbd6b04">&#9670;&nbsp;</a></span>interceptStreamUnary()</h2>
+<a id="ab8a381279249e91313395a5ee174951f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab8a381279249e91313395a5ee174951f">&#9670;&nbsp;</a></span>interceptStreamUnary()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -211,6 +211,12 @@ Static Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>$continuation</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">array&#160;</td>
           <td class="paramname"><em>$metadata</em> = <code>[]</code>, </td>
         </tr>
@@ -218,13 +224,7 @@ Static Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">array&#160;</td>
-          <td class="paramname"><em>$options</em> = <code>[]</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname"><em>$continuation</em>&#160;</td>
+          <td class="paramname"><em>$options</em> = <code>[]</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -236,8 +236,8 @@ Static Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a209c18987ef9abed720b658b803bb1cb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a209c18987ef9abed720b658b803bb1cb">&#9670;&nbsp;</a></span>interceptUnaryStream()</h2>
+<a id="afe75564510d738e1f0c01a0c103c9236"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afe75564510d738e1f0c01a0c103c9236">&#9670;&nbsp;</a></span>interceptUnaryStream()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -263,6 +263,12 @@ Static Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>$continuation</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">array&#160;</td>
           <td class="paramname"><em>$metadata</em> = <code>[]</code>, </td>
         </tr>
@@ -270,13 +276,7 @@ Static Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">array&#160;</td>
-          <td class="paramname"><em>$options</em> = <code>[]</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname"><em>$continuation</em>&#160;</td>
+          <td class="paramname"><em>$options</em> = <code>[]</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -288,8 +288,8 @@ Static Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="aec9c69861997289db3efd2abb5d0f58c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aec9c69861997289db3efd2abb5d0f58c">&#9670;&nbsp;</a></span>interceptUnaryUnary()</h2>
+<a id="ad5be9dff122fb7deda65621de274267e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad5be9dff122fb7deda65621de274267e">&#9670;&nbsp;</a></span>interceptUnaryUnary()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -315,6 +315,12 @@ Static Public Member Functions</h2></td></tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>$continuation</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
           <td class="paramtype">array&#160;</td>
           <td class="paramname"><em>$metadata</em> = <code>[]</code>, </td>
         </tr>
@@ -322,13 +328,7 @@ Static Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">array&#160;</td>
-          <td class="paramname"><em>$options</em> = <code>[]</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">&#160;</td>
-          <td class="paramname"><em>$continuation</em>&#160;</td>
+          <td class="paramname"><em>$options</em> = <code>[]</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -346,7 +346,7 @@ Static Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 22 2021 01:32:17 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 3 2021 19:20:18 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

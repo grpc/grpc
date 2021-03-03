@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.35.0</span>
+   &#160;<span id="projectnumber">1.36.1</span>
    </div>
   </td>
  </tr>
@@ -153,6 +153,10 @@ Protected Member Functions</h2></td></tr>
 <tr class="separator:a8e50f2206f90bdcb221232310078d33a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af67bb06438457e78121d38c30399ba9a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#af67bb06438457e78121d38c30399ba9a">ServerContextBase</a> (<a class="el" href="structgpr__timespec.html">gpr_timespec</a> <a class="el" href="classgrpc_1_1_server_context_base.html#aaa0410923dcf941e78c75e7463a34390">deadline</a>, <a class="el" href="structgrpc__metadata__array.html">grpc_metadata_array</a> *arr)</td></tr>
 <tr class="separator:af67bb06438457e78121d38c30399ba9a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09e9fc2c941452180d012cb049ac1b74"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#a09e9fc2c941452180d012cb049ac1b74">set_context_allocator</a> (<a class="el" href="classgrpc_1_1_context_allocator.html">ContextAllocator</a> *<a class="el" href="classgrpc_1_1_server_context_base.html#adee121869f6acd8ea8b13d0d2f290b81">context_allocator</a>)</td></tr>
+<tr class="separator:a09e9fc2c941452180d012cb049ac1b74"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adee121869f6acd8ea8b13d0d2f290b81"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_context_allocator.html">ContextAllocator</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#adee121869f6acd8ea8b13d0d2f290b81">context_allocator</a> () const</td></tr>
+<tr class="separator:adee121869f6acd8ea8b13d0d2f290b81"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
 Friends</h2></td></tr>
@@ -612,6 +616,31 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a id="adee121869f6acd8ea8b13d0d2f290b81"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adee121869f6acd8ea8b13d0d2f290b81">&#9670;&nbsp;</a></span>context_allocator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_context_allocator.html">ContextAllocator</a>* grpc::ServerContextBase::context_allocator </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="aaa0410923dcf941e78c75e7463a34390"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aaa0410923dcf941e78c75e7463a34390">&#9670;&nbsp;</a></span>deadline()</h2>
 
@@ -822,6 +851,32 @@ Friends</h2></td></tr>
   </table>
   </dd>
 </dl>
+
+</div>
+</div>
+<a id="a09e9fc2c941452180d012cb049ac1b74"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a09e9fc2c941452180d012cb049ac1b74">&#9670;&nbsp;</a></span>set_context_allocator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::ServerContextBase::set_context_allocator </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="classgrpc_1_1_context_allocator.html">ContextAllocator</a> *&#160;</td>
+          <td class="paramname"><em>context_allocator</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">protected</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
 
 </div>
 </div>
@@ -1459,7 +1514,7 @@ template&lt;class W &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 3 2021 19:17:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

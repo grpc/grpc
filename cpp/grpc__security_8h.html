@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.35.0</span>
+   &#160;<span id="projectnumber">1.36.1</span>
    </div>
   </td>
  </tr>
@@ -1061,7 +1061,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 
 <p>&ndash; The following auth context methods should only be called by a server metadata </p>
-<h2><a class="anchor" id="autotoc_md258"></a>
+<h2><a class="anchor" id="autotoc_md260"></a>
 processor to set properties extracted from auth metadata.</h2>
 <p>Add a property. </p>
 
@@ -2581,7 +2581,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><div class="memdoc">
 
 <p>Sets the options of whether to request and verify client certs. </p>
-<p>This should be called only on the server side. It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
+<p>This should be called only on the server side. It is used for experimental purpose for now and subject to change. </p>
 
 </div>
 </div>
@@ -2612,7 +2612,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><div class="memdoc">
 
 <p>Sets the credential provider in the options. </p>
-<p>The |options| will implicitly take a new ref to the |provider|. It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
+<p>The |options| will implicitly take a new ref to the |provider|. It is used for experimental purpose for now and subject to change. </p>
 
 </div>
 </div>
@@ -2705,7 +2705,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><div class="memdoc">
 
 <p>Sets the configuration for a custom authorization check performed at the end of the handshake. </p>
-<p>The |options| will implicitly take a new ref to the |config|. It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
+<p>The |options| will implicitly take a new ref to the |config|. It is used for experimental purpose for now and subject to change. </p>
 
 </div>
 </div>
@@ -2736,7 +2736,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><div class="memdoc">
 
 <p>Sets the options of whether to choose certain checks, e.g. </p>
-<p>certificate check, hostname check, etc. This should be called only on the client side. If |server_verification_option| is not GRPC_TLS_SERVER_VERIFICATION, use of a custom authorization check (grpc_tls_server_authorization_check_config) is mandatory. It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
+<p>certificate check, hostname check, etc. This should be called only on the client side. If |server_verification_option| is not GRPC_TLS_SERVER_VERIFICATION, use of a custom authorization check (grpc_tls_server_authorization_check_config) is mandatory. It is used for experimental purpose for now and subject to change. </p>
 
 </div>
 </div>
@@ -2757,7 +2757,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><div class="memdoc">
 
 <p>If set, gRPC stack will keep watching the identity key-cert pairs with name |identity_cert_name|. </p>
-<p>It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
+<p>This is required on the server side, and optional on the client side. It is used for experimental purpose for now and subject to change. </p>
 
 </div>
 </div>
@@ -2778,7 +2778,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><div class="memdoc">
 
 <p>If set, gRPC stack will keep watching the root certificates with name |root_cert_name|. </p>
-<p>It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
+<p>If this is not set on the client side, we will use the root certificates stored in the default system location, since client side must provide root certificates in TLS. If this is not set on the server side, we will not watch any root certificate updates, and assume no root certificates needed for the server(single-side TLS). Default root certs on the server side is not supported. It is used for experimental purpose for now and subject to change. </p>
 
 </div>
 </div>
@@ -2999,7 +2999,7 @@ processor to set properties extracted from auth metadata.</h2>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 3 2021 19:17:22 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
