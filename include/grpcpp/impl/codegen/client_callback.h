@@ -226,8 +226,6 @@ class ClientCallbackUnary {
 template <class Request, class Response>
 class ClientBidiReactor : public internal::ClientReactor {
  public:
-  virtual ~ClientBidiReactor() {}
-
   /// Activate the RPC and initiate any reads or writes that have been Start'ed
   /// before this call. All streaming RPCs issued by the client MUST have
   /// StartCall invoked on them (even if they are canceled) as this call is the
@@ -364,8 +362,6 @@ class ClientBidiReactor : public internal::ClientReactor {
 template <class Response>
 class ClientReadReactor : public internal::ClientReactor {
  public:
-  virtual ~ClientReadReactor() {}
-
   void StartCall() { reader_->StartCall(); }
   void StartRead(Response* resp) { reader_->Read(resp); }
 
@@ -391,8 +387,6 @@ class ClientReadReactor : public internal::ClientReactor {
 template <class Request>
 class ClientWriteReactor : public internal::ClientReactor {
  public:
-  virtual ~ClientWriteReactor() {}
-
   void StartCall() { writer_->StartCall(); }
   void StartWrite(const Request* req) {
     StartWrite(req, ::grpc::WriteOptions());
@@ -437,8 +431,6 @@ class ClientWriteReactor : public internal::ClientReactor {
 /// initiation API among all the reactor flavors.
 class ClientUnaryReactor : public internal::ClientReactor {
  public:
-  virtual ~ClientUnaryReactor() {}
-
   void StartCall() { call_->StartCall(); }
   void OnDone(const ::grpc::Status& /*s*/) override {}
   virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
