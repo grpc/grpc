@@ -19,9 +19,6 @@
 # before https://github.com/dockcross/dockcross/pull/449
 FROM dockcross/manylinux2014-aarch64:20200929-608e6ac
 
-# Update the package manager
-RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel
-
 ###################################
 # Install Python build requirements
 RUN /opt/python/cp35-cp35m/bin/pip install --upgrade cython
