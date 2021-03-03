@@ -13,9 +13,11 @@
 # limitations under the License.
 
 # Docker file for building gRPC manylinux Python artifacts.
-# Updated: 2020-10-08
 
-FROM quay.io/pypa/manylinux2010_x86_64
+# python2.7 was removed from the manylinux2010 image.
+# Use the latest version that still has python2.7
+# TODO(jtattermusch): Stop building python2.7 wheels.
+FROM quay.io/pypa/manylinux2010_x86_64:2021-02-06-3d322a5
 
 # TODO(jtattermusch): revisit which of the deps are really required
 RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel linux-headers openssl-devel zlib-devel gcc
