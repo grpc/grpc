@@ -21,6 +21,18 @@ import grpc_channelz.v1.channelz_pb2_grpc as _channelz_pb2_grpc
 
 from google.protobuf import json_format
 
+import ipaddress
+
+
+def _byte_pack_address(address):
+    if address.HasField("tcpip_address"):
+        addr = address.tcpip_address.ip_address.decode('ascii')
+        try:
+            ip = ipaddress.IPv6Address(addr)
+        except ipaddress.AddressValueError:
+            ip = ipaddress.IPv4Address(addr)
+        address.tcpip_address.ip_address = ip.packed
+
 
 class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     """Servicer handling RPCs for service statuses."""
@@ -108,10 +120,16 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     @staticmethod
     def GetSocket(request, context):
         try:
-            return json_format.Parse(
+            response = json_format.Parse(
                 cygrpc.channelz_get_socket(request.socket_id),
                 _channelz_pb2.GetSocketResponse(),
             )
+            # Core uses JSON for channelz and so does not byte-encode its
+            # addresses. The proto prescribes byte packing, so we do that here.
+            _byte_pack_address(response.socket.remote)
+            _byte_pack_address(response.socket.local)
+
+            return response
         except ValueError as e:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(str(e))
