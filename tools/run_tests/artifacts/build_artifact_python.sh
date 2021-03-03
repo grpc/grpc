@@ -22,8 +22,17 @@ export PYTHON=${PYTHON:-python}
 export PIP=${PIP:-pip}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
-# Install Cython to avoid source wheel build failure.
-"${PIP}" install --upgrade cython
+if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
+then
+  # Install Cython to avoid source wheel build failure.
+  # This only needs to be done when not running under docker (=on MacOS)
+  # since the docker images used for building python wheels
+  # already have a new-enough version of cython pre-installed.
+  # Any installation step is a potential source of breakages,
+  # so we are trying to perform as few download-and-install operations
+  # as possible.
+  "${PIP}" install --upgrade cython
+fi
 
 # Allow build_ext to build C/C++ files in parallel
 # by enabling a monkeypatch. It speeds up the build a lot.
