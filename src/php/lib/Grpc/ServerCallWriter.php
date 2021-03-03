@@ -35,7 +35,7 @@ class ServerCallWriter
 
     public function start(
         array $initialMetadata,
-        \Google\Protobuf\Internal\Message $data = null,
+        $data = null,
         array $options = []
     ) {
         $batch = [];
@@ -45,7 +45,7 @@ class ServerCallWriter
     }
 
     public function write(
-        \Google\Protobuf\Internal\Message $data,
+        $data,
         array $options = [],
         array $initialMetadata = null
     ) {
@@ -58,7 +58,7 @@ class ServerCallWriter
     public function finish(
         array $status = null,
         array $initialMetadata = null,
-        \Google\Protobuf\Internal\Message $data = null,
+        $data = null,
         array $options = []
     ) {
         $batch = [
@@ -84,7 +84,7 @@ class ServerCallWriter
 
     private function addSendMessageOpIfHasData(
         array &$batch,
-        \Google\Protobuf\Internal\Message $data = null,
+        $data = null,
         array $options = []
     ) {
         if ($data) {
