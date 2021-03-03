@@ -718,13 +718,13 @@ RefCountedPtr<Subchannel> Subchannel::Create(
   if (c != nullptr) {
     return c;
   }
-  c = MakeRefCounted<Subchannel>(key, std::move(connector), args);
+  c = MakeRefCounted<Subchannel>(std::move(key), std::move(connector), args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
   // its key maps to a different subchannel.
   RefCountedPtr<Subchannel> registered =
-      subchannel_pool->RegisterSubchannel(key, c);
+      subchannel_pool->RegisterSubchannel(c->key_, c);
   if (registered == c) c->subchannel_pool_ = subchannel_pool->Ref();
   return registered;
 }
@@ -792,9 +792,9 @@ void Subchannel::WatchConnectivityState(
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   } else {
-    health_watcher_map_.AddWatcherLocked(WeakRef(), initial_state,
-                                         *health_check_service_name,
-                                         std::move(watcher));
+    health_watcher_map_.AddWatcherLocked(
+        WeakRef(DEBUG_LOCATION, "health_watcher"), initial_state,
+        *health_check_service_name, std::move(watcher));
   }
 }
 
@@ -939,7 +939,8 @@ void Subchannel::MaybeStartConnectingLocked() {
     return;
   }
   connecting_ = true;
-  WeakRef().release();  // ref held by pending connect
+  WeakRef(DEBUG_LOCATION, "connecting")
+      .release();  // ref held by pending connect
   if (!backoff_begun_) {
     backoff_begun_ = true;
     ContinueConnectingLocked();
@@ -1065,7 +1066,8 @@ bool Subchannel::PublishTransportLocked() {
   }
   // Start watching connected subchannel.
   connected_subchannel_->StartWatch(
-      pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(WeakRef()));
+      pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(
+                        WeakRef(DEBUG_LOCATION, "state_watcher")));
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY, absl::Status());
   return true;
