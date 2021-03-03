@@ -154,11 +154,13 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       }
       // Configure root cert.
       absl::string_view root_provider_instance_name =
-          listener.downstream_tls_context.common_tls_context
+          listener.filter_chains[0]
+              .downstream_tls_context.common_tls_context
               .combined_validation_context
               .validation_context_certificate_provider_instance.instance_name;
       absl::string_view root_provider_cert_name =
-          listener.downstream_tls_context.common_tls_context
+          listener.filter_chains[0]
+              .downstream_tls_context.common_tls_context
               .combined_validation_context
               .validation_context_certificate_provider_instance
               .certificate_name;
@@ -177,10 +179,12 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       }
       // Configure identity cert.
       absl::string_view identity_provider_instance_name =
-          listener.downstream_tls_context.common_tls_context
+          listener.filter_chains[0]
+              .downstream_tls_context.common_tls_context
               .tls_certificate_certificate_provider_instance.instance_name;
       absl::string_view identity_provider_cert_name =
-          listener.downstream_tls_context.common_tls_context
+          listener.filter_chains[0]
+              .downstream_tls_context.common_tls_context
               .tls_certificate_certificate_provider_instance.certificate_name;
       RefCountedPtr<grpc_tls_certificate_provider> new_identity_provider;
       if (!identity_provider_instance_name.empty()) {
@@ -201,7 +205,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
            (root_certificate_provider_ == nullptr)) ||
           ((new_identity_provider == nullptr) !=
            (identity_certificate_provider_ == nullptr)) ||
-          (listener.downstream_tls_context.require_client_certificate !=
+          (listener.filter_chains[0]
+               .downstream_tls_context.require_client_certificate !=
            xds_certificate_provider_->GetRequireClientCertificate(""))) {
         security_connector_update_required = true;
       }
@@ -222,7 +227,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
               ? nullptr
               : identity_certificate_provider_->distributor());
       xds_certificate_provider_->UpdateRequireClientCertificate(
-          "", listener.downstream_tls_context.require_client_certificate);
+          "", listener.filter_chains[0]
+                  .downstream_tls_context.require_client_certificate);
       return security_connector_update_required;
     }
 

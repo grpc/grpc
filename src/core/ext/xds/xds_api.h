@@ -219,7 +219,6 @@ class XdsApi {
       kTcpListener = 0,
       kHttpApiListener,
     } type;
-    DownstreamTlsContext downstream_tls_context;
     // The name to use in the RDS request.
     std::string route_config_name;
     // Storing the Http Connection Manager Common Http Protocol Option
@@ -239,14 +238,73 @@ class XdsApi {
 
       std::string ToString() const;
     };
+
     std::vector<HttpFilter> http_filters;
 
+    struct FilterChain {
+      struct FilterChainMatch {
+        uint32_t destination_port = 0;
+
+        struct CidrRange {
+          std::string address_prefix;
+          uint32_t prefix_len;
+
+          bool operator==(const CidrRange& other) const {
+            return address_prefix == other.address_prefix &&
+                   prefix_len == other.prefix_len;
+          }
+
+          std::string ToString() const;
+        };
+
+        std::vector<CidrRange> prefix_ranges;
+
+        enum class ConnectionSourceType {
+          kAny = 0,
+          kSameIpOrLoopback,
+          kExternal
+        } source_type = ConnectionSourceType::kAny;
+
+        std::vector<CidrRange> source_prefix_ranges;
+        std::vector<uint32_t> source_ports;
+        std::vector<std::string> server_names;
+        std::string transport_protocol;
+        std::vector<std::string> application_protocols;
+
+        bool operator==(const FilterChainMatch& other) const {
+          return destination_port == other.destination_port &&
+                 prefix_ranges == other.prefix_ranges &&
+                 source_type == other.source_type &&
+                 source_prefix_ranges == other.source_prefix_ranges &&
+                 source_ports == other.source_ports &&
+                 server_names == other.server_names &&
+                 transport_protocol == other.transport_protocol &&
+                 application_protocols == other.application_protocols;
+        }
+
+        std::string ToString() const;
+      } filter_chain_match;
+
+      DownstreamTlsContext downstream_tls_context;
+
+      bool operator==(const FilterChain& other) const {
+        return filter_chain_match == other.filter_chain_match &&
+               downstream_tls_context == other.downstream_tls_context;
+      }
+
+      std::string ToString() const;
+    };
+
+    std::vector<FilterChain> filter_chains;
+    absl::optional<FilterChain> default_filter_chain;
+
     bool operator==(const LdsUpdate& other) const {
-      return downstream_tls_context == other.downstream_tls_context &&
-             route_config_name == other.route_config_name &&
+      return route_config_name == other.route_config_name &&
              rds_update == other.rds_update &&
              http_max_stream_duration == other.http_max_stream_duration &&
-             http_filters == other.http_filters;
+             http_filters == other.http_filters &&
+             filter_chains == other.filter_chains &&
+             default_filter_chain == other.default_filter_chain;
     }
 
     std::string ToString() const;
