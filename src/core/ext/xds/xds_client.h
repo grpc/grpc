@@ -115,7 +115,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // The rejected version string of the last failed update attempt.
     std::string failed_version;
     // Details about the last failed update attempt.
-    const char* failed_details;
+    std::string failed_details;
     // Timestamp of the last failed update attempt.
     grpc_millis failed_update_time;
     // The client status of this resource.

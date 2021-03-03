@@ -2281,7 +2281,7 @@ void XdsClient::UpdateResourceMetadataWithFailedParseResult(
   if (!result.resource_names_failed.empty()) {
     // ADS update is rejected and the resource names in the failed update is
     // available.
-    const char* details = grpc_error_string(result.parse_error);
+    absl::string_view details = grpc_error_string(result.parse_error);
     for (auto& name : result.resource_names_failed) {
       ResourceMetadata* resource_metadata;
       if (listener_map_.find(name) != listener_map_.end()) {
@@ -2298,7 +2298,7 @@ void XdsClient::UpdateResourceMetadataWithFailedParseResult(
       }
       resource_metadata->client_status = ClientResourceStatus::NACKED;
       resource_metadata->failed_version = result.version;
-      resource_metadata->failed_details = details;
+      resource_metadata->failed_details = std::string(details);
       resource_metadata->failed_update_time = update_time;
     }
   }
@@ -2315,6 +2315,7 @@ std::string XdsClient::DumpClientConfigInJson() {
   for (auto& p : listener_map_) {
     const std::string& listener_name = p.first;
     const ListenerState& state = p.second;
+    if (state.meta.client_status == grpc_core::XdsClient::UNKNOWN) continue;
     // Creates a DynamicListener JSON
     Json::Object dynamic_listener{{"name", listener_name}};
     if (!state.meta.version.empty()) {
@@ -2342,7 +2343,11 @@ std::string XdsClient::DumpClientConfigInJson() {
   for (auto& name :
        chand_->ads_calld()->GetPendingResourceNames(XdsApi::kLdsTypeUrl)) {
     // In case of reconnect, resources might appear as both pending and active.
-    if (listener_map_.find(name) != listener_map_.end()) continue;
+    if (listener_map_.find(name) != listener_map_.end()) {
+      if (listener_map_[name].meta.client_status != grpc_core::XdsClient::UNKNOWN) {
+        continue;
+      }
+    }
     dynamic_listeners.push_back(Json::Object{
         {"name", name},
         {"clientStatus", ClientResourceStatus::REQUESTED},
@@ -2356,6 +2361,7 @@ std::string XdsClient::DumpClientConfigInJson() {
   Json::Array dynamic_route_configs;
   for (auto& p : route_config_map_) {
     const RouteConfigState& state = p.second;
+    if (state.meta.client_status == grpc_core::XdsClient::UNKNOWN) continue;
     Json::Object dynamic_route_config;
     if (!state.meta.version.empty()) {
       // Packs into Any
@@ -2379,9 +2385,16 @@ std::string XdsClient::DumpClientConfigInJson() {
   for (auto& name :
        chand_->ads_calld()->GetPendingResourceNames(XdsApi::kRdsTypeUrl)) {
     // In case of reconnect, resources might appear as both pending and active.
-    if (route_config_map_.find(name) != route_config_map_.end()) continue;
+    if (route_config_map_.find(name) != route_config_map_.end()) {
+      if (route_config_map_[name].meta.client_status != grpc_core::XdsClient::UNKNOWN) {
+        continue;
+      }
+    }
     dynamic_route_configs.push_back(Json::Object{
-        {"route_config", Json::Object{{"name", name}}},
+        {"route_config", Json::Object{
+          {"@type", XdsApi::kRdsTypeUrl},
+          {"name", name}
+        }},
         {"clientStatus", ClientResourceStatus::REQUESTED},
     });
   }
@@ -2392,6 +2405,7 @@ std::string XdsClient::DumpClientConfigInJson() {
   Json::Array dynamic_active_clusters;
   for (auto& p : cluster_map_) {
     const ClusterState& state = p.second;
+    if (state.meta.client_status == grpc_core::XdsClient::UNKNOWN) continue;
     Json::Object dynamic_cluster_config;
     if (!state.meta.version.empty()) {
       // Packs into Any
@@ -2415,9 +2429,16 @@ std::string XdsClient::DumpClientConfigInJson() {
   for (auto& name :
        chand_->ads_calld()->GetPendingResourceNames(XdsApi::kCdsTypeUrl)) {
     // In case of reconnect, resources might appear as both pending and active.
-    if (cluster_map_.find(name) != cluster_map_.end()) continue;
+    if (cluster_map_.find(name) != cluster_map_.end()) {
+      if (cluster_map_[name].meta.client_status != grpc_core::XdsClient::UNKNOWN) {
+        continue;
+      }
+    }
     dynamic_active_clusters.push_back(Json::Object{
-        {"cluster", Json::Object{{"name", name}}},
+        {"cluster", Json::Object{
+          {"@type", XdsApi::kCdsTypeUrl},
+          {"name", name}
+        }},
         {"clientStatus", ClientResourceStatus::REQUESTED},
     });
   }
@@ -2429,6 +2450,7 @@ std::string XdsClient::DumpClientConfigInJson() {
   Json::Array dynamic_endpoint_configs;
   for (auto& p : endpoint_map_) {
     const EndpointState& state = p.second;
+    if (state.meta.client_status == grpc_core::XdsClient::UNKNOWN) continue;
     Json::Object dynamic_endpoint_config;
     if (!state.meta.version.empty()) {
       // Packs into Any
@@ -2452,9 +2474,16 @@ std::string XdsClient::DumpClientConfigInJson() {
   for (auto& name :
        chand_->ads_calld()->GetPendingResourceNames(XdsApi::kEdsTypeUrl)) {
     // In case of reconnect, resources might appear as both pending and active.
-    if (endpoint_map_.find(name) != endpoint_map_.end()) continue;
+    if (endpoint_map_.find(name) != endpoint_map_.end()) {
+      if (endpoint_map_[name].meta.client_status != grpc_core::XdsClient::UNKNOWN) {
+        continue;
+      }
+    }
     dynamic_endpoint_configs.push_back(Json::Object{
-        {"endpoint_config", Json::Object{{"name", name}}},
+        {"endpoint_config", Json::Object{
+          {"@type", XdsApi::kEdsTypeUrl},
+          {"cluster_name", name}
+        }},
         {"clientStatus", ClientResourceStatus::REQUESTED},
     });
   }

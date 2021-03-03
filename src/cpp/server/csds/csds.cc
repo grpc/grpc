@@ -52,6 +52,7 @@ absl::StatusOr<ClientConfig> DumpClientConfig() {
   if (json_string.empty()) {
     return absl::UnavailableError("xDS config is empty");
   }
+  std::cout << "FIND!!!" << json_string << std::endl;
   grpc::protobuf::util::Status s =
       grpc::protobuf::json::JsonStringToMessage(json_string, &client_config);
   if (!s.ok()) {

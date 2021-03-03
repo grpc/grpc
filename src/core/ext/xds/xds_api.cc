@@ -1450,6 +1450,9 @@ grpc_error* RouteConfigParse(
     for (size_t j = 0; j < num_routes; ++j) {
       const envoy_config_route_v3_RouteMatch* match =
           envoy_config_route_v3_Route_match(routes[j]);
+      if (match == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Match can't be null.");
+      }
       size_t query_parameters_size;
       static_cast<void>(envoy_config_route_v3_RouteMatch_query_parameters(
           match, &query_parameters_size));
@@ -2343,6 +2346,10 @@ grpc_error* LocalityParse(
   const envoy_config_core_v3_Locality* locality =
       envoy_config_endpoint_v3_LocalityLbEndpoints_locality(
           locality_lb_endpoints);
+  if (locality == nullptr) {
+    // Otherwise, it might cause segfault.
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty locality.");
+  }
   std::string region =
       UpbStringToStdString(envoy_config_core_v3_Locality_region(locality));
   std::string zone =
