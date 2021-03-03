@@ -326,7 +326,8 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///                 ownership but the caller must ensure that the message is
   ///                 not deleted or modified until OnWriteDone is called.
   /// \param[in] options The WriteOptions to use for writing this message
-  void StartWrite(const Response* resp, ::grpc::WriteOptions options) ABSL_LOCKS_EXCLUDED(stream_mu_) {
+  void StartWrite(const Response* resp, ::grpc::WriteOptions options)
+      ABSL_LOCKS_EXCLUDED(stream_mu_) {
     ServerCallbackReaderWriter<Request, Response>* stream =
         stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
@@ -545,7 +546,8 @@ class ServerReadReactor : public internal::ServerReactor {
 
   // May be overridden by internal implementation details. This is not a public
   // customization point.
-  virtual void InternalBindReader(ServerCallbackReader<Request>* reader) ABSL_LOCKS_EXCLUDED(reader_mu_) {
+  virtual void InternalBindReader(ServerCallbackReader<Request>* reader)
+      ABSL_LOCKS_EXCLUDED(reader_mu_) {
     grpc::internal::MutexLock l(&reader_mu_);
 
     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
@@ -596,7 +598,8 @@ class ServerWriteReactor : public internal::ServerReactor {
   void StartWrite(const Response* resp) {
     StartWrite(resp, ::grpc::WriteOptions());
   }
-  void StartWrite(const Response* resp, ::grpc::WriteOptions options) ABSL_LOCKS_EXCLUDED(writer_mu_) {
+  void StartWrite(const Response* resp, ::grpc::WriteOptions options)
+      ABSL_LOCKS_EXCLUDED(writer_mu_) {
     ServerCallbackWriter<Response>* writer =
         writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
@@ -655,7 +658,8 @@ class ServerWriteReactor : public internal::ServerReactor {
   friend class ServerCallbackWriter<Response>;
   // May be overridden by internal implementation details. This is not a public
   // customization point.
-  virtual void InternalBindWriter(ServerCallbackWriter<Response>* writer) ABSL_LOCKS_EXCLUDED(writer_mu_) {
+  virtual void InternalBindWriter(ServerCallbackWriter<Response>* writer)
+      ABSL_LOCKS_EXCLUDED(writer_mu_) {
     grpc::internal::MutexLock l(&writer_mu_);
 
     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {
@@ -735,7 +739,8 @@ class ServerUnaryReactor : public internal::ServerReactor {
   friend class ServerCallbackUnary;
   // May be overridden by internal implementation details. This is not a public
   // customization point.
-  virtual void InternalBindCall(ServerCallbackUnary* call) ABSL_LOCKS_EXCLUDED(call_mu_) {
+  virtual void InternalBindCall(ServerCallbackUnary* call)
+      ABSL_LOCKS_EXCLUDED(call_mu_) {
     grpc::internal::MutexLock l(&call_mu_);
 
     if (GPR_UNLIKELY(backlog_.send_initial_metadata_wanted)) {

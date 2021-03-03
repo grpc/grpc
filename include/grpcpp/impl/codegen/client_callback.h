@@ -522,7 +522,8 @@ class ClientCallbackReaderWriterImpl
     call_.PerformOps(&read_ops_);
   }
 
-  void Write(const Request* msg, ::grpc::WriteOptions options) ABSL_LOCKS_EXCLUDED(start_mu_) override {
+  void Write(const Request* msg, ::grpc::WriteOptions options)
+      ABSL_LOCKS_EXCLUDED(start_mu_) override {
     if (options.is_last_message()) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
@@ -917,7 +918,8 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
     this->MaybeFinish(/*from_reaction=*/false);
   }
 
-  void Write(const Request* msg, ::grpc::WriteOptions options) ABSL_LOCKS_EXCLUDED(start_mu_) override {
+  void Write(const Request* msg, ::grpc::WriteOptions options)
+      ABSL_LOCKS_EXCLUDED(start_mu_) override {
     if (GPR_UNLIKELY(options.is_last_message())) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
