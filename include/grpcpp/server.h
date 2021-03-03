@@ -286,8 +286,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                         internal::Call* call) override;
 
-  void ShutdownInternal(gpr_timespec deadline) ABSL_LOCKS_EXCLUDED(mu_)
-      override;
+  void ShutdownInternal(gpr_timespec deadline)
+      ABSL_LOCKS_EXCLUDED(mu_) override;
 
   int max_receive_message_size() const override {
     return max_receive_message_size_;
