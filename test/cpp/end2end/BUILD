@@ -504,6 +504,10 @@ grpc_cc_test(
     name = "xds_end2end_test",
     size = "large",
     srcs = ["xds_end2end_test.cc"],
+    args = [
+        # DO NOT SUBMIT: remove before merge into master
+        "--gtest_filter='*Fault*'",
+    ],
     data = [
         "//src/core/tsi/test_creds:badclient.key",
         "//src/core/tsi/test_creds:badclient.pem",
