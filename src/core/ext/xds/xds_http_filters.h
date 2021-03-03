@@ -101,6 +101,12 @@ class XdsHttpFilterImpl {
   virtual absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,
       const FilterConfig* filter_config_override) const = 0;
+
+  // Returns true if the filter is supported on clients; false otherwise
+  virtual bool IsSupportedOnClients() const = 0;
+
+  // Returns true if the filter is supported on servers; false otherwise
+  virtual bool IsSupportedOnServers() const = 0;
 };
 
 class XdsHttpFilterRegistry {

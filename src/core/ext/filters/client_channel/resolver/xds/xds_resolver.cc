@@ -234,7 +234,7 @@ XdsResolver::Notifier::Notifier(RefCountedPtr<XdsResolver> resolver,
 XdsResolver::Notifier::Notifier(RefCountedPtr<XdsResolver> resolver,
                                 XdsApi::RdsUpdate update)
     : resolver_(std::move(resolver)), type_(kRdsUpdate) {
-  update_.rds_update = std::move(update);
+  update_.http_connection_manager.rds_update = std::move(update);
   GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
   ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
 }
@@ -270,7 +270,8 @@ void XdsResolver::Notifier::RunInWorkSerializer(grpc_error* error) {
       resolver_->OnListenerUpdate(std::move(update_));
       break;
     case kRdsUpdate:
-      resolver_->OnRouteConfigUpdate(std::move(*update_.rds_update));
+      resolver_->OnRouteConfigUpdate(
+          std::move(*update_.http_connection_manager.rds_update));
       break;
     case kError:
       resolver_->OnError(error);
@@ -338,7 +339,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     // one.
     if (!route.max_stream_duration.has_value()) {
       route_entry.route.max_stream_duration =
-          resolver_->current_listener_.http_max_stream_duration;
+          resolver_->current_listener_.http_connection_manager
+              .http_max_stream_duration;
     }
     if (route.weighted_clusters.empty()) {
       *error = CreateMethodConfig(route_entry.route, nullptr,
@@ -363,7 +365,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
   // Populate filter list.
   if (XdsFaultInjectionEnabled()) {
     bool found_router = false;
-    for (const auto& http_filter : resolver_->current_listener_.http_filters) {
+    for (const auto& http_filter :
+         resolver_->current_listener_.http_connection_manager.http_filters) {
       // Stop at the router filter.  It's a no-op for us, and we ignore
       // anything that may come after it, for compatibility with Envoy.
       if (http_filter.config.config_proto_type_name ==
@@ -437,7 +440,8 @@ grpc_error* XdsResolver::XdsConfigSelector::CreateMethodConfig(
   // Handle xDS HTTP filters.
   std::map<std::string, std::vector<std::string>> per_filter_configs;
   grpc_channel_args* args = grpc_channel_args_copy(resolver_->args_);
-  for (const auto& http_filter : resolver_->current_listener_.http_filters) {
+  for (const auto& http_filter :
+       resolver_->current_listener_.http_connection_manager.http_filters) {
     // Stop at the router filter.  It's a no-op for us, and we ignore
     // anything that may come after it, for compatibility with Envoy.
     if (http_filter.config.config_proto_type_name ==
@@ -700,14 +704,17 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_resolver_trace)) {
     gpr_log(GPR_INFO, "[xds_resolver %p] received updated listener data", this);
   }
-  if (listener.route_config_name != route_config_name_) {
+  if (listener.http_connection_manager.route_config_name !=
+      route_config_name_) {
     if (route_config_watcher_ != nullptr) {
       xds_client_->CancelRouteConfigDataWatch(
           route_config_name_, route_config_watcher_,
-          /*delay_unsubscription=*/!listener.route_config_name.empty());
+          /*delay_unsubscription=*/
+          !listener.http_connection_manager.route_config_name.empty());
       route_config_watcher_ = nullptr;
     }
-    route_config_name_ = std::move(listener.route_config_name);
+    route_config_name_ =
+        std::move(listener.http_connection_manager.route_config_name);
     if (!route_config_name_.empty()) {
       current_virtual_host_.routes.clear();
       auto watcher = absl::make_unique<RouteConfigWatcher>(Ref());
@@ -717,8 +724,10 @@ void XdsResolver::OnListenerUpdate(XdsApi::LdsUpdate listener) {
   }
   current_listener_ = std::move(listener);
   if (route_config_name_.empty()) {
-    GPR_ASSERT(current_listener_.rds_update.has_value());
-    OnRouteConfigUpdate(std::move(*current_listener_.rds_update));
+    GPR_ASSERT(
+        current_listener_.http_connection_manager.rds_update.has_value());
+    OnRouteConfigUpdate(
+        std::move(*current_listener_.http_connection_manager.rds_update));
   } else {
     // HCM may contain newer filter config. We need to propagate the update as
     // config selector to the channel
