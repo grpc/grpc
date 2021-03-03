@@ -576,6 +576,13 @@ Chttp2ServerListener::Chttp2ServerListener(
 }
 
 Chttp2ServerListener::~Chttp2ServerListener() {
+  // Flush queued work before destroying handshaker factory, since that
+  // may do a synchronous unref.
+  ExecCtx::Get()->Flush();
+  if (on_destroy_done_ != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, on_destroy_done_, GRPC_ERROR_NONE);
+    ExecCtx::Get()->Flush();
+  }
   grpc_channel_args_destroy(args_);
 }
 
@@ -645,22 +652,14 @@ void Chttp2ServerListener::TcpServerShutdownComplete(void* arg,
                                                      grpc_error* error) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
   /* ensure all threads have unlocked */
-  grpc_closure* destroy_done = nullptr;
   {
     MutexLock lock(&self->mu_);
-    destroy_done = self->on_destroy_done_;
     GPR_ASSERT(self->shutdown_);
     self->StopServingLocked();
     self->channelz_listen_socket_.reset();
   }
-  // Flush queued work before destroying handshaker factory, since that
-  // may do a synchronous unref.
-  ExecCtx::Get()->Flush();
-  if (destroy_done != nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, destroy_done, GRPC_ERROR_REF(error));
-    ExecCtx::Get()->Flush();
-  }
-  delete self;
+  GRPC_ERROR_UNREF(error);
+  self->Unref();
 }
 
 /* Server callback: destroy the tcp listener (so we don't generate further
