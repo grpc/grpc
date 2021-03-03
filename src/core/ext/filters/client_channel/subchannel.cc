@@ -306,6 +306,10 @@ class Subchannel::ConnectedSubchannelStateWatcher
   explicit ConnectedSubchannelStateWatcher(WeakRefCountedPtr<Subchannel> c)
       : subchannel_(std::move(c)) {}
 
+  ~ConnectedSubchannelStateWatcher() override {
+    subchannel_.reset(DEBUG_LOCATION, "state_watcher");
+  }
+
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state,
                                  const absl::Status& status) override {
@@ -426,6 +430,10 @@ class Subchannel::HealthWatcherMap::HealthWatcher
                    : subchannel_->state_) {
     // If the subchannel is already connected, start health checking.
     if (subchannel_->state_ == GRPC_CHANNEL_READY) StartHealthCheckingLocked();
+  }
+
+  ~HealthWatcher() override {
+    subchannel_.reset(DEBUG_LOCATION, "health_watcher");
   }
 
   const std::string& health_check_service_name() const {
@@ -638,7 +646,7 @@ Subchannel::ConnectivityStateWatcherInterface::PopConnectivityStateChange() {
   return state_change;
 }
 
-Subchannel::Subchannel(SubchannelKey* key,
+Subchannel::Subchannel(const SubchannelKey& key,
                        OrphanablePtr<SubchannelConnector> connector,
                        const grpc_channel_args* args)
     : DualRefCounted<Subchannel>(
@@ -697,19 +705,17 @@ Subchannel::~Subchannel() {
   grpc_channel_args_destroy(args_);
   connector_.reset();
   grpc_pollset_set_destroy(pollset_set_);
-  delete key_;
 }
 
 RefCountedPtr<Subchannel> Subchannel::Create(
     OrphanablePtr<SubchannelConnector> connector,
     const grpc_channel_args* args) {
-  SubchannelKey* key = new SubchannelKey(args);
+  SubchannelKey key(args);
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
   GPR_ASSERT(subchannel_pool != nullptr);
-  RefCountedPtr<Subchannel> c = subchannel_pool->FindSubchannel(*key);
+  RefCountedPtr<Subchannel> c = subchannel_pool->FindSubchannel(key);
   if (c != nullptr) {
-    delete key;
     return c;
   }
   c = MakeRefCounted<Subchannel>(key, std::move(connector), args);
@@ -718,7 +724,7 @@ RefCountedPtr<Subchannel> Subchannel::Create(
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
   // its key maps to a different subchannel.
   RefCountedPtr<Subchannel> registered =
-      subchannel_pool->RegisterSubchannel(*key, c);
+      subchannel_pool->RegisterSubchannel(key, c);
   if (registered == c) c->subchannel_pool_ = subchannel_pool->Ref();
   return registered;
 }
@@ -829,7 +835,7 @@ void Subchannel::Orphan() {
   // The subchannel_pool is only used once here in this subchannel, so the
   // access can be outside of the lock.
   if (subchannel_pool_ != nullptr) {
-    subchannel_pool_->UnregisterSubchannel(*key_, this);
+    subchannel_pool_->UnregisterSubchannel(key_, this);
     subchannel_pool_.reset();
   }
   MutexLock lock(&mu_);

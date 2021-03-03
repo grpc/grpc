@@ -189,7 +189,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   };
 
   // The ctor and dtor are not intended to use directly.
-  Subchannel(SubchannelKey* key, OrphanablePtr<SubchannelConnector> connector,
+  Subchannel(const SubchannelKey& key,
+             OrphanablePtr<SubchannelConnector> connector,
              const grpc_channel_args* args);
   ~Subchannel() override;
 
@@ -344,7 +345,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   // TODO(juanlishen): Consider using args_ as key_ directly.
   // Subchannel key that identifies this subchannel in the subchannel pool.
-  SubchannelKey* key_;
+  const SubchannelKey key_;
   // Channel args.
   grpc_channel_args* args_;
   // pollset_set tracking who's interested in a connection being setup.

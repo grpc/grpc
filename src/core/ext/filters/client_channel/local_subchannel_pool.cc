@@ -38,9 +38,9 @@ RefCountedPtr<Subchannel> LocalSubchannelPool::RegisterSubchannel(
 void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
                                                Subchannel* subchannel) {
   auto it = subchannel_map_.find(key);
-  // Because Subchannel::Orphan this subchannel pool are only called under
-  // the client channel's work serializer, any subchannel created by
-  // RegisterSubchannel will be deleted from the map in UnregisterSubchannel.
+  // Because this subchannel pool is accessed only under the client
+  // channel's work serializer, any subchannel created by RegisterSubchannel
+  // will be deleted from the map in UnregisterSubchannel.
   GPR_ASSERT(it != subchannel_map_.end());
   GPR_ASSERT(it->second == subchannel);
   subchannel_map_.erase(it);
