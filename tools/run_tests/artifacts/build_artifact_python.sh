@@ -46,9 +46,8 @@ then
   GRPC_PYTHON_OVERRIDE_EXT_SUFFIX="$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX").replace("-x86_64-linux-gnu.so", "-aarch64-linux-gnu.so"))')"
   export GRPC_PYTHON_OVERRIDE_EXT_SUFFIX
 
-  # Set to empty string to disable the option (see https://github.com/grpc/grpc/issues/24498)
-  # TODO: enable ASM optimizations for crosscompiled wheels
-  export GRPC_BUILD_WITH_BORING_SSL_ASM=""
+  # since we're crosscompiling, we need to explicitly choose the right platform for boringssl assembly optimizations
+  export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-aarch64"
 fi
 
 # Build the source distribution first because MANIFEST.in cannot override
