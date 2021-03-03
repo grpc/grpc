@@ -814,6 +814,8 @@ src/php/lib/Grpc/DefaultCallInvoker.php \
 src/php/lib/Grpc/Interceptor.php \
 src/php/lib/Grpc/RpcServer.php \
 src/php/lib/Grpc/Server.php \
+src/php/lib/Grpc/ServerCallReader.php \
+src/php/lib/Grpc/ServerCallWriter.php \
 src/php/lib/Grpc/ServerCredentials.php \
 src/php/lib/Grpc/ServerStreamingCall.php \
 src/php/lib/Grpc/Status.php \
