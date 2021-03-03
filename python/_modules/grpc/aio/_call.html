@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._call &#8212; gRPC Python 1.35.0 documentation</title>
+    <title>grpc.aio._call &#8212; gRPC Python 1.36.1 documentation</title>
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.35.0</p>
+<p class="blurb">1.36.1</p>
 
 
 
@@ -482,9 +482,8 @@
     <span class="k">def</span> <span class="nf">_metadata_sent_observer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_metadata_sent</span><span class="o">.</span><span class="n">set</span><span class="p">()</span>
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">_consume_request_iterator</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                                        <span class="n">request_iterator</span><span class="p">:</span> <span class="n">RequestIterableType</span>
-                                       <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_consume_request_iterator</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">request_iterator</span><span class="p">:</span> <span class="n">RequestIterableType</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isasyncgen</span><span class="p">(</span><span class="n">request_iterator</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">hasattr</span><span class="p">(</span>
                     <span class="n">request_iterator</span><span class="p">,</span> <span class="s1">&#39;__aiter__&#39;</span><span class="p">):</span>

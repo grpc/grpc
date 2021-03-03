@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.35.0</span>
+   &#160;<span id="projectnumber">1.36.1</span>
    </div>
   </td>
  </tr>
@@ -425,34 +425,34 @@ path_matching</h2>
 <ol type="1">
 <li>EmptyCall RPCs are sent to MIG_default</li>
 </ol>
-<p>The test driver adds a route for EmptyCall, routes become:</p>
-<ol type="1">
-<li>path{“/grpc.testing.TestService/EmptyCall”}: MIG_2</li>
-</ol>
-<ol type="1">
-<li>“/”: MIG_default</li>
-</ol>
-<p>Assert:</p>
-<ol type="1">
-<li>UnaryCall RPCs are sent to MIG_default</li>
-</ol>
-<ol type="1">
-<li>EmptyCall RPCs are sent to MIG_2</li>
-</ol>
-<p>The test driver adds a route for prefix Unary, routes become:</p>
-<ol type="1">
-<li>prefix{“/grpc.testing.TestService/Unary”}: MIG_2</li>
-</ol>
-<ol type="1">
-<li>“/”: MIG_default</li>
-</ol>
-<p>Assert:</p>
-<ol type="1">
-<li>UnaryCall RPCs are sent to MIG_2</li>
-</ol>
-<ol type="1">
-<li>EmptyCall RPCs are sent to MIG_default</li>
-</ol>
+<p>The test driver changes route and asserts RPCs are sent to expected backends. <b>Note</b> that the default route <code>"/"</code> is always pointing to MIG_default, so all RPCs not matching the new route will be sent to MIG_default.</p>
+<ul>
+<li>{path: <code>/grpc.testing.TestService/EmptyCall</code>}: MIG_2<ul>
+<li>UnaryCall -&gt; MIG_default</li>
+<li>EmptyCall -&gt; MIG_2</li>
+</ul>
+</li>
+<li>{prefix: <code>/grpc.testing.TestService/Unary</code>}: MIG_2<ul>
+<li>UnaryCall -&gt; MIG_2</li>
+<li>EmptyCall -&gt; MIG_default</li>
+</ul>
+</li>
+<li>{prefix: <code>/grpc.testing.TestService/Unary</code>}: MIG_default &amp; {path: <code>/grpc.testing.TestService/EmptyCall</code>}: MIG_2<ul>
+<li>UnaryCall -&gt; MIG_default</li>
+<li>EmptyCall -&gt; MIG_2</li>
+</ul>
+</li>
+<li>{regex: <code>^\/.*\/UnaryCall$</code>}: MIG_2<ul>
+<li>UnaryCall -&gt; MIG_2</li>
+<li>EmptyCall -&gt; MIG_default</li>
+</ul>
+</li>
+<li>{path: <code>/gRpC.tEsTinG.tEstseRvice/empTycaLl</code>, ignoreCase: <code>True</code>}: MIG_2<ul>
+<li>UnaryCall -&gt; MIG_default</li>
+<li>EmptyCall -&gt; MIG_2</li>
+</ul>
+</li>
+</ul>
 <h2><a class="anchor" id="autotoc_md255"></a>
 header_matching</h2>
 <p>This test verifies that the traffic for a certain RPC can be routed to a specific cluster based on the RPC header (metadata).</p>
@@ -489,20 +489,50 @@ header_matching</h2>
 <ol type="1">
 <li>EmptyCall RPCs are sent to MIG_default</li>
 </ol>
-<p>The test driver adds a route for header exact match, routes become:</p>
-<ol type="1">
-<li>header{“xds_md”, exact: “exact_match”}: MIG_2</li>
-</ol>
-<ol type="1">
-<li>“/”: MIG_default</li>
-</ol>
-<p>Assert:</p>
-<ol type="1">
-<li>UnaryCall RPCs are sent to MIG_default</li>
-</ol>
-<ol type="1">
-<li>EmptyCall RPCs are sent to MIG_2</li>
-</ol>
+<p>The test driver changes route and asserts RPCs are sent to expected backends. <b>Note</b> that the default route <code>"/"</code> is always pointing to MIG_default, so all RPCs not matching the new route will be sent to MIG_default.</p>
+<ul>
+<li>{header <code>xds_md</code>, exact: <code>empty_ytpme</code>}: MIG_2<ul>
+<li>Unary -&gt; MIG_default</li>
+<li>Empty -&gt; MIG_2</li>
+</ul>
+</li>
+<li>{header <code>xds_md</code>, prefix: <code>un</code>}: MIG_2<ul>
+<li><code>un</code> is the prefix of metadata sent with UnaryCall</li>
+<li>Unary -&gt; MIG_2</li>
+<li>Empty -&gt; MIG_default</li>
+</ul>
+</li>
+<li>{header <code>xds_md</code>, suffix: <code>me</code>}: MIG_2<ul>
+<li><code>me</code> is the suffix of metadata sent with EmptyCall</li>
+<li>Unary -&gt; MIG_default</li>
+<li>Empty to MIG_2</li>
+</ul>
+</li>
+<li>{header <code>xds_md_numeric</code>, present: <code>True</code>}: MIG_2<ul>
+<li>Unary is sent with the metadata, so will be sent to alternative</li>
+<li>Unary -&gt; MIG_2</li>
+<li>Empty -&gt; MIG_default</li>
+</ul>
+</li>
+<li>{header <code>xds_md</code>, exact: <code>unary_yranu</code>, invert: <code>True</code>}: MIG_2<ul>
+<li>Unary is sent with the metadata, so this will not match Unary, but will match Empty</li>
+<li>Unary -&gt; MIG_default</li>
+<li>Empty to MIG_2</li>
+</ul>
+</li>
+<li>{header <code>xds_md_numeric</code>, range <code>[100,200]</code>}: MIG_2<ul>
+<li>Unary is sent with the metadata in range</li>
+<li>Unary -&gt; MIG_2</li>
+<li>Empty -&gt; MIG_default</li>
+</ul>
+</li>
+<li>{header <code>xds_md</code>, regex: <code>^em.*me$</code>}: MIG_2<ul>
+<li>EmptyCall is sent with the metadata</li>
+<li>Unary -&gt; MIG_default</li>
+<li>Empty -&gt; MIG_2</li>
+</ul>
+</li>
+</ul>
 <h2><a class="anchor" id="autotoc_md256"></a>
 gentle_failover</h2>
 <p>This test verifies that traffic is partially diverted to a secondary locality when &gt; 50% of the instances in the primary locality are unhealthy.</p>
@@ -544,6 +574,46 @@ gentle_failover</h2>
 <li>No backends in the secondary locality receive RPCs.</li>
 </ol>
 <h2><a class="anchor" id="autotoc_md257"></a>
+load_based_failover</h2>
+<p>This test verifies that traffic is partially diverted to a secondary locality when the QPS is greater than the configured RPS in the priority locality.</p>
+<p>Client parameters:</p>
+<ol type="1">
+<li>&ndash;num_channels=1</li>
+</ol>
+<ol type="1">
+<li>&ndash;qps=100</li>
+</ol>
+<p>Load balancer configuration:</p>
+<ol type="1">
+<li>The primary MIG with 2 backends in the same zone as the client</li>
+</ol>
+<ol type="1">
+<li>The secondary MIG with 2 backends in a different zone</li>
+</ol>
+<p>Test driver asserts:</p>
+<ol type="1">
+<li>All backends in the primary locality receive at least 1 RPC.</li>
+</ol>
+<ol type="1">
+<li>No backends in the secondary locality receive RPCs.</li>
+</ol>
+<p>The test driver sets <code>balancingMode</code> is <code>RATE</code>, and <code>maxRate</code> to 20 in the primary locality.</p>
+<p>Test driver asserts:</p>
+<ol type="1">
+<li>All backends in the primary locality receive at least 1 RPC.</li>
+</ol>
+<ol type="1">
+<li>All backends in the secondary locality receive at least 1 RPC.</li>
+</ol>
+<p>The test driver set <code>maxRate</code> to 120 in the primary locality.</p>
+<p>Test driver asserts:</p>
+<ol type="1">
+<li>All backends in the primary locality receive at least 1 RPC.</li>
+</ol>
+<ol type="1">
+<li>No backends in the secondary locality receive RPCs.</li>
+</ol>
+<h2><a class="anchor" id="autotoc_md258"></a>
 circuit_breaking</h2>
 <p>This test verifies that the maximum number of outstanding requests is limited by circuit breakers of the backend service.</p>
 <p>Client parameters:</p>
@@ -576,13 +646,62 @@ circuit_breaking</h2>
 <p>The test driver updates MIG_1's circuit breakers with max_request = 800.</p>
 <p>Test driver asserts:</p>
 <ol type="1">
-<li>After reaching steady state, there are 800 UnaryCall RPCs in-flight. </li>
+<li>After reaching steady state, there are 800 UnaryCall RPCs in-flight.</li>
+</ol>
+<h2><a class="anchor" id="autotoc_md259"></a>
+timeout</h2>
+<p>This test verifies that traffic along a route with a <code>max_stream_duration</code> set will cause timeouts on streams open longer than that duration.</p>
+<p>Client parameters:</p>
+<ol type="1">
+<li><code>--num_channels=1</code></li>
+</ol>
+<ol type="1">
+<li><code>--qps=100</code></li>
+</ol>
+<p>Route Configuration:</p>
+<p>Two routes:</p>
+<ol type="1">
+<li>Path match for <code>/grpc.testing.TestService/UnaryCall</code>, with a <code>route_action</code> containing <code>max_stream_duration</code> of 3 seconds.</li>
+</ol>
+<ol type="1">
+<li>Default route containing no <code>max_stream_duration</code> setting.</li>
+</ol>
+<p>There are four sub-tests:</p>
+<ol type="1">
+<li><code>app_timeout_exceeded</code><ol type="a">
+<li>Test client configured to send UnaryCall RPCs with a 1s application timeout, and metadata of <code>rpc-behavior: sleep-2</code>.</li>
+</ol>
+<ol type="a">
+<li>Test driver asserts client recieves ~100% status <code>DEADLINE_EXCEEDED</code>.</li>
+</ol>
+</li>
+</ol>
+<ol type="1">
+<li><code>timeout_not_exceeded</code><ol type="a">
+<li>Test client configured to send UnaryCall RPCs with the default application timeout (20 seconds), and no metadata.</li>
+</ol>
+<ol type="a">
+<li>Test driver asserts client recieves ~100% status <code>OK</code>.</li>
+</ol>
+</li>
+</ol>
+<ol type="1">
+<li><code>timeout_exceeded</code> (executed with the below test case)</li>
+</ol>
+<ol type="1">
+<li><code>timeout_different_route</code><ol type="a">
+<li>Test client configured to send UnaryCall RPCs and EmptyCall RPCs with the default application timeout (20 seconds), and metadata of <code>rpc-behavior: sleep-4</code>.</li>
+</ol>
+<ol type="a">
+<li>Test driver asserts client recieves ~100% status <code>OK</code> for EmptyCall and ~100% status <code>DEADLINE_EXCEEDED</code> for UnaryCall. </li>
+</ol>
+</li>
 </ol>
 </div></div><!-- contents -->
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 3 2021 19:17:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

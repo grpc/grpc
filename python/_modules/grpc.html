@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc &#8212; gRPC Python 1.35.0 documentation</title>
+    <title>grpc &#8212; gRPC Python 1.36.1 documentation</title>
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.35.0</p>
+<p class="blurb">1.36.1</p>
 
 
 
@@ -1694,6 +1694,21 @@
                                       <span class="n">certificate_chain</span><span class="p">))</span></div>
 
 
+<span class="k">def</span> <span class="nf">xds_channel_credentials</span><span class="p">(</span><span class="n">fallback_credentials</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a ChannelCredentials for use with xDS. This is an EXPERIMENTAL</span>
+<span class="sd">      API.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      fallback_credentials: Credentials to use in case it is not possible to</span>
+<span class="sd">        establish a secure connection via xDS. If no fallback_credentials</span>
+<span class="sd">        argument is supplied, a default SSLChannelCredentials is used.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fallback_credentials</span> <span class="o">=</span> <span class="n">ssl_channel_credentials</span><span class="p">(</span>
+    <span class="p">)</span> <span class="k">if</span> <span class="n">fallback_credentials</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">fallback_credentials</span>
+    <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">XDSChannelCredentials</span><span class="p">(</span><span class="n">fallback_credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">))</span>
+
+
 <div class="viewcode-block" id="metadata_call_credentials"><a class="viewcode-back" href="../grpc.html#grpc.metadata_call_credentials">[docs]</a><span class="k">def</span> <span class="nf">metadata_call_credentials</span><span class="p">(</span><span class="n">metadata_plugin</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Construct CallCredentials from an AuthMetadataPlugin.</span>
 
@@ -1791,6 +1806,29 @@
                 <span class="n">_cygrpc</span><span class="o">.</span><span class="n">SslPemKeyCertPair</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">pem</span><span class="p">)</span>
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">pem</span> <span class="ow">in</span> <span class="n">private_key_certificate_chain_pairs</span>
             <span class="p">],</span> <span class="n">require_client_auth</span><span class="p">))</span></div>
+
+
+<span class="k">def</span> <span class="nf">xds_server_credentials</span><span class="p">(</span><span class="n">fallback_credentials</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a ServerCredentials for use with xDS. This is an EXPERIMENTAL</span>
+<span class="sd">      API.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      fallback_credentials: Credentials to use in case it is not possible to</span>
+<span class="sd">        establish a secure connection via xDS. No default value is provided.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">xds_server_credentials</span><span class="p">(</span><span class="n">fallback_credentials</span><span class="o">.</span><span class="n">_credentials</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">insecure_server_credentials</span><span class="p">():</span>
+    <span class="sd">&quot;&quot;&quot;Creates a credentials object directing the server to use no credentials.</span>
+<span class="sd">      This is an EXPERIMENTAL API.</span>
+
+<span class="sd">    This object cannot be used directly in a call to `add_secure_port`.</span>
+<span class="sd">    Instead, it should be used to construct other credentials objects, e.g.</span>
+<span class="sd">    with xds_server_credentials.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span><span class="n">_cygrpc</span><span class="o">.</span><span class="n">insecure_server_credentials</span><span class="p">())</span>
 
 
 <div class="viewcode-block" id="ssl_server_certificate_configuration"><a class="viewcode-back" href="../grpc.html#grpc.ssl_server_certificate_configuration">[docs]</a><span class="k">def</span> <span class="nf">ssl_server_certificate_configuration</span><span class="p">(</span><span class="n">private_key_certificate_chain_pairs</span><span class="p">,</span>
@@ -2068,7 +2106,8 @@
            <span class="n">interceptors</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
            <span class="n">options</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
            <span class="n">maximum_concurrent_rpcs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-           <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+           <span class="n">compression</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+           <span class="n">xds</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Creates a Server with which RPCs can be serviced.</span>
 
 <span class="sd">    Args:</span>
@@ -2089,6 +2128,8 @@
 <span class="sd">      compression: An element of grpc.compression, e.g.</span>
 <span class="sd">        grpc.compression.Gzip. This compression algorithm will be used for the</span>
 <span class="sd">        lifetime of the server unless overridden. This is an EXPERIMENTAL option.</span>
+<span class="sd">      xds: If set to true, retrieves server configuration via xDS. This is an</span>
+<span class="sd">        EXPERIMENTAL option.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">      A Server object.</span>
@@ -2098,7 +2139,7 @@
                                  <span class="p">()</span> <span class="k">if</span> <span class="n">handlers</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">handlers</span><span class="p">,</span>
                                  <span class="p">()</span> <span class="k">if</span> <span class="n">interceptors</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">interceptors</span><span class="p">,</span>
                                  <span class="p">()</span> <span class="k">if</span> <span class="n">options</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">options</span><span class="p">,</span>
-                                 <span class="n">maximum_concurrent_rpcs</span><span class="p">,</span> <span class="n">compression</span><span class="p">)</span></div>
+                                 <span class="n">maximum_concurrent_rpcs</span><span class="p">,</span> <span class="n">compression</span><span class="p">,</span> <span class="n">xds</span><span class="p">)</span></div>
 
 
 <span class="nd">@contextlib</span><span class="o">.</span><span class="n">contextmanager</span>

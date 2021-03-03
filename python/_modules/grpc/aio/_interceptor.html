@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._interceptor &#8212; gRPC Python 1.35.0 documentation</title>
+    <title>grpc.aio._interceptor &#8212; gRPC Python 1.36.1 documentation</title>
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.35.0</p>
+<p class="blurb">1.36.1</p>
 
 
 
@@ -131,8 +131,8 @@
 
 <div class="viewcode-block" id="ServerInterceptor.intercept_service"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.ServerInterceptor.intercept_service">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span> <span class="nf">intercept_service</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span> <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">grpc</span><span class="o">.</span><span class="n">HandlerCallDetails</span><span class="p">],</span> <span class="n">Awaitable</span><span class="p">[</span>
-                <span class="n">grpc</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">]],</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">grpc</span><span class="o">.</span><span class="n">HandlerCallDetails</span><span class="p">],</span>
+                                         <span class="n">Awaitable</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">]],</span>
             <span class="n">handler_call_details</span><span class="p">:</span> <span class="n">grpc</span><span class="o">.</span><span class="n">HandlerCallDetails</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">grpc</span><span class="o">.</span><span class="n">RpcMethodHandler</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Intercepts incoming RPCs before handing them over to a handler.</span>
@@ -256,11 +256,11 @@
 
 <div class="viewcode-block" id="StreamUnaryClientInterceptor.intercept_stream_unary"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamUnaryClientInterceptor.intercept_stream_unary">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span> <span class="nf">intercept_stream_unary</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ClientCallDetails</span><span class="p">,</span> <span class="n">RequestType</span><span class="p">],</span>
-                                   <span class="n">UnaryStreamCall</span><span class="p">],</span>
-            <span class="n">client_call_details</span><span class="p">:</span> <span class="n">ClientCallDetails</span><span class="p">,</span>
-            <span class="n">request_iterator</span><span class="p">:</span> <span class="n">RequestIterableType</span><span class="p">,</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ClientCallDetails</span><span class="p">,</span> <span class="n">RequestType</span><span class="p">],</span>
+                               <span class="n">UnaryStreamCall</span><span class="p">],</span>
+        <span class="n">client_call_details</span><span class="p">:</span> <span class="n">ClientCallDetails</span><span class="p">,</span>
+        <span class="n">request_iterator</span><span class="p">:</span> <span class="n">RequestIterableType</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StreamUnaryCall</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Intercepts a stream-unary invocation asynchronously.</span>
 
@@ -297,11 +297,11 @@
 
 <div class="viewcode-block" id="StreamStreamClientInterceptor.intercept_stream_stream"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.StreamStreamClientInterceptor.intercept_stream_stream">[docs]</a>    <span class="nd">@abstractmethod</span>
     <span class="k">async</span> <span class="k">def</span> <span class="nf">intercept_stream_stream</span><span class="p">(</span>
-            <span class="bp">self</span><span class="p">,</span>
-            <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ClientCallDetails</span><span class="p">,</span> <span class="n">RequestType</span><span class="p">],</span>
-                                   <span class="n">UnaryStreamCall</span><span class="p">],</span>
-            <span class="n">client_call_details</span><span class="p">:</span> <span class="n">ClientCallDetails</span><span class="p">,</span>
-            <span class="n">request_iterator</span><span class="p">:</span> <span class="n">RequestIterableType</span><span class="p">,</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">continuation</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">ClientCallDetails</span><span class="p">,</span> <span class="n">RequestType</span><span class="p">],</span>
+                               <span class="n">UnaryStreamCall</span><span class="p">],</span>
+        <span class="n">client_call_details</span><span class="p">:</span> <span class="n">ClientCallDetails</span><span class="p">,</span>
+        <span class="n">request_iterator</span><span class="p">:</span> <span class="n">RequestIterableType</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">ResponseIterableType</span><span class="p">,</span> <span class="n">StreamStreamCall</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Intercepts a stream-stream invocation asynchronously.</span>
 
@@ -369,9 +369,8 @@
     <span class="k">def</span> <span class="fm">__del__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">cancel</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="nf">_fire_or_add_pending_done_callbacks</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span>
-                                            <span class="n">interceptors_task</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span>
-                                           <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_fire_or_add_pending_done_callbacks</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">interceptors_task</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Task</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pending_add_done_callbacks</span><span class="p">:</span>
             <span class="k">return</span>
@@ -531,8 +530,8 @@
         <span class="c1"># consumed a logging warning is emmited by Asyncio.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_response_aiter</span> <span class="o">=</span> <span class="kc">None</span>
 
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">_wait_for_interceptor_task_response_iterator</span><span class="p">(</span><span class="bp">self</span>
-                                                          <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResponseType</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_wait_for_interceptor_task_response_iterator</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResponseType</span><span class="p">:</span>
         <span class="n">call</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">_interceptors_task</span>
         <span class="k">async</span> <span class="k">for</span> <span class="n">response</span> <span class="ow">in</span> <span class="n">call</span><span class="p">:</span>
             <span class="k">yield</span> <span class="n">response</span>
@@ -661,14 +660,14 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">interceptors_task</span><span class="p">)</span>
 
     <span class="c1"># pylint: disable=too-many-arguments</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">_invoke</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interceptors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">UnaryUnaryClientInterceptor</span><span class="p">],</span>
-                      <span class="n">method</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
-                      <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">],</span>
-                      <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">],</span>
-                      <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span>
-                      <span class="n">request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span><span class="p">,</span>
-                      <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">DeserializingFunction</span>
-                     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryUnaryCall</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_invoke</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">interceptors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">UnaryUnaryClientInterceptor</span><span class="p">],</span>
+            <span class="n">method</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+            <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">],</span>
+            <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">],</span>
+            <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span>
+            <span class="n">request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span><span class="p">,</span>
+            <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">DeserializingFunction</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryUnaryCall</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Run the RPC call wrapped in interceptors&quot;&quot;&quot;</span>
 
         <span class="k">async</span> <span class="k">def</span> <span class="nf">_run_interceptor</span><span class="p">(</span>
@@ -735,20 +734,20 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">interceptors_task</span><span class="p">)</span>
 
     <span class="c1"># pylint: disable=too-many-arguments</span>
-    <span class="k">async</span> <span class="k">def</span> <span class="nf">_invoke</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interceptors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">UnaryUnaryClientInterceptor</span><span class="p">],</span>
-                      <span class="n">method</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
-                      <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">],</span>
-                      <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">],</span>
-                      <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span>
-                      <span class="n">request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span><span class="p">,</span>
-                      <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">DeserializingFunction</span>
-                     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryStreamCall</span><span class="p">:</span>
+    <span class="k">async</span> <span class="k">def</span> <span class="nf">_invoke</span><span class="p">(</span>
+            <span class="bp">self</span><span class="p">,</span> <span class="n">interceptors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">UnaryUnaryClientInterceptor</span><span class="p">],</span>
+            <span class="n">method</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">timeout</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+            <span class="n">metadata</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Metadata</span><span class="p">],</span>
+            <span class="n">credentials</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">grpc</span><span class="o">.</span><span class="n">CallCredentials</span><span class="p">],</span>
+            <span class="n">wait_for_ready</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">],</span> <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span>
+            <span class="n">request_serializer</span><span class="p">:</span> <span class="n">SerializingFunction</span><span class="p">,</span>
+            <span class="n">response_deserializer</span><span class="p">:</span> <span class="n">DeserializingFunction</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">UnaryStreamCall</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Run the RPC call wrapped in interceptors&quot;&quot;&quot;</span>
 
         <span class="k">async</span> <span class="k">def</span> <span class="nf">_run_interceptor</span><span class="p">(</span>
-                <span class="n">interceptors</span><span class="p">:</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">UnaryStreamClientInterceptor</span><span class="p">],</span>
-                <span class="n">client_call_details</span><span class="p">:</span> <span class="n">ClientCallDetails</span><span class="p">,</span>
-                <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span>
+            <span class="n">interceptors</span><span class="p">:</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">UnaryStreamClientInterceptor</span><span class="p">],</span>
+            <span class="n">client_call_details</span><span class="p">:</span> <span class="n">ClientCallDetails</span><span class="p">,</span>
+            <span class="n">request</span><span class="p">:</span> <span class="n">RequestType</span><span class="p">,</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryUnaryCall</span><span class="p">:</span>
 
             <span class="n">interceptor</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">interceptors</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -830,9 +829,9 @@
         <span class="sd">&quot;&quot;&quot;Run the RPC call wrapped in interceptors&quot;&quot;&quot;</span>
 
         <span class="k">async</span> <span class="k">def</span> <span class="nf">_run_interceptor</span><span class="p">(</span>
-                <span class="n">interceptors</span><span class="p">:</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">UnaryUnaryClientInterceptor</span><span class="p">],</span>
-                <span class="n">client_call_details</span><span class="p">:</span> <span class="n">ClientCallDetails</span><span class="p">,</span>
-                <span class="n">request_iterator</span><span class="p">:</span> <span class="n">RequestIterableType</span>
+            <span class="n">interceptors</span><span class="p">:</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">UnaryUnaryClientInterceptor</span><span class="p">],</span>
+            <span class="n">client_call_details</span><span class="p">:</span> <span class="n">ClientCallDetails</span><span class="p">,</span>
+            <span class="n">request_iterator</span><span class="p">:</span> <span class="n">RequestIterableType</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamUnaryCall</span><span class="p">:</span>
 
             <span class="n">interceptor</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">interceptors</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -903,9 +902,9 @@
         <span class="sd">&quot;&quot;&quot;Run the RPC call wrapped in interceptors&quot;&quot;&quot;</span>
 
         <span class="k">async</span> <span class="k">def</span> <span class="nf">_run_interceptor</span><span class="p">(</span>
-                <span class="n">interceptors</span><span class="p">:</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">StreamStreamClientInterceptor</span><span class="p">],</span>
-                <span class="n">client_call_details</span><span class="p">:</span> <span class="n">ClientCallDetails</span><span class="p">,</span>
-                <span class="n">request_iterator</span><span class="p">:</span> <span class="n">RequestIterableType</span>
+            <span class="n">interceptors</span><span class="p">:</span> <span class="n">Iterator</span><span class="p">[</span><span class="n">StreamStreamClientInterceptor</span><span class="p">],</span>
+            <span class="n">client_call_details</span><span class="p">:</span> <span class="n">ClientCallDetails</span><span class="p">,</span>
+            <span class="n">request_iterator</span><span class="p">:</span> <span class="n">RequestIterableType</span>
         <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamStreamCall</span><span class="p">:</span>
 
             <span class="n">interceptor</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">interceptors</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
@@ -997,8 +996,8 @@
     <span class="n">_call</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryStreamCall</span><span class="p">,</span> <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamStreamCall</span><span class="p">]</span>
     <span class="n">_response_iterator</span><span class="p">:</span> <span class="n">AsyncIterable</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">]</span>
 
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryStreamCall</span><span class="p">,</span> <span class="n">_base_call</span><span class="o">.</span>
-                                   <span class="n">StreamStreamCall</span><span class="p">],</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">call</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">_base_call</span><span class="o">.</span><span class="n">UnaryStreamCall</span><span class="p">,</span>
+                                   <span class="n">_base_call</span><span class="o">.</span><span class="n">StreamStreamCall</span><span class="p">],</span>
                  <span class="n">response_iterator</span><span class="p">:</span> <span class="n">AsyncIterable</span><span class="p">[</span><span class="n">ResponseType</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_response_iterator</span> <span class="o">=</span> <span class="n">response_iterator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_call</span> <span class="o">=</span> <span class="n">call</span>

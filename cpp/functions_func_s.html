@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.35.0</span>
+   &#160;<span id="projectnumber">1.36.1</span>
    </div>
   </td>
  </tr>
@@ -142,6 +142,9 @@ $(function() {
 <li>ServerContextBase()
 : <a class="el" href="classgrpc_1_1_server_context_base.html#a8e50f2206f90bdcb221232310078d33a">grpc::ServerContextBase</a>
 </li>
+<li>ServerCredentials()
+: <a class="el" href="classgrpc_1_1_server_credentials.html#ae4271df98b9da8ac4fada0c147e1674a">grpc::ServerCredentials</a>
+</li>
 <li>ServerInitializer()
 : <a class="el" href="classgrpc_1_1_server_initializer.html#a8ed53b53b1dcfd92a503a4d85756e19d">grpc::ServerInitializer</a>
 </li>
@@ -202,6 +205,9 @@ $(function() {
 <li>set_cert_request_type()
 : <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_credentials_options.html#a4c1c33cf5a3ca22b3e22fdffe405106b">grpc::experimental::TlsServerCredentialsOptions</a>
 </li>
+<li>set_certificate_provider()
+: <a class="el" href="classgrpc_1_1experimental_1_1_tls_credentials_options.html#afd216d4f6b96c16d2e6708658b4fe0ce">grpc::experimental::TlsCredentialsOptions</a>
+</li>
 <li>set_compression_algorithm()
 : <a class="el" href="classgrpc_1_1_client_context.html#a67a71b32afe1d71189aa3a24146ec61d">grpc::ClientContext</a>
 , <a class="el" href="classgrpc_1_1_server_context_base.html#a2d3750842383ac9dd0a06ed1587eb0a6">grpc::ServerContextBase</a>
@@ -209,6 +215,9 @@ $(function() {
 <li>set_compression_level()
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a4deee928e2a0765fa6a9f84f31da034d">grpc::internal::CallOpSendInitialMetadata</a>
 , <a class="el" href="classgrpc_1_1_server_context_base.html#a59552b35829d48e39144e0f8eb11ec4b">grpc::ServerContextBase</a>
+</li>
+<li>set_context_allocator()
+: <a class="el" href="classgrpc_1_1_server_context_base.html#a09e9fc2c941452180d012cb049ac1b74">grpc::ServerContextBase</a>
 </li>
 <li>set_core_cq_tag()
 : <a class="el" href="classgrpc_1_1internal_1_1_call_op_set.html#a449a33a6877ac4710dc40fccaf786c35">grpc::internal::CallOpSet&lt; Op1, Op2, Op3, Op4, Op5, Op6 &gt;</a>
@@ -309,6 +318,9 @@ $(function() {
 <li>SetCompressionAlgorithmSupportStatus()
 : <a class="el" href="classgrpc_1_1_server_builder.html#a26e4b20a377c4bbbe37c33aa72165034">grpc::ServerBuilder</a>
 </li>
+<li>SetContextAllocator()
+: <a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html#a0a1ab9751051802301cd9af88bbd4935">grpc::ServerBuilder::experimental_type</a>
+</li>
 <li>SetDefaultCompressionAlgorithm()
 : <a class="el" href="classgrpc_1_1_server_builder.html#a6ee516b7445ff4e1274a6d882f529504">grpc::ServerBuilder</a>
 </li>
@@ -396,7 +408,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_builder.html#aeab1bf4749eb2b6b40539dc9202915e2">grpc::ServerBuilder</a>
 </li>
 <li>SetPeerIdentityPropertyName()
-: <a class="el" href="classgrpc_1_1_auth_context.html#affa9e838e6a15fdb881bb99058969f49">grpc::AuthContext</a>
+: <a class="el" href="classgrpc_1_1_auth_context.html#a2aeb1b08f1061ada948a5d678b584596">grpc::AuthContext</a>
 </li>
 <li>SetPointer()
 : <a class="el" href="classgrpc_1_1_channel_arguments.html#a4d0542a29349a1d6345d2278f117adfa">grpc::ChannelArguments</a>
@@ -494,7 +506,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a0874823748781629e0b2bde470d78bf3">grpc::ProtoBufferReader</a>
 </li>
 <li>Slice()
-: <a class="el" href="classgrpc_1_1_slice.html#a0fe7abc158b542eae02d1e7b8f76d625">grpc::Slice</a>
+: <a class="el" href="classgrpc_1_1_slice.html#a0a6b936d72f7ae35f083d003d3e0c8a3">grpc::Slice</a>
 </li>
 <li>slice_buffer()
 : <a class="el" href="classgrpc_1_1_proto_buffer_writer.html#a2735ca72a039d465dd538c6f3fa06e20">grpc::ProtoBufferWriter</a>
@@ -566,7 +578,7 @@ $(function() {
 , <a class="el" href="classgrpc_1_1_client_write_reactor.html#a7ec6a54d1e64db79620b2225cdfa7b96">grpc::ClientWriteReactor&lt; Request &gt;</a>
 </li>
 <li>StaticDataCertificateProvider()
-: <a class="el" href="classgrpc_1_1experimental_1_1_static_data_certificate_provider.html#a4dffc04c8a03bb3062488ec3de50a452">grpc::experimental::StaticDataCertificateProvider</a>
+: <a class="el" href="classgrpc_1_1experimental_1_1_static_data_certificate_provider.html#a0b72dc0d81b33ecb4cc1812ee7b0d5f4">grpc::experimental::StaticDataCertificateProvider</a>
 </li>
 <li>status()
 : <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_arg.html#a0adceb3655ec111488cccc04ff079125">grpc::experimental::TlsServerAuthorizationCheckArg</a>
@@ -574,7 +586,7 @@ $(function() {
 , <a class="el" href="classgrpc_1_1_proto_buffer_reader.html#a50b5c353ac2d915b09e68bf9c1f7136e">grpc::ProtoBufferReader</a>
 </li>
 <li>Status()
-: <a class="el" href="classgrpc_1_1_status.html#a8f717edd9625cb4886ce6a599e4d47b4">grpc::Status</a>
+: <a class="el" href="classgrpc_1_1_status.html#a5be6d5b99b07855a1458e0167b066038">grpc::Status</a>
 </li>
 <li>status_ptr()
 : <a class="el" href="classgrpc_1_1internal_1_1_callback_with_status_tag.html#af1165bb5dcac25fadc2069064760c84b">grpc::internal::CallbackWithStatusTag</a>
@@ -583,7 +595,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_streamed_unary_handler.html#ab4784adb1f00341659f6299fe8ade8e1">grpc::internal::StreamedUnaryHandler&lt; RequestType, ResponseType &gt;</a>
 </li>
 <li>string_ref()
-: <a class="el" href="classgrpc_1_1string__ref.html#a3b6c90d10321a5636a134be68f2f6f18">grpc::string_ref</a>
+: <a class="el" href="classgrpc_1_1string__ref.html#a0631f7099a7fc8b1bbf16f3353074400">grpc::string_ref</a>
 </li>
 <li>substr()
 : <a class="el" href="classgrpc_1_1string__ref.html#ae9c7f6a6af76030d720b135cc251c08b">grpc::string_ref</a>
@@ -602,7 +614,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 3 2021 19:17:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

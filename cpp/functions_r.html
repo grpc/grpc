@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.35.0</span>
+   &#160;<span id="projectnumber">1.36.1</span>
    </div>
   </td>
  </tr>
@@ -153,6 +153,9 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_server_builder_1_1experimental__type.html#aa0dfb6068003cdc94d0cde50ffdf9a55">grpc::ServerBuilder::experimental_type</a>
 , <a class="el" href="classgrpc_1_1_server_interface_1_1experimental__registration__interface.html#a235eeb338faba0cfd64de1788bbd42a9">grpc::ServerInterface::experimental_registration_interface</a>
 </li>
+<li>RegisterContextAllocator()
+: <a class="el" href="classgrpc_1_1_server_interface_1_1experimental__registration__interface.html#a7e396306ba141eb61210db5bbecf9d2e">grpc::ServerInterface::experimental_registration_interface</a>
+</li>
 <li>RegisteredAsyncRequest()
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_registered_async_request.html#ab483f2f7b1d56832dd3427dce39e5198">grpc::ServerInterface::RegisteredAsyncRequest</a>
 </li>
@@ -167,6 +170,7 @@ $(function() {
 </li>
 <li>Release()
 : <a class="el" href="classgrpc_1_1_byte_buffer.html#ae03627c8b3297965fa0cdd4f03a9af0f">grpc::ByteBuffer</a>
+, <a class="el" href="classgrpc_1_1_context_allocator.html#a72842a9cbc4cf0ad58c86f24cddd2919">grpc::ContextAllocator</a>
 , <a class="el" href="classgrpc_1_1experimental_1_1_message_holder.html#af488004fd9d0e21865e123a2920ad75c">grpc::experimental::MessageHolder&lt; RequestT, ResponseT &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_default_message_holder.html#a9760eb34327ea06132af6727dbaacaeb">grpc::internal::DefaultMessageHolder&lt; Request, Response &gt;</a>
 </li>
@@ -192,7 +196,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_service.html#aa63db6708659dce46702319eb4011ee9">grpc::Service</a>
 </li>
 <li>RequestAsyncCall()
-: <a class="el" href="classgrpc_1_1_server_interface.html#acec5579d7e5d568a992367051224ca80">grpc::ServerInterface</a>
+: <a class="el" href="classgrpc_1_1_server_interface.html#acaf1e2972cebf65c5457b55aa8f6bf46">grpc::ServerInterface</a>
 </li>
 <li>RequestAsyncClientStreaming()
 : <a class="el" href="classgrpc_1_1_service.html#a7c4edf4844e73f267e857ba3cdb277e6">grpc::Service</a>
@@ -215,10 +219,10 @@ $(function() {
 </li>
 <li>reserved
 : <a class="el" href="structgrpc__auth__metadata__context.html#a0ca2d1c0da619c1e50cef8437f1ef517">grpc_auth_metadata_context</a>
-, <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#a83dbb8e4a7b9660b1d8b3a21b68128c0">grpc_byte_buffer::grpc_byte_buffer_data</a>
+, <a class="el" href="uniongrpc__byte__buffer_1_1grpc__byte__buffer__data.html#afe17bc226df989c4dcc2ca122c1f4cc4">grpc_byte_buffer::grpc_byte_buffer_data</a>
 , <a class="el" href="structgrpc__byte__buffer.html#a0945e647b3a7b14083537a6d3e51fde5">grpc_byte_buffer</a>
 , <a class="el" href="structgrpc__call__details.html#a5c323f3f0c94cbb867f13453dd43dd9d">grpc_call_details</a>
-, <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#ad3859f113f08d8564d504161c263bc08">grpc_op::grpc_op_data</a>
+, <a class="el" href="uniongrpc__op_1_1grpc__op__data.html#aa8dbb47234771bd5509fffa821260dd9">grpc_op::grpc_op_data</a>
 , <a class="el" href="structgrpc__op.html#a58d279ba14f133153eb0ee801deb74f5">grpc_op</a>
 </li>
 <li>Reset()
@@ -232,13 +236,13 @@ $(function() {
 , <a class="el" href="structgrpc__sts__credentials__options.html#acccf3e0c9f7f8865718fbb8e51f2d5ab">grpc_sts_credentials_options</a>
 </li>
 <li>ResourceQuota()
-: <a class="el" href="classgrpc_1_1_resource_quota.html#a452006a82860143a83aefaf42ba2fb48">grpc::ResourceQuota</a>
+: <a class="el" href="classgrpc_1_1_resource_quota.html#a59884378c08c839b340063953925fdf7">grpc::ResourceQuota</a>
 </li>
 <li>response()
 : <a class="el" href="classgrpc_1_1experimental_1_1_message_holder.html#a169fb5a4b742b8a55b04fc9dec54aecb">grpc::experimental::MessageHolder&lt; RequestT, ResponseT &gt;</a>
 </li>
 <li>RpcMethod()
-: <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a1c13d569c84898f688b74958a4d7db49">grpc::internal::RpcMethod</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_rpc_method.html#a254b308ceaa38d17c99afb71f4fc1d73">grpc::internal::RpcMethod</a>
 </li>
 <li>RpcMethodHandler()
 : <a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html#a8e44bc81d48d1ba5518974bb6aaf1a6e">grpc::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType, BaseRequestType, BaseResponseType &gt;</a>
@@ -268,7 +272,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 3 2021 19:17:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

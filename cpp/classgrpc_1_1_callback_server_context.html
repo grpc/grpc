@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.35.0</span>
+   &#160;<span id="projectnumber">1.36.1</span>
    </div>
   </td>
  </tr>
@@ -107,6 +107,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a942b0a431630f987d558550bf9d49dd1"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_callback_server_context.html#a942b0a431630f987d558550bf9d49dd1">compression_level_set</a> () const</td></tr>
 <tr class="memdesc:a942b0a431630f987d558550bf9d49dd1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a bool indicating whether the compression level for this call has been set (either implicitly or through a previous call to <em>set_compression_level</em>.  <a href="classgrpc_1_1_callback_server_context.html#a942b0a431630f987d558550bf9d49dd1">More...</a><br /></td></tr>
 <tr class="separator:a942b0a431630f987d558550bf9d49dd1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adee121869f6acd8ea8b13d0d2f290b81"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_context_allocator.html">ContextAllocator</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_callback_server_context.html#adee121869f6acd8ea8b13d0d2f290b81">context_allocator</a> () const</td></tr>
+<tr class="separator:adee121869f6acd8ea8b13d0d2f290b81"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaa0410923dcf941e78c75e7463a34390"><td class="memItemLeft" align="right" valign="top">std::chrono::system_clock::time_point&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_callback_server_context.html#aaa0410923dcf941e78c75e7463a34390">deadline</a> () const</td></tr>
 <tr class="memdesc:aaa0410923dcf941e78c75e7463a34390"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the deadline for the server call.  <a href="classgrpc_1_1_callback_server_context.html#aaa0410923dcf941e78c75e7463a34390">More...</a><br /></td></tr>
 <tr class="separator:aaa0410923dcf941e78c75e7463a34390"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -125,6 +127,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a59552b35829d48e39144e0f8eb11ec4b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_callback_server_context.html#a59552b35829d48e39144e0f8eb11ec4b">set_compression_level</a> (<a class="el" href="compression__types_8h.html#a14a79ed6b5ebd7e1dda7c2684f499cc7">grpc_compression_level</a> level)</td></tr>
 <tr class="memdesc:a59552b35829d48e39144e0f8eb11ec4b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set <em>level</em> to be the compression level used for the server call.  <a href="classgrpc_1_1_callback_server_context.html#a59552b35829d48e39144e0f8eb11ec4b">More...</a><br /></td></tr>
 <tr class="separator:a59552b35829d48e39144e0f8eb11ec4b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09e9fc2c941452180d012cb049ac1b74"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_callback_server_context.html#a09e9fc2c941452180d012cb049ac1b74">set_context_allocator</a> (<a class="el" href="classgrpc_1_1_context_allocator.html">ContextAllocator</a> *<a class="el" href="classgrpc_1_1_server_context_base.html#adee121869f6acd8ea8b13d0d2f290b81">context_allocator</a>)</td></tr>
+<tr class="separator:a09e9fc2c941452180d012cb049ac1b74"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a8aac6e1b38b734ba079d84fe72d7855d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_callback_server_context.html#a8aac6e1b38b734ba079d84fe72d7855d">SetLoadReportingCosts</a> (const std::vector&lt; std::string &gt; &amp;cost_data)</td></tr>
 <tr class="memdesc:a8aac6e1b38b734ba079d84fe72d7855d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set the serialized load reporting costs in <em>cost_data</em> for the call.  <a href="classgrpc_1_1_callback_server_context.html#a8aac6e1b38b734ba079d84fe72d7855d">More...</a><br /></td></tr>
 <tr class="separator:a8aac6e1b38b734ba079d84fe72d7855d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -209,6 +213,10 @@ Additional Inherited Members</h2></td></tr>
 <tr class="separator:a8e50f2206f90bdcb221232310078d33a inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af67bb06438457e78121d38c30399ba9a inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#af67bb06438457e78121d38c30399ba9a">ServerContextBase</a> (<a class="el" href="structgpr__timespec.html">gpr_timespec</a> <a class="el" href="classgrpc_1_1_server_context_base.html#aaa0410923dcf941e78c75e7463a34390">deadline</a>, <a class="el" href="structgrpc__metadata__array.html">grpc_metadata_array</a> *arr)</td></tr>
 <tr class="separator:af67bb06438457e78121d38c30399ba9a inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a09e9fc2c941452180d012cb049ac1b74 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#a09e9fc2c941452180d012cb049ac1b74">set_context_allocator</a> (<a class="el" href="classgrpc_1_1_context_allocator.html">ContextAllocator</a> *<a class="el" href="classgrpc_1_1_server_context_base.html#adee121869f6acd8ea8b13d0d2f290b81">context_allocator</a>)</td></tr>
+<tr class="separator:a09e9fc2c941452180d012cb049ac1b74 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adee121869f6acd8ea8b13d0d2f290b81 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_context_allocator.html">ContextAllocator</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_context_base.html#adee121869f6acd8ea8b13d0d2f290b81">context_allocator</a> () const</td></tr>
+<tr class="separator:adee121869f6acd8ea8b13d0d2f290b81 inherit pro_methods_classgrpc_1_1_server_context_base"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a636a0349b0344e4cbdb3be5c3a9889eb"></a>
@@ -458,6 +466,28 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="adee121869f6acd8ea8b13d0d2f290b81"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adee121869f6acd8ea8b13d0d2f290b81">&#9670;&nbsp;</a></span>context_allocator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1_context_allocator.html">ContextAllocator</a>* grpc::ServerContextBase::context_allocator</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="aaa0410923dcf941e78c75e7463a34390"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#aaa0410923dcf941e78c75e7463a34390">&#9670;&nbsp;</a></span>deadline()</h2>
 
@@ -645,6 +675,28 @@ Additional Inherited Members</h2></td></tr>
 
 </div>
 </div>
+<a id="a09e9fc2c941452180d012cb049ac1b74"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a09e9fc2c941452180d012cb049ac1b74">&#9670;&nbsp;</a></span>set_context_allocator()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::ServerContextBase::set_context_allocator</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a8aac6e1b38b734ba079d84fe72d7855d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a8aac6e1b38b734ba079d84fe72d7855d">&#9670;&nbsp;</a></span>SetLoadReportingCosts()</h2>
 
@@ -687,7 +739,7 @@ Additional Inherited Members</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Fri Jan 22 2021 01:32:00 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Mar 3 2021 19:17:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
