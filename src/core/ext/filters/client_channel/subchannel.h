@@ -189,8 +189,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
   };
 
   // The ctor and dtor are not intended to use directly.
-  Subchannel(const SubchannelKey& key,
-             OrphanablePtr<SubchannelConnector> connector,
+  Subchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
              const grpc_channel_args* args);
   ~Subchannel() override;
 

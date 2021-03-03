@@ -646,13 +646,13 @@ Subchannel::ConnectivityStateWatcherInterface::PopConnectivityStateChange() {
   return state_change;
 }
 
-Subchannel::Subchannel(const SubchannelKey& key,
+Subchannel::Subchannel(SubchannelKey key,
                        OrphanablePtr<SubchannelConnector> connector,
                        const grpc_channel_args* args)
     : DualRefCounted<Subchannel>(
           GRPC_TRACE_FLAG_ENABLED(grpc_trace_subchannel_refcount) ? "Subchannel"
                                                                   : nullptr),
-      key_(key),
+      key_(std::move(key)),
       connector_(std::move(connector)),
       backoff_(ParseArgsForBackoffValues(args, &min_connect_timeout_ms_)) {
   GRPC_STATS_INC_CLIENT_SUBCHANNELS_CREATED();
