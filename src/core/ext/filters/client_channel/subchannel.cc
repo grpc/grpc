@@ -1002,7 +1002,7 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
     c->connecting_ = false;
     if (c->connecting_result_.transport != nullptr &&
         c->PublishTransportLocked()) {
-      c.release();  // ConnectedSubchannelStateWatcher stole weak ref
+      // Do nothing, transport was published.
     } else if (!c->disconnected_) {
       gpr_log(GPR_INFO, "Connect failed: %s", grpc_error_string(error));
       c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
@@ -1010,6 +1010,7 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
     }
   }
   grpc_channel_args_destroy(delete_channel_args);
+  c.reset(DEBUG_LOCATION, "connecting");
 }
 
 namespace {
@@ -1060,10 +1061,9 @@ bool Subchannel::PublishTransportLocked() {
   if (channelz_node_ != nullptr) {
     channelz_node_->SetChildSocket(std::move(socket));
   }
-  // Start watching connected subchannel. Steal ref from connecting.
+  // Start watching connected subchannel.
   connected_subchannel_->StartWatch(
-      pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(
-                        WeakRefCountedPtr<Subchannel>(this)));
+      pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(WeakRef()));
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY, absl::Status());
   return true;
