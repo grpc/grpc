@@ -58,13 +58,13 @@ class ExternalConnectionAcceptorImpl;
 /// \a Server instances.
 class Server : public ServerInterface, private GrpcLibraryCodegen {
  public:
-  ~Server() override;
+  ~Server() ABSL_LOCKS_EXCLUDED(mu_) override;
 
   /// Block until the server shuts down.
   ///
   /// \warning The server must be either shutting down or some other thread must
   /// call \a Shutdown for this function to ever return.
-  void Wait() override;
+  void Wait() ABSL_LOCKS_EXCLUDED(mu_) override;
 
   /// Global callbacks are a set of hooks that are called when server
   /// events occur.  \a SetGlobalCallbacks method is used to register
@@ -286,13 +286,14 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                         internal::Call* call) override;
 
-  void ShutdownInternal(gpr_timespec deadline) override;
+  void ShutdownInternal(gpr_timespec deadline) ABSL_LOCKS_EXCLUDED(mu_)
+      override;
 
   int max_receive_message_size() const override {
     return max_receive_message_size_;
   }
 
-  CompletionQueue* CallbackCQ() override;
+  CompletionQueue* CallbackCQ() ABSL_LOCKS_EXCLUDED(mu_) override;
 
   ServerInitializer* initializer();
 
