@@ -49,6 +49,8 @@ def _get_external_deps(external_deps):
     for dep in external_deps:
         if dep == "address_sorting":
             ret += ["//third_party/address_sorting"]
+        elif dep == "xxhash":
+            ret += ["//third_party/xxhash"]
         elif dep == "cares":
             ret += select({
                 "//:grpc_no_ares": [],
