@@ -7,3 +7,5 @@
 # --client_image=gcr.io/grpc-testing/xds-k8s-test-client-java:latest
 # Enable port forwarding in local dev
 --debug_use_port_forwarding
+# (convenience) Allow to set always known flags
+--undefok=private_api_key_secret_name

@@ -34,7 +34,7 @@ def main
     Process.wait(client_controller.client_pid)
     STDERR.puts 'killed client child'
     raise 'Timed out waiting for client process. ' \
-      'It likely hangs when requiring grpc, then forking, then using grpc '
+      'It likely freezes when requiring grpc, then forking, then using grpc '
   end
 
   client_exit_code = $CHILD_STATUS

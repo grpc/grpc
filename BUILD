@@ -350,12 +350,29 @@ grpc_cc_library(
     name = "grpc++_public_hdrs",
     hdrs = GRPCXX_PUBLIC_HDRS,
     external_deps = [
+        "absl/synchronization",
         "protobuf_headers",
     ],
 )
 
 grpc_cc_library(
     name = "grpc++",
+    language = "c++",
+    select_deps = {
+        "grpc_no_xds": [],
+        "//conditions:default": [
+            "grpc++_xds_client",
+            "grpc++_xds_server",
+        ],
+    },
+    standalone = True,
+    deps = [
+        "grpc++_internals",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_internals",
     srcs = [
         "src/cpp/client/insecure_credentials.cc",
         "src/cpp/client/secure_credentials.cc",
@@ -376,18 +393,11 @@ grpc_cc_library(
         "src/cpp/server/secure_server_credentials.h",
     ],
     external_deps = [
+        "absl/synchronization",
         "protobuf_headers",
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    select_deps = {
-        "grpc_no_xds": [],
-        "//conditions:default": [
-            "grpc++_xds_client",
-            "grpc++_xds_server",
-        ],
-    },
-    standalone = True,
     deps = [
         "gpr",
         "grpc",
@@ -409,7 +419,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "grpc++_base",
+        "grpc++_internals",
     ],
 )
 
@@ -426,7 +436,7 @@ grpc_cc_library(
         "include/grpcpp/xds_server_builder.h",
     ],
     deps = [
-        "grpc++_base",
+        "grpc++_internals",
     ],
 )
 
@@ -514,6 +524,9 @@ grpc_cc_library(
     name = "grpc++_internal_hdrs_only",
     hdrs = [
         "include/grpcpp/impl/codegen/sync.h",
+    ],
+    external_deps = [
+        "absl/synchronization",
     ],
     language = "c++",
     deps = [
@@ -2303,6 +2316,7 @@ grpc_cc_library(
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
     external_deps = [
+        "absl/synchronization",
         "protobuf_headers",
     ],
     language = "c++",
@@ -2320,6 +2334,7 @@ grpc_cc_library(
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
     external_deps = [
+        "absl/synchronization",
         "protobuf_headers",
     ],
     language = "c++",

@@ -40,7 +40,7 @@ def main
     Process.kill('SIGKILL', client_controller.client_pid)
     Process.wait(client_controller.client_pid)
     STDERR.puts 'killed client child'
-    raise 'Timed out waiting for client process. It likely hangs when a ' \
+    raise 'Timed out waiting for client process. It likely freezes when a ' \
       'SIGINT is sent while there is an active connectivity_state call'
   end
   client_exit_code = $CHILD_STATUS

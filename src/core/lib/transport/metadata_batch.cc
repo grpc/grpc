@@ -23,6 +23,9 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "absl/container/inlined_vector.h"
+#include "absl/strings/str_join.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -294,6 +297,30 @@ void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
       grpc_slice_ref_internal(GRPC_MDKEY(old_mdelem)), value);
   storage->md = new_mdelem;
   GRPC_MDELEM_UNREF(old_mdelem);
+}
+
+absl::optional<absl::string_view> grpc_metadata_batch_get_value(
+    grpc_metadata_batch* batch, absl::string_view target_key,
+    std::string* concatenated_value) {
+  // Find all values for the specified key.
+  GPR_DEBUG_ASSERT(batch != nullptr);
+  absl::InlinedVector<absl::string_view, 1> values;
+  for (grpc_linked_mdelem* md = batch->list.head; md != nullptr;
+       md = md->next) {
+    absl::string_view key = grpc_core::StringViewFromSlice(GRPC_MDKEY(md->md));
+    absl::string_view value =
+        grpc_core::StringViewFromSlice(GRPC_MDVALUE(md->md));
+    if (target_key == key) values.push_back(value);
+  }
+  // If none found, no match.
+  if (values.empty()) return absl::nullopt;
+  // If exactly one found, return it as-is.
+  if (values.size() == 1) return values.front();
+  // If more than one found, concatenate the values, using
+  // *concatenated_values as a temporary holding place for the
+  // concatenated string.
+  *concatenated_value = absl::StrJoin(values, ",");
+  return *concatenated_value;
 }
 
 grpc_error* grpc_metadata_batch_substitute(grpc_metadata_batch* batch,

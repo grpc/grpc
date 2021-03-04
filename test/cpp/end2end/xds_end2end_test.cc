@@ -192,7 +192,7 @@ constexpr char kBootstrapFileV3[] =
     "    \"locality\": {\n"
     "      \"region\": \"corp\",\n"
     "      \"zone\": \"svl\",\n"
-    "      \"subzone\": \"mp3\"\n"
+    "      \"sub_zone\": \"mp3\"\n"
     "    }\n"
     "  },\n"
     "  \"certificate_providers\": {\n"
@@ -234,7 +234,7 @@ constexpr char kBootstrapFileV2[] =
     "    \"locality\": {\n"
     "      \"region\": \"corp\",\n"
     "      \"zone\": \"svl\",\n"
-    "      \"subzone\": \"mp3\"\n"
+    "      \"sub_zone\": \"mp3\"\n"
     "    }\n"
     "  }\n"
     "}\n";
@@ -260,25 +260,6 @@ void WriteBootstrapFiles() {
   fclose(out);
   g_bootstrap_file_v2 = bootstrap_file;
 }
-
-// Helper class to minimize the number of unique ports we use for this test.
-class PortSaver {
- public:
-  int GetPort() {
-    if (idx_ >= ports_.size()) {
-      ports_.push_back(grpc_pick_unused_port_or_die());
-    }
-    return ports_[idx_++];
-  }
-
-  void Reset() { idx_ = 0; }
-
- private:
-  std::vector<int> ports_;
-  size_t idx_ = 0;
-};
-
-PortSaver* g_port_saver = nullptr;
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
@@ -1320,23 +1301,39 @@ class LrsServiceImpl : public std::enable_shared_from_this<LrsServiceImpl> {
 
 class TestType {
  public:
-  TestType(bool use_xds_resolver, bool enable_load_reporting,
-           bool enable_rds_testing = false, bool use_v2 = false,
-           bool use_xds_credentials = false)
-      : use_xds_resolver_(use_xds_resolver),
-        enable_load_reporting_(enable_load_reporting),
-        enable_rds_testing_(enable_rds_testing),
-        use_v2_(use_v2),
-        use_xds_credentials_(use_xds_credentials) {}
+  TestType& set_use_fake_resolver() {
+    use_fake_resolver_ = true;
+    return *this;
+  }
 
-  bool use_xds_resolver() const { return use_xds_resolver_; }
+  TestType& set_enable_load_reporting() {
+    enable_load_reporting_ = true;
+    return *this;
+  }
+
+  TestType& set_enable_rds_testing() {
+    enable_rds_testing_ = true;
+    return *this;
+  }
+
+  TestType& set_use_v2() {
+    use_v2_ = true;
+    return *this;
+  }
+
+  TestType& set_use_xds_credentials() {
+    use_xds_credentials_ = true;
+    return *this;
+  }
+
+  bool use_fake_resolver() const { return use_fake_resolver_; }
   bool enable_load_reporting() const { return enable_load_reporting_; }
   bool enable_rds_testing() const { return enable_rds_testing_; }
   bool use_v2() const { return use_v2_; }
   bool use_xds_credentials() const { return use_xds_credentials_; }
 
   std::string AsString() const {
-    std::string retval = (use_xds_resolver_ ? "XdsResolver" : "FakeResolver");
+    std::string retval = (use_fake_resolver_ ? "FakeResolver" : "XdsResolver");
     retval += (use_v2_ ? "V2" : "V3");
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
@@ -1345,11 +1342,11 @@ class TestType {
   }
 
  private:
-  const bool use_xds_resolver_;
-  const bool enable_load_reporting_;
-  const bool enable_rds_testing_;
-  const bool use_v2_;
-  const bool use_xds_credentials_;
+  bool use_fake_resolver_ = false;
+  bool enable_load_reporting_ = false;
+  bool enable_rds_testing_ = false;
+  bool use_v2_ = false;
+  bool use_xds_credentials_ = false;
 };
 
 std::string ReadFile(const char* file_path) {
@@ -1525,6 +1522,15 @@ const grpc_arg_pointer_vtable
 
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
+  // TODO(roth): We currently set the number of backends and number of
+  // balancers on a per-test-suite basis, not a per-test-case basis.
+  // However, not every individual test case in a given test suite uses
+  // the same number of backends or balancers, so we wind up having to
+  // set the numbers for the test suite to the max number needed by any
+  // one test case in that test suite.  This results in starting more
+  // servers (and using more ports) than we actually need.  When we have
+  // time, change each test to directly start the number of backends and
+  // balancers that it needs, so that we aren't wasting resources.
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
                  int client_load_reporting_interval_seconds = 100,
                  bool use_xds_enabled_server = false,
@@ -1545,39 +1551,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                                            ? g_bootstrap_file_v2
                                            : g_bootstrap_file_v3);
     }
-    g_port_saver->Reset();
     bool localhost_resolves_to_ipv4 = false;
     bool localhost_resolves_to_ipv6 = false;
     grpc_core::LocalhostResolves(&localhost_resolves_to_ipv4,
                                  &localhost_resolves_to_ipv6);
     ipv6_only_ = !localhost_resolves_to_ipv4 && localhost_resolves_to_ipv6;
-    response_generator_ =
-        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    // Inject xDS channel response generator.
-    lb_channel_response_generator_ =
-        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    xds_channel_args_to_add_.emplace_back(
-        grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
-            lb_channel_response_generator_.get()));
-    // Inject xDS logical cluster resolver response generator.
-    logical_dns_cluster_resolver_response_generator_ =
-        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-    if (xds_resource_does_not_exist_timeout_ms_ > 0) {
-      xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
-          const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
-          xds_resource_does_not_exist_timeout_ms_));
-    }
-    xds_channel_args_.num_args = xds_channel_args_to_add_.size();
-    xds_channel_args_.args = xds_channel_args_to_add_.data();
-    grpc_core::internal::SetXdsChannelArgsForTest(&xds_channel_args_);
-    // Make sure each test creates a new XdsClient instance rather than
-    // reusing the one from the previous test.  This avoids spurious failures
-    // caused when a load reporting test runs after a non-load reporting test
-    // and the XdsClient is still talking to the old LRS server, which fails
-    // because it's not expecting the client to connect.  It also
-    // ensures that each test can independently set the global channel
-    // args for the xDS channel.
-    grpc_core::internal::UnsetGlobalXdsClientForTest();
     // Initialize default xDS resources.
     // Construct LDS resource.
     default_listener_.set_name(kServerName);
@@ -1605,11 +1583,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (GetParam().enable_load_reporting()) {
       default_cluster_.mutable_lrs_server()->mutable_self();
     }
-    // Start the backends.
-    for (size_t i = 0; i < num_backends_; ++i) {
-      backends_.emplace_back(new BackendServerThread(use_xds_enabled_server_));
-      backends_.back()->Start();
-    }
     // Start the load balancers.
     for (size_t i = 0; i < num_balancers_; ++i) {
       balancers_.emplace_back(
@@ -1622,11 +1595,46 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
                                        default_route_config_);
       balancers_.back()->ads_service()->SetCdsResource(default_cluster_);
     }
+    // Initialize XdsClient state.
+    response_generator_ =
+        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+    // Inject xDS channel response generator.
+    lb_channel_response_generator_ =
+        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+    xds_channel_args_to_add_.emplace_back(
+        grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
+            lb_channel_response_generator_.get()));
+    // Inject xDS logical cluster resolver response generator.
+    logical_dns_cluster_resolver_response_generator_ =
+        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+    if (xds_resource_does_not_exist_timeout_ms_ > 0) {
+      xds_channel_args_to_add_.emplace_back(grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS),
+          xds_resource_does_not_exist_timeout_ms_));
+    }
+    xds_channel_args_.num_args = xds_channel_args_to_add_.size();
+    xds_channel_args_.args = xds_channel_args_to_add_.data();
+    grpc_core::internal::SetXdsChannelArgsForTest(&xds_channel_args_);
+    // Make sure each test creates a new XdsClient instance rather than
+    // reusing the one from the previous test.  This avoids spurious failures
+    // caused when a load reporting test runs after a non-load reporting test
+    // and the XdsClient is still talking to the old LRS server, which fails
+    // because it's not expecting the client to connect.  It also
+    // ensures that each test can independently set the global channel
+    // args for the xDS channel.
+    grpc_core::internal::UnsetGlobalXdsClientForTest();
+    // Start the backends.
+    for (size_t i = 0; i < num_backends_; ++i) {
+      backends_.emplace_back(new BackendServerThread(use_xds_enabled_server_));
+      backends_.back()->Start();
+    }
+    // Create channel and stub.
     ResetStub();
   }
 
   const char* DefaultEdsServiceName() const {
-    return GetParam().use_xds_resolver() ? kDefaultEdsServiceName : kServerName;
+    return GetParam().use_fake_resolver() ? kServerName
+                                          : kDefaultEdsServiceName;
   }
 
   void TearDown() override {
@@ -1667,7 +1675,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     // If the parent channel is using the fake resolver, we inject the
     // response generator here.
-    if (!GetParam().use_xds_resolver()) {
+    if (GetParam().use_fake_resolver()) {
       if (response_generator == nullptr) {
         response_generator = response_generator_.get();
       }
@@ -1679,7 +1687,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         logical_dns_cluster_resolver_response_generator_.get(),
         &kLogicalDnsClusterResolverResponseGeneratorVtable);
     std::string uri = absl::StrCat(
-        GetParam().use_xds_resolver() ? "xds" : "fake", ":///", server_name);
+        GetParam().use_fake_resolver() ? "fake" : "xds", ":///", server_name);
     std::shared_ptr<ChannelCredentials> channel_creds =
         GetParam().use_xds_credentials()
             ? experimental::XdsCredentials(CreateTlsFallbackCredentials())
@@ -1860,7 +1868,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   void SetNextResolution(
       const std::vector<int>& ports,
       grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
-    if (GetParam().use_xds_resolver()) return;  // Not used with xds resolver.
+    if (!GetParam().use_fake_resolver()) return;  // Not used with xds resolver.
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(ports);
@@ -2095,7 +2103,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   class ServerThread {
    public:
     explicit ServerThread(bool use_xds_enabled_server = false)
-        : port_(g_port_saver->GetPort()),
+        : port_(grpc_pick_unused_port_or_die()),
           use_xds_enabled_server_(use_xds_enabled_server) {}
     virtual ~ServerThread(){};
 
@@ -2354,8 +2362,8 @@ TEST_P(BasicTest, Vanilla) {
   }
   // Check LB policy name for the channel.
   EXPECT_EQ(
-      (GetParam().use_xds_resolver() ? "xds_cluster_manager_experimental"
-                                     : "xds_cluster_resolver_experimental"),
+      (GetParam().use_fake_resolver() ? "xds_cluster_resolver_experimental"
+                                      : "xds_cluster_manager_experimental"),
       channel_->GetLoadBalancingPolicyName());
 }
 
@@ -2453,7 +2461,7 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
   const size_t kNumUnreachableServers = 5;
   std::vector<int> ports;
   for (size_t i = 0; i < kNumUnreachableServers; ++i) {
-    ports.push_back(g_port_saver->GetPort());
+    ports.push_back(grpc_pick_unused_port_or_die());
   }
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", ports},
@@ -4807,16 +4815,16 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   AdsServiceImpl::EdsResourceArgs args3({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -4941,7 +4949,7 @@ TEST_P(LdsRdsTest, XdsRoutingXdsTimeoutDisabled) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   RouteConfiguration new_route_config = default_route_config_;
@@ -4979,7 +4987,7 @@ TEST_P(LdsRdsTest, XdsRoutingHttpTimeoutDisabled) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   // Construct listener.
   auto listener = default_listener_;
@@ -5024,13 +5032,13 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -5123,7 +5131,7 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto listener = default_listener_;
@@ -5164,7 +5172,7 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {g_port_saver->GetPort()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   auto t0 = system_clock::now();
@@ -8376,7 +8384,7 @@ class ClientLoadReportingTest : public XdsEnd2endTest {
 
 // Tests that the load report received at the balancer is correct.
 TEST_P(ClientLoadReportingTest, Vanilla) {
-  if (!GetParam().use_xds_resolver()) {
+  if (GetParam().use_fake_resolver()) {
     balancers_[0]->lrs_service()->set_cluster_names({kServerName});
   }
   SetNextResolution({});
@@ -8506,7 +8514,7 @@ TEST_P(ClientLoadReportingTest, HonorsClustersRequestedByLrsServer) {
 // Tests that if the balancer restarts, the client load report contains the
 // stats before and after the restart correctly.
 TEST_P(ClientLoadReportingTest, BalancerRestart) {
-  if (!GetParam().use_xds_resolver()) {
+  if (GetParam().use_fake_resolver()) {
     balancers_[0]->lrs_service()->set_cluster_names({kServerName});
   }
   SetNextResolution({});
@@ -8582,7 +8590,7 @@ class ClientLoadReportingWithDropTest : public XdsEnd2endTest {
 
 // Tests that the drop stats are correctly reported by client load reporting.
 TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
-  if (!GetParam().use_xds_resolver()) {
+  if (GetParam().use_fake_resolver()) {
     balancers_[0]->lrs_service()->set_cluster_names({kServerName});
   }
   SetNextResolution({});
@@ -8674,139 +8682,136 @@ std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
 
-// TestType params:
-// - use_xds_resolver
-// - enable_load_reporting
-// - enable_rds_testing = false
-// - use_v2 = false
-// - use_xds_credentials = false
-
-INSTANTIATE_TEST_SUITE_P(XdsTest, BasicTest,
-                         ::testing::Values(TestType(false, true),
-                                           TestType(false, false),
-                                           TestType(true, false),
-                                           TestType(true, true)),
-                         &TestTypeName);
+// Run with all combinations of xds/fake resolver and enabling load reporting.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, BasicTest,
+    ::testing::Values(
+        TestType(), TestType().set_enable_load_reporting(),
+        TestType().set_use_fake_resolver(),
+        TestType().set_use_fake_resolver().set_enable_load_reporting()),
+    &TestTypeName);
 
 // Run with both fake resolver and xds resolver.
 // Don't run with load reporting or v2 or RDS, since they are irrelevant to
 // the tests.
 INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
-                         ::testing::Values(TestType(false, false),
-                                           TestType(true, false)),
+                         ::testing::Values(TestType(),
+                                           TestType().set_use_fake_resolver()),
                          &TestTypeName);
 
 // LDS depends on XdsResolver.
-INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest,
-                         ::testing::Values(TestType(true, false),
-                                           TestType(true, true)),
+INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest, ::testing::Values(TestType()),
                          &TestTypeName);
 
 // LDS/RDS commmon tests depend on XdsResolver.
-INSTANTIATE_TEST_SUITE_P(XdsTest, LdsRdsTest,
-                         ::testing::Values(TestType(true, false),
-                                           TestType(true, true),
-                                           TestType(true, false, true),
-                                           TestType(true, true, true),
-                                           // Also test with xDS v2.
-                                           TestType(true, true, true, true)),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, LdsRdsTest,
+    ::testing::Values(TestType(), TestType().set_enable_rds_testing(),
+                      // Also test with xDS v2.
+                      TestType().set_enable_rds_testing().set_use_v2()),
+    &TestTypeName);
 
 // CDS depends on XdsResolver.
-INSTANTIATE_TEST_SUITE_P(XdsTest, CdsTest,
-                         ::testing::Values(TestType(true, false),
-                                           TestType(true, true)),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, CdsTest,
+    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
+    &TestTypeName);
 
 // CDS depends on XdsResolver.
 // Security depends on v3.
 // Not enabling load reporting or RDS, since those are irrelevant to these
 // tests.
-INSTANTIATE_TEST_SUITE_P(XdsTest, XdsSecurityTest,
-                         ::testing::Values(TestType(true, false, false, false,
-                                                    true)),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsSecurityTest,
+    ::testing::Values(TestType().set_use_xds_credentials()), &TestTypeName);
 
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
-                         ::testing::Values(TestType(true, false, false, false,
-                                                    false)),
-                         &TestTypeName);
+                         ::testing::Values(TestType()), &TestTypeName);
 
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerSecurityTest,
-                         ::testing::Values(TestType(false, false, false, false,
-                                                    true)),
+                         ::testing::Values(TestType()
+                                               .set_use_fake_resolver()
+                                               .set_use_xds_credentials()),
                          &TestTypeName);
 
 // EDS could be tested with or without XdsResolver, but the tests would
 // be the same either way, so we test it only with XdsResolver.
-INSTANTIATE_TEST_SUITE_P(XdsTest, EdsTest,
-                         ::testing::Values(TestType(true, false),
-                                           TestType(true, true)),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, EdsTest,
+    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
+    &TestTypeName);
 
 // Test initial resource timeouts for each resource type.
 // Do this only for XdsResolver with RDS enabled, so that we can test
 // all resource types.
 // Run with V3 only, since the functionality is no different in V2.
 INSTANTIATE_TEST_SUITE_P(XdsTest, TimeoutTest,
-                         ::testing::Values(TestType(true, false, true)),
+                         ::testing::Values(TestType().set_enable_rds_testing()),
                          &TestTypeName);
 
 // XdsResolverOnlyTest depends on XdsResolver.
-INSTANTIATE_TEST_SUITE_P(XdsTest, XdsResolverOnlyTest,
-                         ::testing::Values(TestType(true, false),
-                                           TestType(true, true)),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsResolverOnlyTest,
+    ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
+    &TestTypeName);
 
 // XdsResolverLoadReprtingOnlyTest depends on XdsResolver and load reporting.
-INSTANTIATE_TEST_SUITE_P(XdsTest, XdsResolverLoadReportingOnlyTest,
-                         ::testing::Values(TestType(true, true)),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsResolverLoadReportingOnlyTest,
+    ::testing::Values(TestType().set_enable_load_reporting()), &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(XdsTest, LocalityMapTest,
-                         ::testing::Values(TestType(false, true),
-                                           TestType(false, false),
-                                           TestType(true, false),
-                                           TestType(true, true)),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, LocalityMapTest,
+    ::testing::Values(
+        TestType(), TestType().set_enable_load_reporting(),
+        TestType().set_use_fake_resolver(),
+        TestType().set_use_fake_resolver().set_enable_load_reporting()),
+    &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(XdsTest, FailoverTest,
-                         ::testing::Values(TestType(false, true),
-                                           TestType(false, false),
-                                           TestType(true, false),
-                                           TestType(true, true)),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, FailoverTest,
+    ::testing::Values(
+        TestType(), TestType().set_enable_load_reporting(),
+        TestType().set_use_fake_resolver(),
+        TestType().set_use_fake_resolver().set_enable_load_reporting()),
+    &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(XdsTest, DropTest,
-                         ::testing::Values(TestType(false, true),
-                                           TestType(false, false),
-                                           TestType(true, false),
-                                           TestType(true, true)),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, DropTest,
+    ::testing::Values(
+        TestType(), TestType().set_enable_load_reporting(),
+        TestType().set_use_fake_resolver(),
+        TestType().set_use_fake_resolver().set_enable_load_reporting()),
+    &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(XdsTest, BalancerUpdateTest,
-                         ::testing::Values(TestType(false, true),
-                                           TestType(false, false),
-                                           TestType(true, true)),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, BalancerUpdateTest,
+    ::testing::Values(
+        TestType().set_use_fake_resolver(),
+        TestType().set_use_fake_resolver().set_enable_load_reporting(),
+        TestType().set_enable_load_reporting()),
+    &TestTypeName);
 
 // Load reporting tests are not run with load reporting disabled.
-INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingTest,
-                         ::testing::Values(TestType(false, true),
-                                           TestType(true, true)),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, ClientLoadReportingTest,
+    ::testing::Values(
+        TestType().set_enable_load_reporting(),
+        TestType().set_enable_load_reporting().set_use_fake_resolver()),
+    &TestTypeName);
 
 // Load reporting tests are not run with load reporting disabled.
-INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingWithDropTest,
-                         ::testing::Values(TestType(false, true),
-                                           TestType(true, true)),
-                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, ClientLoadReportingWithDropTest,
+    ::testing::Values(
+        TestType().set_enable_load_reporting(),
+        TestType().set_enable_load_reporting().set_use_fake_resolver()),
+    &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, BootstrapContentsFromEnvVarTest,
-                         ::testing::Values(TestType(true, false)),
-                         &TestTypeName);
+                         ::testing::Values(TestType()), &TestTypeName);
 
 }  // namespace
 }  // namespace testing
@@ -8816,7 +8821,6 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::WriteBootstrapFiles();
-  grpc::testing::g_port_saver = new grpc::testing::PortSaver();
   // Make the backup poller poll very frequently in order to pick up
   // updates from all the subchannels's FDs.
   GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);

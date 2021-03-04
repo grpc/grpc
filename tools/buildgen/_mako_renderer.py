@@ -18,53 +18,61 @@ Just a wrapper around the mako rendering library.
 """
 
 import getopt
+import glob
 import importlib.util
 import os
 import pickle
 import shutil
 import sys
+from typing import List
 
 import yaml
+from mako import exceptions
 from mako.lookup import TemplateLookup
 from mako.runtime import Context
 from mako.template import Template
 
-import bunch
+PROJECT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
+                            "..")
+# TODO(lidiz) find a better way for plugins to reference each other
+sys.path.append(os.path.join(PROJECT_ROOT, 'tools', 'buildgen', 'plugins'))
 
 
-# Imports a plugin
-def import_plugin(path):
-    module_name = os.path.basename(path).replace('.py', '')
-    spec = importlib.util.spec_from_file_location(module_name, path)
-    module = importlib.util.module_from_spec(spec)
-    sys.modules[module_name] = module
-    spec.loader.exec_module(module)
-    return module
-
-
-def out(msg):
+def out(msg: str) -> None:
     print(msg, file=sys.stderr)
 
 
-def showhelp():
+def showhelp() -> None:
     out('mako-renderer.py [-o out] [-m cache] [-P preprocessed_input] [-d dict] [-d dict...]'
         ' [-t template] [-w preprocessed_output]')
 
 
-def main(argv):
+def render_template(template: Template, context: Context) -> None:
+    """Render the mako template with given context.
+    
+    Prints an error template to indicate where and what in the template caused
+    the render failure.
+    """
+    try:
+        template.render_context(context)
+    except:
+        out(exceptions.text_error_template().render())
+        raise
+
+
+def main(argv: List[str]) -> None:
     got_input = False
     module_directory = None
     preprocessed_output = None
     dictionary = {}
     json_dict = {}
     got_output = False
-    plugins = []
     output_name = None
     got_preprocessed_input = False
     output_merged = None
 
     try:
-        opts, args = getopt.getopt(argv, 'hM:m:d:o:p:t:P:w:')
+        opts, args = getopt.getopt(argv, 'hM:m:o:t:P:')
     except getopt.GetoptError:
         out('Unknown option')
         showhelp()
@@ -97,36 +105,9 @@ def main(argv):
         elif opt == '-P':
             assert not got_preprocessed_input
             assert json_dict == {}
-            sys.path.insert(
-                0,
-                os.path.abspath(
-                    os.path.join(os.path.dirname(sys.argv[0]), 'plugins')))
             with open(arg, 'rb') as dict_file:
                 dictionary = pickle.load(dict_file)
             got_preprocessed_input = True
-        elif opt == '-d':
-            assert not got_preprocessed_input
-            with open(arg, 'r') as dict_file:
-                bunch.merge_json(
-                    json_dict,
-                    yaml.load(dict_file.read(), Loader=yaml.FullLoader))
-        elif opt == '-p':
-            plugins.append(import_plugin(arg))
-        elif opt == '-w':
-            preprocessed_output = arg
-
-    if not got_preprocessed_input:
-        for plugin in plugins:
-            plugin.mako_plugin(json_dict)
-        if output_merged:
-            with open(output_merged, 'w') as yaml_file:
-                yaml_file.write(yaml.dump(json_dict))
-        for k, v in json_dict.items():
-            dictionary[k] = bunch.to_bunch(v)
-
-    if preprocessed_output:
-        with open(preprocessed_output, 'wb') as dict_file:
-            pickle.dump(dictionary, dict_file)
 
     cleared_dir = False
     for arg in args:
@@ -141,7 +122,8 @@ def main(argv):
                                     module_directory=module_directory,
                                     lookup=TemplateLookup(directories=['.']))
                 with open(output_name, 'w') as output_file:
-                    template.render_context(Context(output_file, **dictionary))
+                    render_template(template, Context(output_file,
+                                                      **dictionary))
             else:
                 # we have optional control data: this template represents
                 # a directory
@@ -179,7 +161,7 @@ def main(argv):
                         module_directory=module_directory,
                         lookup=TemplateLookup(directories=['.']))
                     with open(item_output_name, 'w') as output_file:
-                        template.render_context(Context(output_file, **args))
+                        render_template(template, Context(output_file, **args))
 
     if not got_input and not preprocessed_output:
         out('Got nothing to do')

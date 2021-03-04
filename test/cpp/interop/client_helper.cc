@@ -84,13 +84,11 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
     std::vector<
         std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
-  GPR_ASSERT(absl::GetFlag(FLAGS_server_port));
-  const int host_port_buf_size = 1024;
-  char host_port[host_port_buf_size];
-  snprintf(host_port, host_port_buf_size, "%s:%d",
-           absl::GetFlag(FLAGS_server_host).c_str(),
-           absl::GetFlag(FLAGS_server_port));
-
+  std::string server_uri = absl::GetFlag(FLAGS_server_host);
+  int32_t port = absl::GetFlag(FLAGS_server_port);
+  if (port != 0) {
+    absl::StrAppend(&server_uri, ":", std::to_string(port));
+  }
   std::shared_ptr<CallCredentials> creds;
   if (test_case == "compute_engine_creds") {
     creds = absl::GetFlag(FLAGS_custom_credentials_type) ==
@@ -115,7 +113,7 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
     // allow the LB policy to be configured with service config
     channel_args.SetInt(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 0);
     return CreateTestChannel(
-        host_port, absl::GetFlag(FLAGS_custom_credentials_type),
+        server_uri, absl::GetFlag(FLAGS_custom_credentials_type),
         absl::GetFlag(FLAGS_server_host_override),
         !absl::GetFlag(FLAGS_use_test_ca), creds, channel_args);
   }
@@ -124,16 +122,16 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
         absl::GetFlag(FLAGS_use_alts)
             ? ALTS
             : (absl::GetFlag(FLAGS_use_tls) ? TLS : INSECURE);
-    return CreateTestChannel(host_port,
+    return CreateTestChannel(server_uri,
                              absl::GetFlag(FLAGS_server_host_override),
                              security_type, !absl::GetFlag(FLAGS_use_test_ca),
                              creds, std::move(interceptor_creators));
   } else {
     if (interceptor_creators.empty()) {
       return CreateTestChannel(
-          host_port, absl::GetFlag(FLAGS_custom_credentials_type), creds);
+          server_uri, absl::GetFlag(FLAGS_custom_credentials_type), creds);
     } else {
-      return CreateTestChannel(host_port,
+      return CreateTestChannel(server_uri,
                                absl::GetFlag(FLAGS_custom_credentials_type),
                                creds, std::move(interceptor_creators));
     }

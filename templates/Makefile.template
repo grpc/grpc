@@ -860,7 +860,6 @@
       "defaults": "abseil",
       "src": sorted(used_abseil_srcs),
       "hdr": sorted(used_abseil_hdrs),
-      "secure": False,
     })
   %>
   ${makelib(grpc_abseil_lib)}
@@ -897,7 +896,7 @@
   % endif
 
   ## If the library requires OpenSSL, let's add some restrictions.
-  % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
+  % if 'libssl' in lib.get('deps', []):
   ifeq ($(NO_SECURE),true)
 
   # You can't build secure libraries if you don't have OpenSSL.
@@ -932,7 +931,7 @@
    $(ADDRESS_SORTING_MERGE_OBJS) \
    $(RE2_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
-  % if lib.get('secure', 'check') == True:
+  % if 'libssl' in lib.get('deps', []):
    $(OPENSSL_MERGE_OBJS) \
   % endif
   % endif
@@ -949,7 +948,7 @@
    $(ADDRESS_SORTING_MERGE_OBJS) \
    $(RE2_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
-  % if lib.get('secure', 'check') == True:
+  % if 'libssl' in lib.get('deps', []):
    $(OPENSSL_MERGE_OBJS) \
   % endif
   % endif
@@ -970,27 +969,15 @@
     lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
     mingw_libs = ''
     mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
-    if lib.get('deps_linkage', None) == 'static':
-      for dep in lib.get('deps', []):
-        if is_absl_lib(dep): continue
-        lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + dep + '.a'
-        common = common + ' ' + lib_archive
-        lib_deps = lib_deps + ' ' + lib_archive
-        mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
-    else:
-      for dep in lib.get('deps', []):
-        if is_absl_lib(dep): continue
-        dep_lib = None
-        for dl in libs:
-          if dl.name == dep:
-            dep_lib = dl
-        assert dep_lib, 'lib %s not found (in %s)' % (dep, lib.name)
-        link_libs = link_libs + ' -l' + dep
-        lib_deps = lib_deps + ' $(LIBDIR)/$(CONFIG)/lib' + dep + '.$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
-        mingw_libs = mingw_libs + ' -l' + dep + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ')-dll'
-        mingw_lib_deps = mingw_lib_deps + ' $(LIBDIR)/$(CONFIG)/' + dep + '$(SHARED_VERSION_' + lang_to_var[dep_lib.language] + ').$(SHARED_EXT_' + lang_to_var[dep_lib.language] + ')'
+    for dep in lib.get('deps', []):
+      if is_absl_lib(dep): continue
+      if 'libssl' == dep: continue
+      lib_archive = '$(LIBDIR)/$(CONFIG)/lib' + dep + '.a'
+      common = common + ' ' + lib_archive
+      lib_deps = lib_deps + ' ' + lib_archive
+      mingw_lib_deps = mingw_lib_deps + ' ' + lib_archive
 
-    security = lib.get('secure', 'check')
+    security = 'libssl' in lib.get('deps', [])
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
     common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
@@ -1002,7 +989,7 @@
       for src in lib.src:
         sources_that_don_t_need_openssl.add(src)
 
-    if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
+    if 'libssl' in lib.get('deps', []):
       lib_deps = lib_deps + ' $(OPENSSL_DEP)'
       mingw_lib_deps = mingw_lib_deps + ' $(OPENSSL_DEP)'
 
@@ -1032,20 +1019,20 @@
   endif
   endif
   % endif
-  % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
+  % if 'libssl' in lib.get('deps', []):
   ## If the lib was secure, we have to close the Makefile's if that tested
   ## the presence of OpenSSL.
 
   endif
   % endif
 
-  % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
+  % if 'libssl' in lib.get('deps', []):
   ifneq ($(NO_SECURE),true)
   % endif
   ifneq ($(NO_DEPS),true)
   -include $(LIB${lib.name.upper()}_OBJS:.o=.dep)
   endif
-  % if lib.get('secure', 'check') == True or lib.get('secure', 'check') == 'check':
+  % if 'libssl' in lib.get('deps', []):
   endif
   % endif
   # end of build recipe for library "${lib.name}"

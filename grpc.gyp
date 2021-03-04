@@ -1399,6 +1399,7 @@
         'gpr',
         'address_sorting',
         'upb',
+        'absl/synchronization:synchronization',
       ],
       'sources': [
         'src/cpp/client/channel_cc.cc',
@@ -1555,6 +1556,7 @@
         'gpr',
         'address_sorting',
         'upb',
+        'absl/synchronization:synchronization',
       ],
       'sources': [
         'src/cpp/client/channel_cc.cc',

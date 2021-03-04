@@ -12,7 +12,6 @@ libs:
   - third_party/address_sorting/address_sorting_posix.c
   - third_party/address_sorting/address_sorting_windows.c
   deps: []
-  secure: false
 - name: end2end_nosec_tests
   build: private
   language: c
@@ -121,7 +120,7 @@ libs:
   - gpr
   - address_sorting
   - upb
-  secure: false
+  - libssl
 - name: end2end_tests
   build: private
   language: c
@@ -231,7 +230,7 @@ libs:
   - gpr
   - address_sorting
   - upb
-  secure: true
+  - libssl
 - name: gpr
   build: all
   language: c
@@ -365,7 +364,6 @@ libs:
   - absl/status:status
   - absl/memory:memory
   - absl/base:base
-  secure: false
 - name: grpc
   build: all
   language: c
@@ -1410,6 +1408,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/types:optional
   - absl/strings:strings
   - absl/status:statusor
@@ -1419,10 +1418,7 @@ libs:
   - absl/container:flat_hash_set
   - absl/container:flat_hash_map
   baselib: true
-  deps_linkage: static
-  dll: true
   generate_plugin_registry: true
-  secure: true
 - name: grpc_csharp_ext
   build: all
   language: c
@@ -1435,8 +1431,7 @@ libs:
   - gpr
   - address_sorting
   - upb
-  deps_linkage: static
-  dll: only
+  - libssl
 - name: grpc_test_util
   build: private
   language: c
@@ -1492,6 +1487,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/debugging:symbolize
   - absl/debugging:stacktrace
   - absl/debugging:failure_signal_handler
@@ -1551,7 +1547,6 @@ libs:
   - absl/debugging:symbolize
   - absl/debugging:stacktrace
   - absl/debugging:failure_signal_handler
-  secure: false
 - name: grpc_unsecure
   build: all
   language: c
@@ -2100,10 +2095,7 @@ libs:
   - absl/container:inlined_vector
   - absl/container:flat_hash_map
   baselib: true
-  deps_linkage: static
-  dll: true
   generate_plugin_registry: true
-  secure: false
 - name: benchmark_helpers
   build: test
   language: c++
@@ -2383,8 +2375,9 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - libssl
+  - absl/synchronization:synchronization
   baselib: true
-  dll: true
 - name: grpc++_alts
   build: all
   language: c++
@@ -2401,6 +2394,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - libssl
   baselib: true
 - name: grpc++_error_details
   build: all
@@ -2417,6 +2411,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: grpc++_reflection
   build: all
   language: c++
@@ -2435,6 +2430,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: grpc++_test
   build: private
   language: c++
@@ -2454,6 +2450,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: grpc++_test_config
   build: private
   language: c++
@@ -2493,6 +2490,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
 - name: grpc++_unsecure
   build: all
@@ -2735,9 +2733,8 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - absl/synchronization:synchronization
   baselib: true
-  dll: true
-  secure: false
 - name: grpc_plugin_support
   build: protoc
   language: c++
@@ -2777,7 +2774,6 @@ libs:
   - src/compiler/python_generator.cc
   - src/compiler/ruby_generator.cc
   deps: []
-  secure: false
 - name: grpcpp_channelz
   build: all
   language: c++
@@ -2795,6 +2791,7 @@ libs:
   - gpr
   - address_sorting
   - upb
+  - libssl
 targets:
 - name: algorithm_test
   build: test
@@ -2808,6 +2805,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: alloc_test
   build: test
@@ -2821,6 +2819,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: alpn_test
   build: test
@@ -2834,6 +2833,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: alts_counter_test
   build: test
   language: c
@@ -2848,6 +2848,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: alts_crypt_test
   build: test
   language: c
@@ -2862,6 +2863,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: alts_crypter_test
   build: test
   language: c
@@ -2876,6 +2878,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: alts_frame_protector_test
   build: test
   language: c
@@ -2892,6 +2895,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: alts_grpc_record_protocol_test
   build: test
   language: c
@@ -2906,6 +2910,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: alts_handshaker_client_test
   build: test
   language: c
@@ -2920,6 +2925,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: alts_iovec_record_protocol_test
   build: test
   language: c
@@ -2934,6 +2940,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: alts_security_connector_test
   build: test
   language: c
@@ -2946,6 +2953,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: alts_tsi_handshaker_test
   build: test
   language: c
@@ -2960,6 +2968,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: alts_tsi_utils_test
   build: test
   language: c
@@ -2974,6 +2983,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: alts_zero_copy_grpc_protector_test
   build: test
   language: c
@@ -2988,6 +2998,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: arena_test
   build: test
   language: c
@@ -3000,6 +3011,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: auth_context_test
   build: test
@@ -3013,6 +3025,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: avl_test
   build: test
@@ -3026,6 +3039,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: b64_test
   build: test
@@ -3039,6 +3053,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: bad_server_response_test
   build: test
@@ -3054,6 +3069,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: bad_ssl_alpn_test
   build: test
   language: c
@@ -3068,6 +3084,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3086,6 +3103,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3102,6 +3120,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: bin_encoder_test
   build: test
@@ -3115,6 +3134,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: buffer_list_test
   build: test
@@ -3128,6 +3148,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: channel_args_test
   build: test
   language: c
@@ -3140,6 +3161,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: channel_create_test
   build: test
@@ -3153,6 +3175,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: channel_stack_builder_test
   build: test
   language: c
@@ -3165,6 +3188,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: channel_stack_test
   build: test
   language: c
@@ -3177,6 +3201,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: check_gcp_environment_linux_test
   build: test
@@ -3190,6 +3215,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: check_gcp_environment_windows_test
   build: test
   language: c
@@ -3202,6 +3228,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: client_ssl_test
   build: test
   language: c
@@ -3214,6 +3241,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3230,6 +3258,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: combiner_test
   build: test
@@ -3243,6 +3272,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3260,6 +3290,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: compression_test
   build: test
   language: c
@@ -3272,6 +3303,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: concurrent_connectivity_test
   build: test
@@ -3285,6 +3317,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: connection_refused_test
   build: test
   language: c
@@ -3299,6 +3332,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: cpu_test
   build: test
   language: c
@@ -3311,6 +3345,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: dns_resolver_connectivity_using_ares_test
   build: test
@@ -3324,6 +3359,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   args:
   - --resolver=ares
 - name: dns_resolver_connectivity_using_native_test
@@ -3338,6 +3374,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   args:
   - --resolver=native
 - name: dns_resolver_cooldown_test
@@ -3352,6 +3389,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: dns_resolver_test
   build: test
   language: c
@@ -3364,6 +3402,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: dualstack_socket_test
   build: test
   language: c
@@ -3378,6 +3417,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3396,6 +3436,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: env_test
   build: test
   language: c
@@ -3408,6 +3449,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: error_test
   build: test
@@ -3423,6 +3465,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: ev_epollex_linux_test
   build: test
@@ -3436,6 +3479,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3452,6 +3496,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: fake_transport_security_test
   build: test
   language: c
@@ -3466,6 +3511,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -3478,6 +3524,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3494,6 +3541,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3515,6 +3563,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3536,6 +3585,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3552,6 +3602,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3574,6 +3625,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: frame_handler_test
   build: test
   language: c
@@ -3588,6 +3640,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: goaway_server_test
   build: test
   language: c
@@ -3602,6 +3655,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: grpc_alts_credentials_options_test
   build: test
   language: c
@@ -3614,6 +3668,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: grpc_byte_buffer_reader_test
   build: test
   language: c
@@ -3626,6 +3681,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: grpc_completion_queue_test
   build: test
@@ -3639,6 +3695,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: grpc_ipv6_loopback_available_test
   build: test
   language: c
@@ -3651,6 +3708,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: handshake_server_with_readahead_handshaker_test
   build: test
   language: c
@@ -3665,6 +3723,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3681,6 +3740,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3697,6 +3757,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: host_port_test
   build: test
@@ -3710,6 +3771,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: hpack_encoder_test
   build: test
@@ -3723,6 +3785,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: hpack_parser_test
   build: test
@@ -3736,6 +3799,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: hpack_table_test
   build: test
@@ -3749,6 +3813,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: httpcli_test
   build: test
@@ -3767,6 +3832,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3788,6 +3854,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3805,6 +3872,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: invalid_call_argument_test
   build: test
@@ -3820,6 +3888,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: json_token_test
   build: test
   language: c
@@ -3832,6 +3901,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: jwt_verifier_test
   build: test
@@ -3845,6 +3915,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: lame_client_test
   build: test
@@ -3860,6 +3931,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: load_file_test
   build: test
   language: c
@@ -3872,6 +3944,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: manual_constructor_test
   build: test
@@ -3885,6 +3958,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: message_compress_test
   build: test
@@ -3898,6 +3972,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: metadata_test
   build: test
@@ -3911,6 +3986,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: minimal_stack_is_minimal_test
   build: test
   language: c
@@ -3923,6 +3999,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: mpmcqueue_test
   build: test
@@ -3936,6 +4013,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: mpscq_test
   build: test
@@ -3949,6 +4027,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -3968,6 +4047,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: murmur_hash_test
   build: test
   language: c
@@ -3980,6 +4060,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: no_server_test
   build: test
@@ -3995,6 +4076,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: num_external_connectivity_watchers_test
   build: test
   language: c
@@ -4007,6 +4089,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: parse_address_test
   build: test
   language: c
@@ -4019,6 +4102,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: parse_address_with_named_scope_id_test
   build: test
   language: c
@@ -4031,6 +4115,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -4053,6 +4138,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: percent_encoding_test
   build: test
@@ -4066,6 +4152,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: public_headers_must_be_c89
   build: test
@@ -4079,6 +4166,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: resolve_address_using_ares_resolver_posix_test
   build: test
   language: c
@@ -4091,6 +4179,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   args:
   - --resolver=ares
   platforms:
@@ -4109,6 +4198,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   args:
   - --resolver=ares
 - name: resolve_address_using_native_resolver_posix_test
@@ -4123,6 +4213,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   args:
   - --resolver=native
   platforms:
@@ -4141,6 +4232,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   args:
   - --resolver=native
 - name: resource_quota_test
@@ -4155,6 +4247,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: secure_channel_create_test
   build: test
   language: c
@@ -4167,6 +4260,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: secure_endpoint_test
   build: test
   language: c
@@ -4181,6 +4275,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: security_connector_test
   build: test
   language: c
@@ -4193,6 +4288,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: sequential_connectivity_test
   build: test
   run: false
@@ -4206,6 +4302,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: server_ssl_test
   build: test
   language: c
@@ -4220,6 +4317,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -4236,6 +4334,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: slice_buffer_test
   build: test
   language: c
@@ -4248,6 +4347,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: slice_string_helpers_test
   build: test
@@ -4261,6 +4361,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: sockaddr_resolver_test
   build: test
@@ -4274,6 +4375,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: sockaddr_utils_test
   build: test
   language: c
@@ -4286,6 +4388,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: socket_utils_test
   build: test
   language: c
@@ -4298,6 +4401,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -4314,6 +4418,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: ssl_credentials_test
   build: test
@@ -4327,6 +4432,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: ssl_transport_security_test
   build: test
   language: c
@@ -4341,6 +4447,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -4357,6 +4464,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: stream_compression_test
   build: test
@@ -4370,6 +4478,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: stream_map_test
   build: test
@@ -4383,6 +4492,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: stream_owned_slice_test
   build: test
   language: c
@@ -4395,6 +4505,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: string_test
   build: test
@@ -4408,6 +4519,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: sync_test
   build: test
@@ -4421,6 +4533,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: tcp_client_posix_test
   build: test
@@ -4434,6 +4547,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -4452,6 +4566,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -4467,6 +4582,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -4483,6 +4599,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: test_core_security_credentials_test
   build: test
@@ -4496,6 +4613,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: test_core_slice_slice_test
   build: test
   language: c
@@ -4508,6 +4626,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: thd_test
   build: test
@@ -4521,6 +4640,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: threadpool_test
   build: test
@@ -4534,6 +4654,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: time_averaged_stats_test
   build: test
@@ -4547,6 +4668,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: timeout_encoding_test
   build: test
@@ -4560,6 +4682,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: timer_heap_test
   build: test
@@ -4573,6 +4696,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: timer_list_test
   build: test
@@ -4586,6 +4710,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: tls_test
   build: test
@@ -4599,6 +4724,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: transport_security_common_api_test
   build: test
@@ -4612,6 +4738,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: transport_security_test
   build: test
   language: c
@@ -4624,6 +4751,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: udp_server_test
   build: test
   language: c
@@ -4636,6 +4764,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -4652,6 +4781,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: varint_test
   build: test
@@ -4665,6 +4795,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: address_sorting_test
   gtest: true
@@ -4682,6 +4813,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -4749,6 +4881,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -4766,6 +4899,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/security/corpus/alts_credentials_corpus
@@ -4786,6 +4920,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: async_end2end_test
   gtest: true
   build: test
@@ -4806,6 +4941,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: auth_property_iterator_test
   gtest: true
   build: test
@@ -4821,6 +4957,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: authorization_engine_test
   gtest: true
@@ -4835,6 +4972,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: aws_request_signer_test
   gtest: true
   build: test
@@ -4848,6 +4986,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: backoff_test
   gtest: true
   build: test
@@ -4861,6 +5000,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: bad_streaming_id_bad_client_test
   gtest: true
@@ -4879,6 +5019,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: badreq_bad_client_test
   gtest: true
   build: test
@@ -4896,6 +5037,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: bdp_estimator_test
   gtest: true
   build: test
@@ -4909,6 +5051,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -5003,6 +5146,7 @@ targets:
   uses_polling: false
 - name: bm_callback_streaming_ping_pong
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/microbenchmarks/callback_streaming_ping_pong.h
@@ -5033,6 +5177,7 @@ targets:
   - posix
 - name: bm_callback_unary_ping_pong
   build: test
+  run: false
   language: c++
   headers:
   - test/cpp/microbenchmarks/callback_test_service.h
@@ -5406,6 +5551,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: byte_stream_test
   gtest: true
@@ -5420,6 +5566,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: cancel_ares_query_test
   gtest: true
@@ -5441,6 +5588,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: certificate_provider_registry_test
   gtest: true
   build: test
@@ -5454,6 +5602,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: certificate_provider_store_test
   gtest: true
   build: test
@@ -5467,6 +5616,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: cfstream_test
   gtest: true
   build: test
@@ -5488,6 +5638,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: channel_arguments_test
   gtest: true
   build: test
@@ -5502,6 +5653,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: channel_filter_test
   gtest: true
@@ -5517,6 +5669,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: channel_trace_test
   gtest: true
@@ -5535,6 +5688,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: channelz_registry_test
   gtest: true
   build: test
@@ -5549,6 +5703,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: channelz_service_test
   gtest: true
@@ -5571,6 +5726,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: channelz_test
   gtest: true
   build: test
@@ -5588,6 +5744,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: cli_call_test
   gtest: true
   build: test
@@ -5620,6 +5777,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
 - name: client_callback_end2end_test
   gtest: true
@@ -5643,6 +5801,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: client_channel_stress_test
   gtest: true
   build: test
@@ -5666,6 +5825,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -5684,6 +5844,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/end2end/fuzzers/client_fuzzer_corpus
@@ -5711,6 +5872,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: client_lb_end2end_test
   gtest: true
   build: test
@@ -5736,6 +5898,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -5754,6 +5917,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: codegen_test_minimal
   gtest: true
@@ -5769,6 +5933,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: connection_prefix_bad_client_test
   gtest: true
@@ -5787,6 +5952,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: connectivity_state_test
   gtest: true
   build: test
@@ -5800,6 +5966,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: context_allocator_end2end_test
   gtest: true
   build: test
@@ -5820,6 +5987,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: context_list_test
   gtest: true
   build: test
@@ -5833,6 +6001,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: delegating_channel_test
   gtest: true
@@ -5854,6 +6023,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: destroy_grpclb_channel_with_active_connect_stress_test
   gtest: true
   build: test
@@ -5869,6 +6039,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: dual_ref_counted_test
   gtest: true
   build: test
@@ -5882,6 +6053,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test
@@ -5899,6 +6071,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: end2end_test
   gtest: true
   build: test
@@ -5924,6 +6097,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: error_details_test
   gtest: true
   build: test
@@ -5941,6 +6115,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: evaluate_args_test
   gtest: true
   build: test
@@ -5954,6 +6129,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: eventmanager_libuv_test
   gtest: true
   build: test
@@ -5967,6 +6143,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: examine_stack_test
   gtest: true
@@ -5981,6 +6158,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/debugging:symbolize
   - absl/debugging:stacktrace
   platforms:
@@ -6006,6 +6184,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: file_watcher_certificate_provider_factory_test
   gtest: true
   build: test
@@ -6019,6 +6198,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: filter_end2end_test
   gtest: true
   build: test
@@ -6038,6 +6218,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: flaky_network_test
   gtest: true
   build: test
@@ -6059,6 +6240,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: generic_end2end_test
   gtest: true
   build: test
@@ -6078,6 +6260,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: global_config_env_test
   gtest: true
   build: test
@@ -6091,6 +6274,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -6109,6 +6293,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: google_mesh_ca_certificate_provider_factory_test
   gtest: true
@@ -6125,6 +6310,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: grpc_cli
   build: test
   run: false
@@ -6153,6 +6339,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
 - name: grpc_cpp_plugin
   build: protoc
@@ -6162,7 +6349,6 @@ targets:
   - src/compiler/cpp_plugin.cc
   deps:
   - grpc_plugin_support
-  secure: false
 - name: grpc_csharp_plugin
   build: protoc
   language: c++
@@ -6171,7 +6357,6 @@ targets:
   - src/compiler/csharp_plugin.cc
   deps:
   - grpc_plugin_support
-  secure: false
 - name: grpc_node_plugin
   build: protoc
   language: c++
@@ -6180,7 +6365,6 @@ targets:
   - src/compiler/node_plugin.cc
   deps:
   - grpc_plugin_support
-  secure: false
 - name: grpc_objective_c_plugin
   build: protoc
   language: c++
@@ -6189,7 +6373,6 @@ targets:
   - src/compiler/objective_c_plugin.cc
   deps:
   - grpc_plugin_support
-  secure: false
 - name: grpc_php_plugin
   build: protoc
   language: c++
@@ -6198,7 +6381,6 @@ targets:
   - src/compiler/php_plugin.cc
   deps:
   - grpc_plugin_support
-  secure: false
 - name: grpc_python_plugin
   build: protoc
   language: c++
@@ -6207,7 +6389,6 @@ targets:
   - src/compiler/python_plugin.cc
   deps:
   - grpc_plugin_support
-  secure: false
 - name: grpc_ruby_plugin
   build: protoc
   language: c++
@@ -6216,7 +6397,6 @@ targets:
   - src/compiler/ruby_plugin.cc
   deps:
   - grpc_plugin_support
-  secure: false
 - name: grpc_tls_certificate_distributor_test
   gtest: true
   build: test
@@ -6230,6 +6410,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: grpc_tls_certificate_provider_test
   gtest: true
   build: test
@@ -6243,6 +6424,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: grpc_tls_credentials_options_test
   gtest: true
   build: test
@@ -6256,6 +6438,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: grpc_tool_test
   gtest: true
   build: test
@@ -6288,6 +6471,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   platforms:
   - linux
@@ -6309,6 +6493,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: grpclb_end2end_test
   gtest: true
   build: test
@@ -6332,6 +6517,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -6350,6 +6536,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: head_of_line_blocking_bad_client_test
   gtest: true
   build: test
@@ -6367,6 +6554,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: headers_bad_client_test
   gtest: true
   build: test
@@ -6384,6 +6572,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: health_service_end2end_test
   gtest: true
   build: test
@@ -6408,6 +6597,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: hpack_parser_fuzzer_test
   build: fuzzer
   language: c++
@@ -6422,6 +6612,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/transport/chttp2/hpack_parser_corpus
@@ -6446,6 +6637,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
 - name: http_request_fuzzer_test
   build: fuzzer
@@ -6461,6 +6653,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/http/request_corpus
@@ -6479,6 +6672,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/http/response_corpus
@@ -6504,6 +6698,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: init_test
   gtest: true
   build: test
@@ -6517,6 +6712,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: initial_settings_frame_bad_client_test
   gtest: true
@@ -6535,6 +6731,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: insecure_security_connector_test
   gtest: true
   build: test
@@ -6548,6 +6745,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: interop_client
   build: test
   run: false
@@ -6573,6 +6771,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
 - name: interop_server
   build: test
@@ -6596,6 +6795,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
 - name: interop_test
   build: test
@@ -6612,6 +6812,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   platforms:
   - linux
@@ -6631,6 +6832,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/json/corpus
@@ -6648,6 +6850,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: large_metadata_bad_client_test
   gtest: true
@@ -6666,6 +6869,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: lb_get_cpu_stats_test
   gtest: true
   build: test
@@ -6685,6 +6889,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: lb_load_data_store_test
   gtest: true
   build: test
@@ -6702,6 +6907,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: linux_system_roots_test
   gtest: true
   build: test
@@ -6715,6 +6921,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: log_test
   gtest: true
   build: test
@@ -6728,6 +6935,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: matchers_test
   gtest: true
@@ -6742,6 +6950,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: message_allocator_end2end_test
   gtest: true
   build: test
@@ -6762,6 +6971,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: mock_test
   gtest: true
   build: test
@@ -6782,6 +6992,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: nanopb_fuzzer_response_test
   build: fuzzer
   language: c++
@@ -6796,6 +7007,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/nanopb/corpus_response
@@ -6814,6 +7026,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/nanopb/corpus_serverlist
@@ -6836,6 +7049,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: noop-benchmark
   build: test
   language: c++
@@ -6848,6 +7062,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - benchmark
   benchmark: true
   defaults: benchmark
@@ -6864,6 +7079,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: out_of_bounds_bad_client_test
   gtest: true
   build: test
@@ -6881,6 +7097,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c++
@@ -6895,6 +7112,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/slice/percent_decode_corpus
@@ -6913,6 +7131,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/slice/percent_encode_corpus
@@ -6930,6 +7149,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: port_sharing_end2end_test
   gtest: true
   build: test
@@ -6950,6 +7170,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -6974,6 +7195,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: proto_utils_test
   gtest: true
   build: test
@@ -6988,6 +7210,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: qps_json_driver
   build: test
@@ -7040,6 +7263,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
 - name: qps_worker
   build: test
@@ -7083,6 +7307,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
 - name: raw_end2end_test
   gtest: true
@@ -7105,6 +7330,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: ref_counted_ptr_test
   gtest: true
   build: test
@@ -7118,6 +7344,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: ref_counted_test
   gtest: true
   build: test
@@ -7131,6 +7358,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: remove_stream_from_stalled_lists_test
   gtest: true
   build: test
@@ -7144,6 +7372,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -7161,6 +7390,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: secure_auth_context_test
   gtest: true
@@ -7177,6 +7407,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: server_builder_plugin_test
   gtest: true
   build: test
@@ -7198,6 +7429,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: server_builder_test
   gtest: true
   build: test
@@ -7253,6 +7485,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: server_context_test_spouse_test
   gtest: true
   build: test
@@ -7269,6 +7502,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: server_early_return_test
   gtest: true
   build: test
@@ -7287,6 +7521,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: server_fuzzer
   build: fuzzer
   language: c++
@@ -7301,6 +7536,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/end2end/fuzzers/server_fuzzer_corpus
@@ -7328,6 +7564,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: server_registered_method_bad_client_test
   gtest: true
   build: test
@@ -7345,6 +7582,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: server_request_call_test
   gtest: true
   build: test
@@ -7387,6 +7625,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: service_config_test
   gtest: true
   build: test
@@ -7400,6 +7639,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: settings_timeout_test
   gtest: true
   build: test
@@ -7414,6 +7654,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: shutdown_test
   gtest: true
   build: test
@@ -7433,6 +7674,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: simple_request_bad_client_test
   gtest: true
   build: test
@@ -7450,6 +7692,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: ssl_server_fuzzer
   build: fuzzer
   language: c++
@@ -7464,6 +7707,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
@@ -7481,6 +7725,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/debugging:symbolize
   platforms:
   - linux
@@ -7500,6 +7745,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: static_metadata_test
   gtest: true
@@ -7514,6 +7760,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: stats_test
   gtest: true
   build: test
@@ -7527,6 +7774,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: status_metadata_test
   gtest: true
@@ -7541,6 +7789,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: status_util_test
   gtest: true
@@ -7555,6 +7804,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: stranded_event_test
   gtest: true
@@ -7571,6 +7821,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -7594,6 +7845,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -7612,6 +7864,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: test_cpp_client_credentials_test
   gtest: true
@@ -7627,6 +7880,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: test_cpp_server_credentials_test
   gtest: true
   build: test
@@ -7641,6 +7895,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: test_cpp_util_slice_test
   gtest: true
   build: test
@@ -7656,6 +7911,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: test_cpp_util_time_test
   gtest: true
@@ -7672,6 +7928,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: thread_manager_test
   gtest: true
@@ -7689,6 +7946,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: thread_stress_test
   gtest: true
   build: test
@@ -7708,6 +7966,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -7727,6 +7986,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -7744,6 +8004,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   uses_polling: false
 - name: timer_test
   gtest: true
@@ -7759,6 +8020,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: tls_security_connector_test
   gtest: true
   build: test
@@ -7772,6 +8034,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: too_many_pings_test
   gtest: true
   build: test
@@ -7790,6 +8053,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: unknown_frame_bad_client_test
   gtest: true
   build: test
@@ -7807,6 +8071,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: uri_fuzzer_test
   build: fuzzer
   language: c++
@@ -7821,6 +8086,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
   corpus_dirs:
   - test/core/uri/uri_corpus
@@ -7838,6 +8104,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: window_overflow_bad_client_test
   gtest: true
   build: test
@@ -7855,6 +8122,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: work_serializer_test
   gtest: true
   build: test
@@ -7868,6 +8136,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -7930,6 +8199,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/debugging:symbolize
   - absl/debugging:stacktrace
   - absl/debugging:failure_signal_handler
@@ -7950,6 +8220,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: xds_certificate_provider_test
   gtest: true
   build: test
@@ -7963,6 +8234,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: xds_credentials_end2end_test
   gtest: true
   build: test
@@ -7983,6 +8255,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: xds_credentials_test
   gtest: true
   build: test
@@ -7996,6 +8269,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
 - name: xds_end2end_test
   gtest: true
   build: test
@@ -8043,6 +8317,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -8065,6 +8340,7 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
 - name: xds_interop_server
   build: test
@@ -8084,5 +8360,6 @@ targets:
   - gpr
   - address_sorting
   - upb
+  - libssl
   - absl/flags:flag
 tests: []
