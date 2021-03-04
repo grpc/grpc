@@ -19,7 +19,7 @@
 ulimit -n 32768
 ulimit -c unlimited
 
-sudo pip install tabulate
+sudo python3 -m pip install --upgrade pip tabulate
 
 # Python dependencies for tools/run_tests/python_utils/check_on_pr.py
 time python3 -m pip install pyjwt cryptography requests --user
