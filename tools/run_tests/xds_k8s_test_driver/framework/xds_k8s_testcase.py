@@ -40,7 +40,7 @@ _FORCE_CLEANUP = flags.DEFINE_bool(
 # from channelz
 _CHECK_LOCAL_CERTS = flags.DEFINE_bool(
     "check_local_certs",
-    default=False,
+    default=True,
     help="Security Tests also check the value of local certs")
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
