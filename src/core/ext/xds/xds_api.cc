@@ -1647,11 +1647,10 @@ grpc_error* CommonTlsContextParse(
   return GRPC_ERROR_NONE;
 }
 
-template <bool is_client>
 grpc_error* HttpConnectionManagerParse(
-    const EncodingContext& context,
+    bool is_client, const EncodingContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
-        http_connection_manager_proto,
+        http_connection_manager_proto, 
     XdsApi::LdsUpdate::HttpConnectionManager* http_connection_manager) {
   MaybeLogHttpConnectionManager(context, http_connection_manager_proto);
   if (XdsTimeoutEnabled()) {
@@ -1710,7 +1709,7 @@ grpc_error* HttpConnectionManagerParse(
       }
       if ((is_client && !filter_impl->IsSupportedOnClients()) ||
           (!is_client && !filter_impl->IsSupportedOnServers())) {
-        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrFormat("Filter %s is not supported on %s", filter_type,
                             is_client ? "clients" : "servers")
                 .c_str());
@@ -1785,7 +1784,7 @@ grpc_error* LdsResponseParseClient(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Could not parse HttpConnectionManager config from ApiListener");
   }
-  return HttpConnectionManagerParse<true>(context, http_connection_manager,
+  return HttpConnectionManagerParse(true /* is_client */, context, http_connection_manager,
                                           &lds_update->http_connection_manager);
 }
 
@@ -1941,7 +1940,7 @@ grpc_error* FilterChainParse(
         "Could not parse HttpConnectionManager config from filter "
         "typed_config");
   }
-  error = HttpConnectionManagerParse<false>(
+  error = HttpConnectionManagerParse(false /* is_client */,
       context, http_connection_manager, &filter_chain->http_connection_manager);
   if (error != GRPC_ERROR_NONE) return error;
   // Get the DownstreamTlsContext for the filter chain
@@ -1980,7 +1979,7 @@ grpc_error* LdsResponseParseServer(
     XdsApi::LdsUpdate::FilterChain filter_chain;
     error = FilterChainParse(context, filter_chains[0], &filter_chain);
     if (error != GRPC_ERROR_NONE) return error;
-    lds_update->filter_chains.push_back(filter_chain);
+    lds_update->filter_chains.push_back(std::move(filter_chain));
   }
   auto* default_filter_chain =
       envoy_config_listener_v3_Listener_default_filter_chain(listener);
@@ -1988,7 +1987,7 @@ grpc_error* LdsResponseParseServer(
     XdsApi::LdsUpdate::FilterChain filter_chain;
     error = FilterChainParse(context, default_filter_chain, &filter_chain);
     if (error != GRPC_ERROR_NONE) return error;
-    lds_update->default_filter_chain = filter_chain;
+    lds_update->default_filter_chain = std::move(filter_chain);
   }
   if (size == 0 && default_filter_chain == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No filter chain provided.");
