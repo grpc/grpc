@@ -336,10 +336,11 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // Server status
   internal::Mutex mu_;
   bool started_;
-  bool shutdown_;
-  bool shutdown_notified_;  // Was notify called on the shutdown_cv_
+  bool shutdown_ ABSL_GUARDED_BY(mu_);
+  bool shutdown_notified_
+      ABSL_GUARDED_BY(mu_);  // Was notify called on the shutdown_cv_
   internal::CondVar shutdown_done_cv_;
-  bool shutdown_done_ = false;
+  bool shutdown_done_ ABSL_GUARDED_BY(mu_) = false;
   std::atomic_int shutdown_refs_outstanding_{1};
 
   internal::CondVar shutdown_cv_;
