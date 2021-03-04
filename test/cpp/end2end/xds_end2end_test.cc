@@ -6834,7 +6834,8 @@ TEST_P(XdsEnabledServerTest, Basic) {
       ipv6_only_ ? "::1" : "127.0.0.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(
       backends_[0]->port());
-  listener.add_filter_chains();
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
   balancers_[0]->ads_service()->SetLdsResource(listener);
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
@@ -6849,7 +6850,8 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
                    ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
-  listener.add_filter_chains();
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
   balancers_[0]->ads_service()->SetLdsResource(listener);
   CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
   const auto response_state =
@@ -6871,6 +6873,8 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
   listener.mutable_address()->mutable_socket_address()->set_port_value(
       backends_[0]->port());
   auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   listener.mutable_api_listener();
@@ -6943,6 +6947,8 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
     listener.mutable_address()->mutable_socket_address()->set_port_value(
         backends_[0]->port());
     auto* filter_chain = listener.add_filter_chains();
+    filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+        HttpConnectionManager());
     if (!identity_instance_name.empty()) {
       auto* transport_socket = filter_chain->mutable_transport_socket();
       transport_socket->set_name("envoy.transport_sockets.tls");
@@ -7130,6 +7136,8 @@ TEST_P(XdsServerSecurityTest, TlsConfigurationWithoutRootProviderInstance) {
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
   auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
   auto* transport_socket = filter_chain->mutable_transport_socket();
   transport_socket->set_name("envoy.transport_sockets.tls");
   DownstreamTlsContext downstream_tls_context;
