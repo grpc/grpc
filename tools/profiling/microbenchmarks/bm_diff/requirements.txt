@@ -1,0 +1,4 @@
+tabulate>=0.8
+scipy>=1.0.0
+requests>=2.19.0
+jwt>=0.5.0

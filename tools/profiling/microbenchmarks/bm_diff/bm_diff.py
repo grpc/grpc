@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2017 gRPC authors.
 #
@@ -15,20 +15,19 @@
 # limitations under the License.
 """ Computes the diff between two bm runs and outputs significant results """
 
-import bm_constants
-import bm_speedup
-
-import sys
-import os
-
-sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
-import bm_json
-
-import json
-import tabulate
 import argparse
 import collections
+import json
+import os
 import subprocess
+import sys
+
+sys.path.append(os.path.join(os.path.dirname(sys.argv[0]), '..'))
+
+import bm_constants
+import bm_json
+import bm_speedup
+import tabulate
 
 verbose = False
 
@@ -38,9 +37,9 @@ def _median(ary):
     ary = sorted(ary)
     n = len(ary)
     if n % 2 == 0:
-        return (ary[(n - 1) / 2] + ary[(n - 1) / 2 + 1]) / 2.0
+        return (ary[(n - 1) // 2] + ary[(n - 1) // 2 + 1]) / 2.0
     else:
-        return ary[n / 2]
+        return ary[n // 2]
 
 
 def _args():
@@ -91,7 +90,7 @@ def _args():
 
 def _maybe_print(str):
     if verbose:
-        print str
+        print(str)
 
 
 class Benchmark:
@@ -136,14 +135,14 @@ def _read_json(filename, badjson_files, nonexistant_files):
         with open(filename) as f:
             r = f.read()
             return json.loads(r)
-    except IOError, e:
+    except IOError as e:
         if stripped in nonexistant_files:
             nonexistant_files[stripped] += 1
         else:
             nonexistant_files[stripped] = 1
         return None
-    except ValueError, e:
-        print r
+    except ValueError as e:
+        print(r)
         if stripped in badjson_files:
             badjson_files[stripped] += 1
         else:
@@ -166,6 +165,7 @@ def diff(bms, loops, regex, track, old, new, counters):
                     'bm_diff_%s/opt/%s' % (old, bm), '--benchmark_list_tests',
                     '--benchmark_filter=%s' % regex
             ]).splitlines():
+                line = line.decode('UTF-8')
                 stripped_line = line.strip().replace("/", "_").replace(
                     "<", "_").replace(">", "_").replace(", ", "_")
                 js_new_opt = _read_json(
