@@ -236,6 +236,7 @@ class FakeHandshakerService : public HandshakerService::Service {
     result.mutable_local_identity()->set_service_account("local_identity");
     string key(1024, '\0');
     result.set_key_data(key);
+    result.set_max_frame_size(16384);
     result.mutable_peer_rpc_versions()->mutable_max_rpc_version()->set_major(2);
     result.mutable_peer_rpc_versions()->mutable_max_rpc_version()->set_minor(1);
     result.mutable_peer_rpc_versions()->mutable_min_rpc_version()->set_major(2);
