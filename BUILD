@@ -358,6 +358,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++",
     language = "c++",
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = {
         "grpc_no_xds": [],
         "//conditions:default": [
