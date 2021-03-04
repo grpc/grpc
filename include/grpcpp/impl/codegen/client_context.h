@@ -92,6 +92,7 @@ class ClientAsyncResponseReader;
 
 namespace testing {
 class InteropClientContextInspector;
+class ClientContextTestPeer;
 }  // namespace testing
 
 namespace internal {
@@ -423,6 +424,7 @@ class ClientContext {
   ClientContext& operator=(const ClientContext&);
 
   friend class ::grpc::testing::InteropClientContextInspector;
+  friend class ::grpc::testing::ClientContextTestPeer;
   friend class ::grpc::internal::CallOpClientRecvStatus;
   friend class ::grpc::internal::CallOpRecvInitialMetadata;
   friend class ::grpc::Channel;
