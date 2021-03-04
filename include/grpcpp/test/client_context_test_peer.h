@@ -31,8 +31,8 @@ class ClientContextTestPeer {
  public:
   explicit ClientContextTestPeer(ClientContext* const ctx) : ctx_(ctx) {}
 
-  /// Inject metadata to the ClientContext for the test. The test spouse
-  /// ##must be alive when \ a ClientContext::recv_initial_metadata is called.
+  /// Inject metadata to the ClientContext for the test. The test peer
+  /// ##must be alive when a ClientContext::recv_initial_metadata is called.
   void AddMetadata(const std::string& key, const std::string& value) {
     initial_metadata_storage_.insert(
         std::pair<std::string, std::string>(key, value));
