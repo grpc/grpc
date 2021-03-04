@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2021 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,21 +16,20 @@
  *
  */
 
-#ifndef GRPC_RB_SERVER_CREDENTIALS_H_
-#define GRPC_RB_SERVER_CREDENTIALS_H_
+#ifndef GRPC_RB_XDS_SERVER_CREDENTIALS_H_
+#define GRPC_RB_XDS_SERVER_CREDENTIALS_H_
 
+#include <grpc/grpc_security.h>
 #include <ruby/ruby.h>
 #include <stdbool.h>
 
-#include <grpc/grpc_security.h>
-
-/* Initializes the ruby ServerCredentials class. */
-void Init_grpc_server_credentials();
+/* Initializes the ruby XdsServerCredentials class. */
+void Init_grpc_xds_server_credentials();
 
 /* Gets the wrapped server_credentials from the ruby wrapper */
-grpc_server_credentials* grpc_rb_get_wrapped_server_credentials(VALUE v);
+grpc_server_credentials* grpc_rb_get_wrapped_xds_server_credentials(VALUE v);
 
-/* Check if v is kind of ServerCredentials */
-bool grpc_rb_is_server_credentials(VALUE v);
+/* Check if v is kind of XdsServerCredentials */
+bool grpc_rb_is_xds_server_credentials(VALUE v);
 
-#endif /* GRPC_RB_SERVER_CREDENTIALS_H_ */
+#endif /* GRPC_RB_XDS_SERVER_CREDENTIALS_H_ */
