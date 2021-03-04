@@ -55,7 +55,7 @@ any packages with private assets, such as thus marked Grpc.Tools.
 
 #### Per-file options that can be set in Visual Studio
 
-For an "dotnet SDK" project, you have more control of some frequently used options.
+For a "dotnet SDK" project, you have more control of some frequently used options.
 **You may need to open and close Visual Studio** for this form to appear in the
 properties window after adding a reference to Grpc.Tools package (we do not know
 whether this is a bug or by design, but it looks like a bug):
