@@ -551,8 +551,8 @@ absl::optional<uint64_t> HeaderHashHelper(
     grpc_metadata_batch* initial_metadata) {
   GPR_ASSERT(policy.type == XdsApi::Route::HashPolicy::HEADER);
   std::string concatenated_value;
-  absl::optional<absl::string_view> value = GetMetadataValue(
-      policy.header_name, initial_metadata, &concatenated_value);
+  absl::optional<absl::string_view> value = grpc_metadata_batch_get_value(
+      initial_metadata, policy.header_name, &concatenated_value);
   if (value.has_value()) {
     if (policy.regex != nullptr) {
       std::string key(*value);
