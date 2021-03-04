@@ -15,7 +15,9 @@
 
 from __future__ import print_function
 
-import six.moves.urllib.request as request
+from . import jobset
+
+from urllib import request
 import logging
 import os
 import socket
