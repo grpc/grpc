@@ -165,7 +165,9 @@ def _create_target_from_bazel_rule(target_name, bazel_rules):
         '_HEADERS_BAZEL': _extract_nonpublic_headers(bazel_rule),
         '_SRC_BAZEL': _extract_sources(bazel_rule),
         '_DEPS_BAZEL': _extract_deps(bazel_rule),
+        '_TAGS_BAZEL': bazel_rule.get('tags', []),
     }
+
     return result
 
 
@@ -360,6 +362,9 @@ def _generate_build_metadata(build_extra_metadata, bazel_rules):
 
         # populate extra properties from the build.yaml-specific "extra metadata"
         lib_dict.update(build_extra_metadata.get(lib_name, {}))
+
+        if '_grpc_build_metadata_baselib' in lib_dict['_TAGS_BAZEL']:
+            lib_dict['baselib'] = True
 
         # store to results
         result[lib_name] = lib_dict
@@ -643,19 +648,16 @@ _BUILD_EXTRA_METADATA = {
     'grpc': {
         'language': 'c',
         'build': 'all',
-        'baselib': True,
         'secure': True,
         'generate_plugin_registry': True
     },
     'grpc++': {
         'language': 'c++',
         'build': 'all',
-        'baselib': True,
     },
     'grpc++_alts': {
         'language': 'c++',
         'build': 'all',
-        'baselib': True
     },
     'grpc++_error_details': {
         'language': 'c++',
@@ -668,7 +670,6 @@ _BUILD_EXTRA_METADATA = {
     'grpc++_unsecure': {
         'language': 'c++',
         'build': 'all',
-        'baselib': True,
         'secure': False,
     },
     # TODO(jtattermusch): do we need to set grpc_csharp_ext's LDFLAGS for wrapping memcpy in the same way as in build.yaml?
@@ -679,7 +680,6 @@ _BUILD_EXTRA_METADATA = {
     'grpc_unsecure': {
         'language': 'c',
         'build': 'all',
-        'baselib': True,
         'secure': False,
         'generate_plugin_registry': True
     },

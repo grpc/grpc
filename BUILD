@@ -310,6 +310,7 @@ grpc_cc_library(
         "grpc_common",
         "grpc_lb_policy_grpclb",
     ],
+    tags = ["_grpc_build_metadata_baselib"],
 )
 
 grpc_cc_library(
@@ -344,6 +345,7 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
     ],
+    tags = ["_grpc_build_metadata_baselib"],
 )
 
 grpc_cc_library(
@@ -399,6 +401,7 @@ grpc_cc_library(
         "grpc++_codegen_proto",
         "grpc_secure",
     ],
+    tags = ["_grpc_build_metadata_baselib"],
 )
 
 grpc_cc_library(
@@ -449,6 +452,7 @@ grpc_cc_library(
         "grpc++_codegen_proto",
         "grpc_unsecure",
     ],
+    tags = ["_grpc_build_metadata_baselib"],
 )
 
 grpc_cc_library(
@@ -484,6 +488,7 @@ grpc_cc_library(
         "alts_util",
         "grpc++",
     ],
+    tags = ["_grpc_build_metadata_baselib"]
 )
 
 grpc_cc_library(
