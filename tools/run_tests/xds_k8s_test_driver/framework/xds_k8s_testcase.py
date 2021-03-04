@@ -349,7 +349,7 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         # Confirm regular TLS: server local cert == client remote cert
         self.assertNotEmpty(client_tls.remote_certificate,
                             msg="(mTLS) Client remote certificate is missing")
-        if cls.check_local_certs:
+        if self.check_local_certs:
             self.assertNotEmpty(
                 server_tls.local_certificate,
                 msg="(mTLS) Server local certificate is missing")
@@ -362,7 +362,7 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         # mTLS: server remote cert == client local cert
         self.assertNotEmpty(server_tls.remote_certificate,
                             msg="(mTLS) Server remote certificate is missing")
-        if cls.check_local_certs:
+        if self.check_local_certs:
             self.assertNotEmpty(
                 client_tls.local_certificate,
                 msg="(mTLS) Client local certificate is missing")
@@ -385,7 +385,7 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         # Regular TLS: server local cert == client remote cert
         self.assertNotEmpty(client_tls.remote_certificate,
                             msg="(TLS) Client remote certificate is missing")
-        if cls.check_local_certs:
+        if self.check_local_certs:
             self.assertNotEmpty(server_tls.local_certificate,
                                 msg="(TLS) Server local certificate is missing")
             self.assertEqual(
