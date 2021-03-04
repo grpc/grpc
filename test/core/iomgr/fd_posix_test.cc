@@ -81,7 +81,7 @@ static void create_test_socket(int port, int* socket_fd,
   sin->sin_port = htons(static_cast<uint16_t>(port));
 }
 
-/* Dummy gRPC callback */
+/* Phony gRPC callback */
 void no_op_cb(void* /*arg*/, int /*success*/) {}
 
 /* =======An upload server to test notify_on_read===========

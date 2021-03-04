@@ -76,6 +76,7 @@ proto_files=( \
   "envoy/config/route/v3/scoped_route.proto" \
   "envoy/config/trace/v3/http_tracer.proto" \
   "envoy/extensions/clusters/aggregate/v3/cluster.proto" \
+  "envoy/extensions/filters/http/router/v3/router.proto" \
   "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto" \
   "envoy/extensions/transport_sockets/tls/v3/cert.proto" \
   "envoy/extensions/transport_sockets/tls/v3/common.proto" \
@@ -126,12 +127,13 @@ proto_files=( \
   "udpa/annotations/sensitive.proto" \
   "udpa/annotations/status.proto" \
   "udpa/annotations/versioning.proto" \
-  "udpa/core/v1/authority.proto" \
-  "udpa/core/v1/collection_entry.proto" \
-  "udpa/core/v1/context_params.proto" \
-  "udpa/core/v1/resource_locator.proto" \
-  "udpa/core/v1/resource_name.proto" \
-  "udpa/core/v1/resource.proto" \
+  "udpa/type/v1/typed_struct.proto" \
+  "xds/core/v3/authority.proto" \
+  "xds/core/v3/collection_entry.proto" \
+  "xds/core/v3/context_params.proto" \
+  "xds/core/v3/resource_locator.proto" \
+  "xds/core/v3/resource_name.proto" \
+  "xds/core/v3/resource.proto" \
   "validate/validate.proto")
 
 INCLUDE_OPTIONS="-I=$PWD/third_party/udpa \

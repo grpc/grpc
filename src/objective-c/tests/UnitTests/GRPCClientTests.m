@@ -108,8 +108,9 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 }
 
 - (void)setUp {
-  // Add a custom user agent prefix that will be used in test
+  // Add a custom user agent prefix and suffix that will be used in test
   [GRPCCall setUserAgentPrefix:@"Foo" forHost:kHostAddress];
+  [GRPCCall setUserAgentSuffix:@"Suffix" forHost:kHostAddress];
   // Register test server as non-SSL.
   [GRPCCall useInsecureConnectionsForHost:kHostAddress];
 
@@ -280,7 +281,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-- (void)testUserAgentPrefix {
+- (void)testUserAgentPrefixAndSuffix {
   __weak XCTestExpectation *response =
       [self expectationWithDescription:@"Empty response received."];
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Empty RPC completed."];
@@ -303,6 +304,7 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
         // Test the regex is correct
         NSString *expectedUserAgent = @"Foo grpc-objc-cfstream/";
         expectedUserAgent = [expectedUserAgent stringByAppendingString:GRPC_OBJC_VERSION_STRING];
+        expectedUserAgent = [expectedUserAgent stringByAppendingString:@" Suffix"];
         expectedUserAgent = [expectedUserAgent stringByAppendingString:@" grpc-c/"];
         expectedUserAgent = [expectedUserAgent stringByAppendingString:GRPC_C_VERSION_STRING];
         expectedUserAgent = [expectedUserAgent stringByAppendingString:@" ("];
@@ -322,8 +324,11 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
                                             options:0
                                               range:NSMakeRange(0, [userAgent length])
                                        withTemplate:@""];
-        XCTAssertEqualObjects(customUserAgent, @"Foo");
 
+        NSArray *userAgentArray = [customUserAgent componentsSeparatedByString:@" "];
+        XCTAssertEqual([userAgentArray count], 2);
+        XCTAssertEqualObjects([userAgentArray objectAtIndex:0], @"Foo");
+        XCTAssertEqualObjects([userAgentArray objectAtIndex:1], @"Suffix");
         [response fulfill];
       }
       completionHandler:^(NSError *errorOrNil) {
@@ -532,11 +537,11 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
 
 - (void)testErrorCode {
   int port = [self findFreePort];
-  NSString *const kDummyAddress = [NSString stringWithFormat:@"localhost:%d", port];
+  NSString *const kPhonyAddress = [NSString stringWithFormat:@"localhost:%d", port];
   __weak XCTestExpectation *completion =
       [self expectationWithDescription:@"Received correct error code."];
 
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kDummyAddress
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kPhonyAddress
                                              path:kEmptyCallMethod.HTTPPath
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
 
@@ -561,14 +566,14 @@ static GRPCProtoMethod *kFullDuplexCallMethod;
   const double kMargin = 0.1;
 
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Timeout in a second."];
-  NSString *const kDummyAddress = [NSString stringWithFormat:@"8.8.8.8:1"];
-  [GRPCCall useInsecureConnectionsForHost:kDummyAddress];
+  NSString *const kPhonyAddress = [NSString stringWithFormat:@"8.8.8.8:1"];
+  [GRPCCall useInsecureConnectionsForHost:kPhonyAddress];
   [GRPCCall setMinConnectTimeout:timeout * 1000
                   initialBackoff:backoff * 1000
                       maxBackoff:0
-                         forHost:kDummyAddress];
-  GRPCCall *call = [[GRPCCall alloc] initWithHost:kDummyAddress
-                                             path:@"/dummyPath"
+                         forHost:kPhonyAddress];
+  GRPCCall *call = [[GRPCCall alloc] initWithHost:kPhonyAddress
+                                             path:@"/phonyPath"
                                    requestsWriter:[GRXWriter writerWithValue:[NSData data]]];
   NSDate *startTime = [NSDate date];
   id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc]

@@ -32,7 +32,7 @@
 #include "test/core/util/test_config.h"
 
 typedef struct inproc_fixture_data {
-  bool dummy;  // reserved for future expansion. Struct can't be empty
+  bool phony;  // reserved for future expansion. Struct can't be empty
 } inproc_fixture_data;
 
 namespace {

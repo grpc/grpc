@@ -189,21 +189,23 @@ const upb_msglayout google_api_expr_v1alpha1_Constant_msginit = {
   UPB_SIZE(16, 32), 9, false, 255,
 };
 
-static const upb_msglayout *const google_api_expr_v1alpha1_SourceInfo_submsgs[1] = {
+static const upb_msglayout *const google_api_expr_v1alpha1_SourceInfo_submsgs[2] = {
+  &google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry_msginit,
   &google_api_expr_v1alpha1_SourceInfo_PositionsEntry_msginit,
 };
 
-static const upb_msglayout_field google_api_expr_v1alpha1_SourceInfo__fields[4] = {
+static const upb_msglayout_field google_api_expr_v1alpha1_SourceInfo__fields[5] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
   {2, UPB_SIZE(8, 16), 0, 0, 9, 1},
   {3, UPB_SIZE(16, 32), 0, 0, 5, _UPB_LABEL_PACKED},
-  {4, UPB_SIZE(20, 40), 0, 0, 11, _UPB_LABEL_MAP},
+  {4, UPB_SIZE(20, 40), 0, 1, 11, _UPB_LABEL_MAP},
+  {5, UPB_SIZE(24, 48), 0, 0, 11, _UPB_LABEL_MAP},
 };
 
 const upb_msglayout google_api_expr_v1alpha1_SourceInfo_msginit = {
   &google_api_expr_v1alpha1_SourceInfo_submsgs[0],
   &google_api_expr_v1alpha1_SourceInfo__fields[0],
-  UPB_SIZE(24, 48), 4, false, 255,
+  UPB_SIZE(32, 64), 5, false, 255,
 };
 
 static const upb_msglayout_field google_api_expr_v1alpha1_SourceInfo_PositionsEntry__fields[2] = {
@@ -214,6 +216,21 @@ static const upb_msglayout_field google_api_expr_v1alpha1_SourceInfo_PositionsEn
 const upb_msglayout google_api_expr_v1alpha1_SourceInfo_PositionsEntry_msginit = {
   NULL,
   &google_api_expr_v1alpha1_SourceInfo_PositionsEntry__fields[0],
+  UPB_SIZE(16, 32), 2, false, 255,
+};
+
+static const upb_msglayout *const google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry_submsgs[1] = {
+  &google_api_expr_v1alpha1_Expr_msginit,
+};
+
+static const upb_msglayout_field google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry__fields[2] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 3, 1},
+  {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
+};
+
+const upb_msglayout google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry_msginit = {
+  &google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry_submsgs[0],
+  &google_api_expr_v1alpha1_SourceInfo_MacroCallsEntry__fields[0],
   UPB_SIZE(16, 32), 2, false, 255,
 };
 

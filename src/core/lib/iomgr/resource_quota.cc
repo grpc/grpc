@@ -132,7 +132,7 @@ struct grpc_resource_quota {
      scaled to the range [0..RESOURCE_USAGE_ESTIMATION_MAX] */
   gpr_atm memory_usage_estimation;
 
-  /* Master combiner lock: all activity on a quota executes under this combiner
+  /* Main combiner lock: all activity on a quota executes under this combiner
    * (so no mutex is needed for this data structure) */
   grpc_core::Combiner* combiner;
   /* Size of the resource quota */

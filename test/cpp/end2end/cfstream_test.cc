@@ -190,9 +190,9 @@ class CFStreamTest : public ::testing::TestWithParam<TestScenario> {
     } else {
       GPR_ASSERT(ret == grpc::CompletionQueue::TIMEOUT);
       // This can happen if we hit the Apple CFStream bug which results in the
-      // read stream hanging. We are ignoring hangs and timeouts, but these
+      // read stream freezing. We are ignoring hangs and timeouts, but these
       // tests are still useful as they can catch memory memory corruptions,
-      // crashes and other bugs that don't result in test hang/timeout.
+      // crashes and other bugs that don't result in test freeze/timeout.
       return false;
     }
   }

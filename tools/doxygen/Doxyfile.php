@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC PHP"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.36.0-dev
+PROJECT_NUMBER         = 1.37.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -812,10 +812,15 @@ src/php/lib/Grpc/ClientStreamingCall.php \
 src/php/lib/Grpc/Constants.php \
 src/php/lib/Grpc/DefaultCallInvoker.php \
 src/php/lib/Grpc/Interceptor.php \
+src/php/lib/Grpc/MethodDescriptor.php \
 src/php/lib/Grpc/RpcServer.php \
 src/php/lib/Grpc/Server.php \
+src/php/lib/Grpc/ServerCallReader.php \
+src/php/lib/Grpc/ServerCallWriter.php \
+src/php/lib/Grpc/ServerContext.php \
 src/php/lib/Grpc/ServerCredentials.php \
 src/php/lib/Grpc/ServerStreamingCall.php \
+src/php/lib/Grpc/Status.php \
 src/php/lib/Grpc/Timeval.php \
 src/php/lib/Grpc/UnaryCall.php
 

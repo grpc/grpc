@@ -19,7 +19,7 @@ import sys
 
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 
-# map of banned function signature to whitelist
+# map of banned function signature to allowlist
 BANNED_EXCEPT = {
     'grpc_slice_from_static_buffer(': ['src/core/lib/slice/slice.cc'],
     'grpc_resource_quota_ref(': ['src/core/lib/iomgr/resource_quota.cc'],

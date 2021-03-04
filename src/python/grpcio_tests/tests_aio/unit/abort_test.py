@@ -33,7 +33,7 @@ _RESPONSE = b'\x01\x01\x01'
 _NUM_STREAM_RESPONSES = 5
 
 _ABORT_CODE = grpc.StatusCode.RESOURCE_EXHAUSTED
-_ABORT_DETAILS = 'Dummy error details'
+_ABORT_DETAILS = 'Phony error details'
 
 
 class _GenericHandler(grpc.GenericRpcHandler):

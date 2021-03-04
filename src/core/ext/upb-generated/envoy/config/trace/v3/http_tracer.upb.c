@@ -10,7 +10,6 @@
 #include "upb/msg.h"
 #include "envoy/config/trace/v3/http_tracer.upb.h"
 #include "google/protobuf/any.upb.h"
-#include "google/protobuf/struct.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
 #include "validate/validate.upb.h"

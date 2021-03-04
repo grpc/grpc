@@ -15,7 +15,6 @@
 #include "envoy/type/v3/percent.upb.h"
 #include "envoy/type/v3/semantic_version.upb.h"
 #include "google/protobuf/any.upb.h"
-#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/migrate.upb.h"
@@ -138,6 +137,21 @@ const upb_msglayout envoy_config_core_v3_RuntimeUInt32_msginit = {
   UPB_SIZE(16, 32), 2, false, 255,
 };
 
+static const upb_msglayout *const envoy_config_core_v3_RuntimePercent_submsgs[1] = {
+  &envoy_type_v3_Percent_msginit,
+};
+
+static const upb_msglayout_field envoy_config_core_v3_RuntimePercent__fields[2] = {
+  {1, UPB_SIZE(12, 24), 1, 0, 11, 1},
+  {2, UPB_SIZE(4, 8), 0, 0, 9, 1},
+};
+
+const upb_msglayout envoy_config_core_v3_RuntimePercent_msginit = {
+  &envoy_config_core_v3_RuntimePercent_submsgs[0],
+  &envoy_config_core_v3_RuntimePercent__fields[0],
+  UPB_SIZE(16, 32), 2, false, 255,
+};
+
 static const upb_msglayout_field envoy_config_core_v3_RuntimeDouble__fields[2] = {
   {1, UPB_SIZE(0, 0), 0, 0, 1, 1},
   {2, UPB_SIZE(8, 8), 0, 0, 9, 1},
@@ -203,6 +217,16 @@ const upb_msglayout envoy_config_core_v3_HeaderMap_msginit = {
   &envoy_config_core_v3_HeaderMap_submsgs[0],
   &envoy_config_core_v3_HeaderMap__fields[0],
   UPB_SIZE(8, 8), 1, false, 255,
+};
+
+static const upb_msglayout_field envoy_config_core_v3_WatchedDirectory__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
+};
+
+const upb_msglayout envoy_config_core_v3_WatchedDirectory_msginit = {
+  NULL,
+  &envoy_config_core_v3_WatchedDirectory__fields[0],
+  UPB_SIZE(8, 16), 1, false, 255,
 };
 
 static const upb_msglayout_field envoy_config_core_v3_DataSource__fields[3] = {

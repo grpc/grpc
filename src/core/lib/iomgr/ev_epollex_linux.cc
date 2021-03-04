@@ -537,7 +537,7 @@ static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
 
 static bool fd_has_pollset(grpc_fd* fd, grpc_pollset* pollset) {
   const int epfd = pollset->active_pollable->epfd;
-  grpc_core::MutexLock lock(&fd->pollable_mu);
+  grpc_core::MutexLockForGprMu lock(&fd->pollable_mu);
   for (size_t i = 0; i < fd->pollset_fds.size(); ++i) {
     if (fd->pollset_fds[i] == epfd) {
       return true;
@@ -548,7 +548,7 @@ static bool fd_has_pollset(grpc_fd* fd, grpc_pollset* pollset) {
 
 static void fd_add_pollset(grpc_fd* fd, grpc_pollset* pollset) {
   const int epfd = pollset->active_pollable->epfd;
-  grpc_core::MutexLock lock(&fd->pollable_mu);
+  grpc_core::MutexLockForGprMu lock(&fd->pollable_mu);
   fd->pollset_fds.push_back(epfd);
 }
 
@@ -684,7 +684,7 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
 static grpc_error* kick_one_worker(grpc_pollset_worker* specific_worker) {
   GPR_TIMER_SCOPE("kick_one_worker", 0);
   pollable* p = specific_worker->pollable_obj;
-  grpc_core::MutexLock lock(&p->mu);
+  grpc_core::MutexLockForGprMu lock(&p->mu);
   GPR_ASSERT(specific_worker != nullptr);
   if (specific_worker->kicked) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
@@ -1296,7 +1296,7 @@ static void pollset_add_fd(grpc_pollset* pollset, grpc_fd* fd) {
     return;
   }
 
-  grpc_core::MutexLock lock(&pollset->mu);
+  grpc_core::MutexLockForGprMu lock(&pollset->mu);
   grpc_error* error = pollset_add_fd_locked(pollset, fd);
 
   // If we are in PO_MULTI mode, we should update the pollsets of the FD.

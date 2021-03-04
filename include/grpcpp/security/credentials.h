@@ -277,6 +277,12 @@ class MetadataCredentialsPlugin {
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
+/// Builds External Account credentials.
+/// json_string is the JSON string containing the credentials options.
+/// scopes contains the scopes to be binded with the credentials.
+std::shared_ptr<CallCredentials> ExternalAccountCredentials(
+    const grpc::string& json_string, const std::vector<grpc::string>& scopes);
+
 namespace experimental {
 
 /// Options for creating STS Oauth Token Exchange credentials following the IETF
@@ -306,12 +312,6 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
 
 std::shared_ptr<CallCredentials> StsCredentials(
     const StsCredentialsOptions& options);
-
-/// Builds External Account credentials.
-/// json_string is the JSON string containing the credentials options.
-/// scopes contains the scopes to be binded with the credentials.
-std::shared_ptr<CallCredentials> ExternalAccountCredentials(
-    const grpc::string& json_string, const std::vector<grpc::string>& scopes);
 
 std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin,

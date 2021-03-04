@@ -36,7 +36,7 @@ struct envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig;
 struct envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeightedLbConfig;
 struct envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig;
 struct envoy_config_cluster_v3_Cluster_RefreshRate;
-struct envoy_config_cluster_v3_Cluster_PrefetchPolicy;
+struct envoy_config_cluster_v3_Cluster_PreconnectPolicy;
 struct envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry;
 struct envoy_config_cluster_v3_LoadBalancingPolicy;
 struct envoy_config_cluster_v3_LoadBalancingPolicy_Policy;
@@ -59,7 +59,7 @@ typedef struct envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAwareLbConfig 
 typedef struct envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeightedLbConfig envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeightedLbConfig;
 typedef struct envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig;
 typedef struct envoy_config_cluster_v3_Cluster_RefreshRate envoy_config_cluster_v3_Cluster_RefreshRate;
-typedef struct envoy_config_cluster_v3_Cluster_PrefetchPolicy envoy_config_cluster_v3_Cluster_PrefetchPolicy;
+typedef struct envoy_config_cluster_v3_Cluster_PreconnectPolicy envoy_config_cluster_v3_Cluster_PreconnectPolicy;
 typedef struct envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry;
 typedef struct envoy_config_cluster_v3_LoadBalancingPolicy envoy_config_cluster_v3_LoadBalancingPolicy;
 typedef struct envoy_config_cluster_v3_LoadBalancingPolicy_Policy envoy_config_cluster_v3_LoadBalancingPolicy_Policy;
@@ -82,7 +82,7 @@ extern const upb_msglayout envoy_config_cluster_v3_Cluster_CommonLbConfig_ZoneAw
 extern const upb_msglayout envoy_config_cluster_v3_Cluster_CommonLbConfig_LocalityWeightedLbConfig_msginit;
 extern const upb_msglayout envoy_config_cluster_v3_Cluster_CommonLbConfig_ConsistentHashingLbConfig_msginit;
 extern const upb_msglayout envoy_config_cluster_v3_Cluster_RefreshRate_msginit;
-extern const upb_msglayout envoy_config_cluster_v3_Cluster_PrefetchPolicy_msginit;
+extern const upb_msglayout envoy_config_cluster_v3_Cluster_PreconnectPolicy_msginit;
 extern const upb_msglayout envoy_config_cluster_v3_Cluster_TypedExtensionProtocolOptionsEntry_msginit;
 extern const upb_msglayout envoy_config_cluster_v3_LoadBalancingPolicy_msginit;
 extern const upb_msglayout envoy_config_cluster_v3_LoadBalancingPolicy_Policy_msginit;
@@ -113,8 +113,7 @@ struct google_protobuf_Duration;
 struct google_protobuf_Struct;
 struct google_protobuf_UInt32Value;
 struct google_protobuf_UInt64Value;
-struct udpa_core_v1_CollectionEntry;
-struct udpa_core_v1_ResourceLocator;
+struct xds_core_v3_CollectionEntry;
 extern const upb_msglayout envoy_config_cluster_v3_CircuitBreakers_msginit;
 extern const upb_msglayout envoy_config_cluster_v3_Filter_msginit;
 extern const upb_msglayout envoy_config_cluster_v3_OutlierDetection_msginit;
@@ -139,8 +138,7 @@ extern const upb_msglayout google_protobuf_Duration_msginit;
 extern const upb_msglayout google_protobuf_Struct_msginit;
 extern const upb_msglayout google_protobuf_UInt32Value_msginit;
 extern const upb_msglayout google_protobuf_UInt64Value_msginit;
-extern const upb_msglayout udpa_core_v1_CollectionEntry_msginit;
-extern const upb_msglayout udpa_core_v1_ResourceLocator_msginit;
+extern const upb_msglayout xds_core_v3_CollectionEntry_msginit;
 
 typedef enum {
   envoy_config_cluster_v3_Cluster_USE_CONFIGURED_PROTOCOL = 0,
@@ -212,16 +210,16 @@ UPB_INLINE char *envoy_config_cluster_v3_ClusterCollection_serialize(const envoy
 }
 
 UPB_INLINE bool envoy_config_cluster_v3_ClusterCollection_has_entries(const envoy_config_cluster_v3_ClusterCollection *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE const struct udpa_core_v1_CollectionEntry* envoy_config_cluster_v3_ClusterCollection_entries(const envoy_config_cluster_v3_ClusterCollection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct udpa_core_v1_CollectionEntry*); }
+UPB_INLINE const struct xds_core_v3_CollectionEntry* envoy_config_cluster_v3_ClusterCollection_entries(const envoy_config_cluster_v3_ClusterCollection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct xds_core_v3_CollectionEntry*); }
 
-UPB_INLINE void envoy_config_cluster_v3_ClusterCollection_set_entries(envoy_config_cluster_v3_ClusterCollection *msg, struct udpa_core_v1_CollectionEntry* value) {
+UPB_INLINE void envoy_config_cluster_v3_ClusterCollection_set_entries(envoy_config_cluster_v3_ClusterCollection *msg, struct xds_core_v3_CollectionEntry* value) {
   _upb_sethas(msg, 1);
-  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct udpa_core_v1_CollectionEntry*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct xds_core_v3_CollectionEntry*) = value;
 }
-UPB_INLINE struct udpa_core_v1_CollectionEntry* envoy_config_cluster_v3_ClusterCollection_mutable_entries(envoy_config_cluster_v3_ClusterCollection *msg, upb_arena *arena) {
-  struct udpa_core_v1_CollectionEntry* sub = (struct udpa_core_v1_CollectionEntry*)envoy_config_cluster_v3_ClusterCollection_entries(msg);
+UPB_INLINE struct xds_core_v3_CollectionEntry* envoy_config_cluster_v3_ClusterCollection_mutable_entries(envoy_config_cluster_v3_ClusterCollection *msg, upb_arena *arena) {
+  struct xds_core_v3_CollectionEntry* sub = (struct xds_core_v3_CollectionEntry*)envoy_config_cluster_v3_ClusterCollection_entries(msg);
   if (sub == NULL) {
-    sub = (struct udpa_core_v1_CollectionEntry*)_upb_msg_new(&udpa_core_v1_CollectionEntry_msginit, arena);
+    sub = (struct xds_core_v3_CollectionEntry*)_upb_msg_new(&xds_core_v3_CollectionEntry_msginit, arena);
     if (!sub) return NULL;
     envoy_config_cluster_v3_ClusterCollection_set_entries(msg, sub);
   }
@@ -344,8 +342,8 @@ UPB_INLINE bool envoy_config_cluster_v3_Cluster_has_upstream_config(const envoy_
 UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_cluster_v3_Cluster_upstream_config(const envoy_config_cluster_v3_Cluster *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(128, 232), const struct envoy_config_core_v3_TypedExtensionConfig*); }
 UPB_INLINE bool envoy_config_cluster_v3_Cluster_has_track_cluster_stats(const envoy_config_cluster_v3_Cluster *msg) { return _upb_hasbit(msg, 24); }
 UPB_INLINE const envoy_config_cluster_v3_TrackClusterStats* envoy_config_cluster_v3_Cluster_track_cluster_stats(const envoy_config_cluster_v3_Cluster *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(132, 240), const envoy_config_cluster_v3_TrackClusterStats*); }
-UPB_INLINE bool envoy_config_cluster_v3_Cluster_has_prefetch_policy(const envoy_config_cluster_v3_Cluster *msg) { return _upb_hasbit(msg, 25); }
-UPB_INLINE const envoy_config_cluster_v3_Cluster_PrefetchPolicy* envoy_config_cluster_v3_Cluster_prefetch_policy(const envoy_config_cluster_v3_Cluster *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(136, 248), const envoy_config_cluster_v3_Cluster_PrefetchPolicy*); }
+UPB_INLINE bool envoy_config_cluster_v3_Cluster_has_preconnect_policy(const envoy_config_cluster_v3_Cluster *msg) { return _upb_hasbit(msg, 25); }
+UPB_INLINE const envoy_config_cluster_v3_Cluster_PreconnectPolicy* envoy_config_cluster_v3_Cluster_preconnect_policy(const envoy_config_cluster_v3_Cluster *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(136, 248), const envoy_config_cluster_v3_Cluster_PreconnectPolicy*); }
 UPB_INLINE bool envoy_config_cluster_v3_Cluster_connection_pool_per_downstream_connection(const envoy_config_cluster_v3_Cluster *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(21, 21), bool); }
 UPB_INLINE bool envoy_config_cluster_v3_Cluster_has_maglev_lb_config(const envoy_config_cluster_v3_Cluster *msg) { return _upb_getoneofcase(msg, UPB_SIZE(172, 320)) == 52; }
 UPB_INLINE const envoy_config_cluster_v3_Cluster_MaglevLbConfig* envoy_config_cluster_v3_Cluster_maglev_lb_config(const envoy_config_cluster_v3_Cluster *msg) { return UPB_READ_ONEOF(msg, const envoy_config_cluster_v3_Cluster_MaglevLbConfig*, UPB_SIZE(168, 312), UPB_SIZE(172, 320), 52, NULL); }
@@ -799,16 +797,16 @@ UPB_INLINE struct envoy_config_cluster_v3_TrackClusterStats* envoy_config_cluste
   }
   return sub;
 }
-UPB_INLINE void envoy_config_cluster_v3_Cluster_set_prefetch_policy(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_PrefetchPolicy* value) {
+UPB_INLINE void envoy_config_cluster_v3_Cluster_set_preconnect_policy(envoy_config_cluster_v3_Cluster *msg, envoy_config_cluster_v3_Cluster_PreconnectPolicy* value) {
   _upb_sethas(msg, 25);
-  *UPB_PTR_AT(msg, UPB_SIZE(136, 248), envoy_config_cluster_v3_Cluster_PrefetchPolicy*) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(136, 248), envoy_config_cluster_v3_Cluster_PreconnectPolicy*) = value;
 }
-UPB_INLINE struct envoy_config_cluster_v3_Cluster_PrefetchPolicy* envoy_config_cluster_v3_Cluster_mutable_prefetch_policy(envoy_config_cluster_v3_Cluster *msg, upb_arena *arena) {
-  struct envoy_config_cluster_v3_Cluster_PrefetchPolicy* sub = (struct envoy_config_cluster_v3_Cluster_PrefetchPolicy*)envoy_config_cluster_v3_Cluster_prefetch_policy(msg);
+UPB_INLINE struct envoy_config_cluster_v3_Cluster_PreconnectPolicy* envoy_config_cluster_v3_Cluster_mutable_preconnect_policy(envoy_config_cluster_v3_Cluster *msg, upb_arena *arena) {
+  struct envoy_config_cluster_v3_Cluster_PreconnectPolicy* sub = (struct envoy_config_cluster_v3_Cluster_PreconnectPolicy*)envoy_config_cluster_v3_Cluster_preconnect_policy(msg);
   if (sub == NULL) {
-    sub = (struct envoy_config_cluster_v3_Cluster_PrefetchPolicy*)_upb_msg_new(&envoy_config_cluster_v3_Cluster_PrefetchPolicy_msginit, arena);
+    sub = (struct envoy_config_cluster_v3_Cluster_PreconnectPolicy*)_upb_msg_new(&envoy_config_cluster_v3_Cluster_PreconnectPolicy_msginit, arena);
     if (!sub) return NULL;
-    envoy_config_cluster_v3_Cluster_set_prefetch_policy(msg, sub);
+    envoy_config_cluster_v3_Cluster_set_preconnect_policy(msg, sub);
   }
   return sub;
 }
@@ -948,8 +946,6 @@ UPB_INLINE char *envoy_config_cluster_v3_Cluster_EdsClusterConfig_serialize(cons
 UPB_INLINE bool envoy_config_cluster_v3_Cluster_EdsClusterConfig_has_eds_config(const envoy_config_cluster_v3_Cluster_EdsClusterConfig *msg) { return _upb_hasbit(msg, 1); }
 UPB_INLINE const struct envoy_config_core_v3_ConfigSource* envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_config(const envoy_config_cluster_v3_Cluster_EdsClusterConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_config_core_v3_ConfigSource*); }
 UPB_INLINE upb_strview envoy_config_cluster_v3_Cluster_EdsClusterConfig_service_name(const envoy_config_cluster_v3_Cluster_EdsClusterConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
-UPB_INLINE bool envoy_config_cluster_v3_Cluster_EdsClusterConfig_has_eds_resource_locator(const envoy_config_cluster_v3_Cluster_EdsClusterConfig *msg) { return _upb_hasbit(msg, 2); }
-UPB_INLINE const struct udpa_core_v1_ResourceLocator* envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_resource_locator(const envoy_config_cluster_v3_Cluster_EdsClusterConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct udpa_core_v1_ResourceLocator*); }
 
 UPB_INLINE void envoy_config_cluster_v3_Cluster_EdsClusterConfig_set_eds_config(envoy_config_cluster_v3_Cluster_EdsClusterConfig *msg, struct envoy_config_core_v3_ConfigSource* value) {
   _upb_sethas(msg, 1);
@@ -966,19 +962,6 @@ UPB_INLINE struct envoy_config_core_v3_ConfigSource* envoy_config_cluster_v3_Clu
 }
 UPB_INLINE void envoy_config_cluster_v3_Cluster_EdsClusterConfig_set_service_name(envoy_config_cluster_v3_Cluster_EdsClusterConfig *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
-}
-UPB_INLINE void envoy_config_cluster_v3_Cluster_EdsClusterConfig_set_eds_resource_locator(envoy_config_cluster_v3_Cluster_EdsClusterConfig *msg, struct udpa_core_v1_ResourceLocator* value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct udpa_core_v1_ResourceLocator*) = value;
-}
-UPB_INLINE struct udpa_core_v1_ResourceLocator* envoy_config_cluster_v3_Cluster_EdsClusterConfig_mutable_eds_resource_locator(envoy_config_cluster_v3_Cluster_EdsClusterConfig *msg, upb_arena *arena) {
-  struct udpa_core_v1_ResourceLocator* sub = (struct udpa_core_v1_ResourceLocator*)envoy_config_cluster_v3_Cluster_EdsClusterConfig_eds_resource_locator(msg);
-  if (sub == NULL) {
-    sub = (struct udpa_core_v1_ResourceLocator*)_upb_msg_new(&udpa_core_v1_ResourceLocator_msginit, arena);
-    if (!sub) return NULL;
-    envoy_config_cluster_v3_Cluster_EdsClusterConfig_set_eds_resource_locator(msg, sub);
-  }
-  return sub;
 }
 
 /* envoy.config.cluster.v3.Cluster.LbSubsetConfig */
@@ -1557,54 +1540,54 @@ UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_Cluster_Refr
   return sub;
 }
 
-/* envoy.config.cluster.v3.Cluster.PrefetchPolicy */
+/* envoy.config.cluster.v3.Cluster.PreconnectPolicy */
 
-UPB_INLINE envoy_config_cluster_v3_Cluster_PrefetchPolicy *envoy_config_cluster_v3_Cluster_PrefetchPolicy_new(upb_arena *arena) {
-  return (envoy_config_cluster_v3_Cluster_PrefetchPolicy *)_upb_msg_new(&envoy_config_cluster_v3_Cluster_PrefetchPolicy_msginit, arena);
+UPB_INLINE envoy_config_cluster_v3_Cluster_PreconnectPolicy *envoy_config_cluster_v3_Cluster_PreconnectPolicy_new(upb_arena *arena) {
+  return (envoy_config_cluster_v3_Cluster_PreconnectPolicy *)_upb_msg_new(&envoy_config_cluster_v3_Cluster_PreconnectPolicy_msginit, arena);
 }
-UPB_INLINE envoy_config_cluster_v3_Cluster_PrefetchPolicy *envoy_config_cluster_v3_Cluster_PrefetchPolicy_parse(const char *buf, size_t size,
+UPB_INLINE envoy_config_cluster_v3_Cluster_PreconnectPolicy *envoy_config_cluster_v3_Cluster_PreconnectPolicy_parse(const char *buf, size_t size,
                         upb_arena *arena) {
-  envoy_config_cluster_v3_Cluster_PrefetchPolicy *ret = envoy_config_cluster_v3_Cluster_PrefetchPolicy_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_config_cluster_v3_Cluster_PrefetchPolicy_msginit, arena)) ? ret : NULL;
+  envoy_config_cluster_v3_Cluster_PreconnectPolicy *ret = envoy_config_cluster_v3_Cluster_PreconnectPolicy_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_config_cluster_v3_Cluster_PreconnectPolicy_msginit, arena)) ? ret : NULL;
 }
-UPB_INLINE envoy_config_cluster_v3_Cluster_PrefetchPolicy *envoy_config_cluster_v3_Cluster_PrefetchPolicy_parse_ex(const char *buf, size_t size,
+UPB_INLINE envoy_config_cluster_v3_Cluster_PreconnectPolicy *envoy_config_cluster_v3_Cluster_PreconnectPolicy_parse_ex(const char *buf, size_t size,
                            upb_arena *arena, int options) {
-  envoy_config_cluster_v3_Cluster_PrefetchPolicy *ret = envoy_config_cluster_v3_Cluster_PrefetchPolicy_new(arena);
-  return (ret && _upb_decode(buf, size, ret, &envoy_config_cluster_v3_Cluster_PrefetchPolicy_msginit, arena, options))
+  envoy_config_cluster_v3_Cluster_PreconnectPolicy *ret = envoy_config_cluster_v3_Cluster_PreconnectPolicy_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_cluster_v3_Cluster_PreconnectPolicy_msginit, arena, options))
       ? ret : NULL;
 }
-UPB_INLINE char *envoy_config_cluster_v3_Cluster_PrefetchPolicy_serialize(const envoy_config_cluster_v3_Cluster_PrefetchPolicy *msg, upb_arena *arena, size_t *len) {
-  return upb_encode(msg, &envoy_config_cluster_v3_Cluster_PrefetchPolicy_msginit, arena, len);
+UPB_INLINE char *envoy_config_cluster_v3_Cluster_PreconnectPolicy_serialize(const envoy_config_cluster_v3_Cluster_PreconnectPolicy *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_config_cluster_v3_Cluster_PreconnectPolicy_msginit, arena, len);
 }
 
-UPB_INLINE bool envoy_config_cluster_v3_Cluster_PrefetchPolicy_has_per_upstream_prefetch_ratio(const envoy_config_cluster_v3_Cluster_PrefetchPolicy *msg) { return _upb_hasbit(msg, 1); }
-UPB_INLINE const struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Cluster_PrefetchPolicy_per_upstream_prefetch_ratio(const envoy_config_cluster_v3_Cluster_PrefetchPolicy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_DoubleValue*); }
-UPB_INLINE bool envoy_config_cluster_v3_Cluster_PrefetchPolicy_has_predictive_prefetch_ratio(const envoy_config_cluster_v3_Cluster_PrefetchPolicy *msg) { return _upb_hasbit(msg, 2); }
-UPB_INLINE const struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Cluster_PrefetchPolicy_predictive_prefetch_ratio(const envoy_config_cluster_v3_Cluster_PrefetchPolicy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_DoubleValue*); }
+UPB_INLINE bool envoy_config_cluster_v3_Cluster_PreconnectPolicy_has_per_upstream_preconnect_ratio(const envoy_config_cluster_v3_Cluster_PreconnectPolicy *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Cluster_PreconnectPolicy_per_upstream_preconnect_ratio(const envoy_config_cluster_v3_Cluster_PreconnectPolicy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_DoubleValue*); }
+UPB_INLINE bool envoy_config_cluster_v3_Cluster_PreconnectPolicy_has_predictive_preconnect_ratio(const envoy_config_cluster_v3_Cluster_PreconnectPolicy *msg) { return _upb_hasbit(msg, 2); }
+UPB_INLINE const struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Cluster_PreconnectPolicy_predictive_preconnect_ratio(const envoy_config_cluster_v3_Cluster_PreconnectPolicy *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_DoubleValue*); }
 
-UPB_INLINE void envoy_config_cluster_v3_Cluster_PrefetchPolicy_set_per_upstream_prefetch_ratio(envoy_config_cluster_v3_Cluster_PrefetchPolicy *msg, struct google_protobuf_DoubleValue* value) {
+UPB_INLINE void envoy_config_cluster_v3_Cluster_PreconnectPolicy_set_per_upstream_preconnect_ratio(envoy_config_cluster_v3_Cluster_PreconnectPolicy *msg, struct google_protobuf_DoubleValue* value) {
   _upb_sethas(msg, 1);
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_DoubleValue*) = value;
 }
-UPB_INLINE struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Cluster_PrefetchPolicy_mutable_per_upstream_prefetch_ratio(envoy_config_cluster_v3_Cluster_PrefetchPolicy *msg, upb_arena *arena) {
-  struct google_protobuf_DoubleValue* sub = (struct google_protobuf_DoubleValue*)envoy_config_cluster_v3_Cluster_PrefetchPolicy_per_upstream_prefetch_ratio(msg);
+UPB_INLINE struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Cluster_PreconnectPolicy_mutable_per_upstream_preconnect_ratio(envoy_config_cluster_v3_Cluster_PreconnectPolicy *msg, upb_arena *arena) {
+  struct google_protobuf_DoubleValue* sub = (struct google_protobuf_DoubleValue*)envoy_config_cluster_v3_Cluster_PreconnectPolicy_per_upstream_preconnect_ratio(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_DoubleValue*)_upb_msg_new(&google_protobuf_DoubleValue_msginit, arena);
     if (!sub) return NULL;
-    envoy_config_cluster_v3_Cluster_PrefetchPolicy_set_per_upstream_prefetch_ratio(msg, sub);
+    envoy_config_cluster_v3_Cluster_PreconnectPolicy_set_per_upstream_preconnect_ratio(msg, sub);
   }
   return sub;
 }
-UPB_INLINE void envoy_config_cluster_v3_Cluster_PrefetchPolicy_set_predictive_prefetch_ratio(envoy_config_cluster_v3_Cluster_PrefetchPolicy *msg, struct google_protobuf_DoubleValue* value) {
+UPB_INLINE void envoy_config_cluster_v3_Cluster_PreconnectPolicy_set_predictive_preconnect_ratio(envoy_config_cluster_v3_Cluster_PreconnectPolicy *msg, struct google_protobuf_DoubleValue* value) {
   _upb_sethas(msg, 2);
   *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_DoubleValue*) = value;
 }
-UPB_INLINE struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Cluster_PrefetchPolicy_mutable_predictive_prefetch_ratio(envoy_config_cluster_v3_Cluster_PrefetchPolicy *msg, upb_arena *arena) {
-  struct google_protobuf_DoubleValue* sub = (struct google_protobuf_DoubleValue*)envoy_config_cluster_v3_Cluster_PrefetchPolicy_predictive_prefetch_ratio(msg);
+UPB_INLINE struct google_protobuf_DoubleValue* envoy_config_cluster_v3_Cluster_PreconnectPolicy_mutable_predictive_preconnect_ratio(envoy_config_cluster_v3_Cluster_PreconnectPolicy *msg, upb_arena *arena) {
+  struct google_protobuf_DoubleValue* sub = (struct google_protobuf_DoubleValue*)envoy_config_cluster_v3_Cluster_PreconnectPolicy_predictive_preconnect_ratio(msg);
   if (sub == NULL) {
     sub = (struct google_protobuf_DoubleValue*)_upb_msg_new(&google_protobuf_DoubleValue_msginit, arena);
     if (!sub) return NULL;
-    envoy_config_cluster_v3_Cluster_PrefetchPolicy_set_predictive_prefetch_ratio(msg, sub);
+    envoy_config_cluster_v3_Cluster_PreconnectPolicy_set_predictive_preconnect_ratio(msg, sub);
   }
   return sub;
 }

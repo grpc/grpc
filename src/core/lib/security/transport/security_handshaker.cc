@@ -29,6 +29,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -84,7 +85,7 @@ class SecurityHandshaker : public Handshaker {
   tsi_handshaker* handshaker_;
   RefCountedPtr<grpc_security_connector> connector_;
 
-  gpr_mu mu_;
+  Mutex mu_;
 
   bool is_shutdown_ = false;
   // Endpoint and read buffer to destroy after a shutdown.
@@ -120,14 +121,12 @@ SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
     max_frame_size_ = grpc_channel_arg_get_integer(
         arg, {0, 0, std::numeric_limits<int>::max()});
   }
-  gpr_mu_init(&mu_);
   grpc_slice_buffer_init(&outgoing_);
   GRPC_CLOSURE_INIT(&on_peer_checked_, &SecurityHandshaker::OnPeerCheckedFn,
                     this, grpc_schedule_on_exec_ctx);
 }
 
 SecurityHandshaker::~SecurityHandshaker() {
-  gpr_mu_destroy(&mu_);
   tsi_handshaker_destroy(handshaker_);
   tsi_handshaker_result_destroy(handshaker_result_);
   if (endpoint_to_destroy_ != nullptr) {
@@ -201,6 +200,31 @@ void SecurityHandshaker::HandshakeFailedLocked(grpc_error* error) {
   ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, error);
 }
 
+namespace {
+
+RefCountedPtr<channelz::SocketNode::Security>
+MakeChannelzSecurityFromAuthContext(grpc_auth_context* auth_context) {
+  RefCountedPtr<channelz::SocketNode::Security> security =
+      MakeRefCounted<channelz::SocketNode::Security>();
+  // TODO(yashykt): Currently, we are assuming TLS by default and are only able
+  // to fill in the remote certificate but we should ideally be able to fill in
+  // other fields in
+  // https://github.com/grpc/grpc/blob/fcd43e90304862a823316b224ee733d17a8cfd90/src/proto/grpc/channelz/channelz.proto#L326
+  // from grpc_auth_context.
+  security->type = channelz::SocketNode::Security::ModelType::kTls;
+  security->tls = absl::make_optional<channelz::SocketNode::Security::Tls>();
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      auth_context, GRPC_X509_PEM_CERT_PROPERTY_NAME);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  if (prop != nullptr) {
+    security->tls->remote_certificate =
+        std::string(prop->value, prop->value_length);
+  }
+  return security;
+}
+
+}  // namespace
+
 void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
   MutexLock lock(&mu_);
   if (error != GRPC_ERROR_NONE || is_shutdown_) {
@@ -253,9 +277,13 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
   tsi_handshaker_result_destroy(handshaker_result_);
   handshaker_result_ = nullptr;
   // Add auth context to channel args.
-  grpc_arg auth_context_arg = grpc_auth_context_to_arg(auth_context_.get());
+  absl::InlinedVector<grpc_arg, 2> args_to_add;
+  args_to_add.push_back(grpc_auth_context_to_arg(auth_context_.get()));
+  auto security = MakeChannelzSecurityFromAuthContext(auth_context_.get());
+  args_to_add.push_back(security->MakeChannelArg());
   grpc_channel_args* tmp_args = args_->args;
-  args_->args = grpc_channel_args_copy_and_add(tmp_args, &auth_context_arg, 1);
+  args_->args = grpc_channel_args_copy_and_add(tmp_args, args_to_add.data(),
+                                               args_to_add.size());
   grpc_channel_args_destroy(tmp_args);
   // Invoke callback.
   ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, GRPC_ERROR_NONE);

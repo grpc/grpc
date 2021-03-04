@@ -487,14 +487,14 @@ class CLanguage(object):
             return ('buster', [])
         elif compiler == 'gcc_musl':
             return ('alpine', [])
-        elif compiler == 'clang3.6':
+        elif compiler == 'clang4.0':
             return ('ubuntu1604',
                     self._clang_cmake_configure_extra_args(
-                        version_suffix='-3.6'))
-        elif compiler == 'clang3.7':
+                        version_suffix='-4.0'))
+        elif compiler == 'clang5.0':
             return ('ubuntu1604',
                     self._clang_cmake_configure_extra_args(
-                        version_suffix='-3.7'))
+                        version_suffix='-5.0'))
         else:
             raise Exception('Compiler %s not supported.' % compiler)
 
@@ -1425,8 +1425,8 @@ argp.add_argument(
         'gcc7.4',
         'gcc8.3',
         'gcc_musl',
-        'clang3.6',
-        'clang3.7',
+        'clang4.0',
+        'clang5.0',
         'python2.7',
         'python3.5',
         'python3.6',

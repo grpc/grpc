@@ -65,11 +65,13 @@ struct envoy_config_route_v3_RateLimit_Action_RemoteAddress;
 struct envoy_config_route_v3_RateLimit_Action_GenericKey;
 struct envoy_config_route_v3_RateLimit_Action_HeaderValueMatch;
 struct envoy_config_route_v3_RateLimit_Action_DynamicMetaData;
+struct envoy_config_route_v3_RateLimit_Action_MetaData;
 struct envoy_config_route_v3_RateLimit_Override;
 struct envoy_config_route_v3_RateLimit_Override_DynamicMetadata;
 struct envoy_config_route_v3_HeaderMatcher;
 struct envoy_config_route_v3_QueryParameterMatcher;
 struct envoy_config_route_v3_InternalRedirectPolicy;
+struct envoy_config_route_v3_FilterConfig;
 typedef struct envoy_config_route_v3_VirtualHost envoy_config_route_v3_VirtualHost;
 typedef struct envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry;
 typedef struct envoy_config_route_v3_FilterAction envoy_config_route_v3_FilterAction;
@@ -115,11 +117,13 @@ typedef struct envoy_config_route_v3_RateLimit_Action_RemoteAddress envoy_config
 typedef struct envoy_config_route_v3_RateLimit_Action_GenericKey envoy_config_route_v3_RateLimit_Action_GenericKey;
 typedef struct envoy_config_route_v3_RateLimit_Action_HeaderValueMatch envoy_config_route_v3_RateLimit_Action_HeaderValueMatch;
 typedef struct envoy_config_route_v3_RateLimit_Action_DynamicMetaData envoy_config_route_v3_RateLimit_Action_DynamicMetaData;
+typedef struct envoy_config_route_v3_RateLimit_Action_MetaData envoy_config_route_v3_RateLimit_Action_MetaData;
 typedef struct envoy_config_route_v3_RateLimit_Override envoy_config_route_v3_RateLimit_Override;
 typedef struct envoy_config_route_v3_RateLimit_Override_DynamicMetadata envoy_config_route_v3_RateLimit_Override_DynamicMetadata;
 typedef struct envoy_config_route_v3_HeaderMatcher envoy_config_route_v3_HeaderMatcher;
 typedef struct envoy_config_route_v3_QueryParameterMatcher envoy_config_route_v3_QueryParameterMatcher;
 typedef struct envoy_config_route_v3_InternalRedirectPolicy envoy_config_route_v3_InternalRedirectPolicy;
+typedef struct envoy_config_route_v3_FilterConfig envoy_config_route_v3_FilterConfig;
 extern const upb_msglayout envoy_config_route_v3_VirtualHost_msginit;
 extern const upb_msglayout envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry_msginit;
 extern const upb_msglayout envoy_config_route_v3_FilterAction_msginit;
@@ -165,11 +169,13 @@ extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_RemoteAddress_
 extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_GenericKey_msginit;
 extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_HeaderValueMatch_msginit;
 extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_DynamicMetaData_msginit;
+extern const upb_msglayout envoy_config_route_v3_RateLimit_Action_MetaData_msginit;
 extern const upb_msglayout envoy_config_route_v3_RateLimit_Override_msginit;
 extern const upb_msglayout envoy_config_route_v3_RateLimit_Override_DynamicMetadata_msginit;
 extern const upb_msglayout envoy_config_route_v3_HeaderMatcher_msginit;
 extern const upb_msglayout envoy_config_route_v3_QueryParameterMatcher_msginit;
 extern const upb_msglayout envoy_config_route_v3_InternalRedirectPolicy_msginit;
+extern const upb_msglayout envoy_config_route_v3_FilterConfig_msginit;
 struct envoy_config_core_v3_DataSource;
 struct envoy_config_core_v3_HeaderValueOption;
 struct envoy_config_core_v3_Metadata;
@@ -204,6 +210,11 @@ extern const upb_msglayout google_protobuf_Any_msginit;
 extern const upb_msglayout google_protobuf_BoolValue_msginit;
 extern const upb_msglayout google_protobuf_Duration_msginit;
 extern const upb_msglayout google_protobuf_UInt32Value_msginit;
+
+typedef enum {
+  envoy_config_route_v3_RateLimit_Action_MetaData_DYNAMIC = 0,
+  envoy_config_route_v3_RateLimit_Action_MetaData_ROUTE_ENTRY = 1
+} envoy_config_route_v3_RateLimit_Action_MetaData_Source;
 
 typedef enum {
   envoy_config_route_v3_RedirectAction_MOVED_PERMANENTLY = 0,
@@ -2102,6 +2113,7 @@ UPB_INLINE char *envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig_s
 
 UPB_INLINE bool envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig_has_proxy_protocol_config(const envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig *msg) { return _upb_hasbit(msg, 1); }
 UPB_INLINE const struct envoy_config_core_v3_ProxyProtocolConfig* envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig_proxy_protocol_config(const envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct envoy_config_core_v3_ProxyProtocolConfig*); }
+UPB_INLINE bool envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig_allow_post(const envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool); }
 
 UPB_INLINE void envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig_set_proxy_protocol_config(envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig *msg, struct envoy_config_core_v3_ProxyProtocolConfig* value) {
   _upb_sethas(msg, 1);
@@ -2115,6 +2127,9 @@ UPB_INLINE struct envoy_config_core_v3_ProxyProtocolConfig* envoy_config_route_v
     envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig_set_proxy_protocol_config(msg, sub);
   }
   return sub;
+}
+UPB_INLINE void envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig_set_allow_post(envoy_config_route_v3_RouteAction_UpgradeConfig_ConnectConfig *msg, bool value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 
 /* envoy.config.route.v3.RouteAction.MaxStreamDuration */
@@ -2657,6 +2672,7 @@ UPB_INLINE envoy_config_route_v3_RedirectAction_scheme_rewrite_specifier_oneofca
 typedef enum {
   envoy_config_route_v3_RedirectAction_path_rewrite_specifier_path_redirect = 2,
   envoy_config_route_v3_RedirectAction_path_rewrite_specifier_prefix_rewrite = 5,
+  envoy_config_route_v3_RedirectAction_path_rewrite_specifier_regex_rewrite = 9,
   envoy_config_route_v3_RedirectAction_path_rewrite_specifier_NOT_SET = 0
 } envoy_config_route_v3_RedirectAction_path_rewrite_specifier_oneofcases;
 UPB_INLINE envoy_config_route_v3_RedirectAction_path_rewrite_specifier_oneofcases envoy_config_route_v3_RedirectAction_path_rewrite_specifier_case(const envoy_config_route_v3_RedirectAction* msg) { return (envoy_config_route_v3_RedirectAction_path_rewrite_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(28, 48), int32_t); }
@@ -2673,6 +2689,8 @@ UPB_INLINE bool envoy_config_route_v3_RedirectAction_strip_query(const envoy_con
 UPB_INLINE bool envoy_config_route_v3_RedirectAction_has_scheme_redirect(const envoy_config_route_v3_RedirectAction *msg) { return _upb_getoneofcase(msg, UPB_SIZE(40, 72)) == 7; }
 UPB_INLINE upb_strview envoy_config_route_v3_RedirectAction_scheme_redirect(const envoy_config_route_v3_RedirectAction *msg) { return UPB_READ_ONEOF(msg, upb_strview, UPB_SIZE(32, 56), UPB_SIZE(40, 72), 7, upb_strview_make("", strlen(""))); }
 UPB_INLINE uint32_t envoy_config_route_v3_RedirectAction_port_redirect(const envoy_config_route_v3_RedirectAction *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t); }
+UPB_INLINE bool envoy_config_route_v3_RedirectAction_has_regex_rewrite(const envoy_config_route_v3_RedirectAction *msg) { return _upb_getoneofcase(msg, UPB_SIZE(28, 48)) == 9; }
+UPB_INLINE const struct envoy_type_matcher_v3_RegexMatchAndSubstitute* envoy_config_route_v3_RedirectAction_regex_rewrite(const envoy_config_route_v3_RedirectAction *msg) { return UPB_READ_ONEOF(msg, const struct envoy_type_matcher_v3_RegexMatchAndSubstitute*, UPB_SIZE(20, 32), UPB_SIZE(28, 48), 9, NULL); }
 
 UPB_INLINE void envoy_config_route_v3_RedirectAction_set_host_redirect(envoy_config_route_v3_RedirectAction *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(12, 16), upb_strview) = value;
@@ -2697,6 +2715,18 @@ UPB_INLINE void envoy_config_route_v3_RedirectAction_set_scheme_redirect(envoy_c
 }
 UPB_INLINE void envoy_config_route_v3_RedirectAction_set_port_redirect(envoy_config_route_v3_RedirectAction *msg, uint32_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 4), uint32_t) = value;
+}
+UPB_INLINE void envoy_config_route_v3_RedirectAction_set_regex_rewrite(envoy_config_route_v3_RedirectAction *msg, struct envoy_type_matcher_v3_RegexMatchAndSubstitute* value) {
+  UPB_WRITE_ONEOF(msg, struct envoy_type_matcher_v3_RegexMatchAndSubstitute*, UPB_SIZE(20, 32), value, UPB_SIZE(28, 48), 9);
+}
+UPB_INLINE struct envoy_type_matcher_v3_RegexMatchAndSubstitute* envoy_config_route_v3_RedirectAction_mutable_regex_rewrite(envoy_config_route_v3_RedirectAction *msg, upb_arena *arena) {
+  struct envoy_type_matcher_v3_RegexMatchAndSubstitute* sub = (struct envoy_type_matcher_v3_RegexMatchAndSubstitute*)envoy_config_route_v3_RedirectAction_regex_rewrite(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_type_matcher_v3_RegexMatchAndSubstitute*)_upb_msg_new(&envoy_type_matcher_v3_RegexMatchAndSubstitute_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_route_v3_RedirectAction_set_regex_rewrite(msg, sub);
+  }
+  return sub;
 }
 
 /* envoy.config.route.v3.DirectResponseAction */
@@ -3003,6 +3033,8 @@ typedef enum {
   envoy_config_route_v3_RateLimit_Action_action_specifier_generic_key = 5,
   envoy_config_route_v3_RateLimit_Action_action_specifier_header_value_match = 6,
   envoy_config_route_v3_RateLimit_Action_action_specifier_dynamic_metadata = 7,
+  envoy_config_route_v3_RateLimit_Action_action_specifier_metadata = 8,
+  envoy_config_route_v3_RateLimit_Action_action_specifier_extension = 9,
   envoy_config_route_v3_RateLimit_Action_action_specifier_NOT_SET = 0
 } envoy_config_route_v3_RateLimit_Action_action_specifier_oneofcases;
 UPB_INLINE envoy_config_route_v3_RateLimit_Action_action_specifier_oneofcases envoy_config_route_v3_RateLimit_Action_action_specifier_case(const envoy_config_route_v3_RateLimit_Action* msg) { return (envoy_config_route_v3_RateLimit_Action_action_specifier_oneofcases)*UPB_PTR_AT(msg, UPB_SIZE(4, 8), int32_t); }
@@ -3021,6 +3053,10 @@ UPB_INLINE bool envoy_config_route_v3_RateLimit_Action_has_header_value_match(co
 UPB_INLINE const envoy_config_route_v3_RateLimit_Action_HeaderValueMatch* envoy_config_route_v3_RateLimit_Action_header_value_match(const envoy_config_route_v3_RateLimit_Action *msg) { return UPB_READ_ONEOF(msg, const envoy_config_route_v3_RateLimit_Action_HeaderValueMatch*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 6, NULL); }
 UPB_INLINE bool envoy_config_route_v3_RateLimit_Action_has_dynamic_metadata(const envoy_config_route_v3_RateLimit_Action *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 7; }
 UPB_INLINE const envoy_config_route_v3_RateLimit_Action_DynamicMetaData* envoy_config_route_v3_RateLimit_Action_dynamic_metadata(const envoy_config_route_v3_RateLimit_Action *msg) { return UPB_READ_ONEOF(msg, const envoy_config_route_v3_RateLimit_Action_DynamicMetaData*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 7, NULL); }
+UPB_INLINE bool envoy_config_route_v3_RateLimit_Action_has_metadata(const envoy_config_route_v3_RateLimit_Action *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 8; }
+UPB_INLINE const envoy_config_route_v3_RateLimit_Action_MetaData* envoy_config_route_v3_RateLimit_Action_metadata(const envoy_config_route_v3_RateLimit_Action *msg) { return UPB_READ_ONEOF(msg, const envoy_config_route_v3_RateLimit_Action_MetaData*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 8, NULL); }
+UPB_INLINE bool envoy_config_route_v3_RateLimit_Action_has_extension(const envoy_config_route_v3_RateLimit_Action *msg) { return _upb_getoneofcase(msg, UPB_SIZE(4, 8)) == 9; }
+UPB_INLINE const struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_route_v3_RateLimit_Action_extension(const envoy_config_route_v3_RateLimit_Action *msg) { return UPB_READ_ONEOF(msg, const struct envoy_config_core_v3_TypedExtensionConfig*, UPB_SIZE(0, 0), UPB_SIZE(4, 8), 9, NULL); }
 
 UPB_INLINE void envoy_config_route_v3_RateLimit_Action_set_source_cluster(envoy_config_route_v3_RateLimit_Action *msg, envoy_config_route_v3_RateLimit_Action_SourceCluster* value) {
   UPB_WRITE_ONEOF(msg, envoy_config_route_v3_RateLimit_Action_SourceCluster*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 1);
@@ -3103,6 +3139,30 @@ UPB_INLINE struct envoy_config_route_v3_RateLimit_Action_DynamicMetaData* envoy_
     sub = (struct envoy_config_route_v3_RateLimit_Action_DynamicMetaData*)_upb_msg_new(&envoy_config_route_v3_RateLimit_Action_DynamicMetaData_msginit, arena);
     if (!sub) return NULL;
     envoy_config_route_v3_RateLimit_Action_set_dynamic_metadata(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_route_v3_RateLimit_Action_set_metadata(envoy_config_route_v3_RateLimit_Action *msg, envoy_config_route_v3_RateLimit_Action_MetaData* value) {
+  UPB_WRITE_ONEOF(msg, envoy_config_route_v3_RateLimit_Action_MetaData*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 8);
+}
+UPB_INLINE struct envoy_config_route_v3_RateLimit_Action_MetaData* envoy_config_route_v3_RateLimit_Action_mutable_metadata(envoy_config_route_v3_RateLimit_Action *msg, upb_arena *arena) {
+  struct envoy_config_route_v3_RateLimit_Action_MetaData* sub = (struct envoy_config_route_v3_RateLimit_Action_MetaData*)envoy_config_route_v3_RateLimit_Action_metadata(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_route_v3_RateLimit_Action_MetaData*)_upb_msg_new(&envoy_config_route_v3_RateLimit_Action_MetaData_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_route_v3_RateLimit_Action_set_metadata(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_route_v3_RateLimit_Action_set_extension(envoy_config_route_v3_RateLimit_Action *msg, struct envoy_config_core_v3_TypedExtensionConfig* value) {
+  UPB_WRITE_ONEOF(msg, struct envoy_config_core_v3_TypedExtensionConfig*, UPB_SIZE(0, 0), value, UPB_SIZE(4, 8), 9);
+}
+UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_route_v3_RateLimit_Action_mutable_extension(envoy_config_route_v3_RateLimit_Action *msg, upb_arena *arena) {
+  struct envoy_config_core_v3_TypedExtensionConfig* sub = (struct envoy_config_core_v3_TypedExtensionConfig*)envoy_config_route_v3_RateLimit_Action_extension(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_config_core_v3_TypedExtensionConfig*)_upb_msg_new(&envoy_config_core_v3_TypedExtensionConfig_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_route_v3_RateLimit_Action_set_extension(msg, sub);
   }
   return sub;
 }
@@ -3336,6 +3396,55 @@ UPB_INLINE struct envoy_type_metadata_v3_MetadataKey* envoy_config_route_v3_Rate
 }
 UPB_INLINE void envoy_config_route_v3_RateLimit_Action_DynamicMetaData_set_default_value(envoy_config_route_v3_RateLimit_Action_DynamicMetaData *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(12, 24), upb_strview) = value;
+}
+
+/* envoy.config.route.v3.RateLimit.Action.MetaData */
+
+UPB_INLINE envoy_config_route_v3_RateLimit_Action_MetaData *envoy_config_route_v3_RateLimit_Action_MetaData_new(upb_arena *arena) {
+  return (envoy_config_route_v3_RateLimit_Action_MetaData *)_upb_msg_new(&envoy_config_route_v3_RateLimit_Action_MetaData_msginit, arena);
+}
+UPB_INLINE envoy_config_route_v3_RateLimit_Action_MetaData *envoy_config_route_v3_RateLimit_Action_MetaData_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_config_route_v3_RateLimit_Action_MetaData *ret = envoy_config_route_v3_RateLimit_Action_MetaData_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_config_route_v3_RateLimit_Action_MetaData_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_config_route_v3_RateLimit_Action_MetaData *envoy_config_route_v3_RateLimit_Action_MetaData_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_config_route_v3_RateLimit_Action_MetaData *ret = envoy_config_route_v3_RateLimit_Action_MetaData_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_route_v3_RateLimit_Action_MetaData_msginit, arena, options))
+      ? ret : NULL;
+}
+UPB_INLINE char *envoy_config_route_v3_RateLimit_Action_MetaData_serialize(const envoy_config_route_v3_RateLimit_Action_MetaData *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_config_route_v3_RateLimit_Action_MetaData_msginit, arena, len);
+}
+
+UPB_INLINE upb_strview envoy_config_route_v3_RateLimit_Action_MetaData_descriptor_key(const envoy_config_route_v3_RateLimit_Action_MetaData *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_strview); }
+UPB_INLINE bool envoy_config_route_v3_RateLimit_Action_MetaData_has_metadata_key(const envoy_config_route_v3_RateLimit_Action_MetaData *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct envoy_type_metadata_v3_MetadataKey* envoy_config_route_v3_RateLimit_Action_MetaData_metadata_key(const envoy_config_route_v3_RateLimit_Action_MetaData *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 40), const struct envoy_type_metadata_v3_MetadataKey*); }
+UPB_INLINE upb_strview envoy_config_route_v3_RateLimit_Action_MetaData_default_value(const envoy_config_route_v3_RateLimit_Action_MetaData *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_strview); }
+UPB_INLINE int32_t envoy_config_route_v3_RateLimit_Action_MetaData_source(const envoy_config_route_v3_RateLimit_Action_MetaData *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t); }
+
+UPB_INLINE void envoy_config_route_v3_RateLimit_Action_MetaData_set_descriptor_key(envoy_config_route_v3_RateLimit_Action_MetaData *msg, upb_strview value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(8, 8), upb_strview) = value;
+}
+UPB_INLINE void envoy_config_route_v3_RateLimit_Action_MetaData_set_metadata_key(envoy_config_route_v3_RateLimit_Action_MetaData *msg, struct envoy_type_metadata_v3_MetadataKey* value) {
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(24, 40), struct envoy_type_metadata_v3_MetadataKey*) = value;
+}
+UPB_INLINE struct envoy_type_metadata_v3_MetadataKey* envoy_config_route_v3_RateLimit_Action_MetaData_mutable_metadata_key(envoy_config_route_v3_RateLimit_Action_MetaData *msg, upb_arena *arena) {
+  struct envoy_type_metadata_v3_MetadataKey* sub = (struct envoy_type_metadata_v3_MetadataKey*)envoy_config_route_v3_RateLimit_Action_MetaData_metadata_key(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_type_metadata_v3_MetadataKey*)_upb_msg_new(&envoy_type_metadata_v3_MetadataKey_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_route_v3_RateLimit_Action_MetaData_set_metadata_key(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_route_v3_RateLimit_Action_MetaData_set_default_value(envoy_config_route_v3_RateLimit_Action_MetaData *msg, upb_strview value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(16, 24), upb_strview) = value;
+}
+UPB_INLINE void envoy_config_route_v3_RateLimit_Action_MetaData_set_source(envoy_config_route_v3_RateLimit_Action_MetaData *msg, int32_t value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 4), int32_t) = value;
 }
 
 /* envoy.config.route.v3.RateLimit.Override */
@@ -3628,6 +3737,47 @@ UPB_INLINE struct envoy_config_core_v3_TypedExtensionConfig* envoy_config_route_
   return sub;
 }
 UPB_INLINE void envoy_config_route_v3_InternalRedirectPolicy_set_allow_cross_scheme_redirect(envoy_config_route_v3_InternalRedirectPolicy *msg, bool value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
+}
+
+/* envoy.config.route.v3.FilterConfig */
+
+UPB_INLINE envoy_config_route_v3_FilterConfig *envoy_config_route_v3_FilterConfig_new(upb_arena *arena) {
+  return (envoy_config_route_v3_FilterConfig *)_upb_msg_new(&envoy_config_route_v3_FilterConfig_msginit, arena);
+}
+UPB_INLINE envoy_config_route_v3_FilterConfig *envoy_config_route_v3_FilterConfig_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_config_route_v3_FilterConfig *ret = envoy_config_route_v3_FilterConfig_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_config_route_v3_FilterConfig_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_config_route_v3_FilterConfig *envoy_config_route_v3_FilterConfig_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_config_route_v3_FilterConfig *ret = envoy_config_route_v3_FilterConfig_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_route_v3_FilterConfig_msginit, arena, options))
+      ? ret : NULL;
+}
+UPB_INLINE char *envoy_config_route_v3_FilterConfig_serialize(const envoy_config_route_v3_FilterConfig *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_config_route_v3_FilterConfig_msginit, arena, len);
+}
+
+UPB_INLINE bool envoy_config_route_v3_FilterConfig_has_config(const envoy_config_route_v3_FilterConfig *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct google_protobuf_Any* envoy_config_route_v3_FilterConfig_config(const envoy_config_route_v3_FilterConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), const struct google_protobuf_Any*); }
+UPB_INLINE bool envoy_config_route_v3_FilterConfig_is_optional(const envoy_config_route_v3_FilterConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool); }
+
+UPB_INLINE void envoy_config_route_v3_FilterConfig_set_config(envoy_config_route_v3_FilterConfig *msg, struct google_protobuf_Any* value) {
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), struct google_protobuf_Any*) = value;
+}
+UPB_INLINE struct google_protobuf_Any* envoy_config_route_v3_FilterConfig_mutable_config(envoy_config_route_v3_FilterConfig *msg, upb_arena *arena) {
+  struct google_protobuf_Any* sub = (struct google_protobuf_Any*)envoy_config_route_v3_FilterConfig_config(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Any*)_upb_msg_new(&google_protobuf_Any_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_route_v3_FilterConfig_set_config(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_route_v3_FilterConfig_set_is_optional(envoy_config_route_v3_FilterConfig *msg, bool value) {
   *UPB_PTR_AT(msg, UPB_SIZE(1, 1), bool) = value;
 }
 

@@ -26,6 +26,7 @@
 @interface GRPCCall (ChannelArg)
 
 + (void)setUserAgentPrefix:(nonnull NSString *)userAgentPrefix forHost:(nonnull NSString *)host;
++ (void)setUserAgentSuffix:(nonnull NSString *)userAgentSuffix forHost:(nonnull NSString *)host;
 + (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host;
 + (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE("The API for this feature is experimental, "
                                                       "and might be removed or modified at any "

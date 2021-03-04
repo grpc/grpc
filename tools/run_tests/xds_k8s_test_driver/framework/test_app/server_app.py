@@ -126,6 +126,9 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
 
 
 class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
+    DEFAULT_TEST_PORT = 8080
+    DEFAULT_MAINTENANCE_PORT = 8080
+    DEFAULT_SECURE_MODE_MAINTENANCE_PORT = 8081
 
     def __init__(self,
                  k8s_namespace,
@@ -176,7 +179,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
 
     def run(self,
             *,
-            test_port=8080,
+            test_port=DEFAULT_TEST_PORT,
             maintenance_port=None,
             secure_mode=False,
             server_id=None,
@@ -190,7 +193,11 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
         # maintenance services can be reached independently from the security
         # configuration under test.
         if maintenance_port is None:
-            maintenance_port = test_port if not secure_mode else test_port + 1
+            if not secure_mode:
+                maintenance_port = self.DEFAULT_MAINTENANCE_PORT
+            else:
+                maintenance_port = self.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
+
         if secure_mode and maintenance_port == test_port:
             raise ValueError('port and maintenance_port must be different '
                              'when running test server in secure mode')

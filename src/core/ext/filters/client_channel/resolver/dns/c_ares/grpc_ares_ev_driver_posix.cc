@@ -54,8 +54,8 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
     /* c-ares library will close the fd inside grpc_fd. This fd may be picked up
        immediately by another thread, and should not be closed by the following
        grpc_fd_orphan. */
-    int dummy_release_fd;
-    grpc_fd_orphan(fd_, nullptr, &dummy_release_fd, "c-ares query finished");
+    int phony_release_fd;
+    grpc_fd_orphan(fd_, nullptr, &phony_release_fd, "c-ares query finished");
   }
 
   void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
