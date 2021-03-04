@@ -60,8 +60,6 @@
       deps.append("${_gRPC_BASELIB_LIBRARIES}")
     if target_dict.get('build', None) in ['protoc']:
       deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
-    if target_dict.get('secure', False):
-      deps.append("${_gRPC_SSL_LIBRARIES}")
     if target_dict.language == 'c++':
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
     if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
@@ -74,6 +72,8 @@
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
         deps.append("${_gRPC_BENCHMARK_LIBRARIES}")
+      elif d == 'libssl':
+        deps.append("${_gRPC_SSL_LIBRARIES}")
       elif is_absl_lib(d):
         deps.append(get_absl_dep(d))
       else:
