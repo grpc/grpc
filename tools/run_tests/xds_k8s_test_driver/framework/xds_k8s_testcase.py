@@ -350,8 +350,9 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         self.assertNotEmpty(client_tls.remote_certificate,
                             msg="(mTLS) Client remote certificate is missing")
         if cls.check_local_certs:
-            self.assertNotEmpty(server_tls.local_certificate,
-                                msg="(mTLS) Server local certificate is missing")
+            self.assertNotEmpty(
+                server_tls.local_certificate,
+                msg="(mTLS) Server local certificate is missing")
             self.assertEqual(
                 server_tls.local_certificate,
                 client_tls.remote_certificate,
@@ -362,8 +363,9 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         self.assertNotEmpty(server_tls.remote_certificate,
                             msg="(mTLS) Server remote certificate is missing")
         if cls.check_local_certs:
-            self.assertNotEmpty(client_tls.local_certificate,
-                                msg="(mTLS) Client local certificate is missing")
+            self.assertNotEmpty(
+                client_tls.local_certificate,
+                msg="(mTLS) Client local certificate is missing")
             self.assertEqual(
                 server_tls.remote_certificate,
                 client_tls.local_certificate,
@@ -386,10 +388,11 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         if cls.check_local_certs:
             self.assertNotEmpty(server_tls.local_certificate,
                                 msg="(TLS) Server local certificate is missing")
-            self.assertEqual(server_tls.local_certificate,
-                             client_tls.remote_certificate,
-                             msg="(TLS) Server local certificate must match client "
-                             "remote certificate")
+            self.assertEqual(
+                server_tls.local_certificate,
+                client_tls.remote_certificate,
+                msg="(TLS) Server local certificate must match client "
+                "remote certificate")
 
         # mTLS must not be used
         self.assertEmpty(
