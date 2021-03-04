@@ -22,8 +22,17 @@ export PYTHON=${PYTHON:-python}
 export PIP=${PIP:-pip}
 export AUDITWHEEL=${AUDITWHEEL:-auditwheel}
 
-# Install Cython to avoid source wheel build failure.
-"${PIP}" install --upgrade cython
+if [ "$GRPC_SKIP_PIP_CYTHON_UPGRADE" == "" ]
+then
+  # Install Cython to avoid source wheel build failure.
+  # This only needs to be done when not running under docker (=on MacOS)
+  # since the docker images used for building python wheels
+  # already have a new-enough version of cython pre-installed.
+  # Any installation step is a potential source of breakages,
+  # so we are trying to perform as few download-and-install operations
+  # as possible.
+  "${PIP}" install --upgrade cython
+fi
 
 # Allow build_ext to build C/C++ files in parallel
 # by enabling a monkeypatch. It speeds up the build a lot.
@@ -46,9 +55,8 @@ then
   GRPC_PYTHON_OVERRIDE_EXT_SUFFIX="$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX").replace("-x86_64-linux-gnu.so", "-aarch64-linux-gnu.so"))')"
   export GRPC_PYTHON_OVERRIDE_EXT_SUFFIX
 
-  # Set to empty string to disable the option (see https://github.com/grpc/grpc/issues/24498)
-  # TODO: enable ASM optimizations for crosscompiled wheels
-  export GRPC_BUILD_WITH_BORING_SSL_ASM=""
+  # since we're crosscompiling, we need to explicitly choose the right platform for boringssl assembly optimizations
+  export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-aarch64"
 fi
 
 # Build the source distribution first because MANIFEST.in cannot override

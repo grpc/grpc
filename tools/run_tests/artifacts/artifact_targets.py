@@ -144,6 +144,7 @@ class PythonArtifact:
             environ['PYTHON'] = '/opt/python/{}/bin/python'.format(
                 self.py_version)
             environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.py_version)
+            environ['GRPC_SKIP_PIP_CYTHON_UPGRADE'] = 'TRUE'
             if self.arch == 'aarch64':
                 environ['GRPC_SKIP_TWINE_CHECK'] = 'TRUE'
                 # when crosscompiling, we need to force statically linking libstdc++
