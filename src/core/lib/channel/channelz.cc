@@ -439,13 +439,12 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
     grpc_resolved_address resolved_host;
     grpc_string_to_sockaddr(&resolved_host, host.c_str(), port_num);
     std::string packed_host = grpc_sockaddr_get_packed_host(&resolved_host);
-    char* b64_host = grpc_base64_encode(packed_host.data(), packed_host.size(),
-                                        false, false);
+    std::string b64_host;
+    absl::Base64Escape(packed_host, &b64_host);
     data["tcpip_address"] = Json::Object{
         {"port", port_num},
         {"ip_address", b64_host},
     };
-    gpr_free(b64_host);
   } else if (uri.ok() && uri->scheme() == "unix") {
     data["uds_address"] = Json::Object{
         {"filename", uri->path()},
