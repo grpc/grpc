@@ -439,8 +439,7 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
     grpc_resolved_address resolved_host;
     grpc_string_to_sockaddr(&resolved_host, host.c_str(), port_num);
     std::string packed_host = grpc_sockaddr_get_packed_host(&resolved_host);
-    std::string b64_host;
-    absl::Base64Escape(packed_host, &b64_host);
+    std::string b64_host = absl::Base64Escape(packed_host);
     data["tcpip_address"] = Json::Object{
         {"port", port_num},
         {"ip_address", b64_host},
