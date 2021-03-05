@@ -1,5 +1,5 @@
 tabulate>=0.8
 scipy>=1.0.0
 requests>=2.19.0
-pyjwt>=1.7.1
+PyJWT>=2.0.1
 cryptography>=2.5
