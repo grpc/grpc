@@ -178,7 +178,6 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     void Orphan() override;
 
    private:
-    void SetupOnCloseCallbackLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
     static void OnClose(void* arg, grpc_error* error);
 
     RefCountedPtr<Chttp2ServerListener> const listener_;
@@ -407,7 +406,10 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           // list of active connections.
           if (self->connection_->listener_->config_fetcher_watcher_ !=
               nullptr) {
-            self->connection_->SetupOnCloseCallbackLocked();
+            self->connection_->Ref().release();
+            GRPC_CLOSURE_INIT(&self->connection_->on_close_,
+                              ActiveConnection::OnClose, self,
+                              grpc_schedule_on_exec_ctx);
             on_close = &self->connection_->on_close_;
           }
           grpc_chttp2_transport_start_reading(transport, args->read_buffer,
@@ -483,13 +485,6 @@ void Chttp2ServerListener::ActiveConnection::Orphan() {
     grpc_transport_perform_op(&transport->base, op);
   }
   Unref();
-}
-
-void Chttp2ServerListener::ActiveConnection::SetupOnCloseCallbackLocked() {
-  // Refs helds by OnClose()
-  Ref().release();
-  GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
-                    grpc_schedule_on_exec_ctx);
 }
 
 void Chttp2ServerListener::ActiveConnection::OnClose(void* arg,
