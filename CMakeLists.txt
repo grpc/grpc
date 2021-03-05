@@ -13782,7 +13782,6 @@ target_include_directories(rbac_translator_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
