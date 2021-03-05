@@ -133,7 +133,8 @@ absl::StatusOr<Rbac::Permission> ParseHeaders(const Json& json) {
   absl::string_view header_name = it->second.string_value();
   // TODO(ashithasantosh): Add connection headers below.
   if (absl::StartsWith(header_name, ":") ||
-      absl::StartsWith(header_name, "grpc-") || header_name == "host") {
+      absl::StartsWith(header_name, "grpc-") || header_name == "host" ||
+      header_name == "Host") {
     return absl::InvalidArgumentError(
         absl::StrFormat("Unsupported \"key\" %s.", header_name));
   }
@@ -330,6 +331,8 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
           absl::StrCat("deny_", deny_policy_or.status().message()));
     }
     rbac_policies.deny_policy = std::move(deny_policy_or.value());
+  } else {
+    rbac_policies.deny_policy.action = Rbac::Action::DENY;
   }
   it = json.mutable_object()->find("allow_rules");
   if (it == json.mutable_object()->end()) {

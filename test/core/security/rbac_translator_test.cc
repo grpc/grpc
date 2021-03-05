@@ -160,6 +160,7 @@ TEST(GenerateRbacPoliciesTest, MissingSourceAndRequest) {
       "}";
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   ASSERT_TRUE(rbac_policies.ok());
+  EXPECT_EQ(rbac_policies.value().deny_policy.action, Rbac::Action::DENY);
   EXPECT_EQ(rbac_policies.value().allow_policy.action, Rbac::Action::ALLOW);
   EXPECT_THAT(rbac_policies.value().allow_policy.policies,
               ::testing::ElementsAre(::testing::Pair(
@@ -189,6 +190,7 @@ TEST(GenerateRbacPoliciesTest, EmptySourceAndRequest) {
       "}";
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   ASSERT_TRUE(rbac_policies.ok());
+  EXPECT_EQ(rbac_policies.value().deny_policy.action, Rbac::Action::DENY);
   EXPECT_EQ(rbac_policies.value().allow_policy.action, Rbac::Action::ALLOW);
   EXPECT_THAT(rbac_policies.value().allow_policy.policies,
               ::testing::ElementsAre(::testing::Pair(
@@ -534,6 +536,58 @@ TEST(GenerateRbacPoliciesTest, UnsupportedPseudoHeaders) {
             "allow_rules 0: \"headers\" 0: Unsupported \"key\" :method.");
 }
 
+TEST(GenerateRbacPoliciesTest, UnsupportedhostHeader) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"deny_rules\": ["
+      "    {"
+      "      \"name\": \"policy\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"host\","
+      "            \"values\": ["
+      "              \"*\""
+      "            ]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  auto rbac_policies = GenerateRbacPolicies(authz_policy);
+  EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(rbac_policies.status().message(),
+            "deny_rules 0: \"headers\" 0: Unsupported \"key\" host.");
+}
+
+TEST(GenerateRbacPoliciesTest, UnsupportedHostHeader) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"policy\","
+      "      \"request\": {"
+      "        \"headers\": ["
+      "          {"
+      "            \"key\": \"Host\","
+      "            \"values\": ["
+      "              \"*\""
+      "            ]"
+      "          }"
+      "        ]"
+      "      }"
+      "    }"
+      "  ]"
+      "}";
+  auto rbac_policies = GenerateRbacPolicies(authz_policy);
+  EXPECT_EQ(rbac_policies.status().code(), absl::StatusCode::kInvalidArgument);
+  EXPECT_EQ(rbac_policies.status().message(),
+            "allow_rules 0: \"headers\" 0: Unsupported \"key\" Host.");
+}
+
 TEST(GenerateRbacPoliciesTest, EmptyHeaderValuesList) {
   const char* authz_policy =
       "{"
@@ -589,6 +643,7 @@ TEST(GenerateRbacPoliciesTest, ParseRequestHeadersSuccess) {
       "}";
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   ASSERT_TRUE(rbac_policies.ok());
+  EXPECT_EQ(rbac_policies.value().deny_policy.action, Rbac::Action::DENY);
   EXPECT_EQ(rbac_policies.value().allow_policy.action, Rbac::Action::ALLOW);
   EXPECT_THAT(
       rbac_policies.value().allow_policy.policies,
@@ -671,6 +726,7 @@ TEST(GenerateRbacPoliciesTest, ParseRulesArraySuccess) {
       "}";
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   ASSERT_TRUE(rbac_policies.ok());
+  EXPECT_EQ(rbac_policies.value().deny_policy.action, Rbac::Action::DENY);
   EXPECT_EQ(rbac_policies.value().allow_policy.action, Rbac::Action::ALLOW);
   EXPECT_THAT(
       rbac_policies.value().allow_policy.policies,

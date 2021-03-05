@@ -2040,6 +2040,7 @@ grpc_cc_library(
     ],
 )
 
+# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
 grpc_cc_library(
     name = "grpc_cel_engine",
     srcs = [
