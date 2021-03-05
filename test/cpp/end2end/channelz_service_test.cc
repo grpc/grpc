@@ -71,8 +71,8 @@ static bool ValidateAddress(const Address& address) {
   if (address.address_case() != Address::kTcpipAddress) {
     return true;
   }
-  return address.tcpip_address().ip_address().size() == 4 || address.tcpip_address().ip_address().size() == 16; 
-
+  return address.tcpip_address().ip_address().size() == 4 ||
+         address.tcpip_address().ip_address().size() == 16;
 }
 
 // Proxy service supports N backends. Sends RPC to backend dictated by
