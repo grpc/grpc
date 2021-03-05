@@ -894,8 +894,8 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_cert_name(
     grpc_tls_credentials_options* options, const char* identity_cert_name);
 
 /**
- * Sets the options of whether to request and verify client certs. This should
- * be called only on the server side.
+ * Sets the options of whether to request and/or verify client certs. This shall
+ * only be called on the server side.
  * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
@@ -915,30 +915,34 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
  * It would only stay within the check_peer() call of the security connector.
  * Callers should not directly manage the ownership of it. We will make sure it
  * is always available inside schedule() or cancel() call, and will destroy the
- * object at the end of custom verification(inside check_peer()).
+ * object at the end of custom verification.
  */
 struct grpc_tls_custom_verification_check_request {
   /* -- The following fields are read-only. -- */
-  /* The target name of the peer. */
+  /* The target name of the server when the client initiates the connection. */
+  /* This field will be nullptr if on the server side. */
   const char* target_name = nullptr;
+  /* The information contained in the certificate chain sent from the peer. */
   struct peer_info {
+    /* The Common Name field on the peer leaf certificate. */
     const char* common_name = nullptr;
-    /* The list of SAN names on |peer_cert|. */
+    /* The list of Subject Alternative Names on the peer leaf certificate. */
     struct san_names {
       char** uri_names = nullptr;
       size_t uri_names_size = 0;
       char** ip_names = nullptr;
       size_t ip_names_size = 0;
-      // Other SAN name fields go here...
+      /*TODO(ZhenLian): Other SAN name fields go here. This will likely require
+       * changes in TSI, which might go into  another PR... */
     } san_names;
-    /* The leaf certificate sent from the peer. */
+    /* The raw peer leaf certificate. */
     const char* peer_cert = nullptr;
-    /* The full certificate chain sent from the peer. */
+    /* The raw peer certificate chain. */
     const char* peer_cert_full_chain = nullptr;
   } peer_info;
   /* -- The following fields can be modified. -- */
   /* Indicates if a connection should be allowed. This should be properly
-  populated to indicate if a connection is good. */
+  populated to indicate the success/failure of a connection. */
   grpc_status_code status;
   /* Error details. This should be properly populated if |status| is not
    * GRPC_STATUS_OK. When setting, the callers need to use gpr_malloc(),
@@ -974,10 +978,12 @@ struct grpc_tls_certificate_verifier_external {
    * request: request information exposed to the function implementer.
    * user_data: used for binding any caller-specified states. Whatever passed
    *            in user_data can be retrieved in callback.
-   * callback_arg: the callback that the function implementer needs to invoke,
+   * callback: the callback that the function implementer needs to invoke,
    * if return a non-zero value. It is usually invoked when the asynchronous
-   * verification is done, and serves to bring the control back to gRPC. return:
-   * return a non-zero value if |verify| is expected to be executed
+   * verification is done, and serves to bring the control back to gRPC.
+   * callback_arg: any argument that is passed in here can be retrieved later in
+   * the |callback| function.
+   * return: return a non-zero value if |verify| is expected to be executed
    *         asynchronously, otherwise return 0.
    */
   int (*verify)(grpc_tls_certificate_verifier_external* external_verifier,
@@ -992,7 +998,7 @@ struct grpc_tls_certificate_verifier_external {
    * reached, or any other reasons. In such cases, function implementers might
    * want to be notified, and properly clean up some resources.
    *
-   * external_verifier: a pointer to the struct itself
+   * external_verifier: a pointer to the struct itself.
    * request: request information exposed to the function implementer.
    */
   void (*cancel)(grpc_tls_certificate_verifier_external* external_verifier,
@@ -1006,7 +1012,7 @@ struct grpc_tls_certificate_verifier_external {
    * external_verifier, since external_verifier will invoke them while being
    * used.
    *
-   * external_verifier: a pointer to the struct itself
+   * external_verifier: a pointer to the struct itself.
    */
   void (*destruct)(grpc_tls_certificate_verifier_external* external_verifier);
 };
