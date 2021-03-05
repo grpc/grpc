@@ -252,8 +252,8 @@ grpc_cc_binary(
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
         "//test/core/util:grpc_test_util",
-        "//test/cpp/util:test_config",
         "//test/cpp/end2end:test_health_check_service_impl",
+        "//test/cpp/util:test_config",
     ],
 )
 

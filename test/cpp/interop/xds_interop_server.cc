@@ -162,13 +162,13 @@ int main(int argc, char** argv) {
     return 1;
   }
   int port = absl::GetFlag(FLAGS_port);
-  if (absl::GetFlag(FLAGS_port) == 0) {
+  if (port == 0) {
     std::cout << "Invalid port, terminating" << std::endl;
     return 1;
   }
   int maintenance_port = absl::GetFlag(FLAGS_maintenance_port);
-  if (absl::GetFlag(FLAGS_port) == 0) {
-    std::cout << "Invalid port, terminating" << std::endl;
+  if (maintenance_port == 0) {
+    std::cout << "Invalid maintenance port, terminating" << std::endl;
     return 1;
   }
   grpc::EnableDefaultHealthCheckService(false);
