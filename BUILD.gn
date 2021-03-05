@@ -1229,7 +1229,6 @@ config("grpc_config") {
         "src/core/tsi/transport_security_grpc.cc",
         "src/core/tsi/transport_security_grpc.h",
         "src/core/tsi/transport_security_interface.h",
-        "third_party/xxhash/xxhash.h",
     ]
     deps = [
         "//third_party/zlib",
