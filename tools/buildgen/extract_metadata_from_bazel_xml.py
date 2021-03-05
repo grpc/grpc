@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2020 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -34,14 +34,36 @@ import subprocess
 import yaml
 import xml.etree.ElementTree as ET
 import os
+import collections
 import sys
+import re
+from typing import List, Any, Dict, Optional, Iterable
+
 import build_cleaner
 
-_ROOT = os.path.abspath(os.path.join(os.path.dirname(sys.argv[0]), '../..'))
-os.chdir(_ROOT)
+PROJECT_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..",
+                            "..")
+os.chdir(PROJECT_ROOT)
+
+BuildMetadata = Dict[str, Any]
+BuildDict = Dict[str, BuildMetadata]
+BuildYaml = Dict[str, Any]
+
+# Map from the external repository's labels to their path prefixes.
+EXTERNAL_LIB_LABEL_PATH_MAP = dict(
+    envoy_api="third_party/envoy-api/",
+    com_google_googleapis="third_party/googleapis/",
+    com_github_cncf_udpa="third_party/udpa/",
+    com_envoyproxy_protoc_gen_validate="third_party/protoc-gen-validate/",
+    opencensus_proto="third_party/opencensus-proto/src/")
+# The external repositories that we are currently able to support the metadata
+# extraction. We aim to support arbitrary external libraries in the long term.
+# This variable should be removed eventually.
+RE_MATCH_SUPPORTED_EXTERNAL_LIBS = re.compile(
+    f'^@({"|".join(EXTERNAL_LIB_LABEL_PATH_MAP.keys())}).*$')
 
 
-def _bazel_query_xml_tree(query):
+def _bazel_query_xml_tree(query: str) -> ET.Element:
     """Get xml output of bazel query invocation, parsed as XML tree"""
     output = subprocess.check_output(
         ['tools/bazel', 'query', '--noimplicit_deps', '--output', 'xml', query])
@@ -90,7 +112,7 @@ def _extract_rules_from_bazel_xml(xml_tree):
             rule_name = rule_dict['name']
             if rule_clazz in [
                     'cc_library', 'cc_binary', 'cc_test', 'cc_proto_library',
-                    'proto_library'
+                    'proto_library', 'cc_proto_gen_validate'
             ]:
                 if rule_name in result:
                     raise Exception('Rule %s already present' % rule_name)
@@ -98,14 +120,16 @@ def _extract_rules_from_bazel_xml(xml_tree):
     return result
 
 
-def _get_bazel_label(target_name):
+def _get_bazel_label(target_name: str) -> str:
+    if target_name.startswith('@'):
+        return target_name
     if ':' in target_name:
         return '//%s' % target_name
     else:
         return '//:%s' % target_name
 
 
-def _extract_source_file_path(label):
+def _extract_source_file_path(label: str) -> str:
     """Gets relative path to source file from bazel deps listing"""
     if label.startswith('//'):
         label = label[len('//'):]
@@ -117,7 +141,7 @@ def _extract_source_file_path(label):
     return label
 
 
-def _extract_public_headers(bazel_rule):
+def _extract_public_headers(bazel_rule: BuildMetadata) -> List[str]:
     """Gets list of public headers from a bazel rule"""
     result = []
     for dep in bazel_rule['hdrs']:
@@ -126,7 +150,7 @@ def _extract_public_headers(bazel_rule):
     return list(sorted(result))
 
 
-def _extract_nonpublic_headers(bazel_rule):
+def _extract_nonpublic_headers(bazel_rule: BuildMetadata) -> List[str]:
     """Gets list of non-public headers from a bazel rule"""
     result = []
     for dep in bazel_rule['hdrs']:
@@ -136,22 +160,50 @@ def _extract_nonpublic_headers(bazel_rule):
     return list(sorted(result))
 
 
-def _extract_sources(bazel_rule):
+def _extract_sources(bazel_rule: BuildMetadata) -> List[str]:
     """Gets list of source files from a bazel rule"""
     result = []
-    for dep in bazel_rule['srcs']:
-        if dep.startswith('//') and (dep.endswith('.cc') or dep.endswith('.c')
-                                     or dep.endswith('.proto')):
-            result.append(_extract_source_file_path(dep))
+    for src in bazel_rule['srcs']:
+        if src.endswith('.cc') or src.endswith('.c') or src.endswith('.proto'):
+            if src.startswith('//'):
+                # This source file is local to gRPC
+                result.append(_extract_source_file_path(src))
+            elif RE_MATCH_SUPPORTED_EXTERNAL_LIBS.match(src):
+                # This source file is external, and we need to translate the
+                # @REPO_NAME to a valid path prefix. At this stage, we need
+                # to check repo name, since the label/path mapping is not
+                # available in BUILD files.
+                external_library_name = RE_MATCH_SUPPORTED_EXTERNAL_LIBS.match(
+                    src).group(1)
+                result.append(
+                    src.replace(
+                        f"@{external_library_name}//",
+                        EXTERNAL_LIB_LABEL_PATH_MAP[external_library_name]).
+                    replace(':', "/"))
+            else:
+                # We don't know how to map these labels to a concrete source
+                # file path, so let's skip them.
+                pass
     return list(sorted(result))
 
 
-def _extract_deps(bazel_rule):
+def _extract_deps(bazel_rule: BuildMetadata,
+                  bazel_rules: BuildDict) -> List[str]:
     """Gets list of deps from from a bazel rule"""
-    return list(sorted(bazel_rule['deps']))
+    deps = set(bazel_rule['deps'])
+    for src in bazel_rule['srcs']:
+        if not src.endswith('.cc') and not src.endswith(
+                '.c') and not src.endswith('.proto'):
+            if src in bazel_rules:
+                # This label doesn't point to a source file, but another Bazel
+                # target. This is required for :pkg_cc_proto_validate targets,
+                # and it's generally allowed by Bazel.
+                deps.add(src)
+    return list(sorted(list(deps)))
 
 
-def _create_target_from_bazel_rule(target_name, bazel_rules):
+def _create_target_from_bazel_rule(target_name: str,
+                                   bazel_rules: BuildDict) -> BuildMetadata:
     """Create build.yaml-like target definition from bazel metadata"""
     bazel_rule = bazel_rules[_get_bazel_label(target_name)]
 
@@ -164,71 +216,16 @@ def _create_target_from_bazel_rule(target_name, bazel_rules):
         '_PUBLIC_HEADERS_BAZEL': _extract_public_headers(bazel_rule),
         '_HEADERS_BAZEL': _extract_nonpublic_headers(bazel_rule),
         '_SRC_BAZEL': _extract_sources(bazel_rule),
-        '_DEPS_BAZEL': _extract_deps(bazel_rule),
+        '_DEPS_BAZEL': _extract_deps(bazel_rule, bazel_rules),
+        'public_headers': bazel_rule['_COLLAPSED_PUBLIC_HEADERS'],
+        'headers': bazel_rule['_COLLAPSED_HEADERS'],
+        'src': bazel_rule['_COLLAPSED_SRCS'],
+        'deps': bazel_rule['_COLLAPSED_DEPS'],
     }
     return result
 
 
-def _sort_by_build_order(lib_names, lib_dict, deps_key_name, verbose=False):
-    """Sort library names to form correct build order. Use metadata from lib_dict"""
-    # we find correct build order by performing a topological sort
-    # expected output: if library B depends on A, A should be listed first
-
-    # all libs that are not in the dictionary are considered external.
-    external_deps = list(
-        sorted([lib_name for lib_name in lib_names if lib_name not in lib_dict
-               ]))
-    if verbose:
-        print('topo_ordering ' + str(lib_names))
-        print('    external_deps ' + str(external_deps))
-
-    result = list(external_deps)  # external deps will be listed first
-    while len(result) < len(lib_names):
-        more_results = []
-        for lib in lib_names:
-            if lib not in result:
-                dep_set = set(lib_dict[lib].get(deps_key_name, []))
-                dep_set = dep_set.intersection(lib_names)
-                # if lib only depends on what's already built, add it to the results
-                if not dep_set.difference(set(result)):
-                    more_results.append(lib)
-        if not more_results:
-            raise Exception(
-                'Cannot sort topologically, there seems to be a cyclic dependency'
-            )
-        if verbose:
-            print('    adding ' + str(more_results))
-        result = result + list(
-            sorted(more_results
-                  ))  # when build order doesn't matter, sort lexicographically
-    return result
-
-
-# TODO(jtattermusch): deduplicate with transitive_dependencies.py (which has a slightly different logic)
-def _populate_transitive_deps(bazel_rules):
-    """Add 'transitive_deps' field for each of the rules"""
-    transitive_deps = {}
-    for rule_name in bazel_rules.keys():
-        transitive_deps[rule_name] = set(bazel_rules[rule_name]['deps'])
-
-    while True:
-        deps_added = 0
-        for rule_name in bazel_rules.keys():
-            old_deps = transitive_deps[rule_name]
-            new_deps = set(old_deps)
-            for dep_name in old_deps:
-                new_deps.update(transitive_deps.get(dep_name, set()))
-            deps_added += len(new_deps) - len(old_deps)
-            transitive_deps[rule_name] = new_deps
-        # if none of the transitive dep sets has changed, we're done
-        if deps_added == 0:
-            break
-
-    for rule_name, bazel_rule in bazel_rules.items():
-        bazel_rule['transitive_deps'] = list(sorted(transitive_deps[rule_name]))
-
-
-def _external_dep_name_from_bazel_dependency(bazel_dep):
+def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
     """Returns name of dependency if external bazel dependency is provided or None"""
     if bazel_dep.startswith('@com_google_absl//'):
         # special case for add dependency on one of the absl libraries (there is not just one absl library)
@@ -247,98 +244,171 @@ def _external_dep_name_from_bazel_dependency(bazel_dep):
         return None
 
 
-def _expand_intermediate_deps(target_dict, public_dep_names, bazel_rules):
-    # Some of the libraries defined by bazel won't be exposed in build.yaml
-    # We call these "intermediate" dependencies. This method expands
-    # the intermediate deps for given target (populates library's
-    # headers, sources and dicts as if the intermediate dependency never existed)
+def _deduplicate_append(target: List[str], pending: List[str]) -> None:
+    """Append the list without duplicated items in place.
+    
+    Expected to be used to create a order-stable dependency list.
+    """
+    seen = set(target)
+    for dep in pending:
+        if dep not in seen:
+            target.append(dep)
 
-    # use this dictionary to translate from bazel labels to dep names
+
+def _compute_transitive_metadata(
+        rule_name: str, bazel_rules: Any,
+        bazel_label_to_dep_name: Dict[str, str]) -> None:
+    """Computes the final build metadata for Bazel target with rule_name.
+
+    The dependencies that will appear on the deps list are:
+
+    * Public build targets including binaries and tests;
+    * External targets, like absl, re2.
+
+    All other intermediate dependencies will be merged, which means their
+    source file, headers, etc. will be collected into one build target. This
+    step of processing will greatly reduce the complexity of the generated
+    CMake build files.
+
+    The final build metadata are:
+    * _TRANSITIVE_DEPS: all the transitive dependencies including intermediate
+                        targets;
+    * _COLLAPSED_DEPS:  dependencies that fits our requirement above, and it
+                        will remove duplicated items and produce the shortest
+                        possible dependency list;
+    * _COLLAPSED_SRCS:  the merged source files;
+    * _COLLAPSED_PUBLIC_HEADERS: the merged public headers;
+    * _COLLAPSED_HEADERS: the merged non-public headers.
+    * _EXCLUDE_DEPS: the intermediate dependency labels.
+
+    For the new collapsed_deps, the new algorithm improved cases like:
+
+    The previous result:
+        end2end_tests -> [grpc_test_util, grpc, gpr, address_sorting, upb]
+        grpc_test_util -> [grpc, gpr, address_sorting, upb, ...]
+        grpc -> [gpr, address_sorting, upb, ...]
+    
+    The new result:
+        end2end_tests -> [grpc_test_util]
+        grpc_test_util -> [grpc]
+        grpc -> [gpr, address_sorting, upb, ...]
+    """
+    bazel_rule = bazel_rules[rule_name]
+    direct_deps = _extract_deps(bazel_rule, bazel_rules)
+    transitive_deps = []
+    # We care about the order of dependencies list, so it will be a list.
+    collapsed_deps = []
+    # We don't care about the order of srcs and headers, they will be sorted.
+    collapsed_srcs = set(_extract_sources(bazel_rule))
+    collapsed_public_headers = set(_extract_public_headers(bazel_rule))
+    collapsed_headers = set(_extract_nonpublic_headers(bazel_rule))
+    exclude_deps = set()
+
+    for dep in direct_deps:
+        external_dep_name_maybe = _external_dep_name_from_bazel_dependency(dep)
+
+        if dep in bazel_rules:
+            # The follow if is used to suppress expanding absl libs; expanding
+            # absl deps are technically correct but creates too many noise
+            if external_dep_name_maybe is None or not external_dep_name_maybe.startswith(
+                    'absl'):
+                if "_PROCESSING_DONE" not in bazel_rules[dep]:
+                    # This item is not processed before, compute now
+                    _compute_transitive_metadata(dep, bazel_rules,
+                                                 bazel_label_to_dep_name)
+                _deduplicate_append(
+                    transitive_deps,
+                    bazel_rules[dep].get('_TRANSITIVE_DEPS', []))
+                _deduplicate_append(collapsed_deps,
+                                    bazel_rules[dep].get('_COLLAPSED_DEPS', []))
+                exclude_deps.update(bazel_rules[dep].get('_EXCLUDE_DEPS', []))
+
+        # This dep is a public target, add it as a dependency
+        if dep in bazel_label_to_dep_name:
+            _deduplicate_append(transitive_deps, [bazel_label_to_dep_name[dep]])
+            _deduplicate_append(collapsed_deps, [bazel_label_to_dep_name[dep]])
+            exclude_deps.update(bazel_rules[dep]['_TRANSITIVE_DEPS'])
+            exclude_deps.add(dep)
+            continue
+
+        # This dep is an external target, add it as a dependency
+        if external_dep_name_maybe is not None:
+            _deduplicate_append(transitive_deps, [external_dep_name_maybe])
+            _deduplicate_append(collapsed_deps, [external_dep_name_maybe])
+            continue
+
+    # Direct dependencies are part of transitive dependencies
+    _deduplicate_append(transitive_deps, direct_deps)
+
+    # Removes all duplicated intermediate labels.
+    # This is the step that further shorten the deps list.
+    collapsed_deps = list(
+        filter(lambda x: x not in exclude_deps, collapsed_deps))
+
+    # Compute the final source files and headers, without all intermediate dependencies.
+    for dep in transitive_deps:
+        if dep not in exclude_deps:
+            if dep in bazel_rules:
+                collapsed_srcs.update(_extract_sources(bazel_rules[dep]))
+                collapsed_public_headers.update(
+                    _extract_public_headers(bazel_rules[dep]))
+                collapsed_headers.update(
+                    _extract_nonpublic_headers(bazel_rules[dep]))
+
+    # This item is a "visited" flag
+    bazel_rule["_PROCESSING_DONE"] = True
+    # Following items are described in the docstinrg.
+    bazel_rule["_TRANSITIVE_DEPS"] = transitive_deps
+    bazel_rule["_COLLAPSED_DEPS"] = collapsed_deps
+    bazel_rule["_COLLAPSED_SRCS"] = list(sorted(collapsed_srcs))
+    bazel_rule["_COLLAPSED_PUBLIC_HEADERS"] = list(
+        sorted(collapsed_public_headers))
+    bazel_rule["_COLLAPSED_HEADERS"] = list(sorted(collapsed_headers))
+    bazel_rule["_EXCLUDE_DEPS"] = list(sorted(exclude_deps))
+
+
+# TODO(jtattermusch): deduplicate with transitive_dependencies.py (which has a slightly different logic)
+def _populate_transitive_metadata(bazel_rules: Any,
+                                  public_dep_names: Iterable[str]) -> None:
+    """Add 'transitive_deps' field for each of the rules"""
+    # Create the map between Bazel label and public dependency name
     bazel_label_to_dep_name = {}
     for dep_name in public_dep_names:
         bazel_label_to_dep_name[_get_bazel_label(dep_name)] = dep_name
 
-    target_name = target_dict['name']
-    bazel_deps = target_dict['_DEPS_BAZEL']
-
-    # initial values
-    public_headers = set(target_dict['_PUBLIC_HEADERS_BAZEL'])
-    headers = set(target_dict['_HEADERS_BAZEL'])
-    src = set(target_dict['_SRC_BAZEL'])
-    deps = set()
-
-    expansion_blocklist = set()
-    to_expand = set(bazel_deps)
-    while to_expand:
-
-        # start with the last dependency to be built
-        build_order = _sort_by_build_order(list(to_expand), bazel_rules,
-                                           'transitive_deps')
-
-        bazel_dep = build_order[-1]
-        to_expand.remove(bazel_dep)
-
-        is_public = bazel_dep in bazel_label_to_dep_name
-        external_dep_name_maybe = _external_dep_name_from_bazel_dependency(
-            bazel_dep)
-
-        if is_public:
-            # this is not an intermediate dependency we so we add it
-            # to the list of public dependencies to the list, in the right format
-            deps.add(bazel_label_to_dep_name[bazel_dep])
-
-            # we do not want to expand any intermediate libraries that are already included
-            # by the dependency we just added
-            expansion_blocklist.update(
-                bazel_rules[bazel_dep]['transitive_deps'])
-
-        elif external_dep_name_maybe:
-            deps.add(external_dep_name_maybe)
-
-        elif bazel_dep.startswith(
-                '//external:') or not bazel_dep.startswith('//'):
-            # all the other external deps can be skipped
-            pass
-
-        elif bazel_dep in expansion_blocklist:
-            # do not expand if a public dependency that depends on this has already been expanded
-            pass
-
-        else:
-            if bazel_dep in bazel_rules:
-                # this is an intermediate library, expand it
-                public_headers.update(
-                    _extract_public_headers(bazel_rules[bazel_dep]))
-                headers.update(
-                    _extract_nonpublic_headers(bazel_rules[bazel_dep]))
-                src.update(_extract_sources(bazel_rules[bazel_dep]))
-
-                new_deps = _extract_deps(bazel_rules[bazel_dep])
-                to_expand.update(new_deps)
-            else:
-                raise Exception(bazel_dep + ' not in bazel_rules')
-
-    # make the 'deps' field transitive, but only list non-intermediate deps and selected external deps
-    bazel_transitive_deps = bazel_rules[_get_bazel_label(
-        target_name)]['transitive_deps']
-    for transitive_bazel_dep in bazel_transitive_deps:
-        public_name = bazel_label_to_dep_name.get(transitive_bazel_dep, None)
-        if public_name:
-            deps.add(public_name)
-        external_dep_name_maybe = _external_dep_name_from_bazel_dependency(
-            transitive_bazel_dep)
-        if external_dep_name_maybe:
-            # expanding all absl libraries is technically correct but creates too much noise
-            if not external_dep_name_maybe.startswith('absl'):
-                deps.add(external_dep_name_maybe)
-
-    target_dict['public_headers'] = list(sorted(public_headers))
-    target_dict['headers'] = list(sorted(headers))
-    target_dict['src'] = list(sorted(src))
-    target_dict['deps'] = list(sorted(deps))
+    # Make sure we reached all the Bazel rules
+    # TODO(lidiz) potentially we could only update a subset of rules
+    for rule_name in bazel_rules:
+        if "_PROCESSING_DONE" not in bazel_rules[rule_name]:
+            _compute_transitive_metadata(rule_name, bazel_rules,
+                                         bazel_label_to_dep_name)
 
 
-def _generate_build_metadata(build_extra_metadata, bazel_rules):
+def update_test_metadata_with_transitive_metadata(
+        all_extra_metadata: BuildDict, bazel_rules: BuildDict) -> None:
+    """Patches test build metdata with transitive metadata.
+    
+    Logics in this PR was part of `_generate_build_extra_metadata_for_tests`,
+    but to merge the metadata computation we need to split them out.
+    """
+    for lib_name, lib_dict in all_extra_metadata.items():
+        # Skip if it isn't not an test
+        if lib_dict.get('build') != 'test' or lib_dict.get('_TYPE') != 'target':
+            continue
+
+        bazel_rule = bazel_rules[_get_bazel_label(lib_name)]
+
+        if '//external:benchmark' in bazel_rule['_TRANSITIVE_DEPS']:
+            lib_dict['benchmark'] = True
+            lib_dict['defaults'] = 'benchmark'
+
+        if '//external:gtest' in bazel_rule['_TRANSITIVE_DEPS']:
+            lib_dict['gtest'] = True
+            lib_dict['language'] = 'c++'
+
+
+def _generate_build_metadata(build_extra_metadata: BuildDict,
+                             bazel_rules: BuildDict) -> BuildDict:
     """Generate build metadata in build.yaml-like format bazel build metadata and build.yaml-specific "extra metadata"."""
     lib_names = list(build_extra_metadata.keys())
     result = {}
@@ -358,7 +428,7 @@ def _generate_build_metadata(build_extra_metadata, bazel_rules):
         # while in bazel builds it is customary to define larger number of smaller
         # "sublibraries". The need for elision (and expansion)
         # of intermediate libraries can be re-evaluated in the future.
-        _expand_intermediate_deps(lib_dict, lib_names, bazel_rules)
+        # _expand_intermediate_deps(lib_dict, lib_names, bazel_rules)
 
         # populate extra properties from the build.yaml-specific "extra metadata"
         lib_dict.update(build_extra_metadata.get(lib_name, {}))
@@ -376,8 +446,8 @@ def _generate_build_metadata(build_extra_metadata, bazel_rules):
         if to_name:
             # store lib under the new name and also change its 'name' property
             if to_name in result:
-                raise Exception('Cannot rename target ' + lib_name + ', ' +
-                                to_name + ' already exists.')
+                raise Exception('Cannot rename target ' + str(lib_name) + ', ' +
+                                str(to_name) + ' already exists.')
             lib_dict = result.pop(lib_name)
             lib_dict['name'] = to_name
             result[to_name] = lib_dict
@@ -389,15 +459,10 @@ def _generate_build_metadata(build_extra_metadata, bazel_rules):
                     for dep in lib_dict_to_update['deps']
                 ])
 
-    # make sure deps are listed in reverse topological order (e.g. "grpc gpr" and not "gpr grpc")
-    for lib_dict in result.values():
-        lib_dict['deps'] = list(
-            reversed(_sort_by_build_order(lib_dict['deps'], result, 'deps')))
-
     return result
 
 
-def _convert_to_build_yaml_like(lib_dict):
+def _convert_to_build_yaml_like(lib_dict: BuildMetadata) -> BuildYaml:
     lib_names = [
         lib_name for lib_name in list(lib_dict.keys())
         if lib_dict[lib_name].get('_TYPE', 'library') == 'library'
@@ -440,7 +505,7 @@ def _convert_to_build_yaml_like(lib_dict):
     return build_yaml_like
 
 
-def _extract_cc_tests(bazel_rules):
+def _extract_cc_tests(bazel_rules: BuildDict) -> List[str]:
     """Gets list of cc_test tests from bazel rules"""
     result = []
     for bazel_rule in bazel_rules.values():
@@ -452,7 +517,7 @@ def _extract_cc_tests(bazel_rules):
     return list(sorted(result))
 
 
-def _exclude_unwanted_cc_tests(tests):
+def _exclude_unwanted_cc_tests(tests: List[str]) -> List[str]:
     """Filters out bazel tests that we don't want to run with other build systems or we cannot build them reasonably"""
 
     # most qps tests are autogenerated, we are fine without them
@@ -518,7 +583,8 @@ def _exclude_unwanted_cc_tests(tests):
     return tests
 
 
-def _generate_build_extra_metadata_for_tests(tests, bazel_rules):
+def _generate_build_extra_metadata_for_tests(
+        tests: List[str], bazel_rules: BuildDict) -> BuildDict:
     """For given tests, generate the "extra metadata" that we need for our "build.yaml"-like output. The extra metadata is generated from the bazel rule metadata by using a bunch of heuristics."""
     test_metadata = {}
     for test in tests:
@@ -567,19 +633,11 @@ def _generate_build_extra_metadata_for_tests(tests, bazel_rules):
                 platforms.append('windows')
             test_dict['platforms'] = platforms
 
-        if '//external:benchmark' in bazel_rule['transitive_deps']:
-            test_dict['benchmark'] = True
-            test_dict['defaults'] = 'benchmark'
-
         cmdline_args = bazel_rule['args']
         if cmdline_args:
             test_dict['args'] = list(cmdline_args)
 
-        uses_gtest = '//external:gtest' in bazel_rule['transitive_deps']
-        if uses_gtest:
-            test_dict['gtest'] = True
-
-        if test.startswith('test/cpp') or uses_gtest:
+        if test.startswith('test/cpp'):
             test_dict['language'] = 'c++'
 
         elif test.startswith('test/core'):
@@ -615,7 +673,7 @@ def _generate_build_extra_metadata_for_tests(tests, bazel_rules):
     return test_metadata
 
 
-def _detect_and_print_issues(build_yaml_like):
+def _detect_and_print_issues(build_yaml_like: BuildYaml) -> None:
     """Try detecting some unusual situations and warn about them."""
     for tgt in build_yaml_like['targets']:
         if tgt['build'] == 'test':
@@ -968,6 +1026,8 @@ _BAZEL_DEPS_QUERIES = [
     'deps("//:all")',
     'deps("//src/compiler/...")',
     'deps("//src/proto/...")',
+    # The ^ is needed to differentiate proto_library from go_proto_library
+    'deps(kind("^proto_library", @envoy_api//envoy/...))',
 ]
 
 # Step 1: run a bunch of "bazel query --output xml" queries to collect
@@ -986,14 +1046,6 @@ bazel_rules = {}
 for query in _BAZEL_DEPS_QUERIES:
     bazel_rules.update(
         _extract_rules_from_bazel_xml(_bazel_query_xml_tree(query)))
-
-# Step 1a: Knowing the transitive closure of dependencies will make
-# the postprocessing simpler, so compute the info for all our rules.
-#
-# Example:
-# '//:grpc' : { ...,
-#               'transitive_deps': ['//:gpr_base', ...] }
-_populate_transitive_deps(bazel_rules)
 
 # Step 2: Extract the known bazel cc_test tests. While most tests
 # will be buildable with other build systems just fine, some of these tests
@@ -1049,7 +1101,23 @@ all_extra_metadata.update(_BUILD_EXTRA_METADATA)
 all_extra_metadata.update(
     _generate_build_extra_metadata_for_tests(tests, bazel_rules))
 
-# Step 4: Generate the final metadata for all the targets.
+# Step 4: Compute the build metdata that will be used in the final build.yaml.
+# The final build metdata includes transitive dependencies, and sources/headers
+# expanded without intermediate dependencies.
+# Example:
+# '//:grpc' : { ...,
+#               '_TRANSITIVE_DEPS': ['//:gpr_base', ...],
+#               '_COLLAPSED_DEPS': ['gpr', ...],
+#               '_COLLAPSED_SRCS': [...],
+#               '_COLLAPSED_PUBLIC_HEADERS': [...],
+#               '_COLLAPSED_HEADERS': [...]
+#             }
+_populate_transitive_metadata(bazel_rules, all_extra_metadata.keys())
+
+# Step 4a: Update the exist test metadata with the updated build metdata.
+update_test_metadata_with_transitive_metadata(all_extra_metadata, bazel_rules)
+
+# Step 5: Generate the final metadata for all the targets.
 # This is done by combining the bazel build metadata and the "extra metadata"
 # we obtained in the previous step.
 # In this step, we also perform some interesting massaging of the target metadata
@@ -1079,7 +1147,7 @@ all_extra_metadata.update(
 #            ... }
 all_targets_dict = _generate_build_metadata(all_extra_metadata, bazel_rules)
 
-# Step 5: convert the dictionary with all the targets to a dict that has
+# Step 6: convert the dictionary with all the targets to a dict that has
 # the desired "build.yaml"-like layout.
 # TODO(jtattermusch): We use the custom "build.yaml"-like layout because
 # currently all other build systems use that format as their source of truth.
@@ -1096,7 +1164,7 @@ build_yaml_like = _convert_to_build_yaml_like(all_targets_dict)
 # detect and report some suspicious situations we've seen before
 _detect_and_print_issues(build_yaml_like)
 
-# Step 6: Store the build_autogenerated.yaml in a deterministic (=sorted)
+# Step 7: Store the build_autogenerated.yaml in a deterministic (=sorted)
 # and cleaned-up form.
 # A basic overview of the resulting "build.yaml"-like format is here:
 # https://github.com/grpc/grpc/blob/master/templates/README.md
