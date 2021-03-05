@@ -266,6 +266,7 @@ def _compute_transitive_deps_for_rule(rule_name: str, bazel_rules: Any, bazel_la
 
     for dep in direct_deps:
 
+        # not neeeded...
         #if dep == '//:gpr_base' and rule_name != '//:gpr':
         #    # DIRTY HACK!!!
         #    dep = '//:gpr'
@@ -298,12 +299,16 @@ def _compute_transitive_deps_for_rule(rule_name: str, bazel_rules: Any, bazel_la
             _deduplicate_append(
                 transitive_intermediate_deps,
                 bazel_rules[dep].get('_TRANSITIVE_INTERMEDIATE_DEPS', []))
+        else:
+            print ('skipping dep: ' + rule_name)
 
-    # public libraries that our intermediate deps depend on
+    # public and external libraries that our intermediate deps depend on
     for dep in transitive_intermediate_deps:
         for dep_dep in _extract_deps(bazel_rules[dep], bazel_rules):
             if dep_dep in bazel_label_to_dep_name:
                _deduplicate_append(public_deps, [dep_dep])
+            if _external_dep_name_from_bazel_dependency(dep_dep) is not None:
+               _deduplicate_append(external_deps, [dep_dep])
 
     # we must not colapse sources for intermediate deps that some of our public deps already depend on
     # because that would lead to compiling the same files twice.
