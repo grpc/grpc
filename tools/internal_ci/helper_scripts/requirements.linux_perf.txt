@@ -1,5 +1,5 @@
-tabulate>=0.8
-scipy>=1.0.0
-requests>=2.19.0
-PyJWT>=2.0.1
-cryptography>=3.3.1,<4.0.0
+tabulate==0.8.9
+scipy==1.6.1
+requests==2.25.1
+PyJWT==2.0.1
+cryptography==3.4.6
