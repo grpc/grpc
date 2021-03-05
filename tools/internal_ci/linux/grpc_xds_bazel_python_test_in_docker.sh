@@ -26,7 +26,7 @@ VIRTUAL_ENV=$(mktemp -d)
 virtualenv "$VIRTUAL_ENV" -p python3
 PYTHON="$VIRTUAL_ENV"/bin/python
 "$PYTHON" -m pip install --upgrade pip==19.3.1
-"$PYTHON" -m pip install --upgrade grpcio-tools "google-api-python-client==1.12.8" "google-auth-httplib2==0.0.4" "oauth2client==4.1.3"
+"$PYTHON" -m pip install --upgrade grpcio-tools google-api-python-client google-auth-httplib2 oauth2client
 
 # Prepare generated Python code.
 TOOLS_DIR=tools/run_tests
