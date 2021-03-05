@@ -23,9 +23,9 @@ curl https://raw.githubusercontent.com/rake-compiler/rake-compiler/v1.1.1/tasks/
 
 # See https://github.com/grpc/grpc/issues/12161 for verconf.h patch details
 patch "$CROSS_RUBY" << EOF
---- cross-ruby.rake	2021-03-01 15:49:42.771235714 -0800
-+++ patched	2021-03-01 15:48:35.387078412 -0800
-@@ -111,8 +111,10 @@
+--- cross-ruby.rake	2021-03-05 12:04:09.898286632 -0800
++++ patched	2021-03-05 12:05:35.594318962 -0800
+@@ -111,10 +111,11 @@
      "--host=#{MINGW_HOST}",
      "--target=#{MINGW_TARGET}",
      "--build=#{RUBY_BUILD}",
@@ -35,9 +35,11 @@ patch "$CROSS_RUBY" << EOF
      '--disable-install-doc',
 +    '--without-gmp',
      '--with-ext=',
-     'LDFLAGS=-pipe -s',
+-    'LDFLAGS=-pipe -s',
    ]
-@@ -130,6 +132,7 @@
+ 
+   # Force Winsock2 for Ruby 1.8, 1.9 defaults to it
+@@ -130,6 +131,7 @@
  # make
  file "#{build_dir}/ruby.exe" => ["#{build_dir}/Makefile"] do |t|
    chdir File.dirname(t.prerequisites.first) do
