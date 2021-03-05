@@ -90,12 +90,13 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   class ConfigFetcherWatcher
       : public grpc_server_config_fetcher::WatcherInterface {
    public:
-    explicit ConfigFetcherWatcher(Chttp2ServerListener* listener)
-        : listener_(listener) {}
+    explicit ConfigFetcherWatcher(RefCountedPtr<Chttp2ServerListener> listener)
+        : listener_(std::move(listener)) {}
 
     void UpdateConfig(grpc_channel_args* args) override {
       {
         MutexLock lock(&listener_->mu_);
+        if (!listener_->shutdown_) return;  // Listener has been shutdown.
         grpc_channel_args_destroy(listener_->args_);
         grpc_error* error = GRPC_ERROR_NONE;
         args = listener_->args_modifier_(args, &error);
@@ -106,44 +107,48 @@ class Chttp2ServerListener : public Server::ListenerInterface {
         }
         listener_->args_ = args;
         listener_->is_serving_ = true;
-        if (!listener_->shutdown_) return;  // Already started listening.
-        listener_->shutdown_ = false;
+        if (!listener_->started_)
+          return;  // Listener has already invoked StartListening()
+        int port_temp;
+        error = grpc_tcp_server_add_port(
+            listener_->tcp_server_, &listener_->resolved_address_, &port_temp);
+        if (error != GRPC_ERROR_NONE) {
+          GRPC_ERROR_UNREF(error);
+          gpr_log(GPR_ERROR, "Error adding port to server: %s",
+                  grpc_error_string(error));
+          // TODO(yashykt): We wouldn't need to assert here if we bound to the
+          // port earlier during AddPort.
+          GPR_ASSERT(0);
+        }
+        listener_->StartListeningLocked();
       }
-      int port_temp;
-      grpc_error* error = grpc_tcp_server_add_port(
-          listener_->tcp_server_, &listener_->resolved_address_, &port_temp);
-      if (error != GRPC_ERROR_NONE) {
-        GRPC_ERROR_UNREF(error);
-        gpr_log(GPR_ERROR, "Error adding port to server: %s",
-                grpc_error_string(error));
-        // TODO(yashykt): We wouldn't need to assert here if we bound to the
-        // port earlier during AddPort.
-        GPR_ASSERT(0);
-      }
-      listener_->StartListening();
     }
 
     void StopServing() override {
-      MutexLock lock(&listener_->mu_);
-      listener_->StopServingLocked();
+      std::map<ActiveConnection*, OrphanablePtr<ActiveConnection>> connections;
+      {
+        MutexLock lock(&listener_->mu_);
+        listener_->is_serving_ = false;
+        connections = std::move(listener_->connections_);
+      }
     }
 
    private:
-    Chttp2ServerListener* listener_;
+    RefCountedPtr<Chttp2ServerListener> listener_;
   };
 
   class ActiveConnection : public InternallyRefCounted<ActiveConnection> {
    public:
     class HandshakingState : public InternallyRefCounted<HandshakingState> {
      public:
-      HandshakingState(ActiveConnection* connection,
+      HandshakingState(OrphanablePtr<ActiveConnection> connection,
                        grpc_pollset* accepting_pollset,
                        grpc_tcp_server_acceptor* acceptor,
                        grpc_endpoint* endpoint, grpc_channel_args* args);
 
       ~HandshakingState() override;
 
-      void Orphan() override { Unref(); }
+      void Orphan() override;
 
       void ShutdownLocked(grpc_error* why);
 
@@ -154,7 +159,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       RefCountedPtr<ActiveConnection> connection_;
       grpc_pollset* const accepting_pollset_;
       grpc_tcp_server_acceptor* const acceptor_;
-      RefCountedPtr<HandshakeManager> handshake_mgr_;
+      RefCountedPtr<HandshakeManager> handshake_mgr_
+          ABSL_GUARDED_BY(connection_->mu_);
       // State for enforcing handshake timeout on receiving HTTP/2 settings.
       grpc_millis deadline_;
       grpc_timer timer_;
@@ -163,39 +169,32 @@ class Chttp2ServerListener : public Server::ListenerInterface {
       grpc_pollset_set* const interested_parties_;
     };
 
-    ActiveConnection(Chttp2ServerListener* listener,
+    ActiveConnection(RefCountedPtr<Chttp2ServerListener> listener,
                      grpc_pollset* accepting_pollset,
                      grpc_tcp_server_acceptor* acceptor,
                      grpc_endpoint* endpoint, grpc_channel_args* args);
     ~ActiveConnection() override;
 
-    void Orphan() override { Unref(); }
-
-    void StopServingLocked()
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Chttp2ServerListener::mu_);
+    void Orphan() override;
 
    private:
-    void InitializeOnCloseLocked()
-        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Chttp2ServerListener::mu_);
+    void SetupOnCloseCallbackLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
     static void OnClose(void* arg, grpc_error* error);
 
     RefCountedPtr<Chttp2ServerListener> const listener_;
+    Mutex mu_ ACQUIRED_AFTER(&listener_->mu_);
     // Set by HandshakingState before the handshaking begins and reset when
     // handshaking is done.
-    OrphanablePtr<HandshakingState> handshaking_state_
-        ABSL_GUARDED_BY(&Chttp2ServerListener::mu_);
+    OrphanablePtr<HandshakingState> handshaking_state_ ABSL_GUARDED_BY(&mu_);
     // Set by HandshakingState when handshaking is done and a valid transport is
     // created.
-    grpc_chttp2_transport* transport_
-        ABSL_GUARDED_BY(&Chttp2ServerListener::mu_) = nullptr;
+    grpc_chttp2_transport* transport_ ABSL_GUARDED_BY(&mu_) = nullptr;
     grpc_closure on_close_;
-    bool is_serving_ ABSL_GUARDED_BY(&Chttp2ServerListener::mu_) = true;
+    bool is_serving_ ABSL_GUARDED_BY(&mu_) = true;
   };
 
   // Should only be called once so as to start the TCP server.
-  void StartListening();
-  // Results in all currently active connections stopping to serve new requests.
-  void StopServingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void StartListeningLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&mu_);
 
   static void OnAccept(void* arg, grpc_endpoint* tcp,
                        grpc_pollset* accepting_pollset,
@@ -213,9 +212,14 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
   Mutex mu_;
   grpc_channel_args* args_ ABSL_GUARDED_BY(mu_);
+  // Signals whether grpc_tcp_server_start() has been called.
+  bool started_ ABSL_GUARDED_BY(mu_) = false;
+  // Signals whether new requests/connections are to be accepted.
   bool is_serving_ ABSL_GUARDED_BY(mu_) = false;
-  bool shutdown_ ABSL_GUARDED_BY(mu_) = true;
-  std::set<ActiveConnection*> connections_ ABSL_GUARDED_BY(mu_);
+  // Signals whether the application has triggered shutdown.
+  bool shutdown_ ABSL_GUARDED_BY(mu_) = false;
+  std::map<ActiveConnection*, OrphanablePtr<ActiveConnection>> connections_
+      ABSL_GUARDED_BY(mu_);
   grpc_closure tcp_server_shutdown_complete_ ABSL_GUARDED_BY(mu_);
   grpc_closure* on_destroy_done_ ABSL_GUARDED_BY(mu_) = nullptr;
   RefCountedPtr<channelz::ListenSocketNode> channelz_listen_socket_;
@@ -233,10 +237,10 @@ grpc_millis GetConnectionDeadline(const grpc_channel_args* args) {
 }
 
 Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
-    ActiveConnection* connection, grpc_pollset* accepting_pollset,
+    OrphanablePtr<ActiveConnection> connection, grpc_pollset* accepting_pollset,
     grpc_tcp_server_acceptor* acceptor, grpc_endpoint* endpoint,
     grpc_channel_args* args)
-    : connection_(connection),
+    : connection_(connection->Ref()),
       accepting_pollset_(accepting_pollset),
       acceptor_(acceptor),
       handshake_mgr_(MakeRefCounted<HandshakeManager>()),
@@ -266,7 +270,8 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::HandshakingState(
             "Memory quota exhausted, rejecting connection, no handshaking.");
         shutting_down = true;
       } else {
-        connection_->listener_->connections_.insert(connection_.get());
+        connection_->listener_->connections_.emplace(connection_.get(),
+                                                     std::move(connection));
         connection_->handshaking_state_ = OrphanablePtr<HandshakingState>(this);
       }
     }
@@ -289,13 +294,15 @@ Chttp2ServerListener::ActiveConnection::HandshakingState::~HandshakingState() {
   grpc_pollset_set_destroy(interested_parties_);
 }
 
-void Chttp2ServerListener::ActiveConnection::HandshakingState::ShutdownLocked(
-    grpc_error* why) {
-  if (handshake_mgr_ != nullptr) {
-    handshake_mgr_->Shutdown(why);
-  } else {
-    GRPC_ERROR_UNREF(why);
+void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
+  {
+    MutexLock lock(&connection_->mu_);
+    if (handshake_mgr_ != nullptr) {
+      handshake_mgr_->Shutdown(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Listener stopped serving."));
+    }
   }
+  Unref();
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout(
@@ -309,7 +316,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout(
         "Did not receive HTTP/2 settings before handshake timeout");
     grpc_chttp2_transport* transport = nullptr;
     {
-      MutexLock lock(&self->connection_->listener_->mu_);
+      MutexLock lock(&self->connection_->mu_);
       transport = self->connection_->transport_;
     }
     grpc_transport_perform_op(&transport->base, op);
@@ -330,23 +337,29 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   HandshakingState* self = static_cast<HandshakingState*>(args->user_data);
   OrphanablePtr<HandshakingState> handshaking_state_ref;
   RefCountedPtr<HandshakeManager> handshake_mgr;
+  OrphanablePtr<ActiveConnection> connection;
   {
-    MutexLock lock(&self->connection_->listener_->mu_);
+    MutexLock listener_lock(&self->connection_->listener_->mu_);
+    MutexLock connection_lock(&self->connection_->mu_);
     grpc_resource_user* resource_user =
         self->connection_->listener_->server_->default_resource_user();
-    auto connection_cleanup_fn = [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
-                                     self->connection_->listener_->mu_) {
+    auto connection_cleanup_fn =
+        [&]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(self->connection_->listener_->mu_)
+        -> OrphanablePtr<ActiveConnection> {
+      OrphanablePtr<ActiveConnection> connection = std::move(
+          self->connection_->listener_->connections_[self->connection_.get()]);
       self->connection_->listener_->connections_.erase(self->connection_.get());
       if (resource_user != nullptr) {
         grpc_resource_user_free(resource_user,
                                 GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
       }
+      return connection;
     };
     if (error != GRPC_ERROR_NONE || self->connection_->listener_->shutdown_ ||
         !self->connection_->is_serving_) {
       const char* error_str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
-      connection_cleanup_fn();
+      connection = connection_cleanup_fn();
       if (error == GRPC_ERROR_NONE && args->endpoint != nullptr) {
         // We were shut down or stopped serving after handshaking completed
         // successfully, so destroy the endpoint here.
@@ -373,6 +386,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
                 grpc_chttp2_transport_get_socket_node(transport),
                 resource_user);
         if (channel_init_err == GRPC_ERROR_NONE) {
+          grpc_closure* on_close = nullptr;
           // Use notify_on_receive_settings callback to enforce the
           // handshake deadline.
           // Note: The reinterpret_cast<>s here are safe, because
@@ -391,10 +405,9 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           // If the listener has been configured with a config fetcher, we need
           // to watch on the transport being closed so that we can an updated
           // list of active connections.
-          grpc_closure* on_close = nullptr;
           if (self->connection_->listener_->config_fetcher_watcher_ !=
               nullptr) {
-            self->connection_->InitializeOnCloseLocked();
+            self->connection_->SetupOnCloseCallbackLocked();
             on_close = &self->connection_->on_close_;
           }
           grpc_chttp2_transport_start_reading(transport, args->read_buffer,
@@ -414,11 +427,11 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           grpc_transport_destroy(transport);
           grpc_slice_buffer_destroy_internal(args->read_buffer);
           gpr_free(args->read_buffer);
-          connection_cleanup_fn();
+          connection = connection_cleanup_fn();
           grpc_channel_args_destroy(args->args);
         }
       } else {
-        connection_cleanup_fn();
+        connection = connection_cleanup_fn();
       }
     }
     // Since the handshake manager is done, the connection no longer needs to
@@ -428,7 +441,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
     handshake_mgr = std::move(self->handshake_mgr_);
     handshaking_state_ref = std::move(self->connection_->handshaking_state_);
   }
-  handshake_mgr.reset();
   gpr_free(self->acceptor_);
 }
 
@@ -437,46 +449,43 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
 //
 
 Chttp2ServerListener::ActiveConnection::ActiveConnection(
-    Chttp2ServerListener* listener, grpc_pollset* accepting_pollset,
-    grpc_tcp_server_acceptor* acceptor, grpc_endpoint* endpoint,
-    grpc_channel_args* args)
-    : listener_(listener) {
+    RefCountedPtr<Chttp2ServerListener> listener,
+    grpc_pollset* accepting_pollset, grpc_tcp_server_acceptor* acceptor,
+    grpc_endpoint* endpoint, grpc_channel_args* args)
+    : listener_(std::move(listener)) {
   // Deletes itself when done.
-  new ActiveConnection::HandshakingState(this, accepting_pollset, acceptor,
-                                         endpoint, args);
+  new ActiveConnection::HandshakingState(OrphanablePtr<ActiveConnection>(this),
+                                         accepting_pollset, acceptor, endpoint,
+                                         args);
 }
 
 Chttp2ServerListener::ActiveConnection::~ActiveConnection() {
+  if (transport_ != nullptr) {
+    GRPC_CHTTP2_UNREF_TRANSPORT(transport_, "ActiveConnection");
+  }
+}
+
+void Chttp2ServerListener::ActiveConnection::Orphan() {
+  OrphanablePtr<HandshakingState> handshaking_state;
   grpc_chttp2_transport* transport = nullptr;
   {
-    MutexLock lock(&listener_->mu_);
-    // The node was already deleted from the connections_ list if the connection
-    // is not serving.
-    if (is_serving_) {
-      listener_->connections_.erase(this);
-    }
+    MutexLock lock(&mu_);
+    is_serving_ = false;
+    // Reset handshaking_state_ since we have been orphaned by the listener
+    // signaling that the listener has stopped serving.
+    handshaking_state = std::move(handshaking_state_);
     transport = transport_;
   }
   if (transport != nullptr) {
-    GRPC_CHTTP2_UNREF_TRANSPORT(transport, "ActiveConnection");
-  }
-}
-
-void Chttp2ServerListener::ActiveConnection::StopServingLocked() {
-  is_serving_ = false;
-  if (handshaking_state_ != nullptr) {
-    handshaking_state_->ShutdownLocked(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("Listener stopped serving"));
-  }
-  if (transport_ != nullptr) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->goaway_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Server is stopping to serve requests.");
-    grpc_transport_perform_op(&transport_->base, op);
+    grpc_transport_perform_op(&transport->base, op);
   }
+  Unref();
 }
 
-void Chttp2ServerListener::ActiveConnection::InitializeOnCloseLocked() {
+void Chttp2ServerListener::ActiveConnection::SetupOnCloseCallbackLocked() {
   // Refs helds by OnClose()
   Ref().release();
   GRPC_CLOSURE_INIT(&on_close_, ActiveConnection::OnClose, this,
@@ -486,10 +495,16 @@ void Chttp2ServerListener::ActiveConnection::InitializeOnCloseLocked() {
 void Chttp2ServerListener::ActiveConnection::OnClose(void* arg,
                                                      grpc_error* /* error */) {
   ActiveConnection* self = static_cast<ActiveConnection*>(arg);
-  grpc_chttp2_transport* transport = nullptr;
+  OrphanablePtr<ActiveConnection> connection;
   {
-    MutexLock lock(&self->listener_->mu_);
-    transport = self->transport_;
+    MutexLock listener_lock(&self->listener_->mu_);
+    MutexLock connection_lock(&self->mu_);
+    // The node was already deleted from the connections_ list if the connection
+    // is not serving.
+    if (self->is_serving_) {
+      connection = std::move(self->listener_->connections_[self]);
+      self->listener_->connections_.erase(self);
+    }
   }
   self->Unref();
 }
@@ -591,7 +606,7 @@ void Chttp2ServerListener::Start(
     Server* /*server*/, const std::vector<grpc_pollset*>* /* pollsets */) {
   if (server_->config_fetcher() != nullptr) {
     grpc_channel_args* args = nullptr;
-    auto watcher = absl::make_unique<ConfigFetcherWatcher>(this);
+    auto watcher = absl::make_unique<ConfigFetcherWatcher>(Ref());
     config_fetcher_watcher_ = watcher.get();
     {
       MutexLock lock(&mu_);
@@ -603,23 +618,15 @@ void Chttp2ServerListener::Start(
   } else {
     {
       MutexLock lock(&mu_);
-      is_serving_ = true;
-      shutdown_ = false;
+      StartListeningLocked();
     }
-    StartListening();
   }
 }
 
-void Chttp2ServerListener::StartListening() {
+void Chttp2ServerListener::StartListeningLocked() {
+  started_ = true;
+  is_serving_ = true;
   grpc_tcp_server_start(tcp_server_, &server_->pollsets(), OnAccept, this);
-}
-
-void Chttp2ServerListener::StopServingLocked() {
-  is_serving_ = false;
-  for (ActiveConnection* connection : connections_) {
-    connection->StopServingLocked();
-  }
-  connections_.clear();
 }
 
 void Chttp2ServerListener::SetOnDestroyDone(grpc_closure* on_destroy_done) {
@@ -632,6 +639,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
                                     grpc_tcp_server_acceptor* acceptor) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
   grpc_channel_args* args = nullptr;
+  RefCountedPtr<Chttp2ServerListener> listener;
   {
     MutexLock lock(&self->mu_);
     if (self->shutdown_ || !self->is_serving_) {
@@ -640,22 +648,26 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
       gpr_free(acceptor);
       return;
     }
-    self->Ref().release();  // Held by ActiveConnection
+    listener = self->Ref();
     args = grpc_channel_args_copy(self->args_);
   }
   // Deletes itself when done
-  new ActiveConnection(self, accepting_pollset, acceptor, tcp, args);
+  new ActiveConnection(std::move(listener), accepting_pollset, acceptor, tcp,
+                       args);
   grpc_channel_args_destroy(args);
 }
 
 void Chttp2ServerListener::TcpServerShutdownComplete(void* arg,
                                                      grpc_error* error) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
+  std::map<ActiveConnection*, OrphanablePtr<ActiveConnection>> connections;
   /* ensure all threads have unlocked */
   {
     MutexLock lock(&self->mu_);
     GPR_ASSERT(self->shutdown_);
-    self->StopServingLocked();
+    self->is_serving_ = false;
+    // Orphan the connections so that they can start cleaning up.
+    connections = std::move(self->connections_);
     self->channelz_listen_socket_.reset();
   }
   GRPC_ERROR_UNREF(error);
