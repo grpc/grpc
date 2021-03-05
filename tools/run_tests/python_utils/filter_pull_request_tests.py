@@ -129,7 +129,7 @@ def _get_changed_files(base_branch):
     base_commit = check_output(["git", "merge-base", base_branch,
                                 "HEAD"]).rstrip()
     return check_output(["git", "diff", base_commit, "--name-only",
-                         "HEAD"]).splitlines()
+                         "HEAD"]).decode("UTF-8").splitlines()
 
 
 def _can_skip_tests(file_names, triggers):
