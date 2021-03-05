@@ -59,8 +59,9 @@ ABSL_FLAG(std::string, rpc, "UnaryCall",
 ABSL_FLAG(std::string, metadata, "", "metadata to send with the RPC.");
 ABSL_FLAG(std::string, expect_status, "OK",
           "RPC status for the test RPC to be considered successful");
-ABSL_FLAG(std::string, security, "none",
-          "If set to \"secure\", XdsCredentials are used");
+ABSL_FLAG(
+    bool, secure_mode, false,
+    "If true, XdsCredentials are used, InsecureChannelCredentials otherwise");
 
 using grpc::Channel;
 using grpc::ClientAsyncResponseReader;
@@ -464,7 +465,7 @@ void RunTestLoop(std::chrono::duration<double> duration_per_query,
                  RpcConfigurationsQueue* rpc_configs_queue) {
   TestClient client(
       grpc::CreateChannel(absl::GetFlag(FLAGS_server),
-                          absl::GetFlag(FLAGS_security) == "secure"
+                          absl::GetFlag(FLAGS_secure_mode)
                               ? grpc::experimental::XdsCredentials(
                                     grpc::InsecureChannelCredentials())
                               : grpc::InsecureChannelCredentials()),
