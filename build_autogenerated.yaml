@@ -115,9 +115,9 @@ libs:
   - test/core/end2end/tests/write_buffering.cc
   - test/core/end2end/tests/write_buffering_at_end.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: end2end_tests
   build: private
   language: c
@@ -222,9 +222,9 @@ libs:
   - test/core/end2end/tests/write_buffering.cc
   - test/core/end2end/tests/write_buffering_at_end.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: gpr
   build: all
   language: c
@@ -350,14 +350,14 @@ libs:
   - src/core/lib/profiling/basic_timers.cc
   - src/core/lib/profiling/stap_timers.cc
   deps:
-  - absl/base:base
-  - absl/memory:memory
-  - absl/status:status
-  - absl/strings:str_format
-  - absl/strings:strings
-  - absl/synchronization:synchronization
-  - absl/time:time
   - absl/types:optional
+  - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:status
+  - absl/memory:memory
+  - absl/base:base
 - name: grpc
   build: all
   language: c
@@ -1399,22 +1399,22 @@ libs:
   - src/core/tsi/transport_security.cc
   - src/core/tsi/transport_security_grpc.cc
   deps:
-  - gpr
   - address_sorting
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
-  - upb
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
   - absl/functional:bind_front
+  - absl/container:inlined_vector
   - absl/container:flat_hash_set
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   - libssl
   baselib: true
   generate_plugin_registry: true
@@ -1426,8 +1426,8 @@ libs:
   src:
   - src/csharp/ext/grpc_csharp_ext.c
   deps:
-  - gpr
   - grpc
+  - gpr
 - name: grpc_test_util
   build: private
   language: c
@@ -1480,23 +1480,23 @@ libs:
   - test/core/util/trickle_endpoint.cc
   deps:
   - grpc
-  - gpr
   - address_sorting
-  - absl/debugging:failure_signal_handler
-  - absl/debugging:symbolize
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
-  - upb
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/debugging:symbolize
   - absl/debugging:stacktrace
+  - absl/debugging:failure_signal_handler
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
 - name: grpc_test_util_unsecure
   build: private
   language: c
@@ -1547,23 +1547,23 @@ libs:
   - test/core/util/trickle_endpoint.cc
   deps:
   - grpc_unsecure
-  - gpr
   - address_sorting
-  - absl/debugging:failure_signal_handler
-  - absl/debugging:symbolize
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
-  - upb
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/debugging:symbolize
   - absl/debugging:stacktrace
+  - absl/debugging:failure_signal_handler
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
 - name: grpc_unsecure
   build: all
   language: c
@@ -2102,19 +2102,19 @@ libs:
   - src/core/lib/uri/uri_parser.cc
   - src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
   deps:
-  - gpr
   - address_sorting
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
   baselib: true
   generate_plugin_registry: true
@@ -2132,11 +2132,11 @@ libs:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/microbenchmarks/helpers.cc
   deps:
-  - grpc++_unsecure
   - grpc_test_util_unsecure
+  - grpc++_unsecure
   - grpc++_test_config
-  - benchmark
   - absl/synchronization:synchronization
+  - benchmark
   defaults: benchmark
 - name: grpc++
   build: all
@@ -2391,20 +2391,20 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
-  - gpr
   - grpc
-  - absl/synchronization:synchronization
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   - libssl
   baselib: true
 - name: grpc++_alts
@@ -2420,18 +2420,18 @@ libs:
   deps:
   - grpc++
   - gpr
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   baselib: true
 - name: grpc++_error_details
   build: all
@@ -2507,8 +2507,8 @@ libs:
   - test/cpp/util/subprocess.cc
   - test/cpp/util/test_credentials_provider.cc
   deps:
-  - grpc++
   - grpc_test_util
+  - grpc++
   - absl/flags:flag
 - name: grpc++_unsecure
   build: all
@@ -2748,8 +2748,8 @@ libs:
   - src/cpp/util/string_ref.cc
   - src/cpp/util/time_cc.cc
   deps:
-  - gpr
   - grpc_unsecure
+  - gpr
   - absl/synchronization:synchronization
   - upb
   baselib: true
@@ -2814,9 +2814,9 @@ targets:
   src:
   - test/core/compression/algorithm_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: alloc_test
   build: test
@@ -2825,8 +2825,8 @@ targets:
   src:
   - test/core/gpr/alloc_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: alpn_test
   build: test
@@ -2835,9 +2835,9 @@ targets:
   src:
   - test/core/transport/chttp2/alpn_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: alts_counter_test
   build: test
   language: c
@@ -2847,21 +2847,21 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/alts_counter_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - libssl
 - name: alts_crypt_test
   build: test
   language: c
@@ -2871,21 +2871,21 @@ targets:
   - test/core/tsi/alts/crypt/aes_gcm_test.cc
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - libssl
 - name: alts_crypter_test
   build: test
   language: c
@@ -2895,21 +2895,21 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/alts_crypter_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - libssl
 - name: alts_frame_protector_test
   build: test
   language: c
@@ -2921,22 +2921,22 @@ targets:
   - test/core/tsi/alts/frame_protector/alts_frame_protector_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
+  - libssl
 - name: alts_grpc_record_protocol_test
   build: test
   language: c
@@ -2946,21 +2946,21 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/zero_copy_frame_protector/alts_grpc_record_protocol_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - libssl
 - name: alts_handshaker_client_test
   build: test
   language: c
@@ -2970,22 +2970,22 @@ targets:
   - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   deps:
-  - grpc
   - grpc_test_util
+  - grpc
   - gpr
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
+  - libssl
 - name: alts_iovec_record_protocol_test
   build: test
   language: c
@@ -2995,21 +2995,21 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - libssl
 - name: alts_security_connector_test
   build: test
   language: c
@@ -3017,20 +3017,20 @@ targets:
   src:
   - test/core/security/alts_security_connector_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
   - libssl
 - name: alts_tsi_handshaker_test
@@ -3042,22 +3042,22 @@ targets:
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   - test/core/tsi/alts/handshaker/alts_tsi_handshaker_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - absl/base:base
-  - absl/memory:memory
-  - absl/status:status
-  - absl/strings:str_format
-  - absl/strings:strings
-  - absl/synchronization:synchronization
-  - absl/time:time
+  - grpc
+  - gpr
   - absl/types:optional
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
+  - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
   - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
+  - libssl
 - name: alts_tsi_utils_test
   build: test
   language: c
@@ -3067,22 +3067,22 @@ targets:
   - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
   - test/core/tsi/alts/handshaker/alts_tsi_utils_test.cc
   deps:
-  - grpc
   - grpc_test_util
+  - grpc
   - gpr
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
+  - libssl
 - name: alts_zero_copy_grpc_protector_test
   build: test
   language: c
@@ -3092,21 +3092,21 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - libssl
 - name: arena_test
   build: test
   language: c
@@ -3114,8 +3114,8 @@ targets:
   src:
   - test/core/gpr/arena_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: auth_context_test
   build: test
@@ -3124,9 +3124,9 @@ targets:
   src:
   - test/core/security/auth_context_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: avl_test
   build: test
@@ -3135,9 +3135,9 @@ targets:
   src:
   - test/core/avl/avl_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: b64_test
   build: test
@@ -3146,9 +3146,9 @@ targets:
   src:
   - test/core/slice/b64_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: bad_server_response_test
   build: test
@@ -3159,9 +3159,9 @@ targets:
   - test/core/end2end/bad_server_response_test.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: bad_ssl_alpn_test
   build: test
   language: c
@@ -3171,9 +3171,9 @@ targets:
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
   - grpc_test_util
   - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3187,9 +3187,9 @@ targets:
   - test/core/bad_ssl/bad_ssl_test.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
   - grpc_test_util
   - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3201,9 +3201,9 @@ targets:
   src:
   - test/core/transport/chttp2/bin_decoder_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: bin_encoder_test
   build: test
@@ -3212,9 +3212,9 @@ targets:
   src:
   - test/core/transport/chttp2/bin_encoder_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: buffer_list_test
   build: test
@@ -3223,9 +3223,9 @@ targets:
   src:
   - test/core/iomgr/buffer_list_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: channel_args_test
   build: test
   language: c
@@ -3233,9 +3233,9 @@ targets:
   src:
   - test/core/channel/channel_args_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: channel_create_test
   build: test
@@ -3244,9 +3244,9 @@ targets:
   src:
   - test/core/surface/channel_create_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: channel_stack_builder_test
   build: test
   language: c
@@ -3254,9 +3254,9 @@ targets:
   src:
   - test/core/channel/channel_stack_builder_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: channel_stack_test
   build: test
   language: c
@@ -3264,9 +3264,9 @@ targets:
   src:
   - test/core/channel/channel_stack_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: check_gcp_environment_linux_test
   build: test
@@ -3275,21 +3275,21 @@ targets:
   src:
   - test/core/security/check_gcp_environment_linux_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
 - name: check_gcp_environment_windows_test
   build: test
   language: c
@@ -3297,21 +3297,21 @@ targets:
   src:
   - test/core/security/check_gcp_environment_windows_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
 - name: client_ssl_test
   build: test
   language: c
@@ -3319,9 +3319,9 @@ targets:
   src:
   - test/core/handshake/client_ssl.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3333,8 +3333,8 @@ targets:
   src:
   - test/core/util/cmdline_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: combiner_test
   build: test
@@ -3343,9 +3343,9 @@ targets:
   src:
   - test/core/iomgr/combiner_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3358,9 +3358,9 @@ targets:
   src:
   - test/core/surface/completion_queue_threading_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: compression_test
   build: test
   language: c
@@ -3368,9 +3368,9 @@ targets:
   src:
   - test/core/compression/compression_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: concurrent_connectivity_test
   build: test
@@ -3379,9 +3379,9 @@ targets:
   src:
   - test/core/surface/concurrent_connectivity_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: connection_refused_test
   build: test
   language: c
@@ -3391,9 +3391,9 @@ targets:
   - test/core/end2end/connection_refused_test.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: cpu_test
   build: test
   language: c
@@ -3401,8 +3401,8 @@ targets:
   src:
   - test/core/gpr/cpu_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: dns_resolver_connectivity_using_ares_test
   build: test
@@ -3411,9 +3411,9 @@ targets:
   src:
   - test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   args:
   - --resolver=ares
 - name: dns_resolver_connectivity_using_native_test
@@ -3423,9 +3423,9 @@ targets:
   src:
   - test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   args:
   - --resolver=native
 - name: dns_resolver_cooldown_test
@@ -3435,9 +3435,9 @@ targets:
   src:
   - test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: dns_resolver_test
   build: test
   language: c
@@ -3445,9 +3445,9 @@ targets:
   src:
   - test/core/client_channel/resolvers/dns_resolver_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: dualstack_socket_test
   build: test
   language: c
@@ -3457,9 +3457,9 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/dualstack_socket_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3473,9 +3473,9 @@ targets:
   - test/core/iomgr/endpoint_pair_test.cc
   - test/core/iomgr/endpoint_tests.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: env_test
   build: test
   language: c
@@ -3483,8 +3483,8 @@ targets:
   src:
   - test/core/gpr/env_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: error_test
   build: test
@@ -3495,9 +3495,9 @@ targets:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/iomgr/error_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: ev_epollex_linux_test
   build: test
@@ -3506,9 +3506,9 @@ targets:
   src:
   - test/core/iomgr/ev_epollex_linux_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3520,20 +3520,20 @@ targets:
   src:
   - test/core/client_channel/resolvers/fake_resolver_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
 - name: fake_transport_security_test
   build: test
@@ -3544,22 +3544,22 @@ targets:
   - test/core/tsi/fake_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
+  - libssl
 - name: fd_conservation_posix_test
   build: test
   language: c
@@ -3567,9 +3567,9 @@ targets:
   src:
   - test/core/iomgr/fd_conservation_posix_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3581,9 +3581,9 @@ targets:
   src:
   - test/core/iomgr/fd_posix_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3600,9 +3600,9 @@ targets:
   - test/core/end2end/data/test_root_cert.cc
   - test/core/fling/fling_stream_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3619,9 +3619,9 @@ targets:
   - test/core/end2end/data/test_root_cert.cc
   - test/core/fling/fling_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3633,8 +3633,8 @@ targets:
   src:
   - test/core/gprpp/fork_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   platforms:
   - linux
   - posix
@@ -3652,9 +3652,9 @@ targets:
   - test/core/end2end/data/test_root_cert.cc
   - test/core/http/format_request_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: frame_handler_test
   build: test
   language: c
@@ -3664,21 +3664,21 @@ targets:
   - test/core/tsi/alts/crypt/gsec_test_util.cc
   - test/core/tsi/alts/frame_protector/frame_handler_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - libssl
 - name: goaway_server_test
   build: test
   language: c
@@ -3688,9 +3688,9 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/goaway_server_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: grpc_alts_credentials_options_test
   build: test
   language: c
@@ -3698,21 +3698,21 @@ targets:
   src:
   - test/core/security/grpc_alts_credentials_options_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
 - name: grpc_byte_buffer_reader_test
   build: test
   language: c
@@ -3720,9 +3720,9 @@ targets:
   src:
   - test/core/surface/byte_buffer_reader_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: grpc_completion_queue_test
   build: test
@@ -3731,9 +3731,9 @@ targets:
   src:
   - test/core/surface/completion_queue_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: grpc_ipv6_loopback_available_test
   build: test
   language: c
@@ -3741,9 +3741,9 @@ targets:
   src:
   - test/core/iomgr/grpc_ipv6_loopback_available_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: handshake_server_with_readahead_handshaker_test
   build: test
   language: c
@@ -3753,9 +3753,9 @@ targets:
   - test/core/handshake/readahead_handshaker_server_ssl.cc
   - test/core/handshake/server_ssl_common.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3767,9 +3767,9 @@ targets:
   src:
   - test/core/handshake/verify_peer_options.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3781,8 +3781,8 @@ targets:
   src:
   - test/core/util/histogram_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: host_port_test
   build: test
@@ -3791,8 +3791,8 @@ targets:
   src:
   - test/core/gprpp/host_port_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: hpack_encoder_test
   build: test
@@ -3801,9 +3801,9 @@ targets:
   src:
   - test/core/transport/chttp2/hpack_encoder_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: hpack_parser_test
   build: test
@@ -3812,9 +3812,9 @@ targets:
   src:
   - test/core/transport/chttp2/hpack_parser_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: hpack_table_test
   build: test
@@ -3823,9 +3823,9 @@ targets:
   src:
   - test/core/transport/chttp2/hpack_table_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: httpcli_test
   build: test
@@ -3839,9 +3839,9 @@ targets:
   - test/core/end2end/data/test_root_cert.cc
   - test/core/http/httpcli_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3858,9 +3858,9 @@ targets:
   - test/core/end2end/data/test_root_cert.cc
   - test/core/http/httpscli_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -3872,10 +3872,10 @@ targets:
   src:
   - test/core/end2end/inproc_callback_test.cc
   deps:
-  - gpr
-  - grpc
   - end2end_tests
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: invalid_call_argument_test
   build: test
@@ -3886,9 +3886,9 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/invalid_call_argument_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: json_token_test
   build: test
   language: c
@@ -3896,9 +3896,9 @@ targets:
   src:
   - test/core/security/json_token_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: jwt_verifier_test
   build: test
@@ -3907,9 +3907,9 @@ targets:
   src:
   - test/core/security/jwt_verifier_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: lame_client_test
   build: test
@@ -3920,9 +3920,9 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/surface/lame_client_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: load_file_test
   build: test
   language: c
@@ -3930,9 +3930,9 @@ targets:
   src:
   - test/core/iomgr/load_file_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: manual_constructor_test
   build: test
@@ -3941,8 +3941,8 @@ targets:
   src:
   - test/core/gprpp/manual_constructor_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: message_compress_test
   build: test
@@ -3951,9 +3951,9 @@ targets:
   src:
   - test/core/compression/message_compress_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: metadata_test
   build: test
@@ -3962,9 +3962,9 @@ targets:
   src:
   - test/core/transport/metadata_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: minimal_stack_is_minimal_test
   build: test
   language: c
@@ -3972,9 +3972,9 @@ targets:
   src:
   - test/core/channel/minimal_stack_is_minimal_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: mpmcqueue_test
   build: test
@@ -3983,9 +3983,9 @@ targets:
   src:
   - test/core/iomgr/mpmcqueue_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: mpscq_test
   build: test
@@ -3994,8 +3994,8 @@ targets:
   src:
   - test/core/gprpp/mpscq_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   platforms:
   - linux
   - posix
@@ -4010,9 +4010,9 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/multiple_server_queues_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: murmur_hash_test
   build: test
   language: c
@@ -4020,8 +4020,8 @@ targets:
   src:
   - test/core/gpr/murmur_hash_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: no_server_test
   build: test
@@ -4032,9 +4032,9 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/no_server_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: num_external_connectivity_watchers_test
   build: test
   language: c
@@ -4042,9 +4042,9 @@ targets:
   src:
   - test/core/surface/num_external_connectivity_watchers_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: parse_address_test
   build: test
   language: c
@@ -4052,9 +4052,9 @@ targets:
   src:
   - test/core/iomgr/parse_address_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: parse_address_with_named_scope_id_test
   build: test
   language: c
@@ -4062,9 +4062,9 @@ targets:
   src:
   - test/core/iomgr/parse_address_with_named_scope_id_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -4082,9 +4082,9 @@ targets:
   - test/core/end2end/data/test_root_cert.cc
   - test/core/http/parser_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: percent_encoding_test
   build: test
@@ -4093,9 +4093,9 @@ targets:
   src:
   - test/core/slice/percent_encoding_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: public_headers_must_be_c89
   build: test
@@ -4104,9 +4104,9 @@ targets:
   src:
   - test/core/surface/public_headers_must_be_c89.c
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: resolve_address_using_ares_resolver_posix_test
   build: test
   language: c
@@ -4114,9 +4114,9 @@ targets:
   src:
   - test/core/iomgr/resolve_address_posix_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   args:
   - --resolver=ares
   platforms:
@@ -4130,9 +4130,9 @@ targets:
   src:
   - test/core/iomgr/resolve_address_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   args:
   - --resolver=ares
 - name: resolve_address_using_native_resolver_posix_test
@@ -4142,9 +4142,9 @@ targets:
   src:
   - test/core/iomgr/resolve_address_posix_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   args:
   - --resolver=native
   platforms:
@@ -4158,9 +4158,9 @@ targets:
   src:
   - test/core/iomgr/resolve_address_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   args:
   - --resolver=native
 - name: resource_quota_test
@@ -4170,9 +4170,9 @@ targets:
   src:
   - test/core/iomgr/resource_quota_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: secure_channel_create_test
   build: test
   language: c
@@ -4180,9 +4180,9 @@ targets:
   src:
   - test/core/surface/secure_channel_create_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: secure_endpoint_test
   build: test
   language: c
@@ -4192,9 +4192,9 @@ targets:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/security/secure_endpoint_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: security_connector_test
   build: test
   language: c
@@ -4202,9 +4202,9 @@ targets:
   src:
   - test/core/security/security_connector_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: sequential_connectivity_test
   build: test
   run: false
@@ -4213,9 +4213,9 @@ targets:
   src:
   - test/core/surface/sequential_connectivity_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: server_ssl_test
   build: test
   language: c
@@ -4225,9 +4225,9 @@ targets:
   - test/core/handshake/server_ssl.cc
   - test/core/handshake/server_ssl_common.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -4239,9 +4239,9 @@ targets:
   src:
   - test/core/surface/server_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: slice_buffer_test
   build: test
   language: c
@@ -4249,9 +4249,9 @@ targets:
   src:
   - test/core/slice/slice_buffer_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: slice_string_helpers_test
   build: test
@@ -4260,9 +4260,9 @@ targets:
   src:
   - test/core/slice/slice_string_helpers_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: sockaddr_resolver_test
   build: test
@@ -4271,9 +4271,9 @@ targets:
   src:
   - test/core/client_channel/resolvers/sockaddr_resolver_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: sockaddr_utils_test
   build: test
   language: c
@@ -4281,9 +4281,9 @@ targets:
   src:
   - test/core/iomgr/sockaddr_utils_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: socket_utils_test
   build: test
   language: c
@@ -4291,9 +4291,9 @@ targets:
   src:
   - test/core/iomgr/socket_utils_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -4305,8 +4305,8 @@ targets:
   src:
   - test/core/gpr/spinlock_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: ssl_credentials_test
   build: test
@@ -4315,9 +4315,9 @@ targets:
   src:
   - test/core/security/ssl_credentials_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: ssl_transport_security_test
   build: test
   language: c
@@ -4327,22 +4327,22 @@ targets:
   - test/core/tsi/ssl_transport_security_test.cc
   - test/core/tsi/transport_security_test_lib.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
+  - libssl
   platforms:
   - linux
   - posix
@@ -4354,9 +4354,9 @@ targets:
   src:
   - test/core/transport/status_conversion_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: stream_compression_test
   build: test
@@ -4365,9 +4365,9 @@ targets:
   src:
   - test/core/compression/stream_compression_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: stream_map_test
   build: test
@@ -4376,9 +4376,9 @@ targets:
   src:
   - test/core/transport/chttp2/stream_map_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: stream_owned_slice_test
   build: test
   language: c
@@ -4386,9 +4386,9 @@ targets:
   src:
   - test/core/transport/stream_owned_slice_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: string_test
   build: test
@@ -4397,8 +4397,8 @@ targets:
   src:
   - test/core/gpr/string_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: sync_test
   build: test
@@ -4407,8 +4407,8 @@ targets:
   src:
   - test/core/gpr/sync_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: tcp_client_posix_test
   build: test
@@ -4417,9 +4417,9 @@ targets:
   src:
   - test/core/iomgr/tcp_client_posix_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -4433,9 +4433,9 @@ targets:
   - test/core/iomgr/endpoint_tests.cc
   - test/core/iomgr/tcp_posix_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -4446,9 +4446,9 @@ targets:
   src:
   - test/core/iomgr/tcp_server_posix_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -4460,8 +4460,8 @@ targets:
   src:
   - test/core/gpr/time_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: test_core_security_credentials_test
   build: test
@@ -4470,9 +4470,9 @@ targets:
   src:
   - test/core/security/credentials_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: test_core_slice_slice_test
   build: test
   language: c
@@ -4480,9 +4480,9 @@ targets:
   src:
   - test/core/slice/slice_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: thd_test
   build: test
@@ -4491,8 +4491,8 @@ targets:
   src:
   - test/core/gprpp/thd_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: threadpool_test
   build: test
@@ -4501,9 +4501,9 @@ targets:
   src:
   - test/core/iomgr/threadpool_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: time_averaged_stats_test
   build: test
@@ -4512,9 +4512,9 @@ targets:
   src:
   - test/core/iomgr/time_averaged_stats_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: timeout_encoding_test
   build: test
@@ -4523,9 +4523,9 @@ targets:
   src:
   - test/core/transport/timeout_encoding_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: timer_heap_test
   build: test
@@ -4534,9 +4534,9 @@ targets:
   src:
   - test/core/iomgr/timer_heap_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: timer_list_test
   build: test
@@ -4545,9 +4545,9 @@ targets:
   src:
   - test/core/iomgr/timer_list_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: tls_test
   build: test
@@ -4556,8 +4556,8 @@ targets:
   src:
   - test/core/gpr/tls_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: transport_security_common_api_test
   build: test
@@ -4566,21 +4566,21 @@ targets:
   src:
   - test/core/tsi/alts/handshaker/transport_security_common_api_test.cc
   deps:
-  - grpc
   - grpc_test_util
+  - grpc
   - gpr
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
 - name: transport_security_test
   build: test
   language: c
@@ -4588,9 +4588,9 @@ targets:
   src:
   - test/core/tsi/transport_security_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: udp_server_test
   build: test
   language: c
@@ -4598,9 +4598,9 @@ targets:
   src:
   - test/core/iomgr/udp_server_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -4612,8 +4612,8 @@ targets:
   src:
   - test/core/gpr/useful_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: varint_test
   build: test
@@ -4622,9 +4622,9 @@ targets:
   src:
   - test/core/transport/chttp2/varint_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: address_sorting_test
   gtest: true
@@ -4634,12 +4634,12 @@ targets:
   src:
   - test/cpp/naming/address_sorting_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_config
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -4658,11 +4658,11 @@ targets:
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
   deps:
-  - gpr
+  - grpc_test_util_unsecure
   - grpc++_unsecure
   - grpc_unsecure
-  - grpc_test_util_unsecure
   - grpc++_test_config
+  - gpr
   platforms:
   - linux
   - posix
@@ -4675,8 +4675,8 @@ targets:
   src:
   - test/cpp/common/alarm_test.cc
   deps:
-  - grpc++_unsecure
   - grpc_test_util_unsecure
+  - grpc++_unsecure
   platforms:
   - linux
   - posix
@@ -4695,22 +4695,22 @@ targets:
   - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
   - test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
   deps:
-  - grpc
   - grpc_test_util
-  - gpr
   - grpc++
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   platforms:
   - linux
   - posix
@@ -4722,10 +4722,10 @@ targets:
   - test/core/security/alts_credentials_fuzzer.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
+  - gpr
   - absl/flags:flag
   corpus_dirs:
   - test/core/security/corpus/alts_credentials_corpus
@@ -4739,8 +4739,8 @@ targets:
   - test/cpp/common/alts_util_test.cc
   deps:
   - grpc++_alts
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
 - name: async_end2end_test
   gtest: true
   build: test
@@ -4754,11 +4754,11 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/end2end/async_end2end_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: auth_property_iterator_test
   gtest: true
@@ -4768,9 +4768,9 @@ targets:
   src:
   - test/cpp/common/auth_property_iterator_test.cc
   deps:
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
   uses_polling: false
 - name: authorization_engine_test
   gtest: true
@@ -4780,9 +4780,9 @@ targets:
   src:
   - test/core/security/authorization_engine_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: aws_request_signer_test
   gtest: true
   build: test
@@ -4791,21 +4791,21 @@ targets:
   src:
   - test/core/security/aws_request_signer_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   - libssl
 - name: backoff_test
   gtest: true
@@ -4815,9 +4815,9 @@ targets:
   src:
   - test/core/backoff/backoff_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: bad_streaming_id_bad_client_test
   gtest: true
@@ -4831,9 +4831,9 @@ targets:
   - test/core/bad_client/tests/bad_streaming_id.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: badreq_bad_client_test
   gtest: true
   build: test
@@ -4846,9 +4846,9 @@ targets:
   - test/core/bad_client/tests/badreq.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: bdp_estimator_test
   gtest: true
   build: test
@@ -4857,9 +4857,9 @@ targets:
   src:
   - test/core/transport/bdp_estimator_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -4938,10 +4938,10 @@ targets:
   - test/cpp/util/subprocess.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - benchmark
+  - grpc++_unsecure
   - absl/synchronization:synchronization
+  - benchmark
   benchmark: true
   defaults: benchmark
   platforms:
@@ -4965,10 +4965,10 @@ targets:
   - test/cpp/util/subprocess.cc
   deps:
   - benchmark_helpers
-  - grpc++_unsecure
   - grpc_test_util_unsecure
-  - benchmark
+  - grpc++_unsecure
   - absl/synchronization:synchronization
+  - benchmark
   benchmark: true
   defaults: benchmark
   platforms:
@@ -5202,9 +5202,9 @@ targets:
   src:
   - test/core/transport/byte_stream_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: cancel_ares_query_test
   gtest: true
@@ -5218,12 +5218,12 @@ targets:
   - test/cpp/naming/cancel_ares_query_test.cc
   - test/cpp/naming/dns_test_util.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_config
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: certificate_provider_registry_test
   gtest: true
   build: test
@@ -5232,9 +5232,9 @@ targets:
   src:
   - test/core/client_channel/certificate_provider_registry_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: certificate_provider_store_test
   gtest: true
   build: test
@@ -5243,9 +5243,9 @@ targets:
   src:
   - test/core/xds/certificate_provider_store_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: cfstream_test
   gtest: true
   build: test
@@ -5260,11 +5260,11 @@ targets:
   - test/cpp/end2end/cfstream_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: channel_arguments_test
   gtest: true
@@ -5274,8 +5274,8 @@ targets:
   src:
   - test/cpp/common/channel_arguments_test.cc
   deps:
-  - grpc++
   - grpc_test_util
+  - grpc++
   uses_polling: false
 - name: channel_filter_test
   gtest: true
@@ -5285,8 +5285,8 @@ targets:
   src:
   - test/cpp/common/channel_filter_test.cc
   deps:
-  - grpc++
   - grpc_test_util
+  - grpc++
   uses_polling: false
 - name: channel_trace_test
   gtest: true
@@ -5299,10 +5299,10 @@ targets:
   - test/core/channel/channel_trace_test.cc
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
   - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: channelz_registry_test
   gtest: true
@@ -5312,10 +5312,10 @@ targets:
   src:
   - test/core/channel/channelz_registry_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
   - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   uses_polling: false
 - name: channelz_service_test
   gtest: true
@@ -5330,12 +5330,12 @@ targets:
   - test/cpp/end2end/channelz_service_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
   - grpcpp_channelz
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: channelz_test
   gtest: true
@@ -5348,10 +5348,10 @@ targets:
   - test/core/channel/channelz_test.cc
   - test/cpp/util/channel_trace_proto_helper.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
   - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: cli_call_test
   gtest: true
@@ -5378,8 +5378,8 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
   - grpc++
   - absl/synchronization:synchronization
   - absl/flags:flag
@@ -5398,11 +5398,11 @@ targets:
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: client_channel_stress_test
   gtest: true
@@ -5420,22 +5420,22 @@ targets:
   - test/cpp/client/client_channel_stress_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
   platforms:
   - linux
@@ -5449,10 +5449,10 @@ targets:
   - test/core/end2end/fuzzers/client_fuzzer.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
+  - gpr
   - absl/flags:flag
   corpus_dirs:
   - test/core/end2end/fuzzers/client_fuzzer_corpus
@@ -5473,11 +5473,11 @@ targets:
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: client_lb_end2end_test
   gtest: true
@@ -5497,11 +5497,11 @@ targets:
   - test/cpp/end2end/client_lb_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
   platforms:
   - linux
@@ -5515,8 +5515,8 @@ targets:
   src:
   - test/cpp/codegen/codegen_test_full.cc
   deps:
-  - grpc++
   - grpc_test_util
+  - grpc++
   uses_polling: false
 - name: codegen_test_minimal
   gtest: true
@@ -5526,8 +5526,8 @@ targets:
   src:
   - test/cpp/codegen/codegen_test_minimal.cc
   deps:
-  - grpc++
   - grpc_test_util
+  - grpc++
   uses_polling: false
 - name: connection_prefix_bad_client_test
   gtest: true
@@ -5541,9 +5541,9 @@ targets:
   - test/core/bad_client/tests/connection_prefix.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: connectivity_state_test
   gtest: true
   build: test
@@ -5552,9 +5552,9 @@ targets:
   src:
   - test/core/transport/connectivity_state_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: context_allocator_end2end_test
   gtest: true
   build: test
@@ -5568,11 +5568,11 @@ targets:
   - test/cpp/end2end/context_allocator_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: context_list_test
   gtest: true
@@ -5582,9 +5582,9 @@ targets:
   src:
   - test/core/transport/chttp2/context_list_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: delegating_channel_test
   gtest: true
@@ -5599,11 +5599,11 @@ targets:
   - test/cpp/end2end/delegating_channel_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: destroy_grpclb_channel_with_active_connect_stress_test
   gtest: true
@@ -5613,22 +5613,22 @@ targets:
   src:
   - test/cpp/client/destroy_grpclb_channel_with_active_connect_stress_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
 - name: dual_ref_counted_test
   gtest: true
@@ -5640,14 +5640,14 @@ targets:
   deps:
   - grpc_test_util
   - gpr
-  - absl/base:base
-  - absl/memory:memory
-  - absl/status:status
-  - absl/strings:str_format
-  - absl/strings:strings
-  - absl/synchronization:synchronization
-  - absl/time:time
   - absl/types:optional
+  - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:status
+  - absl/memory:memory
+  - absl/base:base
 - name: duplicate_header_bad_client_test
   gtest: true
   build: test
@@ -5660,9 +5660,9 @@ targets:
   - test/core/bad_client/tests/duplicate_header.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: end2end_test
   gtest: true
   build: test
@@ -5680,12 +5680,12 @@ targets:
   - test/cpp/end2end/interceptors_util.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - grpc++
-  - gpr
-  - grpc
   - grpc++_test
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: error_details_test
   gtest: true
@@ -5708,25 +5708,25 @@ targets:
   src:
   - test/core/security/evaluate_args_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
   - address_sorting
-  - absl/debugging:failure_signal_handler
-  - absl/debugging:symbolize
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
-  - upb
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/debugging:symbolize
   - absl/debugging:stacktrace
+  - absl/debugging:failure_signal_handler
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
 - name: eventmanager_libuv_test
   gtest: true
   build: test
@@ -5737,17 +5737,17 @@ targets:
   deps:
   - grpc_test_util
   - gpr
-  - absl/base:base
-  - absl/memory:memory
-  - absl/status:status
-  - absl/strings:str_format
-  - absl/strings:strings
-  - absl/synchronization:synchronization
-  - absl/time:time
   - absl/types:optional
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
+  - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
   - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   uses_polling: false
 - name: examine_stack_test
   gtest: true
@@ -5757,10 +5757,10 @@ targets:
   src:
   - test/core/gprpp/examine_stack_test.cc
   deps:
-  - gpr
   - grpc_test_util
-  - absl/debugging:stacktrace
+  - gpr
   - absl/debugging:symbolize
+  - absl/debugging:stacktrace
   platforms:
   - linux
   - posix
@@ -5777,11 +5777,11 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/end2end/exception_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: file_watcher_certificate_provider_factory_test
   gtest: true
@@ -5791,9 +5791,9 @@ targets:
   src:
   - test/core/xds/file_watcher_certificate_provider_factory_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: filter_end2end_test
   gtest: true
   build: test
@@ -5806,11 +5806,11 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/end2end/filter_end2end_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: flaky_network_test
   gtest: true
@@ -5826,11 +5826,11 @@ targets:
   - test/cpp/end2end/flaky_network_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: generic_end2end_test
   gtest: true
@@ -5844,11 +5844,11 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/end2end/generic_end2end_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: global_config_env_test
   gtest: true
@@ -5858,8 +5858,8 @@ targets:
   src:
   - test/core/gprpp/global_config_env_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   platforms:
   - linux
   - posix
@@ -5873,8 +5873,8 @@ targets:
   src:
   - test/core/gprpp/global_config_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: google_mesh_ca_certificate_provider_factory_test
   gtest: true
@@ -5886,23 +5886,23 @@ targets:
   - src/core/ext/xds/google_mesh_ca_certificate_provider_factory.cc
   - test/core/xds/google_mesh_ca_certificate_provider_factory_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
-  - upb
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
   - absl/functional:bind_front
+  - absl/container:inlined_vector
   - absl/container:flat_hash_set
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   - libssl
 - name: grpc_cli
   build: test
@@ -5926,10 +5926,10 @@ targets:
   - test/cpp/util/proto_reflection_descriptor_database.cc
   - test/cpp/util/service_describer.cc
   deps:
-  - grpc++
   - grpc++_test_config
-  - absl/flags:flag
+  - grpc++
   - absl/synchronization:synchronization
+  - absl/flags:flag
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
@@ -5994,21 +5994,21 @@ targets:
   src:
   - test/core/security/grpc_tls_certificate_distributor_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   - libssl
 - name: grpc_tls_certificate_provider_test
   gtest: true
@@ -6018,21 +6018,21 @@ targets:
   src:
   - test/core/security/grpc_tls_certificate_provider_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   - libssl
 - name: grpc_tls_credentials_options_test
   gtest: true
@@ -6042,21 +6042,21 @@ targets:
   src:
   - test/core/security/grpc_tls_credentials_options_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   - libssl
 - name: grpc_tool_test
   gtest: true
@@ -6083,11 +6083,11 @@ targets:
   - test/cpp/util/service_describer.cc
   deps:
   - grpc++_reflection
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
   - grpc++
-  - absl/flags:flag
   - absl/synchronization:synchronization
+  - absl/flags:flag
   platforms:
   - linux
   - posix
@@ -6101,11 +6101,11 @@ targets:
   - src/proto/grpc/lb/v1/load_balancer.proto
   - test/cpp/grpclb/grpclb_api_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: grpclb_end2end_test
   gtest: true
@@ -6123,22 +6123,22 @@ targets:
   - test/cpp/end2end/grpclb_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
   platforms:
   - linux
@@ -6152,23 +6152,23 @@ targets:
   src:
   - test/core/end2end/h2_ssl_session_reuse_test.cc
   deps:
-  - gpr
-  - grpc
   - end2end_tests
   - grpc_test_util
-  - libssl
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
+  - libssl
 - name: head_of_line_blocking_bad_client_test
   gtest: true
   build: test
@@ -6181,9 +6181,9 @@ targets:
   - test/core/bad_client/tests/head_of_line_blocking.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: headers_bad_client_test
   gtest: true
   build: test
@@ -6196,9 +6196,9 @@ targets:
   - test/core/bad_client/tests/headers.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: health_service_end2end_test
   gtest: true
   build: test
@@ -6216,11 +6216,11 @@ targets:
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: hpack_parser_fuzzer_test
   build: fuzzer
@@ -6230,9 +6230,9 @@ targets:
   - test/core/transport/chttp2/hpack_parser_fuzzer_test.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
   - absl/flags:flag
   corpus_dirs:
   - test/core/transport/chttp2/hpack_parser_corpus
@@ -6249,12 +6249,12 @@ targets:
   - src/proto/grpc/testing/test.proto
   - test/cpp/interop/http2_client.cc
   deps:
-  - grpc++
-  - grpc_test_util
   - grpc++_test_config
   - grpc++_test_util
-  - absl/flags:flag
+  - grpc_test_util
+  - grpc++
   - absl/synchronization:synchronization
+  - absl/flags:flag
 - name: http_request_fuzzer_test
   build: fuzzer
   language: c++
@@ -6263,10 +6263,10 @@ targets:
   - test/core/http/request_fuzzer.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
+  - gpr
   - absl/flags:flag
   corpus_dirs:
   - test/core/http/request_corpus
@@ -6279,10 +6279,10 @@ targets:
   - test/core/http/response_fuzzer.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
+  - gpr
   - absl/flags:flag
   corpus_dirs:
   - test/core/http/response_corpus
@@ -6301,11 +6301,11 @@ targets:
   - test/cpp/end2end/hybrid_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: init_test
   gtest: true
@@ -6315,9 +6315,9 @@ targets:
   src:
   - test/core/surface/init_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: initial_settings_frame_bad_client_test
   gtest: true
@@ -6331,9 +6331,9 @@ targets:
   - test/core/bad_client/tests/initial_settings_frame.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: insecure_security_connector_test
   gtest: true
   build: test
@@ -6342,21 +6342,21 @@ targets:
   src:
   - test/core/security/insecure_security_connector_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   - libssl
 - name: interop_client
   build: test
@@ -6375,12 +6375,12 @@ targets:
   - test/cpp/interop/client_helper.cc
   - test/cpp/interop/interop_client.cc
   deps:
-  - grpc++
   - grpc++_test_config
   - grpc++_test_util
+  - grpc++
   - grpc
-  - absl/flags:flag
   - absl/synchronization:synchronization
+  - absl/flags:flag
 - name: interop_server
   build: test
   run: false
@@ -6395,11 +6395,11 @@ targets:
   - test/cpp/interop/interop_server_bootstrap.cc
   - test/cpp/interop/server_helper.cc
   deps:
-  - grpc++
   - grpc++_test_config
   - grpc++_test_util
-  - absl/flags:flag
+  - grpc++
   - absl/synchronization:synchronization
+  - absl/flags:flag
 - name: interop_test
   build: test
   language: c++
@@ -6407,12 +6407,12 @@ targets:
   src:
   - test/cpp/interop/interop_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_config
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/flags:flag
   platforms:
   - linux
@@ -6426,10 +6426,10 @@ targets:
   - test/core/json/fuzzer.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
+  - gpr
   - absl/flags:flag
   corpus_dirs:
   - test/core/json/corpus
@@ -6442,9 +6442,9 @@ targets:
   src:
   - test/core/json/json_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: large_metadata_bad_client_test
   gtest: true
@@ -6458,9 +6458,9 @@ targets:
   - test/core/bad_client/tests/large_metadata.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: lb_get_cpu_stats_test
   gtest: true
   build: test
@@ -6474,10 +6474,10 @@ targets:
   - src/cpp/server/load_reporter/get_cpu_stats_windows.cc
   - test/cpp/server/load_reporter/get_cpu_stats_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
   - grpc++
+  - grpc
+  - gpr
 - name: lb_load_data_store_test
   gtest: true
   build: test
@@ -6499,9 +6499,9 @@ targets:
   src:
   - test/core/security/linux_system_roots_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: log_test
   gtest: true
   build: test
@@ -6510,8 +6510,8 @@ targets:
   src:
   - test/core/gpr/log_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: matchers_test
   gtest: true
@@ -6521,9 +6521,9 @@ targets:
   src:
   - test/core/security/matchers_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: message_allocator_end2end_test
   gtest: true
   build: test
@@ -6537,11 +6537,11 @@ targets:
   - test/cpp/end2end/message_allocator_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: mock_test
   gtest: true
@@ -6555,12 +6555,12 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/end2end/mock_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
   - grpc++_test
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: nanopb_fuzzer_response_test
   build: fuzzer
@@ -6570,10 +6570,10 @@ targets:
   - test/core/nanopb/fuzzer_response.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
+  - gpr
   - absl/flags:flag
   corpus_dirs:
   - test/core/nanopb/corpus_response
@@ -6586,10 +6586,10 @@ targets:
   - test/core/nanopb/fuzzer_serverlist.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
+  - gpr
   - absl/flags:flag
   corpus_dirs:
   - test/core/nanopb/corpus_serverlist
@@ -6605,11 +6605,11 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/end2end/nonblocking_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: noop-benchmark
   build: test
@@ -6632,14 +6632,14 @@ targets:
   deps:
   - grpc_test_util
   - gpr
-  - absl/base:base
-  - absl/memory:memory
-  - absl/status:status
-  - absl/strings:str_format
-  - absl/strings:strings
-  - absl/synchronization:synchronization
-  - absl/time:time
   - absl/types:optional
+  - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:status
+  - absl/memory:memory
+  - absl/base:base
 - name: out_of_bounds_bad_client_test
   gtest: true
   build: test
@@ -6652,9 +6652,9 @@ targets:
   - test/core/bad_client/tests/out_of_bounds.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: percent_decode_fuzzer
   build: fuzzer
   language: c++
@@ -6663,10 +6663,10 @@ targets:
   - test/core/slice/percent_decode_fuzzer.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
+  - gpr
   - absl/flags:flag
   corpus_dirs:
   - test/core/slice/percent_decode_corpus
@@ -6679,10 +6679,10 @@ targets:
   - test/core/slice/percent_encode_fuzzer.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
+  - gpr
   - absl/flags:flag
   corpus_dirs:
   - test/core/slice/percent_encode_corpus
@@ -6695,9 +6695,9 @@ targets:
   src:
   - test/core/transport/pid_controller_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: port_sharing_end2end_test
   gtest: true
   build: test
@@ -6711,11 +6711,11 @@ targets:
   - test/cpp/end2end/port_sharing_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: proto_server_reflection_test
   gtest: true
@@ -6733,12 +6733,12 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/proto_reflection_descriptor_database.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
   - grpc++_reflection
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: proto_utils_test
   gtest: true
@@ -6748,8 +6748,8 @@ targets:
   src:
   - test/cpp/codegen/proto_utils_test.cc
   deps:
-  - grpc++
   - grpc_test_util
+  - grpc++
   uses_polling: false
 - name: qps_json_driver
   build: test
@@ -6794,14 +6794,14 @@ targets:
   - test/cpp/qps/server_sync.cc
   - test/cpp/qps/usage_timer.cc
   deps:
-  - grpc++
   - grpc++_test_config
   - grpc++_test_util
   - grpc_test_util
+  - grpc++
   - grpc
   - gpr
-  - absl/flags:flag
   - absl/synchronization:synchronization
+  - absl/flags:flag
 - name: qps_worker
   build: test
   run: false
@@ -6836,14 +6836,14 @@ targets:
   - test/cpp/qps/usage_timer.cc
   - test/cpp/qps/worker.cc
   deps:
-  - grpc++
-  - grpc_test_util
   - grpc++_test_config
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
   - grpc
   - gpr
-  - absl/flags:flag
   - absl/synchronization:synchronization
+  - absl/flags:flag
 - name: raw_end2end_test
   gtest: true
   build: test
@@ -6858,11 +6858,11 @@ targets:
   - test/cpp/end2end/raw_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: ref_counted_ptr_test
   gtest: true
@@ -6874,14 +6874,14 @@ targets:
   deps:
   - grpc_test_util
   - gpr
-  - absl/base:base
-  - absl/memory:memory
-  - absl/status:status
-  - absl/strings:str_format
-  - absl/strings:strings
-  - absl/synchronization:synchronization
-  - absl/time:time
   - absl/types:optional
+  - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:status
+  - absl/memory:memory
+  - absl/base:base
 - name: ref_counted_test
   gtest: true
   build: test
@@ -6892,14 +6892,14 @@ targets:
   deps:
   - grpc_test_util
   - gpr
-  - absl/base:base
-  - absl/memory:memory
-  - absl/status:status
-  - absl/strings:str_format
-  - absl/strings:strings
-  - absl/synchronization:synchronization
-  - absl/time:time
   - absl/types:optional
+  - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:status
+  - absl/memory:memory
+  - absl/base:base
 - name: remove_stream_from_stalled_lists_test
   gtest: true
   build: test
@@ -6908,9 +6908,9 @@ targets:
   src:
   - test/core/transport/chttp2/remove_stream_from_stalled_lists_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -6923,9 +6923,9 @@ targets:
   src:
   - test/core/client_channel/retry_throttle_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: secure_auth_context_test
   gtest: true
@@ -6935,9 +6935,9 @@ targets:
   src:
   - test/cpp/common/secure_auth_context_test.cc
   deps:
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
 - name: server_builder_plugin_test
   gtest: true
   build: test
@@ -6952,11 +6952,11 @@ targets:
   - test/cpp/end2end/server_builder_plugin_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: server_builder_test
   gtest: true
@@ -6969,8 +6969,8 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/server/server_builder_test.cc
   deps:
-  - grpc++_unsecure
   - grpc_test_util_unsecure
+  - grpc++_unsecure
   - absl/synchronization:synchronization
   platforms:
   - linux
@@ -6987,8 +6987,8 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
-  - grpc++_unsecure
   - grpc_test_util_unsecure
+  - grpc++_unsecure
   - absl/synchronization:synchronization
   platforms:
   - linux
@@ -7002,9 +7002,9 @@ targets:
   src:
   - test/core/surface/server_chttp2_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: server_context_test_spouse_test
   gtest: true
   build: test
@@ -7013,12 +7013,12 @@ targets:
   src:
   - test/cpp/test/server_context_test_spouse_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
   - grpc++_test
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: server_early_return_test
   gtest: true
   build: test
@@ -7030,11 +7030,11 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/end2end/server_early_return_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: server_fuzzer
   build: fuzzer
@@ -7044,10 +7044,10 @@ targets:
   - test/core/end2end/fuzzers/server_fuzzer.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
+  - gpr
   - absl/flags:flag
   corpus_dirs:
   - test/core/end2end/fuzzers/server_fuzzer_corpus
@@ -7068,11 +7068,11 @@ targets:
   - test/cpp/end2end/server_interceptors_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: server_registered_method_bad_client_test
   gtest: true
@@ -7086,9 +7086,9 @@ targets:
   - test/core/bad_client/tests/server_registered_method.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: server_request_call_test
   gtest: true
   build: test
@@ -7100,8 +7100,8 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/server/server_request_call_test.cc
   deps:
-  - grpc++_unsecure
   - grpc_test_util_unsecure
+  - grpc++_unsecure
   - absl/synchronization:synchronization
   platforms:
   - linux
@@ -7121,11 +7121,11 @@ targets:
   - test/cpp/end2end/service_config_end2end_test.cc
   - test/cpp/end2end/test_service_impl.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: service_config_test
   gtest: true
@@ -7135,9 +7135,9 @@ targets:
   src:
   - test/core/client_channel/service_config_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: settings_timeout_test
   gtest: true
   build: test
@@ -7147,9 +7147,9 @@ targets:
   src:
   - test/core/transport/chttp2/settings_timeout_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: shutdown_test
   gtest: true
   build: test
@@ -7162,11 +7162,11 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/end2end/shutdown_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: simple_request_bad_client_test
   gtest: true
@@ -7180,9 +7180,9 @@ targets:
   - test/core/bad_client/tests/simple_request.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: ssl_server_fuzzer
   build: fuzzer
   language: c++
@@ -7191,10 +7191,10 @@ targets:
   - test/core/security/ssl_server_fuzzer.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
+  - gpr
   - absl/flags:flag
   corpus_dirs:
   - test/core/security/corpus/ssl_server_corpus
@@ -7208,21 +7208,21 @@ targets:
   - test/core/util/stack_tracer_test.cc
   deps:
   - grpc_test_util
-  - gpr
   - address_sorting
+  - gpr
+  - absl/types:optional
+  - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
   - absl/debugging:symbolize
   - absl/debugging:stacktrace
-  - absl/container:flat_hash_map
   - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
-  - absl/types:optional
+  - absl/container:flat_hash_map
   - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
-  - absl/time:time
   - upb
   platforms:
   - linux
@@ -7237,9 +7237,9 @@ targets:
   src:
   - test/core/gprpp/stat_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: static_metadata_test
   gtest: true
@@ -7249,9 +7249,9 @@ targets:
   src:
   - test/core/transport/static_metadata_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: stats_test
   gtest: true
   build: test
@@ -7260,9 +7260,9 @@ targets:
   src:
   - test/core/debug/stats_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   uses_polling: false
 - name: status_metadata_test
   gtest: true
@@ -7272,8 +7272,8 @@ targets:
   src:
   - test/core/transport/status_metadata_test.cc
   deps:
-  - grpc
   - grpc_test_util
+  - grpc
   uses_polling: false
 - name: status_util_test
   gtest: true
@@ -7283,8 +7283,8 @@ targets:
   src:
   - test/core/channel/status_util_test.cc
   deps:
-  - grpc
   - grpc_test_util
+  - grpc
   uses_polling: false
 - name: stranded_event_test
   gtest: true
@@ -7296,9 +7296,9 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/iomgr/stranded_event_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -7315,11 +7315,11 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/end2end/streaming_throughput_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
   platforms:
   - linux
@@ -7333,8 +7333,8 @@ targets:
   src:
   - test/cpp/util/string_ref_test.cc
   deps:
-  - grpc++
   - grpc_test_util
+  - grpc++
   uses_polling: false
 - name: test_cpp_client_credentials_test
   gtest: true
@@ -7344,10 +7344,10 @@ targets:
   src:
   - test/cpp/client/credentials_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
   - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: test_cpp_server_credentials_test
   gtest: true
   build: test
@@ -7356,10 +7356,10 @@ targets:
   src:
   - test/cpp/server/credentials_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
   - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: test_cpp_util_slice_test
   gtest: true
   build: test
@@ -7388,12 +7388,12 @@ targets:
   src:
   - test/cpp/thread_manager/thread_manager_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_config
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: thread_stress_test
   gtest: true
   build: test
@@ -7406,11 +7406,11 @@ targets:
   - src/proto/grpc/testing/simple_messages.proto
   - test/cpp/end2end/thread_stress_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
   platforms:
   - linux
@@ -7425,8 +7425,8 @@ targets:
   src:
   - test/cpp/common/time_jump_test.cc
   deps:
-  - grpc++
   - grpc_test_util
+  - grpc++
   platforms:
   - linux
   - posix
@@ -7439,8 +7439,8 @@ targets:
   src:
   - test/core/gprpp/time_util_test.cc
   deps:
-  - gpr
   - grpc_test_util
+  - gpr
   uses_polling: false
 - name: timer_test
   gtest: true
@@ -7450,8 +7450,8 @@ targets:
   src:
   - test/cpp/common/timer_test.cc
   deps:
-  - grpc++
   - grpc_test_util
+  - grpc++
 - name: tls_security_connector_test
   gtest: true
   build: test
@@ -7460,21 +7460,21 @@ targets:
   src:
   - test/core/security/tls_security_connector_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   - libssl
 - name: too_many_pings_test
   gtest: true
@@ -7486,12 +7486,12 @@ targets:
   - test/core/end2end/cq_verifier.cc
   - test/core/transport/chttp2/too_many_pings_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_config
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: unknown_frame_bad_client_test
   gtest: true
   build: test
@@ -7504,9 +7504,9 @@ targets:
   - test/core/bad_client/tests/unknown_frame.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: uri_fuzzer_test
   build: fuzzer
   language: c++
@@ -7515,10 +7515,10 @@ targets:
   - test/core/uri/uri_fuzzer_test.cc
   - test/core/util/fuzzer_corpus_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc_test_util
   - grpc++_test_config
+  - grpc_test_util
+  - grpc
+  - gpr
   - absl/flags:flag
   corpus_dirs:
   - test/core/uri/uri_corpus
@@ -7531,8 +7531,8 @@ targets:
   src:
   - test/core/uri/uri_parser_test.cc
   deps:
-  - grpc
   - grpc_test_util
+  - grpc
 - name: window_overflow_bad_client_test
   gtest: true
   build: test
@@ -7545,9 +7545,9 @@ targets:
   - test/core/bad_client/tests/window_overflow.cc
   - test/core/end2end/cq_verifier.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: work_serializer_test
   gtest: true
   build: test
@@ -7556,9 +7556,9 @@ targets:
   src:
   - test/core/iomgr/work_serializer_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
   platforms:
   - linux
   - posix
@@ -7616,25 +7616,25 @@ targets:
   - test/core/util/trickle_endpoint.cc
   - test/cpp/performance/writes_per_rpc_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc++
+  - grpc
   - address_sorting
-  - absl/synchronization:synchronization
-  - absl/debugging:failure_signal_handler
-  - absl/debugging:symbolize
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
   - absl/time:time
-  - upb
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/debugging:symbolize
   - absl/debugging:stacktrace
+  - absl/debugging:failure_signal_handler
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   platforms:
   - linux
   - posix
@@ -7647,9 +7647,9 @@ targets:
   src:
   - test/core/xds/xds_bootstrap_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
+  - grpc
+  - gpr
 - name: xds_certificate_provider_test
   gtest: true
   build: test
@@ -7658,21 +7658,21 @@ targets:
   src:
   - test/core/xds/xds_certificate_provider_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   - libssl
 - name: xds_credentials_end2end_test
   gtest: true
@@ -7687,11 +7687,11 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds_credentials_end2end_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/synchronization:synchronization
 - name: xds_credentials_test
   gtest: true
@@ -7701,21 +7701,21 @@ targets:
   src:
   - test/core/security/xds_credentials_test.cc
   deps:
-  - gpr
-  - grpc
   - grpc_test_util
-  - upb
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
+  - upb
   - libssl
 - name: xds_end2end_test
   gtest: true
@@ -7757,22 +7757,22 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
-  - gpr
-  - grpc
-  - grpc++
-  - grpc_test_util
   - grpc++_test_util
-  - absl/container:flat_hash_map
-  - absl/container:inlined_vector
-  - absl/status:status
-  - absl/status:statusor
-  - absl/strings:strings
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
   - absl/types:optional
-  - absl/base:base
-  - absl/memory:memory
-  - absl/strings:str_format
-  - absl/synchronization:synchronization
   - absl/time:time
+  - absl/synchronization:synchronization
+  - absl/strings:strings
+  - absl/strings:str_format
+  - absl/status:statusor
+  - absl/status:status
+  - absl/memory:memory
+  - absl/container:inlined_vector
+  - absl/container:flat_hash_map
+  - absl/base:base
   - upb
   platforms:
   - linux
@@ -7789,11 +7789,11 @@ targets:
   - src/proto/grpc/testing/test.proto
   - test/cpp/interop/xds_interop_client.cc
   deps:
-  - grpc++
-  - grpc_test_util
   - grpc++_test_config
-  - absl/flags:flag
+  - grpc_test_util
+  - grpc++
   - absl/synchronization:synchronization
+  - absl/flags:flag
 - name: xds_interop_server
   build: test
   run: false
@@ -7805,9 +7805,9 @@ targets:
   - src/proto/grpc/testing/test.proto
   - test/cpp/interop/xds_interop_server.cc
   deps:
-  - grpc++
-  - grpc_test_util
   - grpc++_test_config
-  - absl/flags:flag
+  - grpc_test_util
+  - grpc++
   - absl/synchronization:synchronization
+  - absl/flags:flag
 tests: []
