@@ -123,7 +123,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_exponential_biased
   absl_fixed_array
   absl_flat_hash_map
-  absl_flat_hash_set
   absl_function_ref
   absl_graphcycles_internal
   absl_hash
@@ -887,6 +886,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx qps_json_driver)
   add_dependencies(buildtests_cxx qps_worker)
   add_dependencies(buildtests_cxx raw_end2end_test)
+  add_dependencies(buildtests_cxx rbac_translator_test)
   add_dependencies(buildtests_cxx ref_counted_ptr_test)
   add_dependencies(buildtests_cxx ref_counted_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1864,9 +1864,7 @@ add_library(grpc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/security/authorization/authorization_engine.cc
-  src/core/lib/security/authorization/evaluate_args.cc
-  src/core/lib/security/authorization/matchers.cc
+  src/core/lib/matchers/matchers.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -2036,7 +2034,6 @@ target_link_libraries(grpc
   absl::status
   absl::bind_front
   absl::inlined_vector
-  absl::flat_hash_set
   absl::flat_hash_map
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -8555,6 +8552,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(authorization_engine_test
+  src/core/lib/security/authorization/authorization_engine.cc
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/rbac_policy.cc
   test/core/security/authorization_engine_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -8587,6 +8587,7 @@ target_link_libraries(authorization_engine_test
   address_sorting
   upb
   ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_set
 )
 
 
@@ -11089,6 +11090,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(evaluate_args_test
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/rbac_policy.cc
   test/core/security/evaluate_args_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -13749,6 +13752,49 @@ target_link_libraries(raw_end2end_test
   grpc++_test_util
   grpc_test_util
   grpc++
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_SSL_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(rbac_translator_test
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/rbac_policy.cc
+  src/core/lib/security/authorization/rbac_translator.cc
+  test/core/security/rbac_translator_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(rbac_translator_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(rbac_translator_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
   grpc
   gpr
   address_sorting

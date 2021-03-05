@@ -1443,9 +1443,7 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/security/authorization/authorization_engine.cc \
-    src/core/lib/security/authorization/evaluate_args.cc \
-    src/core/lib/security/authorization/matchers.cc \
+    src/core/lib/matchers/matchers.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -2830,9 +2828,7 @@ src/core/ext/xds/xds_client_stats.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_filters.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_server_config_fetcher.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/authorization/authorization_engine.cc: $(OPENSSL_DEP)
-src/core/lib/security/authorization/evaluate_args.cc: $(OPENSSL_DEP)
-src/core/lib/security/authorization/matchers.cc: $(OPENSSL_DEP)
+src/core/lib/matchers/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)

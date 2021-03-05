@@ -1422,9 +1422,9 @@ grpc_cc_library(
     deps = [
         "envoy_ads_upb",
         "envoy_ads_upbdefs",
-        "grpc_authorization_engine",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_matchers",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
         "udpa_type_upb",
@@ -1984,21 +1984,70 @@ grpc_cc_library(
     ],
 )
 
+# This target depends on RE2 and should not be linked into grpc by default for binary-size reasons.
 grpc_cc_library(
-    name = "grpc_authorization_engine",
+    name = "grpc_matchers",
+    srcs = [
+        "src/core/lib/matchers/matchers.cc",
+    ],
+    hdrs = [
+        "src/core/lib/matchers/matchers.h",
+    ],
+    external_deps = [
+        "re2",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+grpc_cc_library(
+    name = "grpc_rbac_engine",
+    srcs = [
+        "src/core/lib/security/authorization/evaluate_args.cc",
+        "src/core/lib/security/authorization/rbac_policy.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/rbac_policy.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_matchers",
+        "grpc_secure",
+    ],
+)
+
+# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+grpc_cc_library(
+    name = "grpc_authorization_provider",
+    srcs = [
+        "src/core/lib/security/authorization/rbac_translator.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/authorization/rbac_translator.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_matchers",
+        "grpc_rbac_engine",
+    ],
+)
+
+# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+grpc_cc_library(
+    name = "grpc_cel_engine",
     srcs = [
         "src/core/lib/security/authorization/authorization_engine.cc",
-        "src/core/lib/security/authorization/evaluate_args.cc",
-        "src/core/lib/security/authorization/matchers.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
-        "src/core/lib/security/authorization/evaluate_args.h",
-        "src/core/lib/security/authorization/matchers.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
-        "re2",
     ],
     language = "c++",
     deps = [
@@ -2006,7 +2055,7 @@ grpc_cc_library(
         "google_api_upb",
         "grpc_base",
         "grpc_mock_cel",
-        "grpc_secure",
+        "grpc_rbac_engine",
     ],
 )
 
