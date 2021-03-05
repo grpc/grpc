@@ -870,6 +870,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - third_party/xxhash/xxhash.h
   src:
   - src/core/ext/filters/census/grpc_context.cc
   - src/core/ext/filters/client_channel/backend_metric.cc
