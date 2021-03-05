@@ -84,6 +84,22 @@ TEST(GenerateRbacPoliciesTest, MissingAllowRules) {
             "\"allow_rules\" is not present.");
 }
 
+TEST(GenerateRbacPoliciesTest, MissingDenyRules) {
+  const char* authz_policy =
+      "{"
+      "  \"name\": \"authz\","
+      "  \"allow_rules\": ["
+      "    {"
+      "      \"name\": \"allow_policy\""
+      "    }"
+      "  ]"
+      "}";
+  auto rbac_policies = GenerateRbacPolicies(authz_policy);
+  ASSERT_TRUE(rbac_policies.ok());
+  EXPECT_EQ(rbac_policies.value().deny_policy.action, Rbac::Action::DENY);
+  EXPECT_TRUE(rbac_policies.value().deny_policy.policies.empty());
+}
+
 TEST(GenerateRbacPoliciesTest, IncorrectAllowRulesType) {
   const char* authz_policy =
       "{"
@@ -160,7 +176,6 @@ TEST(GenerateRbacPoliciesTest, MissingSourceAndRequest) {
       "}";
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   ASSERT_TRUE(rbac_policies.ok());
-  EXPECT_EQ(rbac_policies.value().deny_policy.action, Rbac::Action::DENY);
   EXPECT_EQ(rbac_policies.value().allow_policy.action, Rbac::Action::ALLOW);
   EXPECT_THAT(rbac_policies.value().allow_policy.policies,
               ::testing::ElementsAre(::testing::Pair(
@@ -190,7 +205,6 @@ TEST(GenerateRbacPoliciesTest, EmptySourceAndRequest) {
       "}";
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   ASSERT_TRUE(rbac_policies.ok());
-  EXPECT_EQ(rbac_policies.value().deny_policy.action, Rbac::Action::DENY);
   EXPECT_EQ(rbac_policies.value().allow_policy.action, Rbac::Action::ALLOW);
   EXPECT_THAT(rbac_policies.value().allow_policy.policies,
               ::testing::ElementsAre(::testing::Pair(
@@ -644,6 +658,7 @@ TEST(GenerateRbacPoliciesTest, ParseRequestHeadersSuccess) {
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   ASSERT_TRUE(rbac_policies.ok());
   EXPECT_EQ(rbac_policies.value().deny_policy.action, Rbac::Action::DENY);
+  EXPECT_TRUE(rbac_policies.value().deny_policy.policies.empty());
   EXPECT_EQ(rbac_policies.value().allow_policy.action, Rbac::Action::ALLOW);
   EXPECT_THAT(
       rbac_policies.value().allow_policy.policies,
@@ -727,6 +742,7 @@ TEST(GenerateRbacPoliciesTest, ParseRulesArraySuccess) {
   auto rbac_policies = GenerateRbacPolicies(authz_policy);
   ASSERT_TRUE(rbac_policies.ok());
   EXPECT_EQ(rbac_policies.value().deny_policy.action, Rbac::Action::DENY);
+  EXPECT_TRUE(rbac_policies.value().deny_policy.policies.empty());
   EXPECT_EQ(rbac_policies.value().allow_policy.action, Rbac::Action::ALLOW);
   EXPECT_THAT(
       rbac_policies.value().allow_policy.policies,
