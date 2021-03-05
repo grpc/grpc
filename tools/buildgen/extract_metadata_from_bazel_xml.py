@@ -254,114 +254,214 @@ def _deduplicate_append(target: List[str], pending: List[str]) -> None:
         if dep not in seen:
             target.append(dep)
 
-
-def _compute_transitive_metadata(
-        rule_name: str, bazel_rules: Any,
-        bazel_label_to_dep_name: Dict[str, str]) -> None:
-    """Computes the final build metadata for Bazel target with rule_name.
-
-    The dependencies that will appear on the deps list are:
-
-    * Public build targets including binaries and tests;
-    * External targets, like absl, re2.
-
-    All other intermediate dependencies will be merged, which means their
-    source file, headers, etc. will be collected into one build target. This
-    step of processing will greatly reduce the complexity of the generated
-    CMake build files.
-
-    The final build metadata are:
-    * _TRANSITIVE_DEPS: all the transitive dependencies including intermediate
-                        targets;
-    * _COLLAPSED_DEPS:  dependencies that fits our requirement above, and it
-                        will remove duplicated items and produce the shortest
-                        possible dependency list;
-    * _COLLAPSED_SRCS:  the merged source files;
-    * _COLLAPSED_PUBLIC_HEADERS: the merged public headers;
-    * _COLLAPSED_HEADERS: the merged non-public headers.
-    * _EXCLUDE_DEPS: the intermediate dependency labels.
-
-    For the new collapsed_deps, the new algorithm improved cases like:
-
-    The previous result:
-        end2end_tests -> [grpc_test_util, grpc, gpr, address_sorting, upb]
-        grpc_test_util -> [grpc, gpr, address_sorting, upb, ...]
-        grpc -> [gpr, address_sorting, upb, ...]
-    
-    The new result:
-        end2end_tests -> [grpc_test_util]
-        grpc_test_util -> [grpc]
-        grpc -> [gpr, address_sorting, upb, ...]
-    """
-    bazel_rule = bazel_rules[rule_name]
+def _compute_transitive_deps_for_rule(rule_name: str, bazel_rules: Any, bazel_label_to_dep_name: Dict[str, str]) -> None:
+    """Computes transitive deps and transitive intermediate deps for targets"""
+    bazel_rule = bazel_rules[rule_name]  
     direct_deps = _extract_deps(bazel_rule, bazel_rules)
+
     transitive_deps = []
-    # We care about the order of dependencies list, so it will be a list.
-    collapsed_deps = []
-    # We don't care about the order of srcs and headers, they will be sorted.
-    collapsed_srcs = set(_extract_sources(bazel_rule))
-    collapsed_public_headers = set(_extract_public_headers(bazel_rule))
-    collapsed_headers = set(_extract_nonpublic_headers(bazel_rule))
-    exclude_deps = set()
+    transitive_intermediate_deps = []
+    public_deps = []
+    external_deps = []
 
     for dep in direct_deps:
-        external_dep_name_maybe = _external_dep_name_from_bazel_dependency(dep)
 
-        if dep in bazel_rules:
-            if external_dep_name_maybe is None:
+        #if dep == '//:gpr_base' and rule_name != '//:gpr':
+        #    # DIRTY HACK!!!
+        #    dep = '//:gpr'
+
+        is_external_dep = _external_dep_name_from_bazel_dependency(dep) is not None
+        is_public_dep = dep in bazel_label_to_dep_name
+                
+        # First make sure that dependency info for all our transitive dependencies
+        # has been computed already.
+        if dep in bazel_rules and not is_external_dep:
+                # Compute transitive dependency info by recursive descent,
+                # avoid visiting nodes that are already marked as done.
                 if "_PROCESSING_DONE" not in bazel_rules[dep]:
-                    # This item is not processed before, compute now
-                    _compute_transitive_metadata(dep, bazel_rules,
-                                                 bazel_label_to_dep_name)
+                    _compute_transitive_deps_for_rule(dep, bazel_rules,
+                                                      bazel_label_to_dep_name)                
                 _deduplicate_append(
                     transitive_deps,
                     bazel_rules[dep].get('_TRANSITIVE_DEPS', []))
-                _deduplicate_append(collapsed_deps,
-                                    bazel_rules[dep].get('_COLLAPSED_DEPS', []))
-                exclude_deps.update(bazel_rules[dep].get('_EXCLUDE_DEPS', []))
+        
+        _deduplicate_append(transitive_deps, [dep])
+        
+        if is_public_dep:    
+            _deduplicate_append(public_deps, [dep])
+        elif is_external_dep:
+            _deduplicate_append(external_deps, [dep])
+        elif dep in bazel_rules:
+            # a dependency that is not public nor external is "intermediate"
+            _deduplicate_append(transitive_intermediate_deps, [dep])
+            # only update intermediate deps from direct deps that are intermediate themselves
+            _deduplicate_append(
+                transitive_intermediate_deps,
+                bazel_rules[dep].get('_TRANSITIVE_INTERMEDIATE_DEPS', []))
 
-        # This dep is a public target, add it as a dependency
-        if dep in bazel_label_to_dep_name:
-            _deduplicate_append(transitive_deps, [bazel_label_to_dep_name[dep]])
-            _deduplicate_append(collapsed_deps, [bazel_label_to_dep_name[dep]])
-            exclude_deps.update(bazel_rules[dep]['_TRANSITIVE_DEPS'])
-            exclude_deps.add(dep)
-            continue
+    # public libraries that our intermediate deps depend on
+    for dep in transitive_intermediate_deps:
+        for dep_dep in _extract_deps(bazel_rules[dep], bazel_rules):
+            if dep_dep in bazel_label_to_dep_name:
+               _deduplicate_append(public_deps, [dep_dep])
 
-        # This dep is an external target, add it as a dependency
-        if external_dep_name_maybe is not None:
-            _deduplicate_append(transitive_deps, [external_dep_name_maybe])
-            _deduplicate_append(collapsed_deps, [external_dep_name_maybe])
-            continue
+    # we must not colapse sources for intermediate deps that some of our public deps already depend on
+    # because that would lead to compiling the same files twice.
+    intermediate_deps_to_skip_collapsing = set()
+    for dep in public_deps:
+        #if dep in bazel_rules:
+        intermediate_deps_to_skip_collapsing.update(bazel_rules[dep].get('_TRANSITIVE_DEPS', []))
 
-    # Direct dependencies are part of transitive dependencies
-    _deduplicate_append(transitive_deps, direct_deps)
+    # produce srcs, public_header and headers by collapsing all intermediate dependencies
+    collapsed_srcs = set(_extract_sources(bazel_rule))
+    collapsed_public_headers = set(_extract_public_headers(bazel_rule))
+    collapsed_headers = set(_extract_nonpublic_headers(bazel_rule))
+    for dep in transitive_intermediate_deps:
+        if dep not in intermediate_deps_to_skip_collapsing:
+            collapsed_srcs.update(_extract_sources(bazel_rules[dep]))
+            collapsed_public_headers.update(
+                _extract_public_headers(bazel_rules[dep]))
+            collapsed_headers.update(
+                _extract_nonpublic_headers(bazel_rules[dep]))
 
-    # Removes all duplicated intermediate labels.
-    # This is the step that further shorten the deps list.
-    collapsed_deps = list(
-        filter(lambda x: x not in exclude_deps, collapsed_deps))
-
-    # Compute the final source files and headers, without all intermediate dependencies.
-    for dep in transitive_deps:
-        if dep not in exclude_deps:
-            if dep in bazel_rules:
-                collapsed_srcs.update(_extract_sources(bazel_rules[dep]))
-                collapsed_public_headers.update(
-                    _extract_public_headers(bazel_rules[dep]))
-                collapsed_headers.update(
-                    _extract_nonpublic_headers(bazel_rules[dep]))
-
+    # produce collapsed_deps, it will be the deps that show up in build.yaml
+    collapsed_deps = []
+    for dep in public_deps:
+        _deduplicate_append(collapsed_deps, [bazel_label_to_dep_name[dep]])
+    for dep in external_deps:
+        _deduplicate_append(collapsed_deps, [_external_dep_name_from_bazel_dependency(dep)])
+    
     # This item is a "visited" flag
     bazel_rule["_PROCESSING_DONE"] = True
-    # Following items are described in the docstinrg.
+
     bazel_rule["_TRANSITIVE_DEPS"] = transitive_deps
-    bazel_rule["_COLLAPSED_DEPS"] = collapsed_deps
+    bazel_rule["_TRANSITIVE_INTERMEDIATE_DEPS"] = transitive_intermediate_deps
     bazel_rule["_COLLAPSED_SRCS"] = list(sorted(collapsed_srcs))
     bazel_rule["_COLLAPSED_PUBLIC_HEADERS"] = list(
         sorted(collapsed_public_headers))
     bazel_rule["_COLLAPSED_HEADERS"] = list(sorted(collapsed_headers))
-    bazel_rule["_EXCLUDE_DEPS"] = list(sorted(exclude_deps))
+    bazel_rule["_COLLAPSED_DEPS"] = collapsed_deps
+
+    if rule_name in ['//:gpr', '//:grpc', '//:grpc++']:
+        print(rule_name)
+        print ('\n_TRANSITIVE_DEPS' + str(bazel_rule["_TRANSITIVE_DEPS"]))
+        print ('\n_TRANSITIVE_INTERMEDIATE_DEPS' + str(bazel_rule["_TRANSITIVE_INTERMEDIATE_DEPS"]))
+        print ('\npublic deps ' + str(public_deps))
+        print ('\nskip collapsing ' + str(intermediate_deps_to_skip_collapsing))
+        print('')
+
+
+# def _compute_transitive_metadata(
+#         rule_name: str, bazel_rules: Any,
+#         bazel_label_to_dep_name: Dict[str, str]) -> None:
+#     """Computes the final build metadata for Bazel target with rule_name.
+
+#     The dependencies that will appear on the deps list are:
+
+#     * Public build targets including binaries and tests;
+#     * External targets, like absl, re2.
+
+#     All other intermediate dependencies will be merged, which means their
+#     source file, headers, etc. will be collected into one build target. This
+#     step of processing will greatly reduce the complexity of the generated
+#     CMake build files.
+
+#     The final build metadata are:
+#     * _TRANSITIVE_DEPS: all the transitive dependencies including intermediate
+#                         targets;
+#     * _COLLAPSED_DEPS:  dependencies that fits our requirement above, and it
+#                         will remove duplicated items and produce the shortest
+#                         possible dependency list;
+#     * _COLLAPSED_SRCS:  the merged source files;
+#     * _COLLAPSED_PUBLIC_HEADERS: the merged public headers;
+#     * _COLLAPSED_HEADERS: the merged non-public headers.
+#     * _EXCLUDE_DEPS: the intermediate dependency labels.
+
+#     For the new collapsed_deps, the new algorithm improved cases like:
+
+#     The previous result:
+#         end2end_tests -> [grpc_test_util, grpc, gpr, address_sorting, upb]
+#         grpc_test_util -> [grpc, gpr, address_sorting, upb, ...]
+#         grpc -> [gpr, address_sorting, upb, ...]
+    
+#     The new result:
+#         end2end_tests -> [grpc_test_util]
+#         grpc_test_util -> [grpc]
+#         grpc -> [gpr, address_sorting, upb, ...]
+#     """
+#     _compute_transitive_deps_for_rule(rule_name, bazel_rules, bazel_label_to_dep_name)
+
+#     bazel_rule = bazel_rules[rule_name]
+#     direct_deps = _extract_deps(bazel_rule, bazel_rules)
+#     transitive_deps = []
+#     # We care about the order of dependencies list, so it will be a list.
+#     collapsed_deps = []
+#     # We don't care about the order of srcs and headers, they will be sorted.
+#     collapsed_srcs = set(_extract_sources(bazel_rule))
+#     collapsed_public_headers = set(_extract_public_headers(bazel_rule))
+#     collapsed_headers = set(_extract_nonpublic_headers(bazel_rule))
+#     exclude_deps = set()
+
+#     for dep in direct_deps:
+#         external_dep_name_maybe = _external_dep_name_from_bazel_dependency(dep)
+
+#         if dep in bazel_rules:
+#             if external_dep_name_maybe is None:
+#                 if "_PROCESSING_DONE" not in bazel_rules[dep]:
+#                     # This item is not processed before, compute now
+#                     _compute_transitive_metadata(dep, bazel_rules,
+#                                                  bazel_label_to_dep_name)
+#                 _deduplicate_append(
+#                     transitive_deps,
+#                     bazel_rules[dep].get('_TRANSITIVE_DEPS', []))
+#                 _deduplicate_append(collapsed_deps,
+#                                     bazel_rules[dep].get('_COLLAPSED_DEPS', []))
+#                 exclude_deps.update(bazel_rules[dep].get('_EXCLUDE_DEPS', []))
+
+#         # This dep is a public target, add it as a dependency
+#         if dep in bazel_label_to_dep_name:
+#             _deduplicate_append(transitive_deps, [bazel_label_to_dep_name[dep]])
+#             _deduplicate_append(collapsed_deps, [bazel_label_to_dep_name[dep]])
+#             exclude_deps.update(bazel_rules[dep]['_TRANSITIVE_DEPS'])
+#             exclude_deps.add(dep)
+#             continue
+
+#         # This dep is an external target, add it as a dependency
+#         if external_dep_name_maybe is not None:
+#             _deduplicate_append(transitive_deps, [external_dep_name_maybe])
+#             _deduplicate_append(collapsed_deps, [external_dep_name_maybe])
+#             continue
+
+#     # Direct dependencies are part of transitive dependencies
+#     _deduplicate_append(transitive_deps, direct_deps)
+
+#     # Removes all duplicated intermediate labels.
+#     # This is the step that further shorten the deps list.
+#     collapsed_deps = list(
+#         filter(lambda x: x not in exclude_deps, collapsed_deps))
+
+#     # Compute the final source files and headers, without all intermediate dependencies.
+#     for dep in transitive_deps:
+#         if dep not in exclude_deps:
+#             if dep in bazel_rules:
+#                 collapsed_srcs.update(_extract_sources(bazel_rules[dep]))
+#                 collapsed_public_headers.update(
+#                     _extract_public_headers(bazel_rules[dep]))
+#                 collapsed_headers.update(
+#                     _extract_nonpublic_headers(bazel_rules[dep]))
+
+#     #
+#     collapsed_deps = []
+
+#     # This item is a "visited" flag
+#     bazel_rule["_PROCESSING_DONE"] = True
+#     # Following items are described in the docstinrg.
+#     bazel_rule["_TRANSITIVE_DEPS"] = transitive_deps
+#     bazel_rule["_COLLAPSED_SRCS"] = list(sorted(collapsed_srcs))
+#     bazel_rule["_COLLAPSED_PUBLIC_HEADERS"] = list(
+#         sorted(collapsed_public_headers))
+#     bazel_rule["_COLLAPSED_HEADERS"] = list(sorted(collapsed_headers))
+#     bazel_rule["_COLLAPSED_DEPS"] = collapsed_deps
 
 
 # TODO(jtattermusch): deduplicate with transitive_dependencies.py (which has a slightly different logic)
@@ -377,7 +477,7 @@ def _populate_transitive_metadata(bazel_rules: Any,
     # TODO(lidiz) potentially we could only update a subset of rules
     for rule_name in bazel_rules:
         if "_PROCESSING_DONE" not in bazel_rules[rule_name]:
-            _compute_transitive_metadata(rule_name, bazel_rules,
+            _compute_transitive_deps_for_rule(rule_name, bazel_rules,
                                          bazel_label_to_dep_name)
 
 
