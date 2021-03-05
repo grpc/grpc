@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/security/authorization/matchers.h"
+#include "src/core/lib/matchers/matchers.h"
 
 #include <gtest/gtest.h>
 

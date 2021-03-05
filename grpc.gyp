@@ -60,7 +60,6 @@
       '-Ithird_party/upb',
       '-Isrc/core/ext/upb-generated',
       '-Isrc/core/ext/upbdefs-generated',
-      '-Ithird_party/xxhash',
     ],
     'ldflags': [
       '-g',
@@ -140,7 +139,6 @@
             '-Ithird_party/upb',
             '-Isrc/core/ext/upb-generated',
             '-Isrc/core/ext/upbdefs-generated',
-            '-Ithird_party/xxhash',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
             '-g',
@@ -152,7 +150,6 @@
             '-Ithird_party/upb',
             '-Isrc/core/ext/upb-generated',
             '-Isrc/core/ext/upbdefs-generated',
-            '-Ithird_party/xxhash',
             '-stdlib=libc++',
             '-std=c++11',
             '-Wno-error=deprecated-declarations',
@@ -452,7 +449,6 @@
         'absl/status:status',
         'absl/functional:bind_front',
         'absl/container:inlined_vector',
-        'absl/container:flat_hash_set',
         'absl/container:flat_hash_map',
       ],
       'sources': [
@@ -865,9 +861,7 @@
         'src/core/lib/json/json_reader.cc',
         'src/core/lib/json/json_util.cc',
         'src/core/lib/json/json_writer.cc',
-        'src/core/lib/security/authorization/authorization_engine.cc',
-        'src/core/lib/security/authorization/evaluate_args.cc',
-        'src/core/lib/security/authorization/matchers.cc',
+        'src/core/lib/matchers/matchers.cc',
         'src/core/lib/security/context/security_context.cc',
         'src/core/lib/security/credentials/alts/alts_credentials.cc',
         'src/core/lib/security/credentials/alts/check_gcp_environment.cc',
