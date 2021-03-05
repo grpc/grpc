@@ -51,10 +51,12 @@
 #include "envoy/config/route/v3/route_components.upb.h"
 #include "envoy/config/route/v3/route_components.upbdefs.h"
 #include "envoy/extensions/clusters/aggregate/v3/cluster.upb.h"
+#include "envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h"
 #include "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h"
 #include "envoy/extensions/transport_sockets/tls/v3/common.upb.h"
 #include "envoy/extensions/transport_sockets/tls/v3/tls.upb.h"
+#include "envoy/extensions/transport_sockets/tls/v3/tls.upbdefs.h"
 #include "envoy/service/cluster/v3/cds.upb.h"
 #include "envoy/service/cluster/v3/cds.upbdefs.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
@@ -635,7 +637,11 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
   envoy_config_listener_v3_Listener_getmsgdef(symtab_.ptr());
   envoy_config_route_v3_RouteConfiguration_getmsgdef(symtab_.ptr());
   envoy_config_cluster_v3_Cluster_getmsgdef(symtab_.ptr());
+  envoy_extensions_clusters_aggregate_v3_ClusterConfig_getmsgdef(symtab_.ptr());
+  envoy_config_cluster_v3_Cluster_getmsgdef(symtab_.ptr());
   envoy_config_endpoint_v3_ClusterLoadAssignment_getmsgdef(symtab_.ptr());
+  envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_getmsgdef(
+      symtab_.ptr());
   envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_getmsgdef(
       symtab_.ptr());
   // Load HTTP filter proto messages into the upb symtab.

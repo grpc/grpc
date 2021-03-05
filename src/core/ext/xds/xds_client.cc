@@ -2275,7 +2275,7 @@ void XdsClient::UpdateResourceMetadataWithFailedParseResult(
   // available.
   absl::string_view details = grpc_error_string(result.parse_error);
   for (auto& name : result.resource_names_failed) {
-    ResourceMetadata* resource_metadata;
+    ResourceMetadata* resource_metadata = nullptr;
     if (listener_map_.find(name) != listener_map_.end()) {
       resource_metadata = &listener_map_[name].meta;
     }
@@ -2287,6 +2287,9 @@ void XdsClient::UpdateResourceMetadataWithFailedParseResult(
     }
     if (endpoint_map_.find(name) != endpoint_map_.end()) {
       resource_metadata = &endpoint_map_[name].meta;
+    }
+    if (resource_metadata == nullptr) {
+      return;
     }
     resource_metadata->client_status = ClientResourceStatus::NACKED;
     resource_metadata->failed_version = result.version;

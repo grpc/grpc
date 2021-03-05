@@ -8699,7 +8699,6 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
   ClientStatusDiscoveryServiceTest() : XdsEnd2endTest(1, 1) {}
 
   void SetUp() override {
-    xds_resource_does_not_exist_timeout_ms_ = 5000;
     XdsEnd2endTest::SetUp();
     // The ServerThread picks port using PortSaver, but PortSaver will be reset
     // in XdsEnd2endTest::SetUp(). So, the admin server thread must be created
