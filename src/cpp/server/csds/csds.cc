@@ -52,7 +52,6 @@ absl::StatusOr<ClientConfig> DumpClientConfig() {
   if (json_string.empty()) {
     return absl::UnavailableError("xDS config is empty");
   }
-  std::cout << "FIND!!!" << json_string << std::endl;
   grpc::protobuf::util::Status s =
       grpc::protobuf::json::JsonStringToMessage(json_string, &client_config);
   if (!s.ok()) {
@@ -79,7 +78,7 @@ Status ClientStatusDiscoveryService::StreamClientStatus(
       }
       return Status(StatusCode(s.status().raw_code()), s.status().ToString());
     }
-    *response.add_config() = s.value();
+    *response.add_config() = std::move(s.value());
     stream->Write(response);
   }
   return Status::OK;
@@ -96,7 +95,7 @@ Status ClientStatusDiscoveryService::FetchClientStatus(
     }
     return Status(StatusCode(s.status().raw_code()), s.status().ToString());
   }
-  *response->add_config() = s.value();
+  *response->add_config() = std::move(s.value());
   return Status::OK;
 }
 

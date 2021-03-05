@@ -80,48 +80,6 @@ class XdsClient : public DualRefCounted<XdsClient> {
     virtual void OnResourceDoesNotExist() = 0;
   };
 
-  // Resource status from the view of a xDS client, which tells the
-  // synchronization status between the xDS client and the xDS server.
-  enum ClientResourceStatus {
-    // Resource status is not available/unknown.
-    UNKNOWN = 0,
-    // Client requested this resource but hasn't received any update from
-    // management
-    // server. The client will not fail requests, but will queue them until
-    // update
-    // arrives or the client times out waiting for the resource.
-    REQUESTED,
-    // This resource has been requested by the client but has either not been
-    // delivered by the server or was previously delivered by the server and
-    // then
-    // subsequently removed from resources provided by the server. For more
-    // information, please refer to the :ref:`"Knowing When a Requested Resource
-    // Does Not Exist" <xds_protocol_resource_not_existed>` section.
-    DOES_NOT_EXIST,
-    // Client received this resource and replied with ACK.
-    ACKED,
-    // Client received this resource and replied with NACK.
-    NACKED
-  };
-
-  // The metadata of the xDS resource; used by the xDS config dump.
-  struct ResourceMetadata {
-    // The JSON of the last successfully updated raw xDS resource.
-    Json raw_json;
-    // The timestamp when the resource was last successfully updated.
-    grpc_millis update_time;
-    // The last successfully updated version of the resource.
-    std::string version;
-    // The rejected version string of the last failed update attempt.
-    std::string failed_version;
-    // Details about the last failed update attempt.
-    std::string failed_details;
-    // Timestamp of the last failed update attempt.
-    grpc_millis failed_update_time;
-    // The client status of this resource.
-    ClientResourceStatus client_status;
-  };
-
   // Factory function to get or create the global XdsClient instance.
   // If *error is not GRPC_ERROR_NONE upon return, then there was
   // an error initializing the client.
@@ -267,6 +225,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void MaybeStartLrsCall();
     void StopLrsCall();
 
+    bool HasAdsCall() const;
     bool HasActiveAdsCall() const;
 
     void StartConnectivityWatchLocked();
@@ -292,6 +251,48 @@ class XdsClient : public DualRefCounted<XdsClient> {
     // The retryable XDS calls.
     OrphanablePtr<RetryableCall<AdsCallState>> ads_calld_;
     OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
+  };
+
+  // Resource status from the view of a xDS client, which tells the
+  // synchronization status between the xDS client and the xDS server.
+  enum ClientResourceStatus {
+    // Resource status is not available/unknown.
+    UNKNOWN = 0,
+    // Client requested this resource but hasn't received any update from
+    // management
+    // server. The client will not fail requests, but will queue them until
+    // update
+    // arrives or the client times out waiting for the resource.
+    REQUESTED,
+    // This resource has been requested by the client but has either not been
+    // delivered by the server or was previously delivered by the server and
+    // then
+    // subsequently removed from resources provided by the server. For more
+    // information, please refer to the :ref:`"Knowing When a Requested Resource
+    // Does Not Exist" <xds_protocol_resource_not_existed>` section.
+    DOES_NOT_EXIST,
+    // Client received this resource and replied with ACK.
+    ACKED,
+    // Client received this resource and replied with NACK.
+    NACKED
+  };
+
+  // The metadata of the xDS resource; used by the xDS config dump.
+  struct ResourceMetadata {
+    // The JSON of the last successfully updated raw xDS resource.
+    Json raw_json;
+    // The timestamp when the resource was last successfully updated.
+    grpc_millis update_time;
+    // The last successfully updated version of the resource.
+    std::string version;
+    // The rejected version string of the last failed update attempt.
+    std::string failed_version;
+    // Details about the last failed update attempt.
+    std::string failed_details;
+    // Timestamp of the last failed update attempt.
+    grpc_millis failed_update_time = 0;
+    // The client status of this resource.
+    ClientResourceStatus client_status;
   };
 
   struct ListenerState {
@@ -349,6 +350,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
       bool send_all_clusters, const std::set<std::string>& clusters);
 
+  static XdsClient::ResourceMetadata CreateResourceMetadataAcked(
+      Json raw_json, std::string version, grpc_millis update_time);
+  static Json::Object CreateUpdateFailureStateJson(
+      const XdsClient::ResourceMetadata& resource_metadata);
   void UpdateResourceMetadataWithFailedParseResult(
       grpc_millis update_time, const XdsApi::AdsParseResult& result);
 

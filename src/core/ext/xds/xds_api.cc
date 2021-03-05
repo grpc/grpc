@@ -813,9 +813,11 @@ inline Json SerializeToJson(upb_arena* arena, const upb_msg* msg,
                             const upb_msgdef* m, const upb_symtab* ext_pool,
                             std::vector<grpc_error*>* errors) {
   upb_status status;
+  // This placeholder is needed to make UBSAN happy.
+  char placeholder[0];
   // Measure the JSON string length
   size_t estimated_length =
-      upb_json_encode(msg, m, ext_pool, 0, nullptr, 0, &status);
+      upb_json_encode(msg, m, ext_pool, 0, placeholder, 0, &status);
   // If encode failed
   if (estimated_length == static_cast<size_t>(-1)) {
     const char* error_message = upb_status_errmsg(&status);

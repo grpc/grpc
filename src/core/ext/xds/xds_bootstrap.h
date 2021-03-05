@@ -88,7 +88,6 @@ class XdsBootstrap {
   // add support for fallback for the xds channel.
   const XdsServer& server() const { return servers_[0]; }
   const Node* node() const { return node_.get(); }
-  const Json& raw_node() const { return raw_node_; }
 
   const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
       const {
