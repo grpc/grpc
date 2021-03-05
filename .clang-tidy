@@ -45,12 +45,9 @@
 # - performance-no-automatic-move
 # - performance-unnecessary-copy-initialization
 # - performance-unnecessary-value-param
-# - readability-const-return-type
-# - readability-delete-null-pointer
 # - readability-else-after-return
 # - readability-implicit-bool-conversion
 # - readability-redundant-declaration
-# - readability-simplify-boolean-expr
 # - readability-static-definition-in-anonymous-namespace
 #
 Checks: '-*,
@@ -108,7 +105,9 @@ Checks: '-*,
   modernize-use-nullptr,
   modernize-use-override,
   modernize-use-transparent-functors,
+  readability-const-return-type,
   readability-container-size-empty,
+  readability-delete-null-pointer,
   readability-deleted-default,
   readability-function-size,
   readability-inconsistent-declaration-parameter-name,
@@ -117,6 +116,7 @@ Checks: '-*,
   readability-redundant-control-flow,
   readability-redundant-function-ptr-dereference,
   readability-redundant-smartptr-get,
+  readability-simplify-boolean-expr,
   readability-string-compare,
   readability-uniqueptr-delete-release'
 WarningsAsErrors: '*'

@@ -169,7 +169,7 @@ static void test_server_channel_filter(grpc_end2end_test_config config) {
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
   cq_verify(cqv);
 
-  if (g_channel_filter_init_failure == true) {
+  if (g_channel_filter_init_failure) {
     // Inproc channel returns invalid_argument and other clients return
     // unavailable.
     // Windows with sockpair returns unknown.
