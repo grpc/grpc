@@ -189,7 +189,6 @@ Pod::Spec.new do |s|
     abseil_version = '1.20200923.3'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
-    ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
@@ -607,16 +606,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/work_serializer.h',
                       'src/core/lib/json/json.h',
                       'src/core/lib/json/json_util.h',
+                      'src/core/lib/matchers/matchers.h',
                       'src/core/lib/profiling/timers.h',
-                      'src/core/lib/security/authorization/authorization_engine.h',
-                      'src/core/lib/security/authorization/evaluate_args.h',
-                      'src/core/lib/security/authorization/matchers.h',
-                      'src/core/lib/security/authorization/mock_cel/activation.h',
-                      'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
-                      'src/core/lib/security/authorization/mock_cel/cel_expression.h',
-                      'src/core/lib/security/authorization/mock_cel/cel_value.h',
-                      'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
-                      'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -825,8 +816,7 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/text_encode.h',
                       'third_party/upb/upb/upb.h',
                       'third_party/upb/upb/upb.hpp',
-                      'third_party/upb/upb/upb.int.h',
-                      'third_party/xxhash/xxhash.h'
+                      'third_party/upb/upb/upb.int.h'
 
     ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
@@ -1234,16 +1224,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/work_serializer.h',
                               'src/core/lib/json/json.h',
                               'src/core/lib/json/json_util.h',
+                              'src/core/lib/matchers/matchers.h',
                               'src/core/lib/profiling/timers.h',
-                              'src/core/lib/security/authorization/authorization_engine.h',
-                              'src/core/lib/security/authorization/evaluate_args.h',
-                              'src/core/lib/security/authorization/matchers.h',
-                              'src/core/lib/security/authorization/mock_cel/activation.h',
-                              'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
-                              'src/core/lib/security/authorization/mock_cel/cel_expression.h',
-                              'src/core/lib/security/authorization/mock_cel/cel_value.h',
-                              'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
-                              'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -1402,8 +1384,7 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/text_encode.h',
                               'third_party/upb/upb/upb.h',
                               'third_party/upb/upb/upb.hpp',
-                              'third_party/upb/upb/upb.int.h',
-                              'third_party/xxhash/xxhash.h'
+                              'third_party/upb/upb/upb.int.h'
   end
 
   s.subspec 'Protobuf' do |ss|
@@ -1445,8 +1426,5 @@ Pod::Spec.new do |s|
     find third_party/re2/re2/ third_party/re2/util/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g;s;#include "util/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/util/\\1"\\\n#else\\\n  #include  "util/\\1"\\\n#endif;g'
     find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g'
     find src/core/ third_party/re2/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
-    find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "xxhash.h";#if COCOAPODS==1\\\n #include "third_party/xxhash/xxhash.h"\\\n#else\\\n #include "xxhash.h"\\\n#endif;g'
-    find third_party/xxhash  -type f -name xxhash.h -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;@param([^,]*),;@param\\1 ,;g'
-    find src/core/ third_party/xxhash/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end
