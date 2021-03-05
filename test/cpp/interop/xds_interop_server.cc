@@ -89,14 +89,14 @@ class XdsUpdateHealthServiceImpl : public XdsUpdateHealthService::Service {
       HealthCheckServiceImpl* health_check_service)
       : health_check_service_(health_check_service) {}
 
-  Status SetServing(ServerContext* context, const Empty* /* request */,
+  Status SetServing(ServerContext* /* context */, const Empty* /* request */,
                     Empty* /* response */) override {
     health_check_service_->SetAll(
         grpc::health::v1::HealthCheckResponse::SERVING);
     return Status::OK;
   }
 
-  Status SetNotServing(ServerContext* context, const Empty* /* request */,
+  Status SetNotServing(ServerContext* /* context */, const Empty* /* request */,
                        Empty* /* response */) override {
     health_check_service_->SetAll(
         grpc::health::v1::HealthCheckResponse::NOT_SERVING);
