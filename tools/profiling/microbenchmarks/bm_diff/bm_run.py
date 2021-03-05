@@ -80,8 +80,8 @@ def _collect_bm_data(bm, cfg, name, regex, idx, loops):
     for line in subprocess.check_output([
             'bm_diff_%s/%s/%s' % (name, cfg, bm), '--benchmark_list_tests',
             '--benchmark_filter=%s' % regex
-    ]).splitlines():
-        line = line.decode('UTF-8')
+    ],
+                                        text=True).splitlines():
         stripped_line = line.strip().replace("/",
                                              "_").replace("<", "_").replace(
                                                  ">", "_").replace(", ", "_")
