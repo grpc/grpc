@@ -254,7 +254,7 @@ def _deduplicate_append(target: List[str], pending: List[str]) -> None:
         if dep not in seen:
             target.append(dep)
 
-def _compute_transitive_deps_for_rule(rule_name: str, bazel_rules: Any, bazel_label_to_dep_name: Dict[str, str]) -> None:
+def _compute_transitive_deps_for_rule(rule_name: str, bazel_rules: Any, bazel_label_to_dep_name: Dict[str, str], topological_sort_counter) -> None:
     """Computes transitive deps and transitive intermediate deps for targets"""
     bazel_rule = bazel_rules[rule_name]  
     direct_deps = _extract_deps(bazel_rule, bazel_rules)
@@ -265,12 +265,6 @@ def _compute_transitive_deps_for_rule(rule_name: str, bazel_rules: Any, bazel_la
     external_deps = []
 
     for dep in direct_deps:
-
-        # not neeeded...
-        #if dep == '//:gpr_base' and rule_name != '//:gpr':
-        #    # DIRTY HACK!!!
-        #    dep = '//:gpr'
-
         is_external_dep = _external_dep_name_from_bazel_dependency(dep) is not None
         is_public_dep = dep in bazel_label_to_dep_name
                 
@@ -281,7 +275,7 @@ def _compute_transitive_deps_for_rule(rule_name: str, bazel_rules: Any, bazel_la
                 # avoid visiting nodes that are already marked as done.
                 if "_PROCESSING_DONE" not in bazel_rules[dep]:
                     _compute_transitive_deps_for_rule(dep, bazel_rules,
-                                                      bazel_label_to_dep_name)                
+                                                      bazel_label_to_dep_name, topological_sort_counter)                
                 _deduplicate_append(
                     transitive_deps,
                     bazel_rules[dep].get('_TRANSITIVE_DEPS', []))
@@ -331,9 +325,10 @@ def _compute_transitive_deps_for_rule(rule_name: str, bazel_rules: Any, bazel_la
 
     # produce collapsed_deps, it will be the deps that show up in build.yaml
     collapsed_deps = []
-    for dep in public_deps:
+    for dep in sorted(public_deps, key=lambda dep: -1 * bazel_rules[dep]['_TOPOLOGICAL_ORDER'] ):
+        # TODO: also do second-level reverse alphabetical sort
         _deduplicate_append(collapsed_deps, [bazel_label_to_dep_name[dep]])
-    for dep in external_deps:
+    for dep in reversed(sorted(external_deps)):
         _deduplicate_append(collapsed_deps, [_external_dep_name_from_bazel_dependency(dep)])
     
     # This item is a "visited" flag
@@ -346,6 +341,7 @@ def _compute_transitive_deps_for_rule(rule_name: str, bazel_rules: Any, bazel_la
         sorted(collapsed_public_headers))
     bazel_rule["_COLLAPSED_HEADERS"] = list(sorted(collapsed_headers))
     bazel_rule["_COLLAPSED_DEPS"] = collapsed_deps
+    bazel_rule["_TOPOLOGICAL_ORDER"] = topological_sort_counter.increment_and_get()
 
     if rule_name in ['//:gpr', '//:grpc', '//:grpc++']:
         print(rule_name)
@@ -353,6 +349,7 @@ def _compute_transitive_deps_for_rule(rule_name: str, bazel_rules: Any, bazel_la
         print ('\n_TRANSITIVE_INTERMEDIATE_DEPS' + str(bazel_rule["_TRANSITIVE_INTERMEDIATE_DEPS"]))
         print ('\npublic deps ' + str(public_deps))
         print ('\nskip collapsing ' + str(intermediate_deps_to_skip_collapsing))
+        print ('\n_TOPOLOGICAL_ORDER' + str(bazel_rule["_TOPOLOGICAL_ORDER"]))
         print('')
 
 
@@ -478,13 +475,22 @@ def _populate_transitive_metadata(bazel_rules: Any,
     for dep_name in public_dep_names:
         bazel_label_to_dep_name[_get_bazel_label(dep_name)] = dep_name
 
+    class TopoCounter:
+        def __init__(self):
+            self.counter = 0
+
+        def increment_and_get(self):
+            self.counter += 1
+            return self.counter
+    
+    topological_sort_counter = TopoCounter()
+
     # Make sure we reached all the Bazel rules
     # TODO(lidiz) potentially we could only update a subset of rules
     for rule_name in bazel_rules:
         if "_PROCESSING_DONE" not in bazel_rules[rule_name]:
             _compute_transitive_deps_for_rule(rule_name, bazel_rules,
-                                         bazel_label_to_dep_name)
-
+                                         bazel_label_to_dep_name, topological_sort_counter)
 
 def update_test_metadata_with_transitive_metadata(
         all_extra_metadata: BuildDict, bazel_rules: BuildDict) -> None:
