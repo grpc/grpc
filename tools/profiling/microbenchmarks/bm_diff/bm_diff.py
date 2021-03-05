@@ -164,8 +164,8 @@ def diff(bms, loops, regex, track, old, new, counters):
             for line in subprocess.check_output([
                     'bm_diff_%s/opt/%s' % (old, bm), '--benchmark_list_tests',
                     '--benchmark_filter=%s' % regex
-            ],
-                                                text=True).splitlines():
+            ]).splitlines():
+                line = line.decode('UTF-8')
                 stripped_line = line.strip().replace("/", "_").replace(
                     "<", "_").replace(">", "_").replace(", ", "_")
                 js_new_opt = _read_json(

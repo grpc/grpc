@@ -95,8 +95,8 @@ def collect_latency(bm_name, args):
     for line in subprocess.check_output([
             'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
             '--benchmark_list_tests'
-    ],
-                                        text=True).splitlines():
+    ]).splitlines():
+        line = line.decode('UTF-8')
         link(line, '%s.txt' % fnize(line))
         benchmarks.append(
             jobset.JobSpec([
@@ -150,8 +150,8 @@ def collect_perf(bm_name, args):
     for line in subprocess.check_output([
             'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
             '--benchmark_list_tests'
-    ],
-                                        text=True).splitlines():
+    ]).splitlines():
+        line = line.decode('UTF-8')
         link(line, '%s.svg' % fnize(line))
         benchmarks.append(
             jobset.JobSpec([
