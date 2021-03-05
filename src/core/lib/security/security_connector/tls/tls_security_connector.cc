@@ -46,6 +46,134 @@ namespace grpc_core {
 
 namespace {
 
+char* CopyCoreString(char* src, size_t length) {
+  char* target = static_cast<char*>(gpr_malloc(length + 1));
+  memcpy(target, src, length);
+  target[length] = '\0';
+  return target;
+}
+
+}  // namespace
+
+PendingVerifierRequest::PendingVerifierRequest(grpc_closure* on_peer_checked,
+                                               tsi_peer peer)
+    : on_peer_checked_(on_peer_checked), peer_(peer) {
+  PendingVerifierRequestInit(&request_);
+  // Parse tsi_peer and feed in the values in the check request.
+  // We will make a copy of each field and destroy them when request_ is
+  // destroyed.
+  // TODO(ZhenLian): avoid the copy when the underlying core implementation used
+  // the null-terminating string.
+  std::vector<char*> uri_names;
+  std::vector<char*> dns_names;
+  for (size_t i = 0; i < peer.property_count; ++i) {
+    const tsi_peer_property* prop = &peer.properties[i];
+    if (prop->name == nullptr) continue;
+    if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
+      request_.peer_info.common_name =
+          CopyCoreString(prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_PROPERTY) == 0) {
+      request_.peer_info.peer_cert =
+          CopyCoreString(prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_CHAIN_PROPERTY) == 0) {
+      request_.peer_info.peer_cert_full_chain =
+          CopyCoreString(prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
+      char* uri = CopyCoreString(prop->value.data, prop->value.length);
+      uri_names.emplace_back(uri);
+    } else if (strcmp(prop->name,
+                      TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
+      // TODO(ZhenLian): The logic here is wrong.
+      // We are passing all SAN names as DNS names, because the DNS names are
+      // not plumbed. Once it is plumbed, this should be changed.
+      char* dns = CopyCoreString(prop->value.data, prop->value.length);
+      dns_names.emplace_back(dns);
+    } else {
+      // Not supported fields.
+      // TODO(ZhenLian): populate IP Address and other fields here as well.
+    }
+  }
+  request_.peer_info.san_names.uri_names_size = uri_names.size();
+  if (!uri_names.empty()) {
+    request_.peer_info.san_names.uri_names =
+        new char*[request_.peer_info.san_names.uri_names_size];
+    for (size_t i = 0; i < request_.peer_info.san_names.uri_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
+      request_.peer_info.san_names.uri_names[i] = uri_names[i];
+    }
+  }
+  request_.peer_info.san_names.dns_names_size = dns_names.size();
+  if (!dns_names.empty()) {
+    request_.peer_info.san_names.dns_names =
+        new char*[request_.peer_info.san_names.dns_names_size];
+    for (size_t i = 0; i < request_.peer_info.san_names.dns_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
+      request_.peer_info.san_names.dns_names[i] = dns_names[i];
+    }
+  }
+}
+
+PendingVerifierRequest::~PendingVerifierRequest() {
+  tsi_peer_destruct(&peer_);
+  PendingVerifierRequestDestroy(&request_);
+}
+
+void PendingVerifierRequest::PendingVerifierRequestInit(
+    grpc_tls_custom_verification_check_request* request) {
+  GPR_ASSERT(request != nullptr);
+  request->target_name = nullptr;
+  request->peer_info.common_name = nullptr;
+  request->peer_info.san_names.uri_names = nullptr;
+  request->peer_info.san_names.uri_names_size = 0;
+  request->peer_info.san_names.ip_names = nullptr;
+  request->peer_info.san_names.ip_names_size = 0;
+  request->peer_info.san_names.dns_names = nullptr;
+  request->peer_info.san_names.dns_names_size = 0;
+  request->peer_info.peer_cert = nullptr;
+  request->peer_info.peer_cert_full_chain = nullptr;
+  request->status = GRPC_STATUS_CANCELLED;
+  request->error_details = nullptr;
+}
+
+void PendingVerifierRequest::PendingVerifierRequestDestroy(
+    grpc_tls_custom_verification_check_request* request) {
+  GPR_ASSERT(request != nullptr);
+  if (request->peer_info.common_name != nullptr) {
+    gpr_free(const_cast<char*>(request->peer_info.common_name));
+  }
+  if (request->peer_info.san_names.uri_names_size > 0) {
+    for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
+      gpr_free(request->peer_info.san_names.uri_names[i]);
+    }
+    delete[] request->peer_info.san_names.uri_names;
+  }
+  if (request->peer_info.san_names.ip_names_size > 0) {
+    for (size_t i = 0; i < request->peer_info.san_names.ip_names_size; ++i) {
+      gpr_free(request->peer_info.san_names.ip_names[i]);
+    }
+    delete[] request->peer_info.san_names.ip_names;
+  }
+  if (request->peer_info.san_names.dns_names_size > 0) {
+    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
+      gpr_free(request->peer_info.san_names.dns_names[i]);
+    }
+    delete[] request->peer_info.san_names.dns_names;
+  }
+  if (request->peer_info.peer_cert != nullptr) {
+    gpr_free(const_cast<char*>(request->peer_info.peer_cert));
+  }
+  if (request->peer_info.peer_cert_full_chain != nullptr) {
+    gpr_free(const_cast<char*>(request->peer_info.peer_cert_full_chain));
+  }
+  if (request->error_details != nullptr) {
+    gpr_free(const_cast<char*>(request->error_details));
+  }
+}
+
+namespace {
+
 tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
     const PemKeyCertPairList& cert_pair_list) {
   tsi_ssl_pem_key_cert_pair* tsi_pairs = nullptr;
@@ -116,7 +244,6 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
   if (ssl_session_cache_ != nullptr) {
     tsi_ssl_session_cache_ref(ssl_session_cache_);
   }
-  check_arg_ = ServerAuthorizationCheckArgCreate(this);
   absl::string_view host;
   absl::string_view port;
   SplitHostPort(target_name, &host, &port);
@@ -164,9 +291,6 @@ TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
   }
-  if (check_arg_ != nullptr) {
-    ServerAuthorizationCheckArgDestroy(check_arg_);
-  }
 }
 
 void TlsChannelSecurityConnector::add_handshakers(
@@ -205,118 +329,39 @@ void TlsChannelSecurityConnector::check_peer(
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  if (options_->server_verification_option() == GRPC_TLS_SERVER_VERIFICATION) {
-    /* Do the default host name check if specifying the target name. */
-    error = internal::TlsCheckHostName(target_name, &peer);
-    if (error != GRPC_ERROR_NONE) {
-      ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
-      tsi_peer_destruct(&peer);
-      return;
-    }
+  GPR_ASSERT(options_->certificate_verifier() != nullptr);
+  auto* pending_request = new ChannelPendingVerifierRequest(
+      Ref(), on_peer_checked, peer, target_name);
+  {
+    MutexLock lock(&verifier_request_map_mu_);
+    pending_verifier_requests_.emplace(on_peer_checked, pending_request);
   }
-  /* Do the custom server authorization check, if specified by the user. */
-  const grpc_tls_server_authorization_check_config* config =
-      options_->server_authorization_check_config();
-  /* If server authorization config is not null, use it to perform
-   * server authorization check. */
-  if (config != nullptr) {
-    const tsi_peer_property* p =
-        tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
-    if (p == nullptr) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "Cannot check peer: missing pem cert property.");
-    } else {
-      char* peer_pem = static_cast<char*>(gpr_zalloc(p->value.length + 1));
-      memcpy(peer_pem, p->value.data, p->value.length);
-      GPR_ASSERT(check_arg_ != nullptr);
-      check_arg_->peer_cert = check_arg_->peer_cert == nullptr
-                                  ? gpr_strdup(peer_pem)
-                                  : check_arg_->peer_cert;
-      check_arg_->target_name = check_arg_->target_name == nullptr
-                                    ? gpr_strdup(target_name)
-                                    : check_arg_->target_name;
-      on_peer_checked_ = on_peer_checked;
-      gpr_free(peer_pem);
-      const tsi_peer_property* chain = tsi_peer_get_property_by_name(
-          &peer, TSI_X509_PEM_CERT_CHAIN_PROPERTY);
-      if (chain != nullptr) {
-        char* peer_pem_chain =
-            static_cast<char*>(gpr_zalloc(chain->value.length + 1));
-        memcpy(peer_pem_chain, chain->value.data, chain->value.length);
-        check_arg_->peer_cert_full_chain =
-            check_arg_->peer_cert_full_chain == nullptr
-                ? gpr_strdup(peer_pem_chain)
-                : check_arg_->peer_cert_full_chain;
-        gpr_free(peer_pem_chain);
-      }
-      // TODO(zhenlian) - This should be cleaned up as part of the custom
-      // verification changes. Fill in the subject alternative names
-      std::vector<char*> subject_alternative_names;
-      for (size_t i = 0; i < peer.property_count; i++) {
-        const tsi_peer_property* prop = &peer.properties[i];
-        if (strcmp(prop->name,
-                   TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
-          char* san = new char[prop->value.length + 1];
-          memcpy(san, prop->value.data, prop->value.length);
-          san[prop->value.length] = '\0';
-          subject_alternative_names.emplace_back(san);
-        }
-      }
-      if (check_arg_->subject_alternative_names != nullptr) {
-        for (size_t i = 0; i < check_arg_->subject_alternative_names_size;
-             ++i) {
-          delete[] check_arg_->subject_alternative_names[i];
-        }
-        delete[] check_arg_->subject_alternative_names;
-      }
-      check_arg_->subject_alternative_names_size =
-          subject_alternative_names.size();
-      if (subject_alternative_names.empty()) {
-        check_arg_->subject_alternative_names = nullptr;
-      } else {
-        check_arg_->subject_alternative_names =
-            new char*[check_arg_->subject_alternative_names_size];
-        for (size_t i = 0; i < check_arg_->subject_alternative_names_size;
-             ++i) {
-          check_arg_->subject_alternative_names[i] =
-              subject_alternative_names[i];
-        }
-      }
-      int callback_status = config->Schedule(check_arg_);
-      /* Server authorization check is handled asynchronously. */
-      if (callback_status) {
-        tsi_peer_destruct(&peer);
-        return;
-      }
-      /* Server authorization check is handled synchronously. */
-      error = ProcessServerAuthorizationCheckResult(check_arg_);
-    }
-  }
-  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
-  tsi_peer_destruct(&peer);
+  pending_request->Start();
 }
 
 int TlsChannelSecurityConnector::cmp(
     const grpc_security_connector* other_sc) const {
   auto* other = reinterpret_cast<const TlsChannelSecurityConnector*>(other_sc);
   int c = channel_security_connector_cmp(other);
-  if (c != 0) {
-    return c;
-  }
-  return grpc_ssl_cmp_target_name(
+  if (c != 0) return c;
+  c = grpc_ssl_cmp_target_name(
       target_name_.c_str(), other->target_name_.c_str(),
       overridden_target_name_.c_str(), other->overridden_target_name_.c_str());
+  if (c != 0) return c;
+  if (pem_root_certs_ != other->pem_root_certs_ ||
+      pem_key_cert_pair_list_ != other->pem_key_cert_pair_list_)
+    return 1;
+  if (certificate_watcher_ != other->certificate_watcher_ ||
+      client_handshaker_factory_ != other->client_handshaker_factory_ ||
+      ssl_session_cache_ != other->ssl_session_cache_)
+    return 1;
+  return 0;
 }
 
 bool TlsChannelSecurityConnector::check_call_host(
     absl::string_view host, grpc_auth_context* auth_context,
     grpc_closure* /*on_call_host_checked*/, grpc_error_handle* error) {
-  if (options_->server_verification_option() ==
-          GRPC_TLS_SKIP_HOSTNAME_VERIFICATION ||
-      options_->server_verification_option() ==
-          GRPC_TLS_SKIP_ALL_SERVER_VERIFICATION) {
-    return true;
-  }
+  // Question: shall we apply the verifier logic here as well?
   return grpc_ssl_check_call_host(host, target_name_.c_str(),
                                   overridden_target_name_.c_str(), auth_context,
                                   error);
@@ -369,13 +414,32 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::OnError(
   GRPC_ERROR_UNREF(identity_cert_error);
 }
 
+void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::OnVerifyDone(
+    bool run_callback_inline, absl::Status status) {
+  {
+    MutexLock lock(&security_connector_->verifier_request_map_mu_);
+    security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
+  }
+  grpc_error* error = GRPC_ERROR_NONE;
+  if (!status.ok()) {
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Custom verification check failed with error: ",
+                     status.ToString())
+            .c_str());
+  }
+  if (run_callback_inline) {
+    Closure::Run(DEBUG_LOCATION, on_peer_checked_, error);
+  } else {
+    ExecCtx::Run(DEBUG_LOCATION, on_peer_checked_, error);
+  }
+  delete this;
+}
+
 // TODO(ZhenLian): implement the logic to signal waiting handshakers once
 // BlockOnInitialCredentialHandshaker is implemented.
 grpc_security_status
 TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
-  bool skip_server_certificate_verification =
-      options_->server_verification_option() ==
-      GRPC_TLS_SKIP_ALL_SERVER_VERIFICATION;
+  bool skip_server_certificate_verification = !options_->verify_server_cert();
   /* Free the client handshaker factory if exists. */
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
@@ -404,79 +468,6 @@ TlsChannelSecurityConnector::UpdateHandshakerFactoryLocked() {
     grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
   }
   return status;
-}
-
-void TlsChannelSecurityConnector::ServerAuthorizationCheckDone(
-    grpc_tls_server_authorization_check_arg* arg) {
-  GPR_ASSERT(arg != nullptr);
-  ExecCtx exec_ctx;
-  grpc_error_handle error = ProcessServerAuthorizationCheckResult(arg);
-  TlsChannelSecurityConnector* connector =
-      static_cast<TlsChannelSecurityConnector*>(arg->cb_user_data);
-  ExecCtx::Run(DEBUG_LOCATION, connector->on_peer_checked_, error);
-}
-
-grpc_error_handle
-TlsChannelSecurityConnector::ProcessServerAuthorizationCheckResult(
-    grpc_tls_server_authorization_check_arg* arg) {
-  grpc_error_handle error = GRPC_ERROR_NONE;
-  /* Server authorization check is cancelled by caller. */
-  if (arg->status == GRPC_STATUS_CANCELLED) {
-    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-        absl::StrCat("Server authorization check is cancelled by the caller "
-                     "with error: ",
-                     arg->error_details->error_details()));
-  } else if (arg->status == GRPC_STATUS_OK) {
-    /* Server authorization check completed successfully but returned check
-     * failure. */
-    if (!arg->success) {
-      error = GRPC_ERROR_CREATE_FROM_CPP_STRING(
-          absl::StrCat("Server authorization check failed with error: ",
-                       arg->error_details->error_details()));
-    }
-    /* Server authorization check did not complete correctly. */
-  } else {
-    error = GRPC_ERROR_CREATE_FROM_CPP_STRING(absl::StrCat(
-        "Server authorization check did not finish correctly with error: ",
-        arg->error_details->error_details()));
-  }
-  return error;
-}
-
-grpc_tls_server_authorization_check_arg*
-TlsChannelSecurityConnector::ServerAuthorizationCheckArgCreate(
-    void* user_data) {
-  grpc_tls_server_authorization_check_arg* arg =
-      new grpc_tls_server_authorization_check_arg();
-  arg->target_name = nullptr;
-  arg->peer_cert = nullptr;
-  arg->peer_cert_full_chain = nullptr;
-  arg->subject_alternative_names = nullptr;
-  arg->subject_alternative_names_size = 0;
-  arg->error_details = new grpc_tls_error_details();
-  arg->cb = ServerAuthorizationCheckDone;
-  arg->cb_user_data = user_data;
-  arg->status = GRPC_STATUS_OK;
-  return arg;
-}
-
-void TlsChannelSecurityConnector::ServerAuthorizationCheckArgDestroy(
-    grpc_tls_server_authorization_check_arg* arg) {
-  if (arg == nullptr) {
-    return;
-  }
-  gpr_free(const_cast<char*>(arg->target_name));
-  gpr_free(const_cast<char*>(arg->peer_cert));
-  gpr_free(const_cast<char*>(arg->peer_cert_full_chain));
-  for (size_t i = 0; i < arg->subject_alternative_names_size; ++i) {
-    delete[] arg->subject_alternative_names[i];
-  }
-  delete[] arg->subject_alternative_names;
-  delete arg->error_details;
-  if (arg->destroy_context != nullptr) {
-    arg->destroy_context(arg->context);
-  }
-  delete arg;
 }
 
 // -------------------server security connector-------------------
@@ -559,16 +550,34 @@ void TlsServerSecurityConnector::check_peer(
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   grpc_error_handle error = grpc_ssl_check_alpn(&peer);
+  if (error != GRPC_ERROR_NONE) {
+    ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+    tsi_peer_destruct(&peer);
+    return;
+  }
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  tsi_peer_destruct(&peer);
-  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+  auto* pending_request =
+      new ServerPendingVerifierRequest(Ref(), on_peer_checked, peer);
+  {
+    MutexLock lock(&verifier_request_map_mu_);
+    pending_verifier_requests_.emplace(on_peer_checked, pending_request);
+  }
+  pending_request->Start();
 }
 
 int TlsServerSecurityConnector::cmp(
-    const grpc_security_connector* other) const {
-  return server_security_connector_cmp(
-      static_cast<const grpc_server_security_connector*>(other));
+    const grpc_security_connector* other_sc) const {
+  auto* other = reinterpret_cast<const TlsServerSecurityConnector*>(other_sc);
+  int c = server_security_connector_cmp(other);
+  if (c != 0) return c;
+  if (pem_root_certs_ != other->pem_root_certs_ ||
+      pem_key_cert_pair_list_ != other->pem_key_cert_pair_list_)
+    return 1;
+  if (certificate_watcher_ != other->certificate_watcher_ ||
+      server_handshaker_factory_ != other->server_handshaker_factory_)
+    return 1;
+  return 0;
 }
 
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
@@ -617,6 +626,27 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::OnError(
   GRPC_ERROR_UNREF(identity_cert_error);
 }
 
+void TlsServerSecurityConnector::ServerPendingVerifierRequest::OnVerifyDone(
+    bool run_callback_inline, absl::Status status) {
+  {
+    MutexLock lock(&security_connector_->verifier_request_map_mu_);
+    security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
+  }
+  grpc_error* error = GRPC_ERROR_NONE;
+  if (!status.ok()) {
+    error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Custom verification check failed with error: ",
+                     status.ToString())
+            .c_str());
+  }
+  if (run_callback_inline) {
+    Closure::Run(DEBUG_LOCATION, on_peer_checked_, error);
+  } else {
+    ExecCtx::Run(DEBUG_LOCATION, on_peer_checked_, error);
+  }
+  delete this;
+}
+
 // TODO(ZhenLian): implement the logic to signal waiting handshakers once
 // BlockOnInitialCredentialHandshaker is implemented.
 grpc_security_status
@@ -650,6 +680,7 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
   return status;
 }
 
+<<<<<<< HEAD
 namespace internal {
 
 grpc_error_handle TlsCheckHostName(const char* peer_name,
@@ -664,4 +695,6 @@ grpc_error_handle TlsCheckHostName(const char* peer_name,
 
 }  // namespace internal
 
+=======
+>>>>>>> 55cbaf32a7 (custom verification proposed C core changes)
 }  // namespace grpc_core
