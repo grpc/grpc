@@ -141,7 +141,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     void OnError(grpc_error* error) override {
       if (have_resource_) {
         gpr_log(GPR_ERROR,
-                "ListenerWatcher:%p XdsClient reports error: %s for %sl "
+                "ListenerWatcher:%p XdsClient reports error: %s for %s; "
                 "ignoring in favor of existing resource",
                 this, grpc_error_string(error), listening_address_.c_str());
       } else {
