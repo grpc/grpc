@@ -9158,17 +9158,16 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpDoesNotExist) {
   CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
                       grpc::UNKNOWN);
   auto csds_response = FetchCsdsResponse();
-  bool seen_does_not_exist = false;
-  for (int i = 0; i < csds_response.config(0).xds_config_size(); i++) {
-    const auto& xds_config = csds_response.config(0).xds_config(i);
-    if (xds_config.has_listener_config()) {
-      EXPECT_EQ(
-          ClientResourceStatus::DOES_NOT_EXIST,
-          xds_config.listener_config().dynamic_listeners(0).client_status());
-      seen_does_not_exist = true;
-    }
-  }
-  EXPECT_TRUE(seen_does_not_exist);
+  EXPECT_THAT(
+      csds_response.config(0).xds_config(),
+      ::testing::Contains(::testing::Property(
+          &envoy::service::status::v3::PerXdsConfig::listener_config,
+          ::testing::Property(
+              &envoy::admin::v3::ListenersConfigDump::dynamic_listeners,
+              ::testing::ElementsAre(::testing::Property(
+                  &envoy::admin::v3::ListenersConfigDump::DynamicListener::
+                      client_status,
+                  ::testing::Eq(ClientResourceStatus::DOES_NOT_EXIST)))))));
 }
 
 std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
