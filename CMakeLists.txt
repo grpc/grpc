@@ -811,6 +811,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx client_channel_stress_test)
   endif()
+  add_dependencies(buildtests_cxx client_context_test_peer_test)
   add_dependencies(buildtests_cxx client_interceptors_end2end_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx client_lb_end2end_test)
@@ -903,6 +904,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx server_chttp2_test)
   add_dependencies(buildtests_cxx server_context_test_spouse_test)
+
   add_dependencies(buildtests_cxx server_early_return_test)
   add_dependencies(buildtests_cxx server_interceptors_end2end_test)
   add_dependencies(buildtests_cxx server_registered_method_bad_client_test)
@@ -3245,6 +3247,7 @@ foreach(_hdr
   include/grpc++/test/mock_stream.h
   include/grpc++/test/server_context_test_spouse.h
   include/grpcpp/test/channel_test_peer.h
+  include/grpcpp/test/client_context_test_peer.h
   include/grpcpp/test/default_reactor_test_peer.h
   include/grpcpp/test/mock_stream.h
   include/grpcpp/test/server_context_test_spouse.h
