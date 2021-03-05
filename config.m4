@@ -208,6 +208,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.c \
     src/core/ext/upb-generated/google/api/http.upb.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
+    src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
     src/core/ext/upb-generated/google/protobuf/duration.upb.c \
     src/core/ext/upb-generated/google/protobuf/empty.upb.c \
     src/core/ext/upb-generated/google/protobuf/struct.upb.c \
@@ -294,6 +295,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.c \
     src/core/ext/upbdefs-generated/google/api/http.upbdefs.c \
     src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.c \
+    src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c \
     src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.c \
     src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.c \
     src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.c \
@@ -627,6 +629,80 @@ if test "$PHP_GRPC" != "no"; then
     src/php/ext/grpc/server.c \
     src/php/ext/grpc/server_credentials.c \
     src/php/ext/grpc/timeval.c \
+    third_party/abseil-cpp/absl/base/internal/cycleclock.cc \
+    third_party/abseil-cpp/absl/base/internal/exponential_biased.cc \
+    third_party/abseil-cpp/absl/base/internal/low_level_alloc.cc \
+    third_party/abseil-cpp/absl/base/internal/raw_logging.cc \
+    third_party/abseil-cpp/absl/base/internal/spinlock.cc \
+    third_party/abseil-cpp/absl/base/internal/spinlock_wait.cc \
+    third_party/abseil-cpp/absl/base/internal/sysinfo.cc \
+    third_party/abseil-cpp/absl/base/internal/thread_identity.cc \
+    third_party/abseil-cpp/absl/base/internal/throw_delegate.cc \
+    third_party/abseil-cpp/absl/base/internal/unscaledcycleclock.cc \
+    third_party/abseil-cpp/absl/base/log_severity.cc \
+    third_party/abseil-cpp/absl/container/internal/hashtablez_sampler.cc \
+    third_party/abseil-cpp/absl/container/internal/hashtablez_sampler_force_weak_definition.cc \
+    third_party/abseil-cpp/absl/container/internal/raw_hash_set.cc \
+    third_party/abseil-cpp/absl/debugging/internal/address_is_readable.cc \
+    third_party/abseil-cpp/absl/debugging/internal/demangle.cc \
+    third_party/abseil-cpp/absl/debugging/internal/elf_mem_image.cc \
+    third_party/abseil-cpp/absl/debugging/internal/vdso_support.cc \
+    third_party/abseil-cpp/absl/debugging/stacktrace.cc \
+    third_party/abseil-cpp/absl/debugging/symbolize.cc \
+    third_party/abseil-cpp/absl/hash/internal/city.cc \
+    third_party/abseil-cpp/absl/hash/internal/hash.cc \
+    third_party/abseil-cpp/absl/numeric/int128.cc \
+    third_party/abseil-cpp/absl/status/status.cc \
+    third_party/abseil-cpp/absl/status/status_payload_printer.cc \
+    third_party/abseil-cpp/absl/status/statusor.cc \
+    third_party/abseil-cpp/absl/strings/ascii.cc \
+    third_party/abseil-cpp/absl/strings/charconv.cc \
+    third_party/abseil-cpp/absl/strings/cord.cc \
+    third_party/abseil-cpp/absl/strings/escaping.cc \
+    third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
+    third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
+    third_party/abseil-cpp/absl/strings/internal/escaping.cc \
+    third_party/abseil-cpp/absl/strings/internal/memutil.cc \
+    third_party/abseil-cpp/absl/strings/internal/ostringstream.cc \
+    third_party/abseil-cpp/absl/strings/internal/str_format/arg.cc \
+    third_party/abseil-cpp/absl/strings/internal/str_format/bind.cc \
+    third_party/abseil-cpp/absl/strings/internal/str_format/extension.cc \
+    third_party/abseil-cpp/absl/strings/internal/str_format/float_conversion.cc \
+    third_party/abseil-cpp/absl/strings/internal/str_format/output.cc \
+    third_party/abseil-cpp/absl/strings/internal/str_format/parser.cc \
+    third_party/abseil-cpp/absl/strings/internal/utf8.cc \
+    third_party/abseil-cpp/absl/strings/match.cc \
+    third_party/abseil-cpp/absl/strings/numbers.cc \
+    third_party/abseil-cpp/absl/strings/str_cat.cc \
+    third_party/abseil-cpp/absl/strings/str_replace.cc \
+    third_party/abseil-cpp/absl/strings/str_split.cc \
+    third_party/abseil-cpp/absl/strings/string_view.cc \
+    third_party/abseil-cpp/absl/strings/substitute.cc \
+    third_party/abseil-cpp/absl/synchronization/barrier.cc \
+    third_party/abseil-cpp/absl/synchronization/blocking_counter.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/create_thread_identity.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/graphcycles.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/per_thread_sem.cc \
+    third_party/abseil-cpp/absl/synchronization/internal/waiter.cc \
+    third_party/abseil-cpp/absl/synchronization/mutex.cc \
+    third_party/abseil-cpp/absl/synchronization/notification.cc \
+    third_party/abseil-cpp/absl/time/civil_time.cc \
+    third_party/abseil-cpp/absl/time/clock.cc \
+    third_party/abseil-cpp/absl/time/duration.cc \
+    third_party/abseil-cpp/absl/time/format.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/civil_time_detail.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_fixed.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_format.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_if.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_impl.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_info.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_libc.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_lookup.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/time_zone_posix.cc \
+    third_party/abseil-cpp/absl/time/internal/cctz/src/zone_info_source.cc \
+    third_party/abseil-cpp/absl/time/time.cc \
+    third_party/abseil-cpp/absl/types/bad_optional_access.cc \
+    third_party/abseil-cpp/absl/types/bad_variant_access.cc \
     third_party/address_sorting/address_sorting.c \
     third_party/address_sorting/address_sorting_posix.c \
     third_party/address_sorting/address_sorting_windows.c \
@@ -921,6 +997,17 @@ if test "$PHP_GRPC" != "no"; then
     third_party/re2/util/pcre.cc \
     third_party/re2/util/rune.cc \
     third_party/re2/util/strutil.cc \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/decode_fast.c \
+    third_party/upb/upb/def.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/json_decode.c \
+    third_party/upb/upb/json_encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/reflection.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/text_encode.c \
+    third_party/upb/upb/upb.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
@@ -1077,6 +1164,22 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/alts/zero_copy_frame_protector)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/tsi/ssl/session_cache)
   PHP_ADD_BUILD_DIR($ext_builddir/src/php/ext/grpc)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/base/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/container/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/debugging)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/debugging/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/hash/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/numeric)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/status)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/strings/internal/str_format)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/synchronization)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/synchronization/internal)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/time/internal/cctz/src)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/abseil-cpp/absl/types)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/address_sorting)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/crypto)
@@ -1123,4 +1226,5 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
 fi

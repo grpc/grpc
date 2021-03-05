@@ -176,6 +176,14 @@ config("grpc_config") {
         "src/core/lib/profiling/timers.h",
     ]
     deps = [
+        ":absl/base:base",
+        ":absl/memory:memory",
+        ":absl/status:status",
+        ":absl/strings:str_format",
+        ":absl/strings:strings",
+        ":absl/synchronization:synchronization",
+        ":absl/time:time",
+        ":absl/types:optional",
     ]
     
     public_configs = [
@@ -1226,6 +1234,21 @@ config("grpc_config") {
         "//third_party/zlib",
         ":gpr",
         ":address_sorting",
+        ":absl/container:flat_hash_map",
+        ":absl/container:inlined_vector",
+        ":absl/status:status",
+        ":absl/status:statusor",
+        ":absl/strings:strings",
+        ":absl/types:optional",
+        ":absl/base:base",
+        ":absl/memory:memory",
+        ":absl/strings:str_format",
+        ":absl/synchronization:synchronization",
+        ":absl/time:time",
+        ":upb",
+        ":absl/functional:bind_front",
+        ":absl/container:flat_hash_set",
+        "//third_party/boringssl",
         "//third_party/cares",
         ":address_sorting",
     ]
@@ -1494,6 +1517,19 @@ config("grpc_config") {
         "//third_party/protobuf:protobuf_lite",
         ":gpr",
         ":grpc",
+        ":absl/synchronization:synchronization",
+        ":upb",
+        ":absl/container:flat_hash_map",
+        ":absl/container:inlined_vector",
+        ":absl/status:status",
+        ":absl/status:statusor",
+        ":absl/strings:strings",
+        ":absl/types:optional",
+        ":absl/base:base",
+        ":absl/memory:memory",
+        ":absl/strings:str_format",
+        ":absl/time:time",
+        "//third_party/boringssl",
     ]
     
     public_configs = [

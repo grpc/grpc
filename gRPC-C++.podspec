@@ -187,6 +187,19 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
     abseil_version = '1.20200923.3'
+    ss.dependency 'abseil/base/base', abseil_version
+    ss.dependency 'abseil/container/flat_hash_map', abseil_version
+    ss.dependency 'abseil/container/flat_hash_set', abseil_version
+    ss.dependency 'abseil/container/inlined_vector', abseil_version
+    ss.dependency 'abseil/functional/bind_front', abseil_version
+    ss.dependency 'abseil/memory/memory', abseil_version
+    ss.dependency 'abseil/status/status', abseil_version
+    ss.dependency 'abseil/status/statusor', abseil_version
+    ss.dependency 'abseil/strings/str_format', abseil_version
+    ss.dependency 'abseil/strings/strings', abseil_version
+    ss.dependency 'abseil/synchronization/synchronization', abseil_version
+    ss.dependency 'abseil/time/time', abseil_version
+    ss.dependency 'abseil/types/optional', abseil_version
 
     ss.source_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
@@ -334,6 +347,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h',
                       'src/core/ext/upb-generated/google/api/http.upb.h',
                       'src/core/ext/upb-generated/google/protobuf/any.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
                       'src/core/ext/upb-generated/google/protobuf/duration.upb.h',
                       'src/core/ext/upb-generated/google/protobuf/empty.upb.h',
                       'src/core/ext/upb-generated/google/protobuf/struct.upb.h',
@@ -420,6 +434,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h',
                       'src/core/ext/upbdefs-generated/google/api/http.upbdefs.h',
                       'src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h',
+                      'src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h',
                       'src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h',
                       'src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.h',
                       'src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.h',
@@ -792,7 +807,25 @@ Pod::Spec.new do |s|
                       'third_party/re2/util/strutil.h',
                       'third_party/re2/util/test.h',
                       'third_party/re2/util/utf.h',
-                      'third_party/re2/util/util.h'
+                      'third_party/re2/util/util.h',
+                      'third_party/upb/third_party/wyhash/wyhash.h',
+                      'third_party/upb/upb/decode.h',
+                      'third_party/upb/upb/decode.int.h',
+                      'third_party/upb/upb/decode_fast.h',
+                      'third_party/upb/upb/def.h',
+                      'third_party/upb/upb/def.hpp',
+                      'third_party/upb/upb/encode.h',
+                      'third_party/upb/upb/json_decode.h',
+                      'third_party/upb/upb/json_encode.h',
+                      'third_party/upb/upb/msg.h',
+                      'third_party/upb/upb/port_def.inc',
+                      'third_party/upb/upb/port_undef.inc',
+                      'third_party/upb/upb/reflection.h',
+                      'third_party/upb/upb/table.int.h',
+                      'third_party/upb/upb/text_encode.h',
+                      'third_party/upb/upb/upb.h',
+                      'third_party/upb/upb/upb.hpp',
+                      'third_party/upb/upb/upb.int.h'
 
     ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
@@ -940,6 +973,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/google/api/expr/v1alpha1/syntax.upb.h',
                               'src/core/ext/upb-generated/google/api/http.upb.h',
                               'src/core/ext/upb-generated/google/protobuf/any.upb.h',
+                              'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
                               'src/core/ext/upb-generated/google/protobuf/duration.upb.h',
                               'src/core/ext/upb-generated/google/protobuf/empty.upb.h',
                               'src/core/ext/upb-generated/google/protobuf/struct.upb.h',
@@ -1026,6 +1060,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upbdefs-generated/google/api/annotations.upbdefs.h',
                               'src/core/ext/upbdefs-generated/google/api/http.upbdefs.h',
                               'src/core/ext/upbdefs-generated/google/protobuf/any.upbdefs.h',
+                              'src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.h',
                               'src/core/ext/upbdefs-generated/google/protobuf/duration.upbdefs.h',
                               'src/core/ext/upbdefs-generated/google/protobuf/empty.upbdefs.h',
                               'src/core/ext/upbdefs-generated/google/protobuf/struct.upbdefs.h',
@@ -1348,7 +1383,25 @@ Pod::Spec.new do |s|
                               'third_party/re2/util/strutil.h',
                               'third_party/re2/util/test.h',
                               'third_party/re2/util/utf.h',
-                              'third_party/re2/util/util.h'
+                              'third_party/re2/util/util.h',
+                              'third_party/upb/third_party/wyhash/wyhash.h',
+                              'third_party/upb/upb/decode.h',
+                              'third_party/upb/upb/decode.int.h',
+                              'third_party/upb/upb/decode_fast.h',
+                              'third_party/upb/upb/def.h',
+                              'third_party/upb/upb/def.hpp',
+                              'third_party/upb/upb/encode.h',
+                              'third_party/upb/upb/json_decode.h',
+                              'third_party/upb/upb/json_encode.h',
+                              'third_party/upb/upb/msg.h',
+                              'third_party/upb/upb/port_def.inc',
+                              'third_party/upb/upb/port_undef.inc',
+                              'third_party/upb/upb/reflection.h',
+                              'third_party/upb/upb/table.int.h',
+                              'third_party/upb/upb/text_encode.h',
+                              'third_party/upb/upb/upb.h',
+                              'third_party/upb/upb/upb.hpp',
+                              'third_party/upb/upb/upb.int.h'
   end
 
   s.subspec 'Protobuf' do |ss|

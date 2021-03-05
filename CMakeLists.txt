@@ -98,6 +98,69 @@ set(gRPC_ABSL_PROVIDER "module" CACHE STRING "Provider of absl library")
 set_property(CACHE gRPC_ABSL_PROVIDER PROPERTY STRINGS "module" "package")
 
 set(gRPC_ABSL_USED_TARGETS
+  absl_algorithm
+  absl_algorithm_container
+  absl_atomic_hook
+  absl_bad_optional_access
+  absl_bad_variant_access
+  absl_base
+  absl_base_internal
+  absl_bind_front
+  absl_bits
+  absl_city
+  absl_civil_time
+  absl_compressed_tuple
+  absl_config
+  absl_container_common
+  absl_container_memory
+  absl_cord
+  absl_core_headers
+  absl_debugging_internal
+  absl_demangle_internal
+  absl_dynamic_annotations
+  absl_endian
+  absl_errno_saver
+  absl_exponential_biased
+  absl_fixed_array
+  absl_flat_hash_map
+  absl_flat_hash_set
+  absl_function_ref
+  absl_graphcycles_internal
+  absl_hash
+  absl_hash_function_defaults
+  absl_hash_policy_traits
+  absl_hashtable_debug_hooks
+  absl_hashtablez_sampler
+  absl_have_sse
+  absl_inlined_vector
+  absl_inlined_vector_internal
+  absl_int128
+  absl_kernel_timeout_internal
+  absl_layout
+  absl_log_severity
+  absl_malloc_internal
+  absl_memory
+  absl_optional
+  absl_raw_hash_map
+  absl_raw_hash_set
+  absl_raw_logging_internal
+  absl_span
+  absl_spinlock_wait
+  absl_stacktrace
+  absl_status
+  absl_statusor
+  absl_str_format
+  absl_str_format_internal
+  absl_strings
+  absl_strings_internal
+  absl_symbolize
+  absl_synchronization
+  absl_throw_delegate
+  absl_time
+  absl_time_zone
+  absl_type_traits
+  absl_utility
+  absl_variant
   absl_meta
 )
 
@@ -1309,6 +1372,14 @@ target_include_directories(gpr
 )
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::base
+  absl::memory
+  absl::status
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
 )
 if(_gRPC_PLATFORM_ANDROID)
   target_link_libraries(gpr
@@ -1951,6 +2022,21 @@ target_link_libraries(grpc
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   address_sorting
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
+  absl::bind_front
+  absl::flat_hash_set
+  ${_gRPC_SSL_LIBRARIES}
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc "-framework CoreFoundation")
@@ -2091,6 +2177,21 @@ target_link_libraries(grpc_test_util
   grpc
   gpr
   address_sorting
+  absl::failure_signal_handler
+  absl::symbolize
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
+  absl::stacktrace
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util "-framework CoreFoundation")
@@ -2158,6 +2259,21 @@ target_link_libraries(grpc_test_util_unsecure
   grpc_unsecure
   gpr
   address_sorting
+  absl::failure_signal_handler
+  absl::symbolize
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
+  absl::stacktrace
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
@@ -2485,6 +2601,18 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   address_sorting
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_unsecure "-framework CoreFoundation")
@@ -2581,6 +2709,7 @@ target_link_libraries(benchmark_helpers
   grpc_test_util_unsecure
   grpc++_test_config
   ${_gRPC_BENCHMARK_LIBRARIES}
+  absl::synchronization
 )
 
 endif()
@@ -2675,6 +2804,19 @@ target_link_libraries(grpc++
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc
+  absl::synchronization
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::time
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 foreach(_hdr
@@ -2921,6 +3063,18 @@ target_link_libraries(grpc++_alts
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
   gpr
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
 )
 
 foreach(_hdr
@@ -3047,6 +3201,7 @@ target_link_libraries(grpc++_reflection
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  absl::synchronization
 )
 
 foreach(_hdr
@@ -3317,6 +3472,8 @@ target_link_libraries(grpc++_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc_unsecure
+  absl::synchronization
+  upb
 )
 
 foreach(_hdr
@@ -3633,6 +3790,7 @@ target_link_libraries(grpcpp_channelz
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++
+  absl::synchronization
 )
 
 foreach(_hdr
@@ -3927,6 +4085,18 @@ target_link_libraries(alts_counter_test
   gpr
   grpc
   grpc_test_util
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
 )
 
 
@@ -3956,6 +4126,18 @@ target_link_libraries(alts_crypt_test
   gpr
   grpc
   grpc_test_util
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
 )
 
 
@@ -3985,6 +4167,18 @@ target_link_libraries(alts_crypter_test
   gpr
   grpc
   grpc_test_util
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
 )
 
 
@@ -4015,6 +4209,19 @@ target_link_libraries(alts_frame_protector_test
   gpr
   grpc
   grpc_test_util
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
 )
 
 
@@ -4044,6 +4251,18 @@ target_link_libraries(alts_grpc_record_protocol_test
   gpr
   grpc
   grpc_test_util
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
 )
 
 
@@ -4073,6 +4292,19 @@ target_link_libraries(alts_handshaker_client_test
   grpc
   grpc_test_util
   gpr
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
 )
 
 
@@ -4102,6 +4334,18 @@ target_link_libraries(alts_iovec_record_protocol_test
   gpr
   grpc
   grpc_test_util
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
 )
 
 
@@ -4130,6 +4374,19 @@ target_link_libraries(alts_security_connector_test
   gpr
   grpc
   grpc_test_util
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4159,6 +4416,19 @@ target_link_libraries(alts_tsi_handshaker_test
   gpr
   grpc
   grpc_test_util
+  absl::base
+  absl::memory
+  absl::status
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::statusor
+  upb
 )
 
 
@@ -4188,6 +4458,19 @@ target_link_libraries(alts_tsi_utils_test
   grpc
   grpc_test_util
   gpr
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
 )
 
 
@@ -4217,6 +4500,18 @@ target_link_libraries(alts_zero_copy_grpc_protector_test
   gpr
   grpc
   grpc_test_util
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
 )
 
 
@@ -4643,6 +4938,18 @@ target_link_libraries(check_gcp_environment_linux_test
   gpr
   grpc
   grpc_test_util
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
 )
 
 
@@ -4671,6 +4978,18 @@ target_link_libraries(check_gcp_environment_windows_test
   gpr
   grpc
   grpc_test_util
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
 )
 
 
@@ -5184,6 +5503,18 @@ target_link_libraries(fake_resolver_test
   gpr
   grpc
   grpc_test_util
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
 )
 
 
@@ -5213,6 +5544,19 @@ target_link_libraries(fake_transport_security_test
   gpr
   grpc
   grpc_test_util
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
 )
 
 
@@ -5431,6 +5775,18 @@ target_link_libraries(frame_handler_test
   gpr
   grpc
   grpc_test_util
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
 )
 
 
@@ -5488,6 +5844,18 @@ target_link_libraries(grpc_alts_credentials_options_test
   gpr
   grpc
   grpc_test_util
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
 )
 
 
@@ -6980,6 +7348,19 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     grpc
     grpc_test_util
+    ${_gRPC_SSL_LIBRARIES}
+    absl::flat_hash_map
+    absl::inlined_vector
+    absl::status
+    absl::statusor
+    absl::strings
+    absl::optional
+    absl::base
+    absl::memory
+    absl::str_format
+    absl::synchronization
+    absl::time
+    upb
   )
 
 
@@ -7543,6 +7924,18 @@ target_link_libraries(transport_security_common_api_test
   grpc
   grpc_test_util
   gpr
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
 )
 
 
@@ -7825,6 +8218,18 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     grpc_test_util
     gpr
     grpc++
+    upb
+    absl::flat_hash_map
+    absl::inlined_vector
+    absl::status
+    absl::statusor
+    absl::strings
+    absl::optional
+    absl::base
+    absl::memory
+    absl::str_format
+    absl::synchronization
+    absl::time
   )
 
 
@@ -7920,6 +8325,7 @@ target_link_libraries(async_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -8028,6 +8434,19 @@ target_link_libraries(aws_request_signer_test
   gpr
   grpc
   grpc_test_util
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -8363,6 +8782,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     benchmark_helpers
     grpc++_unsecure
     grpc_test_util_unsecure
+    ${_gRPC_BENCHMARK_LIBRARIES}
+    absl::synchronization
   )
 
 
@@ -8405,6 +8826,8 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     benchmark_helpers
     grpc++_unsecure
     grpc_test_util_unsecure
+    ${_gRPC_BENCHMARK_LIBRARIES}
+    absl::synchronization
   )
 
 
@@ -9181,6 +9604,7 @@ target_link_libraries(cfstream_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -9293,6 +9717,7 @@ target_link_libraries(channel_trace_test
   grpc
   grpc++
   grpc_test_util
+  absl::synchronization
 )
 
 
@@ -9382,6 +9807,7 @@ target_link_libraries(channelz_service_test
   grpcpp_channelz
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -9424,6 +9850,7 @@ target_link_libraries(channelz_test
   grpc
   grpc++
   grpc_test_util
+  absl::synchronization
 )
 
 
@@ -9482,6 +9909,8 @@ target_link_libraries(cli_call_test
   grpc_test_util
   grpc++_test_util
   grpc++
+  absl::synchronization
+  absl::flags
 )
 
 
@@ -9534,6 +9963,7 @@ target_link_libraries(client_callback_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -9594,6 +10024,18 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc++
     grpc_test_util
     grpc++_test_util
+    absl::flat_hash_map
+    absl::inlined_vector
+    absl::status
+    absl::statusor
+    absl::strings
+    absl::optional
+    absl::base
+    absl::memory
+    absl::str_format
+    absl::synchronization
+    absl::time
+    upb
   )
 
 
@@ -9647,6 +10089,7 @@ target_link_libraries(client_interceptors_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -9708,6 +10151,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc++
     grpc_test_util
     grpc++_test_util
+    absl::synchronization
   )
 
 
@@ -9904,6 +10348,7 @@ target_link_libraries(context_allocator_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -9991,6 +10436,7 @@ target_link_libraries(delegating_channel_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -10029,6 +10475,18 @@ target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
 )
 
 
@@ -10064,6 +10522,14 @@ target_link_libraries(dual_ref_counted_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   gpr
+  absl::base
+  absl::memory
+  absl::status
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
 )
 
 
@@ -10159,6 +10625,7 @@ target_link_libraries(end2end_test
   grpc++_test
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -10202,6 +10669,7 @@ target_link_libraries(error_details_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_error_details
   grpc_test_util
+  absl::synchronization
 )
 
 
@@ -10239,6 +10707,21 @@ target_link_libraries(evaluate_args_test
   grpc
   grpc_test_util
   address_sorting
+  absl::failure_signal_handler
+  absl::symbolize
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
+  absl::stacktrace
 )
 
 
@@ -10274,6 +10757,17 @@ target_link_libraries(eventmanager_libuv_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   gpr
+  absl::base
+  absl::memory
+  absl::status
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::statusor
 )
 
 
@@ -10363,6 +10857,7 @@ target_link_libraries(exception_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -10453,6 +10948,7 @@ target_link_libraries(filter_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -10504,6 +11000,7 @@ target_link_libraries(flaky_network_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -10558,6 +11055,7 @@ target_link_libraries(generic_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -10667,6 +11165,21 @@ target_link_libraries(google_mesh_ca_certificate_provider_factory_test
   gpr
   grpc
   grpc_test_util
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
+  absl::bind_front
+  absl::flat_hash_set
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10713,6 +11226,7 @@ target_link_libraries(grpc_cli
   grpc++
   grpc++_test_config
   absl::flags
+  absl::synchronization
 )
 
 
@@ -11015,6 +11529,19 @@ target_link_libraries(grpc_tls_certificate_distributor_test
   gpr
   grpc
   grpc_test_util
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11051,6 +11578,19 @@ target_link_libraries(grpc_tls_certificate_provider_test
   gpr
   grpc
   grpc_test_util
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11087,6 +11627,19 @@ target_link_libraries(grpc_tls_credentials_options_test
   gpr
   grpc
   grpc_test_util
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11144,6 +11697,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc++_test_util
     grpc++
     absl::flags
+    absl::synchronization
   )
 
 
@@ -11187,6 +11741,7 @@ target_link_libraries(grpclb_api_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -11247,6 +11802,18 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc++
     grpc_test_util
     grpc++_test_util
+    absl::flat_hash_map
+    absl::inlined_vector
+    absl::status
+    absl::statusor
+    absl::strings
+    absl::optional
+    absl::base
+    absl::memory
+    absl::str_format
+    absl::synchronization
+    absl::time
+    upb
   )
 
 
@@ -11285,6 +11852,19 @@ target_link_libraries(h2_ssl_session_reuse_test
   grpc
   end2end_tests
   grpc_test_util
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  upb
 )
 
 
@@ -11421,6 +12001,7 @@ target_link_libraries(health_service_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -11471,6 +12052,7 @@ target_link_libraries(http2_client
   grpc++_test_config
   grpc++_test_util
   absl::flags
+  absl::synchronization
 )
 
 
@@ -11526,6 +12108,7 @@ target_link_libraries(hybrid_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -11636,6 +12219,19 @@ target_link_libraries(insecure_security_connector_test
   gpr
   grpc
   grpc_test_util
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11688,6 +12284,8 @@ target_link_libraries(interop_client
   grpc++_test_config
   grpc++_test_util
   grpc
+  absl::flags
+  absl::synchronization
 )
 
 
@@ -11739,6 +12337,7 @@ target_link_libraries(interop_server
   grpc++_test_config
   grpc++_test_util
   absl::flags
+  absl::synchronization
 )
 
 
@@ -12090,6 +12689,7 @@ target_link_libraries(message_allocator_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -12145,6 +12745,7 @@ target_link_libraries(mock_test
   grpc++_test
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -12195,6 +12796,7 @@ target_link_libraries(nonblocking_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -12265,6 +12867,14 @@ target_link_libraries(orphanable_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   gpr
+  absl::base
+  absl::memory
+  absl::status
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
 )
 
 
@@ -12390,6 +13000,7 @@ target_link_libraries(port_sharing_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -12447,6 +13058,7 @@ target_link_libraries(proto_server_reflection_test
   grpc++_reflection
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -12568,6 +13180,7 @@ target_link_libraries(qps_json_driver
   grpc
   gpr
   absl::flags
+  absl::synchronization
 )
 
 
@@ -12646,6 +13259,7 @@ target_link_libraries(qps_worker
   grpc
   gpr
   absl::flags
+  absl::synchronization
 )
 
 
@@ -12701,6 +13315,7 @@ target_link_libraries(raw_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -12736,6 +13351,14 @@ target_link_libraries(ref_counted_ptr_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   gpr
+  absl::base
+  absl::memory
+  absl::status
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
 )
 
 
@@ -12771,6 +13394,14 @@ target_link_libraries(ref_counted_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   gpr
+  absl::base
+  absl::memory
+  absl::status
+  absl::str_format
+  absl::strings
+  absl::synchronization
+  absl::time
+  absl::optional
 )
 
 
@@ -12936,6 +13567,7 @@ target_link_libraries(server_builder_plugin_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -12984,6 +13616,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
     grpc_test_util_unsecure
+    absl::synchronization
   )
 
 
@@ -13033,6 +13666,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
     grpc_test_util_unsecure
+    absl::synchronization
   )
 
 
@@ -13159,6 +13793,7 @@ target_link_libraries(server_early_return_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -13211,6 +13846,7 @@ target_link_libraries(server_interceptors_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -13297,6 +13933,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_ALLTARGETS_LIBRARIES}
     grpc++_unsecure
     grpc_test_util_unsecure
+    absl::synchronization
   )
 
 
@@ -13353,6 +13990,7 @@ target_link_libraries(service_config_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -13479,6 +14117,7 @@ target_link_libraries(shutdown_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -13555,6 +14194,19 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     absl::symbolize
+    absl::stacktrace
+    absl::flat_hash_map
+    absl::inlined_vector
+    absl::status
+    absl::statusor
+    absl::strings
+    absl::optional
+    absl::base
+    absl::memory
+    absl::str_format
+    absl::synchronization
+    absl::time
+    upb
   )
 
 
@@ -13828,6 +14480,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc++
     grpc_test_util
     grpc++_test_util
+    absl::synchronization
   )
 
 
@@ -14100,6 +14753,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc++
     grpc_test_util
     grpc++_test_util
+    absl::synchronization
   )
 
 
@@ -14244,6 +14898,19 @@ target_link_libraries(tls_security_connector_test
   gpr
   grpc
   grpc_test_util
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14505,6 +15172,21 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc
     grpc++
     address_sorting
+    absl::synchronization
+    absl::failure_signal_handler
+    absl::symbolize
+    absl::flat_hash_map
+    absl::inlined_vector
+    absl::status
+    absl::statusor
+    absl::strings
+    absl::optional
+    absl::base
+    absl::memory
+    absl::str_format
+    absl::time
+    upb
+    absl::stacktrace
   )
 
 
@@ -14578,6 +15260,19 @@ target_link_libraries(xds_certificate_provider_test
   gpr
   grpc
   grpc_test_util
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14629,6 +15324,7 @@ target_link_libraries(xds_credentials_end2end_test
   grpc++
   grpc_test_util
   grpc++_test_util
+  absl::synchronization
 )
 
 
@@ -14665,6 +15361,19 @@ target_link_libraries(xds_credentials_test
   gpr
   grpc
   grpc_test_util
+  upb
+  absl::flat_hash_map
+  absl::inlined_vector
+  absl::status
+  absl::statusor
+  absl::strings
+  absl::optional
+  absl::base
+  absl::memory
+  absl::str_format
+  absl::synchronization
+  absl::time
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14821,6 +15530,18 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     grpc++
     grpc_test_util
     grpc++_test_util
+    absl::flat_hash_map
+    absl::inlined_vector
+    absl::status
+    absl::statusor
+    absl::strings
+    absl::optional
+    absl::base
+    absl::memory
+    absl::str_format
+    absl::synchronization
+    absl::time
+    upb
   )
 
 
@@ -14871,6 +15592,7 @@ target_link_libraries(xds_interop_client
   grpc_test_util
   grpc++_test_config
   absl::flags
+  absl::synchronization
 )
 
 
@@ -14920,6 +15642,7 @@ target_link_libraries(xds_interop_server
   grpc_test_util
   grpc++_test_config
   absl::flags
+  absl::synchronization
 )
 
 
@@ -14958,6 +15681,7 @@ target_link_libraries(alts_credentials_fuzzer_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -14996,6 +15720,7 @@ target_link_libraries(client_fuzzer_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -15033,6 +15758,7 @@ target_link_libraries(hpack_parser_fuzzer_test_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -15071,6 +15797,7 @@ target_link_libraries(http_request_fuzzer_test_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -15109,6 +15836,7 @@ target_link_libraries(http_response_fuzzer_test_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -15147,6 +15875,7 @@ target_link_libraries(json_fuzzer_test_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -15185,6 +15914,7 @@ target_link_libraries(nanopb_fuzzer_response_test_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -15223,6 +15953,7 @@ target_link_libraries(nanopb_fuzzer_serverlist_test_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -15261,6 +15992,7 @@ target_link_libraries(percent_decode_fuzzer_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -15299,6 +16031,7 @@ target_link_libraries(percent_encode_fuzzer_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -15337,6 +16070,7 @@ target_link_libraries(server_fuzzer_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -15375,6 +16109,7 @@ target_link_libraries(ssl_server_fuzzer_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -15413,6 +16148,7 @@ target_link_libraries(uri_fuzzer_test_one_entry
   grpc
   grpc_test_util
   grpc++_test_config
+  absl::flags
 )
 
 
@@ -15476,7 +16212,7 @@ generate_pkgconfig(
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
   ""
-  "-lgpr"
+  "-lgpr -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_status -labsl_cord -labsl_str_format_internal -labsl_bad_optional_access -labsl_symbolize -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "gpr.pc")
 
@@ -15486,7 +16222,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz"
+  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_statusor -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_status -labsl_cord -labsl_str_format_internal -labsl_bad_optional_access -labsl_symbolize -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc.pc")
 
@@ -15496,7 +16232,7 @@ generate_pkgconfig(
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
   "gpr"
-  "-lgrpc_unsecure"
+  "-lgrpc_unsecure -labsl_statusor -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_status -labsl_cord -labsl_str_format_internal -labsl_bad_optional_access -labsl_symbolize -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc_unsecure.pc")
 
@@ -15506,7 +16242,7 @@ generate_pkgconfig(
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
   "grpc"
-  "-lgrpc++"
+  "-lgrpc++ -labsl_statusor -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_status -labsl_cord -labsl_str_format_internal -labsl_bad_optional_access -labsl_symbolize -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc++.pc")
 
@@ -15516,6 +16252,6 @@ generate_pkgconfig(
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
   "grpc_unsecure"
-  "-lgrpc++_unsecure"
+  "-lgrpc++_unsecure -labsl_statusor -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_exponential_biased -labsl_hash -labsl_bad_variant_access -labsl_city -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_status -labsl_cord -labsl_str_format_internal -labsl_bad_optional_access -labsl_symbolize -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
   ""
   "grpc++_unsecure.pc")
