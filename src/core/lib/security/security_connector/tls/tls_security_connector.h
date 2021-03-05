@@ -108,32 +108,13 @@ class TlsChannelSecurityConnector final
   // |certificate_watcher_| is watching get updated.
   grpc_security_status UpdateHandshakerFactoryLocked();
 
-  // gRPC-provided callback executed by application, which servers to bring the
-  // control back to gRPC core.
-  static void ServerAuthorizationCheckDone(
-      grpc_tls_server_authorization_check_arg* arg);
-
-  // A util function to process server authorization check result.
-  static grpc_error* ProcessServerAuthorizationCheckResult(
-      grpc_tls_server_authorization_check_arg* arg);
-
-  // A util function to create a server authorization check arg instance.
-  static grpc_tls_server_authorization_check_arg*
-  ServerAuthorizationCheckArgCreate(void* user_data);
-
-  // A util function to destroy a server authorization check arg instance.
-  static void ServerAuthorizationCheckArgDestroy(
-      grpc_tls_server_authorization_check_arg* arg);
-
   grpc_core::Mutex mu_;
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
   grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
       certificate_watcher_ = nullptr;
-  grpc_closure* on_peer_checked_ = nullptr;
   std::string target_name_;
   std::string overridden_target_name_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
-  grpc_tls_server_authorization_check_arg* check_arg_ = nullptr;
   tsi_ssl_session_cache* ssl_session_cache_ = nullptr;
   absl::optional<absl::string_view> pem_root_certs_;
   absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pair_list_;
@@ -212,15 +193,6 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   absl::optional<absl::string_view> pem_root_certs_;
   absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pair_list_;
 };
-
-// ---- Functions below are exposed for testing only -----------------------
-namespace internal {
-
-// TlsCheckHostName checks if |peer_name| matches the identity information
-// contained in |peer|. This is AKA hostname check.
-grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer);
-
-}  // namespace internal
 
 }  // namespace grpc_core
 

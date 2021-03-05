@@ -747,15 +747,6 @@ GRPCAPI grpc_server_credentials* grpc_local_server_credentials_create(
 /** --- TLS channel/server credentials ---
  * It is used for experimental purpose for now and subject to change. */
 
-/** Struct for indicating errors. It is used for
- *  experimental purpose for now and subject to change. */
-typedef struct grpc_tls_error_details grpc_tls_error_details;
-
-/** Config for TLS server authorization check. It is used for
- *  experimental purpose for now and subject to change. */
-typedef struct grpc_tls_server_authorization_check_config
-    grpc_tls_server_authorization_check_config;
-
 /**
  * A struct that can be specified by callers to configure underlying TLS
  * behaviors. It is used for experimental purpose for now and subject to change.
@@ -855,26 +846,6 @@ GRPCAPI void grpc_tls_certificate_provider_release(
 GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create(void);
 
 /**
- * Sets the options of whether to request and verify client certs. This should
- * be called only on the server side. It is used for experimental purpose for
- * now and subject to change.
- */
-GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
-    grpc_tls_credentials_options* options,
-    grpc_ssl_client_certificate_request_type type);
-
-/**
- * Sets the options of whether to choose certain checks, e.g. certificate check,
- * hostname check, etc. This should be called only on the client side. If
- * |server_verification_option| is not GRPC_TLS_SERVER_VERIFICATION, use of a
- * custom authorization check (grpc_tls_server_authorization_check_config) is
- * mandatory. It is used for experimental purpose for now and subject to change.
- */
-GRPCAPI void grpc_tls_credentials_options_set_server_verification_option(
-    grpc_tls_credentials_options* options,
-    grpc_tls_server_verification_option server_verification_option);
-
-/**
  * Sets the credential provider in the options.
  * The |options| will implicitly take a new ref to the |provider|.
  * It is used for experimental purpose for now and subject to change.
@@ -923,104 +894,166 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_cert_name(
     grpc_tls_credentials_options* options, const char* identity_cert_name);
 
 /**
- * Sets the configuration for a custom authorization check performed at the end
- * of the handshake. The |options| will implicitly take a new ref to the
- * |config|.
+ * Sets the options of whether to request and verify client certs. This should
+ * be called only on the server side.
  * It is used for experimental purpose for now and subject to change.
  */
-GRPCAPI void grpc_tls_credentials_options_set_server_authorization_check_config(
+GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
-    grpc_tls_server_authorization_check_config* config);
-
-/** --- TLS server authorization check config. ---
- *  It is used for experimental purpose for now and subject to change. */
-
-typedef struct grpc_tls_server_authorization_check_arg
-    grpc_tls_server_authorization_check_arg;
-
-/** callback function provided by gRPC used to handle the result of server
-    authorization check. It is used when schedule API is implemented
-    asynchronously, and serves to bring the control back to gRPC C core. It is
-    used for experimental purpose for now and subject to change. */
-typedef void (*grpc_tls_on_server_authorization_check_done_cb)(
-    grpc_tls_server_authorization_check_arg* arg);
-
-/** A struct containing all information necessary to schedule/cancel a server
-    authorization check request.
-    - cb and cb_user_data represent a gRPC-provided callback and an argument
-      passed to it.
-    - success will store the result of server authorization check. That is,
-      if success returns a non-zero value, it means the authorization check
-      passes and if returning zero, it means the check fails.
-   - target_name is the name of an endpoint the channel is connecting to.
-   - peer_cert represents a complete certificate chain including both
-     signing and leaf certificates.
-   - \a subject_alternative_names is an array of size
-     \a subject_alternative_names_size consisting of pointers to strings.
-   - status and error_details contain information
-     about errors occurred when a server authorization check request is
-     scheduled/cancelled.
-   - config is a pointer to the unique
-     grpc_tls_server_authorization_check_config instance that this argument
-     corresponds to.
-   - context is a pointer to a wrapped language implementation of this
-     grpc_tls_server_authorization_check_arg instance.
-   - destroy_context is a pointer to a caller-provided method that cleans
-      up any data associated with the context pointer.
-   It is used for experimental purpose for now and subject to change.
-*/
-struct grpc_tls_server_authorization_check_arg {
-  grpc_tls_on_server_authorization_check_done_cb cb;
-  void* cb_user_data;
-  int success;
-  const char* target_name;
-  const char* peer_cert;
-  const char* peer_cert_full_chain;
-  char** subject_alternative_names;
-  size_t subject_alternative_names_size;
-  grpc_status_code status;
-  grpc_tls_error_details* error_details;
-  grpc_tls_server_authorization_check_config* config;
-  void* context;
-  void (*destroy_context)(void* ctx);
-};
-
-/** Create a grpc_tls_server_authorization_check_config instance.
-    - config_user_data is config-specific, read-only user data
-      that works for all channels created with a credential using the config.
-    - schedule is a pointer to an application-provided callback used to invoke
-      server authorization check API. The implementation of this method has to
-      be non-blocking, but can be performed synchronously or asynchronously.
-      1)If processing occurs synchronously, it populates arg->result,
-      arg->status, and arg->error_details and returns zero.
-      2) If processing occurs asynchronously, it returns a non-zero value. The
-      application then invokes arg->cb when processing is completed. Note that
-      arg->cb cannot be invoked before schedule API returns.
-    - cancel is a pointer to an application-provided callback used to cancel a
-      server authorization check request scheduled via an asynchronous schedule
-      API. arg is used to pinpoint an exact check request to be cancelled. The
-      operation may not have any effect if the request has already been
-      processed.
-    - destruct is a pointer to an application-provided callback used to clean up
-      any data associated with the config.
-    It is used for experimental purpose for now and subject to change.
-*/
-GRPCAPI grpc_tls_server_authorization_check_config*
-grpc_tls_server_authorization_check_config_create(
-    const void* config_user_data,
-    int (*schedule)(void* config_user_data,
-                    grpc_tls_server_authorization_check_arg* arg),
-    void (*cancel)(void* config_user_data,
-                   grpc_tls_server_authorization_check_arg* arg),
-    void (*destruct)(void* config_user_data));
+    grpc_ssl_client_certificate_request_type type);
 
 /**
- * Releases a grpc_tls_server_authorization_check_config object. The creator of
- * the grpc_tls_server_authorization_check_config object is responsible for its
- * release. It is used for experimental purpose for now and subject to change.
+ * Sets the options of whether to verify server certs on the client side.
+ * Passing in a non-zero value indicates verifying the certs.
+ * It is used for experimental purpose for now and subject to change.
  */
-GRPCAPI void grpc_tls_server_authorization_check_config_release(
-    grpc_tls_server_authorization_check_config* config);
+GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
+    grpc_tls_credentials_options* options, int verify_server_cert);
+
+/**
+ * The request information exposed in a verification call.
+ * It would only stay within the check_peer() call of the security connector.
+ * Callers should not directly manage the ownership of it. We will make sure it
+ * is always available inside schedule() or cancel() call, and will destroy the
+ * object at the end of custom verification(inside check_peer()).
+ */
+struct grpc_tls_custom_verification_check_request {
+  /* -- The following fields are read-only. -- */
+  /* The target name of the peer. */
+  const char* target_name = nullptr;
+  struct peer_info {
+    const char* common_name = nullptr;
+    /* The list of SAN names on |peer_cert|. */
+    struct san_names {
+      char** uri_names = nullptr;
+      size_t uri_names_size = 0;
+      char** ip_names = nullptr;
+      size_t ip_names_size = 0;
+      // Other SAN name fields go here...
+    } san_names;
+    /* The leaf certificate sent from the peer. */
+    const char* peer_cert = nullptr;
+    /* The full certificate chain sent from the peer. */
+    const char* peer_cert_full_chain = nullptr;
+  } peer_info;
+  /* -- The following fields can be modified. -- */
+  /* Indicates if a connection should be allowed. This should be properly
+  populated to indicate if a connection is good. */
+  grpc_status_code status;
+  /* Error details. This should be properly populated if |status| is not
+   * GRPC_STATUS_OK. When setting, the callers need to use gpr_malloc(),
+   * gpr_strdup() or gpr_asprintf() and pass the ownership; gRPC will free
+   * it when it is not needed. */
+  char* error_details = nullptr;
+};
+
+/**
+ * A callback function provided by gRPC as a parameter of the |verify| function
+ * in grpc_tls_certificate_verifier_external. If |verify| is expected to be run
+ * asynchronously, the implementer of |verify| will need to invoke this callback
+ * at the end to bring the control back to gRPC C core.
+ */
+typedef void (*grpc_tls_on_custom_verification_check_done_cb)(
+    grpc_tls_custom_verification_check_request* request, void* callback_arg);
+
+/**
+ * The internal verifier type that will be used inside core.
+ */
+typedef struct grpc_tls_certificate_verifier grpc_tls_certificate_verifier;
+
+/**
+ * A struct containing all the necessary functions a custom external verifier
+ * needs to implement to be able to be converted to an internal verifier.
+ */
+struct grpc_tls_certificate_verifier_external {
+  /**
+   * A function pointer containing the verification logic that will be
+   * performed after the TLS handshake is done.
+   *
+   * external_verifier: a pointer to the struct itself
+   * request: request information exposed to the function implementer.
+   * user_data: used for binding any caller-specified states. Whatever passed
+   *            in user_data can be retrieved in callback.
+   * callback_arg: the callback that the function implementer needs to invoke,
+   * if return a non-zero value. It is usually invoked when the asynchronous
+   * verification is done, and serves to bring the control back to gRPC. return:
+   * return a non-zero value if |verify| is expected to be executed
+   *         asynchronously, otherwise return 0.
+   */
+  int (*verify)(grpc_tls_certificate_verifier_external* external_verifier,
+                grpc_tls_custom_verification_check_request* request,
+                grpc_tls_on_custom_verification_check_done_cb callback,
+                void* callback_arg);
+  /**
+   * A function pointer that cleans up the caller-specified resources when the
+   * verifier is still running but the whole connection got cancelled. This
+   * could happen when the verifier is doing some async operations, and the
+   * whole handshaker object got destroyed because of connetion time limit is
+   * reached, or any other reasons. In such cases, function implementers might
+   * want to be notified, and properly clean up some resources.
+   *
+   * external_verifier: a pointer to the struct itself
+   * request: request information exposed to the function implementer.
+   */
+  void (*cancel)(grpc_tls_certificate_verifier_external* external_verifier,
+                 grpc_tls_custom_verification_check_request* request);
+  /**
+   * A function pointer that does some additional destruction work when the
+   * verifier is destroyed. This is used when the caller wants to associate some
+   * objects to the lifetime of external_verifier, and destroy them when
+   * external_verifier got destructed. For example, in C++, the class containing
+   * user-specified callback functions should not be destroyed before
+   * external_verifier, since external_verifier will invoke them while being
+   * used.
+   *
+   * external_verifier: a pointer to the struct itself
+   */
+  void (*destruct)(grpc_tls_certificate_verifier_external* external_verifier);
+};
+
+/**
+ * Converts an external verifier to an internal verifier. The internal verifier
+ * will take the ownership of the external verifier.
+ */
+grpc_tls_certificate_verifier* grpc_tls_certificate_verifier_external_create(
+    grpc_tls_certificate_verifier_external* external_verifier);
+
+/**
+ * Factory function for an internal verifier that will do the default hostname
+ * check.
+ */
+grpc_tls_certificate_verifier* grpc_tls_certificate_verifier_host_name_create();
+
+/**
+ * Releases a grpc_tls_certificate_verifier object. The creator of the
+ * grpc_tls_certificate_verifier object is responsible for its release.
+ * It is used for experimental purpose for now and subject to change.
+ */
+void grpc_tls_certificate_verifier_release(
+    grpc_tls_certificate_verifier* verifier);
+
+// Sets the verifier in options. The |options| will implicitly take a new ref to
+// the |verifier|. If not set on the client side, we will verify server's
+// certificates, and check the default hostname. If not set on the server side,
+// we will verify client's certificates.
+void grpc_tls_credentials_options_set_certificate_verifier(
+    grpc_tls_credentials_options* options,
+    grpc_tls_certificate_verifier* verifier);
+
+// Performs the verification logic of an internal verifier.
+// This is typically used when composing the internal verifiers as part of the
+// custom verification.
+int grpc_tls_certificate_verifier_verify(
+    grpc_tls_certificate_verifier* verifier,
+    grpc_tls_custom_verification_check_request* request,
+    grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg);
+
+// Performs the cancellation logic of an internal verifier.
+// This is typically used when composing the internal verifiers as part of the
+// custom verification.
+void grpc_tls_certificate_verifier_cancel(
+    grpc_tls_certificate_verifier* verifier,
+    grpc_tls_custom_verification_check_request* request);
 
 /**
  * Creates a TLS channel credential object based on the
