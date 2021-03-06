@@ -24,30 +24,57 @@ grpc_config = ENV['GRPC_CONFIG'] || 'opt'
 
 ENV['MACOSX_DEPLOYMENT_TARGET'] = '10.10'
 
-if ENV['AR'].nil? || ENV['AR'].size == 0
-    ENV['AR'] = RbConfig::CONFIG['AR']
-end
-if ENV['CC'].nil? || ENV['CC'].size == 0
-    ENV['CC'] = RbConfig::CONFIG['CC']
-end
-if ENV['CXX'].nil? || ENV['CXX'].size == 0
-    ENV['CXX'] = RbConfig::CONFIG['CXX']
-end
-if ENV['LD'].nil? || ENV['LD'].size == 0
-    ENV['LD'] = ENV['CC']
+def env_unset?(name)
+  ENV[name].nil? || ENV[name].size == 0
 end
 
-if RUBY_PLATFORM =~ /darwin/
+def rbconfig_set?(name)
+  RbConfig::CONFIG[name] && RbConfig::CONFIG[name].size > 0
+end
+
+def inherit_rbconfig(name)
+  ENV[name] = RbConfig::CONFIG[name] if env_unset?(name) && rbconfig_set?(name)
+end
+
+def env_append(name, string)
+  ENV[name] ||= ''
+  ENV[name] += ' ' + string
+end
+
+inherit_rbconfig 'AR'
+inherit_rbconfig 'CC'
+inherit_rbconfig 'CXX'
+inherit_rbconfig 'RANLIB'
+inherit_rbconfig 'STRIP'
+inherit_rbconfig 'CPPFLAGS'
+inherit_rbconfig 'LDFLAGS'
+
+ENV['LD'] = ENV['CC'] if env_unset?('LD')
+ENV['LDXX'] = ENV['CXX'] if env_unset?('LDXX')
+
+if RUBY_ENGINE == 'truffleruby'
+  # ensure we can find the system's OpenSSL
+  env_append 'CPPFLAGS', RbConfig::CONFIG['cppflags']
+end
+
+def apple_toolchain?
+  # TruffleRuby uses the Sulong LLVM runtime, which is different from Apple's.
+  RUBY_PLATFORM =~ /darwin/ && RUBY_ENGINE != 'truffleruby'
+end
+
+if apple_toolchain?
   ENV['AR'] = 'libtool'
   ENV['ARFLAGS'] = '-o'
  end
 
-ENV['EMBED_OPENSSL'] = 'true'
-ENV['EMBED_ZLIB'] = 'true'
+# Don't embed on Truffleruby (constant-time crypto is unsafe with Sulong, slow build times)
+ENV['EMBED_OPENSSL'] = (RUBY_ENGINE != 'truffleruby').to_s
+ENV['EMBED_ZLIB'] = (RUBY_ENGINE != 'truffleruby').to_s
+
 ENV['EMBED_CARES'] = 'true'
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
-ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
-ENV['CPPFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
+ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if apple_toolchain?
+env_append 'CPPFLAGS', '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])
 grpc_lib_dir = File.join(output_dir, 'libs', grpc_config)
@@ -66,7 +93,7 @@ $CFLAGS << ' -I' + File.join(grpc_root, 'include')
 
 ext_export_file = File.join(grpc_root, 'src', 'ruby', 'ext', 'grpc', 'ext-export')
 $LDFLAGS << ' -Wl,--version-script="' + ext_export_file + '.gcc"' if RUBY_PLATFORM =~ /linux/
-$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if RUBY_PLATFORM =~ /darwin/
+$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if apple_toolchain?
 
 $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
 if grpc_config == 'gcov'
@@ -79,8 +106,10 @@ if grpc_config == 'dbg'
 end
 
 $LDFLAGS << ' -Wl,-wrap,memcpy' if RUBY_PLATFORM =~ /linux/
-$LDFLAGS << ' -static-libgcc -static-libstdc++' if RUBY_PLATFORM =~ /linux/
 $LDFLAGS << ' -static' if windows
+if RUBY_PLATFORM =~ /linux/ && RUBY_ENGINE != 'truffleruby'
+  $LDFLAGS << ' -static-libgcc -static-libstdc++'
+end
 
 $CFLAGS << ' -std=c99 '
 $CFLAGS << ' -Wall '
@@ -92,7 +121,7 @@ puts 'Generating Makefile for ' + output
 create_makefile(output)
 
 strip_tool = RbConfig::CONFIG['STRIP']
-strip_tool = 'strip -x' if RUBY_PLATFORM =~ /darwin/
+strip_tool = 'strip -x' if apple_toolchain?
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|
