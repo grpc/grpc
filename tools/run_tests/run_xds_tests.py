@@ -1744,7 +1744,8 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
                            before_stats.stats_per_method[rpc].result[status])
                     want = pct * args.qps * test_runtime_secs
                     # Allow 10% deviation from expectation to reduce flakiness
-                    if qty < (want * .9) or qty > (want * 1.1):
+                    VARIANCE_ALLOWED = 0.1
+                    if abs(qty - want) > want * VARIANCE_ALLOWED:
                         logger.info('%s: failed due to %s[%s]: got %d want ~%d',
                                     testcase_name, rpc, status, qty, want)
                         success = False
