@@ -8374,11 +8374,14 @@ targets:
   build: test
   run: false
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/test_health_check_service_impl.h
   src:
+  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/interop/xds_interop_server.cc
   deps:
   - grpc_test_util
