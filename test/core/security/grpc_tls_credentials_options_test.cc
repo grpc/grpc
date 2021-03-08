@@ -54,24 +54,97 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
     private_key_2_ = GetFileContents(SERVER_KEY_PATH_2);
   }
 
+  void TearDown() override {
+    grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(
+        &request_);
+    if (external_certificate_verifier_ != nullptr) {
+      delete external_certificate_verifier_;
+    }
+  }
+
+  void CreateExternalCertificateVerifier(
+      int (*verify)(grpc_tls_certificate_verifier_external* external_verifier,
+                    grpc_tls_custom_verification_check_request* request,
+                    grpc_tls_on_custom_verification_check_done_cb callback,
+                    void* callback_arg),
+      void (*cancel)(grpc_tls_certificate_verifier_external* external_verifier,
+                     grpc_tls_custom_verification_check_request* request),
+      void (*destruct)(
+          grpc_tls_certificate_verifier_external* external_verifier)) {
+    grpc_tls_certificate_verifier_external* external_verifier =
+        new grpc_tls_certificate_verifier_external();
+    external_verifier->verify = verify;
+    external_verifier->cancel = cancel;
+    external_verifier->destruct = destruct;
+    // Takes the ownership of external_verifier.
+    external_certificate_verifier_ =
+        new ExternalCertificateVerifier(external_verifier);
+  }
+
+  static int SyncExternalVerifierGoodVerify(
+      grpc_tls_certificate_verifier_external* external_verifier,
+      grpc_tls_custom_verification_check_request* request,
+      grpc_tls_on_custom_verification_check_done_cb callback,
+      void* callback_arg) {
+    request->status = GRPC_STATUS_OK;
+    return false;
+  }
+
+  struct ThreadArgs {
+    grpc_tls_custom_verification_check_request* request;
+    grpc_tls_on_custom_verification_check_done_cb callback;
+    void* callback_arg;
+  };
+
+  static int AsyncExternalVerifierBadVerify(
+      grpc_tls_certificate_verifier_external* external_verifier,
+      grpc_tls_custom_verification_check_request* request,
+      grpc_tls_on_custom_verification_check_done_cb callback,
+      void* callback_arg) {
+    ThreadArgs* thread_args = new ThreadArgs();
+    thread_args->request = request;
+    thread_args->callback = callback;
+    thread_args->callback_arg = callback_arg;
+    grpc_core::Thread thread = grpc_core::Thread(
+        "AsyncExternalVerifierGoodVerify", &AsyncExternalVerifierGoodVerifyCb,
+        static_cast<void*>(thread_args));
+    thread.Start();
+    // Question: This still behaves like a sync operation. I wanted to return
+    // true first, and then at the main thread or TearDown function we join the
+    // thread. Is it possible?
+    thread.Join();
+    return true;
+  }
+
+  static void AsyncExternalVerifierGoodVerifyCb(void* args) {
+    ThreadArgs* thread_args = static_cast<ThreadArgs*>(args);
+    grpc_tls_custom_verification_check_request* request = thread_args->request;
+    grpc_tls_on_custom_verification_check_done_cb callback =
+        thread_args->callback;
+    void* callback_arg = thread_args->callback_arg;
+    request->status = GRPC_STATUS_UNAUTHENTICATED;
+    request->error_details = gpr_strdup("SyncExternalVerifierBadVerify failed");
+    callback(request, callback_arg);
+    delete thread_args;
+  }
+
   std::string root_cert_;
   std::string private_key_;
   std::string cert_chain_;
   std::string root_cert_2_;
   std::string private_key_2_;
   std::string cert_chain_2_;
+  grpc_tls_custom_verification_check_request request_;
+  ExternalCertificateVerifier* external_certificate_verifier_ = nullptr;
+  HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
-TEST_F(GrpcTlsCredentialsOptionsTest, ErrorDetails) {
-  grpc_tls_error_details error_details;
-  EXPECT_STREQ(error_details.error_details().c_str(), "");
-  error_details.set_error_details("test error details");
-  EXPECT_STREQ(error_details.error_details().c_str(), "test error details");
-}
+//
+// Tests for Default Root Certs.
+//
 
 TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsOnDefaultRootCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
@@ -84,7 +157,10 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsOnDefaultRootCerts) {
   EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
 }
 
+//
 // Tests for StaticDataCertificateProvider.
+//
+
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithStaticDataProviderOnBothCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
@@ -93,7 +169,6 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_watch_identity_pair(true);
-  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
@@ -115,7 +190,6 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       root_cert_, PemKeyCertPairList());
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
-  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
@@ -137,7 +211,6 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
-  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
@@ -157,7 +230,6 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       "", MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
   options->set_certificate_provider(std::move(provider));
   options->set_watch_identity_pair(true);
-  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
@@ -227,7 +299,10 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
+//
 // Tests for FileWatcherCertificateProvider.
+//
+
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithCertWatcherProviderOnBothCerts) {
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
@@ -236,7 +311,6 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_watch_identity_pair(true);
-  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
@@ -258,7 +332,6 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       MakeRefCounted<FileWatcherCertificateProvider>("", "", CA_CERT_PATH, 1);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
-  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
@@ -280,7 +353,6 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       SERVER_KEY_PATH, SERVER_CERT_PATH, "", 1);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
-  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
@@ -300,7 +372,6 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
       MakeRefCounted<FileWatcherCertificateProvider>("", "", INVALID_PATH, 1);
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
-  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
@@ -387,8 +458,11 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
-// The following tests write credential data to temporary files to test the
+//
+// Tests writing credential data to temporary files to test the
 // transition behavior of the provider.
+//
+
 TEST_F(GrpcTlsCredentialsOptionsTest,
        ClientOptionsWithCertWatcherProviderOnCertificateRefreshed) {
   // Create temporary files and copy cert data into them.
@@ -403,7 +477,6 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_watch_identity_pair(true);
-  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
@@ -452,7 +525,6 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   options->set_certificate_provider(std::move(provider));
   options->set_watch_root_cert(true);
   options->set_watch_identity_pair(true);
-  options->set_server_verification_option(GRPC_TLS_SERVER_VERIFICATION);
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
@@ -487,6 +559,89 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
   ASSERT_TRUE(tls_connector->KeyCertPairListForTesting().has_value());
   EXPECT_EQ(tls_connector->KeyCertPairListForTesting(),
             MakeCertKeyPairs(private_key_.c_str(), cert_chain_.c_str()));
+}
+
+//
+// Tests for ExternalCertificateVerifier.
+//
+
+TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsWithGoodExternalVerifier) {
+  CreateExternalCertificateVerifier(SyncExternalVerifierGoodVerify, nullptr,
+                                    nullptr);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_verify_server_cert(true);
+  options->set_certificate_verifier(external_certificate_verifier_->Ref());
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  grpc_channel_args* new_args = nullptr;
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", nullptr, &new_args);
+  grpc_channel_args_destroy(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithBadExternalVerifier) {
+  CreateExternalCertificateVerifier(AsyncExternalVerifierBadVerify, nullptr,
+                                    nullptr);
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  options->set_certificate_verifier(external_certificate_verifier_->Ref());
+  // On server side we have to set the provider providing identity certs.
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
+      root_cert_, PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_identity_pair(true);
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  auto connector = credentials->create_security_connector(nullptr);
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
+  // Having a bad verifier shouldn't affect the creation of tls_connector.
+  EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+}
+
+//
+// Tests for HostnameCertificateVerifier.
+//
+
+TEST_F(GrpcTlsCredentialsOptionsTest,
+       ClientOptionsWithHostnameCertificateVerifier) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_verify_server_cert(true);
+  options->set_certificate_verifier(hostname_certificate_verifier_.Ref());
+  auto credentials = MakeRefCounted<TlsCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  grpc_channel_args* new_args = nullptr;
+  auto connector = credentials->create_security_connector(
+      nullptr, "random targets", nullptr, &new_args);
+  grpc_channel_args_destroy(new_args);
+  ASSERT_NE(connector, nullptr);
+  TlsChannelSecurityConnector* tls_connector =
+      static_cast<TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest,
+       ServerOptionsWithHostnameCertificateVerifier) {
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  options->set_certificate_verifier(hostname_certificate_verifier_.Ref());
+  // On server side we have to set the provider providing identity certs.
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
+      root_cert_, PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_identity_pair(true);
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  auto connector = credentials->create_security_connector(nullptr);
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
+  EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
 }
 
 }  // namespace testing

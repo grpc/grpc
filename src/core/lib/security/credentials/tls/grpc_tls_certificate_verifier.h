@@ -50,6 +50,10 @@ struct grpc_tls_certificate_verifier
   // This is only needed when in async mode.
   // TODO(ZhenLian): find out the place to invoke this...
   virtual void Cancel(grpc_tls_custom_verification_check_request* request) = 0;
+  // A utility function to help clean up the request.
+  // Note the request pointer itself won't be deleted.
+  static void CertificateVerificationRequestDestroy(
+      grpc_tls_custom_verification_check_request* request);
 };
 
 namespace grpc_core {
@@ -61,9 +65,7 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
   // Takes the ownership of external_verifier.
   explicit ExternalCertificateVerifier(
       grpc_tls_certificate_verifier_external* external_verifier)
-      : external_verifier_(external_verifier) {
-    gpr_log(GPR_ERROR, "inside external verifier ctor");
-  }
+      : external_verifier_(external_verifier) {}
 
   ~ExternalCertificateVerifier() {
     if (external_verifier_->destruct != nullptr) {
