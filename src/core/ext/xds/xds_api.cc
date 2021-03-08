@@ -1650,7 +1650,7 @@ grpc_error* CommonTlsContextParse(
 grpc_error* HttpConnectionManagerParse(
     bool is_client, const EncodingContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
-        http_connection_manager_proto, 
+        http_connection_manager_proto,
     XdsApi::LdsUpdate::HttpConnectionManager* http_connection_manager) {
   MaybeLogHttpConnectionManager(context, http_connection_manager_proto);
   if (XdsTimeoutEnabled()) {
@@ -1693,6 +1693,10 @@ grpc_error* HttpConnectionManagerParse(
       const google_protobuf_Any* any =
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
               http_filter);
+      if (any == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "No typed_config found for HTTP filter");
+      }
       absl::string_view filter_type;
       grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
       if (error != GRPC_ERROR_NONE) return error;
@@ -1784,8 +1788,9 @@ grpc_error* LdsResponseParseClient(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Could not parse HttpConnectionManager config from ApiListener");
   }
-  return HttpConnectionManagerParse(true /* is_client */, context, http_connection_manager,
-                                          &lds_update->http_connection_manager);
+  return HttpConnectionManagerParse(true /* is_client */, context,
+                                    http_connection_manager,
+                                    &lds_update->http_connection_manager);
 }
 
 XdsApi::LdsUpdate::FilterChain::FilterChainMatch::CidrRange CidrRangeParse(
@@ -1929,6 +1934,15 @@ grpc_error* FilterChainParse(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No typed_config found in filter.");
   }
+  absl::string_view type_url =
+      UpbStringToAbsl(google_protobuf_Any_type_url(typed_config));
+  if (type_url !=
+      "type.googleapis.com/"
+      "envoy.extensions.filters.network.http_connection_manager.v3."
+      "HttpConnectionManager") {
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Unsupported filter type ", type_url).c_str());
+  }
   const upb_strview encoded_http_connection_manager =
       google_protobuf_Any_value(typed_config);
   const auto* http_connection_manager =
@@ -1940,8 +1954,9 @@ grpc_error* FilterChainParse(
         "Could not parse HttpConnectionManager config from filter "
         "typed_config");
   }
-  error = HttpConnectionManagerParse(false /* is_client */,
-      context, http_connection_manager, &filter_chain->http_connection_manager);
+  error = HttpConnectionManagerParse(false /* is_client */, context,
+                                     http_connection_manager,
+                                     &filter_chain->http_connection_manager);
   if (error != GRPC_ERROR_NONE) return error;
   // Get the DownstreamTlsContext for the filter chain
   if (XdsSecurityEnabled()) {
