@@ -122,7 +122,7 @@ class ResponseParameters extends \Google\Protobuf\Internal\Message
      * the response's compression status.
      *
      * Generated from protobuf field <code>.grpc.testing.BoolValue compressed = 3;</code>
-     * @return \Grpc\Testing\BoolValue
+     * @return \Grpc\Testing\BoolValue|null
      */
     public function getCompressed()
     {

@@ -1443,9 +1443,7 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/security/authorization/authorization_engine.cc \
-    src/core/lib/security/authorization/evaluate_args.cc \
-    src/core/lib/security/authorization/matchers.cc \
+    src/core/lib/matchers/matchers.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -1670,15 +1668,15 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
 $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.15 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.15 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).so.15
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).so
 endif
@@ -2299,7 +2297,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
 
-PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
 
@@ -2351,7 +2348,6 @@ LIBRE2_SRC = \
     third_party/re2/util/rune.cc \
     third_party/re2/util/strutil.cc \
 
-PUBLIC_HEADERS_C += \
 
 LIBRE2_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBRE2_SRC))))
 
@@ -2390,7 +2386,6 @@ LIBUPB_SRC = \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
     src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c \
 
-PUBLIC_HEADERS_C += \
 
 LIBUPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUPB_SRC))))
 
@@ -2448,7 +2443,6 @@ LIBZ_SRC = \
     third_party/zlib/uncompr.c \
     third_party/zlib/zutil.c \
 
-PUBLIC_HEADERS_C += \
 
 LIBZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBZ_SRC))))
 
@@ -2526,7 +2520,6 @@ LIBARES_SRC = \
     third_party/cares/cares/inet_ntop.c \
     third_party/cares/cares/windows_port.c \
 
-PUBLIC_HEADERS_C += \
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 
@@ -2835,9 +2828,7 @@ src/core/ext/xds/xds_client_stats.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_http_filters.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_server_config_fetcher.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/authorization/authorization_engine.cc: $(OPENSSL_DEP)
-src/core/lib/security/authorization/evaluate_args.cc: $(OPENSSL_DEP)
-src/core/lib/security/authorization/matchers.cc: $(OPENSSL_DEP)
+src/core/lib/matchers/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)

@@ -114,7 +114,7 @@ class ConfigureTarget < Grpc::Testing::XdsUpdateClientConfigureService::Service
 
   def configure(req, _call)
     metadata_to_send = {}
-    req['metadata'].each do |m|
+    req.metadata.each do |m|
       rpc = m.type
       if !metadata_to_send.key?(rpc)
         metadata_to_send[rpc] = {}

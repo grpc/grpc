@@ -449,7 +449,6 @@
         'absl/status:status',
         'absl/functional:bind_front',
         'absl/container:inlined_vector',
-        'absl/container:flat_hash_set',
         'absl/container:flat_hash_map',
       ],
       'sources': [
@@ -862,9 +861,7 @@
         'src/core/lib/json/json_reader.cc',
         'src/core/lib/json/json_util.cc',
         'src/core/lib/json/json_writer.cc',
-        'src/core/lib/security/authorization/authorization_engine.cc',
-        'src/core/lib/security/authorization/evaluate_args.cc',
-        'src/core/lib/security/authorization/matchers.cc',
+        'src/core/lib/matchers/matchers.cc',
         'src/core/lib/security/context/security_context.cc',
         'src/core/lib/security/credentials/alts/alts_credentials.cc',
         'src/core/lib/security/credentials/alts/check_gcp_environment.cc',
@@ -1399,6 +1396,7 @@
         'gpr',
         'address_sorting',
         'upb',
+        'absl/synchronization:synchronization',
       ],
       'sources': [
         'src/cpp/client/channel_cc.cc',
@@ -1555,6 +1553,7 @@
         'gpr',
         'address_sorting',
         'upb',
+        'absl/synchronization:synchronization',
       ],
       'sources': [
         'src/cpp/client/channel_cc.cc',

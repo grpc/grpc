@@ -118,6 +118,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/message_allocator.h',
                       'include/grpcpp/impl/codegen/metadata_map.h',
                       'include/grpcpp/impl/codegen/method_handler.h',
+                      'include/grpcpp/impl/codegen/method_handler_impl.h',
                       'include/grpcpp/impl/codegen/rpc_method.h',
                       'include/grpcpp/impl/codegen/rpc_service_method.h',
                       'include/grpcpp/impl/codegen/security/auth_context.h',
@@ -188,7 +189,6 @@ Pod::Spec.new do |s|
     abseil_version = '1.20200923.3'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
-    ss.dependency 'abseil/container/flat_hash_set', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
     ss.dependency 'abseil/functional/bind_front', abseil_version
     ss.dependency 'abseil/memory/memory', abseil_version
@@ -606,16 +606,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/work_serializer.h',
                       'src/core/lib/json/json.h',
                       'src/core/lib/json/json_util.h',
+                      'src/core/lib/matchers/matchers.h',
                       'src/core/lib/profiling/timers.h',
-                      'src/core/lib/security/authorization/authorization_engine.h',
-                      'src/core/lib/security/authorization/evaluate_args.h',
-                      'src/core/lib/security/authorization/matchers.h',
-                      'src/core/lib/security/authorization/mock_cel/activation.h',
-                      'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
-                      'src/core/lib/security/authorization/mock_cel/cel_expression.h',
-                      'src/core/lib/security/authorization/mock_cel/cel_value.h',
-                      'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
-                      'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',
                       'src/core/lib/security/credentials/alts/check_gcp_environment.h',
@@ -1232,16 +1224,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/work_serializer.h',
                               'src/core/lib/json/json.h',
                               'src/core/lib/json/json_util.h',
+                              'src/core/lib/matchers/matchers.h',
                               'src/core/lib/profiling/timers.h',
-                              'src/core/lib/security/authorization/authorization_engine.h',
-                              'src/core/lib/security/authorization/evaluate_args.h',
-                              'src/core/lib/security/authorization/matchers.h',
-                              'src/core/lib/security/authorization/mock_cel/activation.h',
-                              'src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h',
-                              'src/core/lib/security/authorization/mock_cel/cel_expression.h',
-                              'src/core/lib/security/authorization/mock_cel/cel_value.h',
-                              'src/core/lib/security/authorization/mock_cel/evaluator_core.h',
-                              'src/core/lib/security/authorization/mock_cel/flat_expr_builder.h',
                               'src/core/lib/security/context/security_context.h',
                               'src/core/lib/security/credentials/alts/alts_credentials.h',
                               'src/core/lib/security/credentials/alts/check_gcp_environment.h',
