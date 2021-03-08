@@ -30,6 +30,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -40,31 +41,6 @@
 
 // Channel arg containing a URI indicating the address to connect to.
 #define GRPC_ARG_SUBCHANNEL_ADDRESS "grpc.subchannel_address"
-
-// For debugging refcounting.
-#ifndef NDEBUG
-#define GRPC_SUBCHANNEL_REF(p, r) (p)->Ref(__FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(p, r) (p)->RefFromWeakRef()
-#define GRPC_SUBCHANNEL_UNREF(p, r) (p)->Unref(__FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_WEAK_REF(p, r) (p)->WeakRef(__FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_WEAK_UNREF(p, r) (p)->WeakUnref(__FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_REF_EXTRA_ARGS \
-  const char *file, int line, const char *reason
-#define GRPC_SUBCHANNEL_REF_REASON reason
-#define GRPC_SUBCHANNEL_REF_MUTATE_EXTRA_ARGS \
-  , GRPC_SUBCHANNEL_REF_EXTRA_ARGS, const char* purpose
-#define GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE(x) , file, line, reason, x
-#else
-#define GRPC_SUBCHANNEL_REF(p, r) (p)->Ref()
-#define GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(p, r) (p)->RefFromWeakRef()
-#define GRPC_SUBCHANNEL_UNREF(p, r) (p)->Unref()
-#define GRPC_SUBCHANNEL_WEAK_REF(p, r) (p)->WeakRef()
-#define GRPC_SUBCHANNEL_WEAK_UNREF(p, r) (p)->WeakUnref()
-#define GRPC_SUBCHANNEL_REF_EXTRA_ARGS
-#define GRPC_SUBCHANNEL_REF_REASON ""
-#define GRPC_SUBCHANNEL_REF_MUTATE_EXTRA_ARGS
-#define GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE(x)
-#endif
 
 namespace grpc_core {
 
@@ -168,7 +144,7 @@ class SubchannelCall {
 // different from the SubchannelInterface that is exposed to LB policy
 // implementations.  The client channel provides an adaptor class
 // (SubchannelWrapper) that "converts" between the two.
-class Subchannel {
+class Subchannel : public DualRefCounted<Subchannel> {
  public:
   class ConnectivityStateWatcherInterface
       : public RefCounted<ConnectivityStateWatcherInterface> {
@@ -213,28 +189,19 @@ class Subchannel {
   };
 
   // The ctor and dtor are not intended to use directly.
-  Subchannel(SubchannelKey* key, OrphanablePtr<SubchannelConnector> connector,
+  Subchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
              const grpc_channel_args* args);
-  ~Subchannel();
+  ~Subchannel() override;
 
   // Creates a subchannel given \a connector and \a args.
-  static Subchannel* Create(OrphanablePtr<SubchannelConnector> connector,
-                            const grpc_channel_args* args);
+  static RefCountedPtr<Subchannel> Create(
+      OrphanablePtr<SubchannelConnector> connector,
+      const grpc_channel_args* args);
 
   // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
   // is larger than the subchannel's current keepalive time. The updated value
   // will have an affect when the subchannel creates a new ConnectedSubchannel.
   void ThrottleKeepaliveTime(int new_keepalive_time);
-
-  // Strong and weak refcounting.
-  Subchannel* Ref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-  void Unref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-  Subchannel* WeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-  void WeakUnref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-  // Attempts to return a strong ref when only the weak refcount is guaranteed
-  // non-zero. If the strong refcount is zero, does not alter the refcount and
-  // returns null.
-  Subchannel* RefFromWeakRef();
 
   // Gets the string representing the subchannel address.
   // Caller doesn't take ownership.
@@ -281,6 +248,9 @@ class Subchannel {
   // SubchannelList and SubchannelData), at which point this method can
   // go away.
   void ResetBackoff();
+
+  // Tears down any existing connection, and arranges for destruction
+  void Orphan() override;
 
   // Returns a new channel arg encoding the subchannel address as a URI
   // string. Caller is responsible for freeing the string.
@@ -333,7 +303,8 @@ class Subchannel {
   class HealthWatcherMap {
    public:
     void AddWatcherLocked(
-        Subchannel* subchannel, grpc_connectivity_state initial_state,
+        WeakRefCountedPtr<Subchannel> subchannel,
+        grpc_connectivity_state initial_state,
         const std::string& health_check_service_name,
         RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const std::string& health_check_service_name,
@@ -368,28 +339,18 @@ class Subchannel {
   void ContinueConnectingLocked();
   static void OnConnectingFinished(void* arg, grpc_error* error);
   bool PublishTransportLocked();
-  void Disconnect();
-
-  gpr_atm RefMutate(gpr_atm delta,
-                    int barrier GRPC_SUBCHANNEL_REF_MUTATE_EXTRA_ARGS);
 
   // The subchannel pool this subchannel is in.
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   // TODO(juanlishen): Consider using args_ as key_ directly.
   // Subchannel key that identifies this subchannel in the subchannel pool.
-  SubchannelKey* key_;
+  const SubchannelKey key_;
   // Channel args.
   grpc_channel_args* args_;
   // pollset_set tracking who's interested in a connection being setup.
   grpc_pollset_set* pollset_set_;
   // Protects the other members.
   Mutex mu_;
-  // Refcount
-  //    - lower INTERNAL_REF_BITS bits are for internal references:
-  //      these do not keep the subchannel open.
-  //    - upper remaining bits are for public references: these do
-  //      keep the subchannel open
-  gpr_atm ref_pair_;
 
   // Connection states.
   OrphanablePtr<SubchannelConnector> connector_;

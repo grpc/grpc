@@ -1,0 +1,111 @@
+#---------------------------------#
+#      general configuration      #
+#---------------------------------#
+version: 1.0.{build}
+max_jobs: 2
+
+#---------------------------------#
+#    environment configuration    #
+#---------------------------------#
+clone_depth: 2
+environment:
+  matrix:
+  - COMPILER: "visual"
+    ARCH: "x64"
+    TEST_XXHSUM: "true"
+  - COMPILER: "visual"
+    ARCH: "x64"
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    TEST_XXHSUM: "true"
+  - COMPILER: "visual"
+    ARCH: "Win32"
+    TEST_XXHSUM: "true"
+  - COMPILER: "visual"
+    ARCH: "Win32"
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2013
+    TEST_XXHSUM: "true"
+  - COMPILER: "visual"
+    ARCH: "ARM"
+  - COMPILER: "visual"
+    ARCH: "ARM64"
+    APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2017
+    # note: ARM64 is not available with Visual Studio 14 2015, which is default for Appveyor
+  - COMPILER: "gcc"
+    PLATFORM: "mingw64"
+  - COMPILER: "gcc"
+    PLATFORM: "mingw32"
+  - COMPILER: "gcc"
+    PLATFORM: "clang"
+
+install:
+  - ECHO Installing %COMPILER% %PLATFORM% %ARCH%
+  - MKDIR bin
+  - if [%COMPILER%]==[gcc] SET PATH_ORIGINAL=%PATH%
+  - if [%COMPILER%]==[gcc] (
+      SET "PATH_MINGW32=c:\MinGW\bin;c:\MinGW\usr\bin" &&
+      SET "PATH_MINGW64=c:\msys64\mingw64\bin;c:\msys64\usr\bin" &&
+      COPY C:\MinGW\bin\mingw32-make.exe C:\MinGW\bin\make.exe &&
+      COPY C:\MinGW\bin\gcc.exe C:\MinGW\bin\cc.exe
+    )
+
+#---------------------------------#
+#       build configuration       #
+#---------------------------------#
+build_script:
+  - if [%PLATFORM%]==[mingw32] SET PATH=%PATH_MINGW32%;%PATH_ORIGINAL%
+  - if [%PLATFORM%]==[mingw64] SET PATH=%PATH_MINGW64%;%PATH_ORIGINAL%
+  - if [%PLATFORM%]==[clang]   SET PATH=%PATH_MINGW64%;%PATH_ORIGINAL%
+  - ECHO ***
+  - ECHO Building %COMPILER% %PLATFORM% %ARCH%
+  - ECHO ***
+
+  - if [%COMPILER%]==[gcc] (
+      if [%PLATFORM%]==[clang] (
+        clang -v
+      ) ELSE (
+        gcc -v
+      )
+    )
+  - if [%COMPILER%]==[gcc] (
+      echo ----- &&
+      make -v &&
+      echo ----- &&
+      if not [%PLATFORM%]==[clang] (
+        if [%PLATFORM%]==[mingw32] ( SET CPPFLAGS=-DPOOL_MT=0 ) &&
+        make -B clean test MOREFLAGS=-Werror
+      ) ELSE (
+        SET CXXFLAGS=--std=c++14 &&
+        make -B clean test CC=clang CXX=clang++ MOREFLAGS="--target=x86_64-w64-mingw32 -Werror -Wno-pass-failed" NO_C90_TEST=true
+      ) &&
+      make -C tests/bench
+    )
+    # note 1: strict c90 tests with clang fail, due to (erroneous) presence on `inline` keyword in some included system file
+    # note 2: multi-threading code doesn't work with mingw32, disabled through POOL_MT=0
+    # note 3: clang requires C++14 to compile sort because its own code contains c++14-only code
+
+  - if [%COMPILER%]==[visual] (
+      cd cmake_unofficial &&
+      cmake . -DCMAKE_BUILD_TYPE=Release -A %ARCH% -DXXHASH_C_FLAGS="/WX" &&
+      cmake --build . --config Release
+    )
+
+#---------------------------------#
+#       tests configuration       #
+#---------------------------------#
+test_script:
+  # note: can only run x86 and x64 binaries on Appveyor
+  # note: if %COMPILER%==gcc, xxhsum was already tested within `make test`
+  - if [%TEST_XXHSUM%]==[true] (
+      ECHO ***  &&
+      ECHO Testing %COMPILER% %PLATFORM% %ARCH%  &&
+      ECHO ***  &&
+      cd Release &&
+      xxhsum.exe -bi1 &&
+      ECHO ------- xxhsum tested -------
+    )
+
+
+#---------------------------------#
+#      artifacts configuration    #
+#---------------------------------#
+# none yet

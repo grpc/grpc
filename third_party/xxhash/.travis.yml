@@ -1,0 +1,138 @@
+language: c
+
+# Dump CPU info before start
+before_install:
+  - cat /proc/cpuinfo || echo /proc/cpuinfo is not present
+
+matrix:
+  fast_finish: true
+  include:
+
+    - name: General linux x64 tests
+      arch: amd64
+      addons:
+        apt:
+          packages:
+            - g++-multilib
+            - gcc-multilib
+            - cppcheck
+      script:
+        - make -B test-all
+        - make clean
+        - CFLAGS="-Werror" MOREFLAGS="-Wno-sign-conversion" make dispatch  # removing sign conversion warnings due to a bug in gcc-5's definition of some AVX512 intrinsics
+        - make clean
+        - CC=g++ CFLAGS="-O1 -mavx512f -Werror" make
+        - make clean
+        - CC=g++ CFLAGS="-Wall -Wextra -Werror" make DISPATCH=1
+
+
+    - name: Check results consistency on x64
+      arch: amd64
+      script:
+        - CPPFLAGS=-DXXH_VECTOR=XXH_SCALAR make check   # Scalar code path
+        - make clean
+        - CPPFLAGS=-DXXH_VECTOR=XXH_SSE2 make check   # SSE2 code path
+        - make clean
+        - CPPFLAGS="-mavx2 -DXXH_VECTOR=XXH_AVX2" make check   # AVX2 code path
+        - make clean
+        - CPPFLAGS="-mavx512f -DXXH_VECTOR=XXH_AVX512" make check   # AVX512 code path
+        - make clean
+        - CPPFLAGS=-DXXH_REROLL=1 make check   # reroll code path (#240)
+        - make -C tests/bench
+
+    - name: macOS General Test
+      os: osx
+      compiler: clang
+      script:
+        - CFLAGS="-Werror" make   # test library build
+        - make clean
+        - make test MOREFLAGS='-Werror' | tee # test scenario where `stdout` is not the console
+
+    - name: ARM compilation and consistency checks (Qemu)
+      dist: xenial
+      arch: amd64
+      addons:
+        apt:
+          packages:
+            - qemu-system-arm
+            - qemu-user-static
+            - gcc-arm-linux-gnueabi
+            - libc6-dev-armel-cross
+      script:
+        # arm (32-bit)
+        - CC=arm-linux-gnueabi-gcc CPPFLAGS=-DXXH_VECTOR=XXH_SCALAR LDFLAGS=-static RUN_ENV=qemu-arm-static make check   # Scalar code path
+        - make clean
+        # NEON (32-bit)
+        - CC=arm-linux-gnueabi-gcc CPPFLAGS=-DXXH_VECTOR=XXH_NEON CFLAGS="-O3 -march=armv7-a -fPIC -mfloat-abi=softfp -mfpu=neon-vfpv4" LDFLAGS=-static RUN_ENV=qemu-arm-static make check   # NEON code path
+
+    - name: aarch64 compilation and consistency checks
+      dist: xenial
+      arch: arm64
+      script:
+        # aarch64
+        - CPPFLAGS=-DXXH_VECTOR=XXH_SCALAR make check   # Scalar code path
+        # NEON (64-bit)
+        - make clean
+        - CPPFLAGS=-DXXH_VECTOR=XXH_NEON make check   # NEON code path
+        # clang
+        - make clean
+        - CC=clang CPPFLAGS=-DXXH_VECTOR=XXH_SCALAR make check   # Scalar code path
+        # clang + NEON
+        - make clean
+        - CC=clang CPPFLAGS=-DXXH_VECTOR=XXH_NEON make check   # NEON code path
+
+    # We need Bionic here because the QEMU versions shipped in the older repos
+    # do not support POWER8 emulation, and compiling QEMU from source is a pain.
+    - name: PowerPC + PPC64 compilation and consistency checks (Qemu on Bionic)
+      dist: bionic
+      arch: amd64
+      addons:
+        apt:
+          packages:
+            - qemu-system-ppc
+            - qemu-user-static
+            - gcc-powerpc-linux-gnu
+            - gcc-powerpc64-linux-gnu
+            - libc6-dev-powerpc-cross
+            - libc6-dev-ppc64-cross
+      script:
+        - CC=powerpc-linux-gnu-gcc RUN_ENV=qemu-ppc-static LDFLAGS=-static make check   # Scalar code path
+        - make clean
+        - CC=powerpc64-linux-gnu-gcc RUN_ENV=qemu-ppc64-static CPPFLAGS=-DXXH_VECTOR=XXH_SCALAR CFLAGS="-O3" LDFLAGS="-static -m64" make check   # Scalar code path
+        # VSX code
+        - make clean
+        - CC=powerpc64-linux-gnu-gcc RUN_ENV="qemu-ppc64-static -cpu power8" CPPFLAGS=-DXXH_VECTOR=XXH_VSX CFLAGS="-O3 -maltivec -mvsx -mcpu=power8 -mpower8-vector" LDFLAGS="-static -m64" make check   # VSX code path
+        # altivec.h redefinition issue #426
+        - make clean
+        - CC=powerpc64-linux-gnu-gcc CPPFLAGS=-DXXH_VECTOR=XXH_VSX CFLAGS="-maltivec -mvsx -mcpu=power8 -mpower8-vector" make -C tests test_ppc_redefine
+
+    - name: PPC64LE compilation and consistency checks
+      dist: xenial
+      arch: ppc64le
+      script:
+        # Scalar (universal) code path
+        - CPPFLAGS=-DXXH_VECTOR=XXH_SCALAR LDFLAGS=-static make check
+        # VSX code path (64-bit)
+        - make clean
+        - CPPFLAGS=-DXXH_VECTOR=XXH_VSX CFLAGS="-O3 -maltivec -mvsx -mpower8-vector -mcpu=power8" LDFLAGS="-static" make check
+        # altivec.h redefinition issue #426
+        - make clean
+        - CPPFLAGS=-DXXH_VECTOR=XXH_VSX CFLAGS="-maltivec -mvsx -mcpu=power8 -mpower8-vector" make -C tests test_ppc_redefine
+
+    - name: IBM s390x compilation and consistency checks
+      dist: bionic
+      arch: s390x
+      script:
+        # Scalar (universal) code path
+        - CPPFLAGS=-DXXH_VECTOR=XXH_SCALAR LDFLAGS=-static make check
+        # s390x code path (64-bit)
+        - make clean
+        - CPPFLAGS=-DXXH_VECTOR=XXH_VSX CFLAGS="-O3 -march=arch11 -mzvector" LDFLAGS="-static" make check
+
+    - name: cmake build test
+      script:
+        - cd cmake_unofficial
+        - mkdir build
+        - cd build
+        - cmake ..
+        - CFLAGS=-Werror make

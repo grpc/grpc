@@ -1229,13 +1229,14 @@ config("grpc_config") {
         "src/core/tsi/transport_security_grpc.cc",
         "src/core/tsi/transport_security_grpc.h",
         "src/core/tsi/transport_security_interface.h",
+        "third_party/xxhash/xxhash.h",
     ]
     deps = [
-        "//third_party/boringssl",
         "//third_party/zlib",
         ":gpr",
         ":address_sorting",
         ":upb",
+        "//third_party/boringssl",
         ":absl/types:optional",
         ":absl/strings:strings",
         ":absl/status:statusor",
@@ -1381,6 +1382,7 @@ config("grpc_config") {
         "include/grpcpp/impl/codegen/message_allocator.h",
         "include/grpcpp/impl/codegen/metadata_map.h",
         "include/grpcpp/impl/codegen/method_handler.h",
+        "include/grpcpp/impl/codegen/method_handler_impl.h",
         "include/grpcpp/impl/codegen/proto_buffer_reader.h",
         "include/grpcpp/impl/codegen/proto_buffer_writer.h",
         "include/grpcpp/impl/codegen/proto_utils.h",
@@ -1513,6 +1515,7 @@ config("grpc_config") {
         ":gpr",
         ":address_sorting",
         ":upb",
+        "//third_party/boringssl",
         ":absl/synchronization:synchronization",
     ]
     

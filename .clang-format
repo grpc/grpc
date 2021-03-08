@@ -3,6 +3,7 @@ Language: Cpp
 BasedOnStyle: Google
 DerivePointerAlignment: false
 PointerAlignment: Left
+IncludeBlocks: Preserve
 ---
 Language: ObjC
 BasedOnStyle: Google

@@ -73,6 +73,7 @@ UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext',
                                            'upb-generated'),)
 UPBDEFS_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext',
                                                'upbdefs-generated'),)
+XXHASH_INCLUDE = (os.path.join('third_party', 'xxhash'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
 README = os.path.join(PYTHON_STEM, 'README.rst')
 
@@ -108,6 +109,14 @@ CLASSIFIERS = [
 
 BUILD_WITH_BORING_SSL_ASM = os.environ.get('GRPC_BUILD_WITH_BORING_SSL_ASM',
                                            True)
+
+# Export this environment variable to override the platform variant that will
+# be chosen for boringssl assembly optimizations. This option is useful when
+# crosscompiling and the host platform as obtained by distutils.utils.get_platform()
+# doesn't match the platform we are targetting.
+# Example value: "linux-aarch64"
+BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM = os.environ.get(
+    'GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM', '')
 
 # Environment variable to determine whether or not the Cython extension should
 # *use* Cython or use the generated C files. Note that this requires the C files
@@ -284,7 +293,8 @@ EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
                                  RE2_INCLUDE + SSL_INCLUDE + UPB_INCLUDE +
                                  UPB_GRPC_GENERATED_INCLUDE +
-                                 UPBDEFS_GRPC_GENERATED_INCLUDE + ZLIB_INCLUDE)
+                                 UPBDEFS_GRPC_GENERATED_INCLUDE +
+                                 XXHASH_INCLUDE + ZLIB_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
@@ -314,20 +324,22 @@ asm_files = []
 
 asm_key = ''
 if BUILD_WITH_BORING_SSL_ASM and not BUILD_WITH_SYSTEM_OPENSSL:
+    boringssl_asm_platform = BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM if BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM else util.get_platform(
+    )
     LINUX_X86_64 = 'linux-x86_64'
     LINUX_ARM = 'linux-arm'
     LINUX_AARCH64 = 'linux-aarch64'
-    if LINUX_X86_64 == util.get_platform():
+    if LINUX_X86_64 == boringssl_asm_platform:
         asm_key = 'crypto_linux_x86_64'
-    elif LINUX_ARM == util.get_platform():
+    elif LINUX_ARM == boringssl_asm_platform:
         asm_key = 'crypto_linux_arm'
-    elif LINUX_AARCH64 == util.get_platform():
+    elif LINUX_AARCH64 == boringssl_asm_platform:
         asm_key = 'crypto_linux_aarch64'
-    elif "mac" in util.get_platform() and "x86_64" in util.get_platform():
+    elif "mac" in boringssl_asm_platform and "x86_64" in boringssl_asm_platform:
         asm_key = 'crypto_mac_x86_64'
     else:
         print("ASM Builds for BoringSSL currently not supported on:",
-              util.get_platform())
+              boringssl_asm_platform)
 if asm_key:
     asm_files = grpc_core_dependencies.ASM_SOURCE_FILES[asm_key]
 else:

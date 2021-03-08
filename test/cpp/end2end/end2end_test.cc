@@ -38,6 +38,7 @@
 #include <thread>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
@@ -1459,13 +1460,11 @@ TEST_P(End2endTest, ExpectErrorTest) {
     EXPECT_EQ(iter->code(), s.error_code());
     EXPECT_EQ(iter->error_message(), s.error_message());
     EXPECT_EQ(iter->binary_error_details(), s.error_details());
-    EXPECT_TRUE(context.debug_error_string().find("created") !=
-                std::string::npos);
-    EXPECT_TRUE(context.debug_error_string().find("file") != std::string::npos);
-    EXPECT_TRUE(context.debug_error_string().find("line") != std::string::npos);
-    EXPECT_TRUE(context.debug_error_string().find("status") !=
-                std::string::npos);
-    EXPECT_TRUE(context.debug_error_string().find("13") != std::string::npos);
+    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "created"));
+    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "file"));
+    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "line"));
+    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "status"));
+    EXPECT_TRUE(absl::StrContains(context.debug_error_string(), "13"));
   }
 }
 
