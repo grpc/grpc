@@ -47,7 +47,7 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 # Install Python 2.7
 RUN apt-get update && apt-get install -y python2 python2-dev
 RUN ln -s /usr/bin/python2 /usr/bin/python
-RUN curl https://bootstrap.pypa.io/2.7/get-pip.py | python2
+RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2
 
 <%include file="./gcp_api_libraries.include"/>
 <%include file="./run_tests_addons.include"/>

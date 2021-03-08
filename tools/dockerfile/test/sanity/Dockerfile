@@ -61,7 +61,7 @@ RUN curl https://bootstrap.pypa.io/get-pip.py | python3
 # Install Python 2.7
 RUN apt-get update && apt-get install -y python2 python2-dev
 RUN ln -s /usr/bin/python2 /usr/bin/python
-RUN curl https://bootstrap.pypa.io/2.7/get-pip.py | python2
+RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2
 
 # Google Cloud platform API libraries
 RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
