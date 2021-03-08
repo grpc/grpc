@@ -514,6 +514,9 @@ grpc_cc_test(
     name = "xds_end2end_test",
     size = "large",
     srcs = ["xds_end2end_test.cc"],
+    args = [
+        "--gtest_filter='*Dump*'",
+    ],
     data = [
         "//src/core/tsi/test_creds:badclient.key",
         "//src/core/tsi/test_creds:badclient.pem",
