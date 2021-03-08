@@ -20,14 +20,6 @@
 #define GRPC_IMPL_CODEGEN_PORT_PLATFORM_H
 
 /*
- * Define GPR_BACKWARDS_COMPATIBILITY_MODE to try harder to be ABI
- * compatible with older platforms (currently only on Linux)
- * Causes:
- *  - some libc calls to be gotten via dlsym
- *  - some syscalls to be made directly
- */
-
-/*
  * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil
  */
 #ifndef GPR_ABSEIL_SYNC
@@ -393,18 +385,6 @@
 #error "Could not auto-detect platform"
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
-
-#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
-/*
- * For backward compatibility mode, reset _FORTIFY_SOURCE to prevent
- * a library from having non-standard symbols such as __asprintf_chk.
- * This helps non-glibc systems such as alpine using musl to find symbols.
- */
-#if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0
-#undef _FORTIFY_SOURCE
-#define _FORTIFY_SOURCE 0
-#endif
-#endif
 
 #if defined(__has_include)
 #if __has_include(<atomic>)
