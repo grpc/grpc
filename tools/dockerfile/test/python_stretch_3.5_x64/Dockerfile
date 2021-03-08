@@ -65,4 +65,4 @@ RUN mkdir /var/local/jenkins
 
 
 RUN apt-get update && apt-get install -y python3.5 python3-all-dev
-RUN curl https://bootstrap.pypa.io/3.5/get-pip.py | python3.5
+RUN curl https://bootstrap.pypa.io/pip/3.5/get-pip.py | python3.5

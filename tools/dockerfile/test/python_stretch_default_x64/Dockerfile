@@ -105,7 +105,7 @@ RUN python3.8 -m ensurepip && \
 
 
 RUN apt-get update && apt-get install -y python3.5 python3.5-dev
-RUN curl https://bootstrap.pypa.io/3.5/get-pip.py | python3.5
+RUN curl https://bootstrap.pypa.io/pip/3.5/get-pip.py | python3.5
 
 RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
