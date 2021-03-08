@@ -61,7 +61,7 @@ MAKE="make -j8"
 pushd ~/sources
 curl -L https://ftp.ruby-lang.org/pub/ruby/3.0/ruby-3.0.0.tar.gz -o ruby-3.0.0.tar.gz
 ccache -c
-rake -f "$CROSS_RUBY" cross-ruby VERSION=3.0.0 HOST=x86_64-darwin11 MAKE="$MAKE" SOURCE="${HOME}/sources/ruby-3.0.0.tar.gz"
+rake -f "$CROSS_RUBY" cross-ruby VERSION=3.0.0 HOST=x86_64-darwin11 MAKE="$MAKE" SOURCE="${HOME}/.rake-compiler/sources/ruby-3.0.0.tar.gz"
 popd
 # Install ruby 2.7.0 for rake-compiler
 set +x # rvm commands are very verbose
