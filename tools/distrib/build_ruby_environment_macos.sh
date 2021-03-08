@@ -51,6 +51,19 @@ EOF
 
 MAKE="make -j8"
 
+# Install ruby 3.0.0 for rake-compiler
+# Download ruby 3.0.0 sources outside of the cross-ruby.rake file, since the
+# latest rake-compiler/v1.1.1 cross-ruby.rake file requires tar.bz2 source
+# files.
+# TODO(apolcyn): remove this hack when tar.bz2 sources are available for ruby
+# 3.0.0 in https://ftp.ruby-lang.org/pub/ruby/3.0/. Also see
+# https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0.
+pushd ~/sources
+curl -L https://ftp.ruby-lang.org/pub/ruby/3.0/ruby-3.0.0.tar.gz -o ruby-3.0.0.tar.gz
+ccache -c
+rake -f "$CROSS_RUBY" cross-ruby VERSION=3.0.0 HOST=x86_64-darwin11 MAKE="$MAKE" SOURCE="${HOME}/sources/ruby-3.0.0.tar.gz"
+popd
+# Install ruby 2.7.0 for rake-compiler
 set +x # rvm commands are very verbose
 source ~/.rvm/scripts/rvm
 rvm use 2.7.0
@@ -60,11 +73,12 @@ for v in 2.7.0 ; do
   ccache -c
   rake -f "$CROSS_RUBY" cross-ruby VERSION="$v" HOST=x86_64-darwin11 MAKE="$MAKE"
 done
+# Install ruby 2.4-2.6 for rake-compiler
 set +x
 rvm use 2.5.0
 set -x
 ruby --version | grep 'ruby 2.5.0'
-for v in 3.0.0 2.6.0 2.5.0 2.4.0 2.3.0 2.2.2 ; do
+for v in 2.6.0 2.5.0 2.4.0 ; do
   ccache -c
   rake -f "$CROSS_RUBY" cross-ruby VERSION="$v" HOST=x86_64-darwin11 MAKE="$MAKE"
 done
