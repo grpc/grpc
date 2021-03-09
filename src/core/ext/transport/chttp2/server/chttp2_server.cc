@@ -165,7 +165,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     bool shutdown_ ABSL_GUARDED_BY(&mu_) = false;
   };
 
-  // To allow access to RefCounted<> interface.
+  // To allow access to RefCounted<> like interface.
   friend class RefCountedPtr<Chttp2ServerListener>;
 
   // Should only be called once so as to start the TCP server.
@@ -180,20 +180,32 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   static void DestroyListener(Server* /*server*/, void* arg,
                               grpc_closure* destroy_done);
 
-  // The interface of RefCounted<> has been manually implemented here to take a
-  // ref on tcp_server_ instead. Note that, the handshaker needs tcp_server_ to
-  // exist for the lifetime of the handshake since it's needed by acceptor.
-  // Sharing refs between the listener and tcp_server_ is just an optimization
-  // to avoid taking additional refs on the listener, since
+  // The interface required by RefCountedPtr<> has been manually implemented
+  // here to take a ref on tcp_server_ instead. Note that, the handshaker needs
+  // tcp_server_ to exist for the lifetime of the handshake since it's needed by
+  // acceptor. Sharing refs between the listener and tcp_server_ is just an
+  // optimization to avoid taking additional refs on the listener, since
   // TcpServerShutdownComplete already holds a ref to the listener.
   void IncrementRefCount() { grpc_tcp_server_ref(tcp_server_); }
+  void IncrementRefCount(const DebugLocation& /* location */,
+                         const char* /* reason */) {
+    IncrementRefCount();
+  }
 
-  RefCountedPtr<Chttp2ServerListener> Ref() {
+  RefCountedPtr<Chttp2ServerListener> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
     return RefCountedPtr<Chttp2ServerListener>(this);
   }
+  RefCountedPtr<Chttp2ServerListener> Ref(const DebugLocation& /* location */,
+                                          const char* /* reason */)
+      GRPC_MUST_USE_RESULT {
+    return Ref();
+  }
 
   void Unref() { grpc_tcp_server_unref(tcp_server_); }
+  void Unref(const DebugLocation& /* location */, const char* /* reason */) {
+    Unref();
+  }
 
   Server* const server_;
   grpc_tcp_server* tcp_server_;
