@@ -19,6 +19,8 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include "src/core/lib/channel/channelz.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 
 #include "absl/strings/escaping.h"
 #include "absl/strings/strip.h"
@@ -434,12 +436,14 @@ void PopulateSocketAddressJson(Json::Object* json, const char* name,
     if (!port.empty()) {
       port_num = atoi(port.data());
     }
-    char* b64_host = grpc_base64_encode(host.data(), host.size(), false, false);
+    grpc_resolved_address resolved_host;
+    grpc_string_to_sockaddr(&resolved_host, host.c_str(), port_num);
+    std::string packed_host = grpc_sockaddr_get_packed_host(&resolved_host);
+    std::string b64_host = absl::Base64Escape(packed_host);
     data["tcpip_address"] = Json::Object{
         {"port", port_num},
         {"ip_address", b64_host},
     };
-    gpr_free(b64_host);
   } else if (uri.ok() && uri->scheme() == "unix") {
     data["uds_address"] = Json::Object{
         {"filename", uri->path()},
