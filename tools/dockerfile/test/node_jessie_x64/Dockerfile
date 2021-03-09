@@ -72,13 +72,13 @@ RUN apt-get update && apt-get install -y \
     python-setuptools
 
 # Install Python packages from PyPI
-RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
+RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
 RUN pip install --upgrade pip==19.3.1
 RUN pip install virtualenv==16.7.9
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.15.0 twisted==17.5.0
 
 # Google Cloud platform API libraries
-RUN pip install --upgrade google-api-python-client oauth2client
+RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 #==================
 # Node dependencies
