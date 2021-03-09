@@ -82,7 +82,6 @@
 #include "google/protobuf/wrappers.upb.h"
 #include "google/rpc/status.upb.h"
 #include "udpa/type/v1/typed_struct.upb.h"
-#include "upb/json_encode.h"
 #include "upb/text_encode.h"
 #include "upb/upb.h"
 #include "upb/upb.hpp"
@@ -890,47 +889,6 @@ inline absl::string_view UpbStringToAbsl(const upb_strview& str) {
 
 inline std::string UpbStringToStdString(const upb_strview& str) {
   return std::string(str.data, str.size);
-}
-
-// Serializes an upb message to a JSON object. If parsing error occurs, returns
-// an empty JSON object.
-inline Json SerializeToJson(upb_arena* arena, const upb_msg* msg,
-                            const upb_msgdef* m, const upb_symtab* ext_pool,
-                            std::vector<grpc_error*>* errors) {
-  upb_status status;
-  // This placeholder is needed to make UBSAN happy.
-  char placeholder[1];
-  // Measure the JSON string length
-  size_t estimated_length =
-      upb_json_encode(msg, m, ext_pool, 0, placeholder, 0, &status);
-  // If encode failed
-  if (estimated_length == static_cast<size_t>(-1)) {
-    const char* error_message = upb_status_errmsg(&status);
-    errors->push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message));
-    return "";
-  }
-  char* data =
-      static_cast<char*>(upb_arena_malloc(arena, estimated_length + 1));
-  // Print out the JSON string
-  size_t output_length =
-      upb_json_encode(msg, m, ext_pool, 0, data, estimated_length + 1, &status);
-  GPR_ASSERT(estimated_length == output_length);
-  // Parse the string into JSON structs
-  // TODO(https://github.com/protocolbuffers/upb/issues/370): remove the hack
-  // after upb fixed the empty Any conversion bug.
-  // "httpFilters": [{"name": "router", "typedConfig": {
-  //    "@type":
-  //    "type.googleapis.com/envoy.extensions.filters.http.router.v3.Router",
-  // }}]
-  std::string json_string = absl::StrReplaceAll(
-      absl::string_view(data, output_length), {{",}", "}"}});
-  grpc_error* error = GRPC_ERROR_NONE;
-  Json parsed_json = Json::Parse(json_string, &error);
-  if (error != GRPC_ERROR_NONE) {
-    errors->push_back(error);
-    return "";
-  }
-  return parsed_json;
 }
 
 void MaybeLogDiscoveryRequest(

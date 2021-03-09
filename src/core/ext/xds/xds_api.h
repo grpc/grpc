@@ -569,9 +569,6 @@ class XdsApi {
                                std::set<std::string>* cluster_names,
                                grpc_millis* load_reporting_interval);
 
-  // Dump Node information in JSON format, used by CSDS.
-  Json NodeJson();
-
   // Assemble the client config proto message and return the serialized result.
   std::string AssembleClientConfig(
       const std::map<std::string, std::string>& resource_version_map,

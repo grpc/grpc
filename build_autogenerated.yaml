@@ -8378,6 +8378,8 @@ targets:
   - address_sorting
   - upb
   - libssl
+  args:
+  - --gtest_filter='*Dump*'
   platforms:
   - linux
   - posix
