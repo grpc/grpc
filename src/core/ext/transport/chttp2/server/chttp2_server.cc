@@ -59,6 +59,44 @@ namespace {
 const char kUnixUriPrefix[] = "unix:";
 const char kUnixAbstractUriPrefix[] = "unix-abstract:";
 
+class TcpServerRef {
+ public:
+  TcpServerRef() {}
+
+  TcpServerRef(grpc_tcp_server* server) : server_(server) {
+    grpc_tcp_server_ref(server);
+  }
+
+  TcpServerRef(TcpServerRef&& other) {
+    server_ = other.server_;
+    other.server_ = nullptr;
+  }
+
+  TcpServerRef& operator=(TcpServerRef&& other) {
+    if (server_ != nullptr) {
+      grpc_tcp_server_unref(server_);
+    }
+    server_ = other.server_;
+    other.server_ = nullptr;
+    return *this;
+  }
+
+  // Delete unused copy constructor and assignment operators
+  TcpServerRef(const TcpServerRef& other) = delete;
+  TcpServerRef& operator=(const TcpServerRef& other) = delete;
+
+  ~TcpServerRef() {
+    if (server_ != nullptr) {
+      grpc_tcp_server_unref(server_);
+    }
+  }
+
+  void release() { server_ = nullptr; }
+
+ private:
+  grpc_tcp_server* server_ = nullptr;
+};
+
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
   static grpc_error* Create(Server* server, grpc_resolved_address* addr,
@@ -114,7 +152,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
       void Orphan() override;
 
-      void Start(grpc_endpoint* endpoint, grpc_channel_args* args);
+      void Start(TcpServerRef tcp_server_ref, grpc_endpoint* endpoint,
+                 grpc_channel_args* args);
 
       // Needed to be able to grab an external ref in ActiveConnection::Start()
       using InternallyRefCounted<HandshakingState>::Ref;
@@ -144,7 +183,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
     void Orphan() override;
 
-    void Start(grpc_endpoint* endpoint, grpc_channel_args* args);
+    void Start(TcpServerRef tcp_server_ref, grpc_endpoint* endpoint,
+               grpc_channel_args* args);
 
     // Needed to be able to grab an external ref in
     // Chttp2ServerListener::OnAccept()
@@ -299,9 +339,12 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::Start(
-    grpc_endpoint* endpoint,
+    TcpServerRef tcp_server_ref, grpc_endpoint* endpoint,
     grpc_channel_args* args) ABSL_NO_THREAD_SAFETY_ANALYSIS {
   Ref().release();  // Held by OnHandshakeDone
+  // The ref to the grpc_tcp_server is needed by the handshaker when using the
+  // acceptor.
+  tcp_server_ref.release();  // Held by OnHandshakeDone
   // Not acquiring a lock for handshake_mgr_ since it is only reset in
   // OnHandshakeDone or on destruction.
   handshake_mgr_->DoHandshake(endpoint, args, deadline_, acceptor_,
@@ -444,6 +487,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
       self->connection_->listener_->connections_.erase(it);
     }
   }
+  grpc_tcp_server_unref(self->connection_->listener_->tcp_server_);
   self->Unref();
 }
 
@@ -488,7 +532,8 @@ void Chttp2ServerListener::ActiveConnection::Orphan() {
   Unref();
 }
 
-void Chttp2ServerListener::ActiveConnection::Start(grpc_endpoint* endpoint,
+void Chttp2ServerListener::ActiveConnection::Start(TcpServerRef tcp_server_ref,
+                                                   grpc_endpoint* endpoint,
                                                    grpc_channel_args* args) {
   RefCountedPtr<HandshakingState> handshaking_state_ref;
   {
@@ -498,7 +543,7 @@ void Chttp2ServerListener::ActiveConnection::Start(grpc_endpoint* endpoint,
     // the critical region.
     handshaking_state_ref = handshaking_state_->Ref();
   }
-  handshaking_state_ref->Start(endpoint, args);
+  handshaking_state_ref->Start(std::move(tcp_server_ref), endpoint, args);
 }
 
 void Chttp2ServerListener::ActiveConnection::OnClose(void* arg,
@@ -657,6 +702,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   }
   auto connection = MakeOrphanable<ActiveConnection>(
       self->Ref(), accepting_pollset, acceptor, args);
+  TcpServerRef tcp_server_ref;
   // Hold a ref to connection to allow starting handshake outside the
   // critical region
   RefCountedPtr<ActiveConnection> connection_ref = connection->Ref();
@@ -673,6 +719,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
             GPR_ERROR,
             "Memory quota exhausted, rejecting connection, no handshaking.");
       } else {
+        tcp_server_ref = TcpServerRef(self->tcp_server_);
         self->connections_.emplace(connection.get(), std::move(connection));
       }
     }
@@ -682,7 +729,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     grpc_endpoint_destroy(tcp);
     gpr_free(acceptor);
   } else {
-    connection_ref->Start(tcp, args);
+    connection_ref->Start(std::move(tcp_server_ref), tcp, args);
   }
   grpc_channel_args_destroy(args);
 }
