@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/log.h>
-
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
 #include "absl/strings/str_join.h"

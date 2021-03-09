@@ -22,8 +22,8 @@ namespace {
 
 bool AuthenticatedMatchesHelper(const EvaluateArgs& args,
                                 const StringMatcher& matcher) {
-  if (args.GetTransportSecurityType() != "ssl") {
-    // Connection is not ssl authenticated.
+  if (args.GetTransportSecurityType() != GRPC_SSL_TRANSPORT_SECURITY_TYPE) {
+    // Connection is not authenticated.
     return false;
   }
   if (matcher.string_matcher().empty()) {
@@ -94,7 +94,7 @@ std::unique_ptr<Matcher> Matcher::Create(const Rbac::Principal& principal) {
       return absl::make_unique<PathMatcher>(principal.string_matcher,
                                             principal.not_rule);
   }
-  gpr_log(GPR_ERROR, "Unexpected Principal id type.");
+  gpr_log(GPR_ERROR, "Unexpected Principal rule type.");
 }
 
 AndMatcher::AndMatcher(

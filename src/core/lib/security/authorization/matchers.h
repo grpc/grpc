@@ -104,7 +104,7 @@ class HttpHeaderMatcher : public Matcher {
 // Perform a match against IP Cidr Range.
 // TODO(ashithasantosh): Handle type of Ip or use seperate matchers for each
 // type. Implement Match functionality, this would require updating EvaluateArgs
-// getters, to return type of IP as well.
+// getters, to return format of IP as well.
 class IpMatcher : public Matcher {
  public:
   explicit IpMatcher(const Rbac::CidrRange& range, bool not_rule = false)
@@ -118,7 +118,7 @@ class IpMatcher : public Matcher {
   const bool not_rule_;
 };
 
-// Matches the port number of the destination (local) address.
+// Perform a match against port number of the destination (local) address.
 class PortMatcher : public Matcher {
  public:
   explicit PortMatcher(const int port, bool not_rule = false)
