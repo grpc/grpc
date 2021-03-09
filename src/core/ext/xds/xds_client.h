@@ -193,7 +193,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   //
   // Expected to be invoked by wrapper languages in their CSDS service
   // implementation.
-  std::string DumpClientConfigInJson();
+  std::string DumpClientConfigBinary();
 
  private:
   // Contains a channel to the xds server and all the data related to the
@@ -253,55 +253,13 @@ class XdsClient : public DualRefCounted<XdsClient> {
     OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
   };
 
-  // Resource status from the view of a xDS client, which tells the
-  // synchronization status between the xDS client and the xDS server.
-  enum ClientResourceStatus {
-    // Resource status is not available/unknown.
-    UNKNOWN = 0,
-    // Client requested this resource but hasn't received any update from
-    // management
-    // server. The client will not fail requests, but will queue them until
-    // update
-    // arrives or the client times out waiting for the resource.
-    REQUESTED,
-    // This resource has been requested by the client but has either not been
-    // delivered by the server or was previously delivered by the server and
-    // then
-    // subsequently removed from resources provided by the server. For more
-    // information, please refer to the :ref:`"Knowing When a Requested Resource
-    // Does Not Exist" <xds_protocol_resource_not_existed>` section.
-    DOES_NOT_EXIST,
-    // Client received this resource and replied with ACK.
-    ACKED,
-    // Client received this resource and replied with NACK.
-    NACKED
-  };
-
-  // The metadata of the xDS resource; used by the xDS config dump.
-  struct ResourceMetadata {
-    // The JSON of the last successfully updated raw xDS resource.
-    Json raw_json;
-    // The timestamp when the resource was last successfully updated.
-    grpc_millis update_time;
-    // The last successfully updated version of the resource.
-    std::string version;
-    // The rejected version string of the last failed update attempt.
-    std::string failed_version;
-    // Details about the last failed update attempt.
-    std::string failed_details;
-    // Timestamp of the last failed update attempt.
-    grpc_millis failed_update_time = 0;
-    // The client status of this resource.
-    ClientResourceStatus client_status = UNKNOWN;
-  };
-
   struct ListenerState {
     std::map<ListenerWatcherInterface*,
              std::unique_ptr<ListenerWatcherInterface>>
         watchers;
     // The latest data seen from LDS.
     absl::optional<XdsApi::LdsUpdate> update;
-    ResourceMetadata meta;
+    XdsApi::ResourceMetadata meta;
   };
 
   struct RouteConfigState {
@@ -310,7 +268,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from RDS.
     absl::optional<XdsApi::RdsUpdate> update;
-    ResourceMetadata meta;
+    XdsApi::ResourceMetadata meta;
   };
 
   struct ClusterState {
@@ -318,7 +276,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from CDS.
     absl::optional<XdsApi::CdsUpdate> update;
-    ResourceMetadata meta;
+    XdsApi::ResourceMetadata meta;
   };
 
   struct EndpointState {
@@ -327,7 +285,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from EDS.
     absl::optional<XdsApi::EdsUpdate> update;
-    ResourceMetadata meta;
+    XdsApi::ResourceMetadata meta;
   };
 
   struct LoadReportState {
@@ -350,12 +308,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
       bool send_all_clusters, const std::set<std::string>& clusters);
 
-  static XdsClient::ResourceMetadata CreateResourceMetadataAcked(
-      Json raw_json, std::string version, grpc_millis update_time);
-  static Json::Object CreateUpdateFailureStateJson(
-      const XdsClient::ResourceMetadata& resource_metadata);
   void UpdateResourceMetadataWithFailedParseResult(
       grpc_millis update_time, const XdsApi::AdsParseResult& result);
+  void UpdatePendingResources(
+      const std::string& type_url,
+      XdsApi::ResourceMetadataMap* resource_metadata_map);
 
   const grpc_millis request_timeout_;
   grpc_pollset_set* interested_parties_;

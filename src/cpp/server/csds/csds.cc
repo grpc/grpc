@@ -48,16 +48,10 @@ absl::StatusOr<ClientConfig> DumpClientConfig() {
     GRPC_ERROR_UNREF(error);
     return status;
   }
-  std::string json_string = xds_client->DumpClientConfigInJson();
-  if (json_string.empty()) {
-    return absl::UnavailableError("xDS config is empty");
+  if (!client_config.ParseFromString(xds_client->DumpClientConfigBinary())) {
+    return absl::InternalError("Failed to parse ClientConfig.");
   }
-  grpc::protobuf::util::Status s =
-      grpc::protobuf::json::JsonStringToMessage(json_string, &client_config);
-  if (!s.ok()) {
-    return absl::InternalError(
-        absl::StrCat("Failed to parse ClientConfig:", s.ToString()));
-  }
+  std::cout << "HEY!!!" << client_config.DebugString() << std::endl;
   return client_config;
 }
 
