@@ -1106,7 +1106,7 @@ void Server::UnrefAndWaitLocked() {
   }
   grpc::internal::WaitUntil(
       &shutdown_done_cv_, &mu_,
-      [this] ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return shutdown_done_; });
+      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return shutdown_done_; });
 }
 
 void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
