@@ -1685,19 +1685,25 @@ grpc_error* LdsResponseParseClient(
             absl::StrCat("duplicate HTTP filter name: ", name).c_str());
       }
       names_seen.insert(name);
+      const bool is_optional =
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
+              http_filter);
       const google_protobuf_Any* any =
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
               http_filter);
+      if (any == nullptr) {
+        if (is_optional) continue;
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("no filter config specified for filter name ", name)
+                .c_str());
+      }
       absl::string_view filter_type;
       grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
       if (error != GRPC_ERROR_NONE) return error;
       const XdsHttpFilterImpl* filter_impl =
           XdsHttpFilterRegistry::GetFilterForType(filter_type);
       if (filter_impl == nullptr) {
-        if (envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
-                http_filter)) {
-          continue;
-        }
+        if (is_optional) continue;
         return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrCat("no filter registered for config type ", filter_type)
                 .c_str());
