@@ -6871,13 +6871,9 @@ class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
     return grpc_core::XdsHttpFilterImpl::ServiceConfigJsonEntry{name_, ""};
   }
 
-  virtual bool IsSupportedOnClients() const override {
-    return supported_on_clients_;
-  }
+  bool IsSupportedOnClients() const override { return supported_on_clients_; }
 
-  virtual bool IsSupportedOnServers() const override {
-    return supported_on_servers_;
-  }
+  bool IsSupportedOnServers() const override { return supported_on_servers_; }
 
  private:
   const std::string name_;
