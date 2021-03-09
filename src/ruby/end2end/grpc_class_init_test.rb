@@ -20,6 +20,9 @@ def main
   native_grpc_classes = %w( channel
                             server
                             channel_credentials
+                            xds_channel_credentials
+                            server_credentials
+                            xds_server_credentials
                             call_credentials
                             compression_options )
 

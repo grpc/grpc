@@ -27,6 +27,7 @@
 #include <string>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/types/optional.h"
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
@@ -268,10 +269,37 @@ class ServerNode : public BaseNode {
   std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;
 };
 
+#define GRPC_ARG_CHANNELZ_SECURITY "grpc.internal.channelz_security"
+
 // Handles channelz bookkeeping for sockets
 class SocketNode : public BaseNode {
  public:
-  SocketNode(std::string local, std::string remote, std::string name);
+  struct Security : public RefCounted<Security> {
+    struct Tls {
+      enum class NameType { kUnset = 0, kStandardName = 1, kOtherName = 2 };
+      NameType type = NameType::kUnset;
+      // Holds the value of standard_name or other_names if type is not kUnset.
+      std::string name;
+      std::string local_certificate;
+      std::string remote_certificate;
+
+      Json RenderJson();
+    };
+    enum class ModelType { kUnset = 0, kTls = 1, kOther = 2 };
+    ModelType type = ModelType::kUnset;
+    absl::optional<Tls> tls;
+    absl::optional<Json> other;
+
+    Json RenderJson();
+
+    grpc_arg MakeChannelArg() const;
+
+    static RefCountedPtr<Security> GetFromChannelArgs(
+        const grpc_channel_args* args);
+  };
+
+  SocketNode(std::string local, std::string remote, std::string name,
+             RefCountedPtr<Security> security);
   ~SocketNode() override {}
 
   Json RenderJson() override;
@@ -305,6 +333,7 @@ class SocketNode : public BaseNode {
   Atomic<gpr_cycle_counter> last_message_received_cycle_{0};
   std::string local_;
   std::string remote_;
+  RefCountedPtr<Security> const security_;
 };
 
 // Handles channelz bookkeeping for listen sockets

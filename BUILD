@@ -350,12 +350,36 @@ grpc_cc_library(
     name = "grpc++_public_hdrs",
     hdrs = GRPCXX_PUBLIC_HDRS,
     external_deps = [
+        "absl/synchronization",
         "protobuf_headers",
     ],
 )
 
 grpc_cc_library(
     name = "grpc++",
+    hdrs = [
+        "src/cpp/client/secure_credentials.h",
+        "src/cpp/common/secure_auth_context.h",
+        "src/cpp/common/tls_credentials_options_util.h",
+        "src/cpp/server/secure_server_credentials.h",
+    ],
+    language = "c++",
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
+    select_deps = {
+        "grpc_no_xds": [],
+        "//conditions:default": [
+            "grpc++_xds_client",
+            "grpc++_xds_server",
+        ],
+    },
+    standalone = True,
+    deps = [
+        "grpc++_internals",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_internals",
     srcs = [
         "src/cpp/client/insecure_credentials.cc",
         "src/cpp/client/secure_credentials.cc",
@@ -376,18 +400,11 @@ grpc_cc_library(
         "src/cpp/server/secure_server_credentials.h",
     ],
     external_deps = [
+        "absl/synchronization",
         "protobuf_headers",
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
-    select_deps = {
-        "grpc_no_xds": [],
-        "//conditions:default": [
-            "grpc++_xds_client",
-            "grpc++_xds_server",
-        ],
-    },
-    standalone = True,
     deps = [
         "gpr",
         "grpc",
@@ -409,7 +426,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "grpc++_base",
+        "grpc++_internals",
     ],
 )
 
@@ -426,7 +443,7 @@ grpc_cc_library(
         "include/grpcpp/xds_server_builder.h",
     ],
     deps = [
-        "grpc++_base",
+        "grpc++_internals",
     ],
 )
 
@@ -514,6 +531,9 @@ grpc_cc_library(
     name = "grpc++_internal_hdrs_only",
     hdrs = [
         "include/grpcpp/impl/codegen/sync.h",
+    ],
+    external_deps = [
+        "absl/synchronization",
     ],
     language = "c++",
     deps = [
@@ -1402,9 +1422,9 @@ grpc_cc_library(
     deps = [
         "envoy_ads_upb",
         "envoy_ads_upbdefs",
-        "grpc_authorization_engine",
         "grpc_base",
         "grpc_client_channel",
+        "grpc_matchers",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
         "udpa_type_upb",
@@ -1964,21 +1984,70 @@ grpc_cc_library(
     ],
 )
 
+# This target depends on RE2 and should not be linked into grpc by default for binary-size reasons.
 grpc_cc_library(
-    name = "grpc_authorization_engine",
+    name = "grpc_matchers",
+    srcs = [
+        "src/core/lib/matchers/matchers.cc",
+    ],
+    hdrs = [
+        "src/core/lib/matchers/matchers.h",
+    ],
+    external_deps = [
+        "re2",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+grpc_cc_library(
+    name = "grpc_rbac_engine",
+    srcs = [
+        "src/core/lib/security/authorization/evaluate_args.cc",
+        "src/core/lib/security/authorization/rbac_policy.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/rbac_policy.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_matchers",
+        "grpc_secure",
+    ],
+)
+
+# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+grpc_cc_library(
+    name = "grpc_authorization_provider",
+    srcs = [
+        "src/core/lib/security/authorization/rbac_translator.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/authorization/rbac_translator.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_matchers",
+        "grpc_rbac_engine",
+    ],
+)
+
+# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+grpc_cc_library(
+    name = "grpc_cel_engine",
     srcs = [
         "src/core/lib/security/authorization/authorization_engine.cc",
-        "src/core/lib/security/authorization/evaluate_args.cc",
-        "src/core/lib/security/authorization/matchers.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/authorization_engine.h",
-        "src/core/lib/security/authorization/evaluate_args.h",
-        "src/core/lib/security/authorization/matchers.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
-        "re2",
     ],
     language = "c++",
     deps = [
@@ -1986,7 +2055,7 @@ grpc_cc_library(
         "google_api_upb",
         "grpc_base",
         "grpc_mock_cel",
-        "grpc_secure",
+        "grpc_rbac_engine",
     ],
 )
 
@@ -2303,6 +2372,7 @@ grpc_cc_library(
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
     external_deps = [
+        "absl/synchronization",
         "protobuf_headers",
     ],
     language = "c++",
@@ -2320,6 +2390,7 @@ grpc_cc_library(
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
     external_deps = [
+        "absl/synchronization",
         "protobuf_headers",
     ],
     language = "c++",
@@ -2339,13 +2410,13 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/async_stream.h",
         "include/grpc++/impl/codegen/async_unary_call.h",
         "include/grpc++/impl/codegen/byte_buffer.h",
-        "include/grpc++/impl/codegen/call.h",
         "include/grpc++/impl/codegen/call_hook.h",
+        "include/grpc++/impl/codegen/call.h",
         "include/grpc++/impl/codegen/channel_interface.h",
         "include/grpc++/impl/codegen/client_context.h",
         "include/grpc++/impl/codegen/client_unary_call.h",
-        "include/grpc++/impl/codegen/completion_queue.h",
         "include/grpc++/impl/codegen/completion_queue_tag.h",
+        "include/grpc++/impl/codegen/completion_queue.h",
         "include/grpc++/impl/codegen/config.h",
         "include/grpc++/impl/codegen/core_codegen_interface.h",
         "include/grpc++/impl/codegen/create_auth_context.h",
@@ -2360,8 +2431,8 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/server_interface.h",
         "include/grpc++/impl/codegen/service_type.h",
         "include/grpc++/impl/codegen/slice.h",
-        "include/grpc++/impl/codegen/status.h",
         "include/grpc++/impl/codegen/status_code_enum.h",
+        "include/grpc++/impl/codegen/status.h",
         "include/grpc++/impl/codegen/string_ref.h",
         "include/grpc++/impl/codegen/stub_options.h",
         "include/grpc++/impl/codegen/sync_stream.h",
@@ -2370,42 +2441,43 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/async_stream.h",
         "include/grpcpp/impl/codegen/async_unary_call.h",
         "include/grpcpp/impl/codegen/byte_buffer.h",
-        "include/grpcpp/impl/codegen/call.h",
         "include/grpcpp/impl/codegen/call_hook.h",
-        "include/grpcpp/impl/codegen/call_op_set.h",
         "include/grpcpp/impl/codegen/call_op_set_interface.h",
+        "include/grpcpp/impl/codegen/call_op_set.h",
+        "include/grpcpp/impl/codegen/call.h",
         "include/grpcpp/impl/codegen/callback_common.h",
         "include/grpcpp/impl/codegen/channel_interface.h",
         "include/grpcpp/impl/codegen/client_callback.h",
         "include/grpcpp/impl/codegen/client_context.h",
         "include/grpcpp/impl/codegen/client_interceptor.h",
         "include/grpcpp/impl/codegen/client_unary_call.h",
-        "include/grpcpp/impl/codegen/completion_queue.h",
         "include/grpcpp/impl/codegen/completion_queue_tag.h",
+        "include/grpcpp/impl/codegen/completion_queue.h",
         "include/grpcpp/impl/codegen/config.h",
         "include/grpcpp/impl/codegen/core_codegen_interface.h",
         "include/grpcpp/impl/codegen/create_auth_context.h",
         "include/grpcpp/impl/codegen/delegating_channel.h",
         "include/grpcpp/impl/codegen/grpc_library.h",
         "include/grpcpp/impl/codegen/intercepted_channel.h",
-        "include/grpcpp/impl/codegen/interceptor.h",
         "include/grpcpp/impl/codegen/interceptor_common.h",
+        "include/grpcpp/impl/codegen/interceptor.h",
         "include/grpcpp/impl/codegen/message_allocator.h",
         "include/grpcpp/impl/codegen/metadata_map.h",
+        "include/grpcpp/impl/codegen/method_handler_impl.h",
         "include/grpcpp/impl/codegen/method_handler.h",
         "include/grpcpp/impl/codegen/rpc_method.h",
         "include/grpcpp/impl/codegen/rpc_service_method.h",
         "include/grpcpp/impl/codegen/security/auth_context.h",
         "include/grpcpp/impl/codegen/serialization_traits.h",
-        "include/grpcpp/impl/codegen/server_callback.h",
         "include/grpcpp/impl/codegen/server_callback_handlers.h",
+        "include/grpcpp/impl/codegen/server_callback.h",
         "include/grpcpp/impl/codegen/server_context.h",
         "include/grpcpp/impl/codegen/server_interceptor.h",
         "include/grpcpp/impl/codegen/server_interface.h",
         "include/grpcpp/impl/codegen/service_type.h",
         "include/grpcpp/impl/codegen/slice.h",
-        "include/grpcpp/impl/codegen/status.h",
         "include/grpcpp/impl/codegen/status_code_enum.h",
+        "include/grpcpp/impl/codegen/status.h",
         "include/grpcpp/impl/codegen/string_ref.h",
         "include/grpcpp/impl/codegen/stub_options.h",
         "include/grpcpp/impl/codegen/sync_stream.h",

@@ -32,9 +32,7 @@
 
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 
-#ifdef GRPCPP_ABSEIL_SYNC
 #include "absl/synchronization/mutex.h"
-#endif
 
 // The core library is not accessible in C++ codegen headers, and vice versa.
 // Thus, we need to have duplicate headers with similar functionality.
@@ -57,7 +55,7 @@ using CondVar = absl::CondVar;
 
 #else
 
-class Mutex {
+class ABSL_LOCKABLE Mutex {
  public:
   Mutex() { g_core_codegen_interface->gpr_mu_init(&mu_); }
   ~Mutex() { g_core_codegen_interface->gpr_mu_destroy(&mu_); }
@@ -65,8 +63,12 @@ class Mutex {
   Mutex(const Mutex&) = delete;
   Mutex& operator=(const Mutex&) = delete;
 
-  void Lock() { g_core_codegen_interface->gpr_mu_lock(&mu_); }
-  void Unlock() { g_core_codegen_interface->gpr_mu_unlock(&mu_); }
+  void Lock() ABSL_EXCLUSIVE_LOCK_FUNCTION() {
+    g_core_codegen_interface->gpr_mu_lock(&mu_);
+  }
+  void Unlock() ABSL_UNLOCK_FUNCTION() {
+    g_core_codegen_interface->gpr_mu_unlock(&mu_);
+  }
 
  private:
   union {
@@ -80,10 +82,12 @@ class Mutex {
   friend class CondVar;
 };
 
-class MutexLock {
+class ABSL_SCOPED_LOCKABLE MutexLock {
  public:
-  explicit MutexLock(Mutex* mu) : mu_(mu) { mu_->Lock(); }
-  ~MutexLock() { mu_->Unlock(); }
+  explicit MutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu) : mu_(mu) {
+    mu_->Lock();
+  }
+  ~MutexLock() ABSL_UNLOCK_FUNCTION() { mu_->Unlock(); }
 
   MutexLock(const MutexLock&) = delete;
   MutexLock& operator=(const MutexLock&) = delete;
@@ -92,17 +96,20 @@ class MutexLock {
   Mutex* const mu_;
 };
 
-class ReleasableMutexLock {
+class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
  public:
-  explicit ReleasableMutexLock(Mutex* mu) : mu_(mu) { mu_->Lock(); }
-  ~ReleasableMutexLock() {
+  explicit ReleasableMutexLock(Mutex* mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)
+      : mu_(mu) {
+    mu_->Lock();
+  }
+  ~ReleasableMutexLock() ABSL_UNLOCK_FUNCTION() {
     if (!released_) mu_->Unlock();
   }
 
   ReleasableMutexLock(const ReleasableMutexLock&) = delete;
   ReleasableMutexLock& operator=(const ReleasableMutexLock&) = delete;
 
-  void Release() {
+  void Release() ABSL_UNLOCK_FUNCTION() {
     GPR_DEBUG_ASSERT(!released_);
     released_ = true;
     mu_->Unlock();

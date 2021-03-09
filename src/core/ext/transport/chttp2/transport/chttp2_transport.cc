@@ -366,7 +366,9 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             std::string(grpc_endpoint_get_local_address(t->ep)), t->peer_string,
-            absl::StrFormat("%s %s", get_vtable()->name, t->peer_string));
+            absl::StrFormat("%s %s", get_vtable()->name, t->peer_string),
+            grpc_core::channelz::SocketNode::Security::GetFromChannelArgs(
+                channel_args));
   }
   return enable_bdp;
 }
@@ -2557,9 +2559,10 @@ static void read_action_locked(void* tp, grpc_error* error) {
 }
 
 static void continue_read_action_locked(grpc_chttp2_transport* t) {
+  const bool urgent = t->goaway_error != GRPC_ERROR_NONE;
   GRPC_CLOSURE_INIT(&t->read_action_locked, read_action, t,
                     grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked);
+  grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent);
   grpc_chttp2_act_on_flowctl_action(t->flow_control->MakeAction(), t, nullptr);
 }
 

@@ -24,73 +24,33 @@
 
 namespace grpc_core {
 
-LocalSubchannelPool::LocalSubchannelPool() {
-  subchannel_map_ = grpc_avl_create(&subchannel_avl_vtable_);
+RefCountedPtr<Subchannel> LocalSubchannelPool::RegisterSubchannel(
+    const SubchannelKey& key, RefCountedPtr<Subchannel> constructed) {
+  auto it = subchannel_map_.find(key);
+  // Because this pool is only accessed under the client channel's work
+  // serializer, and because FindSubchannel is checked before invoking
+  // RegisterSubchannel, no such subchannel should exist in the map.
+  GPR_ASSERT(it == subchannel_map_.end());
+  subchannel_map_[key] = constructed.get();
+  return constructed;
 }
 
-LocalSubchannelPool::~LocalSubchannelPool() {
-  grpc_avl_unref(subchannel_map_, nullptr);
+void LocalSubchannelPool::UnregisterSubchannel(const SubchannelKey& key,
+                                               Subchannel* subchannel) {
+  auto it = subchannel_map_.find(key);
+  // Because this subchannel pool is accessed only under the client
+  // channel's work serializer, any subchannel created by RegisterSubchannel
+  // will be deleted from the map in UnregisterSubchannel.
+  GPR_ASSERT(it != subchannel_map_.end());
+  GPR_ASSERT(it->second == subchannel);
+  subchannel_map_.erase(it);
 }
 
-Subchannel* LocalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
-                                                    Subchannel* constructed) {
-  // Check to see if a subchannel already exists.
-  Subchannel* c =
-      static_cast<Subchannel*>(grpc_avl_get(subchannel_map_, key, nullptr));
-  if (c != nullptr) {
-    // The subchannel already exists. Reuse it.
-    c = GRPC_SUBCHANNEL_REF(c, "subchannel_register+reuse");
-    GRPC_SUBCHANNEL_UNREF(constructed, "subchannel_register+found_existing");
-  } else {
-    // There hasn't been such subchannel. Add one.
-    subchannel_map_ = grpc_avl_add(subchannel_map_, new SubchannelKey(*key),
-                                   constructed, nullptr);
-    c = constructed;
-  }
-  return c;
+RefCountedPtr<Subchannel> LocalSubchannelPool::FindSubchannel(
+    const SubchannelKey& key) {
+  auto it = subchannel_map_.find(key);
+  if (it == subchannel_map_.end()) return nullptr;
+  return it->second->Ref();
 }
-
-void LocalSubchannelPool::UnregisterSubchannel(SubchannelKey* key) {
-  subchannel_map_ = grpc_avl_remove(subchannel_map_, key, nullptr);
-}
-
-Subchannel* LocalSubchannelPool::FindSubchannel(SubchannelKey* key) {
-  Subchannel* c =
-      static_cast<Subchannel*>(grpc_avl_get(subchannel_map_, key, nullptr));
-  return c == nullptr ? c : GRPC_SUBCHANNEL_REF(c, "found_from_pool");
-}
-
-namespace {
-
-void sck_avl_destroy(void* p, void* /*user_data*/) {
-  SubchannelKey* key = static_cast<SubchannelKey*>(p);
-  delete key;
-}
-
-void* sck_avl_copy(void* p, void* /*unused*/) {
-  const SubchannelKey* key = static_cast<const SubchannelKey*>(p);
-  auto new_key = new SubchannelKey(*key);
-  return static_cast<void*>(new_key);
-}
-
-long sck_avl_compare(void* a, void* b, void* /*unused*/) {
-  const SubchannelKey* key_a = static_cast<const SubchannelKey*>(a);
-  const SubchannelKey* key_b = static_cast<const SubchannelKey*>(b);
-  return key_a->Cmp(*key_b);
-}
-
-void scv_avl_destroy(void* /*p*/, void* /*user_data*/) {}
-
-void* scv_avl_copy(void* p, void* /*unused*/) { return p; }
-
-}  // namespace
-
-const grpc_avl_vtable LocalSubchannelPool::subchannel_avl_vtable_ = {
-    sck_avl_destroy,  // destroy_key
-    sck_avl_copy,     // copy_key
-    sck_avl_compare,  // compare_keys
-    scv_avl_destroy,  // destroy_value
-    scv_avl_copy      // copy_value
-};
 
 }  // namespace grpc_core

@@ -1,0 +1,47 @@
+# objects
+*.o
+*.obj
+*.s
+
+# libraries
+libxxhash.*
+!libxxhash.pc.in
+
+# Executables
+*.exe
+xxh32sum
+xxh64sum
+xxh128sum
+xxhsum
+xxhsum32
+xxhsum_privateXXH
+xxhsum_inlinedXXH
+dispatch
+tests/generate_unicode_test
+
+# compilation chain
+.clang_complete
+
+# Mac OS-X artefacts
+*.dSYM
+.DS_Store
+
+# Wasm / emcc / emscripten artefacts
+*.html
+*.wasm
+*.js
+
+# CMake build directories
+build*/
+
+# project managers artifacts
+.projectile
+
+# analyzer artifacts
+infer-out
+
+# test artifacts
+.test*
+tmp*
+tests/*.unicode
+tests/unicode_test*

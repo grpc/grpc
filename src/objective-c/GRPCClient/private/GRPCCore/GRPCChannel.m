@@ -54,8 +54,8 @@
   if (_callOptions.transport != NULL) {
     id<GRPCTransportFactory> transportFactory =
         [[GRPCTransportRegistry sharedInstance] getTransportFactoryWithID:_callOptions.transport];
-    if (!
-        [transportFactory respondsToSelector:@selector(createCoreChannelFactoryWithCallOptions:)]) {
+    if (![transportFactory
+            respondsToSelector:@selector(createCoreChannelFactoryWithCallOptions:)]) {
       // impossible because we are using GRPCCore now
       [NSException raise:NSInternalInconsistencyException
                   format:@"Transport factory type is wrong"];

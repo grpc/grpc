@@ -40,51 +40,52 @@ cmake \
 make -j4 install
 popd
 
-# Download raspberry pi toolchain.
-mkdir -p "/tmp/raspberrypi_root"
-pushd "/tmp/raspberrypi_root"
-git clone https://github.com/raspberrypi/tools raspberrypi-tools
-cd raspberrypi-tools && git checkout 4a335520900ce55e251ac4f420f52bf0b2ab6b1f && cd ..
-
 # Write a toolchain file to use for cross-compiling.
-cat > toolchain.cmake <<'EOT'
+cat > /tmp/toolchain.cmake <<'EOT'
 SET(CMAKE_SYSTEM_NAME Linux)
-SET(CMAKE_SYSTEM_PROCESSOR arm)
-set(devel_root /tmp/raspberrypi_root)
-set(CMAKE_STAGING_PREFIX ${devel_root}/stage)
-set(tool_root ${devel_root}/raspberrypi-tools/arm-bcm2708)
-set(CMAKE_SYSROOT ${tool_root}/arm-rpi-4.9.3-linux-gnueabihf/arm-linux-gnueabihf/sysroot)
-set(CMAKE_C_COMPILER ${tool_root}/arm-linux-gnueabihf/bin/arm-linux-gnueabihf-gcc)
-set(CMAKE_CXX_COMPILER ${tool_root}/arm-linux-gnueabihf/bin/arm-linux-gnueabihf-g++)
+SET(CMAKE_SYSTEM_PROCESSOR aarch64)
+set(CMAKE_STAGING_PREFIX /tmp/stage)
+set(CMAKE_C_COMPILER /usr/bin/aarch64-linux-gnu-gcc-6)
+set(CMAKE_CXX_COMPILER /usr/bin/aarch64-linux-gnu-g++-6)
 set(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)
 set(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)
 set(CMAKE_FIND_ROOT_PATH_MODE_PACKAGE ONLY)
 EOT
-popd
 
-# Build and install gRPC for raspberry pi.
-# This build will use the host architecture copies of protoc and
-# grpc_cpp_plugin that we built earlier because we installed them
-# to a location in our PATH (/usr/local/bin).
-mkdir -p "cmake/raspberrypi_build"
-pushd "cmake/raspberrypi_build"
-cmake -DCMAKE_TOOLCHAIN_FILE=/tmp/raspberrypi_root/toolchain.cmake \
+# Build and install absl (absl won't be installed down below)
+mkdir -p "third_party/abseil-cpp/cmake/build_arm"
+pushd "third_party/abseil-cpp/cmake/build_arm"
+cmake -DCMAKE_TOOLCHAIN_FILE=/tmp/toolchain.cmake \
       -DCMAKE_BUILD_TYPE=Release \
-      -DCMAKE_INSTALL_PREFIX=/tmp/raspberrypi_root/grpc_install \
+      -DCMAKE_INSTALL_PREFIX=/tmp/install \
+      -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE \
       ../..
 make -j4 install
 popd
 
-# Build helloworld example for raspberry pi.
+# Build and install gRPC for ARM.
+# This build will use the host architecture copies of protoc and
+# grpc_cpp_plugin that we built earlier because we installed them
+# to a location in our PATH (/usr/local/bin).
+mkdir -p "cmake/build_arm"
+pushd "cmake/build_arm"
+cmake -DCMAKE_TOOLCHAIN_FILE=/tmp/toolchain.cmake \
+      -DCMAKE_BUILD_TYPE=Release \
+      -DCMAKE_INSTALL_PREFIX=/tmp/install \
+      ../..
+make -j4 install
+popd
+
+# Build helloworld example for ARM.
 # As above, it will find and use protoc and grpc_cpp_plugin
 # for the host architecture.
-mkdir -p "examples/cpp/helloworld/cmake/raspberrypi_build"
-pushd "examples/cpp/helloworld/cmake/raspberrypi_build"
-cmake -DCMAKE_TOOLCHAIN_FILE=/tmp/raspberrypi_root/toolchain.cmake \
+mkdir -p "examples/cpp/helloworld/cmake/build_arm"
+pushd "examples/cpp/helloworld/cmake/build_arm"
+cmake -DCMAKE_TOOLCHAIN_FILE=/tmp/toolchain.cmake \
       -DCMAKE_BUILD_TYPE=Release \
-      -DProtobuf_DIR=/tmp/raspberrypi_root/stage/lib/cmake/protobuf \
-      -DgRPC_DIR=/tmp/raspberrypi_root/stage/lib/cmake/grpc \
+      -DProtobuf_DIR=/tmp/stage/lib/cmake/protobuf \
+      -DgRPC_DIR=/tmp/stage/lib/cmake/grpc \
       ../..
 make
 popd

@@ -35,8 +35,6 @@
   <%!
   def get_deps(target_dict):
     deps = []
-    if target_dict.get("secure", False):
-      deps = ["//third_party/boringssl"]
     if target_dict.get("build", None) == "protoc":
       deps.append("//third_party/protobuf:protoc_lib")
     name = target_dict.get("name", None)
@@ -45,7 +43,9 @@
     elif name in ("grpc", "grpc_unsecure"):
       deps.append("//third_party/zlib")
     for d in target_dict.get("deps", []):
-      if d.startswith(("//", ":")):
+      if d == "libssl":
+        deps.append("//third_party/boringssl")
+      elif d.startswith(("//", ":")):
         deps.append(d)
       else:
         deps.append(":%s" % d)

@@ -240,9 +240,19 @@ grpc_cc_library(
 grpc_cc_test(
     name = "channelz_service_test",
     srcs = ["channelz_service_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],
+    # TODO(yulin-liang): The test is not able to load the certificate files on
+    # iOS. Figure out why.
+    tags = ["no_test_ios"],
     deps = [
         ":test_service_impl",
         "//:gpr",

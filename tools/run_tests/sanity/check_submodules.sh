@@ -35,6 +35,7 @@ cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
  82944da21578a53b74e547774cf62ed31a05b841 third_party/googleapis (common-protos-1_3_1-915-g80ed4d0bb)
  c9ccac7cb7345901884aabf5d1a786cfa6e2f397 third_party/googletest (6e2f397)
  15ae750151ac9341e5945eb38f8982d59fb99201 third_party/libuv (v1.34.0)
+ 4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89 third_party/opencensus-proto (v0.3.0)
  d7e943b8d2bc444a8c770644e73d090b486f8b37 third_party/protobuf (v3.15.2)
  872b28c457822ed9c2a5405da3c33f386ac0e86f third_party/protoc-gen-validate (v0.4.1)
  aecba11114cf1fac5497aeb844b6966106de3eb6 third_party/re2 (heads/master)

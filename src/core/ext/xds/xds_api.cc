@@ -448,15 +448,93 @@ std::string XdsApi::LdsUpdate::HttpFilter::ToString() const {
 }
 
 //
+// XdsApi::LdsUpdate::FilterChain::FilterChainMatch::CidrRange
+//
+
+std::string
+XdsApi::LdsUpdate::FilterChain::FilterChainMatch::CidrRange::ToString() const {
+  return absl::StrCat("{address_prefix=", address_prefix,
+                      " prefix_len=", prefix_len, "}");
+}
+
+//
+// XdsApi::LdsUpdate::FilterChain::FilterChainMatch
+//
+
+std::string XdsApi::LdsUpdate::FilterChain::FilterChainMatch::ToString() const {
+  absl::InlinedVector<std::string, 8> contents;
+  if (destination_port != 0) {
+    contents.push_back(absl::StrCat("destination_port=", destination_port));
+  }
+  if (!prefix_ranges.empty()) {
+    std::vector<std::string> prefix_ranges_content;
+    for (const auto& range : prefix_ranges) {
+      prefix_ranges_content.push_back(range.ToString());
+    }
+    contents.push_back(absl::StrCat(
+        "prefix_ranges={", absl::StrJoin(prefix_ranges_content, ", "), "}"));
+  }
+  if (source_type == XdsApi::LdsUpdate::FilterChain::FilterChainMatch::
+                         ConnectionSourceType::kSameIpOrLoopback) {
+    contents.push_back("source_type=SAME_IP_OR_LOOPBACK");
+  } else if (source_type == XdsApi::LdsUpdate::FilterChain::FilterChainMatch::
+                                ConnectionSourceType::kExternal) {
+    contents.push_back("source_type=EXTERNAL");
+  }
+  if (!source_prefix_ranges.empty()) {
+    std::vector<std::string> source_prefix_ranges_content;
+    for (const auto& range : source_prefix_ranges) {
+      source_prefix_ranges_content.push_back(range.ToString());
+    }
+    contents.push_back(
+        absl::StrCat("source_prefix_ranges={",
+                     absl::StrJoin(source_prefix_ranges_content, ", "), "}"));
+  }
+  if (!source_ports.empty()) {
+    contents.push_back(
+        absl::StrCat("source_ports={", absl::StrJoin(source_ports, ", "), "}"));
+  }
+  if (!server_names.empty()) {
+    contents.push_back(
+        absl::StrCat("server_names={", absl::StrJoin(server_names, ", "), "}"));
+  }
+  if (!transport_protocol.empty()) {
+    contents.push_back(absl::StrCat("transport_protocol=", transport_protocol));
+  }
+  if (!application_protocols.empty()) {
+    contents.push_back(absl::StrCat("application_protocols={",
+                                    absl::StrJoin(application_protocols, ", "),
+                                    "}"));
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
+//
+// XdsApi::LdsUpdate::FilterChain
+//
+
+std::string XdsApi::LdsUpdate::FilterChain::ToString() const {
+  return absl::StrFormat("{filter_chain_match=%s, downstream_tls_context=%s}",
+                         filter_chain_match.ToString(),
+                         downstream_tls_context.ToString());
+}
+
+//
 // XdsApi::LdsUpdate
 //
 
 std::string XdsApi::LdsUpdate::ToString() const {
   absl::InlinedVector<std::string, 3> contents;
   if (type == ListenerType::kTcpListener) {
-    if (!downstream_tls_context.Empty()) {
-      contents.push_back(absl::StrFormat("downstream_tls_context=%s",
-                                         downstream_tls_context.ToString()));
+    std::vector<std::string> filter_chains_content;
+    for (const auto& filter_chain : filter_chains) {
+      filter_chains_content.push_back(filter_chain.ToString());
+    }
+    contents.push_back(absl::StrCat(
+        "filter_chains={", absl::StrJoin(filter_chains_content, ", "), "}"));
+    if (default_filter_chain.has_value()) {
+      contents.push_back(absl::StrCat("default_filter_chain=",
+                                      default_filter_chain->ToString()));
     }
   } else if (type == ListenerType::kHttpApiListener) {
     contents.push_back(absl::StrFormat(
@@ -1677,70 +1755,182 @@ grpc_error* LdsResponseParseClient(
   return GRPC_ERROR_NONE;
 }
 
+XdsApi::LdsUpdate::FilterChain::FilterChainMatch::CidrRange CidrRangeParse(
+    const envoy_config_core_v3_CidrRange* cidr_range_proto) {
+  uint32_t prefix_len = 0;
+  auto* prefix_len_proto =
+      envoy_config_core_v3_CidrRange_prefix_len(cidr_range_proto);
+  if (prefix_len_proto != nullptr) {
+    prefix_len = google_protobuf_UInt32Value_value(prefix_len_proto);
+  }
+  return {UpbStringToStdString(
+              envoy_config_core_v3_CidrRange_address_prefix(cidr_range_proto)),
+          prefix_len};
+}
+
+XdsApi::LdsUpdate::FilterChain::FilterChainMatch FilterChainMatchParse(
+    const envoy_config_listener_v3_FilterChainMatch* filter_chain_match_proto) {
+  XdsApi::LdsUpdate::FilterChain::FilterChainMatch filter_chain_match;
+  auto* destination_port =
+      envoy_config_listener_v3_FilterChainMatch_destination_port(
+          filter_chain_match_proto);
+  if (destination_port != nullptr) {
+    filter_chain_match.destination_port =
+        google_protobuf_UInt32Value_value(destination_port);
+  }
+  size_t size = 0;
+  auto* prefix_ranges = envoy_config_listener_v3_FilterChainMatch_prefix_ranges(
+      filter_chain_match_proto, &size);
+  filter_chain_match.prefix_ranges.reserve(size);
+  for (size_t i = 0; i < size; i++) {
+    filter_chain_match.prefix_ranges.push_back(
+        CidrRangeParse(prefix_ranges[i]));
+  }
+  filter_chain_match.source_type = static_cast<
+      XdsApi::LdsUpdate::FilterChain::FilterChainMatch::ConnectionSourceType>(
+      envoy_config_listener_v3_FilterChainMatch_source_type(
+          filter_chain_match_proto));
+  auto* source_prefix_ranges =
+      envoy_config_listener_v3_FilterChainMatch_source_prefix_ranges(
+          filter_chain_match_proto, &size);
+  filter_chain_match.source_prefix_ranges.reserve(size);
+  for (size_t i = 0; i < size; i++) {
+    filter_chain_match.source_prefix_ranges.push_back(
+        CidrRangeParse(source_prefix_ranges[i]));
+  }
+  auto* source_ports = envoy_config_listener_v3_FilterChainMatch_source_ports(
+      filter_chain_match_proto, &size);
+  filter_chain_match.source_ports.reserve(size);
+  for (size_t i = 0; i < size; i++) {
+    filter_chain_match.source_ports.push_back(source_ports[i]);
+  }
+  auto* server_names = envoy_config_listener_v3_FilterChainMatch_server_names(
+      filter_chain_match_proto, &size);
+  for (size_t i = 0; i < size; i++) {
+    filter_chain_match.server_names.push_back(
+        UpbStringToStdString(server_names[i]));
+  }
+  filter_chain_match.transport_protocol = UpbStringToStdString(
+      envoy_config_listener_v3_FilterChainMatch_transport_protocol(
+          filter_chain_match_proto));
+  auto* application_protocols =
+      envoy_config_listener_v3_FilterChainMatch_application_protocols(
+          filter_chain_match_proto, &size);
+  for (size_t i = 0; i < size; i++) {
+    filter_chain_match.application_protocols.push_back(
+        UpbStringToStdString(application_protocols[i]));
+  }
+  return filter_chain_match;
+}
+
+grpc_error* DownstreamTlsContextParse(
+    const EncodingContext& context,
+    const envoy_config_core_v3_TransportSocket* transport_socket,
+    XdsApi::DownstreamTlsContext* downstream_tls_context) {
+  absl::string_view name = UpbStringToAbsl(
+      envoy_config_core_v3_TransportSocket_name(transport_socket));
+  if (name == "envoy.transport_sockets.tls") {
+    auto* typed_config =
+        envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
+    if (typed_config != nullptr) {
+      const upb_strview encoded_downstream_tls_context =
+          google_protobuf_Any_value(typed_config);
+      auto* downstream_tls_context_proto =
+          envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
+              encoded_downstream_tls_context.data,
+              encoded_downstream_tls_context.size, context.arena);
+      if (downstream_tls_context_proto == nullptr) {
+        return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Can't decode downstream tls context.");
+      }
+      auto* common_tls_context =
+          envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
+              downstream_tls_context_proto);
+      if (common_tls_context != nullptr) {
+        grpc_error* error = CommonTlsContextParse(
+            common_tls_context, &downstream_tls_context->common_tls_context);
+        if (error != GRPC_ERROR_NONE) return error;
+      }
+      auto* require_client_certificate =
+          envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(
+              downstream_tls_context_proto);
+      if (require_client_certificate != nullptr) {
+        downstream_tls_context->require_client_certificate =
+            google_protobuf_BoolValue_value(require_client_certificate);
+      }
+    }
+    if (downstream_tls_context->common_tls_context
+            .tls_certificate_certificate_provider_instance.instance_name
+            .empty()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "TLS configuration provided but no "
+          "tls_certificate_certificate_provider_instance found.");
+    }
+  }
+  return GRPC_ERROR_NONE;
+}
+
+XdsApi::LdsUpdate::FilterChain FilterChainParse(
+    const EncodingContext& context,
+    const envoy_config_listener_v3_FilterChain* filter_chain_proto,
+    grpc_error** error) {
+  XdsApi::LdsUpdate::FilterChain filter_chain;
+  auto* filter_chain_match =
+      envoy_config_listener_v3_FilterChain_filter_chain_match(
+          filter_chain_proto);
+  if (filter_chain_match != nullptr) {
+    filter_chain.filter_chain_match = FilterChainMatchParse(filter_chain_match);
+  }
+  // Get the DownstreamTlsContext for the filter chain
+  if (XdsSecurityEnabled()) {
+    auto* transport_socket =
+        envoy_config_listener_v3_FilterChain_transport_socket(
+            filter_chain_proto);
+    if (transport_socket != nullptr) {
+      *error = DownstreamTlsContextParse(context, transport_socket,
+                                         &filter_chain.downstream_tls_context);
+    }
+  }
+  return filter_chain;
+}
+
 grpc_error* LdsResponseParseServer(
     const EncodingContext& context,
     const envoy_config_listener_v3_Listener* listener,
     XdsApi::LdsUpdate* lds_update) {
   lds_update->type = XdsApi::LdsUpdate::ListenerType::kTcpListener;
-  // TODO(yashykt): Support filter chain match.
-  // Right now, we are supporting and expecting only one entry in filter_chains.
-  // As part of this, we'll need to refactor the code to process the
-  // HttpConnectionManager config so that it is shared with the client-side
+  grpc_error* error = GRPC_ERROR_NONE;
+  // TODO(yashykt): As part of this, we'll need to refactor the code to process
+  // the HttpConnectionManager config so that it is shared with the client-side
   // parsing.
   size_t size = 0;
   auto* filter_chains =
       envoy_config_listener_v3_Listener_filter_chains(listener, &size);
-  if (size != 1) {
+  // TODO(yashykt): Remove following if block when FilterChainMatch
+  // implementation is in
+  if (size == 0) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Only one filter_chain supported.");
+        "At least one filter chain needed.");
   }
-  // Get the DownstreamTlsContext from the match
-  if (XdsSecurityEnabled()) {
-    auto* transport_socket =
-        envoy_config_listener_v3_FilterChain_transport_socket(filter_chains[0]);
-    if (transport_socket != nullptr) {
-      absl::string_view name = UpbStringToAbsl(
-          envoy_config_core_v3_TransportSocket_name(transport_socket));
-      if (name == "envoy.transport_sockets.tls") {
-        auto* typed_config =
-            envoy_config_core_v3_TransportSocket_typed_config(transport_socket);
-        if (typed_config != nullptr) {
-          const upb_strview encoded_downstream_tls_context =
-              google_protobuf_Any_value(typed_config);
-          auto* downstream_tls_context =
-              envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_parse(
-                  encoded_downstream_tls_context.data,
-                  encoded_downstream_tls_context.size, context.arena);
-          if (downstream_tls_context == nullptr) {
-            return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Can't decode downstream tls context.");
-          }
-          auto* common_tls_context =
-              envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
-                  downstream_tls_context);
-          if (common_tls_context != nullptr) {
-            grpc_error* error = CommonTlsContextParse(
-                common_tls_context,
-                &lds_update->downstream_tls_context.common_tls_context);
-            if (error != GRPC_ERROR_NONE) return error;
-          }
-          auto* require_client_certificate =
-              envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_require_client_certificate(
-                  downstream_tls_context);
-          if (require_client_certificate != nullptr) {
-            lds_update->downstream_tls_context.require_client_certificate =
-                google_protobuf_BoolValue_value(require_client_certificate);
-          }
-        }
-        if (lds_update->downstream_tls_context.common_tls_context
-                .tls_certificate_certificate_provider_instance.instance_name
-                .empty()) {
-          return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "TLS configuration provided but no "
-              "tls_certificate_certificate_provider_instance found.");
-        }
-      }
+  lds_update->filter_chains.reserve(size);
+  for (size_t i = 0; i < size; i++) {
+    lds_update->filter_chains.push_back(
+        FilterChainParse(context, filter_chains[0], &error));
+    if (error != GRPC_ERROR_NONE) {
+      return error;
     }
+  }
+  auto* default_filter_chain =
+      envoy_config_listener_v3_Listener_default_filter_chain(listener);
+  if (default_filter_chain != nullptr) {
+    lds_update->default_filter_chain =
+        FilterChainParse(context, default_filter_chain, &error);
+    if (error != GRPC_ERROR_NONE) {
+      return error;
+    }
+  }
+  if (size == 0 && default_filter_chain == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No filter chain provided.");
   }
   return GRPC_ERROR_NONE;
 }
