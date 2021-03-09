@@ -58,6 +58,7 @@ MAKE="make -j8"
 # TODO(apolcyn): remove this hack when tar.bz2 sources are available for ruby
 # 3.0.0 in https://ftp.ruby-lang.org/pub/ruby/3.0/. Also see
 # https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0.
+mkdir -p ~/.rake-compiler/sources
 pushd ~/.rake-compiler/sources
 curl -L https://ftp.ruby-lang.org/pub/ruby/3.0/ruby-3.0.0.tar.gz -o ruby-3.0.0.tar.gz
 ccache -c
