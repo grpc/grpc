@@ -1282,9 +1282,15 @@ grpc_error* ParseTypedPerFilterConfig(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("empty filter name in map");
     }
     const google_protobuf_Any* any = value_func(filter_entry);
-    bool is_optional = false;
+    GPR_ASSERT(any != nullptr);
     absl::string_view filter_type =
         UpbStringToAbsl(google_protobuf_Any_type_url(any));
+    if (filter_type.empty()) {
+      return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("no filter config specified for filter name ", key)
+              .c_str());
+    }
+    bool is_optional = false;
     if (filter_type ==
         "type.googleapis.com/envoy.config.route.v3.FilterConfig") {
       upb_strview any_value = google_protobuf_Any_value(any);
@@ -1298,6 +1304,12 @@ grpc_error* ParseTypedPerFilterConfig(
       is_optional =
           envoy_config_route_v3_FilterConfig_is_optional(filter_config);
       any = envoy_config_route_v3_FilterConfig_config(filter_config);
+      if (any == nullptr) {
+        if (is_optional) continue;
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("no filter config specified for filter name ", key)
+                .c_str());
+      }
     }
     grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
     if (error != GRPC_ERROR_NONE) return error;
@@ -1685,19 +1697,25 @@ grpc_error* LdsResponseParseClient(
             absl::StrCat("duplicate HTTP filter name: ", name).c_str());
       }
       names_seen.insert(name);
+      const bool is_optional =
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
+              http_filter);
       const google_protobuf_Any* any =
           envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
               http_filter);
+      if (any == nullptr) {
+        if (is_optional) continue;
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("no filter config specified for filter name ", name)
+                .c_str());
+      }
       absl::string_view filter_type;
       grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
       if (error != GRPC_ERROR_NONE) return error;
       const XdsHttpFilterImpl* filter_impl =
           XdsHttpFilterRegistry::GetFilterForType(filter_type);
       if (filter_impl == nullptr) {
-        if (envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
-                http_filter)) {
-          continue;
-        }
+        if (is_optional) continue;
         return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrCat("no filter registered for config type ", filter_type)
                 .c_str());

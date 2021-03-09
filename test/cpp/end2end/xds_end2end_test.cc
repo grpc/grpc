@@ -3323,6 +3323,59 @@ TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
+// Test that we NACK filters without configs.
+TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("unknown");
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Wait until xDS server sees NACK.
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "no filter config specified for filter name unknown"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we ignore optional filters without configs.
+TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("unknown");
+  filter->set_is_optional(true);
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
+            AdsServiceImpl::ResponseState::ACKED);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
 // Test that we NACK unparseable filter configs.
 TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
@@ -5685,6 +5738,79 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
+// Test that we NACK filters without configs in VirtualHost.
+TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInVirtualHost) {
+  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  RouteConfiguration route_config = default_route_config_;
+  auto* per_filter_config =
+      route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
+  (*per_filter_config)["unknown"];
+  SetListenerAndRouteConfiguration(0, default_listener_, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Wait until xDS server sees NACK.
+  do {
+    CheckRpcSendFailure();
+  } while (RouteConfigurationResponseState(0).state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "no filter config specified for filter name unknown"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we NACK filters without configs in FilterConfig in VirtualHost.
+TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
+  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  RouteConfiguration route_config = default_route_config_;
+  auto* per_filter_config =
+      route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
+  (*per_filter_config)["unknown"].PackFrom(
+      ::envoy::config::route::v3::FilterConfig());
+  SetListenerAndRouteConfiguration(0, default_listener_, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Wait until xDS server sees NACK.
+  do {
+    CheckRpcSendFailure();
+  } while (RouteConfigurationResponseState(0).state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "no filter config specified for filter name unknown"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we ignore optional filters without configs in VirtualHost.
+TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
+  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  RouteConfiguration route_config = default_route_config_;
+  auto* per_filter_config =
+      route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
+  ::envoy::config::route::v3::FilterConfig filter_config;
+  filter_config.set_is_optional(true);
+  (*per_filter_config)["unknown"].PackFrom(filter_config);
+  SetListenerAndRouteConfiguration(0, default_listener_, route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  EXPECT_EQ(RouteConfigurationResponseState(0).state,
+            AdsServiceImpl::ResponseState::ACKED);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
 // Test that we NACK unparseable filter types in VirtualHost.
 TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
@@ -5745,6 +5871,82 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
                                 ->mutable_typed_per_filter_config();
   ::envoy::config::route::v3::FilterConfig filter_config;
   filter_config.mutable_config()->PackFrom(Listener());
+  filter_config.set_is_optional(true);
+  (*per_filter_config)["unknown"].PackFrom(filter_config);
+  SetListenerAndRouteConfiguration(0, default_listener_, route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  EXPECT_EQ(RouteConfigurationResponseState(0).state,
+            AdsServiceImpl::ResponseState::ACKED);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we NACK filters without configs in Route.
+TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInRoute) {
+  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  RouteConfiguration route_config = default_route_config_;
+  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
+                                ->mutable_routes(0)
+                                ->mutable_typed_per_filter_config();
+  (*per_filter_config)["unknown"];
+  SetListenerAndRouteConfiguration(0, default_listener_, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Wait until xDS server sees NACK.
+  do {
+    CheckRpcSendFailure();
+  } while (RouteConfigurationResponseState(0).state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "no filter config specified for filter name unknown"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we NACK filters without configs in FilterConfig in Route.
+TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
+  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  RouteConfiguration route_config = default_route_config_;
+  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
+                                ->mutable_routes(0)
+                                ->mutable_typed_per_filter_config();
+  (*per_filter_config)["unknown"].PackFrom(
+      ::envoy::config::route::v3::FilterConfig());
+  SetListenerAndRouteConfiguration(0, default_listener_, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Wait until xDS server sees NACK.
+  do {
+    CheckRpcSendFailure();
+  } while (RouteConfigurationResponseState(0).state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "no filter config specified for filter name unknown"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we ignore optional filters without configs in Route.
+TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
+  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  RouteConfiguration route_config = default_route_config_;
+  auto* per_filter_config = route_config.mutable_virtual_hosts(0)
+                                ->mutable_routes(0)
+                                ->mutable_typed_per_filter_config();
+  ::envoy::config::route::v3::FilterConfig filter_config;
   filter_config.set_is_optional(true);
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
@@ -5832,6 +6034,98 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
   auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
   ::envoy::config::route::v3::FilterConfig filter_config;
   filter_config.mutable_config()->PackFrom(Listener());
+  filter_config.set_is_optional(true);
+  (*per_filter_config)["unknown"].PackFrom(filter_config);
+  SetListenerAndRouteConfiguration(0, default_listener_, route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  EXPECT_EQ(RouteConfigurationResponseState(0).state,
+            AdsServiceImpl::ResponseState::ACKED);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we NACK filters without configs in ClusterWeight.
+TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInClusterWeight) {
+  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  RouteConfiguration route_config = default_route_config_;
+  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
+                             ->mutable_routes(0)
+                             ->mutable_route()
+                             ->mutable_weighted_clusters()
+                             ->add_clusters();
+  cluster_weight->set_name(kDefaultClusterName);
+  cluster_weight->mutable_weight()->set_value(100);
+  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
+  (*per_filter_config)["unknown"];
+  SetListenerAndRouteConfiguration(0, default_listener_, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Wait until xDS server sees NACK.
+  do {
+    CheckRpcSendFailure();
+  } while (RouteConfigurationResponseState(0).state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "no filter config specified for filter name unknown"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we NACK filters without configs in FilterConfig in ClusterWeight.
+TEST_P(LdsRdsTest,
+       RejectsHttpFilterWithoutConfigInFilterConfigInClusterWeight) {
+  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  RouteConfiguration route_config = default_route_config_;
+  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
+                             ->mutable_routes(0)
+                             ->mutable_route()
+                             ->mutable_weighted_clusters()
+                             ->add_clusters();
+  cluster_weight->set_name(kDefaultClusterName);
+  cluster_weight->mutable_weight()->set_value(100);
+  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
+  (*per_filter_config)["unknown"].PackFrom(
+      ::envoy::config::route::v3::FilterConfig());
+  SetListenerAndRouteConfiguration(0, default_listener_, route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Wait until xDS server sees NACK.
+  do {
+    CheckRpcSendFailure();
+  } while (RouteConfigurationResponseState(0).state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state = RouteConfigurationResponseState(0);
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "no filter config specified for filter name unknown"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// Test that we ignore optional filters without configs in ClusterWeight.
+TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
+  if (GetParam().use_v2()) return;  // Filters supported in v3 only.
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  RouteConfiguration route_config = default_route_config_;
+  auto* cluster_weight = route_config.mutable_virtual_hosts(0)
+                             ->mutable_routes(0)
+                             ->mutable_route()
+                             ->mutable_weighted_clusters()
+                             ->add_clusters();
+  cluster_weight->set_name(kDefaultClusterName);
+  cluster_weight->mutable_weight()->set_value(100);
+  auto* per_filter_config = cluster_weight->mutable_typed_per_filter_config();
+  ::envoy::config::route::v3::FilterConfig filter_config;
   filter_config.set_is_optional(true);
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
