@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # Copyright 2017 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -96,6 +96,7 @@ def collect_latency(bm_name, args):
             'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
             '--benchmark_list_tests'
     ]).splitlines():
+        line = line.decode('UTF-8')
         link(line, '%s.txt' % fnize(line))
         benchmarks.append(
             jobset.JobSpec([
@@ -150,6 +151,7 @@ def collect_perf(bm_name, args):
             'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
             '--benchmark_list_tests'
     ]).splitlines():
+        line = line.decode('UTF-8')
         link(line, '%s.svg' % fnize(line))
         benchmarks.append(
             jobset.JobSpec([

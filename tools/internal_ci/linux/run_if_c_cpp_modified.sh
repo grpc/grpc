@@ -20,7 +20,7 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
-AFFECTS_C_CPP=`python -c 'import os; \
+AFFECTS_C_CPP=`python3 -c 'import os; \
                import sys; \
                sys.path.insert(0, "tools/run_tests/python_utils"); \
                import filter_pull_request_tests as filter; \
