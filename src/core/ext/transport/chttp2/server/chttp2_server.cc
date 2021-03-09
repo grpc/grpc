@@ -59,44 +59,6 @@ namespace {
 const char kUnixUriPrefix[] = "unix:";
 const char kUnixAbstractUriPrefix[] = "unix-abstract:";
 
-class TcpServerRef {
- public:
-  TcpServerRef() {}
-
-  explicit TcpServerRef(grpc_tcp_server* server) : server_(server) {
-    grpc_tcp_server_ref(server);
-  }
-
-  TcpServerRef(TcpServerRef&& other) noexcept {
-    server_ = other.server_;
-    other.server_ = nullptr;
-  }
-
-  TcpServerRef& operator=(TcpServerRef&& other) noexcept {
-    if (server_ != nullptr) {
-      grpc_tcp_server_unref(server_);
-    }
-    server_ = other.server_;
-    other.server_ = nullptr;
-    return *this;
-  }
-
-  // Delete unused copy constructor and assignment operators
-  TcpServerRef(const TcpServerRef& other) = delete;
-  TcpServerRef& operator=(const TcpServerRef& other) = delete;
-
-  ~TcpServerRef() {
-    if (server_ != nullptr) {
-      grpc_tcp_server_unref(server_);
-    }
-  }
-
-  void release() { server_ = nullptr; }
-
- private:
-  grpc_tcp_server* server_ = nullptr;
-};
-
 class Chttp2ServerListener : public Server::ListenerInterface {
  public:
   static grpc_error* Create(Server* server, grpc_resolved_address* addr,
@@ -123,6 +85,21 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   void SetOnDestroyDone(grpc_closure* on_destroy_done) override;
 
   void Orphan() override;
+
+  // The interface of RefCounted<> has been manually implemented here to take a
+  // ref on tcp_server_ instead. Note that, the handshaker needs tcp_server_ to
+  // exist for the lifetime of the handshake since it's needed by acceptor.
+  // Sharing refs between the listener and tcp_server_ is just an optimization
+  // to avoid taking additional refs on the listener, since
+  // TcpServerShutdownComplete already holds a ref to the listener.
+  void IncrementRefCount() { grpc_tcp_server_ref(tcp_server_); }
+
+  RefCountedPtr<Chttp2ServerListener> Ref() {
+    IncrementRefCount();
+    return RefCountedPtr<Chttp2ServerListener>(this);
+  }
+
+  void Unref() { grpc_tcp_server_unref(tcp_server_); }
 
  private:
   class ConfigFetcherWatcher
@@ -152,8 +129,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
       void Orphan() override;
 
-      void Start(TcpServerRef tcp_server_ref, grpc_endpoint* endpoint,
-                 grpc_channel_args* args);
+      void Start(grpc_endpoint* endpoint, grpc_channel_args* args);
 
       // Needed to be able to grab an external ref in ActiveConnection::Start()
       using InternallyRefCounted<HandshakingState>::Ref;
@@ -183,8 +159,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
     void Orphan() override;
 
-    void Start(TcpServerRef tcp_server_ref, grpc_endpoint* endpoint,
-               grpc_channel_args* args);
+    void Start(grpc_endpoint* endpoint, grpc_channel_args* args);
 
     // Needed to be able to grab an external ref in
     // Chttp2ServerListener::OnAccept()
@@ -339,16 +314,16 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::Orphan() {
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::Start(
-    TcpServerRef tcp_server_ref, grpc_endpoint* endpoint,
-    grpc_channel_args* args) ABSL_NO_THREAD_SAFETY_ANALYSIS {
+    grpc_endpoint* endpoint, grpc_channel_args* args) {
   Ref().release();  // Held by OnHandshakeDone
-  // The ref to the grpc_tcp_server is needed by the handshaker when using the
-  // acceptor.
-  tcp_server_ref.release();  // Held by OnHandshakeDone
-  // Not acquiring a lock for handshake_mgr_ since it is only reset in
-  // OnHandshakeDone or on destruction.
-  handshake_mgr_->DoHandshake(endpoint, args, deadline_, acceptor_,
-                              OnHandshakeDone, this);
+  RefCountedPtr<HandshakeManager> handshake_mgr;
+  {
+    MutexLock lock(&connection_->mu_);
+    if (handshake_mgr_ == nullptr) return;
+    handshake_mgr = handshake_mgr_;
+  }
+  handshake_mgr->DoHandshake(endpoint, args, deadline_, acceptor_,
+                             OnHandshakeDone, this);
 }
 
 void Chttp2ServerListener::ActiveConnection::HandshakingState::OnTimeout(
@@ -487,7 +462,6 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
       self->connection_->listener_->connections_.erase(it);
     }
   }
-  grpc_tcp_server_unref(self->connection_->listener_->tcp_server_);
   self->Unref();
 }
 
@@ -532,8 +506,7 @@ void Chttp2ServerListener::ActiveConnection::Orphan() {
   Unref();
 }
 
-void Chttp2ServerListener::ActiveConnection::Start(TcpServerRef tcp_server_ref,
-                                                   grpc_endpoint* endpoint,
+void Chttp2ServerListener::ActiveConnection::Start(grpc_endpoint* endpoint,
                                                    grpc_channel_args* args) {
   RefCountedPtr<HandshakingState> handshaking_state_ref;
   {
@@ -543,7 +516,7 @@ void Chttp2ServerListener::ActiveConnection::Start(TcpServerRef tcp_server_ref,
     // the critical region.
     handshaking_state_ref = handshaking_state_->Ref();
   }
-  handshaking_state_ref->Start(std::move(tcp_server_ref), endpoint, args);
+  handshaking_state_ref->Start(endpoint, args);
 }
 
 void Chttp2ServerListener::ActiveConnection::OnClose(void* arg,
@@ -702,7 +675,6 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   }
   auto connection = MakeOrphanable<ActiveConnection>(
       self->Ref(), accepting_pollset, acceptor, args);
-  TcpServerRef tcp_server_ref;
   // Hold a ref to connection to allow starting handshake outside the
   // critical region
   RefCountedPtr<ActiveConnection> connection_ref = connection->Ref();
@@ -719,7 +691,6 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
             GPR_ERROR,
             "Memory quota exhausted, rejecting connection, no handshaking.");
       } else {
-        tcp_server_ref = TcpServerRef(self->tcp_server_);
         self->connections_.emplace(connection.get(), std::move(connection));
       }
     }
@@ -729,7 +700,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     grpc_endpoint_destroy(tcp);
     gpr_free(acceptor);
   } else {
-    connection_ref->Start(std::move(tcp_server_ref), tcp, args);
+    connection_ref->Start(tcp, args);
   }
   grpc_channel_args_destroy(args);
 }
@@ -737,17 +708,9 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
 void Chttp2ServerListener::TcpServerShutdownComplete(void* arg,
                                                      grpc_error* error) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
-  std::map<ActiveConnection*, OrphanablePtr<ActiveConnection>> connections;
-  /* ensure all threads have unlocked */
-  {
-    MutexLock lock(&self->mu_);
-    self->is_serving_ = false;
-    // Orphan the connections so that they can start cleaning up.
-    connections = std::move(self->connections_);
-    self->channelz_listen_socket_.reset();
-  }
+  self->channelz_listen_socket_.reset();
   GRPC_ERROR_UNREF(error);
-  self->Unref();
+  delete self;
 }
 
 /* Server callback: destroy the tcp listener (so we don't generate further
@@ -758,10 +721,14 @@ void Chttp2ServerListener::Orphan() {
   if (config_fetcher_watcher_ != nullptr) {
     server_->config_fetcher()->CancelWatch(config_fetcher_watcher_);
   }
+  std::map<ActiveConnection*, OrphanablePtr<ActiveConnection>> connections;
   grpc_tcp_server* tcp_server;
   {
     MutexLock lock(&mu_);
     shutdown_ = true;
+    is_serving_ = false;
+    // Orphan the connections so that they can start cleaning up.
+    connections = std::move(connections_);
     // If the listener is currently set to be serving but has not been started
     // yet, it means that `grpc_tcp_server_start` is in progress. Wait for the
     // operation to finish to avoid causing races.
