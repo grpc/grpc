@@ -62,11 +62,15 @@ mkdir -p ~/.rake-compiler/sources
 pushd ~/.rake-compiler/sources
 curl -L https://ftp.ruby-lang.org/pub/ruby/3.0/ruby-3.0.0.tar.gz -o ruby-3.0.0.tar.gz
 ccache -c
+set +x # rvm commands are very verbose
+source ~/.rvm/scripts/rvm
+rvm use 3.0.0
+set -x
+ruby --version | grep 'ruby 3.0.0'
 rake -f "$CROSS_RUBY" cross-ruby VERSION=3.0.0 HOST=x86_64-darwin11 MAKE="$MAKE" SOURCE="${HOME}/.rake-compiler/sources/ruby-3.0.0.tar.gz"
 popd
 # Install ruby 2.7.0 for rake-compiler
-set +x # rvm commands are very verbose
-source ~/.rvm/scripts/rvm
+set +x
 rvm use 2.7.0
 set -x
 ruby --version | grep 'ruby 2.7.0'
