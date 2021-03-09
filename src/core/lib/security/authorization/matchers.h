@@ -86,6 +86,8 @@ class OrMatcher : public Matcher {
   const bool not_rule_;
 };
 
+// TODO(ashithasantosh): Add matcher implementation for metadata field.
+
 // Perform a match against HTTP headers.
 class HttpHeaderMatcher : public Matcher {
  public:
