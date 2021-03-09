@@ -524,8 +524,9 @@ std::string XdsApi::LdsUpdate::FilterChain::ToString() const {
 //
 
 std::string XdsApi::LdsUpdate::ToString() const {
-  absl::InlinedVector<std::string, 3> contents;
+  absl::InlinedVector<std::string, 4> contents;
   if (type == ListenerType::kTcpListener) {
+    contents.push_back(absl::StrCat("address=", address));
     std::vector<std::string> filter_chains_content;
     for (const auto& filter_chain : filter_chains) {
       filter_chains_content.push_back(filter_chain.ToString());
@@ -1894,12 +1895,40 @@ XdsApi::LdsUpdate::FilterChain FilterChainParse(
   return filter_chain;
 }
 
+grpc_error* AddressParse(const envoy_config_core_v3_Address* address_proto,
+                         std::string* address) {
+  const auto* socket_address =
+      envoy_config_core_v3_Address_socket_address(address_proto);
+  if (socket_address == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        "Address does not have socket_address");
+  }
+  if (envoy_config_core_v3_SocketAddress_protocol(socket_address) !=
+      envoy_config_core_v3_SocketAddress_TCP) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "SocketAddress protocol is not TCP");
+  }
+  uint32_t port = envoy_config_core_v3_SocketAddress_port_value(socket_address);
+  if (port > 65535) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port");
+  }
+  *address = absl::StrFormat(
+      "%s:%u",
+      UpbStringToAbsl(
+          envoy_config_core_v3_SocketAddress_address(socket_address)),
+      port);
+  return GRPC_ERROR_NONE;
+}
+
 grpc_error* LdsResponseParseServer(
     const EncodingContext& context,
     const envoy_config_listener_v3_Listener* listener,
+    const envoy_config_core_v3_Address* address,
     XdsApi::LdsUpdate* lds_update) {
   lds_update->type = XdsApi::LdsUpdate::ListenerType::kTcpListener;
   grpc_error* error = GRPC_ERROR_NONE;
+  error = AddressParse(address, &lds_update->address);
+  if (error != GRPC_ERROR_NONE) return error;
   // TODO(yashykt): As part of this, we'll need to refactor the code to process
   // the HttpConnectionManager config so that it is shared with the client-side
   // parsing.
@@ -2009,7 +2038,7 @@ grpc_error* LdsResponseParse(
     if (api_listener != nullptr) {
       error = LdsResponseParseClient(context, api_listener, &lds_update);
     } else {
-      error = LdsResponseParseServer(context, listener, &lds_update);
+      error = LdsResponseParseServer(context, listener, address, &lds_update);
     }
     if (error != GRPC_ERROR_NONE) {
       errors.push_back(grpc_error_add_child(
