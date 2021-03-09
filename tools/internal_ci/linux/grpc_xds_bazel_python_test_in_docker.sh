@@ -64,10 +64,10 @@ bazel build //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
 # because not all interop clients in all languages support these new tests.
 GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
-    --test_case="all,path_matching,header_matching,circuit_breaking" \
+    --test_case="all,path_matching,header_matching,circuit_breaking,timeout" \
     --project_id=grpc-testing \
     --project_num=830293263384 \
-    --source_image=projects/grpc-testing/global/images/xds-test-server-3 \
+    --source_image=projects/grpc-testing/global/images/xds-test-server-4 \
     --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
     --gcp_suffix=$(date '+%s') \
     --verbose \
