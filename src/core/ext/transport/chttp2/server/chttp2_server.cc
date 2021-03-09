@@ -63,16 +63,16 @@ class TcpServerRef {
  public:
   TcpServerRef() {}
 
-  TcpServerRef(grpc_tcp_server* server) : server_(server) {
+  explicit TcpServerRef(grpc_tcp_server* server) : server_(server) {
     grpc_tcp_server_ref(server);
   }
 
-  TcpServerRef(TcpServerRef&& other) {
+  TcpServerRef(TcpServerRef&& other) noexcept {
     server_ = other.server_;
     other.server_ = nullptr;
   }
 
-  TcpServerRef& operator=(TcpServerRef&& other) {
+  TcpServerRef& operator=(TcpServerRef&& other) noexcept {
     if (server_ != nullptr) {
       grpc_tcp_server_unref(server_);
     }
