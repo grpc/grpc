@@ -12,7 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcr.io/oss-fuzz-base/base-builder
+# Pinned version of the base image is used to avoid regressions caused
+# by rebuilding of this docker image. To see available versions, you can run
+# "gcloud container images list-tags gcr.io/oss-fuzz-base/base-builder"
+# TODO(jtattermusch): with the latest version we'd get clang12+
+# which makes our build fail due to new warnings being treated
+# as errors.
+FROM gcr.io/oss-fuzz-base/base-builder@sha256:de220fd2433cd53bd06b215770dcd14a5e74632e0215acea7401fee8cafb18da
 
 # -------------------------- WARNING --------------------------------------
 # If you are making changes to this file, consider changing
@@ -44,7 +50,7 @@ RUN apt-get update && apt-get install -y \
     python-setuptools
 
 # Install Python packages from PyPI
-RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
+RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
 RUN pip install --upgrade pip==19.3.1
 RUN pip install virtualenv==16.7.9
 RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.15.0 twisted==17.5.0
