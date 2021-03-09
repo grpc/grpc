@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC authors.
+# Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -49,38 +49,47 @@ RUN apt-get update && apt-get install -y \
 # Build profiling
 RUN apt-get update && apt-get install -y time && apt-get clean
 
+#====================
+# Python dependencies
 
+# Install dependencies
 
 RUN apt-get update && apt-get install -y \
     python-all-dev \
     python3-all-dev \
-    python-setuptools \
-    procps
+    python-setuptools
 
 # Install Python packages from PyPI
-RUN curl https://bootstrap.pypa.io/get-pip.py | python3
+RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
 RUN pip install --upgrade pip==19.3.1
 RUN pip install virtualenv==16.7.9
-RUN pip install protobuf==3.5.2.post1 twisted==17.5.0
+RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.15.0 twisted==17.5.0
 
 # Google Cloud platform API libraries
-RUN pip install --upgrade google-api-python-client oauth2client
+RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 #==================
 # Ruby dependencies
 
 # Install rvm
-RUN apt-get update && apt-get install -y gnupg2
+RUN apt-get update && apt-get install -y gnupg2 && apt-get clean
 RUN gpg2 --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
 RUN \curl -sSL https://get.rvm.io | bash -s stable
 
 # Install Ruby 2.5
+RUN apt-get update && apt-get install -y procps && apt-get clean
 RUN /bin/bash -l -c "rvm install ruby-2.5"
 RUN /bin/bash -l -c "rvm use --default ruby-2.5"
 RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.5' >> ~/.bashrc"
 RUN /bin/bash -l -c "gem install bundler --no-document -v 1.9"
+
+#=================
+# Install cmake
+# Note that this step should be only used for distributions that have new enough cmake to satisfy gRPC's cmake version requirement.
+
+RUN apt-get update && apt-get install -y cmake && apt-get clean
 
 
 RUN mkdir /var/local/jenkins
