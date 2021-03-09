@@ -17,7 +17,7 @@ set -ex
 
 rm -rf ~/.rake-compiler
 
-CROSS_RUBY=$(mktemp tmpfile.XXXXXXXX)
+CROSS_RUBY="$(pwd)/$(mktemp tmpfile.XXXXXXXX)"
 
 curl https://raw.githubusercontent.com/rake-compiler/rake-compiler/v1.1.1/tasks/bin/cross-ruby.rake > "$CROSS_RUBY"
 
