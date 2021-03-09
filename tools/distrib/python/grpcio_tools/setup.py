@@ -66,9 +66,11 @@ CLASSIFIERS = [
 
 PY3 = sys.version_info.major == 3
 
+
 def _env_bool_value(env_name, default):
     """Parses a bool option from an environment variable"""
     return os.environ.get(env_name, default).upper() not in ['FALSE', '0', '']
+
 
 # Environment variable to determine whether or not the Cython extension should
 # *use* Cython or use the generated C files. Note that this requires the C files
