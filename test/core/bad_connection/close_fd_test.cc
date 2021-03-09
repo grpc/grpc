@@ -99,7 +99,7 @@ static void init_client() {
   transport = grpc_create_chttp2_transport(nullptr, g_ctx.ep->client, true);
   client_setup_transport(transport);
   GPR_ASSERT(g_ctx.client);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 }
 
 static void init_server() {
@@ -111,7 +111,7 @@ static void init_server() {
   grpc_server_start(g_ctx.server);
   transport = grpc_create_chttp2_transport(nullptr, g_ctx.ep->server, false);
   server_setup_transport(transport);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 }
 
 static void test_init() {

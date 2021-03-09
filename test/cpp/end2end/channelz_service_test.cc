@@ -47,6 +47,7 @@
 
 #include <gtest/gtest.h>
 
+using grpc::channelz::v1::Address;
 using grpc::channelz::v1::GetChannelRequest;
 using grpc::channelz::v1::GetChannelResponse;
 using grpc::channelz::v1::GetServerRequest;
@@ -65,6 +66,14 @@ using grpc::channelz::v1::GetTopChannelsResponse;
 namespace grpc {
 namespace testing {
 namespace {
+
+static bool ValidateAddress(const Address& address) {
+  if (address.address_case() != Address::kTcpipAddress) {
+    return true;
+  }
+  return address.tcpip_address().ip_address().size() == 4 ||
+         address.tcpip_address().ip_address().size() == 16;
+}
 
 // Proxy service supports N backends. Sends RPC to backend dictated by
 // request->backend_channel_idx().
@@ -787,6 +796,8 @@ TEST_P(ChannelzServerTest, GetServerSocketsTest) {
   s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
                                 &get_socket_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+  EXPECT_TRUE(ValidateAddress(get_socket_response.socket().remote()));
+  EXPECT_TRUE(ValidateAddress(get_socket_response.socket().local()));
   switch (GetParam()) {
     case CredentialsType::kInsecure:
       EXPECT_FALSE(get_socket_response.socket().has_security());
@@ -898,6 +909,9 @@ TEST_P(ChannelzServerTest, GetServerListenSocketsTest) {
   s = channelz_stub_->GetSocket(&get_socket_context_1, get_socket_request,
                                 &get_socket_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
+
+  EXPECT_TRUE(ValidateAddress(get_socket_response.socket().remote()));
+  EXPECT_TRUE(ValidateAddress(get_socket_response.socket().local()));
   if (listen_socket_size == 2) {
     get_socket_request.set_socket_id(
         get_server_response.server(0).listen_socket(1).socket_id());
