@@ -1427,12 +1427,12 @@ libs:
   public_headers: []
   headers:
   - test/core/util/cmdline.h
-  - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
   - test/core/util/memory_counters.h
   - test/core/util/mock_endpoint.h
+  - test/core/util/mock_eval_args_endpoint.h
   - test/core/util/parse_hexstring.h
   - test/core/util/passthru_endpoint.h
   - test/core/util/port.h
@@ -1449,7 +1449,6 @@ libs:
   - test/core/util/trickle_endpoint.h
   src:
   - test/core/util/cmdline.cc
-  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1486,12 +1485,12 @@ libs:
   public_headers: []
   headers:
   - test/core/util/cmdline.h
-  - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
   - test/core/util/memory_counters.h
   - test/core/util/mock_endpoint.h
+  - test/core/util/mock_eval_args_endpoint.h
   - test/core/util/parse_hexstring.h
   - test/core/util/passthru_endpoint.h
   - test/core/util/port.h
@@ -1507,7 +1506,6 @@ libs:
   - test/core/util/trickle_endpoint.h
   src:
   - test/core/util/cmdline.cc
-  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -4950,25 +4948,19 @@ targets:
   - upb
   - libssl
   uses_polling: false
-- name: authorization_engine_test
+- name: authorization_matchers_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/evaluate_args.h
-  - src/core/lib/security/authorization/mock_cel/activation.h
-  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
-  - src/core/lib/security/authorization/mock_cel/cel_expression.h
-  - src/core/lib/security/authorization/mock_cel/cel_value.h
-  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
-  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
+  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   src:
-  - src/core/lib/security/authorization/authorization_engine.cc
   - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
-  - test/core/security/authorization_engine_test.cc
+  - test/core/security/authorization_matchers_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -4976,7 +4968,6 @@ targets:
   - address_sorting
   - upb
   - libssl
-  - absl/container:flat_hash_set
 - name: aws_request_signer_test
   gtest: true
   build: test
@@ -5593,6 +5584,35 @@ targets:
   - address_sorting
   - upb
   - libssl
+- name: cel_authorization_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/authorization/cel_authorization_engine.h
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/matchers.h
+  - src/core/lib/security/authorization/mock_cel/activation.h
+  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
+  - src/core/lib/security/authorization/mock_cel/cel_expression.h
+  - src/core/lib/security/authorization/mock_cel/cel_value.h
+  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
+  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
+  - src/core/lib/security/authorization/rbac_policy.h
+  src:
+  - src/core/lib/security/authorization/cel_authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
+  - test/core/security/cel_authorization_engine_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  - libssl
+  - absl/container:flat_hash_set
 - name: certificate_provider_registry_test
   gtest: true
   build: test
@@ -6126,9 +6146,11 @@ targets:
   language: c++
   headers:
   - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   src:
   - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/evaluate_args_test.cc
   deps:
@@ -7345,10 +7367,12 @@ targets:
   language: c++
   headers:
   - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   src:
   - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - test/core/security/rbac_translator_test.cc
@@ -8175,12 +8199,12 @@ targets:
   language: c++
   headers:
   - test/core/util/cmdline.h
-  - test/core/util/eval_args_mock_endpoint.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
   - test/core/util/memory_counters.h
   - test/core/util/mock_endpoint.h
+  - test/core/util/mock_eval_args_endpoint.h
   - test/core/util/parse_hexstring.h
   - test/core/util/passthru_endpoint.h
   - test/core/util/port.h
@@ -8199,7 +8223,6 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - test/core/util/cmdline.cc
-  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc

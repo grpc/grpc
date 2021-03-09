@@ -50,14 +50,13 @@ class EvaluateArgs {
   // string_view of that string.
   absl::optional<absl::string_view> GetHeaderValue(
       absl::string_view key, std::string* concatenated_value) const;
-  absl::string_view GetLocalAddress() const;
+  std::string GetLocalAddress() const;
   int GetLocalPort() const;
-  absl::string_view GetPeerAddress() const;
+  std::string GetPeerAddress() const;
   int GetPeerPort() const;
   absl::string_view GetSpiffeId() const;
   absl::string_view GetCertServerName() const;
-
-  // TODO(unknown): Add a getter function for source.principal
+  absl::string_view GetTransportSecurityType() const;
 
  private:
   grpc_metadata_batch* metadata_;
