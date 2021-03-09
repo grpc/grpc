@@ -452,13 +452,12 @@ TEST(AuthorizationMatchersTest, PolicyMatcherSuccessfulMatch) {
   AddPairToMetadataBatch(&metadata, &storage, /*key=*/"key123",
                          /*value=*/"foo");
   EvaluateArgs args(&metadata, /*auth_context=*/nullptr, /*endpoint=*/nullptr);
-  HeaderMatcher header_matcher =
-      HeaderMatcher::Create(/*name=*/"key123", HeaderMatcher::Type::EXACT,
-                            /*matcher=*/"foo")
-          .value();
   std::vector<std::unique_ptr<Rbac::Permission>> rules;
   rules.push_back(absl::make_unique<Rbac::Permission>(
-      Rbac::Permission::RuleType::HEADER, header_matcher));
+      Rbac::Permission::RuleType::HEADER,
+      HeaderMatcher::Create(/*name=*/"key123", HeaderMatcher::Type::EXACT,
+                            /*matcher=*/"foo")
+          .value()));
   PolicyMatcher matcher(Rbac::Policy(
       Rbac::Permission(Rbac::Permission::RuleType::OR, std::move(rules)),
       Rbac::Principal(Rbac::Principal::RuleType::ANY)));
@@ -475,13 +474,12 @@ TEST(AuthorizationMatchersTest, PolicyMatcherFailsMatch) {
   AddPairToMetadataBatch(&metadata, &storage, /*key=*/"key123",
                          /*value=*/"foo");
   EvaluateArgs args(&metadata, /*auth_context=*/nullptr, /*endpoint=*/nullptr);
-  HeaderMatcher header_matcher =
-      HeaderMatcher::Create(/*name=*/"key123", HeaderMatcher::Type::EXACT,
-                            /*matcher=*/"bar")
-          .value();
   std::vector<std::unique_ptr<Rbac::Permission>> rules;
   rules.push_back(absl::make_unique<Rbac::Permission>(
-      Rbac::Permission::RuleType::HEADER, header_matcher));
+      Rbac::Permission::RuleType::HEADER,
+      HeaderMatcher::Create(/*name=*/"key123", HeaderMatcher::Type::EXACT,
+                            /*matcher=*/"bar")
+          .value()));
   PolicyMatcher matcher(Rbac::Policy(
       Rbac::Permission(Rbac::Permission::RuleType::OR, std::move(rules)),
       Rbac::Principal(Rbac::Principal::RuleType::ANY)));
