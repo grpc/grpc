@@ -7448,14 +7448,15 @@ class XdsEnabledServerStatusNotificationTest : public XdsServerSecurityTest {
 TEST_P(XdsEnabledServerStatusNotificationTest, ServingStatus) {
   SetValidLdsUpdate();
   backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
 TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
   SetInvalidLdsUpdate();
   backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat("127.0.0.1:", backends_[0]->port()),
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::UNAVAILABLE);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           true /* test_expects_failure */);
@@ -7464,7 +7465,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest, NotServingStatus) {
 TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
   SetValidLdsUpdate();
   backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
   // Invalid update does not lead to a change in the serving status.
   SetInvalidLdsUpdate();
@@ -7478,7 +7480,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
   }
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
@@ -7486,14 +7489,15 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
        NotServingStatusToServingStatusTransition) {
   SetInvalidLdsUpdate();
   backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat("127.0.0.1:", backends_[0]->port()),
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::UNAVAILABLE);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           true /* test_expects_failure */);
   // Send a valid LDS update to change to serving status
   SetValidLdsUpdate();
   backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
@@ -7503,12 +7507,13 @@ TEST_P(XdsEnabledServerStatusNotificationTest,
        ServingStatusToNonServingStatusTransition) {
   SetValidLdsUpdate();
   backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
   // Deleting the resource should result in a non-serving status.
   UnsetLdsUpdate();
   backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat("127.0.0.1:", backends_[0]->port()),
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::NOT_FOUND);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           true /* test_expects_failure */);
@@ -7519,12 +7524,15 @@ TEST_P(XdsEnabledServerStatusNotificationTest, RepeatedServingStatusChanges) {
     // Send a valid LDS update to get the server to start listening
     SetValidLdsUpdate();
     backends_[0]->notifier()->WaitOnServingStatusChange(
-        absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+        absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:",
+                     backends_[0]->port()),
+        grpc::StatusCode::OK);
     SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
     // Deleting the resource will make the server start rejecting connections
     UnsetLdsUpdate();
     backends_[0]->notifier()->WaitOnServingStatusChange(
-        absl::StrCat("127.0.0.1:", backends_[0]->port()),
+        absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:",
+                     backends_[0]->port()),
         grpc::StatusCode::NOT_FOUND);
     SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
             true /* test_expects_failure */);
@@ -7535,7 +7543,8 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   // Send a valid LDS update to get the server to start listening
   SetValidLdsUpdate();
   backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat("127.0.0.1:", backends_[0]->port()), grpc::StatusCode::OK);
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::OK);
   constexpr int kNumChannels = 10;
   struct StreamingRpc {
     std::shared_ptr<Channel> channel;
@@ -7558,7 +7567,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   // Deleting the resource will make the server start rejecting connections
   UnsetLdsUpdate();
   backends_[0]->notifier()->WaitOnServingStatusChange(
-      absl::StrCat("127.0.0.1:", backends_[0]->port()),
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::NOT_FOUND);
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           true /* test_expects_failure */);
