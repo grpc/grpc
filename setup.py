@@ -108,6 +108,7 @@ CLASSIFIERS = [
 
 
 def _env_bool_value(env_name, default):
+    """Parses a bool option from an environment variable"""
     return os.environ.get(env_name, default).upper() not in ['FALSE', '0', '']
 
 
@@ -160,8 +161,8 @@ BUILD_WITH_SYSTEM_RE2 = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_RE2',
 # it's difficult to ensure that the crosscompilation toolchain has a high-enough version
 # of GCC (we require >4.9) but still uses old-enough libstdc++ symbols.
 # TODO(jtattermusch): remove this workaround once issues with crosscompiler version are resolved.
-BUILD_WITH_STATIC_LIBSTDCXX = os.environ.get(
-    'GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX', False)
+BUILD_WITH_STATIC_LIBSTDCXX = _env_bool_value(
+    'GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX', 'False')
 
 # For local development use only: This skips building gRPC Core and its
 # dependencies, including protobuf and boringssl. This allows "incremental"
