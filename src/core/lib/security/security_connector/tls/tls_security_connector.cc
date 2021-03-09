@@ -193,42 +193,6 @@ void TlsChannelSecurityConnector::add_handshakers(
           "Client BlockOnInitialCredentialHandshaker");
 }
 
-namespace internal {
-
-static void CertificateVerificationRequestDestroy(
-    grpc_tls_custom_verification_check_request* request) {
-  if (request == nullptr) {
-    return;
-  }
-  if (request->target_name != nullptr) {
-    gpr_free(const_cast<char*>(request->target_name));
-  }
-  if (request->peer_info.common_name != nullptr) {
-    gpr_free(const_cast<char*>(request->peer_info.common_name));
-  }
-  if (request->peer_info.san_names.uri_names_size > 0) {
-    for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
-      delete[] request->peer_info.san_names.uri_names[i];
-    }
-    delete[] request->peer_info.san_names.uri_names;
-  }
-  if (request->peer_info.san_names.ip_names_size > 0) {
-    for (size_t i = 0; i < request->peer_info.san_names.ip_names_size; ++i) {
-      delete[] request->peer_info.san_names.ip_names[i];
-    }
-    delete[] request->peer_info.san_names.ip_names;
-  }
-  if (request->peer_info.peer_cert != nullptr) {
-    gpr_free(const_cast<char*>(request->peer_info.peer_cert));
-  }
-  if (request->peer_info.peer_cert_full_chain != nullptr) {
-    gpr_free(const_cast<char*>(request->peer_info.peer_cert_full_chain));
-  }
-  delete request;
-}
-
-}  // namespace internal
-
 void TlsChannelSecurityConnector::check_peer(
     tsi_peer peer, grpc_endpoint* /*ep*/,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
@@ -289,6 +253,8 @@ void TlsChannelSecurityConnector::check_peer(
     request->peer_info.san_names.uri_names =
         new char*[request->peer_info.san_names.uri_names_size];
     for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
       request->peer_info.san_names.uri_names[i] = uri_names[i];
     }
   }
@@ -303,7 +269,9 @@ void TlsChannelSecurityConnector::check_peer(
                        request->error_details)
               .c_str());
     }
-    internal::CertificateVerificationRequestDestroy(request);
+    grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(
+        request);
+    delete request;
     grpc_core::ExecCtx exec_ctx;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   });
@@ -317,7 +285,8 @@ void TlsChannelSecurityConnector::check_peer(
                      request->error_details)
             .c_str());
   }
-  internal::CertificateVerificationRequestDestroy(request);
+  grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(request);
+  delete request;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
@@ -568,6 +537,8 @@ void TlsServerSecurityConnector::check_peer(
     request->peer_info.san_names.uri_names =
         new char*[request->peer_info.san_names.uri_names_size];
     for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
       request->peer_info.san_names.uri_names[i] = uri_names[i];
     }
   }
@@ -582,7 +553,9 @@ void TlsServerSecurityConnector::check_peer(
                        request->error_details)
               .c_str());
     }
-    internal::CertificateVerificationRequestDestroy(request);
+    grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(
+        request);
+    delete request;
     grpc_core::ExecCtx exec_ctx;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   });
@@ -596,7 +569,8 @@ void TlsServerSecurityConnector::check_peer(
                      request->error_details)
             .c_str());
   }
-  internal::CertificateVerificationRequestDestroy(request);
+  grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(request);
+  delete request;
   grpc_core::ExecCtx exec_ctx;
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
