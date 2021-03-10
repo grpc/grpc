@@ -121,7 +121,7 @@ std::string BootstrapString(const XdsBootstrap& bootstrap) {
   parts.push_back("  }\n],\n");
   if (!bootstrap.server_listener_resource_name_template().empty()) {
     parts.push_back(
-        absl::StrFormat("server_listener_resource_name_template_=\"%s\",\n",
+        absl::StrFormat("server_listener_resource_name_template=\"%s\",\n",
                         bootstrap.server_listener_resource_name_template()));
   }
   parts.push_back("certificate_providers={\n");

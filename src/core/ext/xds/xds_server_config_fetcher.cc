@@ -109,8 +109,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
             this, xds_client_.get(), listener.ToString().c_str());
       }
       if (listener.address != listening_address_) {
-        OnFatalError(absl::Status(
-            absl::StatusCode::kFailedPrecondition,
+        OnFatalError(absl::FailedPreconditionError(
             "Address in LDS update does not match listening address"));
         return;
       }
@@ -188,8 +187,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     }
 
     void OnResourceDoesNotExist() override {
-      OnFatalError(absl::Status(absl::StatusCode::kNotFound,
-                                "Requested listener does not exist"));
+      OnFatalError(absl::NotFoundError("Requested listener does not exist"));
     }
 
    private:
