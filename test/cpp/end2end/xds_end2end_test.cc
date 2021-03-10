@@ -1523,6 +1523,48 @@ std::shared_ptr<ChannelCredentials> CreateTlsFallbackCredentials() {
   return channel_creds;
 }
 
+// A No-op HTTP filter used for verifying parsing logic.
+class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
+ public:
+  NoOpHttpFilter(std::string name, bool supported_on_clients,
+                 bool supported_on_servers)
+      : name_(std::move(name)),
+        supported_on_clients_(supported_on_clients),
+        supported_on_servers_(supported_on_servers) {}
+
+  void PopulateSymtab(upb_symtab* /* symtab */) const override {}
+
+  absl::StatusOr<grpc_core::XdsHttpFilterImpl::FilterConfig>
+  GenerateFilterConfig(upb_strview /* serialized_filter_config */,
+                       upb_arena* /* arena */) const override {
+    return grpc_core::XdsHttpFilterImpl::FilterConfig{name_, grpc_core::Json()};
+  }
+
+  absl::StatusOr<grpc_core::XdsHttpFilterImpl::FilterConfig>
+  GenerateFilterConfigOverride(upb_strview /*serialized_filter_config*/,
+                               upb_arena* /*arena*/) const override {
+    return grpc_core::XdsHttpFilterImpl::FilterConfig{name_, grpc_core::Json()};
+  }
+
+  const grpc_channel_filter* channel_filter() const override { return nullptr; }
+
+  absl::StatusOr<grpc_core::XdsHttpFilterImpl::ServiceConfigJsonEntry>
+  GenerateServiceConfig(
+      const FilterConfig& /*hcm_filter_config*/,
+      const FilterConfig* /*filter_config_override*/) const override {
+    return grpc_core::XdsHttpFilterImpl::ServiceConfigJsonEntry{name_, ""};
+  }
+
+  bool IsSupportedOnClients() const override { return supported_on_clients_; }
+
+  bool IsSupportedOnServers() const override { return supported_on_servers_; }
+
+ private:
+  const std::string name_;
+  const bool supported_on_clients_;
+  const bool supported_on_servers_;
+};
+
 namespace {
 
 void* response_generator_arg_copy(void* p) {
@@ -7223,48 +7265,6 @@ TEST_P(XdsSecurityTest, TestFileWatcherCertificateProvider) {
                                           {server_san_exact_},
                                           authenticated_identity_);
 }
-
-// A No-op HTTP filter used for verifying parsing logic.
-class NoOpHttpFilter : public grpc_core::XdsHttpFilterImpl {
- public:
-  NoOpHttpFilter(std::string name, bool supported_on_clients,
-                 bool supported_on_servers)
-      : name_(std::move(name)),
-        supported_on_clients_(supported_on_clients),
-        supported_on_servers_(supported_on_servers) {}
-
-  void PopulateSymtab(upb_symtab* /* symtab */) const override {}
-
-  absl::StatusOr<grpc_core::XdsHttpFilterImpl::FilterConfig>
-  GenerateFilterConfig(upb_strview /* serialized_filter_config */,
-                       upb_arena* /* arena */) const override {
-    return grpc_core::XdsHttpFilterImpl::FilterConfig{name_, grpc_core::Json()};
-  }
-
-  absl::StatusOr<grpc_core::XdsHttpFilterImpl::FilterConfig>
-  GenerateFilterConfigOverride(upb_strview /*serialized_filter_config*/,
-                               upb_arena* /*arena*/) const override {
-    return grpc_core::XdsHttpFilterImpl::FilterConfig{name_, grpc_core::Json()};
-  }
-
-  const grpc_channel_filter* channel_filter() const override { return nullptr; }
-
-  absl::StatusOr<grpc_core::XdsHttpFilterImpl::ServiceConfigJsonEntry>
-  GenerateServiceConfig(
-      const FilterConfig& /*hcm_filter_config*/,
-      const FilterConfig* /*filter_config_override*/) const override {
-    return grpc_core::XdsHttpFilterImpl::ServiceConfigJsonEntry{name_, ""};
-  }
-
-  bool IsSupportedOnClients() const override { return supported_on_clients_; }
-
-  bool IsSupportedOnServers() const override { return supported_on_servers_; }
-
- private:
-  const std::string name_;
-  const bool supported_on_clients_;
-  const bool supported_on_servers_;
-};
 
 class XdsEnabledServerTest : public XdsEnd2endTest {
  protected:
