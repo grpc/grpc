@@ -154,7 +154,7 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     static void OnClose(void* arg, grpc_error* error);
 
     RefCountedPtr<Chttp2ServerListener> listener_;
-    Mutex mu_ ACQUIRED_AFTER(&listener_->mu_);
+    Mutex mu_ ABSL_ACQUIRED_AFTER(&listener_->mu_);
     // Set by HandshakingState before the handshaking begins and reset when
     // handshaking is done.
     OrphanablePtr<HandshakingState> handshaking_state_ ABSL_GUARDED_BY(&mu_);
