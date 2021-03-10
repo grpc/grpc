@@ -51,10 +51,10 @@ RUN apt-get update && apt-get install -y time && apt-get clean
 
 # Install Python 2.7
 RUN apt-get update && apt-get install -y python2.7 python-all-dev
-RUN curl https://bootstrap.pypa.io/2.7/get-pip.py | python2.7
+RUN curl https://bootstrap.pypa.io/pip/2.7/get-pip.py | python2.7
 
 # Google Cloud platform API libraries
-RUN pip install --upgrade google-api-python-client oauth2client
+RUN pip install --upgrade google-auth==1.24.0 google-api-python-client==1.12.8 oauth2client==4.1.0
 
 
 RUN mkdir /var/local/jenkins
@@ -80,6 +80,9 @@ RUN apt-get update && apt-get install -y \
       shellcheck
 RUN python2 -m pip install simplejson mako virtualenv==16.7.9 lxml
 RUN python3 -m pip install simplejson mako virtualenv==16.7.9 lxml six
+
+# Upgrade Python's YAML library
+RUN python3 -m pip install --upgrade --ignore-installed PyYAML==5.4.1 --user
 
 # Add buster-backports for more recent clang packages
 RUN echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/buster-backports.list
