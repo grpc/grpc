@@ -39,6 +39,7 @@ cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
  d7e943b8d2bc444a8c770644e73d090b486f8b37 third_party/protobuf (v3.15.2)
  872b28c457822ed9c2a5405da3c33f386ac0e86f third_party/protoc-gen-validate (v0.4.1)
  aecba11114cf1fac5497aeb844b6966106de3eb6 third_party/re2 (heads/master)
+ 537f4ad6240e586970fe554614542e9717df7902 third_party/snappy (1.1.8)
  cc1b757b3eddccaaaf0743cbb107742bb7e3ee4f third_party/udpa (heads/master)
  cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)
 EOF

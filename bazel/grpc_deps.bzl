@@ -57,6 +57,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "snappy",
+        actual = "@com_google_snappy//:snappy",
+    )
+
+    native.bind(
         name = "protobuf",
         actual = "@com_google_protobuf//:protobuf",
     )
@@ -168,6 +173,18 @@ def grpc_deps():
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/madler/zlib/archive/cacf7f1d4e3d44d871b605da3b647f07d718623f.tar.gz",
                 "https://github.com/madler/zlib/archive/cacf7f1d4e3d44d871b605da3b647f07d718623f.tar.gz",
+            ],
+        )
+
+    if "com_google_snappy" not in native.existing_rules():
+        http_archive(
+            name = "com_google_snappy",
+            build_file = "@com_github_grpc_grpc//third_party:snappy.BUILD",
+            sha256 = "bc6a9ac9d7f398e627fbb80f5b5db0fd7247950d22398c1834a48bef5ecb3437",
+            strip_prefix = "snappy-537f4ad6240e586970fe554614542e9717df7902",
+            urls = [
+                # git tag: 1.1.8
+                "https://github.com/google/snappy/archive/537f4ad6240e586970fe554614542e9717df7902.tar.gz",
             ],
         )
 

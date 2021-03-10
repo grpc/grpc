@@ -1,6 +1,7 @@
 exports_files([
     "gtest.BUILD",
     "zlib.BUILD",
+    "snappy.BUILD",
     "twisted.BUILD",
     "yaml.BUILD",
     "incremental.BUILD",
