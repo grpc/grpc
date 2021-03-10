@@ -2301,16 +2301,16 @@ std::string XdsClient::DumpClientConfigBinary() {
   XdsApi::ResourceMetadataMap& eds_map =
       per_xds_resource_metadata_map[XdsApi::kEdsTypeUrl].resource_metadata_map;
   for (auto& p : listener_map_) {
-    lds_map[p.first] = p.second.meta;
+    lds_map[p.first] = &p.second.meta;
   }
   for (auto& p : route_config_map_) {
-    rds_map[p.first] = p.second.meta;
+    rds_map[p.first] = &p.second.meta;
   }
   for (auto& p : cluster_map_) {
-    cds_map[p.first] = p.second.meta;
+    cds_map[p.first] = &p.second.meta;
   }
   for (auto& p : endpoint_map_) {
-    eds_map[p.first] = p.second.meta;
+    eds_map[p.first] = &p.second.meta;
   }
   // Assemble config dump messages
   return api_.AssembleClientConfig(per_xds_resource_metadata_map);

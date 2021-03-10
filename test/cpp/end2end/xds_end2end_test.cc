@@ -1343,7 +1343,7 @@ class TestType {
     use_csds_streaming_ = true;
     return *this;
   }
-  
+
   TestType& set_filter_config_setup(const FilterConfigSetup& setup) {
     filter_config_setup_ = setup;
     return *this;

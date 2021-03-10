@@ -528,7 +528,7 @@ class XdsApi {
   };
 
   using ResourceMetadataMap =
-      std::map<absl::string_view /*resource_name*/, ResourceMetadata>;
+      std::map<absl::string_view /*resource_name*/, const ResourceMetadata*>;
 
   struct PerXdsResourceMetadata {
     absl::string_view version;

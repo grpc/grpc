@@ -262,7 +262,7 @@ grpc_proto_library(
     deps = [
         "base_proto",
         "config_dump_proto",
-        ],
+    ],
 )
 
 grpc_proto_library(
