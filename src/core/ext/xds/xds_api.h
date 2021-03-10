@@ -295,6 +295,8 @@ class XdsApi {
       std::string ToString() const;
     };
 
+    // host:port listening_address set when type is kTcpListener
+    std::string address;
     std::vector<FilterChain> filter_chains;
     absl::optional<FilterChain> default_filter_chain;
 
@@ -302,7 +304,7 @@ class XdsApi {
       return route_config_name == other.route_config_name &&
              rds_update == other.rds_update &&
              http_max_stream_duration == other.http_max_stream_duration &&
-             http_filters == other.http_filters &&
+             http_filters == other.http_filters && address == other.address &&
              filter_chains == other.filter_chains &&
              default_filter_chain == other.default_filter_chain;
     }

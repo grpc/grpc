@@ -200,6 +200,8 @@ constexpr char kBootstrapFileV3[] =
     "      \"sub_zone\": \"mp3\"\n"
     "    }\n"
     "  },\n"
+    "  \"server_listener_resource_name_template\": "
+    "\"grpc/server?xds.resource.listening_address=%s\",\n"
     "  \"certificate_providers\": {\n"
     "    \"fake_plugin1\": {\n"
     "      \"plugin_name\": \"fake1\"\n"
@@ -7221,10 +7223,6 @@ TEST_P(XdsEnabledServerTest, Basic) {
       backends_[0]->port());
   listener.add_filter_chains();
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  listener.set_name(
-      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                   backends_[0]->port()));
-  balancers_[0]->ads_service()->SetLdsResource(listener);
   WaitForBackend(0);
   CheckRpcSendOk();
 }
@@ -7267,6 +7265,34 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
   EXPECT_THAT(
       response_state.error_message,
       ::testing::HasSubstr("Listener has both address and ApiListener"));
+}
+
+// Verify that a mismatch of listening address results in "not serving" status.
+TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  listener.add_filter_chains();
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  WaitForBackend(0);
+  CheckRpcSendOk();
+  // Set a different listening address in the LDS update
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      "192.168.1.1");
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  bool rpc_failed = false;
+  for (int i = 0; i < 100; ++i) {
+    if (!SendRpc().ok()) {
+      rpc_failed = true;
+      break;
+    }
+  }
+  EXPECT_TRUE(rpc_failed);
 }
 
 class XdsServerSecurityTest : public XdsEnd2endTest {
