@@ -60,6 +60,7 @@
       '-Ithird_party/upb',
       '-Isrc/core/ext/upb-generated',
       '-Isrc/core/ext/upbdefs-generated',
+      '-Ithird_party/xxhash',
     ],
     'ldflags': [
       '-g',
@@ -139,6 +140,7 @@
             '-Ithird_party/upb',
             '-Isrc/core/ext/upb-generated',
             '-Isrc/core/ext/upbdefs-generated',
+            '-Ithird_party/xxhash',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
             '-g',
@@ -150,6 +152,7 @@
             '-Ithird_party/upb',
             '-Isrc/core/ext/upb-generated',
             '-Isrc/core/ext/upbdefs-generated',
+            '-Ithird_party/xxhash',
             '-stdlib=libc++',
             '-std=c++11',
             '-Wno-error=deprecated-declarations',
