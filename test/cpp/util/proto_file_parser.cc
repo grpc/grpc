@@ -16,8 +16,6 @@
  *
  */
 
-#include "absl/strings/str_split.h"
-
 #include "test/cpp/util/proto_file_parser.h"
 
 #include <algorithm>
@@ -26,6 +24,7 @@
 #include <unordered_set>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/str_split.h"
 
 #include <grpcpp/support/config.h>
 
