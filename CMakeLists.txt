@@ -722,6 +722,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx alts_util_test)
   add_dependencies(buildtests_cxx async_end2end_test)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
+  add_dependencies(buildtests_cxx authorization_engine_test)
   add_dependencies(buildtests_cxx authorization_matchers_test)
   add_dependencies(buildtests_cxx aws_request_signer_test)
   add_dependencies(buildtests_cxx backoff_test)
@@ -8550,7 +8551,51 @@ target_link_libraries(auth_property_iterator_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(authorization_engine_test
+  src/core/lib/security/authorization/authorization_engine.cc
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/matchers.cc
+  src/core/lib/security/authorization/rbac_policy.cc
+  test/core/security/authorization_engine_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(authorization_engine_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(authorization_engine_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_SSL_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(authorization_matchers_test
+  src/core/lib/security/authorization/authorization_engine.cc
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
@@ -9851,6 +9896,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(cel_authorization_engine_test
+  src/core/lib/security/authorization/authorization_engine.cc
   src/core/lib/security/authorization/cel_authorization_engine.cc
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/matchers.cc
@@ -11132,6 +11178,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(evaluate_args_test
+  src/core/lib/security/authorization/authorization_engine.cc
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
@@ -13807,6 +13854,7 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(rbac_translator_test
+  src/core/lib/security/authorization/authorization_engine.cc
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
