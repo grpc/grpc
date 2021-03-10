@@ -67,7 +67,7 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     // credential creation. Users who want to bypass all the verifier check
     // should implement a dummy external verifier instead.
     gpr_log(GPR_ERROR,
-            "Should provider custom verifications if bypassing default ones.");
+            "Should provide custom verifications if bypassing default ones.");
     return false;
   }
   // At this point, the verifier should be always set.
