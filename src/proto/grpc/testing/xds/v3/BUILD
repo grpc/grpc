@@ -224,6 +224,17 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "fault_common_proto",
+    srcs = [
+        "fault_common.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "percent_proto",
+    ],
+)
+
+grpc_proto_library(
     name = "tls_proto",
     srcs = [
         "tls.proto",
@@ -251,5 +262,18 @@ grpc_proto_library(
     deps = [
         "base_proto",
         "config_dump_proto",
+        ],
+)
+
+grpc_proto_library(
+    name = "fault_proto",
+    srcs = [
+        "fault.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "fault_common_proto",
+        "percent_proto",
+        "route_proto",
     ],
 )
