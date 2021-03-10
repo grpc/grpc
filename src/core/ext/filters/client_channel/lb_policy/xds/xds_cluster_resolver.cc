@@ -131,7 +131,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     virtual bool disable_reresolution() = 0;
 
     // Caller must ensure that config_ is set before calling.
-    const absl::string_view GetXdsClusterResolverResourceName() const {
+    absl::string_view GetXdsClusterResolverResourceName() const {
       if (!parent_->is_xds_uri_) return parent_->server_name_;
       if (!parent_->config_->discovery_mechanisms()[index_]
                .eds_service_name.empty()) {
