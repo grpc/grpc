@@ -46,7 +46,7 @@
 namespace grpc {
 namespace internal {
 
-#ifdef GRPCPP_ABSEIL_SYNC
+#ifdef GPR_ABSEIL_SYNC
 
 using Mutex = absl::Mutex;
 using MutexLock = absl::MutexLock;
@@ -141,7 +141,7 @@ class CondVar {
   gpr_cv cv_;
 };
 
-#endif  // GRPCPP_ABSEIL_SYNC
+#endif  // GPR_ABSEIL_SYNC
 
 template <typename Predicate>
 static void WaitUntil(CondVar* cv, Mutex* mu, Predicate pred) {
