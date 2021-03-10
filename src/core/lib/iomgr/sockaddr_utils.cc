@@ -294,3 +294,22 @@ int grpc_sockaddr_set_port(grpc_resolved_address* resolved_addr, int port) {
       return 0;
   }
 }
+
+std::string grpc_sockaddr_get_packed_host(
+    const grpc_resolved_address* resolved_addr) {
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
+  if (addr->sa_family == GRPC_AF_INET) {
+    const grpc_sockaddr_in* addr4 =
+        reinterpret_cast<const grpc_sockaddr_in*>(addr);
+    const char* addr_bytes = reinterpret_cast<const char*>(&addr4->sin_addr);
+    return std::string(addr_bytes, 4);
+  } else if (addr->sa_family == GRPC_AF_INET6) {
+    const grpc_sockaddr_in6* addr6 =
+        reinterpret_cast<const grpc_sockaddr_in6*>(addr);
+    const char* addr_bytes = reinterpret_cast<const char*>(&addr6->sin6_addr);
+    return std::string(addr_bytes, 16);
+  } else {
+    GPR_ASSERT(false);
+  }
+}

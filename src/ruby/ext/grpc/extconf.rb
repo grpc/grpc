@@ -45,8 +45,16 @@ if RUBY_PLATFORM =~ /darwin/
 ENV['EMBED_OPENSSL'] = 'true'
 ENV['EMBED_ZLIB'] = 'true'
 ENV['EMBED_CARES'] = 'true'
+
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
-ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64' if RUBY_PLATFORM =~ /darwin/
+if RUBY_PLATFORM =~ /darwin/
+  if RUBY_PLATFORM =~ /arm64/
+    ENV['ARCH_FLAGS'] = '-arch arm64'
+  else
+    ENV['ARCH_FLAGS'] = '-arch i386 -arch x86_64'
+  end
+end
+
 ENV['CPPFLAGS'] = '-DGPR_BACKWARDS_COMPATIBILITY_MODE'
 
 output_dir = File.expand_path(RbConfig::CONFIG['topdir'])

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 #
 # Copyright 2017 gRPC authors.
 #
@@ -15,13 +15,13 @@
 # limitations under the License.
 """ Python utility to build opt and counters benchmarks """
 
-import bm_constants
-
 import argparse
-import subprocess
 import multiprocessing
 import os
 import shutil
+import subprocess
+
+import bm_constants
 
 
 def _args():

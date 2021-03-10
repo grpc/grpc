@@ -62,7 +62,7 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
                           transport, nullptr, &error);
   grpc_channel_args_destroy(final_args);
   if (channel != nullptr) {
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     grpc_core::ExecCtx::Get()->Flush();
   } else {
     intptr_t integer;

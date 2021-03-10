@@ -250,6 +250,9 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    # TODO(yulin-liang): The test is not able to load the certificate files on
+    # iOS. Figure out why.
+    tags = ["no_test_ios"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -548,6 +551,8 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
+        "//src/proto/grpc/testing/xds/v3:fault_common_proto",
+        "//src/proto/grpc/testing/xds/v3:fault_proto",
         "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
         "//src/proto/grpc/testing/xds/v3:listener_proto",
         "//src/proto/grpc/testing/xds/v3:lrs_proto",
