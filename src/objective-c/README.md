@@ -152,7 +152,7 @@ Please check the [example apps][] for examples of how to use a generated gRPC li
 <a name="no-proto"></a>
 ## Use gRPC without Protobuf
 
-This [tests file](https://github.com/grpc/grpc/tree/master/src/objective-c/tests/GRPCClientTests.m)
+This [tests file](https://github.com/grpc/grpc/blob/master/src/objective-c/tests/UnitTests/GRPCClientTests.m)
 shows how to use the generic gRPC Objective-C client without generated protobuf files.
 
 <a name="alternatives"></a>
