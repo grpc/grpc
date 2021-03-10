@@ -1317,9 +1317,7 @@ grpc_error* ParseTypedPerFilterConfig(
     const XdsHttpFilterImpl* filter_impl =
         XdsHttpFilterRegistry::GetFilterForType(filter_type);
     if (filter_impl == nullptr) {
-      if (is_optional) {
-        continue;
-      }
+      if (is_optional) continue;
       return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("no filter registered for config type ", filter_type)
               .c_str());
@@ -2005,7 +2003,7 @@ grpc_error* LdsResponseParse(
     XdsApi::LdsResourceData& lds_resource_data =
         (*lds_update_map)[listener_name];
     XdsApi::LdsUpdate& lds_update = lds_resource_data.resource;
-    lds_resource_data.bytes = UpbStringToStdString(encoded_listener);
+    lds_resource_data.serialized_proto = UpbStringToStdString(encoded_listener);
     // Check whether it's a client or server listener.
     const envoy_config_listener_v3_ApiListener* api_listener =
         envoy_config_listener_v3_Listener_api_listener(listener);
@@ -2098,7 +2096,8 @@ grpc_error* RdsResponseParse(
     XdsApi::RdsResourceData& rds_resource_data =
         (*rds_update_map)[route_config_name];
     XdsApi::RdsUpdate& rds_update = rds_resource_data.resource;
-    rds_resource_data.bytes = UpbStringToStdString(encoded_route_config);
+    rds_resource_data.serialized_proto =
+        UpbStringToStdString(encoded_route_config);
     // Parse the route_config.
     grpc_error* error = RouteConfigParse(context, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) {
@@ -2165,7 +2164,7 @@ grpc_error* CdsResponseParse(
     XdsApi::CdsResourceData& cds_resource_data =
         (*cds_update_map)[cluster_name];
     XdsApi::CdsUpdate& cds_update = cds_resource_data.resource;
-    cds_resource_data.bytes = UpbStringToStdString(encoded_cluster);
+    cds_resource_data.serialized_proto = UpbStringToStdString(encoded_cluster);
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster) &&
         !envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
@@ -2615,7 +2614,7 @@ grpc_error* EdsResponseParse(
     XdsApi::EdsResourceData& eds_resource_data =
         (*eds_update_map)[eds_service_name];
     XdsApi::EdsUpdate& eds_update = eds_resource_data.resource;
-    eds_resource_data.bytes =
+    eds_resource_data.serialized_proto =
         UpbStringToStdString(encoded_cluster_load_assignment);
     // Get the endpoints.
     size_t locality_size;
@@ -2977,9 +2976,10 @@ grpc_error* XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
 }
 
 namespace {
-google_protobuf_Timestamp* GrpcMillisToTimestamp(const grpc_millis& value,
-                                                 upb_arena* arena) {
-  google_protobuf_Timestamp* timestamp = google_protobuf_Timestamp_new(arena);
+google_protobuf_Timestamp* GrpcMillisToTimestamp(
+    const grpc_millis& value, const EncodingContext& context) {
+  google_protobuf_Timestamp* timestamp =
+      google_protobuf_Timestamp_new(context.arena);
   gpr_timespec timespec = grpc_millis_to_timespec(value, GPR_CLOCK_MONOTONIC);
   google_protobuf_Timestamp_set_seconds(timestamp, timespec.tv_sec);
   google_protobuf_Timestamp_set_nanos(timestamp, timespec.tv_nsec);
@@ -2987,8 +2987,10 @@ google_protobuf_Timestamp* GrpcMillisToTimestamp(const grpc_millis& value,
 }
 
 envoy_admin_v3_UpdateFailureState* CreateUpdateFailureStateUpb(
-    const XdsApi::ResourceMetadata& resource_metadata, upb_arena* arena) {
-  auto* update_failure_state = envoy_admin_v3_UpdateFailureState_new(arena);
+    const XdsApi::ResourceMetadata& resource_metadata,
+    const EncodingContext& context) {
+  auto* update_failure_state =
+      envoy_admin_v3_UpdateFailureState_new(context.arena);
   envoy_admin_v3_UpdateFailureState_set_details(
       update_failure_state,
       StdStringToUpbString(resource_metadata.failed_details));
@@ -2997,14 +2999,13 @@ envoy_admin_v3_UpdateFailureState* CreateUpdateFailureStateUpb(
       StdStringToUpbString(resource_metadata.failed_version));
   envoy_admin_v3_UpdateFailureState_set_last_update_attempt(
       update_failure_state,
-      GrpcMillisToTimestamp(resource_metadata.failed_update_time, arena));
+      GrpcMillisToTimestamp(resource_metadata.failed_update_time, context));
   return update_failure_state;
 }
 }  // namespace
 
 std::string XdsApi::AssembleClientConfig(
-    const std::map<std::string, std::string>& resource_version_map,
-    const ResourceMetadataMap& resource_metadata_map) {
+    const PerXdsResourceMetadataMap& per_xds_resource_metadata_map) {
   upb::Arena arena;
   // Setup reuseable constants
   upb_strview kLdsTypeUrlUpb = upb_strview_makez(kLdsTypeUrl);
@@ -3047,165 +3048,174 @@ std::string XdsApi::AssembleClientConfig(
                                    true};
   PopulateNode(context, node_, build_version_, user_agent_name_, node);
   // Fill-in per-xds-type information
-  const auto& version_it_lds = resource_version_map.find(kLdsTypeUrl);
-  if (version_it_lds != resource_version_map.end()) {
+  auto version_it_lds = per_xds_resource_metadata_map.find(kLdsTypeUrl);
+  if (version_it_lds != per_xds_resource_metadata_map.end()) {
     envoy_admin_v3_ListenersConfigDump_set_version_info(
-        listener_config_dump, StdStringToUpbString(version_it_lds->second));
+        listener_config_dump,
+        StdStringToUpbString(version_it_lds->second.version));
   }
-  const auto& version_it_cds = resource_version_map.find(kCdsTypeUrl);
-  if (version_it_cds != resource_version_map.end()) {
+  auto version_it_cds = per_xds_resource_metadata_map.find(kCdsTypeUrl);
+  if (version_it_cds != per_xds_resource_metadata_map.end()) {
     envoy_admin_v3_ClustersConfigDump_set_version_info(
-        cluster_config_dump, StdStringToUpbString(version_it_cds->second));
+        cluster_config_dump,
+        StdStringToUpbString(version_it_cds->second.version));
   }
   // Put the xDS configs into "containers"
-  for (auto& p : resource_metadata_map) {
-    const std::string& name = p.first;
-    const ResourceMetadata& meta = p.second;
-    const upb_strview name_upb = StdStringToUpbString(name);
-    if (meta.type_url == kLdsTypeUrl) {
-      // Listener part
-      auto* dynamic_listener =
-          envoy_admin_v3_ListenersConfigDump_add_dynamic_listeners(
-              listener_config_dump, arena.ptr());
-      envoy_admin_v3_ListenersConfigDump_DynamicListener_set_name(
-          dynamic_listener, name_upb);
-      envoy_admin_v3_ListenersConfigDump_DynamicListener_set_client_status(
-          dynamic_listener, meta.client_status);
-      if (!meta.raw_bytes.empty()) {
-        // Set in-effective listeners
-        auto* dynamic_listener_state =
-            envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_active_state(
-                dynamic_listener, arena.ptr());
-        envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_version_info(
-            dynamic_listener_state, StdStringToUpbString(meta.version));
-        envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_last_updated(
-            dynamic_listener_state,
-            GrpcMillisToTimestamp(meta.update_time, arena.ptr()));
-        auto* listener_any =
-            envoy_admin_v3_ListenersConfigDump_DynamicListenerState_mutable_listener(
-                dynamic_listener_state, arena.ptr());
-        google_protobuf_Any_set_type_url(listener_any, kLdsTypeUrlUpb);
-        google_protobuf_Any_set_value(listener_any,
-                                      StdStringToUpbString(meta.raw_bytes));
-      }
-      if (meta.client_status == NACKED) {
-        // Set error_state if NACKED
-        envoy_admin_v3_ListenersConfigDump_DynamicListener_set_error_state(
-            dynamic_listener, CreateUpdateFailureStateUpb(meta, arena.ptr()));
-      }
-    } else if (meta.type_url == kRdsTypeUrl) {
-      // Route config part
-      auto* dynamic_route_config =
-          envoy_admin_v3_RoutesConfigDump_add_dynamic_route_configs(
-              route_config_dump, arena.ptr());
-      envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_client_status(
-          dynamic_route_config, meta.client_status);
-      auto* route_config_any =
-          envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_mutable_route_config(
-              dynamic_route_config, arena.ptr());
-      if (!meta.raw_bytes.empty()) {
-        // Set in-effective route configs
-        envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_version_info(
-            dynamic_route_config, StdStringToUpbString(meta.version));
-        envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_last_updated(
-            dynamic_route_config,
-            GrpcMillisToTimestamp(meta.update_time, arena.ptr()));
-        google_protobuf_Any_set_type_url(route_config_any, kRdsTypeUrlUpb);
-        google_protobuf_Any_set_value(route_config_any,
-                                      StdStringToUpbString(meta.raw_bytes));
+  for (auto& per_xds_resource_metadata : per_xds_resource_metadata_map) {
+    const absl::string_view& type_url = per_xds_resource_metadata.first;
+    for (auto& p : per_xds_resource_metadata.second.resource_metadata_map) {
+      const absl::string_view& name = p.first;
+      const ResourceMetadata& meta = p.second;
+      const upb_strview name_upb = StdStringToUpbString(name);
+      if (type_url == kLdsTypeUrl) {
+        // Listener part
+        auto* dynamic_listener =
+            envoy_admin_v3_ListenersConfigDump_add_dynamic_listeners(
+                listener_config_dump, arena.ptr());
+        envoy_admin_v3_ListenersConfigDump_DynamicListener_set_name(
+            dynamic_listener, name_upb);
+        envoy_admin_v3_ListenersConfigDump_DynamicListener_set_client_status(
+            dynamic_listener, meta.client_status);
+        if (!meta.serialized_proto.empty()) {
+          // Set in-effective listeners
+          auto* dynamic_listener_state =
+              envoy_admin_v3_ListenersConfigDump_DynamicListener_mutable_active_state(
+                  dynamic_listener, arena.ptr());
+          envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_version_info(
+              dynamic_listener_state, StdStringToUpbString(meta.version));
+          envoy_admin_v3_ListenersConfigDump_DynamicListenerState_set_last_updated(
+              dynamic_listener_state,
+              GrpcMillisToTimestamp(meta.update_time, context));
+          auto* listener_any =
+              envoy_admin_v3_ListenersConfigDump_DynamicListenerState_mutable_listener(
+                  dynamic_listener_state, arena.ptr());
+          google_protobuf_Any_set_type_url(listener_any, kLdsTypeUrlUpb);
+          google_protobuf_Any_set_value(
+              listener_any, StdStringToUpbString(meta.serialized_proto));
+        }
+        if (meta.client_status == NACKED) {
+          // Set error_state if NACKED
+          envoy_admin_v3_ListenersConfigDump_DynamicListener_set_error_state(
+              dynamic_listener, CreateUpdateFailureStateUpb(meta, context));
+        }
+      } else if (type_url == kRdsTypeUrl) {
+        // Route config part
+        auto* dynamic_route_config =
+            envoy_admin_v3_RoutesConfigDump_add_dynamic_route_configs(
+                route_config_dump, arena.ptr());
+        envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_client_status(
+            dynamic_route_config, meta.client_status);
+        auto* route_config_any =
+            envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_mutable_route_config(
+                dynamic_route_config, arena.ptr());
+        if (!meta.serialized_proto.empty()) {
+          // Set in-effective route configs
+          envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_version_info(
+              dynamic_route_config, StdStringToUpbString(meta.version));
+          envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_last_updated(
+              dynamic_route_config,
+              GrpcMillisToTimestamp(meta.update_time, context));
+          google_protobuf_Any_set_type_url(route_config_any, kRdsTypeUrlUpb);
+          google_protobuf_Any_set_value(
+              route_config_any, StdStringToUpbString(meta.serialized_proto));
+        } else {
+          // If there isn't a working route config, we still need to print the
+          // name.
+          auto* route_config =
+              envoy_config_route_v3_RouteConfiguration_new(arena.ptr());
+          envoy_config_route_v3_RouteConfiguration_set_name(route_config,
+                                                            name_upb);
+          size_t length;
+          char* bytes = envoy_config_route_v3_RouteConfiguration_serialize(
+              route_config, arena.ptr(), &length);
+          google_protobuf_Any_set_type_url(route_config_any, kRdsTypeUrlUpb);
+          google_protobuf_Any_set_value(route_config_any,
+                                        upb_strview_make(bytes, length));
+        }
+        if (meta.client_status == NACKED) {
+          // Set error_state if NACKED
+          envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_error_state(
+              dynamic_route_config, CreateUpdateFailureStateUpb(meta, context));
+        }
+      } else if (type_url == kCdsTypeUrl) {
+        // Cluster part
+        auto* dynamic_cluster =
+            envoy_admin_v3_ClustersConfigDump_add_dynamic_active_clusters(
+                cluster_config_dump, arena.ptr());
+        envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_client_status(
+            dynamic_cluster, meta.client_status);
+        auto* cluster_any =
+            envoy_admin_v3_ClustersConfigDump_DynamicCluster_mutable_cluster(
+                dynamic_cluster, arena.ptr());
+        if (!meta.serialized_proto.empty()) {
+          // Set in-effective clusters
+          envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_version_info(
+              dynamic_cluster, StdStringToUpbString(meta.version));
+          envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_last_updated(
+              dynamic_cluster,
+              GrpcMillisToTimestamp(meta.update_time, context));
+          google_protobuf_Any_set_type_url(cluster_any, kCdsTypeUrlUpb);
+          google_protobuf_Any_set_value(
+              cluster_any, StdStringToUpbString(meta.serialized_proto));
+        } else {
+          // If there isn't a working cluster, we still need to print the name.
+          auto* cluster = envoy_config_cluster_v3_Cluster_new(arena.ptr());
+          envoy_config_cluster_v3_Cluster_set_name(cluster, name_upb);
+          size_t length;
+          char* bytes = envoy_config_cluster_v3_Cluster_serialize(
+              cluster, arena.ptr(), &length);
+          google_protobuf_Any_set_type_url(cluster_any, kCdsTypeUrlUpb);
+          google_protobuf_Any_set_value(cluster_any,
+                                        upb_strview_make(bytes, length));
+        }
+        if (meta.client_status == NACKED) {
+          // Set error_state if NACKED
+          envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_error_state(
+              dynamic_cluster, CreateUpdateFailureStateUpb(meta, context));
+        }
+      } else if (type_url == kEdsTypeUrl) {
+        // Endpoint part
+        auto* dynamic_endpoint =
+            envoy_admin_v3_EndpointsConfigDump_add_dynamic_endpoint_configs(
+                endpoint_config_dump, arena.ptr());
+        envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_client_status(
+            dynamic_endpoint, meta.client_status);
+        auto* endpoint_any =
+            envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_mutable_endpoint_config(
+                dynamic_endpoint, arena.ptr());
+        if (!meta.serialized_proto.empty()) {
+          // Set in-effective endpoints
+          envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_version_info(
+              dynamic_endpoint, StdStringToUpbString(meta.version));
+          envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_last_updated(
+              dynamic_endpoint,
+              GrpcMillisToTimestamp(meta.update_time, context));
+          google_protobuf_Any_set_type_url(endpoint_any, kEdsTypeUrlUpb);
+          google_protobuf_Any_set_value(
+              endpoint_any, StdStringToUpbString(meta.serialized_proto));
+        } else {
+          // If there isn't a working endpoint, we still need to print the name.
+          auto* cluster_load_assignment =
+              envoy_config_endpoint_v3_ClusterLoadAssignment_new(arena.ptr());
+          envoy_config_endpoint_v3_ClusterLoadAssignment_set_cluster_name(
+              cluster_load_assignment, name_upb);
+          size_t length;
+          char* bytes =
+              envoy_config_endpoint_v3_ClusterLoadAssignment_serialize(
+                  cluster_load_assignment, arena.ptr(), &length);
+          google_protobuf_Any_set_type_url(endpoint_any, kEdsTypeUrlUpb);
+          google_protobuf_Any_set_value(endpoint_any,
+                                        upb_strview_make(bytes, length));
+        }
+        if (meta.client_status == NACKED) {
+          // Set error_state if NACKED
+          envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_error_state(
+              dynamic_endpoint, CreateUpdateFailureStateUpb(meta, context));
+        }
       } else {
-        // If there isn't a working route config, we still need to print the
-        // name.
-        auto* route_config =
-            envoy_config_route_v3_RouteConfiguration_new(arena.ptr());
-        envoy_config_route_v3_RouteConfiguration_set_name(route_config,
-                                                          name_upb);
-        size_t length;
-        char* bytes = envoy_config_route_v3_RouteConfiguration_serialize(
-            route_config, arena.ptr(), &length);
-        google_protobuf_Any_set_type_url(route_config_any, kRdsTypeUrlUpb);
-        google_protobuf_Any_set_value(route_config_any,
-                                      upb_strview_make(bytes, length));
-      }
-      if (meta.client_status == NACKED) {
-        // Set error_state if NACKED
-        envoy_admin_v3_RoutesConfigDump_DynamicRouteConfig_set_error_state(
-            dynamic_route_config,
-            CreateUpdateFailureStateUpb(meta, arena.ptr()));
-      }
-    } else if (meta.type_url == kCdsTypeUrl) {
-      // Cluster part
-      auto* dynamic_cluster =
-          envoy_admin_v3_ClustersConfigDump_add_dynamic_active_clusters(
-              cluster_config_dump, arena.ptr());
-      envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_client_status(
-          dynamic_cluster, meta.client_status);
-      auto* cluster_any =
-          envoy_admin_v3_ClustersConfigDump_DynamicCluster_mutable_cluster(
-              dynamic_cluster, arena.ptr());
-      if (!meta.raw_bytes.empty()) {
-        // Set in-effective clusters
-        envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_version_info(
-            dynamic_cluster, StdStringToUpbString(meta.version));
-        envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_last_updated(
-            dynamic_cluster,
-            GrpcMillisToTimestamp(meta.update_time, arena.ptr()));
-        google_protobuf_Any_set_type_url(cluster_any, kCdsTypeUrlUpb);
-        google_protobuf_Any_set_value(cluster_any,
-                                      StdStringToUpbString(meta.raw_bytes));
-      } else {
-        // If there isn't a working cluster, we still need to print the name.
-        auto* cluster = envoy_config_cluster_v3_Cluster_new(arena.ptr());
-        envoy_config_cluster_v3_Cluster_set_name(cluster, name_upb);
-        size_t length;
-        char* bytes = envoy_config_cluster_v3_Cluster_serialize(
-            cluster, arena.ptr(), &length);
-        google_protobuf_Any_set_type_url(cluster_any, kCdsTypeUrlUpb);
-        google_protobuf_Any_set_value(cluster_any,
-                                      upb_strview_make(bytes, length));
-      }
-      if (meta.client_status == NACKED) {
-        // Set error_state if NACKED
-        envoy_admin_v3_ClustersConfigDump_DynamicCluster_set_error_state(
-            dynamic_cluster, CreateUpdateFailureStateUpb(meta, arena.ptr()));
-      }
-    } else if (meta.type_url == kEdsTypeUrl) {
-      // Endpoint part
-      auto* dynamic_endpoint =
-          envoy_admin_v3_EndpointsConfigDump_add_dynamic_endpoint_configs(
-              endpoint_config_dump, arena.ptr());
-      envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_client_status(
-          dynamic_endpoint, meta.client_status);
-      auto* endpoint_any =
-          envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_mutable_endpoint_config(
-              dynamic_endpoint, arena.ptr());
-      if (!meta.raw_bytes.empty()) {
-        // Set in-effective endpoints
-        envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_version_info(
-            dynamic_endpoint, StdStringToUpbString(meta.version));
-        envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_last_updated(
-            dynamic_endpoint,
-            GrpcMillisToTimestamp(meta.update_time, arena.ptr()));
-        google_protobuf_Any_set_type_url(endpoint_any, kEdsTypeUrlUpb);
-        google_protobuf_Any_set_value(endpoint_any,
-                                      StdStringToUpbString(meta.raw_bytes));
-      } else {
-        // If there isn't a working endpoint, we still need to print the name.
-        auto* cluster_load_assignment =
-            envoy_config_endpoint_v3_ClusterLoadAssignment_new(arena.ptr());
-        envoy_config_endpoint_v3_ClusterLoadAssignment_set_cluster_name(
-            cluster_load_assignment, name_upb);
-        size_t length;
-        char* bytes = envoy_config_endpoint_v3_ClusterLoadAssignment_serialize(
-            cluster_load_assignment, arena.ptr(), &length);
-        google_protobuf_Any_set_type_url(endpoint_any, kEdsTypeUrlUpb);
-        google_protobuf_Any_set_value(endpoint_any,
-                                      upb_strview_make(bytes, length));
-      }
-      if (meta.client_status == NACKED) {
-        // Set error_state if NACKED
-        envoy_admin_v3_EndpointsConfigDump_DynamicEndpointConfig_set_error_state(
-            dynamic_endpoint, CreateUpdateFailureStateUpb(meta, arena.ptr()));
+        gpr_log(GPR_ERROR, "invalid type_url %s",
+                std::string(type_url).c_str());
+        return "";
       }
     }
   }

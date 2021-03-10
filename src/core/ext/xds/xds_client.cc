@@ -142,8 +142,6 @@ class XdsClient::ChannelState::AdsCallState
 
   bool HasSubscribedResources() const;
 
-  std::set<std::string> GetPendingResourceNames(const std::string& type_url);
-
  private:
   class ResourceState : public InternallyRefCounted<ResourceState> {
    public:
@@ -179,8 +177,6 @@ class XdsClient::ChannelState::AdsCallState
         timer_pending_ = false;
       }
     }
-
-    bool IsPending() const { return sent_initial_request_ && timer_pending_; }
 
    private:
     static void OnTimer(void* arg, grpc_error* error) {
@@ -473,18 +469,6 @@ grpc_channel* CreateXdsChannel(const XdsBootstrap::XdsServer& server) {
   return channel;
 }
 
-// Build a resource metadata struct for ADS result accepting methods and CSDS.
-XdsApi::ResourceMetadata CreateResourceMetadataAcked(std::string& raw_bytes,
-                                                     const std::string& version,
-                                                     grpc_millis update_time) {
-  XdsApi::ResourceMetadata resource_metadata;
-  resource_metadata.raw_bytes = std::move(raw_bytes);
-  resource_metadata.update_time = update_time;
-  resource_metadata.version = version;
-  resource_metadata.client_status = XdsApi::ACKED;
-  return resource_metadata;
-}
-
 }  // namespace
 
 XdsClient::ChannelState::ChannelState(WeakRefCountedPtr<XdsClient> xds_client,
@@ -529,10 +513,6 @@ XdsClient::ChannelState::AdsCallState* XdsClient::ChannelState::ads_calld()
 XdsClient::ChannelState::LrsCallState* XdsClient::ChannelState::lrs_calld()
     const {
   return lrs_calld_->calld();
-}
-
-bool XdsClient::ChannelState::HasAdsCall() const {
-  return ads_calld_ != nullptr;
 }
 
 bool XdsClient::ChannelState::HasActiveAdsCall() const {
@@ -899,17 +879,21 @@ bool XdsClient::ChannelState::AdsCallState::HasSubscribedResources() const {
   return false;
 }
 
-std::set<std::string>
-XdsClient::ChannelState::AdsCallState::GetPendingResourceNames(
-    const std::string& type_url) {
-  std::set<std::string> pending_resources;
-  for (auto& subscribed_resource : state_map_[type_url].subscribed_resources) {
-    if (subscribed_resource.second->IsPending()) {
-      pending_resources.insert(subscribed_resource.first);
-    }
-  }
-  return pending_resources;
+namespace {
+
+// Build a resource metadata struct for ADS result accepting methods and CSDS.
+XdsApi::ResourceMetadata CreateResourceMetadataAcked(
+    std::string& serialized_proto, const std::string& version,
+    grpc_millis update_time) {
+  XdsApi::ResourceMetadata resource_metadata;
+  resource_metadata.serialized_proto = std::move(serialized_proto);
+  resource_metadata.update_time = update_time;
+  resource_metadata.version = version;
+  resource_metadata.client_status = XdsApi::ACKED;
+  return resource_metadata;
 }
+
+}  // namespace
 
 void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     std::string version, grpc_millis update_time,
@@ -949,8 +933,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     }
     // Update the listener state.
     listener_state.update = std::move(lds_update);
-    listener_state.meta =
-        CreateResourceMetadataAcked(p.second.bytes, version, update_time);
+    listener_state.meta = CreateResourceMetadataAcked(p.second.serialized_proto,
+                                                      version, update_time);
     // Notify watchers.
     for (const auto& p : listener_state.watchers) {
       p.first->OnListenerChanged(*listener_state.update);
@@ -1027,8 +1011,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
     }
     // Update the cache.
     route_config_state.update = std::move(rds_update);
-    route_config_state.meta =
-        CreateResourceMetadataAcked(p.second.bytes, version, update_time);
+    route_config_state.meta = CreateResourceMetadataAcked(
+        p.second.serialized_proto, version, update_time);
     // Notify all watchers.
     for (const auto& p : route_config_state.watchers) {
       p.first->OnRouteConfigChanged(*route_config_state.update);
@@ -1073,8 +1057,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     }
     // Update the cluster state.
     cluster_state.update = std::move(cds_update);
-    cluster_state.meta =
-        CreateResourceMetadataAcked(p.second.bytes, version, update_time);
+    cluster_state.meta = CreateResourceMetadataAcked(p.second.serialized_proto,
+                                                     version, update_time);
     // Notify all watchers.
     for (const auto& p : cluster_state.watchers) {
       p.first->OnClusterChanged(cluster_state.update.value());
@@ -1150,8 +1134,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     }
     // Update the cluster state.
     endpoint_state.update = std::move(eds_update);
-    endpoint_state.meta =
-        CreateResourceMetadataAcked(p.second.bytes, version, update_time);
+    endpoint_state.meta = CreateResourceMetadataAcked(p.second.serialized_proto,
+                                                      version, update_time);
     // Notify all watchers.
     for (const auto& p : endpoint_state.watchers) {
       p.first->OnEndpointChanged(endpoint_state.update.value());
@@ -1224,7 +1208,6 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
       ResourceNamesForRequest(XdsApi::kCdsTypeUrl),
       ResourceNamesForRequest(XdsApi::kEdsTypeUrl));
   grpc_slice_unref_internal(response_slice);
-  // Update resource metadata of individual resources
   if (result.type_url.empty()) {
     // Ignore unparsable response.
     gpr_log(GPR_ERROR,
@@ -1878,6 +1861,7 @@ void XdsClient::WatchListenerData(
   std::string listener_name_str = std::string(listener_name);
   MutexLock lock(&mu_);
   ListenerState& listener_state = listener_map_[listener_name_str];
+  listener_state.meta.client_status = XdsApi::REQUESTED;
   ListenerWatcherInterface* w = watcher.get();
   listener_state.watchers[w] = std::move(watcher);
   // If we've already received an LDS update, notify the new watcher
@@ -1917,6 +1901,7 @@ void XdsClient::WatchRouteConfigData(
   MutexLock lock(&mu_);
   RouteConfigState& route_config_state =
       route_config_map_[route_config_name_str];
+  route_config_state.meta.client_status = XdsApi::REQUESTED;
   RouteConfigWatcherInterface* w = watcher.get();
   route_config_state.watchers[w] = std::move(watcher);
   // If we've already received an RDS update, notify the new watcher
@@ -1957,6 +1942,7 @@ void XdsClient::WatchClusterData(
   std::string cluster_name_str = std::string(cluster_name);
   MutexLock lock(&mu_);
   ClusterState& cluster_state = cluster_map_[cluster_name_str];
+  cluster_state.meta.client_status = XdsApi::REQUESTED;
   ClusterWatcherInterface* w = watcher.get();
   cluster_state.watchers[w] = std::move(watcher);
   // If we've already received a CDS update, notify the new watcher
@@ -1995,6 +1981,7 @@ void XdsClient::WatchEndpointData(
   std::string eds_service_name_str = std::string(eds_service_name);
   MutexLock lock(&mu_);
   EndpointState& endpoint_state = endpoint_map_[eds_service_name_str];
+  endpoint_state.meta.client_status = XdsApi::REQUESTED;
   EndpointWatcherInterface* w = watcher.get();
   endpoint_state.watchers[w] = std::move(watcher);
   // If we've already received an EDS update, notify the new watcher
@@ -2266,30 +2253,27 @@ void XdsClient::UpdateResourceMetadataWithFailedParseResult(
   for (auto& name : result.resource_names_failed) {
     XdsApi::ResourceMetadata* resource_metadata = nullptr;
     if (result.type_url == XdsApi::kLdsTypeUrl) {
-      const auto& it = listener_map_.find(name);
+      auto it = listener_map_.find(name);
       if (it != listener_map_.end()) {
         resource_metadata = &it->second.meta;
       }
     }
     if (result.type_url == XdsApi::kRdsTypeUrl) {
-      const auto& it = route_config_map_.find(name);
+      auto it = route_config_map_.find(name);
       if (route_config_map_.find(name) != route_config_map_.end()) {
         resource_metadata = &it->second.meta;
       }
-    }
-    if (result.type_url == XdsApi::kCdsTypeUrl) {
-      const auto& it = cluster_map_.find(name);
+    } else if (result.type_url == XdsApi::kCdsTypeUrl) {
+      auto it = cluster_map_.find(name);
       if (cluster_map_.find(name) != cluster_map_.end()) {
         resource_metadata = &it->second.meta;
       }
-    }
-    if (result.type_url == XdsApi::kEdsTypeUrl) {
-      const auto& it = endpoint_map_.find(name);
+    } else if (result.type_url == XdsApi::kEdsTypeUrl) {
+      auto it = endpoint_map_.find(name);
       if (endpoint_map_.find(name) != endpoint_map_.end()) {
         resource_metadata = &it->second.meta;
       }
-    }
-    if (resource_metadata == nullptr) {
+    } else if (resource_metadata == nullptr) {
       return;
     }
     resource_metadata->client_status = XdsApi::NACKED;
@@ -2299,56 +2283,37 @@ void XdsClient::UpdateResourceMetadataWithFailedParseResult(
   }
 }
 
-void XdsClient::UpdatePendingResources(
-    const std::string& type_url,
-    XdsApi::ResourceMetadataMap* resource_metadata_map) {
-  if (chand_->HasAdsCall()) {
-    for (auto& name : chand_->ads_calld()->GetPendingResourceNames(type_url)) {
-      const auto& it = resource_metadata_map->find(name);
-      if (it != resource_metadata_map->end()) {
-        // If a resource is both pending and active, we mark it as REQUESTED.
-        // TODO(lidiz) remove this check once we ensured that a resource won't
-        // appear in maps with empty resource metadata.
-        if (it->second.type_url.empty()) {
-          it->second.type_url = type_url;
-        }
-        it->second.client_status = XdsApi::REQUESTED;
-      } else {
-        // If this resource is pending only, we need to create an entry.
-        XdsApi::ResourceMetadata& meta = (*resource_metadata_map)[name];
-        meta.client_status = XdsApi::REQUESTED;
-        meta.type_url = type_url;
-      }
-    }
-  }
-}
-
 std::string XdsClient::DumpClientConfigBinary() {
   MutexLock lock(&mu_);
-  XdsApi::ResourceMetadataMap resource_metadata_map;
+  XdsApi::PerXdsResourceMetadataMap per_xds_resource_metadata_map;
+  // Update per-xds-type version if available, this version corresponding to the
+  // last successful ADS update version.
+  for (auto& p : resource_version_map_) {
+    per_xds_resource_metadata_map[p.first].version = p.second;
+  }
+  // Pack resource metadata from XdsClients.
+  XdsApi::ResourceMetadataMap& lds_map =
+      per_xds_resource_metadata_map[XdsApi::kLdsTypeUrl].resource_metadata_map;
+  XdsApi::ResourceMetadataMap& rds_map =
+      per_xds_resource_metadata_map[XdsApi::kRdsTypeUrl].resource_metadata_map;
+  XdsApi::ResourceMetadataMap& cds_map =
+      per_xds_resource_metadata_map[XdsApi::kCdsTypeUrl].resource_metadata_map;
+  XdsApi::ResourceMetadataMap& eds_map =
+      per_xds_resource_metadata_map[XdsApi::kEdsTypeUrl].resource_metadata_map;
   for (auto& p : listener_map_) {
-    p.second.meta.type_url = XdsApi::kLdsTypeUrl;
-    resource_metadata_map[p.first] = p.second.meta;
+    lds_map[p.first] = p.second.meta;
   }
   for (auto& p : route_config_map_) {
-    p.second.meta.type_url = XdsApi::kRdsTypeUrl;
-    resource_metadata_map[p.first] = p.second.meta;
+    rds_map[p.first] = p.second.meta;
   }
   for (auto& p : cluster_map_) {
-    p.second.meta.type_url = XdsApi::kCdsTypeUrl;
-    resource_metadata_map[p.first] = p.second.meta;
+    cds_map[p.first] = p.second.meta;
   }
   for (auto& p : endpoint_map_) {
-    p.second.meta.type_url = XdsApi::kEdsTypeUrl;
-    resource_metadata_map[p.first] = p.second.meta;
+    eds_map[p.first] = p.second.meta;
   }
-  UpdatePendingResources(XdsApi::kLdsTypeUrl, &resource_metadata_map);
-  UpdatePendingResources(XdsApi::kRdsTypeUrl, &resource_metadata_map);
-  UpdatePendingResources(XdsApi::kCdsTypeUrl, &resource_metadata_map);
-  UpdatePendingResources(XdsApi::kEdsTypeUrl, &resource_metadata_map);
   // Assemble config dump messages
-  return api_.AssembleClientConfig(resource_version_map_,
-                                   resource_metadata_map);
+  return api_.AssembleClientConfig(per_xds_resource_metadata_map);
 }
 
 //

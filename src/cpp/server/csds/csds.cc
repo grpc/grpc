@@ -51,7 +51,6 @@ absl::StatusOr<ClientConfig> DumpClientConfig() {
   if (!client_config.ParseFromString(xds_client->DumpClientConfigBinary())) {
     return absl::InternalError("Failed to parse ClientConfig.");
   }
-  std::cout << "HEY!!!" << client_config.DebugString() << std::endl;
   return client_config;
 }
 

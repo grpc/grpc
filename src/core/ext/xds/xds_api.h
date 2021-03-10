@@ -33,6 +33,7 @@
 
 #include <grpc/slice_buffer.h>
 
+#include "envoy/admin/v3/config_dump.upb.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -312,14 +313,14 @@ class XdsApi {
 
   struct LdsResourceData {
     LdsUpdate resource;
-    std::string bytes;
+    std::string serialized_proto;
   };
 
   using LdsUpdateMap = std::map<std::string /*server_name*/, LdsResourceData>;
 
   struct RdsResourceData {
     RdsUpdate resource;
-    std::string bytes;
+    std::string serialized_proto;
   };
 
   using RdsUpdateMap =
@@ -368,7 +369,7 @@ class XdsApi {
 
   struct CdsResourceData {
     CdsUpdate resource;
-    std::string bytes;
+    std::string serialized_proto;
   };
 
   using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsResourceData>;
@@ -457,7 +458,7 @@ class XdsApi {
 
   struct EdsResourceData {
     EdsUpdate resource;
-    std::string bytes;
+    std::string serialized_proto;
   };
 
   using EdsUpdateMap =
@@ -492,16 +493,30 @@ class XdsApi {
     // Client received this resource and replied with NACK.
     NACKED
   };
+  static_assert(static_cast<int>(envoy_admin_v3_UNKNOWN) ==
+                    static_cast<int>(ClientResourceStatus::UNKNOWN),
+                "");
+  static_assert(static_cast<int>(envoy_admin_v3_REQUESTED) ==
+                    static_cast<int>(ClientResourceStatus::REQUESTED),
+                "");
+  static_assert(static_cast<int>(envoy_admin_v3_DOES_NOT_EXIST) ==
+                    static_cast<int>(ClientResourceStatus::DOES_NOT_EXIST),
+                "");
+  static_assert(static_cast<int>(envoy_admin_v3_ACKED) ==
+                    static_cast<int>(ClientResourceStatus::ACKED),
+                "");
+  static_assert(static_cast<int>(envoy_admin_v3_NACKED) ==
+                    static_cast<int>(ClientResourceStatus::NACKED),
+                "");
 
   // The metadata of the xDS resource; used by the xDS config dump.
   struct ResourceMetadata {
-    // The type url of this resource, only used when porting metadata from
-    // XdsClient to XdsApi.
-    std::string type_url;
+    // The client status of this resource.
+    ClientResourceStatus client_status = REQUESTED;
     // The serialized bytes of the last successfully updated raw xDS resource.
-    std::string raw_bytes;
+    std::string serialized_proto;
     // The timestamp when the resource was last successfully updated.
-    grpc_millis update_time;
+    grpc_millis update_time = 0;
     // The last successfully updated version of the resource.
     std::string version;
     // The rejected version string of the last failed update attempt.
@@ -510,12 +525,18 @@ class XdsApi {
     std::string failed_details;
     // Timestamp of the last failed update attempt.
     grpc_millis failed_update_time = 0;
-    // The client status of this resource.
-    ClientResourceStatus client_status = UNKNOWN;
   };
 
   using ResourceMetadataMap =
-      std::map<std::string /*resource_name*/, ResourceMetadata>;
+      std::map<absl::string_view /*resource_name*/, ResourceMetadata>;
+
+  struct PerXdsResourceMetadata {
+    absl::string_view version;
+    ResourceMetadataMap resource_metadata_map;
+  };
+
+  using PerXdsResourceMetadataMap =
+      std::map<absl::string_view /*type_url*/, PerXdsResourceMetadata>;
 
   // If the response can't be parsed at the top level, the resulting
   // type_url will be empty.
@@ -571,8 +592,7 @@ class XdsApi {
 
   // Assemble the client config proto message and return the serialized result.
   std::string AssembleClientConfig(
-      const std::map<std::string, std::string>& resource_version_map,
-      const ResourceMetadataMap& resource_metadata_map);
+      const PerXdsResourceMetadataMap& per_xds_resource_metadata_map);
 
  private:
   XdsClient* client_;
