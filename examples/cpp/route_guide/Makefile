@@ -23,7 +23,7 @@ ifeq ($(SYSTEM),Darwin)
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
 					 -pthread\
            -lgrpc++_reflection\
-           -ldl
+           -ldl -framework CoreFoundation
 else
 LDFLAGS += -L/usr/local/lib `pkg-config --libs protobuf grpc++`\
            -pthread\
