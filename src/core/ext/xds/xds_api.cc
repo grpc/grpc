@@ -1727,6 +1727,7 @@ grpc_error* HttpConnectionManagerParse(
       }
       if ((is_client && !filter_impl->IsSupportedOnClients()) ||
           (!is_client && !filter_impl->IsSupportedOnServers())) {
+        if (is_optional) continue;
         return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrFormat("Filter %s is not supported on %s", filter_type,
                             is_client ? "clients" : "servers")

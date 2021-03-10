@@ -3550,6 +3550,30 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
+// Test that we ignore optional HTTP filters unsupported on client-side.
+TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("grpc.testing.server_only_http_filter");
+  filter->mutable_typed_config()->set_type_url(
+      "grpc.testing.server_only_http_filter");
+  filter->set_is_optional(true);
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends();
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
 using LdsRdsTest = BasicTest;
 
 // Tests that LDS client should send an ACK upon correct LDS response (with
@@ -7433,6 +7457,38 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
       response_state.error_message,
       ::testing::HasSubstr("Filter grpc.testing.client_only_http_filter is not "
                            "supported on servers"));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+TEST_P(XdsEnabledServerTest,
+       HttpFilterNotSupportedOnServerIgnoredWhenOptional) {
+  // Set env var to enable filters parsing.
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  HttpConnectionManager http_connection_manager;
+  auto* http_filter = http_connection_manager.add_http_filters();
+  http_filter->set_name("grpc.testing.client_only_http_filter");
+  http_filter->mutable_typed_config()->set_type_url(
+      "grpc.testing.client_only_http_filter");
+  http_filter->set_is_optional(true);
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
+      http_connection_manager);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
+                   backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  WaitForBackend(0);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
