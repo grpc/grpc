@@ -3292,7 +3292,7 @@ TEST_P(LdsTest, HttpFiltersEnabled) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
-// Filter support is v3 only, but the xDS server may send v2 filters
+// Filter support is v3 only, but we should not fail v2 xDS.
 TEST_P(LdsTest, AllowV2RouterFilter) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   SetNextResolutionForLbChannelAllBalancers();

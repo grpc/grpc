@@ -365,7 +365,8 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     }
   }
   // Populate filter list.
-  if (XdsFaultInjectionEnabled()) {
+  if (XdsFaultInjectionEnabled() &&
+      resolver_->xds_client_->bootstrap()->server().ShouldUseV3()) {
     bool found_router = false;
     for (const auto& http_filter :
          resolver_->current_listener_.http_connection_manager.http_filters) {
