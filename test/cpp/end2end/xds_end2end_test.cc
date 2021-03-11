@@ -3292,6 +3292,29 @@ TEST_P(LdsTest, HttpFiltersEnabled) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
+// Filter support is v3 only, but the xDS server may send v2 filters
+TEST_P(LdsTest, AllowV2RouterFilter) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  SetNextResolutionForLbChannelAllBalancers();
+  HttpConnectionManager http_connection_manager;
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("router");
+  filter->mutable_typed_config()->set_type_url(
+      "type.googleapis.com/envoy.config.filter.http.router.v2.Router");
+  Listener listener;
+  listener.set_name(kServerName);
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForAllBackends();
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
 // Test that we fail RPCs if there is no router filter.
 TEST_P(LdsTest, FailRpcsIfNoHttpRouterFilter) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");

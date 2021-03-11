@@ -24,6 +24,8 @@
 
 namespace grpc_core {
 
+const char* kXdsHttpV2RouterFilterConfigName =
+    "envoy.config.filter.http.router.v2.Router";
 const char* kXdsHttpRouterFilterConfigName =
     "envoy.extensions.filters.http.router.v3.Router";
 
@@ -100,6 +102,8 @@ void XdsHttpFilterRegistry::PopulateSymtab(upb_symtab* symtab) {
 void XdsHttpFilterRegistry::Init() {
   g_filters = new FilterOwnerList;
   g_filter_registry = new FilterRegistryMap;
+  RegisterFilter(absl::make_unique<XdsHttpRouterFilter>(),
+                 {kXdsHttpV2RouterFilterConfigName});
   RegisterFilter(absl::make_unique<XdsHttpRouterFilter>(),
                  {kXdsHttpRouterFilterConfigName});
   RegisterFilter(absl::make_unique<XdsHttpFaultFilter>(),
