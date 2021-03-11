@@ -70,6 +70,9 @@ LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) noexcept {
 
 LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
     const UpdateArgs& other) {
+  if (&other == this) {
+    return *this;
+  }
   addresses = other.addresses;
   config = other.config;
   grpc_channel_args_destroy(args);

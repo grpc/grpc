@@ -119,6 +119,11 @@ std::string BootstrapString(const XdsBootstrap& bootstrap) {
         absl::StrJoin(bootstrap.server().server_features, ", "), "],\n"));
   }
   parts.push_back("  }\n],\n");
+  if (!bootstrap.server_listener_resource_name_template().empty()) {
+    parts.push_back(
+        absl::StrFormat("server_listener_resource_name_template=\"%s\",\n",
+                        bootstrap.server_listener_resource_name_template()));
+  }
   parts.push_back("certificate_providers={\n");
   for (const auto& entry : bootstrap.certificate_providers()) {
     parts.push_back(
@@ -231,6 +236,16 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error** error) {
     } else {
       grpc_error* parse_error = ParseNode(&it->second);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    }
+  }
+  it = json.mutable_object()->find("server_listener_resource_name_template");
+  if (it != json.mutable_object()->end()) {
+    if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "\"server_listener_resource_name_template\" field is not a string"));
+    } else {
+      server_listener_resource_name_template_ =
+          std::move(*it->second.mutable_string_value());
     }
   }
   if (XdsSecurityEnabled()) {
