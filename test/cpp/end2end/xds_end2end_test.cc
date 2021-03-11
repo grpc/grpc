@@ -7359,8 +7359,6 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
   listener.mutable_api_listener();
   balancers_[0]->ads_service()->SetLdsResource(listener);
   CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
@@ -7382,10 +7380,7 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
       ipv6_only_ ? "::1" : "127.0.0.1");
   listener.mutable_address()->mutable_socket_address()->set_port_value(
       backends_[0]->port());
-  auto* filter_chain = listener.add_filter_chains();
-  filter_chain->add_filters()->mutable_typed_config()->PackFrom(default_listener_ /* any proto object other than HttpConnectionManager */);
-  auto* transport_socket = filter_chain->mutable_transport_socket();
-  transport_socket->set_name("envoy.transport_sockets.tls");
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(default_listener_ /* any proto object other than HttpConnectionManager */);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
   const auto response_state =
@@ -7521,6 +7516,28 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
     }
   }
   EXPECT_TRUE(rpc_failed);
+}
+
+TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  listener.mutable_address()->mutable_socket_address()->set_address(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  listener.mutable_address()->mutable_socket_address()->set_port_value(
+      backends_[0]->port());
+  listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  listener.mutable_use_original_dst()->set_value(true);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state();
+                .state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Field \'use_original_dst\' is not supported."));
 }
 
 class XdsServerSecurityTest : public XdsEnd2endTest {
