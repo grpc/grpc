@@ -80,8 +80,8 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
 
   std::unordered_set<std::string> known_services;
   if (!protofiles.empty()) {
-    for (const absl::string_view single_path :
-         absl::StrSplit(proto_path, GRPC_CLI_PATH_SEPARATOR, absl::AllowEmpty())) {
+    for (const absl::string_view single_path : absl::StrSplit(
+             proto_path, GRPC_CLI_PATH_SEPARATOR, absl::AllowEmpty())) {
       source_tree_.MapPath("", std::string(single_path));
     }
     error_printer_ = absl::make_unique<ErrorPrinter>(this);
