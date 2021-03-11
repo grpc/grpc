@@ -9796,6 +9796,58 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   http_fault.mutable_abort()->set_grpc_status(
       static_cast<uint32_t>(StatusCode::ABORTED));
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  delay_percentage->set_numerator(1000000);  // Always inject DELAY!
+  delay_percentage->set_denominator(FractionalPercent::MILLION);
+  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  fixed_delay->set_nanos(kFixedDelayNanos);
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  // Send kNumRpcs RPCs and count the aborts.
+  int num_total = 0, num_ok = 0, num_failure = 0, num_aborted = 0;
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    grpc_millis t0 = NowFromCycleCounter();
+    SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_aborted,
+                    RpcOptions(), "Fault injected");
+    grpc_millis t1 = NowFromCycleCounter();
+    EXPECT_GE(t1, t0 + kFixedDelayNanos / 1000 / 1000);
+  }
+  EXPECT_EQ(kNumRpcs, num_total);
+  EXPECT_EQ(0, num_failure);
+  // The abort rate should be roughly equal to the expectation.
+  const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
+  EXPECT_THAT(seen_abort_rate,
+              ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
+                               ::testing::Le(kAbortRate + kErrorTolerance)));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// This test and the above test apply different denominators to delay and abort.
+// This ensures that we are using the right denominator for each injected fault
+// in our code.
+TEST_P(FaultInjectionTest,
+       XdsFaultInjectionAlwaysDelayPercentageAbortSwitchDenominator) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  const size_t kNumRpcs = 100;
+  const uint32_t kAbortPercentagePerMillion = 500000;
+  const double kAbortRate = kAbortPercentagePerMillion / 1000000.0;
+  const uint32_t kFixedDelayNanos = 10 * 1000 * 1000;  // 10 ms
+  const double kErrorTolerance = 0.2;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(kAbortPercentagePerMillion);
+  abort_percentage->set_denominator(FractionalPercent::MILLION);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
   delay_percentage->set_numerator(100);  // Always inject DELAY!
   delay_percentage->set_denominator(FractionalPercent::HUNDRED);
   auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
