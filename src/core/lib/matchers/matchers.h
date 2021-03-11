@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MATCHERS_H
-#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MATCHERS_H
+#ifndef GRPC_CORE_LIB_MATCHERS_MATCHERS_H
+#define GRPC_CORE_LIB_MATCHERS_MATCHERS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -40,7 +40,7 @@ class StringMatcher {
 
   // Creates StringMatcher instance. Returns error status on failure.
   static absl::StatusOr<StringMatcher> Create(Type type,
-                                              const std::string& matcher,
+                                              absl::string_view matcher,
                                               bool case_sensitive = true);
 
   StringMatcher() = default;
@@ -65,7 +65,7 @@ class StringMatcher {
   bool case_sensitive() const { return case_sensitive_; }
 
  private:
-  StringMatcher(Type type, const std::string& matcher, bool case_sensitive);
+  StringMatcher(Type type, absl::string_view matcher, bool case_sensitive);
   StringMatcher(std::unique_ptr<RE2> regex_matcher, bool case_sensitive);
 
   Type type_ = Type::EXACT;
@@ -106,10 +106,12 @@ class HeaderMatcher {
                 "");
 
   // Creates HeaderMatcher instance. Returns error status on failure.
-  static absl::StatusOr<HeaderMatcher> Create(
-      const std::string& name, Type type, const std::string& matcher,
-      int64_t range_start = 0, int64_t range_end = 0,
-      bool present_match = false, bool invert_match = false);
+  static absl::StatusOr<HeaderMatcher> Create(absl::string_view name, Type type,
+                                              absl::string_view matcher,
+                                              int64_t range_start = 0,
+                                              int64_t range_end = 0,
+                                              bool present_match = false,
+                                              bool invert_match = false);
 
   HeaderMatcher() = default;
   HeaderMatcher(const HeaderMatcher& other);
@@ -136,13 +138,13 @@ class HeaderMatcher {
 
  private:
   // For StringMatcher.
-  HeaderMatcher(const std::string& name, Type type, StringMatcher matcher,
+  HeaderMatcher(absl::string_view name, Type type, StringMatcher matcher,
                 bool invert_match);
   // For RangeMatcher.
-  HeaderMatcher(const std::string& name, int64_t range_start, int64_t range_end,
+  HeaderMatcher(absl::string_view name, int64_t range_start, int64_t range_end,
                 bool invert_match);
   // For PresentMatcher.
-  HeaderMatcher(const std::string& name, bool present_match, bool invert_match);
+  HeaderMatcher(absl::string_view name, bool present_match, bool invert_match);
 
   std::string name_;
   Type type_ = Type::EXACT;
@@ -155,4 +157,4 @@ class HeaderMatcher {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MATCHERS_H */
+#endif /* GRPC_CORE_LIB_MATCHERS_MATCHERS_H */

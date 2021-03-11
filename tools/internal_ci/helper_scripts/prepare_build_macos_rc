@@ -37,6 +37,7 @@ brew config
 # Add GCP credentials for BQ access
 pip install --user google-api-python-client oauth2client six==1.15.0
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
@@ -67,7 +68,7 @@ then
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
 
   # Needed for ios-binary-size
-  time pip install --user pyyaml pyjwt==1.7.1 pyOpenSSL cryptography requests
+  time pip install --user -r $DIR/requirements.macos.txt
 
   # Store intermediate build files of ObjC tests into /tmpfs
   # TODO(jtattermusch): this has likely been done to avoid running
@@ -84,8 +85,8 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PYTHON}" == "true" ]
 then
   # python
-  time pip install --user virtualenv
-  time pip install --user --upgrade Mako tox setuptools==44.1.1 twisted pyyaml pyjwt==1.7.1 pyOpenSSL cryptography requests
+  time pip install --user -r $DIR/requirements.macos.txt
+  time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
 
   # Install Python 3.7 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.7" ]; then

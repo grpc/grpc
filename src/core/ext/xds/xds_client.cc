@@ -887,8 +887,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
               listener_name.c_str(), lds_update.ToString().c_str());
     }
     // Record the RDS resource names seen.
-    if (!lds_update.route_config_name.empty()) {
-      rds_resource_names_seen.insert(lds_update.route_config_name);
+    if (!lds_update.http_connection_manager.route_config_name.empty()) {
+      rds_resource_names_seen.insert(
+          lds_update.http_connection_manager.route_config_name);
     }
     // Ignore identical update.
     ListenerState& listener_state = xds_client()->listener_map_[listener_name];

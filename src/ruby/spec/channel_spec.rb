@@ -130,6 +130,17 @@ describe GRPC::Core::Channel do
     end
   end
 
+  describe '#new for XDS channels' do
+    it_behaves_like '#new'
+
+    def construct_with_args(a)
+      proc do
+        xds_creds = GRPC::Core::XdsChannelCredentials.new(create_test_cert)
+        GRPC::Core::Channel.new('dummy_host', a, xds_creds)
+      end
+    end
+  end
+
   describe '#create_call' do
     it 'creates a call OK' do
       ch = GRPC::Core::Channel.new(fake_host, nil, :this_channel_is_insecure)

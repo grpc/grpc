@@ -55,7 +55,7 @@ def _access_token():
                 url='https://api.github.com/app/installations/%s/access_tokens'
                 % _INSTALLATION_ID,
                 headers={
-                    'Authorization': 'Bearer %s' % _jwt_token().decode('ASCII'),
+                    'Authorization': 'Bearer %s' % _jwt_token(),
                     'Accept': 'application/vnd.github.machine-man-preview+json',
                 })
 

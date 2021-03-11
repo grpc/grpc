@@ -877,7 +877,7 @@ grpc_call_error Server::ValidateServerRequest(
                            (rm->payload_handling == GRPC_SRM_PAYLOAD_NONE)))) {
     return GRPC_CALL_ERROR_PAYLOAD_TYPE_MISMATCH;
   }
-  if (grpc_cq_begin_op(cq_for_notification, tag) == false) {
+  if (!grpc_cq_begin_op(cq_for_notification, tag)) {
     return GRPC_CALL_ERROR_COMPLETION_QUEUE_SHUTDOWN;
   }
   return GRPC_CALL_OK;

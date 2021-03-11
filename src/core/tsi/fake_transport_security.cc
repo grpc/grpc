@@ -474,12 +474,21 @@ static void fake_zero_copy_grpc_protector_destroy(
   gpr_free(impl);
 }
 
+static tsi_result fake_zero_copy_grpc_protector_max_frame_size(
+    tsi_zero_copy_grpc_protector* self, size_t* max_frame_size) {
+  if (self == nullptr || max_frame_size == nullptr) return TSI_INVALID_ARGUMENT;
+  tsi_fake_zero_copy_grpc_protector* impl =
+      reinterpret_cast<tsi_fake_zero_copy_grpc_protector*>(self);
+  *max_frame_size = impl->max_frame_size;
+  return TSI_OK;
+}
+
 static const tsi_zero_copy_grpc_protector_vtable
     zero_copy_grpc_protector_vtable = {
         fake_zero_copy_grpc_protector_protect,
         fake_zero_copy_grpc_protector_unprotect,
         fake_zero_copy_grpc_protector_destroy,
-        nullptr /* fake_zero_copy_grpc_protector_max_frame_size */
+        fake_zero_copy_grpc_protector_max_frame_size,
 };
 
 /* --- tsi_handshaker_result methods implementation. ---*/

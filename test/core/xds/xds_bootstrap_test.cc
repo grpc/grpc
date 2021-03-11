@@ -110,6 +110,7 @@ TEST_P(XdsBootstrapTest, Basic) {
       "    },"
       "    \"ignore\": \"whee\""
       "  },"
+      "  \"server_listener_resource_name_template\": \"example/resource\","
       "  \"ignore\": {}"
       "}";
   grpc_error* error = GRPC_ERROR_NONE;
@@ -140,6 +141,8 @@ TEST_P(XdsBootstrapTest, Basic) {
                       ::testing::AllOf(
                           ::testing::Property(&Json::type, Json::Type::NUMBER),
                           ::testing::Property(&Json::string_value, "1")))));
+  EXPECT_EQ(bootstrap.server_listener_resource_name_template(),
+            "example/resource");
 }
 
 TEST_P(XdsBootstrapTest, ValidWithoutNode) {
@@ -271,6 +274,7 @@ TEST_P(XdsBootstrapTest, TopFieldsWrongTypes) {
       "{"
       "  \"xds_servers\":1,"
       "  \"node\":1,"
+      "  \"server_listener_resource_name_template\":1,"
       "  \"certificate_providers\":1"
       "}";
   grpc_error* error = GRPC_ERROR_NONE;
@@ -279,7 +283,9 @@ TEST_P(XdsBootstrapTest, TopFieldsWrongTypes) {
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_string(error),
               ::testing::ContainsRegex("\"xds_servers\" field is not an array.*"
-                                       "\"node\" field is not an object.*"));
+                                       "\"node\" field is not an object.*"
+                                       "\"server_listener_resource_name_"
+                                       "template\" field is not a string.*"));
   if (GetParam().parse_xds_certificate_providers()) {
     EXPECT_THAT(grpc_error_string(error),
                 ::testing::ContainsRegex(

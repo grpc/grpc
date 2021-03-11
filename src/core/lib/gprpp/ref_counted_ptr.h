@@ -83,6 +83,7 @@ class RefCountedPtr {
   }
 
   // Copy assignment.
+  // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
   RefCountedPtr& operator=(const RefCountedPtr& other) {
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.
@@ -235,6 +236,7 @@ class WeakRefCountedPtr {
   }
 
   // Copy assignment.
+  // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
   WeakRefCountedPtr& operator=(const WeakRefCountedPtr& other) {
     // Note: Order of reffing and unreffing is important here in case value_
     // and other.value_ are the same object.

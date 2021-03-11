@@ -40,6 +40,21 @@ message ApiListener {
   google.protobuf.Any api_listener = 1;
 }
 
+message Filter {
+  reserved 3;
+
+  // The name of the filter to instantiate. The name must match a
+  // :ref:`supported filter <config_network_filters>`.
+  string name = 1;
+
+  // [#extension-category: envoy.filters.network]
+  oneof config_type {
+    // Filter specific configuration which depends on the filter being
+    // instantiated. See the supported filters for further documentation.
+    google.protobuf.Any typed_config = 4;
+  }
+}
+
 message FilterChainMatch {
   // If non-empty, a list of application protocols (e.g. ALPN for TLS protocol) to consider when
   // determining a filter chain match. Those values will be compared against the application
@@ -69,6 +84,12 @@ message FilterChainMatch {
 message FilterChain {
   // The criteria to use when matching a connection to this filter chain.
   FilterChainMatch filter_chain_match = 1;
+
+  // A list of individual network filters that make up the filter chain for
+  // connections established with the listener. Order matters as the filters are
+  // processed sequentially as connection events happen. Note: If the filter
+  // list is empty, the connection will close by default.
+  repeated Filter filters = 3;  
 
   // Optional custom transport socket implementation to use for downstream connections.
   // To setup TLS, set a transport socket with name `tls` and
