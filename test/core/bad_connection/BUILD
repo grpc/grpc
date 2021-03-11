@@ -18,7 +18,7 @@ licenses(["notice"])  # Apache v2
 
 grpc_package(name = "test/core/bad_connection")
 
-grpc_cc_binary(
+grpc_cc_test(
     name = "close_fd_test",
     srcs = [
         "close_fd_test.cc",

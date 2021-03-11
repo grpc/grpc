@@ -3255,6 +3255,23 @@ targets:
   - linux
   - posix
   - mac
+- name: close_fd_test
+  build: test
+  language: c
+  headers: []
+  src:
+  - test/core/bad_connection/close_fd_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  - libssl
+  platforms:
+  - linux
+  - posix
+  - mac
 - name: cmdline_test
   build: test
   language: c

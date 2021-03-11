@@ -989,15 +989,12 @@ static void write_action_end_locked(void* tp, grpc_error* error) {
   GPR_TIMER_SCOPE("terminate_writing_with_lock", 0);
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
 
-  bool closed = false;
   if (error != GRPC_ERROR_NONE) {
     close_transport_locked(t, GRPC_ERROR_REF(error));
-    closed = true;
   }
 
   if (t->sent_goaway_state == GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED) {
     t->sent_goaway_state = GRPC_CHTTP2_GOAWAY_SENT;
-    closed = true;
     if (grpc_chttp2_stream_map_size(&t->stream_map) == 0) {
       close_transport_locked(
           t, GRPC_ERROR_CREATE_FROM_STATIC_STRING("goaway sent"));
@@ -1015,14 +1012,11 @@ static void write_action_end_locked(void* tp, grpc_error* error) {
       GPR_TIMER_MARK("state=writing_stale_no_poller", 0);
       set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING, "continue writing");
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
-      // If the transport is closed, we will retry writing on the endpoint
-      // and next write may contain part of the currently serialized frames.
-      // So, we should only call the run_after_write callbacks when the next
-      // write finishes, or the callbacks will be invoked when the stream is
-      // closed.
-      if (!closed) {
-        grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &t->run_after_write);
-      }
+      // Even though there is more to write, we are done with the previous
+      // write, so we should be able to invoke the run_after_write closures.
+      // Otherwise, it is normally invoked, when write state is set to
+      // GRPC_CHTTP2_WRITE_STATE_IDLE.
+      grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &t->run_after_write);
       t->combiner->FinallyRun(
           GRPC_CLOSURE_INIT(&t->write_action_begin_locked,
                             write_action_begin_locked, t, nullptr),
