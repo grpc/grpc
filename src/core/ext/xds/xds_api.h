@@ -315,12 +315,14 @@ class XdsApi {
     HttpConnectionManager http_connection_manager;
 
     // Populated for type=kTcpListener.
+    // host:port listening_address set when type is kTcpListener
+    std::string address;
     std::vector<FilterChain> filter_chains;
     absl::optional<FilterChain> default_filter_chain;
 
     bool operator==(const LdsUpdate& other) const {
       return http_connection_manager == other.http_connection_manager &&
-             filter_chains == other.filter_chains &&
+             address == other.address && filter_chains == other.filter_chains &&
              default_filter_chain == other.default_filter_chain;
     }
 

@@ -24,7 +24,6 @@
 # - bugprone-signed-char-misuse
 # - bugprone-sizeof-expression
 # - bugprone-too-small-loop-variable
-# - bugprone-unhandled-self-assignment
 # - clang-diagnostic-deprecated-declarations
 # - clang-diagnostic-unused-function
 # - google-readability-avoid-underscore-in-googletest-name
@@ -62,7 +61,6 @@ Checks: '-*,
   -bugprone-signed-char-misuse,
   -bugprone-sizeof-expression,
   -bugprone-too-small-loop-variable,
-  -bugprone-unhandled-self-assignment,
   google-*,
   -google-readability-avoid-underscore-in-googletest-name,
   -google-runtime-int,

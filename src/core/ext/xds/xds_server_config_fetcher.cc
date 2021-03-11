@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/str_replace.h"
+
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -48,9 +50,9 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         std::move(watcher), args, xds_client_, serving_status_notifier_,
         listening_address);
     auto* listener_watcher_ptr = listener_watcher.get();
-    // TODO(yashykt): Get the resource name id from bootstrap
-    listening_address = absl::StrCat(
-        "grpc/server?xds.resource.listening_address=", listening_address);
+    listening_address = absl::StrReplaceAll(
+        xds_client_->bootstrap()->server_listener_resource_name_template(),
+        {{"%s", listening_address}});
     xds_client_->WatchListenerData(listening_address,
                                    std::move(listener_watcher));
     MutexLock lock(&mu_);
@@ -106,6 +108,11 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
             "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
             this, xds_client_.get(), listener.ToString().c_str());
       }
+      if (listener.address != listening_address_) {
+        OnFatalError(absl::FailedPreconditionError(
+            "Address in LDS update does not match listening address"));
+        return;
+      }
       grpc_error* error = GRPC_ERROR_NONE;
       bool update_needed = UpdateXdsCertificateProvider(listener, &error);
       if (error != GRPC_ERROR_NONE) {
@@ -160,11 +167,11 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       GRPC_ERROR_UNREF(error);
     }
 
-    void OnResourceDoesNotExist() override {
-      gpr_log(GPR_ERROR,
-              "ListenerWatcher:%p XdsClient reports requested listener does "
-              "not exist; not serving on %s",
-              this, listening_address_.c_str());
+    void OnFatalError(absl::Status status) {
+      gpr_log(
+          GPR_ERROR,
+          "ListenerWatcher:%p Encountered fatal error %s; not serving on %s",
+          this, status.ToString().c_str(), listening_address_.c_str());
       if (have_resource_) {
         // The server has started listening already, so we need to gracefully
         // stop serving.
@@ -174,8 +181,13 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       if (serving_status_notifier_.on_serving_status_change != nullptr) {
         serving_status_notifier_.on_serving_status_change(
             serving_status_notifier_.user_data, listening_address_.c_str(),
-            GRPC_STATUS_NOT_FOUND, "Requested listener does not exist");
+            static_cast<grpc_status_code>(status.raw_code()),
+            std::string(status.message()).c_str());
       }
+    }
+
+    void OnResourceDoesNotExist() override {
+      OnFatalError(absl::NotFoundError("Requested listener does not exist"));
     }
 
    private:
@@ -313,6 +325,14 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
     gpr_log(GPR_ERROR, "Failed to create xds client: %s",
             grpc_error_string(error));
     GRPC_ERROR_UNREF(error);
+    return nullptr;
+  }
+  if (xds_client->bootstrap()
+          ->server_listener_resource_name_template()
+          .empty()) {
+    gpr_log(GPR_ERROR,
+            "server_listener_resource_name_template not provided in bootstrap "
+            "file.");
     return nullptr;
   }
   return new grpc_core::XdsServerConfigFetcher(std::move(xds_client), notifier);

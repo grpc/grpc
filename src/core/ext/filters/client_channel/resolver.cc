@@ -60,6 +60,9 @@ Resolver::Result::Result(Result&& other) noexcept {
 }
 
 Resolver::Result& Resolver::Result::operator=(const Result& other) {
+  if (&other == this) {
+    return *this;
+  }
   addresses = other.addresses;
   service_config = other.service_config;
   GRPC_ERROR_UNREF(service_config_error);
