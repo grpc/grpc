@@ -14,14 +14,11 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  <%include file="../python_debian10.include"/>
+  FROM debian:bullseye
   
-  # Add buster-backports for more recent clang packages
-  RUN echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/buster-backports.list
-
-  # Install clang-tidy 7
-  RUN apt-get update && apt-get install -y clang-tidy-8 jq
-  ENV CLANG_TIDY=clang-tidy-8
+  # Install clang-tidy 11
+  RUN apt-get update && apt-get install -y clang-tidy-11 jq
+  ENV CLANG_TIDY=clang-tidy-11
 
   ADD clang_tidy_all_the_things.sh /
   

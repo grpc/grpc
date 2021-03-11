@@ -14,7 +14,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/security/authorization/matchers.h"
+#include "src/core/lib/matchers/matchers.h"
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
@@ -29,12 +29,12 @@ namespace grpc_core {
 //
 
 absl::StatusOr<StringMatcher> StringMatcher::Create(Type type,
-                                                    const std::string& matcher,
+                                                    absl::string_view matcher,
                                                     bool case_sensitive) {
   if (type == Type::SAFE_REGEX) {
     RE2::Options options;
     options.set_case_sensitive(case_sensitive);
-    auto regex_matcher = absl::make_unique<RE2>(matcher, options);
+    auto regex_matcher = absl::make_unique<RE2>(std::string(matcher), options);
     if (!regex_matcher->ok()) {
       return absl::InvalidArgumentError(
           "Invalid regex string specified in matcher.");
@@ -45,7 +45,7 @@ absl::StatusOr<StringMatcher> StringMatcher::Create(Type type,
   }
 }
 
-StringMatcher::StringMatcher(Type type, const std::string& matcher,
+StringMatcher::StringMatcher(Type type, absl::string_view matcher,
                              bool case_sensitive)
     : type_(type), string_matcher_(matcher), case_sensitive_(case_sensitive) {}
 
@@ -164,7 +164,7 @@ std::string StringMatcher::ToString() const {
 //
 
 absl::StatusOr<HeaderMatcher> HeaderMatcher::Create(
-    const std::string& name, Type type, const std::string& matcher,
+    absl::string_view name, Type type, absl::string_view matcher,
     int64_t range_start, int64_t range_end, bool present_match,
     bool invert_match) {
   if (static_cast<int>(type) < 5) {
@@ -189,14 +189,14 @@ absl::StatusOr<HeaderMatcher> HeaderMatcher::Create(
   }
 }
 
-HeaderMatcher::HeaderMatcher(const std::string& name, Type type,
+HeaderMatcher::HeaderMatcher(absl::string_view name, Type type,
                              StringMatcher string_matcher, bool invert_match)
     : name_(name),
       type_(type),
       matcher_(std::move(string_matcher)),
       invert_match_(invert_match) {}
 
-HeaderMatcher::HeaderMatcher(const std::string& name, int64_t range_start,
+HeaderMatcher::HeaderMatcher(absl::string_view name, int64_t range_start,
                              int64_t range_end, bool invert_match)
     : name_(name),
       type_(Type::RANGE),
@@ -204,7 +204,7 @@ HeaderMatcher::HeaderMatcher(const std::string& name, int64_t range_start,
       range_end_(range_end),
       invert_match_(invert_match) {}
 
-HeaderMatcher::HeaderMatcher(const std::string& name, bool present_match,
+HeaderMatcher::HeaderMatcher(absl::string_view name, bool present_match,
                              bool invert_match)
     : name_(name),
       type_(Type::PRESENT),

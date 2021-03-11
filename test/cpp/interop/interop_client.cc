@@ -23,6 +23,7 @@
 #include <type_traits>
 #include <utility>
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
@@ -225,7 +226,7 @@ bool InteropClient::DoComputeEngineCreds(
   GPR_ASSERT(response.username().c_str() == default_service_account);
   GPR_ASSERT(!response.oauth_scope().empty());
   const char* oauth_scope_str = response.oauth_scope().c_str();
-  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != std::string::npos);
+  GPR_ASSERT(absl::StrContains(oauth_scope, oauth_scope_str));
   gpr_log(GPR_DEBUG, "Large unary with compute engine creds done.");
   return true;
 }
@@ -251,7 +252,7 @@ bool InteropClient::DoOauth2AuthToken(const std::string& username,
   GPR_ASSERT(!response.oauth_scope().empty());
   GPR_ASSERT(username == response.username());
   const char* oauth_scope_str = response.oauth_scope().c_str();
-  GPR_ASSERT(oauth_scope.find(oauth_scope_str) != std::string::npos);
+  GPR_ASSERT(absl::StrContains(oauth_scope, oauth_scope_str));
   gpr_log(GPR_DEBUG, "Unary with oauth2 access token credentials done.");
   return true;
 }
@@ -536,11 +537,7 @@ bool InteropClient::DoClientCompressedStreaming() {
   GPR_ASSERT(stream->WritesDone());
 
   s = stream->Finish();
-  if (!AssertStatusOk(s, context.debug_error_string())) {
-    return false;
-  }
-
-  return true;
+  return AssertStatusOk(s, context.debug_error_string());
 }
 
 bool InteropClient::DoServerCompressedStreaming() {
@@ -597,10 +594,7 @@ bool InteropClient::DoServerCompressedStreaming() {
   }
 
   Status s = stream->Finish();
-  if (!AssertStatusOk(s, context.debug_error_string())) {
-    return false;
-  }
-  return true;
+  return AssertStatusOk(s, context.debug_error_string());
 }
 
 bool InteropClient::DoResponseStreamingWithSlowConsumer() {

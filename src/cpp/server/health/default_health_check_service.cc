@@ -243,10 +243,9 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::EncodeResponse(
       grpc_health_v1_HealthCheckResponse_new(arena.ptr());
   grpc_health_v1_HealthCheckResponse_set_status(
       response_struct,
-      status == NOT_FOUND
-          ? grpc_health_v1_HealthCheckResponse_SERVICE_UNKNOWN
-          : status == SERVING ? grpc_health_v1_HealthCheckResponse_SERVING
-                              : grpc_health_v1_HealthCheckResponse_NOT_SERVING);
+      status == NOT_FOUND ? grpc_health_v1_HealthCheckResponse_SERVICE_UNKNOWN
+      : status == SERVING ? grpc_health_v1_HealthCheckResponse_SERVING
+                          : grpc_health_v1_HealthCheckResponse_NOT_SERVING);
   size_t buf_length;
   char* buf = grpc_health_v1_HealthCheckResponse_serialize(
       response_struct, arena.ptr(), &buf_length);

@@ -126,7 +126,7 @@ def main() -> None:
     err_cnt, _ = jobset.run(generate_template_render_jobs(templates),
                             maxjobs=args.jobs)
     if err_cnt != 0:
-        print(f'ERROR: {err_cnt} error(s) found while generating projects.',
+        print('ERROR: %s error(s) found while generating projects.' % err_cnt,
               file=sys.stderr)
         sys.exit(1)
 

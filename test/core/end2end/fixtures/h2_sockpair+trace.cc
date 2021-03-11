@@ -55,7 +55,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   grpc_error* error = f->server->core_server->SetupTransport(
       transport, nullptr, f->server->core_server->channel_args(), nullptr);
   if (error == GRPC_ERROR_NONE) {
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
     GRPC_ERROR_UNREF(error);
     grpc_transport_destroy(transport);
@@ -80,7 +80,7 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
                           transport, nullptr, &error);
   grpc_channel_args_destroy(args);
   if (cs->f->client != nullptr) {
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;

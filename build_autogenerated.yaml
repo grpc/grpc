@@ -431,6 +431,8 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/deadline/deadline_filter.h
+  - src/core/ext/filters/fault_injection/fault_injection_filter.h
+  - src/core/ext/filters/fault_injection/service_config_parser.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
   - src/core/ext/filters/http/message_compress/message_compress_filter.h
@@ -499,6 +501,8 @@ libs:
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h
   - src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h
   - src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h
+  - src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.h
+  - src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h
@@ -587,6 +591,8 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h
+  - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h
   - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h
@@ -645,6 +651,7 @@ libs:
   - src/core/ext/xds/xds_channel_args.h
   - src/core/ext/xds/xds_client.h
   - src/core/ext/xds/xds_client_stats.h
+  - src/core/ext/xds/xds_http_fault_filter.h
   - src/core/ext/xds/xds_http_filters.h
   - src/core/lib/avl/avl.h
   - src/core/lib/backoff/backoff.h
@@ -758,15 +765,7 @@ libs:
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
-  - src/core/lib/security/authorization/matchers.h
-  - src/core/lib/security/authorization/mock_cel/activation.h
-  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
-  - src/core/lib/security/authorization/mock_cel/cel_expression.h
-  - src/core/lib/security/authorization/mock_cel/cel_value.h
-  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
-  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
+  - src/core/lib/matchers/matchers.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -871,6 +870,7 @@ libs:
   - src/core/tsi/transport_security.h
   - src/core/tsi/transport_security_grpc.h
   - src/core/tsi/transport_security_interface.h
+  - third_party/xxhash/xxhash.h
   src:
   - src/core/ext/filters/census/grpc_context.cc
   - src/core/ext/filters/client_channel/backend_metric.cc
@@ -933,6 +933,8 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_idle/client_idle_filter.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
+  - src/core/ext/filters/fault_injection/fault_injection_filter.cc
+  - src/core/ext/filters/fault_injection/service_config_parser.cc
   - src/core/ext/filters/http/client/http_client_filter.cc
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
@@ -1011,6 +1013,8 @@ libs:
   - src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
   - src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c
   - src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
+  - src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c
+  - src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c
   - src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
   - src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
@@ -1099,6 +1103,8 @@ libs:
   - src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
+  - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
   - src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
@@ -1155,6 +1161,7 @@ libs:
   - src/core/ext/xds/xds_certificate_provider.cc
   - src/core/ext/xds/xds_client.cc
   - src/core/ext/xds/xds_client_stats.cc
+  - src/core/ext/xds/xds_http_fault_filter.cc
   - src/core/ext/xds/xds_http_filters.cc
   - src/core/ext/xds/xds_server_config_fetcher.cc
   - src/core/lib/avl/avl.cc
@@ -1282,9 +1289,7 @@ libs:
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
-  - src/core/lib/security/authorization/authorization_engine.cc
-  - src/core/lib/security/authorization/evaluate_args.cc
-  - src/core/lib/security/authorization/matchers.cc
+  - src/core/lib/matchers/matchers.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -1417,7 +1422,6 @@ libs:
   - absl/status:status
   - absl/functional:bind_front
   - absl/container:inlined_vector
-  - absl/container:flat_hash_set
   - absl/container:flat_hash_map
   baselib: true
   generate_plugin_registry: true
@@ -1611,6 +1615,8 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   - src/core/ext/filters/deadline/deadline_filter.h
+  - src/core/ext/filters/fault_injection/fault_injection_filter.h
+  - src/core/ext/filters/fault_injection/service_config_parser.h
   - src/core/ext/filters/http/client/http_client_filter.h
   - src/core/ext/filters/http/client_authority_filter.h
   - src/core/ext/filters/http/message_compress/message_compress_filter.h
@@ -1862,6 +1868,8 @@ libs:
   - src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   - src/core/ext/filters/client_idle/client_idle_filter.cc
   - src/core/ext/filters/deadline/deadline_filter.cc
+  - src/core/ext/filters/fault_injection/fault_injection_filter.cc
+  - src/core/ext/filters/fault_injection/service_config_parser.cc
   - src/core/ext/filters/http/client/http_client_filter.cc
   - src/core/ext/filters/http/client_authority_filter.cc
   - src/core/ext/filters/http/http_filters_plugin.cc
@@ -2245,6 +2253,7 @@ libs:
   - include/grpcpp/impl/codegen/message_allocator.h
   - include/grpcpp/impl/codegen/metadata_map.h
   - include/grpcpp/impl/codegen/method_handler.h
+  - include/grpcpp/impl/codegen/method_handler_impl.h
   - include/grpcpp/impl/codegen/proto_buffer_reader.h
   - include/grpcpp/impl/codegen/proto_buffer_writer.h
   - include/grpcpp/impl/codegen/proto_utils.h
@@ -2618,6 +2627,7 @@ libs:
   - include/grpcpp/impl/codegen/message_allocator.h
   - include/grpcpp/impl/codegen/metadata_map.h
   - include/grpcpp/impl/codegen/method_handler.h
+  - include/grpcpp/impl/codegen/method_handler_impl.h
   - include/grpcpp/impl/codegen/proto_buffer_reader.h
   - include/grpcpp/impl/codegen/proto_buffer_writer.h
   - include/grpcpp/impl/codegen/proto_utils.h
@@ -4965,8 +4975,20 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/mock_cel/activation.h
+  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
+  - src/core/lib/security/authorization/mock_cel/cel_expression.h
+  - src/core/lib/security/authorization/mock_cel/cel_value.h
+  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
+  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
+  - src/core/lib/security/authorization/rbac_policy.h
   src:
+  - src/core/lib/security/authorization/authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/authorization_engine_test.cc
   deps:
   - grpc_test_util
@@ -4975,6 +4997,7 @@ targets:
   - address_sorting
   - upb
   - libssl
+  - absl/container:flat_hash_set
 - name: aws_request_signer_test
   gtest: true
   build: test
@@ -6122,8 +6145,12 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/rbac_policy.h
   src:
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/evaluate_args_test.cc
   deps:
   - grpc_test_util
@@ -7333,6 +7360,26 @@ targets:
   - address_sorting
   - upb
   - libssl
+- name: rbac_translator_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/rbac_policy.h
+  - src/core/lib/security/authorization/rbac_translator.h
+  src:
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
+  - src/core/lib/security/authorization/rbac_translator.cc
+  - test/core/security/rbac_translator_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  - address_sorting
+  - upb
+  - libssl
 - name: ref_counted_ptr_test
   gtest: true
   build: test
@@ -8297,6 +8344,8 @@ targets:
   - src/proto/grpc/testing/xds/v3/config_source.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
   - src/proto/grpc/testing/xds/v3/endpoint.proto
+  - src/proto/grpc/testing/xds/v3/fault.proto
+  - src/proto/grpc/testing/xds/v3/fault_common.proto
   - src/proto/grpc/testing/xds/v3/http_connection_manager.proto
   - src/proto/grpc/testing/xds/v3/listener.proto
   - src/proto/grpc/testing/xds/v3/load_report.proto
@@ -8348,11 +8397,14 @@ targets:
   build: test
   run: false
   language: c++
-  headers: []
+  headers:
+  - test/cpp/end2end/test_health_check_service_impl.h
   src:
+  - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/interop/xds_interop_server.cc
   deps:
   - grpc_test_util

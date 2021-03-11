@@ -60,7 +60,7 @@ class MetadataBatch {
                                               const grpc_mdelem> {
    public:
     const grpc_mdelem& operator*() const { return elem_->md; }
-    const grpc_mdelem operator->() const { return elem_->md; }
+    grpc_mdelem operator->() const { return elem_->md; }
 
     const_iterator& operator++() {
       elem_ = elem_->next;
