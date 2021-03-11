@@ -263,10 +263,7 @@ bool client_connection_preface_validator(grpc_slice_buffer* incoming,
   }
   const uint8_t* p = GRPC_SLICE_START_PTR(slice);
   /* Check the frame type (SETTINGS) */
-  if (*(p + 3) != 4) {
-    return false;
-  }
-  return true;
+  return *(p + 3) == 4;
 }
 
 /* connection preface and settings frame to be sent by the client */

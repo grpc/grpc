@@ -604,8 +604,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     response_generator_->SetReresolutionResponse(std::move(result));
   }
 
-  const std::vector<int> GetBackendPorts(size_t start_index = 0,
-                                         size_t stop_index = 0) const {
+  std::vector<int> GetBackendPorts(size_t start_index = 0,
+                                   size_t stop_index = 0) const {
     if (stop_index == 0) stop_index = backends_.size();
     std::vector<int> backend_ports;
     for (size_t i = start_index; i < stop_index; ++i) {

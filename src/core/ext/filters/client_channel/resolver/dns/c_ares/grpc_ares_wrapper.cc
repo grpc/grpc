@@ -971,11 +971,7 @@ static bool target_matches_localhost_inner(const char* name, std::string* host,
     gpr_log(GPR_ERROR, "Unable to split host and port for name: %s", name);
     return false;
   }
-  if (gpr_stricmp(host->c_str(), "localhost") == 0) {
-    return true;
-  } else {
-    return false;
-  }
+  return gpr_stricmp(host->c_str(), "localhost") == 0;
 }
 
 static bool target_matches_localhost(const char* name) {

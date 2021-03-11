@@ -71,7 +71,7 @@ class Server : public InternallyRefCounted<Server> {
   /// Interface for listeners.
   /// Implementations must override the Orphan() method, which should stop
   /// listening and initiate destruction of the listener.
-  class ListenerInterface : public InternallyRefCounted<ListenerInterface> {
+  class ListenerInterface : public Orphanable {
    public:
     ~ListenerInterface() override = default;
 
