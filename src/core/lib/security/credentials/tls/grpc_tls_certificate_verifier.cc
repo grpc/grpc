@@ -66,6 +66,7 @@ namespace grpc_core {
 bool ExternalCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
     std::function<void()> callback) {
+  grpc_core::ExecCtx exec_ctx;
   {
     grpc_core::MutexLock lock(&mu_);
     request_map_.emplace(request, std::move(callback));

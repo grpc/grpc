@@ -86,11 +86,14 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   }
 
   void TearDown() override {
+    gpr_log(GPR_ERROR, "7");
     grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(
         &request_);
+    gpr_log(GPR_ERROR, "8");
     if (external_certificate_verifier_ != nullptr) {
       delete external_certificate_verifier_;
     }
+    gpr_log(GPR_ERROR, "9");
   }
 
   void CreateExternalCertificateVerifier(
@@ -120,6 +123,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
       EXPECT_STREQ(GetErrorMsg(expected_error).c_str(),
                    GetErrorMsg(error).c_str());
     }
+    GRPC_ERROR_UNREF(expected_error);
   }
 
   static std::string GetErrorMsg(grpc_error* error) {
@@ -164,7 +168,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     thread_args->callback = callback;
     thread_args->callback_arg = callback_arg;
     grpc_core::Thread thread = grpc_core::Thread(
-        "AsyncExternalVerifierGoodVerify", &AsyncExternalVerifierGoodVerifyCb,
+        "AsyncExternalVerifierBadVerify", &AsyncExternalVerifierBadVerifyCb,
         static_cast<void*>(thread_args));
     thread.Start();
     // Question: This still behaves like a sync operation. I wanted to return
@@ -174,7 +178,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     return true;
   }
 
-  static void AsyncExternalVerifierGoodVerifyCb(void* args) {
+  static void AsyncExternalVerifierBadVerifyCb(void* args) {
     ThreadArgs* thread_args = static_cast<ThreadArgs*>(args);
     grpc_tls_custom_verification_check_request* request = thread_args->request;
     grpc_tls_on_custom_verification_check_done_cb callback =
@@ -183,6 +187,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     request->status = GRPC_STATUS_UNAUTHENTICATED;
     request->error_details =
         gpr_strdup("AsyncExternalVerifierBadVerify failed");
+    gpr_log(GPR_ERROR, "this is called0");
     callback(request, callback_arg);
     delete thread_args;
   }
@@ -485,6 +490,7 @@ TEST_F(TlsSecurityConnectorTest,
                  &peer.properties[1]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   grpc_error* expected_error = GRPC_ERROR_NONE;
+  grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       grpcClosureCb, (void*)expected_error, grpc_schedule_on_exec_ctx);
   tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
@@ -522,11 +528,12 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_error* expected_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
       "Custom verification check failed with error: "
       "AsyncExternalVerifierBadVerify failed");
+  grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       grpcClosureCb, (void*)expected_error, grpc_schedule_on_exec_ctx);
   tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
   grpc_channel_args_destroy(new_args);
-  GRPC_ERROR_UNREF(expected_error);
+  /*GRPC_ERROR_UNREF(expected_error);*/
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -572,6 +579,7 @@ TEST_F(TlsSecurityConnectorTest,
                  &peer.properties[6]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   grpc_error* expected_error = GRPC_ERROR_NONE;
+  grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       grpcClosureCb, (void*)expected_error, grpc_schedule_on_exec_ctx);
   tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
@@ -623,11 +631,16 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_error* expected_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
       "Custom verification check failed with error: Hostname Verification "
       "Check failed.");
+  grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       grpcClosureCb, (void*)expected_error, grpc_schedule_on_exec_ctx);
   tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  gpr_log(GPR_ERROR, "5");
   grpc_channel_args_destroy(new_args);
+/*
   GRPC_ERROR_UNREF(expected_error);
+*/
+  gpr_log(GPR_ERROR, "6");
 }
 
 //
@@ -829,6 +842,7 @@ TEST_F(TlsSecurityConnectorTest,
                  &peer.properties[1]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   grpc_error* expected_error = GRPC_ERROR_NONE;
+  grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       grpcClosureCb, (void*)expected_error, grpc_schedule_on_exec_ctx);
   connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
@@ -862,10 +876,13 @@ TEST_F(TlsSecurityConnectorTest,
   grpc_error* expected_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
       "Custom verification check failed with error: "
       "AsyncExternalVerifierBadVerify failed");
+  grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
       grpcClosureCb, (void*)expected_error, grpc_schedule_on_exec_ctx);
   connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+/*
   GRPC_ERROR_UNREF(expected_error);
+*/
 }
 
 }  // namespace testing

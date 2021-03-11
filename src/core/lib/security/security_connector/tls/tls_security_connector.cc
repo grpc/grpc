@@ -197,28 +197,6 @@ void TlsChannelSecurityConnector::check_peer(
     tsi_peer peer, grpc_endpoint* /*ep*/,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
-  const char* target_name = overridden_target_name_.empty()
-                                ? target_name_.c_str()
-                                : overridden_target_name_.c_str();
-  grpc_error* error = grpc_ssl_check_alpn(&peer);
-  if (error != GRPC_ERROR_NONE) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
-    tsi_peer_destruct(&peer);
-    return;
-  }
-  *auth_context =
-      grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
-  tsi_peer_destruct(&peer);
-
-
-
-
-
-
-
-
-
   /*const char* target_name = overridden_target_name_.empty()
                                 ? target_name_.c_str()
                                 : overridden_target_name_.c_str();
@@ -230,7 +208,29 @@ void TlsChannelSecurityConnector::check_peer(
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  GPR_ASSERT(options_->certificate_verifier() != nullptr);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+  tsi_peer_destruct(&peer);*/
+
+
+
+
+
+
+
+
+
+  const char* target_name = overridden_target_name_.empty()
+                                ? target_name_.c_str()
+                                : overridden_target_name_.c_str();
+  grpc_error* error = grpc_ssl_check_alpn(&peer);
+  if (error != GRPC_ERROR_NONE) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+    tsi_peer_destruct(&peer);
+    return;
+  }
+  *auth_context =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
+  // GPR_ASSERT(options_->certificate_verifier() != nullptr);
   // Parse tsi_peer and feed in the values in the check request.
   auto* request = new grpc_tls_custom_verification_check_request();
   request->target_name = gpr_strdup(target_name);
@@ -309,8 +309,10 @@ void TlsChannelSecurityConnector::check_peer(
   }
   grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(request);
   delete request;
-  grpc_core::ExecCtx exec_ctx;
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);*/
+  //grpc_core::ExecCtx exec_ctx;
+  gpr_log(GPR_ERROR, "3");
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+  gpr_log(GPR_ERROR, "4");
 }
 
 int TlsChannelSecurityConnector::cmp(
@@ -507,6 +509,27 @@ void TlsServerSecurityConnector::check_peer(
     tsi_peer peer, grpc_endpoint* /*ep*/,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
+  /*grpc_error* error = grpc_ssl_check_alpn(&peer);
+  *auth_context =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
+  tsi_peer_destruct(&peer);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
   grpc_error* error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
@@ -515,7 +538,7 @@ void TlsServerSecurityConnector::check_peer(
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  GPR_ASSERT(options_->certificate_verifier() != nullptr);
+  // GPR_ASSERT(options_->certificate_verifier() != nullptr);
   // Parse tsi_peer and feed in the values in the check request.
   auto* request = new grpc_tls_custom_verification_check_request();
   std::vector<char*> uri_names;
@@ -593,7 +616,7 @@ void TlsServerSecurityConnector::check_peer(
   }
   grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(request);
   delete request;
-  grpc_core::ExecCtx exec_ctx;
+  //grpc_core::ExecCtx exec_ctx;
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 

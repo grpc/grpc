@@ -62,7 +62,7 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     options->set_certificate_verifier(hostname_verifier->Ref());
     hostname_verifier->Unref();
   }
-  if (!is_client && options->certificate_verifier() == nullptr) {
+  /*if (!is_client && options->certificate_verifier() == nullptr) {
     // If no verifier is specified on the server side, we will just fail the
     // credential creation. Users who want to bypass all the verifier check
     // should implement a dummy external verifier instead.
@@ -71,7 +71,7 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     return false;
   }
   // At this point, the verifier should be always set.
-  GPR_ASSERT(options->certificate_verifier() != nullptr);
+  GPR_ASSERT(options->certificate_verifier() != nullptr);*/
   return true;
 }
 
