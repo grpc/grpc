@@ -532,8 +532,7 @@ bool HeaderMatchHelper(const HeaderMatcher& header_matcher,
   // Note: If we ever allow binary headers here, we still need to
   // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
   // they are not visible to the LB policy in grpc-go.
-  if (absl::EndsWith(header_matcher.name(), "-bin") ||
-      header_matcher.name() == "grpc-previous-rpc-attempts") {
+  if (absl::EndsWith(header_matcher.name(), "-bin")) {
     value = absl::nullopt;
   } else if (header_matcher.name() == "content-type") {
     value = "application/grpc";
@@ -557,15 +556,22 @@ absl::optional<uint64_t> HeaderHashHelper(
     grpc_metadata_batch* initial_metadata) {
   GPR_ASSERT(policy.type == XdsApi::Route::HashPolicy::HEADER);
   std::string concatenated_value;
-  absl::optional<absl::string_view> value = grpc_metadata_batch_get_value(
-      initial_metadata, policy.header_name, &concatenated_value);
-  if (value.has_value()) {
-    if (policy.regex != nullptr) {
-      std::string key(*value);
-      RE2::GlobalReplace(&key, *policy.regex, policy.regex_substitution);
-      // TODO(donnadionne: return xx_hash(key);
-    } else {
-      // TODO(donnadionne): return xx_hash(value.value())
+  if (absl::EndsWith(policy.header_name, "-bin")) {
+    return absl::nullopt;
+  } else if (policy.header_name == "content-type") {
+    std::string key("application/grpc");
+    return XXH64(key.c_str(), key.size(), 0);
+  } else {
+    absl::optional<absl::string_view> value = grpc_metadata_batch_get_value(
+        initial_metadata, policy.header_name, &concatenated_value);
+    if (value.has_value()) {
+      if (policy.regex != nullptr) {
+        std::string key(*value);
+        RE2::GlobalReplace(&key, *policy.regex, policy.regex_substitution);
+        return XXH64(key.c_str(), key.size(), 0);
+      } else {
+        return XXH64(value->data(), value->size(), 0);
+      }
     }
   }
   return absl::nullopt;
@@ -636,14 +642,13 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     absl::optional<uint64_t> hash;
     for (const auto& hash_policy : entry.route.hash_policies) {
       absl::optional<uint64_t> new_hash;
-      uint64_t key;
       switch (hash_policy.type) {
         case XdsApi::Route::HashPolicy::HEADER:
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
         case XdsApi::Route::HashPolicy::CHANNEL_ID:
-          key = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
-          // TODO(donnadionne): new_hash = xx_hash(key).
+          new_hash =
+              static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
           break;
         default:
           GPR_ASSERT(0);

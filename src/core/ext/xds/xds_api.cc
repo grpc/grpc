@@ -177,19 +177,14 @@ XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
 XdsApi::Route::HashPolicy::HashPolicy(HashPolicy&& other) noexcept
     : type(other.type),
       header_name(std::move(other.header_name)),
-      regex_substitution(std::move(other.regex_substitution)) {
-  if (other.regex != nullptr) {
-    regex = std::move(other.regex);
-  }
-}
+      regex(std::move(other.regex)),
+      regex_substitution(std::move(other.regex_substitution)) {}
 
 XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
     HashPolicy&& other) noexcept {
   type = other.type;
   header_name = std::move(other.header_name);
-  if (other.regex != nullptr) {
-    regex = std::move(other.regex);
-  }
+  regex = std::move(other.regex);
   regex_substitution = std::move(other.regex_substitution);
   return *this;
 }
@@ -199,10 +194,9 @@ bool XdsApi::Route::HashPolicy::HashPolicy::operator==(
   if (type != other.type) return false;
   if (type == Type::HEADER) {
     if (regex == nullptr) {
-      if (other.regex != nullptr) {
-        return false;
-      }
+      if (other.regex != nullptr) return false;
     } else {
+      if (other.regex == nullptr) return false;
       return header_name == other.header_name &&
              regex->pattern() == other.regex->pattern() &&
              regex_substitution == other.regex_substitution;
