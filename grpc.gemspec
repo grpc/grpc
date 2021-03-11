@@ -2078,6 +2078,7 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/upb/upb/upb.h )
   s.files += %w( third_party/upb/upb/upb.hpp )
   s.files += %w( third_party/upb/upb/upb.int.h )
+  s.files += %w( third_party/xxhash/xxhash.h )
   s.files += %w( third_party/zlib/adler32.c )
   s.files += %w( third_party/zlib/compress.c )
   s.files += %w( third_party/zlib/crc32.c )
