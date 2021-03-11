@@ -219,27 +219,38 @@ class XdsApi {
       kTcpListener = 0,
       kHttpApiListener,
     } type;
-    // The name to use in the RDS request.
-    std::string route_config_name;
-    // Storing the Http Connection Manager Common Http Protocol Option
-    // max_stream_duration
-    Duration http_max_stream_duration;
-    // The RouteConfiguration to use for this listener.
-    // Present only if it is inlined in the LDS response.
-    absl::optional<RdsUpdate> rds_update;
 
-    struct HttpFilter {
-      std::string name;
-      XdsHttpFilterImpl::FilterConfig config;
+    struct HttpConnectionManager {
+      // The name to use in the RDS request.
+      std::string route_config_name;
+      // Storing the Http Connection Manager Common Http Protocol Option
+      // max_stream_duration
+      Duration http_max_stream_duration;
+      // The RouteConfiguration to use for this listener.
+      // Present only if it is inlined in the LDS response.
+      absl::optional<RdsUpdate> rds_update;
 
-      bool operator==(const HttpFilter& other) const {
-        return name == other.name && config == other.config;
+      struct HttpFilter {
+        std::string name;
+        XdsHttpFilterImpl::FilterConfig config;
+
+        bool operator==(const HttpFilter& other) const {
+          return name == other.name && config == other.config;
+        }
+
+        std::string ToString() const;
+      };
+      std::vector<HttpFilter> http_filters;
+
+      bool operator==(const HttpConnectionManager& other) const {
+        return route_config_name == other.route_config_name &&
+               http_max_stream_duration == other.http_max_stream_duration &&
+               rds_update == other.rds_update &&
+               http_filters == other.http_filters;
       }
 
       std::string ToString() const;
     };
-
-    std::vector<HttpFilter> http_filters;
 
     struct FilterChain {
       struct FilterChainMatch {
@@ -287,25 +298,31 @@ class XdsApi {
 
       DownstreamTlsContext downstream_tls_context;
 
+      // This is in principle the filter list.
+      // We currently require exactly one filter, which is the HCM.
+      HttpConnectionManager http_connection_manager;
+
       bool operator==(const FilterChain& other) const {
         return filter_chain_match == other.filter_chain_match &&
-               downstream_tls_context == other.downstream_tls_context;
+               downstream_tls_context == other.downstream_tls_context &&
+               http_connection_manager == other.http_connection_manager;
       }
 
       std::string ToString() const;
     };
 
+    // Populated for type=kHttpApiListener.
+    HttpConnectionManager http_connection_manager;
+
+    // Populated for type=kTcpListener.
     // host:port listening_address set when type is kTcpListener
     std::string address;
     std::vector<FilterChain> filter_chains;
     absl::optional<FilterChain> default_filter_chain;
 
     bool operator==(const LdsUpdate& other) const {
-      return route_config_name == other.route_config_name &&
-             rds_update == other.rds_update &&
-             http_max_stream_duration == other.http_max_stream_duration &&
-             http_filters == other.http_filters && address == other.address &&
-             filter_chains == other.filter_chains &&
+      return http_connection_manager == other.http_connection_manager &&
+             address == other.address && filter_chains == other.filter_chains &&
              default_filter_chain == other.default_filter_chain;
     }
 

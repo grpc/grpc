@@ -61,6 +61,10 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
       const FilterConfig* /*filter_config_override*/) const override {
     return absl::UnimplementedError("router filter should never be called");
   }
+
+  bool IsSupportedOnClients() const override { return true; }
+
+  bool IsSupportedOnServers() const override { return true; }
 };
 
 using FilterOwnerList = std::vector<std::unique_ptr<XdsHttpFilterImpl>>;

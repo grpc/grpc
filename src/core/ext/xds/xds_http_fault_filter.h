@@ -52,6 +52,10 @@ class XdsHttpFaultFilter : public XdsHttpFilterImpl {
   absl::StatusOr<ServiceConfigJsonEntry> GenerateServiceConfig(
       const FilterConfig& hcm_filter_config,
       const FilterConfig* filter_config_override) const override;
+
+  bool IsSupportedOnClients() const override { return true; }
+
+  bool IsSupportedOnServers() const override { return false; }
 };
 
 }  // namespace grpc_core
