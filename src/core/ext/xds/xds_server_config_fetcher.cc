@@ -49,7 +49,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         std::move(watcher), args, xds_client_);
     auto* listener_watcher_ptr = listener_watcher.get();
     listening_address = absl::StrReplaceAll(
-        xds_client_->bootstrap()->server_listener_resource_name_template(),
+        xds_client_->bootstrap().server_listener_resource_name_template(),
         {{"%s", listening_address}});
     xds_client_->WatchListenerData(listening_address,
                                    std::move(listener_watcher));
@@ -272,7 +272,7 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create() {
     return nullptr;
   }
   if (xds_client->bootstrap()
-          ->server_listener_resource_name_template()
+          .server_listener_resource_name_template()
           .empty()) {
     gpr_log(GPR_ERROR,
             "server_listener_resource_name_template not provided in bootstrap "

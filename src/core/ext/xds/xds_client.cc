@@ -2219,6 +2219,7 @@ RefCountedPtr<XdsClient> XdsClient::GetOrCreate(grpc_error** error) {
     if (xds_client != nullptr) return xds_client;
   }
   auto xds_client = MakeRefCounted<XdsClient>(error);
+  if (*error != GRPC_ERROR_NONE) return nullptr;
   g_xds_client = xds_client.get();
   return xds_client;
 }
