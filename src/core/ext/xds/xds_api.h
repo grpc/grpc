@@ -475,42 +475,26 @@ class XdsApi {
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       ClusterLoadReport>;
 
-  // Resource status from the view of a xDS client, which tells the
-  // synchronization status between the xDS client and the xDS server.
-  enum ClientResourceStatus {
-    // Resource status is not available/unknown.
-    UNKNOWN = 0,
-    // Client requested this resource but hasn't received any update from
-    // management server. The client will not fail requests, but will queue them
-    // until update arrives or the client times out waiting for the resource.
-    REQUESTED,
-    // This resource has been requested by the client but has either not been
-    // delivered by the server or was previously delivered by the server and
-    // then subsequently removed from resources provided by the server.
-    DOES_NOT_EXIST,
-    // Client received this resource and replied with ACK.
-    ACKED,
-    // Client received this resource and replied with NACK.
-    NACKED
-  };
-  static_assert(static_cast<int>(envoy_admin_v3_UNKNOWN) ==
-                    static_cast<int>(ClientResourceStatus::UNKNOWN),
-                "");
-  static_assert(static_cast<int>(envoy_admin_v3_REQUESTED) ==
-                    static_cast<int>(ClientResourceStatus::REQUESTED),
-                "");
-  static_assert(static_cast<int>(envoy_admin_v3_DOES_NOT_EXIST) ==
-                    static_cast<int>(ClientResourceStatus::DOES_NOT_EXIST),
-                "");
-  static_assert(static_cast<int>(envoy_admin_v3_ACKED) ==
-                    static_cast<int>(ClientResourceStatus::ACKED),
-                "");
-  static_assert(static_cast<int>(envoy_admin_v3_NACKED) ==
-                    static_cast<int>(ClientResourceStatus::NACKED),
-                "");
-
   // The metadata of the xDS resource; used by the xDS config dump.
   struct ResourceMetadata {
+    // Resource status from the view of a xDS client, which tells the
+    // synchronization status between the xDS client and the xDS server.
+    enum ClientResourceStatus {
+      // Client requested this resource but hasn't received any update from
+      // management server. The client will not fail requests, but will queue
+      // them
+      // until update arrives or the client times out waiting for the resource.
+      REQUESTED = 1,
+      // This resource has been requested by the client but has either not been
+      // delivered by the server or was previously delivered by the server and
+      // then subsequently removed from resources provided by the server.
+      DOES_NOT_EXIST,
+      // Client received this resource and replied with ACK.
+      ACKED,
+      // Client received this resource and replied with NACK.
+      NACKED
+    };
+
     // The client status of this resource.
     ClientResourceStatus client_status = REQUESTED;
     // The serialized bytes of the last successfully updated raw xDS resource.
@@ -526,17 +510,30 @@ class XdsApi {
     // Timestamp of the last failed update attempt.
     grpc_millis failed_update_time = 0;
   };
-
   using ResourceMetadataMap =
       std::map<absl::string_view /*resource_name*/, const ResourceMetadata*>;
-
-  struct PerXdsResourceMetadata {
+  struct ResourceTypeMetadata {
     absl::string_view version;
     ResourceMetadataMap resource_metadata_map;
   };
-
-  using PerXdsResourceMetadataMap =
-      std::map<absl::string_view /*type_url*/, PerXdsResourceMetadata>;
+  using ResourceTypeMetadataMap =
+      std::map<absl::string_view /*type_url*/, ResourceTypeMetadata>;
+  static_assert(
+      static_cast<int>(envoy_admin_v3_REQUESTED) ==
+          static_cast<int>(ResourceMetadata::ClientResourceStatus::REQUESTED),
+      "");
+  static_assert(static_cast<int>(envoy_admin_v3_DOES_NOT_EXIST) ==
+                    static_cast<int>(
+                        ResourceMetadata::ClientResourceStatus::DOES_NOT_EXIST),
+                "");
+  static_assert(
+      static_cast<int>(envoy_admin_v3_ACKED) ==
+          static_cast<int>(ResourceMetadata::ClientResourceStatus::ACKED),
+      "");
+  static_assert(
+      static_cast<int>(envoy_admin_v3_NACKED) ==
+          static_cast<int>(ResourceMetadata::ClientResourceStatus::NACKED),
+      "");
 
   // If the response can't be parsed at the top level, the resulting
   // type_url will be empty.
@@ -592,7 +589,7 @@ class XdsApi {
 
   // Assemble the client config proto message and return the serialized result.
   std::string AssembleClientConfig(
-      const PerXdsResourceMetadataMap& per_xds_resource_metadata_map);
+      const ResourceTypeMetadataMap& per_xds_resource_metadata_map);
 
  private:
   XdsClient* client_;

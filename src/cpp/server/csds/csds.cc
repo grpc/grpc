@@ -22,6 +22,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpcpp/impl/codegen/slice.h>
 
 #include <string>
 
@@ -40,15 +41,10 @@ namespace {
 
 absl::StatusOr<ClientConfig> DumpClientConfig() {
   ClientConfig client_config;
-  grpc_error* error = GRPC_ERROR_NONE;
-  auto xds_client = grpc_core::XdsClient::GetOrCreate(&error);
-  if (error != GRPC_ERROR_NONE) {
-    absl::Status status = absl::UnavailableError(
-        absl::StrCat("XdsClient is not available:", grpc_error_string(error)));
-    GRPC_ERROR_UNREF(error);
-    return status;
-  }
-  if (!client_config.ParseFromString(xds_client->DumpClientConfigBinary())) {
+  grpc_slice serialized_client_config = grpc_dump_xds_configs();
+  std::string bytes = StringFromCopiedSlice(serialized_client_config);
+  grpc_slice_unref(serialized_client_config);
+  if (!client_config.ParseFromString(bytes)) {
     return absl::InternalError("Failed to parse ClientConfig.");
   }
   return client_config;

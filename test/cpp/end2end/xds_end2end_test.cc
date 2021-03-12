@@ -9663,9 +9663,6 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
       xds_resource_does_not_exist_timeout_ms_ = 500;
     }
     XdsEnd2endTest::SetUp();
-    // The ServerThread picks port using PortSaver, but PortSaver will be reset
-    // in XdsEnd2endTest::SetUp(). So, the admin server thread must be created
-    // after the XdsEnd2endTest::SetUp().
     admin_server_thread_ = absl::make_unique<AdminServerThread>();
     admin_server_thread_->Start();
     std::string admin_server_address = absl::StrCat(
@@ -9724,6 +9721,57 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
                          envoy::service::status::v3::ClientStatusResponse>>
       stream_;
 };
+
+#define XDS_FIELD(name) \
+  ::testing::ExplainMatchResult((name), arg.name(), result_listener)
+#define XDS_MATCH(field, value) \
+  ::testing::ExplainMatchResult((value), arg.field(), result_listener)
+
+MATCHER_P4(EqNode, id, user_agent_name, user_agent_version, client_features,
+           "equals Node") {
+  bool ok = true;
+  ok &= XDS_FIELD(id);
+  ok &= XDS_FIELD(user_agent_name);
+  ok &= XDS_FIELD(user_agent_version);
+  ok &= XDS_FIELD(client_features);
+  return ok;
+}
+
+MATCHER_P2(EqListenersConfigDump, version_info, dynamic_listeners,
+           "equals ListenerConfigDump") {
+  bool ok = true;
+  ok &= XDS_MATCH(static_listeners, ::testing::ElementsAre());
+  ok &= XDS_FIELD(version_info);
+  ok &= XDS_FIELD(dynamic_listeners);
+  return ok;
+}
+
+MATCHER_P2(EqDynamicListenerAck, name, active_state, "equals DynamicListener") {
+  bool ok = true;
+  ok &= XDS_MATCH(has_warming_state, false);
+  ok &= XDS_MATCH(has_draining_state, false);
+  ok &= XDS_MATCH(has_error_state, false);
+  ok &= XDS_MATCH(client_status, ClientResourceStatus::ACKED);
+  ok &= XDS_FIELD(name);
+  ok &= XDS_FIELD(active_state);
+  return ok;
+}
+
+MATCHER_P2(EqDynamicListenerState, version_info, listener,
+           "equals DynamicListenerState") {
+  bool ok = true;
+  ok &= XDS_FIELD(version_info);
+  ok &= XDS_FIELD(listener);
+  return ok;
+}
+
+MATCHER_P2(EqListener, name, hcm, "equals Listener") {
+  bool ok = true;
+  ok &= XDS_FIELD(name);
+  ok &= ::testing::ExplainMatchResult(hcm, arg.api_listener().api_listener(),
+                                      result_listener);
+  return ok;
+}
 
 MATCHER_P(UnpackListener, matcher, "is a Listener") {
   Listener config;
@@ -9797,6 +9845,9 @@ MATCHER_P(EqEndpointWeight, weight,
                                    .value()) == static_cast<uint32_t>(weight);
 }
 
+#undef XDS_FIELD
+#undef XDS_MATCH
+
 TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
   const size_t kNumRpcs = 5;
   SetNextResolution({});
@@ -9814,70 +9865,21 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
   EXPECT_EQ(1, csds_response.config_size());
   const auto& client_config = csds_response.config(0);
   // Validate the Node information
-  EXPECT_THAT(
-      client_config.node(),
-      ::testing::AllOf(
-          ::testing::Property(&envoy::config::core::v3::Node::id,
-                              ::testing::Eq("xds_end2end_test")),
-          ::testing::Property(&envoy::config::core::v3::Node::user_agent_name,
-                              ::testing::HasSubstr("C-core")),
-          ::testing::Property(
-              &envoy::config::core::v3::Node::user_agent_version,
-              ::testing::HasSubstr(grpc_version_string())),
-          ::testing::Property(
-              &envoy::config::core::v3::Node::client_features,
-              ::testing::ElementsAre(::testing::Eq(
-                  "envoy.lb.does_not_support_overprovisioning")))));
+  EXPECT_THAT(client_config.node(),
+              EqNode("xds_end2end_test", ::testing::HasSubstr("C-core"),
+                     ::testing::HasSubstr(grpc_version_string()),
+                     ::testing::ElementsAre(
+                         "envoy.lb.does_not_support_overprovisioning")));
   // Validate the listener config
-  EXPECT_THAT(
-      client_config.xds_config(),
-      ::testing::Contains(::testing::Property(
-          &envoy::service::status::v3::PerXdsConfig::listener_config,
-          ::testing::AllOf(
-              ::testing::Property(
-                  &envoy::admin::v3::ListenersConfigDump::version_info,
-                  ::testing::Eq("1")),
-              ::testing::Property(
-                  &envoy::admin::v3::ListenersConfigDump::static_listeners_size,
-                  ::testing::Eq(0)),
-              ::testing::Property(
-                  &envoy::admin::v3::ListenersConfigDump::dynamic_listeners,
-                  ::testing::ElementsAre(::testing::AllOf(
-                      ::testing::Property(
-                          &envoy::admin::v3::ListenersConfigDump::
-                              DynamicListener::name,
-                          ::testing::Eq(kServerName)),
-                      ::testing::Property(
-                          &envoy::admin::v3::ListenersConfigDump::
-                              DynamicListener::has_warming_state,
-                          ::testing::Eq(false)),
-                      ::testing::Property(
-                          &envoy::admin::v3::ListenersConfigDump::
-                              DynamicListener::has_draining_state,
-                          ::testing::Eq(false)),
-                      ::testing::Property(
-                          &envoy::admin::v3::ListenersConfigDump::
-                              DynamicListener::has_error_state,
-                          ::testing::Eq(false)),
-                      ::testing::Property(
-                          &envoy::admin::v3::ListenersConfigDump::
-                              DynamicListener::client_status,
-                          ::testing::Eq(ClientResourceStatus::ACKED)),
-                      ::testing::Property(
-                          &envoy::admin::v3::ListenersConfigDump::
-                              DynamicListener::active_state,
-                          ::testing::AllOf(
-                              ::testing::Property(
-                                  &envoy::admin::v3::ListenersConfigDump::
-                                      DynamicListenerState::version_info,
-                                  ::testing::Eq("1")),
-                              ::testing::Property(
-                                  &envoy::admin::v3::ListenersConfigDump::
-                                      DynamicListenerState::listener,
-                                  UnpackListener(::testing::Property(
-                                      &envoy::config::listener::v3::Listener::
-                                          name,
-                                      ::testing::Eq(kServerName)))))))))))));
+  EXPECT_THAT(client_config.xds_config(),
+              ::testing::Contains(::testing::Property(
+                  &envoy::service::status::v3::PerXdsConfig::listener_config,
+                  EqListenersConfigDump(
+                      "1", ::testing::ElementsAre(EqDynamicListenerAck(
+                               kServerName,
+                               EqDynamicListenerState(
+                                   "1", UnpackListener(EqListener(
+                                            kServerName, ::testing::_)))))))));
   // Validate route config
   if (GetParam().enable_rds_testing()) {
     EXPECT_THAT(
@@ -9913,28 +9915,22 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
         client_config.xds_config(),
         ::testing::Contains(::testing::Property(
             &envoy::service::status::v3::PerXdsConfig::listener_config,
-            ::testing::Property(
-                &envoy::admin::v3::ListenersConfigDump::dynamic_listeners,
-                ::testing::ElementsAre(::testing::Property(
-                    &envoy::admin::v3::ListenersConfigDump::DynamicListener::
-                        active_state,
-                    ::testing::Property(
-                        &envoy::admin::v3::ListenersConfigDump::
-                            DynamicListenerState::listener,
-                        UnpackListener(::testing::Property(
-                            &envoy::config::listener::v3::Listener::
-                                api_listener,
-                            ::testing::Property(
-                                &envoy::config::listener::v3::ApiListener::
-                                    api_listener,
-                                UnpackHttpConnectionManager(::testing::Property(
-                                    &HttpConnectionManager::route_config,
-                                    ::testing::AllOf(
-                                        ::testing::Property(
-                                            &RouteConfiguration::name,
-                                            kDefaultRouteConfigurationName),
-                                        EqRouteConfigCluster(
-                                            kDefaultClusterName))))))))))))));
+            EqListenersConfigDump(
+                "1",
+                ::testing::ElementsAre(EqDynamicListenerAck(
+                    kServerName,
+                    EqDynamicListenerState(
+                        "1",
+                        UnpackListener(EqListener(
+                            kServerName,
+                            UnpackHttpConnectionManager(::testing::Property(
+                                &HttpConnectionManager::route_config,
+                                ::testing::AllOf(
+                                    ::testing::Property(
+                                        &RouteConfiguration::name,
+                                        kDefaultRouteConfigurationName),
+                                    EqRouteConfigCluster(
+                                        kDefaultClusterName)))))))))))));
   }
   // Validate the cluster config
   EXPECT_THAT(
@@ -10304,7 +10300,15 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
                           EqClusterName(kClusterName2))))))));
 }
 
-TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpDoesNotExist) {
+class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
+  void SetUp() override {
+    // Shorten the ADS subscription timeout to speed up the test run.
+    xds_resource_does_not_exist_timeout_ms_ = 500;
+    ClientStatusDiscoveryServiceTest::SetUp();
+  }
+};
+
+TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpDoesNotExist) {
   int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
   balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
@@ -10477,6 +10481,14 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, BootstrapContentsFromEnvVarTest,
 // Run CSDS tests with RDS enabled and disabled.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, ClientStatusDiscoveryServiceTest,
+    ::testing::Values(
+        TestType(), TestType().set_enable_rds_testing(),
+        TestType().set_use_csds_streaming(),
+        TestType().set_enable_rds_testing().set_use_csds_streaming()),
+    &TestTypeName);
+
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, CsdsShortAdsTimeoutTest,
     ::testing::Values(
         TestType(), TestType().set_enable_rds_testing(),
         TestType().set_use_csds_streaming(),
