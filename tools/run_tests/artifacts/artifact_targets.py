@@ -133,7 +133,7 @@ class PythonArtifact:
                 'tools/dockerfile/grpc_artifact_linux_{}'.format(self.arch),
                 'tools/run_tests/artifacts/build_artifact_python.sh',
                 environ=environ,
-                timeout_seconds=60 * 60 * 5,
+                timeout_seconds=60 * 60 * 7,
                 docker_base_image='quay.io/grpc/raspbian_{}'.format(self.arch),
                 extra_docker_args=extra_args)
         elif 'manylinux' in self.platform:
@@ -171,7 +171,7 @@ class PythonArtifact:
                 (self.platform, self.arch),
                 'tools/run_tests/artifacts/build_artifact_python.sh',
                 environ=environ,
-                timeout_seconds=60 * 60)
+                timeout_seconds=60 * 60 * 2)
         elif self.platform == 'windows':
             if 'Python27' in self.py_version:
                 environ['EXT_COMPILER'] = 'mingw32'
@@ -250,7 +250,7 @@ class CSharpExtArtifact:
             return create_jobspec(
                 self.name,
                 ['tools/run_tests/artifacts/build_artifact_csharp_ios.sh'],
-                timeout_seconds=45 * 60,
+                timeout_seconds=60 * 60,
                 use_workspace=True)
         elif self.platform == 'windows':
             return create_jobspec(self.name, [
@@ -282,6 +282,7 @@ class CSharpExtArtifact:
                 return create_jobspec(
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_csharp.sh'],
+                    timeout_seconds=45 * 60,
                     environ={'CMAKE_ARCH_OPTION': cmake_arch_option},
                     use_workspace=True)
 
