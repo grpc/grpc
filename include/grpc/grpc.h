@@ -411,20 +411,10 @@ GRPCAPI void grpc_server_register_completion_queue(grpc_server* server,
                                                    grpc_completion_queue* cq,
                                                    void* reserved);
 
-// There might be more methods added later, so users should take care to memset
-// this to 0 before using it.
-typedef struct {
-  void (*on_serving_status_change)(void* user_data, const char* uri,
-                                   grpc_status_code code,
-                                   const char* error_message);
-  void* user_data;
-} grpc_server_xds_status_notifier;
-
 typedef struct grpc_server_config_fetcher grpc_server_config_fetcher;
 
 /** EXPERIMENTAL.  Creates an xDS config fetcher. */
-GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
-    grpc_server_xds_status_notifier notifier);
+GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create();
 
 /** EXPERIMENTAL.  Destroys a config fetcher. */
 GRPCAPI void grpc_server_config_fetcher_destroy(

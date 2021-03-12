@@ -139,7 +139,7 @@ class Fixture {
     grpc_channel_args c_args = args.c_channel_args();
     ep_ = new PhonyEndpoint;
     t_ = grpc_create_chttp2_transport(&c_args, ep_, client);
-    grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(t_, nullptr, nullptr);
     FlushExecCtx();
   }
 

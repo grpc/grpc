@@ -178,7 +178,7 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error* error) {
       self->Ref().release();  // Ref held by OnTimeout()
       grpc_chttp2_transport_start_reading(self->result_->transport,
                                           args->read_buffer,
-                                          &self->on_receive_settings_, nullptr);
+                                          &self->on_receive_settings_);
       GRPC_CLOSURE_INIT(&self->on_timeout_, OnTimeout, self,
                         grpc_schedule_on_exec_ctx);
       grpc_timer_init(&self->timer_, self->args_.deadline, &self->on_timeout_);
