@@ -459,13 +459,8 @@ struct grpc_server_config_fetcher {
   class WatcherInterface {
    public:
     virtual ~WatcherInterface() = default;
-    // UpdateConfig() is invoked the config fetcher when a new config is
-    // available. Implementations should update the configuration and start
-    // serving if not already serving. Ownership of \a args is transferred.
+    // Ownership of \a args is transferred.
     virtual void UpdateConfig(grpc_channel_args* args) = 0;
-    // Implementations should stop serving when this is called. Serving should
-    // only resume when UpdateConfig() is invoked.
-    virtual void StopServing() = 0;
   };
 
   virtual ~grpc_server_config_fetcher() = default;

@@ -1104,7 +1104,6 @@ grpc_cc_library(
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_inproc",
-        "grpc_fault_injection_filter",
         "grpc_workaround_cronet_compression_filter",
         "grpc_server_backward_compatibility",
     ],
@@ -1261,23 +1260,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_fault_injection_filter",
-    srcs = [
-        "src/core/ext/filters/fault_injection/fault_injection_filter.cc",
-        "src/core/ext/filters/fault_injection/service_config_parser.cc",
-    ],
-    hdrs = [
-        "src/core/ext/filters/fault_injection/fault_injection_filter.h",
-        "src/core/ext/filters/fault_injection/service_config_parser.h",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_client_channel",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_http_filters",
     srcs = [
         "src/core/ext/filters/http/client/http_client_filter.cc",
@@ -1413,7 +1395,6 @@ grpc_cc_library(
         "src/core/ext/xds/xds_certificate_provider.cc",
         "src/core/ext/xds/xds_client.cc",
         "src/core/ext/xds/xds_client_stats.cc",
-        "src/core/ext/xds/xds_http_fault_filter.cc",
         "src/core/ext/xds/xds_http_filters.cc",
         "src/core/lib/security/credentials/xds/xds_credentials.cc",
     ],
@@ -1428,7 +1409,6 @@ grpc_cc_library(
         "src/core/ext/xds/xds_channel_args.h",
         "src/core/ext/xds/xds_client.h",
         "src/core/ext/xds/xds_client_stats.h",
-        "src/core/ext/xds/xds_http_fault_filter.h",
         "src/core/ext/xds/xds_http_filters.h",
         "src/core/lib/security/credentials/xds/xds_credentials.h",
     ],
@@ -1444,7 +1424,6 @@ grpc_cc_library(
         "envoy_ads_upbdefs",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_fault_injection_filter",
         "grpc_matchers",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
@@ -1861,9 +1840,6 @@ grpc_cc_library(
     name = "grpc_resolver_xds",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
-    ],
-    external_deps = [
-        "xxhash",
     ],
     language = "c++",
     deps = [
@@ -2746,8 +2722,6 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c",
         "src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c",
         "src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c",
-        "src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c",
-        "src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c",
         "src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c",
         "src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c",
         "src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c",
@@ -2782,8 +2756,6 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.h",
         "src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.h",
         "src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.h",
-        "src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.h",
-        "src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.h",
         "src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.h",
         "src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.h",
         "src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.h",
@@ -2835,8 +2807,6 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c",
-        "src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c",
-        "src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c",
@@ -2870,8 +2840,6 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.h",
-        "src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.h",
-        "src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.h",

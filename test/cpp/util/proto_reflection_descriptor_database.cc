@@ -290,7 +290,7 @@ bool ProtoReflectionDescriptorDatabase::GetServices(
   return false;
 }
 
-protobuf::FileDescriptorProto
+const protobuf::FileDescriptorProto
 ProtoReflectionDescriptorDatabase::ParseFileDescriptorProtoResponse(
     const std::string& byte_fd_proto) {
   protobuf::FileDescriptorProto file_desc_proto;
@@ -310,7 +310,7 @@ void ProtoReflectionDescriptorDatabase::AddFileFromResponse(
   }
 }
 
-std::shared_ptr<ProtoReflectionDescriptorDatabase::ClientStream>
+const std::shared_ptr<ProtoReflectionDescriptorDatabase::ClientStream>
 ProtoReflectionDescriptorDatabase::GetStream() {
   if (!stream_) {
     stream_ = stub_->ServerReflectionInfo(&ctx_);

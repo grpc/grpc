@@ -341,8 +341,11 @@ static bool is_handshake_finished_properly(handshaker_args* args) {
   GPR_ASSERT(args != nullptr);
   GPR_ASSERT(args->fixture != nullptr);
   tsi_test_fixture* fixture = args->fixture;
-  return (args->is_client && fixture->client_result != nullptr) ||
-         (!args->is_client && fixture->server_result != nullptr);
+  if ((args->is_client && fixture->client_result != nullptr) ||
+      (!args->is_client && fixture->server_result != nullptr)) {
+    return true;
+  }
+  return false;
 }
 
 static void do_handshaker_next(handshaker_args* args) {

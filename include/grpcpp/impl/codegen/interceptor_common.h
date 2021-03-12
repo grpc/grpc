@@ -223,11 +223,18 @@ class InterceptorBatchMethodsImpl
   bool InterceptorsListEmpty() {
     auto* client_rpc_info = call_->client_rpc_info();
     if (client_rpc_info != nullptr) {
-      return client_rpc_info->interceptors_.empty();
+      if (client_rpc_info->interceptors_.empty()) {
+        return true;
+      } else {
+        return false;
+      }
     }
 
     auto* server_rpc_info = call_->server_rpc_info();
-    return server_rpc_info == nullptr || server_rpc_info->interceptors_.empty();
+    if (server_rpc_info == nullptr || server_rpc_info->interceptors_.empty()) {
+      return true;
+    }
+    return false;
   }
 
   // This should be used only by subclasses of CallOpSetInterface. SetCall and
@@ -412,7 +419,11 @@ class CancelInterceptorBatchMethods
  public:
   bool QueryInterceptionHookPoint(
       experimental::InterceptionHookPoints type) override {
-    return type == experimental::InterceptionHookPoints::PRE_SEND_CANCEL;
+    if (type == experimental::InterceptionHookPoints::PRE_SEND_CANCEL) {
+      return true;
+    } else {
+      return false;
+    }
   }
 
   void Proceed() override {

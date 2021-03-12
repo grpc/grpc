@@ -82,13 +82,13 @@ class ProtoReflectionDescriptorDatabase : public protobuf::DescriptorDatabase {
       grpc::reflection::v1alpha::ServerReflectionResponse>
       ClientStream;
 
-  protobuf::FileDescriptorProto ParseFileDescriptorProtoResponse(
+  const protobuf::FileDescriptorProto ParseFileDescriptorProtoResponse(
       const std::string& byte_fd_proto);
 
   void AddFileFromResponse(
       const grpc::reflection::v1alpha::FileDescriptorResponse& response);
 
-  std::shared_ptr<ClientStream> GetStream();
+  const std::shared_ptr<ClientStream> GetStream();
 
   bool DoOneRequest(
       const grpc::reflection::v1alpha::ServerReflectionRequest& request,

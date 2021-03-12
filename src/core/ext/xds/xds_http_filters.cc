@@ -20,7 +20,6 @@
 
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
-#include "src/core/ext/xds/xds_http_fault_filter.h"
 
 namespace grpc_core {
 
@@ -61,10 +60,6 @@ class XdsHttpRouterFilter : public XdsHttpFilterImpl {
       const FilterConfig* /*filter_config_override*/) const override {
     return absl::UnimplementedError("router filter should never be called");
   }
-
-  bool IsSupportedOnClients() const override { return true; }
-
-  bool IsSupportedOnServers() const override { return true; }
 };
 
 using FilterOwnerList = std::vector<std::unique_ptr<XdsHttpFilterImpl>>;
@@ -102,8 +97,6 @@ void XdsHttpFilterRegistry::Init() {
   g_filter_registry = new FilterRegistryMap;
   RegisterFilter(absl::make_unique<XdsHttpRouterFilter>(),
                  {kXdsHttpRouterFilterConfigName});
-  RegisterFilter(absl::make_unique<XdsHttpFaultFilter>(),
-                 {kXdsHttpFaultFilterConfigName});
 }
 
 void XdsHttpFilterRegistry::Shutdown() {

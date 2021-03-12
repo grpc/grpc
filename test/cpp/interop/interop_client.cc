@@ -537,7 +537,11 @@ bool InteropClient::DoClientCompressedStreaming() {
   GPR_ASSERT(stream->WritesDone());
 
   s = stream->Finish();
-  return AssertStatusOk(s, context.debug_error_string());
+  if (!AssertStatusOk(s, context.debug_error_string())) {
+    return false;
+  }
+
+  return true;
 }
 
 bool InteropClient::DoServerCompressedStreaming() {
@@ -594,7 +598,10 @@ bool InteropClient::DoServerCompressedStreaming() {
   }
 
   Status s = stream->Finish();
-  return AssertStatusOk(s, context.debug_error_string());
+  if (!AssertStatusOk(s, context.debug_error_string())) {
+    return false;
+  }
+  return true;
 }
 
 bool InteropClient::DoResponseStreamingWithSlowConsumer() {

@@ -1673,7 +1673,10 @@ static bool tcp_can_track_err(grpc_endpoint* ep) {
   if (getsockname(tcp->fd, &addr, &len) < 0) {
     return false;
   }
-  return addr.sa_family == AF_INET || addr.sa_family == AF_INET6;
+  if (addr.sa_family == AF_INET || addr.sa_family == AF_INET6) {
+    return true;
+  }
+  return false;
 }
 
 static const grpc_endpoint_vtable vtable = {tcp_read,

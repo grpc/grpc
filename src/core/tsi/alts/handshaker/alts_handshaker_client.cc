@@ -117,7 +117,10 @@ static void handshaker_client_send_buffer_destroy(
 
 static bool is_handshake_finished_properly(grpc_gcp_HandshakerResp* resp) {
   GPR_ASSERT(resp != nullptr);
-  return grpc_gcp_HandshakerResp_result(resp) != nullptr;
+  if (grpc_gcp_HandshakerResp_result(resp)) {
+    return true;
+  }
+  return false;
 }
 
 static void alts_grpc_handshaker_client_unref(

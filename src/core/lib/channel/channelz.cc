@@ -375,7 +375,7 @@ Json SocketNode::Security::RenderJson() {
       break;
     case ModelType::kOther:
       if (other) {
-        data["other"] = *other;
+        data["other"] = tls->RenderJson();
       }
       break;
   }

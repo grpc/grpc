@@ -44,9 +44,6 @@ SubchannelKey::SubchannelKey(const SubchannelKey& other) {
 }
 
 SubchannelKey& SubchannelKey::operator=(const SubchannelKey& other) {
-  if (&other == this) {
-    return *this;
-  }
   grpc_channel_args_destroy(const_cast<grpc_channel_args*>(args_));
   Init(other.args_, grpc_channel_args_copy);
   return *this;

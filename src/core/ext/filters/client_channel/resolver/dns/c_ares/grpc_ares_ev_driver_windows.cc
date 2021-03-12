@@ -251,7 +251,7 @@ class GrpcPolledFdWindows {
     }
   }
 
-  bool IsFdStillReadableLocked() { return read_buf_has_data_; }
+  bool IsFdStillReadableLocked() { return GRPC_SLICE_LENGTH(read_buf_) > 0; }
 
   void ShutdownLocked(grpc_error* error) {
     grpc_winsocket_shutdown(winsocket_);

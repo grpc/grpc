@@ -88,9 +88,6 @@ class XdsBootstrap {
   // add support for fallback for the xds channel.
   const XdsServer& server() const { return servers_[0]; }
   const Node* node() const { return node_.get(); }
-  const std::string& server_listener_resource_name_template() const {
-    return server_listener_resource_name_template_;
-  }
 
   const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
       const {
@@ -111,7 +108,6 @@ class XdsBootstrap {
 
   absl::InlinedVector<XdsServer, 1> servers_;
   std::unique_ptr<Node> node_;
-  std::string server_listener_resource_name_template_;
   CertificateProviderStore::PluginDefinitionMap certificate_providers_;
 };
 

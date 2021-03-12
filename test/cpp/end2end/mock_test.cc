@@ -288,7 +288,7 @@ class TestServiceImpl : public EchoTestService::Service {
   }
 
  private:
-  vector<std::string> split(const std::string& input) {
+  const vector<std::string> split(const std::string& input) {
     std::string buff("");
     vector<std::string> result;
 
