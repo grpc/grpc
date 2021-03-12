@@ -27,5 +27,7 @@ ${name}')
 cp -r /var/local/jenkins/service_account $HOME || true
 
 # compile the tests
-(cd /var/local/git/grpc/tools/http2_interop && go test -c)
+(cd /var/local/git/grpc/tools/http2_interop && \
+  go env -w GO111MODULE=auto && \
+  go test -c)
 
