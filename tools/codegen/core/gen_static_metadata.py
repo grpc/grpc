@@ -73,6 +73,7 @@ CONFIG = [
     'deflate',
     'gzip',
     'stream/gzip',
+    'snappy',
     # metadata elements
     # begin hpack static elements
     (':authority', ''),
@@ -143,6 +144,7 @@ CONFIG = [
     ('grpc-encoding', 'identity'),
     ('grpc-encoding', 'gzip'),
     ('grpc-encoding', 'deflate'),
+    ('grpc-encoding', 'snappy'),
     ('te', 'trailers'),
     ('content-type', 'application/grpc'),
     (':scheme', 'grpc'),
@@ -150,6 +152,7 @@ CONFIG = [
     ('accept-encoding', ''),
     ('content-encoding', 'identity'),
     ('content-encoding', 'gzip'),
+    ('content-encoding', 'snappy'),
     ('lb-cost-bin', ''),
 ]
 
@@ -186,6 +189,7 @@ COMPRESSION_ALGORITHMS = [
     'identity',
     'deflate',
     'gzip',
+    'snappy',
 ]
 
 STREAM_COMPRESSION_ALGORITHMS = [

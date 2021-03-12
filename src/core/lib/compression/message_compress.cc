@@ -27,6 +27,9 @@
 
 #include <zlib.h>
 
+#include "snappy-sinksource.h"
+#include "snappy.h"
+
 #include "src/core/lib/slice/slice_internal.h"
 
 #define OUTPUT_BLOCK_SIZE 1024
@@ -140,6 +143,109 @@ static int zlib_decompress(grpc_slice_buffer* input, grpc_slice_buffer* output,
   return r;
 }
 
+// Snappy support
+//
+// SliceBufferSource and SliceBufferSink are adaptors so we can pass
+// grpc_slice_buffer data to snappy's Compress and Uncompress functions, using
+// the Source/Sink interface.
+
+class SliceBufferSource : public ::snappy::Source {
+ private:
+  // original buffer
+  grpc_slice_buffer* input_;
+  size_t total_remaining_;
+  size_t current_slice_index_;
+  size_t current_slice_pos_;
+
+ public:
+  explicit SliceBufferSource(grpc_slice_buffer* input) : input_(input) {
+    this->total_remaining_ = input->length;
+    this->current_slice_index_ = 0;
+    this->current_slice_pos_ = 0;
+  }
+
+  // Return the number of bytes left to read from the source
+  size_t Available() const override { return total_remaining_; }
+
+  // Peek at the next flat region of the source.  Does not reposition
+  // the source.  The returned region is empty iff Available()==0.
+  const char* Peek(size_t* len) override {
+    if (total_remaining_ <= 0) {
+      *len = 0;
+      return nullptr;
+    }
+
+    *len = GRPC_SLICE_LENGTH(input_->slices[current_slice_index_]) -
+           current_slice_pos_;
+
+    return reinterpret_cast<char*>(
+        GRPC_SLICE_START_PTR(input_->slices[current_slice_index_]) +
+        current_slice_pos_);
+  }
+
+  // Skip the next n bytes.  Invalidates any buffer returned by
+  // a previous call to Peek().
+  void Skip(size_t n) override {
+    while (n > 0) {
+      const size_t current_slice_length =
+          GRPC_SLICE_LENGTH(input_->slices[current_slice_index_]);
+
+      // calculate how much of this current slice to skip forward
+      size_t skip_this_slice = std::min(n, current_slice_length);
+
+      current_slice_pos_ += skip_this_slice;
+      n -= skip_this_slice;
+      total_remaining_ -= skip_this_slice;
+
+      // check if we should move to next slice
+      if (this->current_slice_pos_ >= current_slice_length) {
+        ++current_slice_index_;
+        current_slice_pos_ = 0;
+      }
+    }
+  }
+};
+
+class SliceBufferSink : public ::snappy::Sink {
+ public:
+  explicit SliceBufferSink(grpc_slice_buffer* output) : output_(output) {}
+
+  void Append(const char* bytes, size_t n) override {
+    grpc_slice_buffer_add(output_, grpc_slice_from_copied_buffer(bytes, n));
+  }
+
+ private:
+  grpc_slice_buffer* output_;
+};
+
+static int snappy_compress(grpc_slice_buffer* input,
+                           grpc_slice_buffer* output) {
+  SliceBufferSource source(input);
+  SliceBufferSink sink(output);
+
+  size_t bytes_written = snappy::Compress(&source, &sink);
+
+  // if the compressed output is larger than the input, return 0 to signal that
+  // it should not be used. The calling code will copy the input over to the
+  // output in that case, but we have to reset output first - as
+  // snappy::Compress will have written to it.
+  if (bytes_written < input->length) {
+    return 1;
+  } else {
+    grpc_slice_buffer_reset_and_unref(output);
+    return 0;
+  }
+}
+
+static int snappy_decompress(grpc_slice_buffer* input,
+                             grpc_slice_buffer* output) {
+  SliceBufferSource source(input);
+  SliceBufferSink sink(output);
+
+  bool r = snappy::Uncompress(&source, &sink);
+  return r;
+}
+
 static int copy(grpc_slice_buffer* input, grpc_slice_buffer* output) {
   size_t i;
   for (i = 0; i < input->count; i++) {
@@ -159,6 +265,8 @@ static int compress_inner(grpc_message_compression_algorithm algorithm,
       return zlib_compress(input, output, 0);
     case GRPC_MESSAGE_COMPRESS_GZIP:
       return zlib_compress(input, output, 1);
+    case GRPC_MESSAGE_COMPRESS_SNAPPY:
+      return snappy_compress(input, output);
     case GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
@@ -184,6 +292,8 @@ int grpc_msg_decompress(grpc_message_compression_algorithm algorithm,
       return zlib_decompress(input, output, 0);
     case GRPC_MESSAGE_COMPRESS_GZIP:
       return zlib_decompress(input, output, 1);
+    case GRPC_MESSAGE_COMPRESS_SNAPPY:
+      return snappy_decompress(input, output);
     case GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT:
       break;
   }
