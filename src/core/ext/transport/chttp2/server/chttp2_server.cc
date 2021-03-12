@@ -373,7 +373,8 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   HandshakingState* self = static_cast<HandshakingState*>(args->user_data);
   OrphanablePtr<HandshakingState> handshaking_state_ref;
   RefCountedPtr<HandshakeManager> handshake_mgr;
-  bool cleanup_connection = false;
+  bool remove_connection = false;
+  OrphanablePtr<ActiveConnection> connection;
   grpc_resource_user* resource_user =
       self->connection_->listener_->server_->default_resource_user();
   {
@@ -381,7 +382,11 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
     if (error != GRPC_ERROR_NONE || self->connection_->shutdown_) {
       const char* error_str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
-      cleanup_connection = true;
+      remove_connection = true;
+      if (resource_user != nullptr) {
+        grpc_resource_user_free(resource_user,
+                                GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+      }
       if (error == GRPC_ERROR_NONE && args->endpoint != nullptr) {
         // We were shut down or stopped serving after handshaking completed
         // successfully, so destroy the endpoint here.
@@ -424,14 +429,18 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           GRPC_CLOSURE_INIT(&self->on_receive_settings_, OnReceiveSettings,
                             self, grpc_schedule_on_exec_ctx);
           // If the listener has been configured with a config fetcher, we need
-          // to watch on the transport being closed so that we can an updated
-          // list of active connections.
+          // to watch on the transport being closed so that we can keep an
+          // updated list of active connections.
           grpc_closure* on_close = nullptr;
           if (self->connection_->listener_->config_fetcher_watcher_ !=
               nullptr) {
             // Refs helds by OnClose()
             self->connection_->Ref().release();
             on_close = &self->connection_->on_close_;
+          } else {
+            // Since on_close_ has not been set for the non config-fetcher case,
+            // we remove the connection from the connections_ map here.
+            remove_connection = true;
           }
           grpc_chttp2_transport_start_reading(transport, args->read_buffer,
                                               &self->on_receive_settings_,
@@ -449,11 +458,19 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           grpc_transport_destroy(transport);
           grpc_slice_buffer_destroy_internal(args->read_buffer);
           gpr_free(args->read_buffer);
-          cleanup_connection = true;
+          remove_connection = true;
+          if (resource_user != nullptr) {
+            grpc_resource_user_free(resource_user,
+                                    GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+          }
           grpc_channel_args_destroy(args->args);
         }
       } else {
-        cleanup_connection = true;
+        remove_connection = true;
+        if (resource_user != nullptr) {
+          grpc_resource_user_free(resource_user,
+                                  GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+        }
       }
     }
     // Since the handshake manager is done, the connection no longer needs to
@@ -464,11 +481,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
     handshaking_state_ref = std::move(self->connection_->handshaking_state_);
   }
   gpr_free(self->acceptor_);
-  OrphanablePtr<ActiveConnection> connection;
-  if (cleanup_connection) {
-    if (resource_user != nullptr) {
-      grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
-    }
+  if (remove_connection) {
     MutexLock listener_lock(&self->connection_->listener_->mu_);
     auto it = self->connection_->listener_->connections_.find(
         self->connection_.get());
@@ -510,7 +523,12 @@ void Chttp2ServerListener::ActiveConnection::Orphan() {
     handshaking_state = std::move(handshaking_state_);
     transport = transport_;
   }
-  if (transport != nullptr) {
+  // We only need to send a GOAWAY if the connection was orphaned due to an
+  // update from the config fetcher.
+  // TODO(yashykt): During the shutdown of the listener, a GOAWAY would already
+  // be sent by the upper layer. We don't need to send GOAWAY again in that
+  // case.
+  if (transport != nullptr && listener_->config_fetcher_watcher_ != nullptr) {
     grpc_transport_op* op = grpc_make_transport_op(nullptr);
     op->goaway_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Server is stopping to serve requests.");
