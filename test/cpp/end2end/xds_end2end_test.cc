@@ -1638,10 +1638,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Construct LDS resource.
     default_listener_.set_name(kServerName);
     HttpConnectionManager http_connection_manager;
-    auto* filter = http_connection_manager.add_http_filters();
-    filter->set_name("router");
-    filter->mutable_typed_config()->PackFrom(
-        envoy::extensions::filters::http::router::v3::Router());
+    if (!GetParam().use_v2()) {
+      auto* filter = http_connection_manager.add_http_filters();
+      filter->set_name("router");
+      filter->mutable_typed_config()->PackFrom(
+          envoy::extensions::filters::http::router::v3::Router());
+    }
     default_listener_.mutable_api_listener()->mutable_api_listener()->PackFrom(
         http_connection_manager);
     // Construct RDS resource.
@@ -3292,6 +3294,30 @@ TEST_P(LdsTest, HttpFiltersEnabled) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
+// Tests that we ignore filters after the router filter.
+TEST_P(LdsTest, IgnoresHttpFiltersAfterRouterFilter) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  SetNextResolutionForLbChannelAllBalancers();
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("unknown");
+  filter->mutable_typed_config()->set_type_url(
+      "grpc.testing.client_only_http_filter");
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForAllBackends();
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
 // Test that we fail RPCs if there is no router filter.
 TEST_P(LdsTest, FailRpcsIfNoHttpRouterFilter) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
@@ -3322,9 +3348,6 @@ TEST_P(LdsTest, FailRpcsIfNoHttpRouterFilter) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
-
-// TODO(lidiz): As part of adding the fault injection filter, add a test
-// that we ignore filters after the router filter.
 
 // Test that we NACK empty filter names.
 TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
@@ -3577,6 +3600,34 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
   WaitForBackend(0);
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+using LdsV2Test = LdsTest;
+
+// Tests that we ignore the HTTP filter list in v2.
+// TODO(roth): The test framework is not set up to allow us to test
+// the server sending v2 resources when the client requests v3, so this
+// just tests a pure v2 setup.  When we have time, fix this.
+TEST_P(LdsV2Test, IgnoresHttpFilters) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("unknown");
+  filter->mutable_typed_config()->PackFrom(Listener());
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendOk();
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
@@ -6337,10 +6388,6 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInClusterWeight) {
       ::testing::HasSubstr("router filter does not support config override"));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
-
-// TODO(lidiz): As part of adding the fault injection filter, add tests
-// for overriding filter configs in the typed_per_filter_config fields in
-// each of VirtualHost, Route, and ClusterWeight.
 
 using CdsTest = BasicTest;
 
@@ -9962,6 +10009,9 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
 
 // LDS depends on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest, ::testing::Values(TestType()),
+                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(XdsTest, LdsV2Test,
+                         ::testing::Values(TestType().set_use_v2()),
                          &TestTypeName);
 
 // LDS/RDS commmon tests depend on XdsResolver.
