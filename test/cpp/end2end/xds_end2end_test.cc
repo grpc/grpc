@@ -9856,13 +9856,14 @@ MATCHER_P3(EqClusterLoadAssignment, cluster_name, port, weight,
            "equals ClusterLoadAssignment") {
   bool ok = true;
   ok &= XDS_FIELD(cluster_name);
-  ok &= XDS_MATCH(endpoints(0)
-                      .lb_endpoints(0)
-                      .endpoint()
-                      .address()
-                      .socket_address()
-                      .port_value,
-                  port);
+  ok &= ::testing::ExplainMatchResult(port,
+                                      arg.endpoints(0)
+                                          .lb_endpoints(0)
+                                          .endpoint()
+                                          .address()
+                                          .socket_address()
+                                          .port_value(),
+                                      result_listener);
   ok &= ::testing::ExplainMatchResult(
       weight, arg.endpoints(0).load_balancing_weight().value(),
       result_listener);
