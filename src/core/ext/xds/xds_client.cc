@@ -933,7 +933,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
     // Update the listener state.
     listener_state.update = std::move(lds_update);
     listener_state.meta = CreateResourceMetadataAcked(
-        std::move(p.second.serialized_proto), std::move(version), update_time);
+        std::move(p.second.serialized_proto), version, update_time);
     // Notify watchers.
     for (const auto& p : listener_state.watchers) {
       p.first->OnListenerChanged(*listener_state.update);
@@ -1011,7 +1011,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptRdsUpdate(
     // Update the cache.
     route_config_state.update = std::move(rds_update);
     route_config_state.meta = CreateResourceMetadataAcked(
-        std::move(p.second.serialized_proto), std::move(version), update_time);
+        std::move(p.second.serialized_proto), version, update_time);
     // Notify all watchers.
     for (const auto& p : route_config_state.watchers) {
       p.first->OnRouteConfigChanged(*route_config_state.update);
@@ -1057,7 +1057,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     // Update the cluster state.
     cluster_state.update = std::move(cds_update);
     cluster_state.meta = CreateResourceMetadataAcked(
-        std::move(p.second.serialized_proto), std::move(version), update_time);
+        std::move(p.second.serialized_proto), version, update_time);
     // Notify all watchers.
     for (const auto& p : cluster_state.watchers) {
       p.first->OnClusterChanged(cluster_state.update.value());
@@ -1134,7 +1134,7 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     // Update the cluster state.
     endpoint_state.update = std::move(eds_update);
     endpoint_state.meta = CreateResourceMetadataAcked(
-        std::move(p.second.serialized_proto), std::move(version), update_time);
+        std::move(p.second.serialized_proto), version, update_time);
     // Notify all watchers.
     for (const auto& p : endpoint_state.watchers) {
       p.first->OnEndpointChanged(endpoint_state.update.value());
