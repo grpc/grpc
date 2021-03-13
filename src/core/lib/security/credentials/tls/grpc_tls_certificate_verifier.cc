@@ -74,7 +74,7 @@ bool ExternalCertificateVerifier::Verify(
   // Invoke the caller-specified verification logic embedded in
   // external_verifier_.
   bool is_async = external_verifier_->verify(external_verifier_, request,
-                                             &OnVerifyDone, this);
+                                             &OnVerifyDone, this, external_verifier_->user_data);
   if (!is_async) {
     grpc_core::MutexLock lock(&mu_);
     request_map_.erase(request);

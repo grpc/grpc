@@ -970,6 +970,7 @@ typedef struct grpc_tls_certificate_verifier grpc_tls_certificate_verifier;
  * needs to implement to be able to be converted to an internal verifier.
  */
 struct grpc_tls_certificate_verifier_external {
+  void* user_data;
   /**
    * A function pointer containing the verification logic that will be
    * performed after the TLS handshake is done.
@@ -981,15 +982,19 @@ struct grpc_tls_certificate_verifier_external {
    * callback: the callback that the function implementer needs to invoke,
    * if return a non-zero value. It is usually invoked when the asynchronous
    * verification is done, and serves to bring the control back to gRPC.
-   * callback_arg: any argument that is passed in here can be retrieved later in
-   * the |callback| function.
+   * callback_arg: A pointer to the internal ExternalVerifier instance. This is
+   * mainly used as an argument in |callback|, if want to invoke |callback| in
+   * async mode.
+   * user_data: any argument that is passed in the user_data of
+   * grpc_tls_certificate_verifier_external during construction time can be
+   * retrieved later here.
    * return: return a non-zero value if |verify| is expected to be executed
    *         asynchronously, otherwise return 0.
    */
   int (*verify)(grpc_tls_certificate_verifier_external* external_verifier,
                 grpc_tls_custom_verification_check_request* request,
                 grpc_tls_on_custom_verification_check_done_cb callback,
-                void* callback_arg);
+                void* callback_arg, void* user_data);
   /**
    * A function pointer that cleans up the caller-specified resources when the
    * verifier is still running but the whole connection got cancelled. This
@@ -1000,9 +1005,12 @@ struct grpc_tls_certificate_verifier_external {
    *
    * external_verifier: a pointer to the struct itself.
    * request: request information exposed to the function implementer.
+   * user_data: any argument that is passed in the user_data of
+   * grpc_tls_certificate_verifier_external during construction time can be
+   * retrieved later here.
    */
   void (*cancel)(grpc_tls_certificate_verifier_external* external_verifier,
-                 grpc_tls_custom_verification_check_request* request);
+                 grpc_tls_custom_verification_check_request* request, void* user_data);
   /**
    * A function pointer that does some additional destruction work when the
    * verifier is destroyed. This is used when the caller wants to associate some
@@ -1013,8 +1021,11 @@ struct grpc_tls_certificate_verifier_external {
    * used.
    *
    * external_verifier: a pointer to the struct itself.
+   * user_data: any argument that is passed in the user_data of
+   * grpc_tls_certificate_verifier_external during construction time can be
+   * retrieved later here.
    */
-  void (*destruct)(grpc_tls_certificate_verifier_external* external_verifier);
+  void (*destruct)(grpc_tls_certificate_verifier_external* external_verifier, void* user_data);
 };
 
 /**

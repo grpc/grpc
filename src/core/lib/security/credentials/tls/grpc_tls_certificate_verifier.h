@@ -69,7 +69,7 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
 
   ~ExternalCertificateVerifier() {
     if (external_verifier_->destruct != nullptr) {
-      external_verifier_->destruct(external_verifier_);
+      external_verifier_->destruct(external_verifier_, external_verifier_->user_data);
     }
     delete external_verifier_;
   }
@@ -78,7 +78,7 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
               std::function<void()> callback) override;
 
   void Cancel(grpc_tls_custom_verification_check_request* request) override {
-    external_verifier_->cancel(external_verifier_, request);
+    external_verifier_->cancel(external_verifier_, request, external_verifier_->user_data);
   }
 
  private:

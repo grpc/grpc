@@ -52,11 +52,11 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
       int (*verify)(grpc_tls_certificate_verifier_external* external_verifier,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg),
+                    void* callback_arg, void* user_data),
       void (*cancel)(grpc_tls_certificate_verifier_external* external_verifier,
-                     grpc_tls_custom_verification_check_request* request),
+                     grpc_tls_custom_verification_check_request* request, void* user_data),
       void (*destruct)(
-          grpc_tls_certificate_verifier_external* external_verifier)) {
+          grpc_tls_certificate_verifier_external* external_verifier, void* user_data)) {
     grpc_tls_certificate_verifier_external* external_verifier =
         new grpc_tls_certificate_verifier_external();
     external_verifier->verify = verify;
@@ -67,37 +67,43 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
         new ExternalCertificateVerifier(external_verifier);
   }
 
-  static int SyncExternalVerifierGoodVerify(
-      grpc_tls_certificate_verifier_external* external_verifier,
-      grpc_tls_custom_verification_check_request* request,
-      grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
-    request->status = GRPC_STATUS_OK;
-    return false;
-  }
-
-  static int SyncExternalVerifierBadVerify(
-      grpc_tls_certificate_verifier_external* external_verifier,
-      grpc_tls_custom_verification_check_request* request,
-      grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
-    request->status = GRPC_STATUS_UNAUTHENTICATED;
-    request->error_details = gpr_strdup("SyncExternalVerifierBadVerify failed");
-    return false;
-  }
-
   struct ThreadArgs {
-    grpc_tls_custom_verification_check_request* request;
+    grpc_tls_custom_verification_check_request* request = nullptr;
     grpc_tls_on_custom_verification_check_done_cb callback;
-    void* callback_arg;
+    void* callback_arg = nullptr;
+  };
+
+  struct ExternalVerifierUserDataArgs {
+    grpc_core::Thread** thread_ptr_ptr = nullptr;
+    gpr_event* event_ptr  = nullptr;
   };
 
   static int AsyncExternalVerifierGoodVerify(
       grpc_tls_certificate_verifier_external* external_verifier,
       grpc_tls_custom_verification_check_request* request,
       grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
+      void* callback_arg, void* user_data) {
+    gpr_log(GPR_ERROR, "in AsyncExternalVerifierGoodVerify");
+    ExternalVerifierUserDataArgs* user_data_args = static_cast<ExternalVerifierUserDataArgs*>(user_data);
+    grpc_core::Thread** thread_ptr_ptr = user_data_args->thread_ptr_ptr;
+    //grpc_core::Thread* thread_ptr = *thread_ptr_ptr;
+    gpr_event* event_ptr = user_data_args->event_ptr;
+
     ThreadArgs* thread_args = new ThreadArgs();
+    thread_args->request = request;
+    thread_args->callback = callback;
+    thread_args->callback_arg = callback_arg;
+
+    delete *thread_ptr_ptr;
+    *thread_ptr_ptr = new grpc_core::Thread(
+        "AsyncExternalVerifierGoodVerify", &AsyncExternalVerifierGoodVerifyCb,
+        static_cast<void*>(thread_args));
+    (**thread_ptr_ptr).Start();
+
+    // Now we can notify the main thread that the thread object is set.
+    gpr_event_set(event_ptr, reinterpret_cast<void*>(1));
+
+    /*ThreadArgs* thread_args = new ThreadArgs();
     thread_args->request = request;
     thread_args->callback = callback;
     thread_args->callback_arg = callback_arg;
@@ -108,11 +114,13 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
     // Question: This still behaves like a sync operation. I wanted to return
     // true first, and then at the main thread or TearDown function we join the
     // thread. Is it possible?
-    thread.Join();
+    thread.Join();*/
+    gpr_log(GPR_ERROR, "out AsyncExternalVerifierGoodVerify");
     return true;
   }
 
   static void AsyncExternalVerifierGoodVerifyCb(void* args) {
+    gpr_log(GPR_ERROR, "in AsyncExternalVerifierGoodVerifyCb");
     ThreadArgs* thread_args = static_cast<ThreadArgs*>(args);
     grpc_tls_custom_verification_check_request* request = thread_args->request;
     grpc_tls_on_custom_verification_check_done_cb callback =
@@ -120,7 +128,68 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
     void* callback_arg = thread_args->callback_arg;
     request->status = GRPC_STATUS_OK;
     callback(request, callback_arg);
+    gpr_log(GPR_ERROR, "out AsyncExternalVerifierGoodVerifyCb");
     delete thread_args;
+  }
+
+  static void AsyncExternalVerifierGoodDestruct(
+          grpc_tls_certificate_verifier_external* external_verifier, void* user_data) {
+    ExternalVerifierUserDataArgs* user_data_args = static_cast<ExternalVerifierUserDataArgs*>(user_data);
+    grpc_core::Thread** thread_ptr_ptr = user_data_args->thread_ptr_ptr;
+    //grpc_core::Thread* thread_ptr = *thread_ptr_ptr;
+    // gpr_event* event_ptr = user_data_args->event_ptr;
+    gpr_log(GPR_ERROR, "in AsyncExternalVerifierGoodDestruct");
+    delete *thread_ptr_ptr;
+    // event_ptr is created on stack, so no need to free it.
+    delete user_data_args;
+    gpr_log(GPR_ERROR, "out AsyncExternalVerifierGoodDestruct");
+  }
+
+ /* void CreateASyncExternalCertificateVerifier(
+      int (*verify)(grpc_tls_certificate_verifier_external* external_verifier,
+                    grpc_tls_custom_verification_check_request* request,
+                    grpc_tls_on_custom_verification_check_done_cb callback,
+                    void* callback_arg, void* user_data),
+      void (*cancel)(grpc_tls_certificate_verifier_external* external_verifier,
+                     grpc_tls_custom_verification_check_request* request, void* user_data),
+      void (*destruct)(
+          grpc_tls_certificate_verifier_external* external_verifier, void* user_data),
+      gpr_event* event_ptr,
+      grpc_core::Thread* thread_ptr) {
+    grpc_tls_certificate_verifier_external* external_verifier =
+        new grpc_tls_certificate_verifier_external();
+    external_verifier->verify = verify;
+    external_verifier->cancel = cancel;
+    external_verifier->destruct = destruct;
+
+    grpc_core::Thread* thread_ptr = new grpc_core::Thread();
+    ExternalVerifierUserDataArgs* user_data_args = new ExternalVerifierUserDataArgs();
+    user_data_args->thread_ptr = thread_ptr;
+    user_data_args->event_ptr = event_ptr;
+    external_verifier->user_data = (void *)user_data_args;
+    // Takes the ownership of external_verifier.
+    external_certificate_verifier_ =
+        new ExternalCertificateVerifier(external_verifier);
+    return thread_ptr;
+  }*/
+
+  static int SyncExternalVerifierGoodVerify(
+      grpc_tls_certificate_verifier_external* external_verifier,
+      grpc_tls_custom_verification_check_request* request,
+      grpc_tls_on_custom_verification_check_done_cb callback,
+      void* callback_arg, void* user_data) {
+    request->status = GRPC_STATUS_OK;
+    return false;
+  }
+
+  static int SyncExternalVerifierBadVerify(
+      grpc_tls_certificate_verifier_external* external_verifier,
+      grpc_tls_custom_verification_check_request* request,
+      grpc_tls_on_custom_verification_check_done_cb callback,
+      void* callback_arg, void* user_data) {
+    request->status = GRPC_STATUS_UNAUTHENTICATED;
+    request->error_details = gpr_strdup("SyncExternalVerifierBadVerify failed");
+    return false;
   }
 
   grpc_tls_custom_verification_check_request request_;
@@ -128,7 +197,7 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
-TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierGood) {
+/*TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierGood) {
   CreateExternalCertificateVerifier(SyncExternalVerifierGoodVerify, nullptr,
                                     nullptr);
   external_certificate_verifier_->Verify(&request_, [] {});
@@ -141,17 +210,54 @@ TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierBad) {
   external_certificate_verifier_->Verify(&request_, [] {});
   EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);
   EXPECT_STREQ(request_.error_details, "SyncExternalVerifierBadVerify failed");
-}
+}*/
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierGood) {
-  CreateExternalCertificateVerifier(AsyncExternalVerifierGoodVerify, nullptr,
-                                    nullptr);
+  // Indicates if the thread pointer returned from CreateASyncExternalCertificateVerifier is filled with the real object asynchronously.
+  gpr_event event;
+  gpr_event_init(&event);
+
+  /*void* user_data = CreateASyncExternalCertificateVerifier(AsyncExternalVerifierGoodVerify, nullptr,
+                                    AsyncExternalVerifierGoodDestruct, &event);*/
+  grpc_tls_certificate_verifier_external* external_verifier =
+      new grpc_tls_certificate_verifier_external();
+  external_verifier->verify = AsyncExternalVerifierGoodVerify;
+  external_verifier->cancel = nullptr;
+  external_verifier->destruct = AsyncExternalVerifierGoodDestruct;
+
+  grpc_core::Thread* thread_ptr = new grpc_core::Thread();
+  gpr_log(GPR_ERROR, "thread pointer address: %p", thread_ptr);
+  ExternalVerifierUserDataArgs* user_data_args = new ExternalVerifierUserDataArgs();
+  user_data_args->thread_ptr_ptr = &thread_ptr;
+  user_data_args->event_ptr = &event;
+  external_verifier->user_data = (void *)user_data_args;
+  // Takes the ownership of external_verifier.
+  external_certificate_verifier_ =
+      new ExternalCertificateVerifier(external_verifier);
+
+
+
+
   external_certificate_verifier_->Verify(
-      &request_, [] { gpr_log(GPR_INFO, "Callback is invoked."); });
+      &request_, [] {
+        gpr_log(GPR_ERROR, "in lambda");
+        gpr_log(GPR_INFO, "Callback is invoked."); });
+  gpr_log(GPR_ERROR, "external_certificate_verifier_->Verify is called");
+  // This happens probably because at the time this is checked, the value is not set yet...
+  // might need some way of signal...
+  void* value = gpr_event_wait(
+      &event,
+      gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
+  gpr_log(GPR_ERROR, "gpr_event_wait is received");
+  EXPECT_NE(value, nullptr);
+  gpr_log(GPR_ERROR, "thread pointer address: %p", thread_ptr);
+  (*thread_ptr).Join();
+  gpr_log(GPR_ERROR, "After joining");
   EXPECT_EQ(request_.status, GRPC_STATUS_OK);
 }
 
-TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierNullTargetName) {
+/*TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierNullTargetName) {
   hostname_certificate_verifier_.Verify(&request_, [] {});
   EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);
   EXPECT_STREQ(request_.error_details, "Target name is not specified.");
@@ -234,7 +340,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierCommonNameCheckBad) {
   hostname_certificate_verifier_.Verify(&request_, [] {});
   EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);
   EXPECT_STREQ(request_.error_details, "Hostname Verification Check failed.");
-}
+}*/
 
 }  // namespace testing
 
