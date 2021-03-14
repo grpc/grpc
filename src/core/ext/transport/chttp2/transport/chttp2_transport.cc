@@ -165,6 +165,16 @@ static void reset_byte_stream(void* arg, grpc_error* error);
 // GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL
 bool g_flow_control_enabled = true;
 
+namespace grpc_core {
+TestOnlyGlobalHttp2TransportInitCallback test_only_init_callback = nullptr;
+
+void TestOnlySetGlobalHttp2TransportInitCallback(
+    TestOnlyGlobalHttp2TransportInitCallback callback) {
+  test_only_init_callback = callback;
+}
+
+}  // namespace grpc_core
+
 //
 // CONSTRUCTION/DESTRUCTION/REFCOUNTING
 //
@@ -221,6 +231,9 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
 
   GRPC_ERROR_UNREF(closed_with_error);
   gpr_free(ping_acks);
+  if (grpc_core::test_only_init_callback != nullptr) {
+    grpc_core::test_only_init_callback(false);
+  }
 }
 
 static const grpc_transport_vtable* get_vtable(void);
@@ -506,6 +519,9 @@ grpc_chttp2_transport::grpc_chttp2_transport(
 
   grpc_chttp2_initiate_write(this, GRPC_CHTTP2_INITIATE_WRITE_INITIAL_WRITE);
   post_benign_reclaimer(this);
+  if (grpc_core::test_only_init_callback != nullptr) {
+    grpc_core::test_only_init_callback(true);
+  }
 }
 
 static void destroy_transport_locked(void* tp, grpc_error* /*error*/) {
