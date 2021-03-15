@@ -21,6 +21,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
+using Grpc.Core.Internal;
 
 namespace Grpc.Tools
 {
@@ -52,65 +53,19 @@ namespace Grpc.Tools
 
         static Platform()
         {
-#if NETCORE
-            Os = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OsKind.Windows
-               : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? OsKind.Linux
-               : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? OsKind.MacOsX
-               : OsKind.Unknown;
-
-            switch (RuntimeInformation.ProcessArchitecture)
+            switch (CommonPlatformDetection.GetOSKind())
             {
-                case Architecture.X86: Cpu = CpuKind.X86; break;
-                case Architecture.X64: Cpu = CpuKind.X64; break;
-                // We do not have build tools for other architectures.
+                case CommonPlatformDetection.OSKind.Windows: Os = OsKind.Windows; break;
+                case CommonPlatformDetection.OSKind.Linux: Os = OsKind.Linux; break;
+                case CommonPlatformDetection.OSKind.MacOSX: Os = OsKind.MacOsX; break;
+                default: Os = OsKind.Unknown; break;
+            }
+
+            switch (CommonPlatformDetection.GetProcessArchitecture())
+            {
+                case CommonPlatformDetection.CpuArchitecture.X86: Cpu = CpuKind.X86; break;
+                case CommonPlatformDetection.CpuArchitecture.X64: Cpu = CpuKind.X64; break;
                 default: Cpu = CpuKind.Unknown; break;
-            }
-#else
-            // Using the same best-effort detection logic as Grpc.Core/PlatformApis.cs
-            var platform = Environment.OSVersion.Platform;
-            if (platform == PlatformID.Win32NT || platform == PlatformID.Win32S || platform == PlatformID.Win32Windows)
-            {
-                Os = OsKind.Windows;
-            }
-            else if (platform == PlatformID.Unix && GetUname() == "Darwin")
-            {
-                Os = OsKind.MacOsX;
-            }
-            else
-            {
-                Os = OsKind.Linux;
-            }
-
-            // Hope we are not building on ARM under Xamarin!
-            Cpu = Environment.Is64BitProcess ? CpuKind.X64 : CpuKind.X86;
-#endif
-        }
-
-        [DllImport("libc")]
-        static extern int uname(IntPtr buf);
-
-        // This code is copied from Grpc.Core/PlatformApis.cs
-        static string GetUname()
-        {
-            var buffer = Marshal.AllocHGlobal(8192);
-            try
-            {
-                if (uname(buffer) == 0)
-                {
-                    return Marshal.PtrToStringAnsi(buffer);
-                }
-                return string.Empty;
-            }
-            catch
-            {
-                return string.Empty;
-            }
-            finally
-            {
-                if (buffer != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(buffer);
-                }
             }
         }
     };
