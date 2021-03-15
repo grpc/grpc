@@ -23,7 +23,6 @@ cd cmake/build
 cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       -DgRPC_BACKWARDS_COMPATIBILITY_MODE=ON \
       -DgRPC_BUILD_TESTS=OFF \
-      "${CMAKE_ARCH_OPTION}" \
       ../..
 
 make grpc_csharp_ext -j2

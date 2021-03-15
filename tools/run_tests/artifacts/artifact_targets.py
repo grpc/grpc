@@ -260,30 +260,16 @@ class CSharpExtArtifact:
                                   use_workspace=True)
         else:
             if self.platform == 'linux':
-                cmake_arch_option = ''  # x64 is the default architecture
-                if self.arch == 'x86':
-                    # TODO(jtattermusch): more work needed to enable
-                    # boringssl assembly optimizations for 32-bit linux.
-                    # Problem: currently we are building the artifact under
-                    # 32-bit docker image, but CMAKE_SYSTEM_PROCESSOR is still
-                    # set to x86_64, so the resulting boringssl binary
-                    # would have undefined symbols.
-                    cmake_arch_option = '-DOPENSSL_NO_ASM=ON'
                 return create_docker_jobspec(
                     self.name,
                     'tools/dockerfile/grpc_artifact_centos6_{}'.format(
                         self.arch),
-                    'tools/run_tests/artifacts/build_artifact_csharp.sh',
-                    environ={'CMAKE_ARCH_OPTION': cmake_arch_option})
+                    'tools/run_tests/artifacts/build_artifact_csharp.sh')
             else:
-                cmake_arch_option = ''  # x64 is the default architecture
-                if self.arch == 'x86':
-                    cmake_arch_option = '-DCMAKE_OSX_ARCHITECTURES=i386'
                 return create_jobspec(
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_csharp.sh'],
-                    timeout_seconds=45 * 60,
-                    environ={'CMAKE_ARCH_OPTION': cmake_arch_option},
+                    timeout_seconds=45 * 60,,
                     use_workspace=True)
 
     def __str__(self):
