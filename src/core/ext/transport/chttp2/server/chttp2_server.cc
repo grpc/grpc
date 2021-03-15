@@ -516,14 +516,12 @@ Chttp2ServerListener::ActiveConnection::~ActiveConnection() {
 
 void Chttp2ServerListener::ActiveConnection::Orphan() {
   OrphanablePtr<HandshakingState> handshaking_state;
-  grpc_chttp2_transport* transport = nullptr;
   {
     MutexLock lock(&mu_);
     shutdown_ = true;
     // Reset handshaking_state_ since we have been orphaned by the listener
     // signaling that the listener has stopped serving.
     handshaking_state = std::move(handshaking_state_);
-    transport = transport_;
   }
   Unref();
 }
