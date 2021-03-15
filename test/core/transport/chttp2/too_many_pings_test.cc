@@ -62,14 +62,15 @@ namespace {
 
 class TransportCounter {
  public:
-  static void CounterCallback(bool init) {
+  static void CounterInitCallback() {
     absl::MutexLock lock(&mu());
-    if (init) {
-      ++count_;
-    } else {
-      if (--count_ == 0) {
-        cv().SignalAll();
-      }
+    ++count_;
+  }
+
+  static void CounterDestructCallback() {
+    absl::MutexLock lock(&mu());
+    if (--count_ == 0) {
+      cv().SignalAll();
     }
   }
 
@@ -80,7 +81,7 @@ class TransportCounter {
     }
   }
 
-  static int& count() {
+  static int count() {
     absl::MutexLock lock(&mu());
     return count_;
   }
@@ -828,7 +829,9 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_core::TestOnlySetGlobalHttp2TransportInitCallback(
-      TransportCounter::CounterCallback);
+      TransportCounter::CounterInitCallback);
+  grpc_core::TestOnlySetGlobalHttp2TransportDestructCallback(
+      TransportCounter::CounterDestructCallback);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
