@@ -47,6 +47,11 @@ Linux and MacOS. Managed runtime is supplied separately in the Grpc.Core package
     <PackageTags>gRPC RPC HTTP/2</PackageTags>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- include common code for platform detection to avoid duplicating the logic -->
+    <Compile Include="..\Grpc.Core\Internal\CommonPlatformDetection.cs" Link="CommonPlatformDetection.cs" />
+  </ItemGroup>
+
   <ItemGroup Label="NuGet package assets">
     <None Pack="true" PackagePath="build\" Include="build\**\*.xml; build\**\*.props; build\**\*.targets;" />
 
@@ -62,6 +67,7 @@ Linux and MacOS. Managed runtime is supplied separately in the Grpc.Core package
     <_Asset PackagePath="tools/windows_x64/" Include="$(Assets_ProtoCompiler)windows_x64/protoc.exe" />
     <_Asset PackagePath="tools/linux_x86/" Include="$(Assets_ProtoCompiler)linux_x86/protoc" />
     <_Asset PackagePath="tools/linux_x64/" Include="$(Assets_ProtoCompiler)linux_x64/protoc" />
+    <_Asset PackagePath="tools/linux_arm64/" Include="$(Assets_ProtoCompiler)linux_aarch64/protoc" />
     <_Asset PackagePath="tools/macosx_x64/" Include="$(Assets_ProtoCompiler)macos_x64/protoc" /> <!-- GPB: macosx-->
 
     <!-- gRPC assets (for Grpc.Tools) -->
@@ -69,6 +75,7 @@ Linux and MacOS. Managed runtime is supplied separately in the Grpc.Core package
     <_Asset PackagePath="tools/windows_x64/" Include="$(Assets_GrpcPlugins)protoc_windows_x64/grpc_csharp_plugin.exe" />
     <_Asset PackagePath="tools/linux_x86/" Include="$(Assets_GrpcPlugins)protoc_linux_x86/grpc_csharp_plugin" />
     <_Asset PackagePath="tools/linux_x64/" Include="$(Assets_GrpcPlugins)protoc_linux_x64/grpc_csharp_plugin" />
+    <_Asset PackagePath="tools/linux_arm64/" Include="$(Assets_GrpcPlugins)protoc_linux_aarch64/grpc_csharp_plugin" />
     <_Asset PackagePath="tools/macosx_x64/" Include="$(Assets_GrpcPlugins)protoc_macos_x64/grpc_csharp_plugin" />
 
     <None Include="@(_Asset)" Pack="true" Visible="false" />
