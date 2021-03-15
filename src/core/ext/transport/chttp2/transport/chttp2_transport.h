@@ -47,7 +47,7 @@ grpc_chttp2_transport_get_socket_node(grpc_transport* transport);
 /// HTTP/2 settings are received from the peer.
 void grpc_chttp2_transport_start_reading(
     grpc_transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings);
+    grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close);
 
 namespace grpc_core {
 typedef void (*TestOnlyGlobalHttp2TransportInitCallback)();

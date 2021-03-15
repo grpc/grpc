@@ -607,6 +607,11 @@ static void close_transport_locked(grpc_chttp2_transport* t,
                             GRPC_ERROR_REF(error));
     t->notify_on_receive_settings = nullptr;
   }
+  if (t->notify_on_close != nullptr) {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_close,
+                            GRPC_ERROR_REF(error));
+    t->notify_on_close = nullptr;
+  }
   GRPC_ERROR_UNREF(error);
 }
 
@@ -3319,7 +3324,7 @@ grpc_transport* grpc_create_chttp2_transport(
 
 void grpc_chttp2_transport_start_reading(
     grpc_transport* transport, grpc_slice_buffer* read_buffer,
-    grpc_closure* notify_on_receive_settings) {
+    grpc_closure* notify_on_receive_settings, grpc_closure* notify_on_close) {
   grpc_chttp2_transport* t =
       reinterpret_cast<grpc_chttp2_transport*>(transport);
   GRPC_CHTTP2_REF_TRANSPORT(
@@ -3329,6 +3334,7 @@ void grpc_chttp2_transport_start_reading(
     gpr_free(read_buffer);
   }
   t->notify_on_receive_settings = notify_on_receive_settings;
+  t->notify_on_close = notify_on_close;
   t->combiner->Run(
       GRPC_CLOSURE_INIT(&t->read_action_locked, read_action_locked, t, nullptr),
       GRPC_ERROR_NONE);
