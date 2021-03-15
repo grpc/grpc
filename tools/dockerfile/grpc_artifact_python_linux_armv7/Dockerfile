@@ -28,6 +28,9 @@ RUN unset AS AR CC CPP CXX LD && \
     make -j 4 && \
     make install
 
+# TODO: Dirty! overwrite the pyconfig.h that will be used for crosscompilation
+RUN cd Python-3.7.9 && ./configure && cp pyconfig.h /opt/python/cp37-cp37m/include/python3.7m
+
 RUN /opt/python/cp37-cp37m/bin/pip3 install --upgrade cython wheel
 
 ENV AUDITWHEEL_ARCH armv7l
