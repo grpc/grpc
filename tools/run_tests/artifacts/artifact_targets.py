@@ -325,11 +325,16 @@ class ProtocArtifact:
         if self.platform != 'windows':
             environ = {'CXXFLAGS': '', 'LDFLAGS': ''}
             if self.platform == 'linux':
+                dockerfile_dir = 'tools/dockerfile/grpc_artifact_centos6_{}'.format(
+                    self.arch)
+                if self.arch == 'aarch64':
+                    # for aarch64, use a dockcross manylinux image that will
+                    # give us both ready to use crosscompiler and sufficient backward compatibility
+                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
                 environ['LDFLAGS'] += ' -static-libgcc -static-libstdc++ -s'
                 return create_docker_jobspec(
                     self.name,
-                    'tools/dockerfile/grpc_artifact_centos6_{}'.format(
-                        self.arch),
+                    dockerfile_dir,
                     'tools/run_tests/artifacts/build_artifact_protoc.sh',
                     environ=environ)
             else:
@@ -358,6 +363,7 @@ def targets():
     return [
         ProtocArtifact('linux', 'x64'),
         ProtocArtifact('linux', 'x86'),
+        ProtocArtifact('linux', 'aarch64'),
         ProtocArtifact('macos', 'x64'),
         ProtocArtifact('windows', 'x64'),
         ProtocArtifact('windows', 'x86'),
