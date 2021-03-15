@@ -49,4 +49,15 @@ void grpc_chttp2_transport_start_reading(
     grpc_transport* transport, grpc_slice_buffer* read_buffer,
     grpc_closure* notify_on_receive_settings);
 
+namespace grpc_core {
+typedef void (*TestOnlyGlobalHttp2TransportInitCallback)();
+typedef void (*TestOnlyGlobalHttp2TransportDestructCallback)();
+
+void TestOnlySetGlobalHttp2TransportInitCallback(
+    TestOnlyGlobalHttp2TransportInitCallback callback);
+
+void TestOnlySetGlobalHttp2TransportDestructCallback(
+    TestOnlyGlobalHttp2TransportDestructCallback callback);
+}  // namespace grpc_core
+
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_CHTTP2_TRANSPORT_H */
