@@ -1988,17 +1988,6 @@
       ],
     },
     {
-      'target_name': 'snappy',
-      'type': 'static_library',
-      'dependencies': [
-      ],
-      'sources': [
-        'third_party/snappy/snappy-sinksource.cc',
-        'third_party/snappy/snappy-stubs-internal.cc',
-        'third_party/snappy/snappy.cc',
-      ],
-    },
-    {
       'target_name': 'upb',
       'type': 'static_library',
       'dependencies': [
