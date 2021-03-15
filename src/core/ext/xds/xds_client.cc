@@ -2280,38 +2280,38 @@ void XdsClient::UpdateResourceMetadataWithFailedParseResult(
 
 std::string XdsClient::DumpClientConfigBinary() {
   MutexLock lock(&mu_);
-  XdsApi::ResourceTypeMetadataMap per_xds_resource_metadata_map;
+  XdsApi::ResourceTypeMetadataMap resource_type_metadata_map;
   // Update per-xds-type version if available, this version corresponding to the
   // last successful ADS update version.
   for (auto& p : resource_version_map_) {
-    per_xds_resource_metadata_map[p.first].version = p.second;
+    resource_type_metadata_map[p.first].version = p.second;
   }
   // Collect resource metadata from listeners
   auto& lds_map =
-      per_xds_resource_metadata_map[XdsApi::kLdsTypeUrl].resource_metadata_map;
+      resource_type_metadata_map[XdsApi::kLdsTypeUrl].resource_metadata_map;
   for (auto& p : listener_map_) {
     lds_map[p.first] = &p.second.meta;
   }
   // Collect resource metadata from route configs
   auto& rds_map =
-      per_xds_resource_metadata_map[XdsApi::kRdsTypeUrl].resource_metadata_map;
+      resource_type_metadata_map[XdsApi::kRdsTypeUrl].resource_metadata_map;
   for (auto& p : route_config_map_) {
     rds_map[p.first] = &p.second.meta;
   }
   // Collect resource metadata from clusters
   auto& cds_map =
-      per_xds_resource_metadata_map[XdsApi::kCdsTypeUrl].resource_metadata_map;
+      resource_type_metadata_map[XdsApi::kCdsTypeUrl].resource_metadata_map;
   for (auto& p : cluster_map_) {
     cds_map[p.first] = &p.second.meta;
   }
   // Collect resource metadata from endpoints
   auto& eds_map =
-      per_xds_resource_metadata_map[XdsApi::kEdsTypeUrl].resource_metadata_map;
+      resource_type_metadata_map[XdsApi::kEdsTypeUrl].resource_metadata_map;
   for (auto& p : endpoint_map_) {
     eds_map[p.first] = &p.second.meta;
   }
   // Assemble config dump messages
-  return api_.AssembleClientConfig(per_xds_resource_metadata_map);
+  return api_.AssembleClientConfig(resource_type_metadata_map);
 }
 
 //
@@ -2366,6 +2366,8 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 
 // The returned bytes may contain NULL(0), so we can't use c-string.
 grpc_slice grpc_dump_xds_configs() {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_error* error = GRPC_ERROR_NONE;
   auto xds_client = grpc_core::XdsClient::GetOrCreate(&error);
   if (error != GRPC_ERROR_NONE) {

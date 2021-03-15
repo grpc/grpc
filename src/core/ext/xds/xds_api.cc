@@ -2994,7 +2994,7 @@ grpc_error* XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
 
 namespace {
 google_protobuf_Timestamp* GrpcMillisToTimestamp(const EncodingContext& context,
-                                                 const grpc_millis& value) {
+                                                 grpc_millis value) {
   google_protobuf_Timestamp* timestamp =
       google_protobuf_Timestamp_new(context.arena);
   gpr_timespec timespec = grpc_millis_to_timespec(value, GPR_CLOCK_MONOTONIC);
@@ -3121,9 +3121,8 @@ void DumpCdsConfig(const EncodingContext& context,
                    envoy_service_status_v3_PerXdsConfig* per_xds_config) {
   upb_strview kCdsTypeUrlUpb = upb_strview_makez(XdsApi::kCdsTypeUrl);
   auto* cluster_config_dump =
-      envoy_admin_v3_ClustersConfigDump_new(context.arena);
-  envoy_service_status_v3_PerXdsConfig_set_cluster_config(per_xds_config,
-                                                          cluster_config_dump);
+      envoy_service_status_v3_PerXdsConfig_mutable_cluster_config(
+          per_xds_config, context.arena);
   envoy_admin_v3_ClustersConfigDump_set_version_info(
       cluster_config_dump,
       StdStringToUpbString(resource_type_metadata.version));
@@ -3172,10 +3171,8 @@ void DumpEdsConfig(const EncodingContext& context,
                    envoy_service_status_v3_PerXdsConfig* per_xds_config) {
   upb_strview kEdsTypeUrlUpb = upb_strview_makez(XdsApi::kEdsTypeUrl);
   auto* endpoint_config_dump =
-      envoy_admin_v3_EndpointsConfigDump_new(context.arena);
-  envoy_service_status_v3_PerXdsConfig_set_endpoint_config(
-      per_xds_config, endpoint_config_dump);
-
+      envoy_service_status_v3_PerXdsConfig_mutable_endpoint_config(
+          per_xds_config, context.arena);
   for (auto& p : resource_type_metadata.resource_metadata_map) {
     absl::string_view name = p.first;
     const XdsApi::ResourceMetadata* meta = p.second;
@@ -3221,7 +3218,7 @@ void DumpEdsConfig(const EncodingContext& context,
 }  // namespace
 
 std::string XdsApi::AssembleClientConfig(
-    const ResourceTypeMetadataMap& per_xds_resource_metadata_map) {
+    const ResourceTypeMetadataMap& resource_type_metadata_map) {
   upb::Arena arena;
   // Create the ClientConfig for resource metadata from XdsClient
   auto* client_config = envoy_service_status_v3_ClientConfig_new(arena.ptr());
@@ -3232,7 +3229,7 @@ std::string XdsApi::AssembleClientConfig(
                                    true};
   PopulateNode(context, node_, build_version_, user_agent_name_, node);
   // Dump each xDS-type config into PerXdsConfig
-  for (auto& p : per_xds_resource_metadata_map) {
+  for (auto& p : resource_type_metadata_map) {
     absl::string_view type_url = p.first;
     const ResourceTypeMetadata& resource_type_metadata = p.second;
     if (type_url == kLdsTypeUrl) {

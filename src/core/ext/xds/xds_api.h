@@ -518,22 +518,22 @@ class XdsApi {
   };
   using ResourceTypeMetadataMap =
       std::map<absl::string_view /*type_url*/, ResourceTypeMetadata>;
-  static_assert(
-      static_cast<int>(envoy_admin_v3_REQUESTED) ==
-          static_cast<int>(ResourceMetadata::ClientResourceStatus::REQUESTED),
-      "");
-  static_assert(static_cast<int>(envoy_admin_v3_DOES_NOT_EXIST) ==
-                    static_cast<int>(
-                        ResourceMetadata::ClientResourceStatus::DOES_NOT_EXIST),
+  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
+                    envoy_admin_v3_REQUESTED) ==
+                    ResourceMetadata::ClientResourceStatus::REQUESTED,
                 "");
-  static_assert(
-      static_cast<int>(envoy_admin_v3_ACKED) ==
-          static_cast<int>(ResourceMetadata::ClientResourceStatus::ACKED),
-      "");
-  static_assert(
-      static_cast<int>(envoy_admin_v3_NACKED) ==
-          static_cast<int>(ResourceMetadata::ClientResourceStatus::NACKED),
-      "");
+  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
+                    envoy_admin_v3_DOES_NOT_EXIST) ==
+                    ResourceMetadata::ClientResourceStatus::DOES_NOT_EXIST,
+                "");
+  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
+                    envoy_admin_v3_ACKED) ==
+                    ResourceMetadata::ClientResourceStatus::ACKED,
+                "");
+  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
+                    envoy_admin_v3_NACKED) ==
+                    ResourceMetadata::ClientResourceStatus::NACKED,
+                "");
 
   // If the response can't be parsed at the top level, the resulting
   // type_url will be empty.
@@ -589,7 +589,7 @@ class XdsApi {
 
   // Assemble the client config proto message and return the serialized result.
   std::string AssembleClientConfig(
-      const ResourceTypeMetadataMap& per_xds_resource_metadata_map);
+      const ResourceTypeMetadataMap& resource_type_metadata_map);
 
  private:
   XdsClient* client_;

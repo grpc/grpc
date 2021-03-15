@@ -20,13 +20,14 @@
 
 #include "src/cpp/server/csds/csds.h"
 
+#include "absl/status/statusor.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpcpp/impl/codegen/slice.h>
 
 #include <string>
 
-#include "src/core/ext/xds/xds_client.h"
 #include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
 
 namespace grpc {
