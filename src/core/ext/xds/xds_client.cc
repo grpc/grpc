@@ -2213,13 +2213,17 @@ void XdsClientGlobalShutdown() {
 }
 
 RefCountedPtr<XdsClient> XdsClient::GetOrCreate(grpc_error** error) {
-  MutexLock lock(g_mu);
-  if (g_xds_client != nullptr) {
-    auto xds_client = g_xds_client->RefIfNonZero();
-    if (xds_client != nullptr) return xds_client;
+  RefCountedPtr<XdsClient> xds_client;
+  {
+    MutexLock lock(g_mu);
+    if (g_xds_client != nullptr) {
+      auto xds_client = g_xds_client->RefIfNonZero();
+      if (xds_client != nullptr) return xds_client;
+    }
+    xds_client = MakeRefCounted<XdsClient>(error);
+    if (*error != GRPC_ERROR_NONE) return nullptr;
+    g_xds_client = xds_client.get();
   }
-  auto xds_client = MakeRefCounted<XdsClient>(error);
-  g_xds_client = xds_client.get();
   return xds_client;
 }
 
