@@ -26,15 +26,47 @@
 namespace grpc {
 namespace experimental {
 
+class XdsServerServingStatusNotifierInterface {
+ public:
+  virtual ~XdsServerServingStatusNotifierInterface() = default;
+
+  // \a uri contains the listening target associated with the notification. Note
+  // that a single target provided to XdsServerBuilder can get resolved to
+  // multiple listening addresses. Status::OK signifies that the server is
+  // serving, while a non-OK status signifies that the server is not serving.
+  virtual void OnServingStatusChange(std::string uri, grpc::Status status) = 0;
+};
+
 class XdsServerBuilder : public ::grpc::ServerBuilder {
  public:
+  // It is the responsibility of the application to make sure that \a notifier
+  // outlasts the life of the server. Notifications will start being made
+  // asynchronously once `BuildAndStart()` has been called. Note that it is
+  // possible for notifications to be made before `BuildAndStart()` returns.
+  void set_status_notifier(XdsServerServingStatusNotifierInterface* notifier) {
+    notifier_ = notifier;
+  }
+
   std::unique_ptr<Server> BuildAndStart() override {
-    grpc_server_config_fetcher* fetcher =
-        grpc_server_config_fetcher_xds_create();
+    grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(
+        {OnServingStatusChange, notifier_});
     if (fetcher == nullptr) return nullptr;
     set_fetcher(fetcher);
     return ServerBuilder::BuildAndStart();
   }
+
+ private:
+  static void OnServingStatusChange(void* user_data, const char* uri,
+                                    grpc_status_code code,
+                                    const char* error_message) {
+    if (user_data == nullptr) return;
+    XdsServerServingStatusNotifierInterface* notifier =
+        static_cast<XdsServerServingStatusNotifierInterface*>(user_data);
+    notifier->OnServingStatusChange(
+        uri, grpc::Status(static_cast<StatusCode>(code), error_message));
+  }
+
+  XdsServerServingStatusNotifierInterface* notifier_ = nullptr;
 };
 
 }  // namespace experimental

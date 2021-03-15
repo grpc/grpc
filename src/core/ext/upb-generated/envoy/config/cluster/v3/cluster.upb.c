@@ -24,10 +24,7 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "udpa/core/v1/collection_entry.upb.h"
-#include "udpa/core/v1/resource_locator.upb.h"
-#include "envoy/annotations/deprecation.upb.h"
-#include "udpa/annotations/migrate.upb.h"
+#include "xds/core/v3/collection_entry.upb.h"
 #include "udpa/annotations/security.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
@@ -36,7 +33,7 @@
 #include "upb/port_def.inc"
 
 static const upb_msglayout *const envoy_config_cluster_v3_ClusterCollection_submsgs[1] = {
-  &udpa_core_v1_CollectionEntry_msginit,
+  &xds_core_v3_CollectionEntry_msginit,
 };
 
 static const upb_msglayout_field envoy_config_cluster_v3_ClusterCollection__fields[1] = {
@@ -58,7 +55,7 @@ static const upb_msglayout *const envoy_config_cluster_v3_Cluster_submsgs[32] = 
   &envoy_config_cluster_v3_Cluster_LeastRequestLbConfig_msginit,
   &envoy_config_cluster_v3_Cluster_MaglevLbConfig_msginit,
   &envoy_config_cluster_v3_Cluster_OriginalDstLbConfig_msginit,
-  &envoy_config_cluster_v3_Cluster_PrefetchPolicy_msginit,
+  &envoy_config_cluster_v3_Cluster_PreconnectPolicy_msginit,
   &envoy_config_cluster_v3_Cluster_RefreshRate_msginit,
   &envoy_config_cluster_v3_Cluster_RingHashLbConfig_msginit,
   &envoy_config_cluster_v3_Cluster_TransportSocketMatch_msginit,
@@ -172,21 +169,19 @@ const upb_msglayout envoy_config_cluster_v3_Cluster_CustomClusterType_msginit = 
   UPB_SIZE(16, 32), 2, false, 255,
 };
 
-static const upb_msglayout *const envoy_config_cluster_v3_Cluster_EdsClusterConfig_submsgs[2] = {
+static const upb_msglayout *const envoy_config_cluster_v3_Cluster_EdsClusterConfig_submsgs[1] = {
   &envoy_config_core_v3_ConfigSource_msginit,
-  &udpa_core_v1_ResourceLocator_msginit,
 };
 
-static const upb_msglayout_field envoy_config_cluster_v3_Cluster_EdsClusterConfig__fields[3] = {
+static const upb_msglayout_field envoy_config_cluster_v3_Cluster_EdsClusterConfig__fields[2] = {
   {1, UPB_SIZE(12, 24), 1, 0, 11, 1},
   {2, UPB_SIZE(4, 8), 0, 0, 9, 1},
-  {3, UPB_SIZE(16, 32), 2, 1, 11, 1},
 };
 
 const upb_msglayout envoy_config_cluster_v3_Cluster_EdsClusterConfig_msginit = {
   &envoy_config_cluster_v3_Cluster_EdsClusterConfig_submsgs[0],
   &envoy_config_cluster_v3_Cluster_EdsClusterConfig__fields[0],
-  UPB_SIZE(24, 48), 3, false, 255,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 static const upb_msglayout *const envoy_config_cluster_v3_Cluster_LbSubsetConfig_submsgs[2] = {
@@ -356,18 +351,18 @@ const upb_msglayout envoy_config_cluster_v3_Cluster_RefreshRate_msginit = {
   UPB_SIZE(16, 24), 2, false, 255,
 };
 
-static const upb_msglayout *const envoy_config_cluster_v3_Cluster_PrefetchPolicy_submsgs[1] = {
+static const upb_msglayout *const envoy_config_cluster_v3_Cluster_PreconnectPolicy_submsgs[1] = {
   &google_protobuf_DoubleValue_msginit,
 };
 
-static const upb_msglayout_field envoy_config_cluster_v3_Cluster_PrefetchPolicy__fields[2] = {
+static const upb_msglayout_field envoy_config_cluster_v3_Cluster_PreconnectPolicy__fields[2] = {
   {1, UPB_SIZE(4, 8), 1, 0, 11, 1},
   {2, UPB_SIZE(8, 16), 2, 0, 11, 1},
 };
 
-const upb_msglayout envoy_config_cluster_v3_Cluster_PrefetchPolicy_msginit = {
-  &envoy_config_cluster_v3_Cluster_PrefetchPolicy_submsgs[0],
-  &envoy_config_cluster_v3_Cluster_PrefetchPolicy__fields[0],
+const upb_msglayout envoy_config_cluster_v3_Cluster_PreconnectPolicy_msginit = {
+  &envoy_config_cluster_v3_Cluster_PreconnectPolicy_submsgs[0],
+  &envoy_config_cluster_v3_Cluster_PreconnectPolicy__fields[0],
   UPB_SIZE(16, 24), 2, false, 255,
 };
 

@@ -57,7 +57,7 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
     for (grpc_pollset* pollset : core_server->pollsets()) {
       grpc_endpoint_add_to_pollset(server_endpoint, pollset);
     }
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
     gpr_log(GPR_ERROR, "Failed to create channel: %s",
             grpc_error_string(error));

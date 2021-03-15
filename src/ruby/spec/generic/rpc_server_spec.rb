@@ -104,7 +104,7 @@ end
 
 SynchronizedCancellationStub = SynchronizedCancellationService.rpc_stub_class
 
-# a test service that hangs onto call objects
+# a test service that holds onto call objects
 # and uses them after the server-side call has been
 # finished
 class CheckCallAfterFinishedService

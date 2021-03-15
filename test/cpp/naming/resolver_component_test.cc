@@ -292,11 +292,11 @@ void CheckLBPolicyResultLocked(const grpc_channel_args* channel_args,
 }
 
 #ifdef GPR_WINDOWS
-void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
+void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
   sockaddr_in6 addr;
   memset(&addr, 0, sizeof(addr));
   addr.sin6_family = AF_INET6;
-  addr.sin6_port = htons(dummy_port);
+  addr.sin6_port = htons(phony_port);
   ((char*)&addr.sin6_addr)[15] = 1;
   for (;;) {
     if (gpr_event_get(done_ev)) {
@@ -318,7 +318,7 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
           << "Failed to set socket non-blocking";
       ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) != SOCKET_ERROR)
           << "Failed to bind socket " + std::to_string(s) +
-                 " to [::1]:" + std::to_string(dummy_port) +
+                 " to [::1]:" + std::to_string(phony_port) +
                  ". WSA error: " + std::to_string(WSAGetLastError());
       ASSERT_TRUE(listen(s, 1) != SOCKET_ERROR)
           << "Failed to listen on socket " + std::to_string(s) +
@@ -330,7 +330,7 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
     for (size_t i = 0; i < sockets.size(); i++) {
       gpr_log(GPR_DEBUG, "non-blocking accept then close on %d", sockets[i]);
       ASSERT_TRUE(accept(sockets[i], nullptr, nullptr) == INVALID_SOCKET)
-          << "Accept on dummy socket unexpectedly accepted actual connection.";
+          << "Accept on phony socket unexpectedly accepted actual connection.";
       ASSERT_TRUE(WSAGetLastError() == WSAEWOULDBLOCK)
           << "OpenAndCloseSocketsStressLoop accept on socket " +
                  std::to_string(sockets[i]) +
@@ -347,7 +347,7 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
   return;
 }
 #else
-void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
+void OpenAndCloseSocketsStressLoop(int phony_port, gpr_event* done_ev) {
   // The goal of this loop is to catch socket
   // "use after close" bugs within the c-ares resolver by acting
   // like some separate thread doing I/O.
@@ -362,7 +362,7 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
   sockaddr_in6 addr;
   memset(&addr, 0, sizeof(addr));
   addr.sin6_family = AF_INET6;
-  addr.sin6_port = htons(dummy_port);
+  addr.sin6_port = htons(phony_port);
   (reinterpret_cast<char*>(&addr.sin6_addr))[15] = 1;
   for (;;) {
     if (gpr_event_get(done_ev)) {
@@ -388,7 +388,7 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
       gpr_log(GPR_DEBUG, "Opened fd: %d", s);
       ASSERT_TRUE(bind(s, (const sockaddr*)&addr, sizeof(addr)) == 0)
           << "Failed to bind socket " + std::to_string(s) +
-                 " to [::1]:" + std::to_string(dummy_port) +
+                 " to [::1]:" + std::to_string(phony_port) +
                  ". errno: " + std::to_string(errno);
       ASSERT_TRUE(listen(s, 1) == 0) << "Failed to listen on socket " +
                                             std::to_string(s) +
@@ -654,10 +654,10 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
   // Start up background stress thread
-  int dummy_port = grpc_pick_unused_port_or_die();
+  int phony_port = grpc_pick_unused_port_or_die();
   gpr_event done_ev;
   gpr_event_init(&done_ev);
-  std::thread socket_stress_thread(OpenAndCloseSocketsStressLoop, dummy_port,
+  std::thread socket_stress_thread(OpenAndCloseSocketsStressLoop, phony_port,
                                    &done_ev);
   // Run the resolver test
   RunResolvesRelevantRecordsTest(ResultHandler::Create);

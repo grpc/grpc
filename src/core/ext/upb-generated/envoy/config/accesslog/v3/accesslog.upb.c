@@ -14,7 +14,6 @@
 #include "envoy/type/matcher/v3/metadata.upb.h"
 #include "envoy/type/v3/percent.upb.h"
 #include "google/protobuf/any.upb.h"
-#include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"

@@ -92,7 +92,7 @@ void test_succeeds(void) {
   resolved_addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_in));
   addr->sin_family = AF_INET;
 
-  /* create a dummy server */
+  /* create a phony server */
   svr_fd = socket(AF_INET, SOCK_STREAM, 0);
   GPR_ASSERT(svr_fd >= 0);
   GPR_ASSERT(

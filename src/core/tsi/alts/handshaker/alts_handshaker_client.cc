@@ -69,9 +69,9 @@ typedef struct alts_grpc_handshaker_client {
   grpc_closure on_handshaker_service_resp_recv;
   /* Buffers containing information to be sent (or received) to (or from) the
    * handshaker service. */
-  grpc_byte_buffer* send_buffer;
-  grpc_byte_buffer* recv_buffer;
-  grpc_status_code status;
+  grpc_byte_buffer* send_buffer = nullptr;
+  grpc_byte_buffer* recv_buffer = nullptr;
+  grpc_status_code status = GRPC_STATUS_OK;
   /* Initial metadata to be received from handshaker service. */
   grpc_metadata_array recv_initial_metadata;
   /* A callback function provided by an application to be invoked when response
@@ -95,15 +95,15 @@ typedef struct alts_grpc_handshaker_client {
   /** callback for receiving handshake call status */
   grpc_closure on_status_received;
   /** gRPC status code of handshake call */
-  grpc_status_code handshake_status_code;
+  grpc_status_code handshake_status_code = GRPC_STATUS_OK;
   /** gRPC status details of handshake call */
   grpc_slice handshake_status_details;
   /* mu synchronizes all fields below including their internal fields. */
-  gpr_mu mu;
+  grpc_core::Mutex mu;
   /* indicates if the handshaker call's RECV_STATUS_ON_CLIENT op is done. */
-  bool receive_status_finished;
+  bool receive_status_finished = false;
   /* if non-null, contains arguments to complete a TSI next callback. */
-  recv_message_result* pending_recv_message_result;
+  recv_message_result* pending_recv_message_result = nullptr;
   /* Maximum frame size used by frame protector. */
   size_t max_frame_size;
 } alts_grpc_handshaker_client;
@@ -117,10 +117,7 @@ static void handshaker_client_send_buffer_destroy(
 
 static bool is_handshake_finished_properly(grpc_gcp_HandshakerResp* resp) {
   GPR_ASSERT(resp != nullptr);
-  if (grpc_gcp_HandshakerResp_result(resp)) {
-    return true;
-  }
-  return false;
+  return grpc_gcp_HandshakerResp_result(resp) != nullptr;
 }
 
 static void alts_grpc_handshaker_client_unref(
@@ -140,8 +137,7 @@ static void alts_grpc_handshaker_client_unref(
     grpc_alts_credentials_options_destroy(client->options);
     gpr_free(client->buffer);
     grpc_slice_unref_internal(client->handshake_status_details);
-    gpr_mu_destroy(&client->mu);
-    gpr_free(client);
+    delete client;
   }
 }
 
@@ -695,24 +691,24 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
     gpr_log(GPR_ERROR, "Invalid arguments to alts_handshaker_client_create()");
     return nullptr;
   }
-  alts_grpc_handshaker_client* client =
-      static_cast<alts_grpc_handshaker_client*>(gpr_zalloc(sizeof(*client)));
-  gpr_mu_init(&client->mu);
+  alts_grpc_handshaker_client* client = new alts_grpc_handshaker_client();
+  memset(&client->base, 0, sizeof(client->base));
+  client->base.vtable =
+      vtable_for_testing == nullptr ? &vtable : vtable_for_testing;
   gpr_ref_init(&client->refs, 1);
-  client->grpc_caller = grpc_call_start_batch_and_execute;
   client->handshaker = handshaker;
+  client->grpc_caller = grpc_call_start_batch_and_execute;
+  grpc_metadata_array_init(&client->recv_initial_metadata);
   client->cb = cb;
   client->user_data = user_data;
-  client->send_buffer = nullptr;
-  client->recv_buffer = nullptr;
   client->options = grpc_alts_credentials_options_copy(options);
   client->target_name = grpc_slice_copy(target_name);
-  client->recv_bytes = grpc_empty_slice();
-  grpc_metadata_array_init(&client->recv_initial_metadata);
   client->is_client = is_client;
-  client->max_frame_size = max_frame_size;
+  client->recv_bytes = grpc_empty_slice();
   client->buffer_size = TSI_ALTS_INITIAL_BUFFER_SIZE;
   client->buffer = static_cast<unsigned char*>(gpr_zalloc(client->buffer_size));
+  client->handshake_status_details = grpc_empty_slice();
+  client->max_frame_size = max_frame_size;
   grpc_slice slice = grpc_slice_from_copied_string(handshaker_service_url);
   client->call =
       strcmp(handshaker_service_url, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING) ==
@@ -722,8 +718,6 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
                 channel, nullptr, GRPC_PROPAGATE_DEFAULTS, interested_parties,
                 grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
                 GRPC_MILLIS_INF_FUTURE, nullptr);
-  client->base.vtable =
-      vtable_for_testing == nullptr ? &vtable : vtable_for_testing;
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&client->on_status_received, on_status_received, client,

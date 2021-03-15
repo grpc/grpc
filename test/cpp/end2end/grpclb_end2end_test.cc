@@ -24,6 +24,7 @@
 #include <string>
 #include <thread>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -273,7 +274,8 @@ class BalancerServiceImpl : public BalancerService {
       }
       {
         grpc::internal::MutexLock lock(&mu_);
-        serverlist_cond_.WaitUntil(&mu_, [this] { return serverlist_done_; });
+        grpc::internal::WaitUntil(&serverlist_cond_, &mu_,
+                                  [this] { return serverlist_done_; });
       }
 
       if (client_load_reporting_interval_seconds_ > 0) {
@@ -333,8 +335,8 @@ class BalancerServiceImpl : public BalancerService {
     grpc::internal::CondVar cv;
     if (load_report_queue_.empty()) {
       load_report_cond_ = &cv;
-      load_report_cond_->WaitUntil(
-          &mu_, [this] { return !load_report_queue_.empty(); });
+      grpc::internal::WaitUntil(load_report_cond_, &mu_,
+                                [this] { return !load_report_queue_.empty(); });
       load_report_cond_ = nullptr;
     }
     ClientStats load_report = std::move(load_report_queue_.front());
@@ -346,7 +348,7 @@ class BalancerServiceImpl : public BalancerService {
     grpc::internal::MutexLock lock(&mu_);
     if (!serverlist_done_) {
       serverlist_done_ = true;
-      serverlist_cond_.Broadcast();
+      serverlist_cond_.SignalAll();
     }
   }
 
@@ -602,8 +604,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
     response_generator_->SetReresolutionResponse(std::move(result));
   }
 
-  const std::vector<int> GetBackendPorts(size_t start_index = 0,
-                                         size_t stop_index = 0) const {
+  std::vector<int> GetBackendPorts(size_t start_index = 0,
+                                   size_t stop_index = 0) const {
     if (stop_index == 0) stop_index = backends_.size();
     std::vector<int> backend_ports;
     for (size_t i = start_index; i < stop_index; ++i) {
@@ -695,8 +697,8 @@ class GrpclbEnd2endTest : public ::testing::Test {
       // by ServerThread::Serve from firing before the wait below is hit.
       grpc::internal::MutexLock lock(&mu);
       grpc::internal::CondVar cond;
-      thread_.reset(new std::thread(
-          std::bind(&ServerThread::Serve, this, server_host, &mu, &cond)));
+      thread_ = absl::make_unique<std::thread>(
+          std::bind(&ServerThread::Serve, this, server_host, &mu, &cond));
       cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
     }

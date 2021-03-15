@@ -252,6 +252,12 @@ cdef class _ServicerContext:
         else:
             return {}
 
+    def time_remaining(self):
+        if self._rpc_state.details.deadline.seconds == _GPR_INF_FUTURE.seconds:
+            return None
+        else:
+            return max(_time_from_timespec(self._rpc_state.details.deadline) - time.time(), 0)
+
 
 cdef class _SyncServicerContext:
     """Sync servicer context for sync handler compatibility."""
@@ -310,6 +316,9 @@ cdef class _SyncServicerContext:
 
     def auth_context(self):
         return self._context.auth_context()
+
+    def time_remaining(self):
+        return self._context.time_remaining()
 
 
 async def _run_interceptor(object interceptors, object query_handler,
@@ -822,7 +831,8 @@ cdef class AioServer:
         init_grpc_aio()
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
-        self._server = Server(options)
+        # TODO(rbellevi): Support xDS in aio server.
+        self._server = Server(options, False)
         grpc_server_register_completion_queue(
             self._server.c_server,
             global_completion_queue(),

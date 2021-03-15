@@ -49,6 +49,8 @@ def _get_external_deps(external_deps):
     for dep in external_deps:
         if dep == "address_sorting":
             ret += ["//third_party/address_sorting"]
+        elif dep == "xxhash":
+            ret += ["//third_party/xxhash"]
         elif dep == "cares":
             ret += select({
                 "//:grpc_no_ares": [],
@@ -78,7 +80,8 @@ def grpc_cc_library(
         alwayslink = 0,
         data = [],
         use_cfstream = False,
-        tags = []):
+        tags = [],
+        linkstatic = False):
     copts = []
     if use_cfstream:
         copts = if_mac(["-DGRPC_CFSTREAM"])
@@ -122,6 +125,7 @@ def grpc_cc_library(
         alwayslink = alwayslink,
         data = data,
         tags = tags,
+        linkstatic = linkstatic,
     )
 
 def grpc_proto_plugin(name, srcs = [], deps = []):

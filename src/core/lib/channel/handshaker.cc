@@ -53,45 +53,7 @@ std::string HandshakerArgsString(HandshakerArgs* args) {
 
 }  // namespace
 
-HandshakeManager::HandshakeManager() { gpr_mu_init(&mu_); }
-
-/// Add \a mgr to the server side list of all pending handshake managers, the
-/// list starts with \a *head.
-// Not thread-safe. Caller needs to synchronize.
-void HandshakeManager::AddToPendingMgrList(HandshakeManager** head) {
-  GPR_ASSERT(prev_ == nullptr);
-  GPR_ASSERT(next_ == nullptr);
-  next_ = *head;
-  if (*head) {
-    (*head)->prev_ = this;
-  }
-  *head = this;
-}
-
-/// Remove \a mgr from the server side list of all pending handshake managers.
-// Not thread-safe. Caller needs to synchronize.
-void HandshakeManager::RemoveFromPendingMgrList(HandshakeManager** head) {
-  if (next_ != nullptr) {
-    next_->prev_ = prev_;
-  }
-  if (prev_ != nullptr) {
-    prev_->next_ = next_;
-  } else {
-    GPR_ASSERT(*head == this);
-    *head = next_;
-  }
-}
-
-/// Shutdown all pending handshake managers starting at head on the server
-/// side. Not thread-safe. Caller needs to synchronize.
-void HandshakeManager::ShutdownAllPending(grpc_error* why) {
-  auto* head = this;
-  while (head != nullptr) {
-    head->Shutdown(GRPC_ERROR_REF(why));
-    head = head->next_;
-  }
-  GRPC_ERROR_UNREF(why);
-}
+HandshakeManager::HandshakeManager() {}
 
 void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_handshaker_trace)) {
@@ -104,10 +66,7 @@ void HandshakeManager::Add(RefCountedPtr<Handshaker> handshaker) {
   handshakers_.push_back(std::move(handshaker));
 }
 
-HandshakeManager::~HandshakeManager() {
-  handshakers_.clear();
-  gpr_mu_destroy(&mu_);
-}
+HandshakeManager::~HandshakeManager() { handshakers_.clear(); }
 
 void HandshakeManager::Shutdown(grpc_error* why) {
   {
@@ -216,7 +175,6 @@ void HandshakeManager::DoHandshake(grpc_endpoint* endpoint,
   {
     MutexLock lock(&mu_);
     GPR_ASSERT(index_ == 0);
-    GPR_ASSERT(!is_shutdown_);
     // Construct handshaker args.  These will be passed through all
     // handshakers and eventually be freed by the on_handshake_done callback.
     args_.endpoint = endpoint;

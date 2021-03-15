@@ -27,11 +27,13 @@ struct envoy_config_core_v3_Node;
 struct envoy_config_core_v3_Metadata;
 struct envoy_config_core_v3_Metadata_FilterMetadataEntry;
 struct envoy_config_core_v3_RuntimeUInt32;
+struct envoy_config_core_v3_RuntimePercent;
 struct envoy_config_core_v3_RuntimeDouble;
 struct envoy_config_core_v3_RuntimeFeatureFlag;
 struct envoy_config_core_v3_HeaderValue;
 struct envoy_config_core_v3_HeaderValueOption;
 struct envoy_config_core_v3_HeaderMap;
+struct envoy_config_core_v3_WatchedDirectory;
 struct envoy_config_core_v3_DataSource;
 struct envoy_config_core_v3_RetryPolicy;
 struct envoy_config_core_v3_RemoteDataSource;
@@ -46,11 +48,13 @@ typedef struct envoy_config_core_v3_Node envoy_config_core_v3_Node;
 typedef struct envoy_config_core_v3_Metadata envoy_config_core_v3_Metadata;
 typedef struct envoy_config_core_v3_Metadata_FilterMetadataEntry envoy_config_core_v3_Metadata_FilterMetadataEntry;
 typedef struct envoy_config_core_v3_RuntimeUInt32 envoy_config_core_v3_RuntimeUInt32;
+typedef struct envoy_config_core_v3_RuntimePercent envoy_config_core_v3_RuntimePercent;
 typedef struct envoy_config_core_v3_RuntimeDouble envoy_config_core_v3_RuntimeDouble;
 typedef struct envoy_config_core_v3_RuntimeFeatureFlag envoy_config_core_v3_RuntimeFeatureFlag;
 typedef struct envoy_config_core_v3_HeaderValue envoy_config_core_v3_HeaderValue;
 typedef struct envoy_config_core_v3_HeaderValueOption envoy_config_core_v3_HeaderValueOption;
 typedef struct envoy_config_core_v3_HeaderMap envoy_config_core_v3_HeaderMap;
+typedef struct envoy_config_core_v3_WatchedDirectory envoy_config_core_v3_WatchedDirectory;
 typedef struct envoy_config_core_v3_DataSource envoy_config_core_v3_DataSource;
 typedef struct envoy_config_core_v3_RetryPolicy envoy_config_core_v3_RetryPolicy;
 typedef struct envoy_config_core_v3_RemoteDataSource envoy_config_core_v3_RemoteDataSource;
@@ -65,11 +69,13 @@ extern const upb_msglayout envoy_config_core_v3_Node_msginit;
 extern const upb_msglayout envoy_config_core_v3_Metadata_msginit;
 extern const upb_msglayout envoy_config_core_v3_Metadata_FilterMetadataEntry_msginit;
 extern const upb_msglayout envoy_config_core_v3_RuntimeUInt32_msginit;
+extern const upb_msglayout envoy_config_core_v3_RuntimePercent_msginit;
 extern const upb_msglayout envoy_config_core_v3_RuntimeDouble_msginit;
 extern const upb_msglayout envoy_config_core_v3_RuntimeFeatureFlag_msginit;
 extern const upb_msglayout envoy_config_core_v3_HeaderValue_msginit;
 extern const upb_msglayout envoy_config_core_v3_HeaderValueOption_msginit;
 extern const upb_msglayout envoy_config_core_v3_HeaderMap_msginit;
+extern const upb_msglayout envoy_config_core_v3_WatchedDirectory_msginit;
 extern const upb_msglayout envoy_config_core_v3_DataSource_msginit;
 extern const upb_msglayout envoy_config_core_v3_RetryPolicy_msginit;
 extern const upb_msglayout envoy_config_core_v3_RemoteDataSource_msginit;
@@ -81,6 +87,7 @@ struct envoy_config_core_v3_Address;
 struct envoy_config_core_v3_BackoffStrategy;
 struct envoy_config_core_v3_HttpUri;
 struct envoy_type_v3_FractionalPercent;
+struct envoy_type_v3_Percent;
 struct envoy_type_v3_SemanticVersion;
 struct google_protobuf_Any;
 struct google_protobuf_BoolValue;
@@ -90,6 +97,7 @@ extern const upb_msglayout envoy_config_core_v3_Address_msginit;
 extern const upb_msglayout envoy_config_core_v3_BackoffStrategy_msginit;
 extern const upb_msglayout envoy_config_core_v3_HttpUri_msginit;
 extern const upb_msglayout envoy_type_v3_FractionalPercent_msginit;
+extern const upb_msglayout envoy_type_v3_Percent_msginit;
 extern const upb_msglayout envoy_type_v3_SemanticVersion_msginit;
 extern const upb_msglayout google_protobuf_Any_msginit;
 extern const upb_msglayout google_protobuf_BoolValue_msginit;
@@ -469,6 +477,47 @@ UPB_INLINE void envoy_config_core_v3_RuntimeUInt32_set_runtime_key(envoy_config_
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 
+/* envoy.config.core.v3.RuntimePercent */
+
+UPB_INLINE envoy_config_core_v3_RuntimePercent *envoy_config_core_v3_RuntimePercent_new(upb_arena *arena) {
+  return (envoy_config_core_v3_RuntimePercent *)_upb_msg_new(&envoy_config_core_v3_RuntimePercent_msginit, arena);
+}
+UPB_INLINE envoy_config_core_v3_RuntimePercent *envoy_config_core_v3_RuntimePercent_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_config_core_v3_RuntimePercent *ret = envoy_config_core_v3_RuntimePercent_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_RuntimePercent_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_config_core_v3_RuntimePercent *envoy_config_core_v3_RuntimePercent_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_config_core_v3_RuntimePercent *ret = envoy_config_core_v3_RuntimePercent_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_RuntimePercent_msginit, arena, options))
+      ? ret : NULL;
+}
+UPB_INLINE char *envoy_config_core_v3_RuntimePercent_serialize(const envoy_config_core_v3_RuntimePercent *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_config_core_v3_RuntimePercent_msginit, arena, len);
+}
+
+UPB_INLINE bool envoy_config_core_v3_RuntimePercent_has_default_value(const envoy_config_core_v3_RuntimePercent *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct envoy_type_v3_Percent* envoy_config_core_v3_RuntimePercent_default_value(const envoy_config_core_v3_RuntimePercent *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_type_v3_Percent*); }
+UPB_INLINE upb_strview envoy_config_core_v3_RuntimePercent_runtime_key(const envoy_config_core_v3_RuntimePercent *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
+
+UPB_INLINE void envoy_config_core_v3_RuntimePercent_set_default_value(envoy_config_core_v3_RuntimePercent *msg, struct envoy_type_v3_Percent* value) {
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct envoy_type_v3_Percent*) = value;
+}
+UPB_INLINE struct envoy_type_v3_Percent* envoy_config_core_v3_RuntimePercent_mutable_default_value(envoy_config_core_v3_RuntimePercent *msg, upb_arena *arena) {
+  struct envoy_type_v3_Percent* sub = (struct envoy_type_v3_Percent*)envoy_config_core_v3_RuntimePercent_default_value(msg);
+  if (sub == NULL) {
+    sub = (struct envoy_type_v3_Percent*)_upb_msg_new(&envoy_type_v3_Percent_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_core_v3_RuntimePercent_set_default_value(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_core_v3_RuntimePercent_set_runtime_key(envoy_config_core_v3_RuntimePercent *msg, upb_strview value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
+}
+
 /* envoy.config.core.v3.RuntimeDouble */
 
 UPB_INLINE envoy_config_core_v3_RuntimeDouble *envoy_config_core_v3_RuntimeDouble_new(upb_arena *arena) {
@@ -657,6 +706,32 @@ UPB_INLINE struct envoy_config_core_v3_HeaderValue* envoy_config_core_v3_HeaderM
       msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
+}
+
+/* envoy.config.core.v3.WatchedDirectory */
+
+UPB_INLINE envoy_config_core_v3_WatchedDirectory *envoy_config_core_v3_WatchedDirectory_new(upb_arena *arena) {
+  return (envoy_config_core_v3_WatchedDirectory *)_upb_msg_new(&envoy_config_core_v3_WatchedDirectory_msginit, arena);
+}
+UPB_INLINE envoy_config_core_v3_WatchedDirectory *envoy_config_core_v3_WatchedDirectory_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
+  envoy_config_core_v3_WatchedDirectory *ret = envoy_config_core_v3_WatchedDirectory_new(arena);
+  return (ret && upb_decode(buf, size, ret, &envoy_config_core_v3_WatchedDirectory_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_config_core_v3_WatchedDirectory *envoy_config_core_v3_WatchedDirectory_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_config_core_v3_WatchedDirectory *ret = envoy_config_core_v3_WatchedDirectory_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_core_v3_WatchedDirectory_msginit, arena, options))
+      ? ret : NULL;
+}
+UPB_INLINE char *envoy_config_core_v3_WatchedDirectory_serialize(const envoy_config_core_v3_WatchedDirectory *msg, upb_arena *arena, size_t *len) {
+  return upb_encode(msg, &envoy_config_core_v3_WatchedDirectory_msginit, arena, len);
+}
+
+UPB_INLINE upb_strview envoy_config_core_v3_WatchedDirectory_path(const envoy_config_core_v3_WatchedDirectory *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
+
+UPB_INLINE void envoy_config_core_v3_WatchedDirectory_set_path(envoy_config_core_v3_WatchedDirectory *msg, upb_strview value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
 }
 
 /* envoy.config.core.v3.DataSource */

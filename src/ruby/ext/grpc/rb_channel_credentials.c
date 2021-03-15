@@ -180,7 +180,11 @@ static VALUE grpc_rb_channel_credentials_init(int argc, VALUE* argv,
                                         NULL, NULL);
   }
   if (creds == NULL) {
-    rb_raise(rb_eRuntimeError, "could not create a credentials, not sure why");
+    rb_raise(rb_eRuntimeError,
+             "the call to grpc_ssl_credentials_create() failed, could not "
+             "create a credentials, see "
+             "https://github.com/grpc/grpc/blob/master/TROUBLESHOOTING.md for "
+             "debugging tips");
     return Qnil;
   }
   wrapper->wrapped = creds;
@@ -270,7 +274,13 @@ void Init_grpc_channel_credentials() {
 /* Gets the wrapped grpc_channel_credentials from the ruby wrapper */
 grpc_channel_credentials* grpc_rb_get_wrapped_channel_credentials(VALUE v) {
   grpc_rb_channel_credentials* wrapper = NULL;
+  Check_TypedStruct(v, &grpc_rb_channel_credentials_data_type);
   TypedData_Get_Struct(v, grpc_rb_channel_credentials,
                        &grpc_rb_channel_credentials_data_type, wrapper);
   return wrapper->wrapped;
+}
+
+/* Check if v is kind of ChannelCredentials */
+bool grpc_rb_is_channel_credentials(VALUE v) {
+  return rb_typeddata_is_kind_of(v, &grpc_rb_channel_credentials_data_type);
 }

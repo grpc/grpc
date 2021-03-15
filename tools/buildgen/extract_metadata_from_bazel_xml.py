@@ -238,6 +238,8 @@ def _external_dep_name_from_bazel_dependency(bazel_dep):
         return 'upb'
     elif bazel_dep == '//external:benchmark':
         return 'benchmark'
+    elif bazel_dep == '//external:libssl':
+        return 'libssl'
     else:
         # all the other external deps such as protobuf, cares, zlib
         # don't need to be listed explicitly, they are handled automatically
@@ -265,7 +267,7 @@ def _expand_intermediate_deps(target_dict, public_dep_names, bazel_rules):
     src = set(target_dict['_SRC_BAZEL'])
     deps = set()
 
-    expansion_blacklist = set()
+    expansion_blocklist = set()
     to_expand = set(bazel_deps)
     while to_expand:
 
@@ -287,7 +289,7 @@ def _expand_intermediate_deps(target_dict, public_dep_names, bazel_rules):
 
             # we do not want to expand any intermediate libraries that are already included
             # by the dependency we just added
-            expansion_blacklist.update(
+            expansion_blocklist.update(
                 bazel_rules[bazel_dep]['transitive_deps'])
 
         elif external_dep_name_maybe:
@@ -298,7 +300,7 @@ def _expand_intermediate_deps(target_dict, public_dep_names, bazel_rules):
             # all the other external deps can be skipped
             pass
 
-        elif bazel_dep in expansion_blacklist:
+        elif bazel_dep in expansion_blocklist:
             # do not expand if a public dependency that depends on this has already been expanded
             pass
 
@@ -627,33 +629,26 @@ def _detect_and_print_issues(build_yaml_like):
 # there are mostly extra properties that we weren't able to obtain from the bazel build
 # _TYPE: whether this is library, target or test
 # _RENAME: whether this target should be renamed to a different name (to match expectations of make and cmake builds)
-# NOTE: secure is 'check' by default, so setting secure = False below does matter
 _BUILD_EXTRA_METADATA = {
     'third_party/address_sorting:address_sorting': {
         'language': 'c',
         'build': 'all',
-        'secure': False,
         '_RENAME': 'address_sorting'
     },
     'gpr': {
         'language': 'c',
         'build': 'all',
-        'secure': False
     },
     'grpc': {
         'language': 'c',
         'build': 'all',
         'baselib': True,
-        'secure': True,
-        'deps_linkage': 'static',
-        'dll': True,
         'generate_plugin_registry': True
     },
     'grpc++': {
         'language': 'c++',
         'build': 'all',
         'baselib': True,
-        'dll': True
     },
     'grpc++_alts': {
         'language': 'c++',
@@ -672,23 +667,16 @@ _BUILD_EXTRA_METADATA = {
         'language': 'c++',
         'build': 'all',
         'baselib': True,
-        'secure': False,
-        'dll': True
     },
     # TODO(jtattermusch): do we need to set grpc_csharp_ext's LDFLAGS for wrapping memcpy in the same way as in build.yaml?
     'grpc_csharp_ext': {
         'language': 'c',
         'build': 'all',
-        'deps_linkage': 'static',
-        'dll': 'only'
     },
     'grpc_unsecure': {
         'language': 'c',
         'build': 'all',
         'baselib': True,
-        'secure': False,
-        'deps_linkage': 'static',
-        'dll': True,
         'generate_plugin_registry': True
     },
     'grpcpp_channelz': {
@@ -702,55 +690,47 @@ _BUILD_EXTRA_METADATA = {
     'src/compiler:grpc_plugin_support': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_RENAME': 'grpc_plugin_support'
     },
     'src/compiler:grpc_cpp_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_cpp_plugin'
     },
     'src/compiler:grpc_csharp_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_csharp_plugin'
     },
     'src/compiler:grpc_node_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_node_plugin'
     },
     'src/compiler:grpc_objective_c_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_objective_c_plugin'
     },
     'src/compiler:grpc_php_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_php_plugin'
     },
     'src/compiler:grpc_python_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_python_plugin'
     },
     'src/compiler:grpc_ruby_plugin': {
         'language': 'c++',
         'build': 'protoc',
-        'secure': False,
         '_TYPE': 'target',
         '_RENAME': 'grpc_ruby_plugin'
     },
@@ -766,7 +746,6 @@ _BUILD_EXTRA_METADATA = {
     'test/core/util:grpc_test_util_unsecure': {
         'language': 'c',
         'build': 'private',
-        'secure': False,
         '_RENAME': 'grpc_test_util_unsecure'
     },
     # TODO(jtattermusch): consider adding grpc++_test_util_unsecure - it doesn't seem to be used by bazel build (don't forget to set secure: False)
@@ -785,13 +764,11 @@ _BUILD_EXTRA_METADATA = {
     'test/core/end2end:end2end_tests': {
         'language': 'c',
         'build': 'private',
-        'secure': True,
         '_RENAME': 'end2end_tests'
     },
     'test/core/end2end:end2end_nosec_tests': {
         'language': 'c',
         'build': 'private',
-        'secure': False,
         '_RENAME': 'end2end_nosec_tests'
     },
 

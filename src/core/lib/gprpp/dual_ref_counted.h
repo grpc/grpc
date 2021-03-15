@@ -170,8 +170,8 @@ class DualRefCounted : public Orphanable {
 #endif
     const uint64_t prev_ref_pair =
         refs_.FetchSub(MakeRefPair(0, 1), MemoryOrder::ACQ_REL);
-    const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
 #ifndef NDEBUG
+    const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
     if (trace != nullptr) {
       gpr_log(GPR_INFO, "%s:%p weak_unref %d -> %d (refs=%d)", trace, this,
@@ -192,10 +192,10 @@ class DualRefCounted : public Orphanable {
 #endif
     const uint64_t prev_ref_pair =
         refs_.FetchSub(MakeRefPair(0, 1), MemoryOrder::ACQ_REL);
-    const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
 #ifndef NDEBUG
+    const uint32_t weak_refs = GetWeakRefs(prev_ref_pair);
     const uint32_t strong_refs = GetStrongRefs(prev_ref_pair);
-    if (trace_ != nullptr) {
+    if (trace != nullptr) {
       gpr_log(GPR_INFO, "%s:%p %s:%d weak_unref %d -> %d (refs=%d) %s", trace,
               this, location.file(), location.line(), weak_refs, weak_refs - 1,
               strong_refs, reason);

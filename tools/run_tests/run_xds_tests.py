@@ -68,7 +68,15 @@ _ADDITIONAL_TEST_CASES = [
     'path_matching',
     'header_matching',
     'circuit_breaking',
+    'timeout',
+    'fault_injection',
 ]
+
+# Test cases that require the V3 API.  Skipped in older runs.
+_V3_TEST_CASES = frozenset(['timeout', 'fault_injection'])
+
+# Test cases that require the alpha API.  Skipped for stable API runs.
+_ALPHA_TEST_CASES = frozenset(['timeout'])
 
 
 def parse_test_cases(arg):
@@ -345,7 +353,7 @@ def get_client_accumulated_stats():
             return response
 
 
-def configure_client(rpc_types, metadata):
+def configure_client(rpc_types, metadata=[], timeout_sec=None):
     if CLIENT_HOSTS:
         hosts = CLIENT_HOSTS
     else:
@@ -361,6 +369,8 @@ def configure_client(rpc_types, metadata):
                 md.type = rpc_type
                 md.key = md_key
                 md.value = md_value
+            if timeout_sec:
+                request.timeout_sec = timeout_sec
             logger.debug(
                 'Invoking XdsUpdateClientConfigureService RPC to %s:%d: %s',
                 host, args.stats_port, request)
@@ -1395,7 +1405,7 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
         configure_client([
             messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
             messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL
-        ], [])
+        ])
         logger.info('Patching url map with %s', route_rules)
         patch_url_map_backend_service(gcp,
                                       extra_backend_service,
@@ -1445,12 +1455,312 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
         # Avoid new RPCs being outstanding (some test clients create threads
         # for sending RPCs) after restoring backend services.
         configure_client(
-            [messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL], [])
+            [messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL])
     finally:
         patch_url_map_backend_service(gcp, original_backend_service)
         patch_backend_service(gcp, original_backend_service, [instance_group])
         for backend_service in additional_backend_services:
             delete_backend_service(gcp, backend_service)
+        set_validate_for_proxyless(gcp, True)
+
+
+def test_timeout(gcp, original_backend_service, instance_group):
+    logger.info('Running test_timeout')
+
+    logger.info('waiting for original backends to become healthy')
+    wait_for_healthy_backends(gcp, original_backend_service, instance_group)
+
+    # UnaryCall -> maxStreamDuration:3s
+    route_rules = [{
+        'priority': 0,
+        'matchRules': [{
+            'fullPathMatch': '/grpc.testing.TestService/UnaryCall'
+        }],
+        'service': original_backend_service.url,
+        'routeAction': {
+            'maxStreamDuration': {
+                'seconds': 3,
+            },
+        },
+    }]
+    patch_url_map_backend_service(gcp,
+                                  original_backend_service,
+                                  route_rules=route_rules)
+    # A list of tuples (testcase_name, {client_config}, {expected_results})
+    test_cases = [
+        (
+            'app_timeout_exceeded',
+            # UnaryCall only with sleep-2; timeout=1s; calls timeout.
+            {
+                'rpc_types': [
+                    messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                ],
+                'metadata': [
+                    (messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                     'rpc-behavior', 'sleep-2'),
+                ],
+                'timeout_sec': 1,
+            },
+            {
+                'UNARY_CALL': 4,  # DEADLINE_EXCEEDED
+            },
+        ),
+        (
+            'timeout_not_exceeded',
+            # UnaryCall only with no sleep; calls succeed.
+            {
+                'rpc_types': [
+                    messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                ],
+            },
+            {
+                'UNARY_CALL': 0,
+            },
+        ),
+        (
+            'timeout_exceeded (UNARY_CALL), timeout_different_route (EMPTY_CALL)',
+            # UnaryCall and EmptyCall both sleep-4.
+            # UnaryCall timeouts, EmptyCall succeeds.
+            {
+                'rpc_types': [
+                    messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                    messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL,
+                ],
+                'metadata': [
+                    (messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                     'rpc-behavior', 'sleep-4'),
+                    (messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL,
+                     'rpc-behavior', 'sleep-4'),
+                ],
+            },
+            {
+                'UNARY_CALL': 4,  # DEADLINE_EXCEEDED
+                'EMPTY_CALL': 0,
+            },
+        ),
+    ]
+
+    try:
+        for (testcase_name, client_config, expected_results) in test_cases:
+            logger.info('starting case %s', testcase_name)
+            configure_client(**client_config)
+            # wait a second to help ensure the client stops sending RPCs with
+            # the old config.  We will make multiple attempts if it is failing,
+            # but this improves confidence that the test is valid if the
+            # previous client_config would lead to the same results.
+            time.sleep(1)
+            # Each attempt takes 10 seconds; 20 attempts is equivalent to 200
+            # second timeout.
+            attempt_count = 20
+            before_stats = get_client_accumulated_stats()
+            if not before_stats.stats_per_method:
+                raise ValueError(
+                    'stats.stats_per_method is None, the interop client stats service does not support this test case'
+                )
+            for i in range(attempt_count):
+                logger.info('%s: attempt %d', testcase_name, i)
+
+                test_runtime_secs = 10
+                time.sleep(test_runtime_secs)
+                after_stats = get_client_accumulated_stats()
+
+                success = True
+                for rpc, status in expected_results.items():
+                    qty = (after_stats.stats_per_method[rpc].result[status] -
+                           before_stats.stats_per_method[rpc].result[status])
+                    want = test_runtime_secs * args.qps
+                    # Allow 10% deviation from expectation to reduce flakiness
+                    if qty < (want * .9) or qty > (want * 1.1):
+                        logger.info('%s: failed due to %s[%s]: got %d want ~%d',
+                                    testcase_name, rpc, status, qty, want)
+                        success = False
+                if success:
+                    logger.info('success')
+                    break
+                logger.info('%s attempt %d failed', testcase_name, i)
+                before_stats = after_stats
+            else:
+                raise Exception(
+                    '%s: timeout waiting for expected results: %s; got %s' %
+                    (testcase_name, expected_results,
+                     after_stats.stats_per_method))
+    finally:
+        patch_url_map_backend_service(gcp, original_backend_service)
+
+
+def test_fault_injection(gcp, original_backend_service, instance_group):
+    logger.info('Running test_fault_injection')
+
+    logger.info('waiting for original backends to become healthy')
+    wait_for_healthy_backends(gcp, original_backend_service, instance_group)
+
+    testcase_header = 'fi_testcase'
+
+    def _route(pri, name, fi_policy):
+        return {
+            'priority': pri,
+            'matchRules': [{
+                'prefixMatch':
+                    '/',
+                'headerMatches': [{
+                    'headerName': testcase_header,
+                    'exactMatch': name,
+                }],
+            }],
+            'service': original_backend_service.url,
+            'routeAction': {
+                'faultInjectionPolicy': fi_policy
+            },
+        }
+
+    def _abort(pct):
+        return {
+            'abort': {
+                'httpStatus': 401,
+                'percentage': pct,
+            }
+        }
+
+    def _delay(pct):
+        return {
+            'delay': {
+                'fixedDelay': {
+                    'seconds': '20'
+                },
+                'percentage': pct,
+            }
+        }
+
+    zero_route = _abort(0)
+    zero_route.update(_delay(0))
+    route_rules = [
+        _route(0, 'zero_percent_fault_injection', zero_route),
+        _route(1, 'always_delay', _delay(100)),
+        _route(2, 'always_abort', _abort(100)),
+        _route(3, 'delay_half', _delay(50)),
+        _route(4, 'abort_half', _abort(50)),
+        {
+            'priority': 5,
+            'matchRules': [{
+                'prefixMatch': '/'
+            }],
+            'service': original_backend_service.url,
+        },
+    ]
+    set_validate_for_proxyless(gcp, False)
+    patch_url_map_backend_service(gcp,
+                                  original_backend_service,
+                                  route_rules=route_rules)
+    # A list of tuples (testcase_name, {client_config}, {code: percent}).  Each
+    # test case will set the testcase_header with the testcase_name for routing
+    # to the appropriate config for the case, defined above.
+    test_cases = [
+        (
+            'zero_percent_fault_injection',
+            {},
+            {
+                0: 1
+            },  # OK
+        ),
+        (
+            'non_matching_fault_injection',  # Not in route_rules, above.
+            {},
+            {
+                0: 1
+            },  # OK
+        ),
+        (
+            'always_delay',
+            {
+                'timeout_sec': 2
+            },
+            {
+                4: 1
+            },  # DEADLINE_EXCEEDED
+        ),
+        (
+            'always_abort',
+            {},
+            {
+                16: 1
+            },  # UNAUTHENTICATED
+        ),
+        (
+            'delay_half',
+            {
+                'timeout_sec': 2
+            },
+            {
+                4: .5,
+                0: .5
+            },  # DEADLINE_EXCEEDED / OK: 50% / 50%
+        ),
+        (
+            'abort_half',
+            {},
+            {
+                16: .5,
+                0: .5
+            },  # UNAUTHENTICATED / OK: 50% / 50%
+        )
+    ]
+
+    try:
+        for (testcase_name, client_config, expected_results) in test_cases:
+            logger.info('starting case %s', testcase_name)
+
+            client_config['metadata'] = [
+                (messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                 testcase_header, testcase_name)
+            ]
+            client_config['rpc_types'] = [
+                messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+            ]
+            configure_client(**client_config)
+            # wait a second to help ensure the client stops sending RPCs with
+            # the old config.  We will make multiple attempts if it is failing,
+            # but this improves confidence that the test is valid if the
+            # previous client_config would lead to the same results.
+            time.sleep(1)
+            # Each attempt takes 10 seconds; 20 attempts is equivalent to 200
+            # second timeout.
+            attempt_count = 20
+            before_stats = get_client_accumulated_stats()
+            if not before_stats.stats_per_method:
+                raise ValueError(
+                    'stats.stats_per_method is None, the interop client stats service does not support this test case'
+                )
+            for i in range(attempt_count):
+                logger.info('%s: attempt %d', testcase_name, i)
+
+                test_runtime_secs = 10
+                time.sleep(test_runtime_secs)
+                after_stats = get_client_accumulated_stats()
+
+                success = True
+                for status, pct in expected_results.items():
+                    rpc = 'UNARY_CALL'
+                    qty = (after_stats.stats_per_method[rpc].result[status] -
+                           before_stats.stats_per_method[rpc].result[status])
+                    want = pct * args.qps * test_runtime_secs
+                    # Allow 10% deviation from expectation to reduce flakiness
+                    VARIANCE_ALLOWED = 0.1
+                    if abs(qty - want) > want * VARIANCE_ALLOWED:
+                        logger.info('%s: failed due to %s[%s]: got %d want ~%d',
+                                    testcase_name, rpc, status, qty, want)
+                        success = False
+                if success:
+                    logger.info('success')
+                    break
+                logger.info('%s attempt %d failed', testcase_name, i)
+                before_stats = after_stats
+            else:
+                raise Exception(
+                    '%s: timeout waiting for expected results: %s; got %s' %
+                    (testcase_name, expected_results,
+                     after_stats.stats_per_method))
+    finally:
+        patch_url_map_backend_service(gcp, original_backend_service)
         set_validate_for_proxyless(gcp, True)
 
 
@@ -1965,6 +2275,11 @@ def patch_url_map_backend_service(gcp,
 
     Only one of backend_service and service_with_weights can be not None.
     '''
+    if gcp.alpha_compute:
+        compute_to_use = gcp.alpha_compute
+    else:
+        compute_to_use = gcp.compute
+
     if backend_service and services_with_weights:
         raise ValueError(
             'both backend_service and service_with_weights are not None.')
@@ -1986,7 +2301,7 @@ def patch_url_map_backend_service(gcp,
         }]
     }
     logger.debug('Sending GCP request with body=%s', config)
-    result = gcp.compute.urlMaps().patch(
+    result = compute_to_use.urlMaps().patch(
         project=gcp.project, urlMap=gcp.url_map.name,
         body=config).execute(num_retries=_GCP_API_RETRIES)
     wait_for_global_operation(gcp, result['name'])
@@ -2279,9 +2594,24 @@ try:
                 bootstrap_path = bootstrap_file.name
         client_env['GRPC_XDS_BOOTSTRAP'] = bootstrap_path
         client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
+        client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
+        # Temporarily turn off fault injection, because HTTPFault filter isn't
+        # handled correctly yet in CPP and Go. And setting would break all the
+        # other tests. Uncomment the following line when the support is
+        # complete.
+        #
+        # client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
         test_results = {}
         failed_tests = []
         for test_case in args.test_case:
+            if test_case in _V3_TEST_CASES and not args.xds_v3_support:
+                logger.info('skipping test %s due to missing v3 support',
+                            test_case)
+                continue
+            if test_case in _ALPHA_TEST_CASES and not gcp.alpha_compute:
+                logger.info('skipping test %s due to missing alpha support',
+                            test_case)
+                continue
             result = jobset.JobResult()
             log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
             if not os.path.exists(log_dir):
@@ -2386,6 +2716,10 @@ try:
                 elif test_case == 'circuit_breaking':
                     test_circuit_breaking(gcp, backend_service, instance_group,
                                           same_zone_instance_group)
+                elif test_case == 'timeout':
+                    test_timeout(gcp, backend_service, instance_group)
+                elif test_case == 'fault_injection':
+                    test_fault_injection(gcp, backend_service, instance_group)
                 else:
                     logger.error('Unknown test case: %s', test_case)
                     sys.exit(1)

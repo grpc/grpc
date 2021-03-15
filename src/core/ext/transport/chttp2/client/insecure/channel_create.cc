@@ -37,10 +37,11 @@ namespace grpc_core {
 
 class Chttp2InsecureClientChannelFactory : public ClientChannelFactory {
  public:
-  Subchannel* CreateSubchannel(const grpc_channel_args* args) override {
+  RefCountedPtr<Subchannel> CreateSubchannel(
+      const grpc_channel_args* args) override {
     grpc_channel_args* new_args =
         grpc_default_authority_add_if_not_present(args);
-    Subchannel* s =
+    RefCountedPtr<Subchannel> s =
         Subchannel::Create(MakeOrphanable<Chttp2Connector>(), new_args);
     grpc_channel_args_destroy(new_args);
     return s;

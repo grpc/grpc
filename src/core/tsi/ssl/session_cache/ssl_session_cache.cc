@@ -84,7 +84,6 @@ class SslSessionLRUCache::Node {
 
 SslSessionLRUCache::SslSessionLRUCache(size_t capacity) : capacity_(capacity) {
   GPR_ASSERT(capacity > 0);
-  gpr_mu_init(&lock_);
   entry_by_key_ = grpc_avl_create(&cache_avl_vtable);
 }
 
@@ -96,7 +95,6 @@ SslSessionLRUCache::~SslSessionLRUCache() {
     node = next;
   }
   grpc_avl_unref(entry_by_key_, nullptr);
-  gpr_mu_destroy(&lock_);
 }
 
 size_t SslSessionLRUCache::Size() {

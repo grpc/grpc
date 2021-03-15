@@ -25,12 +25,12 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.36.0-dev")
+set(PACKAGE_VERSION       "1.37.0-dev")
 set(gRPC_CORE_VERSION     "15.0.0")
 set(gRPC_CORE_SOVERSION   "15")
-set(gRPC_CPP_VERSION      "1.36.0-dev")
+set(gRPC_CPP_VERSION      "1.37.0-dev")
 set(gRPC_CPP_SOVERSION    "1")
-set(gRPC_CSHARP_VERSION   "2.36.0-dev")
+set(gRPC_CSHARP_VERSION   "2.37.0-dev")
 set(gRPC_CSHARP_SOVERSION "2")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
@@ -123,7 +123,6 @@ set(gRPC_ABSL_USED_TARGETS
   absl_exponential_biased
   absl_fixed_array
   absl_flat_hash_map
-  absl_flat_hash_set
   absl_function_ref
   absl_graphcycles_internal
   absl_hash
@@ -255,6 +254,7 @@ include(cmake/protobuf.cmake)
 include(cmake/re2.cmake)
 include(cmake/ssl.cmake)
 include(cmake/upb.cmake)
+include(cmake/xxhash.cmake)
 include(cmake/zlib.cmake)
 
 if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
@@ -476,6 +476,12 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/endpoint.proto
 )
 protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/fault.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/fault_common.proto
+)
+protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/http_connection_manager.proto
 )
 protobuf_generate_grpc_cpp(
@@ -501,6 +507,9 @@ protobuf_generate_grpc_cpp(
 )
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/route.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/router.proto
 )
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/string.proto
@@ -884,6 +893,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx qps_json_driver)
   add_dependencies(buildtests_cxx qps_worker)
   add_dependencies(buildtests_cxx raw_end2end_test)
+  add_dependencies(buildtests_cxx rbac_translator_test)
   add_dependencies(buildtests_cxx ref_counted_ptr_test)
   add_dependencies(buildtests_cxx ref_counted_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -1010,6 +1020,7 @@ target_include_directories(address_sorting
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(address_sorting
@@ -1147,6 +1158,7 @@ target_include_directories(end2end_nosec_tests
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(end2end_nosec_tests
@@ -1156,6 +1168,7 @@ target_link_libraries(end2end_nosec_tests
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -1281,16 +1294,17 @@ target_include_directories(end2end_tests
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(end2end_tests
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -1370,6 +1384,7 @@ target_include_directories(gpr
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(gpr
@@ -1511,6 +1526,8 @@ add_library(grpc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/filters/fault_injection/fault_injection_filter.cc
+  src/core/ext/filters/fault_injection/service_config_parser.cc
   src/core/ext/filters/http/client/http_client_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
@@ -1589,6 +1606,9 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c
   src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c
   src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c
+  src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c
+  src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c
+  src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c
   src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c
   src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c
   src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c
@@ -1635,14 +1655,15 @@ add_library(grpc
   src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c
   src/core/ext/upb-generated/udpa/annotations/status.upb.c
   src/core/ext/upb-generated/udpa/annotations/versioning.upb.c
-  src/core/ext/upb-generated/udpa/core/v1/authority.upb.c
-  src/core/ext/upb-generated/udpa/core/v1/collection_entry.upb.c
-  src/core/ext/upb-generated/udpa/core/v1/context_params.upb.c
-  src/core/ext/upb-generated/udpa/core/v1/resource.upb.c
-  src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.c
-  src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/xds/core/v3/authority.upb.c
+  src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c
+  src/core/ext/upb-generated/xds/core/v3/context_params.upb.c
+  src/core/ext/upb-generated/xds/core/v3/resource.upb.c
+  src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
+  src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
   src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.c
@@ -1675,6 +1696,9 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c
@@ -1714,13 +1738,14 @@ add_library(grpc
   src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c
   src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c
   src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c
-  src/core/ext/upbdefs-generated/udpa/core/v1/authority.upbdefs.c
-  src/core/ext/upbdefs-generated/udpa/core/v1/collection_entry.upbdefs.c
-  src/core/ext/upbdefs-generated/udpa/core/v1/context_params.upbdefs.c
-  src/core/ext/upbdefs-generated/udpa/core/v1/resource.upbdefs.c
-  src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.c
-  src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.c
+  src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c
   src/core/ext/upbdefs-generated/validate/validate.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c
+  src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c
   src/core/ext/xds/certificate_provider_registry.cc
   src/core/ext/xds/certificate_provider_store.cc
   src/core/ext/xds/file_watcher_certificate_provider_factory.cc
@@ -1729,6 +1754,8 @@ add_library(grpc
   src/core/ext/xds/xds_certificate_provider.cc
   src/core/ext/xds/xds_client.cc
   src/core/ext/xds/xds_client_stats.cc
+  src/core/ext/xds/xds_http_fault_filter.cc
+  src/core/ext/xds/xds_http_filters.cc
   src/core/ext/xds/xds_server_config_fetcher.cc
   src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
@@ -1855,9 +1882,7 @@ add_library(grpc
   src/core/lib/json/json_reader.cc
   src/core/lib/json/json_util.cc
   src/core/lib/json/json_writer.cc
-  src/core/lib/security/authorization/authorization_engine.cc
-  src/core/lib/security/authorization/evaluate_args.cc
-  src/core/lib/security/authorization/matchers.cc
+  src/core/lib/matchers/matchers.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
   src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -2007,11 +2032,11 @@ target_include_directories(grpc
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(grpc
   ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_CARES_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
@@ -2021,13 +2046,13 @@ target_link_libraries(grpc
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::optional
   absl::strings
   absl::statusor
   absl::status
   absl::bind_front
   absl::inlined_vector
-  absl::flat_hash_set
   absl::flat_hash_map
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
@@ -2098,6 +2123,7 @@ target_include_directories(grpc_csharp_ext
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(grpc_csharp_ext
@@ -2106,6 +2132,7 @@ target_link_libraries(grpc_csharp_ext
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -2164,6 +2191,7 @@ target_include_directories(grpc_test_util
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(grpc_test_util
@@ -2172,6 +2200,7 @@ target_link_libraries(grpc_test_util
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::symbolize
   absl::stacktrace
   absl::failure_signal_handler
@@ -2235,6 +2264,7 @@ target_include_directories(grpc_test_util_unsecure
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(grpc_test_util_unsecure
@@ -2309,6 +2339,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/filters/fault_injection/fault_injection_filter.cc
+  src/core/ext/filters/fault_injection/service_config_parser.cc
   src/core/ext/filters/http/client/http_client_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
   src/core/ext/filters/http/http_filters_plugin.cc
@@ -2561,6 +2593,7 @@ target_include_directories(grpc_unsecure
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(grpc_unsecure
@@ -2662,6 +2695,7 @@ target_include_directories(benchmark_helpers
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -2765,6 +2799,7 @@ target_include_directories(grpc++
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -2776,6 +2811,8 @@ target_link_libraries(grpc++
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
+  absl::synchronization
 )
 
 foreach(_hdr
@@ -2899,6 +2936,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler.h
+  include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/proto_buffer_reader.h
   include/grpcpp/impl/codegen/proto_buffer_writer.h
   include/grpcpp/impl/codegen/proto_utils.h
@@ -3012,6 +3050,7 @@ target_include_directories(grpc++_alts
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -3024,6 +3063,7 @@ target_link_libraries(grpc++_alts
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 foreach(_hdr
@@ -3077,6 +3117,7 @@ target_include_directories(grpc++_error_details
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -3088,6 +3129,7 @@ target_link_libraries(grpc++_error_details
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 foreach(_hdr
@@ -3147,6 +3189,7 @@ target_include_directories(grpc++_reflection
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -3158,6 +3201,7 @@ target_link_libraries(grpc++_reflection
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 foreach(_hdr
@@ -3215,6 +3259,7 @@ target_include_directories(grpc++_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -3230,6 +3275,7 @@ target_link_libraries(grpc++_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 foreach(_hdr
@@ -3280,6 +3326,7 @@ target_include_directories(grpc++_test_config
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -3336,6 +3383,7 @@ target_include_directories(grpc++_test_util
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -3352,6 +3400,7 @@ target_link_libraries(grpc++_test_util
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -3427,6 +3476,7 @@ target_include_directories(grpc++_unsecure
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -3438,6 +3488,7 @@ target_link_libraries(grpc++_unsecure
   gpr
   address_sorting
   upb
+  absl::synchronization
 )
 
 foreach(_hdr
@@ -3561,6 +3612,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
   include/grpcpp/impl/codegen/method_handler.h
+  include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/proto_buffer_reader.h
   include/grpcpp/impl/codegen/proto_buffer_writer.h
   include/grpcpp/impl/codegen/proto_utils.h
@@ -3678,6 +3730,7 @@ target_include_directories(grpc_plugin_support
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -3746,6 +3799,7 @@ target_include_directories(grpcpp_channelz
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -3757,6 +3811,7 @@ target_link_libraries(grpcpp_channelz
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 foreach(_hdr
@@ -3824,6 +3879,7 @@ target_include_directories(upb
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 target_link_libraries(upb
@@ -3856,6 +3912,7 @@ target_include_directories(check_epollexclusive
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -3881,6 +3938,7 @@ target_include_directories(gen_hpack_tables
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -3908,6 +3966,7 @@ target_include_directories(gen_legal_metadata_characters
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -3933,6 +3992,7 @@ target_include_directories(gen_percent_encoding_tables
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -3959,6 +4019,7 @@ target_include_directories(algorithm_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -3969,6 +4030,7 @@ target_link_libraries(algorithm_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -3989,6 +4051,7 @@ target_include_directories(alloc_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -3999,6 +4062,7 @@ target_link_libraries(alloc_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4019,6 +4083,7 @@ target_include_directories(alpn_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4029,6 +4094,7 @@ target_link_libraries(alpn_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4050,6 +4116,7 @@ target_include_directories(alts_counter_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4060,6 +4127,7 @@ target_link_libraries(alts_counter_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4081,6 +4149,7 @@ target_include_directories(alts_crypt_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4091,6 +4160,7 @@ target_link_libraries(alts_crypt_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4112,6 +4182,7 @@ target_include_directories(alts_crypter_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4122,6 +4193,7 @@ target_link_libraries(alts_crypter_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4144,6 +4216,7 @@ target_include_directories(alts_frame_protector_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4154,6 +4227,7 @@ target_link_libraries(alts_frame_protector_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4175,6 +4249,7 @@ target_include_directories(alts_grpc_record_protocol_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4185,6 +4260,7 @@ target_link_libraries(alts_grpc_record_protocol_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4206,6 +4282,7 @@ target_include_directories(alts_handshaker_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4216,6 +4293,7 @@ target_link_libraries(alts_handshaker_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4237,6 +4315,7 @@ target_include_directories(alts_iovec_record_protocol_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4247,6 +4326,7 @@ target_link_libraries(alts_iovec_record_protocol_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4267,6 +4347,7 @@ target_include_directories(alts_security_connector_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4277,6 +4358,7 @@ target_link_libraries(alts_security_connector_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4298,6 +4380,7 @@ target_include_directories(alts_tsi_handshaker_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4308,6 +4391,7 @@ target_link_libraries(alts_tsi_handshaker_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4329,6 +4413,7 @@ target_include_directories(alts_tsi_utils_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4339,6 +4424,7 @@ target_link_libraries(alts_tsi_utils_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4360,6 +4446,7 @@ target_include_directories(alts_zero_copy_grpc_protector_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4370,6 +4457,7 @@ target_link_libraries(alts_zero_copy_grpc_protector_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4390,6 +4478,7 @@ target_include_directories(arena_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4400,6 +4489,7 @@ target_link_libraries(arena_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4420,6 +4510,7 @@ target_include_directories(auth_context_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4430,6 +4521,7 @@ target_link_libraries(auth_context_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4450,6 +4542,7 @@ target_include_directories(avl_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4460,6 +4553,7 @@ target_link_libraries(avl_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4480,6 +4574,7 @@ target_include_directories(b64_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4490,6 +4585,7 @@ target_link_libraries(b64_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4511,6 +4607,7 @@ target_include_directories(bad_server_response_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4521,6 +4618,7 @@ target_link_libraries(bad_server_response_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4543,6 +4641,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -4553,6 +4652,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -4576,6 +4676,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -4586,6 +4687,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -4607,6 +4709,7 @@ target_include_directories(bin_decoder_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4617,6 +4720,7 @@ target_link_libraries(bin_decoder_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4637,6 +4741,7 @@ target_include_directories(bin_encoder_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4647,6 +4752,7 @@ target_link_libraries(bin_encoder_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4667,6 +4773,7 @@ target_include_directories(buffer_list_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4677,6 +4784,7 @@ target_link_libraries(buffer_list_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4697,6 +4805,7 @@ target_include_directories(channel_args_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4707,6 +4816,7 @@ target_link_libraries(channel_args_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4727,6 +4837,7 @@ target_include_directories(channel_create_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4737,6 +4848,7 @@ target_link_libraries(channel_create_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4757,6 +4869,7 @@ target_include_directories(channel_stack_builder_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4767,6 +4880,7 @@ target_link_libraries(channel_stack_builder_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4787,6 +4901,7 @@ target_include_directories(channel_stack_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4797,6 +4912,7 @@ target_link_libraries(channel_stack_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4817,6 +4933,7 @@ target_include_directories(check_gcp_environment_linux_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4827,6 +4944,7 @@ target_link_libraries(check_gcp_environment_linux_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4847,6 +4965,7 @@ target_include_directories(check_gcp_environment_windows_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4857,6 +4976,7 @@ target_link_libraries(check_gcp_environment_windows_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4878,6 +4998,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -4888,6 +5009,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -4909,6 +5031,7 @@ target_include_directories(cmdline_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4919,6 +5042,7 @@ target_link_libraries(cmdline_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -4940,6 +5064,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -4950,6 +5075,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -4971,6 +5097,7 @@ target_include_directories(completion_queue_threading_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -4981,6 +5108,7 @@ target_link_libraries(completion_queue_threading_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5001,6 +5129,7 @@ target_include_directories(compression_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5011,6 +5140,7 @@ target_link_libraries(compression_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5031,6 +5161,7 @@ target_include_directories(concurrent_connectivity_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5041,6 +5172,7 @@ target_link_libraries(concurrent_connectivity_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5062,6 +5194,7 @@ target_include_directories(connection_refused_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5072,6 +5205,7 @@ target_link_libraries(connection_refused_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5092,6 +5226,7 @@ target_include_directories(cpu_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5102,6 +5237,7 @@ target_link_libraries(cpu_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5122,6 +5258,7 @@ target_include_directories(dns_resolver_connectivity_using_ares_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5132,6 +5269,7 @@ target_link_libraries(dns_resolver_connectivity_using_ares_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5152,6 +5290,7 @@ target_include_directories(dns_resolver_connectivity_using_native_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5162,6 +5301,7 @@ target_link_libraries(dns_resolver_connectivity_using_native_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5182,6 +5322,7 @@ target_include_directories(dns_resolver_cooldown_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5192,6 +5333,7 @@ target_link_libraries(dns_resolver_cooldown_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5212,6 +5354,7 @@ target_include_directories(dns_resolver_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5222,6 +5365,7 @@ target_link_libraries(dns_resolver_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5244,6 +5388,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -5254,6 +5399,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -5276,6 +5422,7 @@ target_include_directories(endpoint_pair_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5286,6 +5433,7 @@ target_link_libraries(endpoint_pair_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5306,6 +5454,7 @@ target_include_directories(env_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5316,6 +5465,7 @@ target_link_libraries(env_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5337,6 +5487,7 @@ target_include_directories(error_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5347,6 +5498,7 @@ target_link_libraries(error_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5368,6 +5520,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -5378,6 +5531,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -5399,6 +5553,7 @@ target_include_directories(fake_resolver_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5409,6 +5564,7 @@ target_link_libraries(fake_resolver_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5430,6 +5586,7 @@ target_include_directories(fake_transport_security_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5440,6 +5597,7 @@ target_link_libraries(fake_transport_security_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5461,6 +5619,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -5471,6 +5630,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -5493,6 +5653,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -5503,6 +5664,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -5529,6 +5691,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -5539,6 +5702,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -5565,6 +5729,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -5575,6 +5740,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -5597,6 +5763,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -5607,6 +5774,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -5632,6 +5800,7 @@ target_include_directories(format_request_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5642,6 +5811,7 @@ target_link_libraries(format_request_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5663,6 +5833,7 @@ target_include_directories(frame_handler_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5673,6 +5844,7 @@ target_link_libraries(frame_handler_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5694,6 +5866,7 @@ target_include_directories(goaway_server_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5704,6 +5877,7 @@ target_link_libraries(goaway_server_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5724,6 +5898,7 @@ target_include_directories(grpc_alts_credentials_options_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5734,6 +5909,7 @@ target_link_libraries(grpc_alts_credentials_options_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5754,6 +5930,7 @@ target_include_directories(grpc_byte_buffer_reader_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5764,6 +5941,7 @@ target_link_libraries(grpc_byte_buffer_reader_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5784,6 +5962,7 @@ target_include_directories(grpc_completion_queue_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5794,6 +5973,7 @@ target_link_libraries(grpc_completion_queue_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5814,6 +5994,7 @@ target_include_directories(grpc_ipv6_loopback_available_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5824,6 +6005,7 @@ target_link_libraries(grpc_ipv6_loopback_available_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5846,6 +6028,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -5856,6 +6039,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -5878,6 +6062,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -5888,6 +6073,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -5909,6 +6095,7 @@ target_include_directories(histogram_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5919,6 +6106,7 @@ target_link_libraries(histogram_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5939,6 +6127,7 @@ target_include_directories(host_port_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5949,6 +6138,7 @@ target_link_libraries(host_port_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5969,6 +6159,7 @@ target_include_directories(hpack_encoder_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -5979,6 +6170,7 @@ target_link_libraries(hpack_encoder_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -5999,6 +6191,7 @@ target_include_directories(hpack_parser_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6009,6 +6202,7 @@ target_link_libraries(hpack_parser_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6029,6 +6223,7 @@ target_include_directories(hpack_table_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6039,6 +6234,7 @@ target_link_libraries(hpack_table_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6064,6 +6260,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -6074,6 +6271,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -6100,6 +6298,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -6110,6 +6309,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -6131,6 +6331,7 @@ target_include_directories(inproc_callback_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6142,6 +6343,7 @@ target_link_libraries(inproc_callback_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6163,6 +6365,7 @@ target_include_directories(invalid_call_argument_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6173,6 +6376,7 @@ target_link_libraries(invalid_call_argument_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6193,6 +6397,7 @@ target_include_directories(json_token_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6203,6 +6408,7 @@ target_link_libraries(json_token_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6223,6 +6429,7 @@ target_include_directories(jwt_verifier_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6233,6 +6440,7 @@ target_link_libraries(jwt_verifier_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6254,6 +6462,7 @@ target_include_directories(lame_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6264,6 +6473,7 @@ target_link_libraries(lame_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6284,6 +6494,7 @@ target_include_directories(load_file_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6294,6 +6505,7 @@ target_link_libraries(load_file_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6314,6 +6526,7 @@ target_include_directories(manual_constructor_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6324,6 +6537,7 @@ target_link_libraries(manual_constructor_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6344,6 +6558,7 @@ target_include_directories(message_compress_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6354,6 +6569,7 @@ target_link_libraries(message_compress_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6374,6 +6590,7 @@ target_include_directories(metadata_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6384,6 +6601,7 @@ target_link_libraries(metadata_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6404,6 +6622,7 @@ target_include_directories(minimal_stack_is_minimal_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6414,6 +6633,7 @@ target_link_libraries(minimal_stack_is_minimal_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6434,6 +6654,7 @@ target_include_directories(mpmcqueue_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6444,6 +6665,7 @@ target_link_libraries(mpmcqueue_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6465,6 +6687,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -6475,6 +6698,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -6497,6 +6721,7 @@ target_include_directories(multiple_server_queues_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6507,6 +6732,7 @@ target_link_libraries(multiple_server_queues_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6527,6 +6753,7 @@ target_include_directories(murmur_hash_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6537,6 +6764,7 @@ target_link_libraries(murmur_hash_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6558,6 +6786,7 @@ target_include_directories(no_server_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6568,6 +6797,7 @@ target_link_libraries(no_server_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6588,6 +6818,7 @@ target_include_directories(num_external_connectivity_watchers_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6598,6 +6829,7 @@ target_link_libraries(num_external_connectivity_watchers_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6618,6 +6850,7 @@ target_include_directories(parse_address_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6628,6 +6861,7 @@ target_link_libraries(parse_address_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6649,6 +6883,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -6659,6 +6894,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -6684,6 +6920,7 @@ target_include_directories(parser_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6694,6 +6931,7 @@ target_link_libraries(parser_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6714,6 +6952,7 @@ target_include_directories(percent_encoding_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6724,6 +6963,7 @@ target_link_libraries(percent_encoding_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6744,6 +6984,7 @@ target_include_directories(public_headers_must_be_c89
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6754,6 +6995,7 @@ target_link_libraries(public_headers_must_be_c89
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6775,6 +7017,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -6785,6 +7028,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -6806,6 +7050,7 @@ target_include_directories(resolve_address_using_ares_resolver_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6816,6 +7061,7 @@ target_link_libraries(resolve_address_using_ares_resolver_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6837,6 +7083,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -6847,6 +7094,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -6868,6 +7116,7 @@ target_include_directories(resolve_address_using_native_resolver_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6878,6 +7127,7 @@ target_link_libraries(resolve_address_using_native_resolver_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6898,6 +7148,7 @@ target_include_directories(resource_quota_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6908,6 +7159,7 @@ target_link_libraries(resource_quota_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6928,6 +7180,7 @@ target_include_directories(secure_channel_create_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6938,6 +7191,7 @@ target_link_libraries(secure_channel_create_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6959,6 +7213,7 @@ target_include_directories(secure_endpoint_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6969,6 +7224,7 @@ target_link_libraries(secure_endpoint_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -6989,6 +7245,7 @@ target_include_directories(security_connector_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -6999,6 +7256,7 @@ target_link_libraries(security_connector_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7019,6 +7277,7 @@ target_include_directories(sequential_connectivity_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7029,6 +7288,7 @@ target_link_libraries(sequential_connectivity_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7051,6 +7311,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -7061,6 +7322,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -7082,6 +7344,7 @@ target_include_directories(server_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7092,6 +7355,7 @@ target_link_libraries(server_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7112,6 +7376,7 @@ target_include_directories(slice_buffer_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7122,6 +7387,7 @@ target_link_libraries(slice_buffer_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7142,6 +7408,7 @@ target_include_directories(slice_string_helpers_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7152,6 +7419,7 @@ target_link_libraries(slice_string_helpers_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7172,6 +7440,7 @@ target_include_directories(sockaddr_resolver_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7182,6 +7451,7 @@ target_link_libraries(sockaddr_resolver_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7202,6 +7472,7 @@ target_include_directories(sockaddr_utils_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7212,6 +7483,7 @@ target_link_libraries(sockaddr_utils_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7233,6 +7505,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -7243,6 +7516,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -7264,6 +7538,7 @@ target_include_directories(spinlock_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7274,6 +7549,7 @@ target_link_libraries(spinlock_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7294,6 +7570,7 @@ target_include_directories(ssl_credentials_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7304,6 +7581,7 @@ target_link_libraries(ssl_credentials_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7326,6 +7604,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -7336,6 +7615,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -7357,6 +7637,7 @@ target_include_directories(status_conversion_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7367,6 +7648,7 @@ target_link_libraries(status_conversion_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7387,6 +7669,7 @@ target_include_directories(stream_compression_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7397,6 +7680,7 @@ target_link_libraries(stream_compression_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7417,6 +7701,7 @@ target_include_directories(stream_map_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7427,6 +7712,7 @@ target_link_libraries(stream_map_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7447,6 +7733,7 @@ target_include_directories(stream_owned_slice_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7457,6 +7744,7 @@ target_link_libraries(stream_owned_slice_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7477,6 +7765,7 @@ target_include_directories(string_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7487,6 +7776,7 @@ target_link_libraries(string_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7507,6 +7797,7 @@ target_include_directories(sync_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7517,6 +7808,7 @@ target_link_libraries(sync_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7538,6 +7830,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -7548,6 +7841,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -7571,6 +7865,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -7581,6 +7876,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -7603,6 +7899,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -7613,6 +7910,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -7634,6 +7932,7 @@ target_include_directories(test_core_gpr_time_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7644,6 +7943,7 @@ target_link_libraries(test_core_gpr_time_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7664,6 +7964,7 @@ target_include_directories(test_core_security_credentials_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7674,6 +7975,7 @@ target_link_libraries(test_core_security_credentials_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7694,6 +7996,7 @@ target_include_directories(test_core_slice_slice_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7704,6 +8007,7 @@ target_link_libraries(test_core_slice_slice_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7724,6 +8028,7 @@ target_include_directories(thd_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7734,6 +8039,7 @@ target_link_libraries(thd_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7754,6 +8060,7 @@ target_include_directories(threadpool_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7764,6 +8071,7 @@ target_link_libraries(threadpool_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7784,6 +8092,7 @@ target_include_directories(time_averaged_stats_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7794,6 +8103,7 @@ target_link_libraries(time_averaged_stats_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7814,6 +8124,7 @@ target_include_directories(timeout_encoding_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7824,6 +8135,7 @@ target_link_libraries(timeout_encoding_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7844,6 +8156,7 @@ target_include_directories(timer_heap_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7854,6 +8167,7 @@ target_link_libraries(timer_heap_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7874,6 +8188,7 @@ target_include_directories(timer_list_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7884,6 +8199,7 @@ target_link_libraries(timer_list_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7904,6 +8220,7 @@ target_include_directories(tls_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7914,6 +8231,7 @@ target_link_libraries(tls_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7934,6 +8252,7 @@ target_include_directories(transport_security_common_api_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7944,6 +8263,7 @@ target_link_libraries(transport_security_common_api_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7964,6 +8284,7 @@ target_include_directories(transport_security_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -7974,6 +8295,7 @@ target_link_libraries(transport_security_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -7995,6 +8317,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
   )
 
@@ -8005,6 +8328,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -8026,6 +8350,7 @@ target_include_directories(useful_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -8036,6 +8361,7 @@ target_link_libraries(useful_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -8056,6 +8382,7 @@ target_include_directories(varint_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
 )
 
@@ -8066,6 +8393,7 @@ target_link_libraries(varint_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -8089,6 +8417,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -8108,6 +8437,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -8135,6 +8465,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -8177,6 +8508,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -8228,6 +8560,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -8245,6 +8578,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -8268,6 +8602,7 @@ target_include_directories(alts_util_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -8287,6 +8622,7 @@ target_link_libraries(alts_util_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -8329,6 +8665,7 @@ target_include_directories(async_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -8347,6 +8684,7 @@ target_link_libraries(async_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -8369,6 +8707,7 @@ target_include_directories(auth_property_iterator_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -8387,6 +8726,7 @@ target_link_libraries(auth_property_iterator_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -8394,6 +8734,9 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(authorization_engine_test
+  src/core/lib/security/authorization/authorization_engine.cc
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/rbac_policy.cc
   test/core/security/authorization_engine_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -8409,6 +8752,7 @@ target_include_directories(authorization_engine_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -8425,6 +8769,8 @@ target_link_libraries(authorization_engine_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
+  absl::flat_hash_set
 )
 
 
@@ -8447,6 +8793,7 @@ target_include_directories(aws_request_signer_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -8463,6 +8810,7 @@ target_link_libraries(aws_request_signer_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -8485,6 +8833,7 @@ target_include_directories(backoff_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -8501,6 +8850,7 @@ target_link_libraries(backoff_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -8525,6 +8875,7 @@ target_include_directories(bad_streaming_id_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -8541,6 +8892,7 @@ target_link_libraries(bad_streaming_id_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -8565,6 +8917,7 @@ target_include_directories(badreq_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -8581,6 +8934,7 @@ target_link_libraries(badreq_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -8604,6 +8958,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -8620,6 +8975,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -8644,6 +9000,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -8688,6 +9045,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -8732,6 +9090,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -8776,6 +9135,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -8824,6 +9184,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -8872,6 +9233,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -8916,6 +9278,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -8960,6 +9323,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9004,6 +9368,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9048,6 +9413,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9092,6 +9458,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9136,6 +9503,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9180,6 +9548,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9224,6 +9593,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9268,6 +9638,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9312,6 +9683,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9357,6 +9729,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9401,6 +9774,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9445,6 +9819,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9489,6 +9864,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9533,6 +9909,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -9576,6 +9953,7 @@ target_include_directories(byte_buffer_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -9594,6 +9972,7 @@ target_link_libraries(byte_buffer_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -9616,6 +9995,7 @@ target_include_directories(byte_stream_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -9632,6 +10012,7 @@ target_link_libraries(byte_stream_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -9656,6 +10037,7 @@ target_include_directories(cancel_ares_query_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -9675,6 +10057,7 @@ target_link_libraries(cancel_ares_query_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -9697,6 +10080,7 @@ target_include_directories(certificate_provider_registry_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -9713,6 +10097,7 @@ target_link_libraries(certificate_provider_registry_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -9735,6 +10120,7 @@ target_include_directories(certificate_provider_store_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -9751,6 +10137,7 @@ target_link_libraries(certificate_provider_store_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -9786,6 +10173,7 @@ target_include_directories(cfstream_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -9804,6 +10192,7 @@ target_link_libraries(cfstream_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -9826,6 +10215,7 @@ target_include_directories(channel_arguments_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -9843,6 +10233,7 @@ target_link_libraries(channel_arguments_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -9865,6 +10256,7 @@ target_include_directories(channel_filter_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -9882,6 +10274,7 @@ target_link_libraries(channel_filter_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -9909,6 +10302,7 @@ target_include_directories(channel_trace_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -9926,6 +10320,7 @@ target_link_libraries(channel_trace_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -9948,6 +10343,7 @@ target_include_directories(channelz_registry_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -9965,6 +10361,7 @@ target_link_libraries(channelz_registry_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10000,6 +10397,7 @@ target_include_directories(channelz_service_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10019,6 +10417,7 @@ target_link_libraries(channelz_service_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10046,6 +10445,7 @@ target_include_directories(channelz_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10063,6 +10463,7 @@ target_link_libraries(channelz_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10107,6 +10508,7 @@ target_include_directories(cli_call_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10125,6 +10527,7 @@ target_link_libraries(cli_call_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -10162,6 +10565,7 @@ target_include_directories(client_callback_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10180,6 +10584,7 @@ target_link_libraries(client_callback_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10224,6 +10629,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -10242,6 +10648,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -10279,6 +10686,7 @@ target_include_directories(client_interceptors_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10297,6 +10705,7 @@ target_link_libraries(client_interceptors_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10342,6 +10751,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -10360,6 +10770,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -10383,6 +10794,7 @@ target_include_directories(codegen_test_full
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10400,6 +10812,7 @@ target_link_libraries(codegen_test_full
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10422,6 +10835,7 @@ target_include_directories(codegen_test_minimal
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10439,6 +10853,7 @@ target_link_libraries(codegen_test_minimal
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10463,6 +10878,7 @@ target_include_directories(connection_prefix_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10479,6 +10895,7 @@ target_link_libraries(connection_prefix_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10501,6 +10918,7 @@ target_include_directories(connectivity_state_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10517,6 +10935,7 @@ target_link_libraries(connectivity_state_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10552,6 +10971,7 @@ target_include_directories(context_allocator_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10570,6 +10990,7 @@ target_link_libraries(context_allocator_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10592,6 +11013,7 @@ target_include_directories(context_list_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10608,6 +11030,7 @@ target_link_libraries(context_list_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10643,6 +11066,7 @@ target_include_directories(delegating_channel_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10661,6 +11085,7 @@ target_link_libraries(delegating_channel_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10683,6 +11108,7 @@ target_include_directories(destroy_grpclb_channel_with_active_connect_stress_tes
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10701,6 +11127,7 @@ target_link_libraries(destroy_grpclb_channel_with_active_connect_stress_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10723,6 +11150,7 @@ target_include_directories(dual_ref_counted_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10739,6 +11167,7 @@ target_link_libraries(dual_ref_counted_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10763,6 +11192,7 @@ target_include_directories(duplicate_header_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10779,6 +11209,7 @@ target_link_libraries(duplicate_header_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10819,6 +11250,7 @@ target_include_directories(end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10838,6 +11270,7 @@ target_link_libraries(end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10868,6 +11301,7 @@ target_include_directories(error_details_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10886,6 +11320,7 @@ target_link_libraries(error_details_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10893,6 +11328,8 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(evaluate_args_test
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/rbac_policy.cc
   test/core/security/evaluate_args_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -10908,6 +11345,7 @@ target_include_directories(evaluate_args_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10924,6 +11362,7 @@ target_link_libraries(evaluate_args_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10946,6 +11385,7 @@ target_include_directories(eventmanager_libuv_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -10962,6 +11402,7 @@ target_link_libraries(eventmanager_libuv_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -10985,6 +11426,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -11001,6 +11443,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
     absl::symbolize
     absl::stacktrace
   )
@@ -11038,6 +11481,7 @@ target_include_directories(exception_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -11056,6 +11500,7 @@ target_link_libraries(exception_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11078,6 +11523,7 @@ target_include_directories(file_watcher_certificate_provider_factory_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -11094,6 +11540,7 @@ target_link_libraries(file_watcher_certificate_provider_factory_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11132,6 +11579,7 @@ target_include_directories(filter_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -11150,6 +11598,7 @@ target_link_libraries(filter_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11185,6 +11634,7 @@ target_include_directories(flaky_network_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -11203,6 +11653,7 @@ target_link_libraries(flaky_network_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11241,6 +11692,7 @@ target_include_directories(generic_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -11259,6 +11711,7 @@ target_link_libraries(generic_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11282,6 +11735,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -11298,6 +11752,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -11321,6 +11776,7 @@ target_include_directories(global_config_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -11337,6 +11793,7 @@ target_link_libraries(global_config_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11360,6 +11817,7 @@ target_include_directories(google_mesh_ca_certificate_provider_factory_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -11376,6 +11834,7 @@ target_link_libraries(google_mesh_ca_certificate_provider_factory_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11408,6 +11867,7 @@ target_include_directories(grpc_cli
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -11425,6 +11885,7 @@ target_link_libraries(grpc_cli
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -11446,6 +11907,7 @@ target_include_directories(grpc_cpp_plugin
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -11484,6 +11946,7 @@ target_include_directories(grpc_csharp_plugin
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -11522,6 +11985,7 @@ target_include_directories(grpc_node_plugin
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -11560,6 +12024,7 @@ target_include_directories(grpc_objective_c_plugin
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -11598,6 +12063,7 @@ target_include_directories(grpc_php_plugin
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -11636,6 +12102,7 @@ target_include_directories(grpc_python_plugin
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -11674,6 +12141,7 @@ target_include_directories(grpc_ruby_plugin
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     ${_gRPC_PROTO_GENS_DIR}
 )
@@ -11714,6 +12182,7 @@ target_include_directories(grpc_tls_certificate_distributor_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -11730,6 +12199,7 @@ target_link_libraries(grpc_tls_certificate_distributor_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11752,6 +12222,7 @@ target_include_directories(grpc_tls_certificate_provider_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -11768,6 +12239,7 @@ target_link_libraries(grpc_tls_certificate_provider_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11790,6 +12262,7 @@ target_include_directories(grpc_tls_credentials_options_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -11806,6 +12279,7 @@ target_link_libraries(grpc_tls_credentials_options_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11847,6 +12321,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -11866,6 +12341,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
     absl::flags
   )
 
@@ -11894,6 +12370,7 @@ target_include_directories(grpclb_api_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -11912,6 +12389,7 @@ target_link_libraries(grpclb_api_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -11956,6 +12434,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -11974,6 +12453,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -11997,6 +12477,7 @@ target_include_directories(h2_ssl_session_reuse_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12014,6 +12495,7 @@ target_link_libraries(h2_ssl_session_reuse_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12038,6 +12520,7 @@ target_include_directories(head_of_line_blocking_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12054,6 +12537,7 @@ target_link_libraries(head_of_line_blocking_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12078,6 +12562,7 @@ target_include_directories(headers_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12094,6 +12579,7 @@ target_link_libraries(headers_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12138,6 +12624,7 @@ target_include_directories(health_service_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12156,6 +12643,7 @@ target_link_libraries(health_service_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12190,6 +12678,7 @@ target_include_directories(http2_client
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12209,6 +12698,7 @@ target_link_libraries(http2_client
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -12249,6 +12739,7 @@ target_include_directories(hybrid_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12267,6 +12758,7 @@ target_link_libraries(hybrid_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12289,6 +12781,7 @@ target_include_directories(init_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12305,6 +12798,7 @@ target_link_libraries(init_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12329,6 +12823,7 @@ target_include_directories(initial_settings_frame_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12345,6 +12840,7 @@ target_link_libraries(initial_settings_frame_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12367,6 +12863,7 @@ target_include_directories(insecure_security_connector_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12383,6 +12880,7 @@ target_link_libraries(insecure_security_connector_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12420,6 +12918,7 @@ target_include_directories(interop_client
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12439,6 +12938,7 @@ target_link_libraries(interop_client
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -12476,6 +12976,7 @@ target_include_directories(interop_server
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12495,6 +12996,7 @@ target_link_libraries(interop_server
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -12519,6 +13021,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -12538,6 +13041,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
     absl::flags
   )
 
@@ -12562,6 +13066,7 @@ target_include_directories(json_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12578,6 +13083,7 @@ target_link_libraries(json_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12602,6 +13108,7 @@ target_include_directories(large_metadata_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12618,6 +13125,7 @@ target_link_libraries(large_metadata_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12644,6 +13152,7 @@ target_include_directories(lb_get_cpu_stats_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12661,6 +13170,7 @@ target_link_libraries(lb_get_cpu_stats_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12684,6 +13194,7 @@ target_include_directories(lb_load_data_store_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12701,6 +13212,7 @@ target_link_libraries(lb_load_data_store_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12723,6 +13235,7 @@ target_include_directories(linux_system_roots_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12739,6 +13252,7 @@ target_link_libraries(linux_system_roots_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12761,6 +13275,7 @@ target_include_directories(log_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12777,6 +13292,7 @@ target_link_libraries(log_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12799,6 +13315,7 @@ target_include_directories(matchers_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12815,6 +13332,7 @@ target_link_libraries(matchers_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12850,6 +13368,7 @@ target_include_directories(message_allocator_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12868,6 +13387,7 @@ target_link_libraries(message_allocator_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12906,6 +13426,7 @@ target_include_directories(mock_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12925,6 +13446,7 @@ target_link_libraries(mock_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12959,6 +13481,7 @@ target_include_directories(nonblocking_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -12977,6 +13500,7 @@ target_link_libraries(nonblocking_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -12999,6 +13523,7 @@ target_include_directories(noop-benchmark
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13015,6 +13540,7 @@ target_link_libraries(noop-benchmark
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_BENCHMARK_LIBRARIES}
 )
 
@@ -13038,6 +13564,7 @@ target_include_directories(orphanable_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13054,6 +13581,7 @@ target_link_libraries(orphanable_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13078,6 +13606,7 @@ target_include_directories(out_of_bounds_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13094,6 +13623,7 @@ target_link_libraries(out_of_bounds_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13116,6 +13646,7 @@ target_include_directories(pid_controller_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13132,6 +13663,7 @@ target_link_libraries(pid_controller_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13167,6 +13699,7 @@ target_include_directories(port_sharing_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13185,6 +13718,7 @@ target_link_libraries(port_sharing_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13225,6 +13759,7 @@ target_include_directories(proto_server_reflection_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13244,6 +13779,7 @@ target_link_libraries(proto_server_reflection_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13266,6 +13802,7 @@ target_include_directories(proto_utils_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13283,6 +13820,7 @@ target_link_libraries(proto_utils_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13351,6 +13889,7 @@ target_include_directories(qps_json_driver
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13370,6 +13909,7 @@ target_link_libraries(qps_json_driver
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -13431,6 +13971,7 @@ target_include_directories(qps_worker
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13450,6 +13991,7 @@ target_link_libraries(qps_worker
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -13490,6 +14032,7 @@ target_include_directories(raw_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13508,6 +14051,50 @@ target_link_libraries(raw_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(rbac_translator_test
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/rbac_policy.cc
+  src/core/lib/security/authorization/rbac_translator.cc
+  test/core/security/rbac_translator_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(rbac_translator_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(rbac_translator_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+  address_sorting
+  upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13530,6 +14117,7 @@ target_include_directories(ref_counted_ptr_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13546,6 +14134,7 @@ target_link_libraries(ref_counted_ptr_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13568,6 +14157,7 @@ target_include_directories(ref_counted_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13584,6 +14174,7 @@ target_link_libraries(ref_counted_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13607,6 +14198,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -13623,6 +14215,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -13646,6 +14239,7 @@ target_include_directories(retry_throttle_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13662,6 +14256,7 @@ target_link_libraries(retry_throttle_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13684,6 +14279,7 @@ target_include_directories(secure_auth_context_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13702,6 +14298,7 @@ target_link_libraries(secure_auth_context_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13741,6 +14338,7 @@ target_include_directories(server_builder_plugin_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13759,6 +14357,7 @@ target_link_libraries(server_builder_plugin_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13794,6 +14393,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -13847,6 +14447,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -13887,6 +14488,7 @@ target_include_directories(server_chttp2_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13903,6 +14505,7 @@ target_link_libraries(server_chttp2_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13925,6 +14528,7 @@ target_include_directories(server_context_test_spouse_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13944,6 +14548,7 @@ target_link_libraries(server_context_test_spouse_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -13978,6 +14583,7 @@ target_include_directories(server_early_return_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -13996,6 +14602,7 @@ target_link_libraries(server_early_return_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14032,6 +14639,7 @@ target_include_directories(server_interceptors_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14050,6 +14658,7 @@ target_link_libraries(server_interceptors_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14074,6 +14683,7 @@ target_include_directories(server_registered_method_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14090,6 +14700,7 @@ target_link_libraries(server_registered_method_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14125,6 +14736,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -14182,6 +14794,7 @@ target_include_directories(service_config_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14200,6 +14813,7 @@ target_link_libraries(service_config_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14222,6 +14836,7 @@ target_include_directories(service_config_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14238,6 +14853,7 @@ target_link_libraries(service_config_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14260,6 +14876,7 @@ target_include_directories(settings_timeout_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14276,6 +14893,7 @@ target_link_libraries(settings_timeout_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14314,6 +14932,7 @@ target_include_directories(shutdown_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14332,6 +14951,7 @@ target_link_libraries(shutdown_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14356,6 +14976,7 @@ target_include_directories(simple_request_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14372,6 +14993,7 @@ target_link_libraries(simple_request_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14395,6 +15017,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -14411,6 +15034,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
     absl::symbolize
   )
 
@@ -14435,6 +15059,7 @@ target_include_directories(stat_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14451,6 +15076,7 @@ target_link_libraries(stat_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14473,6 +15099,7 @@ target_include_directories(static_metadata_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14489,6 +15116,7 @@ target_link_libraries(static_metadata_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14511,6 +15139,7 @@ target_include_directories(stats_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14527,6 +15156,7 @@ target_link_libraries(stats_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14549,6 +15179,7 @@ target_include_directories(status_metadata_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14565,6 +15196,7 @@ target_link_libraries(status_metadata_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14587,6 +15219,7 @@ target_include_directories(status_util_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14603,6 +15236,7 @@ target_link_libraries(status_util_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14627,6 +15261,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -14643,6 +15278,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -14683,6 +15319,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -14701,6 +15338,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -14724,6 +15362,7 @@ target_include_directories(string_ref_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14741,6 +15380,7 @@ target_link_libraries(string_ref_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14763,6 +15403,7 @@ target_include_directories(test_cpp_client_credentials_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14780,6 +15421,7 @@ target_link_libraries(test_cpp_client_credentials_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14802,6 +15444,7 @@ target_include_directories(test_cpp_server_credentials_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14819,6 +15462,7 @@ target_link_libraries(test_cpp_server_credentials_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14841,6 +15485,7 @@ target_include_directories(test_cpp_util_slice_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14859,6 +15504,7 @@ target_link_libraries(test_cpp_util_slice_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14881,6 +15527,7 @@ target_include_directories(test_cpp_util_time_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14899,6 +15546,7 @@ target_link_libraries(test_cpp_util_time_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14921,6 +15569,7 @@ target_include_directories(thread_manager_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -14940,6 +15589,7 @@ target_link_libraries(thread_manager_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -14979,6 +15629,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -14997,6 +15648,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -15021,6 +15673,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -15038,6 +15691,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -15061,6 +15715,7 @@ target_include_directories(time_util_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15077,6 +15732,7 @@ target_link_libraries(time_util_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -15099,6 +15755,7 @@ target_include_directories(timer_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15116,6 +15773,7 @@ target_link_libraries(timer_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -15138,6 +15796,7 @@ target_include_directories(tls_security_connector_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15154,6 +15813,7 @@ target_link_libraries(tls_security_connector_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -15177,6 +15837,7 @@ target_include_directories(too_many_pings_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15196,6 +15857,7 @@ target_link_libraries(too_many_pings_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -15220,6 +15882,7 @@ target_include_directories(unknown_frame_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15236,6 +15899,7 @@ target_link_libraries(unknown_frame_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -15258,6 +15922,7 @@ target_include_directories(uri_parser_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15274,6 +15939,7 @@ target_link_libraries(uri_parser_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -15298,6 +15964,7 @@ target_include_directories(window_overflow_bad_client_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15314,6 +15981,7 @@ target_link_libraries(window_overflow_bad_client_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -15337,6 +16005,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -15353,6 +16022,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -15411,6 +16081,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -15427,6 +16098,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
     absl::symbolize
     absl::stacktrace
     absl::failure_signal_handler
@@ -15453,6 +16125,7 @@ target_include_directories(xds_bootstrap_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15469,6 +16142,7 @@ target_link_libraries(xds_bootstrap_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -15491,6 +16165,7 @@ target_include_directories(xds_certificate_provider_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15507,6 +16182,7 @@ target_link_libraries(xds_certificate_provider_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -15542,6 +16218,7 @@ target_include_directories(xds_credentials_end2end_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15560,6 +16237,7 @@ target_link_libraries(xds_credentials_end2end_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -15582,6 +16260,7 @@ target_include_directories(xds_credentials_test
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15598,6 +16277,7 @@ target_link_libraries(xds_credentials_test
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
 )
 
 
@@ -15674,6 +16354,14 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/fault_common.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/http_connection_manager.pb.h
@@ -15710,6 +16398,10 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/route.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/router.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/string.pb.h
@@ -15734,6 +16426,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
       ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_XXHASH_INCLUDE_DIR}
       ${_gRPC_ZLIB_INCLUDE_DIR}
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -15752,6 +16445,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     gpr
     address_sorting
     upb
+    ${_gRPC_SSL_LIBRARIES}
   )
 
 
@@ -15787,6 +16481,7 @@ target_include_directories(xds_interop_client
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15805,6 +16500,7 @@ target_link_libraries(xds_interop_client
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -15813,6 +16509,10 @@ endif()
 if(gRPC_BUILD_TESTS)
 
 add_executable(xds_interop_server
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
@@ -15825,6 +16525,7 @@ add_executable(xds_interop_server
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+  test/cpp/end2end/test_health_check_service_impl.cc
   test/cpp/interop/xds_interop_server.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -15840,6 +16541,7 @@ target_include_directories(xds_interop_server
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15858,6 +16560,7 @@ target_link_libraries(xds_interop_server
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -15882,6 +16585,7 @@ target_include_directories(alts_credentials_fuzzer_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15899,6 +16603,7 @@ target_link_libraries(alts_credentials_fuzzer_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -15923,6 +16628,7 @@ target_include_directories(client_fuzzer_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15940,6 +16646,7 @@ target_link_libraries(client_fuzzer_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -15964,6 +16671,7 @@ target_include_directories(hpack_parser_fuzzer_test_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -15981,6 +16689,7 @@ target_link_libraries(hpack_parser_fuzzer_test_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -16005,6 +16714,7 @@ target_include_directories(http_request_fuzzer_test_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -16022,6 +16732,7 @@ target_link_libraries(http_request_fuzzer_test_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -16046,6 +16757,7 @@ target_include_directories(http_response_fuzzer_test_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -16063,6 +16775,7 @@ target_link_libraries(http_response_fuzzer_test_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -16087,6 +16800,7 @@ target_include_directories(json_fuzzer_test_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -16104,6 +16818,7 @@ target_link_libraries(json_fuzzer_test_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -16128,6 +16843,7 @@ target_include_directories(nanopb_fuzzer_response_test_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -16145,6 +16861,7 @@ target_link_libraries(nanopb_fuzzer_response_test_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -16169,6 +16886,7 @@ target_include_directories(nanopb_fuzzer_serverlist_test_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -16186,6 +16904,7 @@ target_link_libraries(nanopb_fuzzer_serverlist_test_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -16210,6 +16929,7 @@ target_include_directories(percent_decode_fuzzer_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -16227,6 +16947,7 @@ target_link_libraries(percent_decode_fuzzer_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -16251,6 +16972,7 @@ target_include_directories(percent_encode_fuzzer_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -16268,6 +16990,7 @@ target_link_libraries(percent_encode_fuzzer_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -16292,6 +17015,7 @@ target_include_directories(server_fuzzer_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -16309,6 +17033,7 @@ target_link_libraries(server_fuzzer_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -16333,6 +17058,7 @@ target_include_directories(ssl_server_fuzzer_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -16350,6 +17076,7 @@ target_link_libraries(ssl_server_fuzzer_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 
@@ -16374,6 +17101,7 @@ target_include_directories(uri_fuzzer_test_one_entry
     ${_gRPC_UPB_GENERATED_DIR}
     ${_gRPC_UPB_GRPC_GENERATED_DIR}
     ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
     third_party/googletest/googletest/include
     third_party/googletest/googletest
@@ -16391,6 +17119,7 @@ target_link_libraries(uri_fuzzer_test_one_entry
   gpr
   address_sorting
   upb
+  ${_gRPC_SSL_LIBRARIES}
   absl::flags
 )
 

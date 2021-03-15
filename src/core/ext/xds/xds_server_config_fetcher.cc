@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/strings/str_replace.h"
+
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -34,8 +36,9 @@ namespace {
 
 class XdsServerConfigFetcher : public grpc_server_config_fetcher {
  public:
-  explicit XdsServerConfigFetcher(RefCountedPtr<XdsClient> xds_client)
-      : xds_client_(std::move(xds_client)) {
+  explicit XdsServerConfigFetcher(RefCountedPtr<XdsClient> xds_client,
+                                  grpc_server_xds_status_notifier notifier)
+      : xds_client_(std::move(xds_client)), serving_status_notifier_(notifier) {
     GPR_ASSERT(xds_client_ != nullptr);
   }
 
@@ -44,11 +47,12 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
                       watcher) override {
     grpc_server_config_fetcher::WatcherInterface* watcher_ptr = watcher.get();
     auto listener_watcher = absl::make_unique<ListenerWatcher>(
-        std::move(watcher), args, xds_client_);
+        std::move(watcher), args, xds_client_, serving_status_notifier_,
+        listening_address);
     auto* listener_watcher_ptr = listener_watcher.get();
-    // TODO(yashykt): Get the resource name id from bootstrap
-    listening_address = absl::StrCat(
-        "grpc/server?xds.resource.listening_address=", listening_address);
+    listening_address = absl::StrReplaceAll(
+        xds_client_->bootstrap()->server_listener_resource_name_template(),
+        {{"%s", listening_address}});
     xds_client_->WatchListenerData(listening_address,
                                    std::move(listener_watcher));
     MutexLock lock(&mu_);
@@ -81,10 +85,14 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     explicit ListenerWatcher(
         std::unique_ptr<grpc_server_config_fetcher::WatcherInterface>
             server_config_watcher,
-        grpc_channel_args* args, RefCountedPtr<XdsClient> xds_client)
+        grpc_channel_args* args, RefCountedPtr<XdsClient> xds_client,
+        grpc_server_xds_status_notifier serving_status_notifier,
+        std::string listening_address)
         : server_config_watcher_(std::move(server_config_watcher)),
           args_(args),
-          xds_client_(std::move(xds_client)) {}
+          xds_client_(std::move(xds_client)),
+          serving_status_notifier_(serving_status_notifier),
+          listening_address_(std::move(listening_address)) {}
 
     ~ListenerWatcher() override { grpc_channel_args_destroy(args_); }
 
@@ -100,6 +108,11 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
             "[ListenerWatcher %p] Received LDS update from xds client %p: %s",
             this, xds_client_.get(), listener.ToString().c_str());
       }
+      if (listener.address != listening_address_) {
+        OnFatalError(absl::FailedPreconditionError(
+            "Address in LDS update does not match listening address"));
+        return;
+      }
       grpc_error* error = GRPC_ERROR_NONE;
       bool update_needed = UpdateXdsCertificateProvider(listener, &error);
       if (error != GRPC_ERROR_NONE) {
@@ -107,10 +120,21 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         return;
       }
       // Only send an update, if something changed.
-      if (updated_once_ && !update_needed) {
+      if (have_resource_ && !update_needed) {
         return;
       }
-      updated_once_ = true;
+      if (!have_resource_) {
+        have_resource_ = true;
+        if (serving_status_notifier_.on_serving_status_change != nullptr) {
+          serving_status_notifier_.on_serving_status_change(
+              serving_status_notifier_.user_data, listening_address_.c_str(),
+              GRPC_STATUS_OK, "");
+        } else {
+          gpr_log(GPR_INFO,
+                  "xDS Listener resource obtained; will start serving on %s",
+                  listening_address_.c_str());
+        }
+      }
       grpc_channel_args* updated_args = nullptr;
       if (xds_certificate_provider_ != nullptr) {
         grpc_arg arg_to_add = xds_certificate_provider_->MakeChannelArg();
@@ -122,18 +146,48 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     }
 
     void OnError(grpc_error* error) override {
-      gpr_log(GPR_ERROR, "ListenerWatcher:%p XdsClient reports error: %s", this,
-              grpc_error_string(error));
+      if (have_resource_) {
+        gpr_log(GPR_ERROR,
+                "ListenerWatcher:%p XdsClient reports error: %s for %s; "
+                "ignoring in favor of existing resource",
+                this, grpc_error_string(error), listening_address_.c_str());
+      } else {
+        if (serving_status_notifier_.on_serving_status_change != nullptr) {
+          serving_status_notifier_.on_serving_status_change(
+              serving_status_notifier_.user_data, listening_address_.c_str(),
+              GRPC_STATUS_UNAVAILABLE, grpc_error_string(error));
+        } else {
+          gpr_log(
+              GPR_ERROR,
+              "ListenerWatcher:%p error obtaining xDS Listener resource: %s; "
+              "not serving on %s",
+              this, grpc_error_string(error), listening_address_.c_str());
+        }
+      }
       GRPC_ERROR_UNREF(error);
-      // TODO(yashykt): We might want to bubble this error to the application.
+    }
+
+    void OnFatalError(absl::Status status) {
+      gpr_log(
+          GPR_ERROR,
+          "ListenerWatcher:%p Encountered fatal error %s; not serving on %s",
+          this, status.ToString().c_str(), listening_address_.c_str());
+      if (have_resource_) {
+        // The server has started listening already, so we need to gracefully
+        // stop serving.
+        server_config_watcher_->StopServing();
+        have_resource_ = false;
+      }
+      if (serving_status_notifier_.on_serving_status_change != nullptr) {
+        serving_status_notifier_.on_serving_status_change(
+            serving_status_notifier_.user_data, listening_address_.c_str(),
+            static_cast<grpc_status_code>(status.raw_code()),
+            std::string(status.message()).c_str());
+      }
     }
 
     void OnResourceDoesNotExist() override {
-      gpr_log(GPR_ERROR,
-              "ListenerWatcher:%p XdsClient reports requested listener does "
-              "not exist",
-              this);
-      // TODO(yashykt): We might want to bubble this error to the application.
+      OnFatalError(absl::NotFoundError("Requested listener does not exist"));
     }
 
    private:
@@ -154,11 +208,13 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       }
       // Configure root cert.
       absl::string_view root_provider_instance_name =
-          listener.downstream_tls_context.common_tls_context
+          listener.filter_chains[0]
+              .downstream_tls_context.common_tls_context
               .combined_validation_context
               .validation_context_certificate_provider_instance.instance_name;
       absl::string_view root_provider_cert_name =
-          listener.downstream_tls_context.common_tls_context
+          listener.filter_chains[0]
+              .downstream_tls_context.common_tls_context
               .combined_validation_context
               .validation_context_certificate_provider_instance
               .certificate_name;
@@ -177,10 +233,12 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       }
       // Configure identity cert.
       absl::string_view identity_provider_instance_name =
-          listener.downstream_tls_context.common_tls_context
+          listener.filter_chains[0]
+              .downstream_tls_context.common_tls_context
               .tls_certificate_certificate_provider_instance.instance_name;
       absl::string_view identity_provider_cert_name =
-          listener.downstream_tls_context.common_tls_context
+          listener.filter_chains[0]
+              .downstream_tls_context.common_tls_context
               .tls_certificate_certificate_provider_instance.certificate_name;
       RefCountedPtr<grpc_tls_certificate_provider> new_identity_provider;
       if (!identity_provider_instance_name.empty()) {
@@ -201,7 +259,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
            (root_certificate_provider_ == nullptr)) ||
           ((new_identity_provider == nullptr) !=
            (identity_certificate_provider_ == nullptr)) ||
-          (listener.downstream_tls_context.require_client_certificate !=
+          (listener.filter_chains[0]
+               .downstream_tls_context.require_client_certificate !=
            xds_certificate_provider_->GetRequireClientCertificate(""))) {
         security_connector_update_required = true;
       }
@@ -222,7 +281,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
               ? nullptr
               : identity_certificate_provider_->distributor());
       xds_certificate_provider_->UpdateRequireClientCertificate(
-          "", listener.downstream_tls_context.require_client_certificate);
+          "", listener.filter_chains[0]
+                  .downstream_tls_context.require_client_certificate);
       return security_connector_update_required;
     }
 
@@ -230,10 +290,12 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         server_config_watcher_;
     grpc_channel_args* args_;
     RefCountedPtr<XdsClient> xds_client_;
+    grpc_server_xds_status_notifier serving_status_notifier_;
+    std::string listening_address_;
     RefCountedPtr<grpc_tls_certificate_provider> root_certificate_provider_;
     RefCountedPtr<grpc_tls_certificate_provider> identity_certificate_provider_;
     RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
-    bool updated_once_ = false;
+    bool have_resource_ = false;
   };
 
   struct WatcherState {
@@ -242,6 +304,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
   };
 
   RefCountedPtr<XdsClient> xds_client_;
+  grpc_server_xds_status_notifier serving_status_notifier_;
   Mutex mu_;
   std::map<grpc_server_config_fetcher::WatcherInterface*, WatcherState>
       watchers_;
@@ -250,7 +313,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
 }  // namespace
 }  // namespace grpc_core
 
-grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create() {
+grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
+    grpc_server_xds_status_notifier notifier) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_config_fetcher_xds_create()", 0, ());
@@ -263,5 +327,13 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create() {
     GRPC_ERROR_UNREF(error);
     return nullptr;
   }
-  return new grpc_core::XdsServerConfigFetcher(std::move(xds_client));
+  if (xds_client->bootstrap()
+          ->server_listener_resource_name_template()
+          .empty()) {
+    gpr_log(GPR_ERROR,
+            "server_listener_resource_name_template not provided in bootstrap "
+            "file.");
+    return nullptr;
+  }
+  return new grpc_core::XdsServerConfigFetcher(std::move(xds_client), notifier);
 }

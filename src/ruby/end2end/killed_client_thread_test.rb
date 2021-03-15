@@ -35,46 +35,46 @@ end
 def main
   STDERR.puts 'start server'
 
-  client_started = false
-  client_started_mu = Mutex.new
-  client_started_cv = ConditionVariable.new
+  received_rpc = false
+  received_rpc_mu = Mutex.new
+  received_rpc_cv = ConditionVariable.new
   received_rpc_callback = proc do
-    client_started_mu.synchronize do
-      client_started = true
-      client_started_cv.signal
+    received_rpc_mu.synchronize do
+      received_rpc = true
+      received_rpc_cv.signal
     end
   end
 
   service_impl = SleepingEchoServerImpl.new(received_rpc_callback)
-  # RPCs against the server will all be hanging, so kill thread
+  # RPCs against the server will all be freezing, so kill thread
   # pool workers immediately rather than after waiting for a second.
   rpc_server_args = { poll_period: 0, pool_keep_alive: 0 }
   server_runner = ServerRunner.new(service_impl, rpc_server_args: rpc_server_args)
   server_port = server_runner.run
   STDERR.puts 'start client'
-  _, client_pid = start_client('killed_client_thread_client.rb',
-                               server_port)
+  client_controller = ClientController.new(
+    'killed_client_thread_client.rb', server_port)
 
-  client_started_mu.synchronize do
-    client_started_cv.wait(client_started_mu) until client_started
+  received_rpc_mu.synchronize do
+    received_rpc_cv.wait(received_rpc_mu) until received_rpc
   end
 
   # SIGTERM the child process now that it's
   # in the middle of an RPC (happening on a non-main thread)
-  Process.kill('SIGTERM', client_pid)
+  Process.kill('SIGTERM', client_controller.client_pid)
   STDERR.puts 'sent shutdown'
 
   begin
     Timeout.timeout(10) do
-      Process.wait(client_pid)
+      Process.wait(client_controller.client_pid)
     end
   rescue Timeout::Error
-    STDERR.puts "timeout wait for client pid #{client_pid}"
-    Process.kill('SIGKILL', client_pid)
-    Process.wait(client_pid)
+    STDERR.puts "timeout wait for client pid #{client_controller.client_pid}"
+    Process.kill('SIGKILL', client_controller.client_pid)
+    Process.wait(client_controller.client_pid)
     STDERR.puts 'killed client child'
     raise 'Timed out waiting for client process. ' \
-      'It likely hangs when killed while in the middle of an rpc'
+      'It likely freezes when killed while in the middle of an rpc'
   end
 
   client_exit_code = $CHILD_STATUS

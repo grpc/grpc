@@ -44,6 +44,31 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $this->assertNotNull($channel);
     }
 
+    public function testCreateXdsWithSsl()
+    {
+        $xdsCreds = \Grpc\ChannelCredentials::createXds(
+            \Grpc\ChannelCredentials::createSsl()
+        );
+        $this->assertNotNull($xdsCreds);
+    }
+
+    public function testCreateXdsWithInsecure() {
+        $xdsCreds = \Grpc\ChannelCredentials::createXds(
+            \Grpc\ChannelCredentials::createInsecure()
+        );
+        $this->assertNotNull($xdsCreds);
+    }
+
+    public function testCreateXdsWithNull() {
+        $this->expectException(\InvalidArgumentException::class);
+        $xdsCreds = \Grpc\ChannelCredentials::createXds(null);
+    }
+
+    public function testCreateXdsWithInvalidType() {
+        $this->expectException(\TypeError::class);
+        $xdsCreds = \Grpc\ChannelCredentials::createXds("invalid-type");
+    }
+
     public function testGetConnectivityState()
     {
         $this->channel = new Grpc\Channel('localhost:50001',
@@ -275,17 +300,90 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $this->channel2->close();
     }
 
-    public function testPersistentChannelSameChannelCredentials()
+    public function persistentChannelSameChannelCredentialsProvider(): array
     {
-        $creds1 = Grpc\ChannelCredentials::createSsl();
-        $creds2 = Grpc\ChannelCredentials::createSsl();
+        return [
+            [
+                Grpc\ChannelCredentials::createSsl(),
+                Grpc\ChannelCredentials::createSsl(),
+                50301,
+            ],
+            [
+                Grpc\ChannelCredentials::createSsl(
+                    file_get_contents(dirname(__FILE__) . '/../data/ca.pem')
+                ),
+                Grpc\ChannelCredentials::createSsl(
+                    file_get_contents(dirname(__FILE__) . '/../data/ca.pem')
+                ),
+                50302,
+            ],
+            [
+                Grpc\ChannelCredentials::createInSecure(),
+                Grpc\ChannelCredentials::createInSecure(),
+                50303,
+            ],
+            [
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createSsl()
+                ),
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createSsl()
+                ),
+                50304,
+            ],
+            [
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createSsl()
+                ),
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createSsl()
+                ),
+                50305,
+            ],
+            [
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createSsl(
+                        file_get_contents(dirname(__FILE__) . '/../data/ca.pem')
+                    )
+                ),
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createSsl(
+                        file_get_contents(dirname(__FILE__) . '/../data/ca.pem')
+                    )
+                ),
+                50306,
+            ],
+            [
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createInSecure()
+                ),
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createInSecure()
+                ),
+                50307,
+            ],
+        ];
+    }
 
-        $this->channel1 = new Grpc\Channel('localhost:50019',
-                                           ["credentials" => $creds1,
-                                             "grpc_target_persist_bound" => 3,
-                                             ]);
-        $this->channel2 = new Grpc\Channel('localhost:50019',
-                                           ["credentials" => $creds2]);
+    /**
+     * @dataProvider persistentChannelSameChannelCredentialsProvider
+     */
+    public function testPersistentChannelSameChannelCredentials(
+        $creds1,
+        $creds2,
+        $port
+    ) {
+        $this->channel1 = new Grpc\Channel(
+            'localhost:' . $port,
+            [
+                "credentials" => $creds1,
+                "grpc_target_persist_bound" => 3,
+            ]
+        );
+        $this->channel2 = new Grpc\Channel(
+            'localhost:' . $port,
+            ["credentials" => $creds2]
+        );
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);
@@ -300,70 +398,78 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $this->channel2->close();
     }
 
-    public function testPersistentChannelDifferentChannelCredentials()
+    public function persistentChannelDifferentChannelCredentialsProvider(): array
     {
-        $creds1 = Grpc\ChannelCredentials::createSsl();
-        $creds2 = Grpc\ChannelCredentials::createSsl(
-            file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
-
-        $this->channel1 = new Grpc\Channel('localhost:50020',
-                                           ["credentials" => $creds1,
-                                             "grpc_target_persist_bound" => 3,
-                                             ]);
-        $this->channel2 = new Grpc\Channel('localhost:50020',
-                                           ["credentials" => $creds2]);
-
-        // try to connect on channel1
-        $state = $this->channel1->getConnectivityState(true);
-        $this->waitUntilNotIdle($this->channel1);
-
-        $state = $this->channel1->getConnectivityState();
-        $this->assertConnecting($state);
-        $state = $this->channel2->getConnectivityState();
-        $this->assertEquals(GRPC\CHANNEL_IDLE, $state);
-
-        $this->channel1->close();
-        $this->channel2->close();
+        return [
+            [
+                Grpc\ChannelCredentials::createSsl(),
+                Grpc\ChannelCredentials::createSsl(
+                    file_get_contents(dirname(__FILE__) . '/../data/ca.pem')
+                ),
+                50351,
+            ],
+            [
+                Grpc\ChannelCredentials::createSsl(),
+                Grpc\ChannelCredentials::createInsecure(),
+                50352,
+            ],
+            [
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createSsl()
+                ),
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createSsl(
+                        file_get_contents(dirname(__FILE__) . '/../data/ca.pem')
+                    )
+                ),
+                50353,
+            ],
+            [
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createSsl()
+                ),
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createInsecure()
+                ),
+                50354,
+            ],
+            [
+                \Grpc\ChannelCredentials::createInsecure(),
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createInsecure()
+                ),
+                50355,
+            ],
+            [
+                \Grpc\ChannelCredentials::createSsl(),
+                \Grpc\ChannelCredentials::createXds(
+                    \Grpc\ChannelCredentials::createSsl()
+                ),
+                50356,
+            ],
+        ];
     }
 
-    public function testPersistentChannelSameChannelCredentialsRootCerts()
-    {
-        $creds1 = Grpc\ChannelCredentials::createSsl(
-            file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
-        $creds2 = Grpc\ChannelCredentials::createSsl(
-            file_get_contents(dirname(__FILE__).'/../data/ca.pem'));
+    /**
+     * @dataProvider persistentChannelDifferentChannelCredentialsProvider
+     */
+    public function testPersistentChannelDifferentChannelCredentials(
+        $creds1,
+        $creds2,
+        $port
+    ) {
 
-        $this->channel1 = new Grpc\Channel('localhost:50021',
-                                           ["credentials" => $creds1,
-                                             "grpc_target_persist_bound" => 3,
-                                             ]);
-        $this->channel2 = new Grpc\Channel('localhost:50021',
-                                           ["credentials" => $creds2]);
-
-        // try to connect on channel1
-        $state = $this->channel1->getConnectivityState(true);
-        $this->waitUntilNotIdle($this->channel1);
-
-        $state = $this->channel1->getConnectivityState();
-        $this->assertConnecting($state);
-        $state = $this->channel2->getConnectivityState();
-        $this->assertConnecting($state);
-
-        $this->channel1->close();
-        $this->channel2->close();
-    }
-
-    public function testPersistentChannelDifferentSecureChannelCredentials()
-    {
-        $creds1 = Grpc\ChannelCredentials::createSsl();
-        $creds2 = Grpc\ChannelCredentials::createInsecure();
-
-        $this->channel1 = new Grpc\Channel('localhost:50022',
-                                           ["credentials" => $creds1,
-                                             "grpc_target_persist_bound" => 3,
-                                             ]);
-        $this->channel2 = new Grpc\Channel('localhost:50022',
-                                           ["credentials" => $creds2]);
+        $this->channel1 = new Grpc\Channel(
+            'localhost:' . $port,
+            [
+                "credentials" => $creds1,
+                "grpc_target_persist_bound" => 3,
+            ]
+        );
+        $this->channel2 = new Grpc\Channel(
+            'localhost:' . $port,
+            ["credentials" => $creds2]
+        );
 
         // try to connect on channel1
         $state = $this->channel1->getConnectivityState(true);

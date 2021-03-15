@@ -1200,7 +1200,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
-    } else if (stream_state->rs.read_stream_closed == true) {
+    } else if (stream_state->rs.read_stream_closed) {
       /* No more data will be received */
       CRONET_LOG(GPR_DEBUG, "read stream closed");
       grpc_core::ExecCtx::Run(
@@ -1217,7 +1217,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
-    } else if (stream_state->rs.length_field_received == false) {
+    } else if (!stream_state->rs.length_field_received) {
       if (stream_state->rs.received_bytes == GRPC_HEADER_SIZE_IN_BYTES &&
           stream_state->rs.remaining_bytes == 0) {
         /* Start a read operation for data */

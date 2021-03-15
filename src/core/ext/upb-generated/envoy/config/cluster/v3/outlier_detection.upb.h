@@ -88,6 +88,8 @@ UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_failure_percentage_
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_failure_percentage_minimum_hosts(const envoy_config_cluster_v3_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(72, 144), const struct google_protobuf_UInt32Value*); }
 UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_failure_percentage_request_volume(const envoy_config_cluster_v3_OutlierDetection *msg) { return _upb_hasbit(msg, 19); }
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDetection_failure_percentage_request_volume(const envoy_config_cluster_v3_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(76, 152), const struct google_protobuf_UInt32Value*); }
+UPB_INLINE bool envoy_config_cluster_v3_OutlierDetection_has_max_ejection_time(const envoy_config_cluster_v3_OutlierDetection *msg) { return _upb_hasbit(msg, 20); }
+UPB_INLINE const struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_max_ejection_time(const envoy_config_cluster_v3_OutlierDetection *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(80, 160), const struct google_protobuf_Duration*); }
 
 UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_consecutive_5xx(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_UInt32Value* value) {
   _upb_sethas(msg, 1);
@@ -336,6 +338,19 @@ UPB_INLINE struct google_protobuf_UInt32Value* envoy_config_cluster_v3_OutlierDe
     sub = (struct google_protobuf_UInt32Value*)_upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
     if (!sub) return NULL;
     envoy_config_cluster_v3_OutlierDetection_set_failure_percentage_request_volume(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_config_cluster_v3_OutlierDetection_set_max_ejection_time(envoy_config_cluster_v3_OutlierDetection *msg, struct google_protobuf_Duration* value) {
+  _upb_sethas(msg, 20);
+  *UPB_PTR_AT(msg, UPB_SIZE(80, 160), struct google_protobuf_Duration*) = value;
+}
+UPB_INLINE struct google_protobuf_Duration* envoy_config_cluster_v3_OutlierDetection_mutable_max_ejection_time(envoy_config_cluster_v3_OutlierDetection *msg, upb_arena *arena) {
+  struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)envoy_config_cluster_v3_OutlierDetection_max_ejection_time(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_Duration*)_upb_msg_new(&google_protobuf_Duration_msginit, arena);
+    if (!sub) return NULL;
+    envoy_config_cluster_v3_OutlierDetection_set_max_ejection_time(msg, sub);
   }
   return sub;
 }

@@ -77,6 +77,7 @@
   "unit._session_cache_test.SSLSessionCacheTest",
   "unit._signal_handling_test.SignalHandlingTest",
   "unit._version_test.VersionTest",
+  "unit._xds_credentials_test.XdsCredentialsTest",
   "unit.beta._beta_features_test.BetaFeaturesTest",
   "unit.beta._beta_features_test.ContextManagementAndLifecycleTest",
   "unit.beta._connectivity_channel_test.ConnectivityStatesTest",

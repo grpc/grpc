@@ -389,7 +389,7 @@ class ChannelData {
   // Fields guarded by a mutex, since they need to be accessed
   // synchronously via get_channel_info().
   //
-  gpr_mu info_mu_;
+  Mutex info_mu_;
   UniquePtr<char> info_lb_policy_name_;
   UniquePtr<char> info_service_config_json_;
 
@@ -1258,27 +1258,28 @@ grpc_error* DynamicTerminationFilterChannelData::Init(
 // control plane work_serializer.
 class ChannelData::SubchannelWrapper : public SubchannelInterface {
  public:
-  SubchannelWrapper(ChannelData* chand, Subchannel* subchannel,
+  SubchannelWrapper(ChannelData* chand, RefCountedPtr<Subchannel> subchannel,
                     absl::optional<std::string> health_check_service_name)
       : SubchannelInterface(
             GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
                 ? "SubchannelWrapper"
                 : nullptr),
         chand_(chand),
-        subchannel_(subchannel),
+        subchannel_(std::move(subchannel)),
         health_check_service_name_(std::move(health_check_service_name)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: creating subchannel wrapper %p for subchannel %p",
-              chand, this, subchannel_);
+              chand, this, subchannel_.get());
     }
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
+      auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
       if (it == chand_->subchannel_refcount_map_.end()) {
         chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
-        it = chand_->subchannel_refcount_map_.emplace(subchannel_, 0).first;
+        it = chand_->subchannel_refcount_map_.emplace(subchannel_.get(), 0)
+                 .first;
       }
       ++it->second;
     }
@@ -1289,12 +1290,12 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
-              chand_, this, subchannel_);
+              chand_, this, subchannel_.get());
     }
     chand_->subchannel_wrappers_.erase(this);
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
+      auto it = chand_->subchannel_refcount_map_.find(subchannel_.get());
       GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
       --it->second;
       if (it->second == 0) {
@@ -1302,7 +1303,6 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         chand_->subchannel_refcount_map_.erase(it);
       }
     }
-    GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB");
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
@@ -1436,7 +1436,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         gpr_log(GPR_INFO,
                 "chand=%p: connectivity change for subchannel wrapper %p "
                 "subchannel %p; hopping into work_serializer",
-                parent_->chand_, parent_.get(), parent_->subchannel_);
+                parent_->chand_, parent_.get(), parent_->subchannel_.get());
       }
       Ref().release();  // ref owned by lambda
       parent_->chand_->work_serializer_->Run(
@@ -1470,7 +1470,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                 "chand=%p: processing connectivity change in work serializer "
                 "for subchannel wrapper %p subchannel %p "
                 "watcher=%p",
-                parent_->chand_, parent_.get(), parent_->subchannel_,
+                parent_->chand_, parent_.get(), parent_->subchannel_.get(),
                 watcher_.get());
       }
       ConnectivityStateChange state_change = PopConnectivityStateChange();
@@ -1539,7 +1539,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   }
 
   ChannelData* chand_;
-  Subchannel* subchannel_;
+  RefCountedPtr<Subchannel> subchannel_;
   absl::optional<std::string> health_check_service_name_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
@@ -1758,7 +1758,7 @@ class ChannelData::ClientChannelControlHelper
         args_to_add.data(), args_to_add.size());
     gpr_free(args_to_add[0].value.string);
     // Create subchannel.
-    Subchannel* subchannel =
+    RefCountedPtr<Subchannel> subchannel =
         chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
@@ -1766,7 +1766,7 @@ class ChannelData::ClientChannelControlHelper
     subchannel->ThrottleKeepaliveTime(chand_->keepalive_time_);
     // Create and return wrapper for the subchannel.
     return MakeRefCounted<SubchannelWrapper>(
-        chand_, subchannel, std::move(health_check_service_name));
+        chand_, std::move(subchannel), std::move(health_check_service_name));
   }
 
   void UpdateState(
@@ -1885,8 +1885,6 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     gpr_log(GPR_INFO, "chand=%p: creating client_channel for channel stack %p",
             this, owning_stack_);
   }
-  // Initialize data members.
-  gpr_mu_init(&info_mu_);
   // Start backup polling.
   grpc_client_channel_start_backup_polling(interested_parties_);
   // Check client channel factory.
@@ -1955,7 +1953,6 @@ ChannelData::~ChannelData() {
   grpc_client_channel_stop_backup_polling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
   GRPC_ERROR_UNREF(disconnect_error_.Load(MemoryOrder::RELAXED));
-  gpr_mu_destroy(&info_mu_);
 }
 
 RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
@@ -2300,7 +2297,7 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked() {
         server_name_, retry_throttle_config.value().max_milli_tokens,
         retry_throttle_config.value().milli_token_ratio);
   }
-  // Construct per-LB filter stack.
+  // Construct dynamic filter stack.
   std::vector<const grpc_channel_filter*> filters =
       config_selector->GetFilters();
   filters.push_back(&kDynamicTerminationFilterVtable);
@@ -2315,6 +2312,7 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked() {
   }
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
       channel_args_, args_to_add.data(), args_to_add.size());
+  new_args = config_selector->ModifyChannelArgs(new_args);
   RefCountedPtr<DynamicFilters> dynamic_filters =
       DynamicFilters::Create(new_args, std::move(filters));
   GPR_ASSERT(dynamic_filters != nullptr);

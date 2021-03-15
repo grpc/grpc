@@ -318,7 +318,7 @@ static void DoNothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
-  grpc_core::Subchannel* CreateSubchannel(
+  grpc_core::RefCountedPtr<grpc_core::Subchannel> CreateSubchannel(
       const grpc_channel_args* /*args*/) override {
     return nullptr;
   }
@@ -343,7 +343,7 @@ struct Fixture {
   const uint32_t flags = kFlags;
 };
 
-namespace dummy_filter {
+namespace phony_filter {
 
 static void StartTransportStreamOp(grpc_call_element* /*elem*/,
                                    grpc_transport_stream_op_batch* /*op*/) {}
@@ -373,7 +373,7 @@ void DestroyChannelElem(grpc_channel_element* /*elem*/) {}
 void GetChannelInfo(grpc_channel_element* /*elem*/,
                     const grpc_channel_info* /*channel_info*/) {}
 
-static const grpc_channel_filter dummy_filter = {StartTransportStreamOp,
+static const grpc_channel_filter phony_filter = {StartTransportStreamOp,
                                                  StartTransportOp,
                                                  0,
                                                  InitCallElem,
@@ -383,11 +383,11 @@ static const grpc_channel_filter dummy_filter = {StartTransportStreamOp,
                                                  InitChannelElem,
                                                  DestroyChannelElem,
                                                  GetChannelInfo,
-                                                 "dummy_filter"};
+                                                 "phony_filter"};
 
-}  // namespace dummy_filter
+}  // namespace phony_filter
 
-namespace dummy_transport {
+namespace phony_transport {
 
 /* Memory required for a single stream element - this is allocated by upper
    layers and initialized by the transport */
@@ -430,15 +430,15 @@ void Destroy(grpc_transport* /*self*/) {}
 /* implementation of grpc_transport_get_endpoint */
 grpc_endpoint* GetEndpoint(grpc_transport* /*self*/) { return nullptr; }
 
-static const grpc_transport_vtable dummy_transport_vtable = {
-    0,          "dummy_http2", InitStream,
+static const grpc_transport_vtable phony_transport_vtable = {
+    0,          "phony_http2", InitStream,
     SetPollset, SetPollsetSet, PerformStreamOp,
     PerformOp,  DestroyStream, Destroy,
     GetEndpoint};
 
-static grpc_transport dummy_transport = {&dummy_transport_vtable};
+static grpc_transport phony_transport = {&phony_transport_vtable};
 
-}  // namespace dummy_transport
+}  // namespace phony_transport
 
 class NoOp {
  public:
@@ -502,8 +502,8 @@ static void BM_IsolatedFilter(benchmark::State& state) {
     filters.push_back(fixture.filter);
   }
   if (fixture.flags & CHECKS_NOT_LAST) {
-    filters.push_back(&dummy_filter::dummy_filter);
-    label << " #has_dummy_filter";
+    filters.push_back(&phony_filter::phony_filter);
+    label << " #has_phony_filter";
   }
 
   grpc_core::ExecCtx exec_ctx;
@@ -517,7 +517,7 @@ static void BM_IsolatedFilter(benchmark::State& state) {
                               filters.empty() ? nullptr : &filters[0],
                               filters.size(), &channel_args,
                               fixture.flags & REQUIRES_TRANSPORT
-                                  ? &dummy_transport::dummy_transport
+                                  ? &phony_transport::phony_transport
                                   : nullptr,
                               "CHANNEL", channel_stack)));
   grpc_core::ExecCtx::Get()->Flush();
@@ -565,9 +565,9 @@ static void BM_IsolatedFilter(benchmark::State& state) {
 
 typedef Fixture<nullptr, 0> NoFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, NoFilter, NoOp);
-typedef Fixture<&dummy_filter::dummy_filter, 0> DummyFilter;
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, DummyFilter, NoOp);
-BENCHMARK_TEMPLATE(BM_IsolatedFilter, DummyFilter, SendEmptyMetadata);
+typedef Fixture<&phony_filter::phony_filter, 0> PhonyFilter;
+BENCHMARK_TEMPLATE(BM_IsolatedFilter, PhonyFilter, NoOp);
+BENCHMARK_TEMPLATE(BM_IsolatedFilter, PhonyFilter, SendEmptyMetadata);
 typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientChannelFilter, NoOp);
 typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
@@ -691,8 +691,8 @@ class IsolatedCallFixture : public TrackCounters {
     // call grpc_init() manually here to balance things out.
     grpc_init();
     grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
-    grpc_channel_stack_builder_set_name(builder, "dummy");
-    grpc_channel_stack_builder_set_target(builder, "dummy_target");
+    grpc_channel_stack_builder_set_name(builder, "phony");
+    grpc_channel_stack_builder_set_target(builder, "phony_target");
     GPR_ASSERT(grpc_channel_stack_builder_append_filter(
         builder, &isolated_call_filter::isolated_call_filter, nullptr,
         nullptr));

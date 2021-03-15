@@ -20,6 +20,7 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      * Deprecated: use stats_per_method.rpcs_started instead.
      *
      * Generated from protobuf field <code>map<string, int32> num_rpcs_started_by_method = 1 [deprecated = true];</code>
+     * @deprecated
      */
     private $num_rpcs_started_by_method;
     /**
@@ -27,6 +28,7 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      * Deprecated: use stats_per_method.result instead.
      *
      * Generated from protobuf field <code>map<string, int32> num_rpcs_succeeded_by_method = 2 [deprecated = true];</code>
+     * @deprecated
      */
     private $num_rpcs_succeeded_by_method;
     /**
@@ -34,11 +36,12 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      * Deprecated: use stats_per_method.result instead.
      *
      * Generated from protobuf field <code>map<string, int32> num_rpcs_failed_by_method = 3 [deprecated = true];</code>
+     * @deprecated
      */
     private $num_rpcs_failed_by_method;
     /**
-     * Per-method RPC statistics.  The key is the full method path; i.e.
-     * "/proto.package.ServiceName/MethodName".
+     * Per-method RPC statistics.  The key is the RpcType in string form; e.g.
+     * 'EMPTY_CALL' or 'UNARY_CALL'
      *
      * Generated from protobuf field <code>map<string, .grpc.testing.LoadBalancerAccumulatedStatsResponse.MethodStats> stats_per_method = 4;</code>
      */
@@ -60,8 +63,8 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      *           The total number of RPCs have ever failed for each type.
      *           Deprecated: use stats_per_method.result instead.
      *     @type array|\Google\Protobuf\Internal\MapField $stats_per_method
-     *           Per-method RPC statistics.  The key is the full method path; i.e.
-     *           "/proto.package.ServiceName/MethodName".
+     *           Per-method RPC statistics.  The key is the RpcType in string form; e.g.
+     *           'EMPTY_CALL' or 'UNARY_CALL'
      * }
      */
     public function __construct($data = NULL) {
@@ -75,9 +78,11 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      *
      * Generated from protobuf field <code>map<string, int32> num_rpcs_started_by_method = 1 [deprecated = true];</code>
      * @return \Google\Protobuf\Internal\MapField
+     * @deprecated
      */
     public function getNumRpcsStartedByMethod()
     {
+        @trigger_error('num_rpcs_started_by_method is deprecated.', E_USER_DEPRECATED);
         return $this->num_rpcs_started_by_method;
     }
 
@@ -88,9 +93,11 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      * Generated from protobuf field <code>map<string, int32> num_rpcs_started_by_method = 1 [deprecated = true];</code>
      * @param array|\Google\Protobuf\Internal\MapField $var
      * @return $this
+     * @deprecated
      */
     public function setNumRpcsStartedByMethod($var)
     {
+        @trigger_error('num_rpcs_started_by_method is deprecated.', E_USER_DEPRECATED);
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::INT32);
         $this->num_rpcs_started_by_method = $arr;
 
@@ -103,9 +110,11 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      *
      * Generated from protobuf field <code>map<string, int32> num_rpcs_succeeded_by_method = 2 [deprecated = true];</code>
      * @return \Google\Protobuf\Internal\MapField
+     * @deprecated
      */
     public function getNumRpcsSucceededByMethod()
     {
+        @trigger_error('num_rpcs_succeeded_by_method is deprecated.', E_USER_DEPRECATED);
         return $this->num_rpcs_succeeded_by_method;
     }
 
@@ -116,9 +125,11 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      * Generated from protobuf field <code>map<string, int32> num_rpcs_succeeded_by_method = 2 [deprecated = true];</code>
      * @param array|\Google\Protobuf\Internal\MapField $var
      * @return $this
+     * @deprecated
      */
     public function setNumRpcsSucceededByMethod($var)
     {
+        @trigger_error('num_rpcs_succeeded_by_method is deprecated.', E_USER_DEPRECATED);
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::INT32);
         $this->num_rpcs_succeeded_by_method = $arr;
 
@@ -131,9 +142,11 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      *
      * Generated from protobuf field <code>map<string, int32> num_rpcs_failed_by_method = 3 [deprecated = true];</code>
      * @return \Google\Protobuf\Internal\MapField
+     * @deprecated
      */
     public function getNumRpcsFailedByMethod()
     {
+        @trigger_error('num_rpcs_failed_by_method is deprecated.', E_USER_DEPRECATED);
         return $this->num_rpcs_failed_by_method;
     }
 
@@ -144,9 +157,11 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
      * Generated from protobuf field <code>map<string, int32> num_rpcs_failed_by_method = 3 [deprecated = true];</code>
      * @param array|\Google\Protobuf\Internal\MapField $var
      * @return $this
+     * @deprecated
      */
     public function setNumRpcsFailedByMethod($var)
     {
+        @trigger_error('num_rpcs_failed_by_method is deprecated.', E_USER_DEPRECATED);
         $arr = GPBUtil::checkMapField($var, \Google\Protobuf\Internal\GPBType::STRING, \Google\Protobuf\Internal\GPBType::INT32);
         $this->num_rpcs_failed_by_method = $arr;
 
@@ -154,8 +169,8 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
     }
 
     /**
-     * Per-method RPC statistics.  The key is the full method path; i.e.
-     * "/proto.package.ServiceName/MethodName".
+     * Per-method RPC statistics.  The key is the RpcType in string form; e.g.
+     * 'EMPTY_CALL' or 'UNARY_CALL'
      *
      * Generated from protobuf field <code>map<string, .grpc.testing.LoadBalancerAccumulatedStatsResponse.MethodStats> stats_per_method = 4;</code>
      * @return \Google\Protobuf\Internal\MapField
@@ -166,8 +181,8 @@ class LoadBalancerAccumulatedStatsResponse extends \Google\Protobuf\Internal\Mes
     }
 
     /**
-     * Per-method RPC statistics.  The key is the full method path; i.e.
-     * "/proto.package.ServiceName/MethodName".
+     * Per-method RPC statistics.  The key is the RpcType in string form; e.g.
+     * 'EMPTY_CALL' or 'UNARY_CALL'
      *
      * Generated from protobuf field <code>map<string, .grpc.testing.LoadBalancerAccumulatedStatsResponse.MethodStats> stats_per_method = 4;</code>
      * @param array|\Google\Protobuf\Internal\MapField $var

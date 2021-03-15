@@ -12,7 +12,7 @@
 #include "envoy/config/core/v3/grpc_service.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
-#include "udpa/core/v1/authority.upb.h"
+#include "xds/core/v3/authority.upb.h"
 #include "envoy/annotations/deprecation.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
@@ -80,7 +80,7 @@ static const upb_msglayout *const envoy_config_core_v3_ConfigSource_submsgs[5] =
   &envoy_config_core_v3_ApiConfigSource_msginit,
   &envoy_config_core_v3_SelfConfigSource_msginit,
   &google_protobuf_Duration_msginit,
-  &udpa_core_v1_Authority_msginit,
+  &xds_core_v3_Authority_msginit,
 };
 
 static const upb_msglayout_field envoy_config_core_v3_ConfigSource__fields[7] = {

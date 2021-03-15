@@ -92,6 +92,12 @@ NS_ASSUME_NONNULL_BEGIN
 @property(copy, readonly, nullable) NSString *userAgentPrefix;
 
 /**
+ * Custom string that is suffixed to a request's user-agent header field after gRPC's internal
+ * user-agent string.
+ */
+@property(copy, readonly, nullable) NSString *userAgentSuffix;
+
+/**
  * The size limit for the response received from server. If it is exceeded, an error with status
  * code GRPCErrorCodeResourceExhausted is returned.
  */
@@ -269,6 +275,12 @@ NS_ASSUME_NONNULL_BEGIN
  * user-agent string.
  */
 @property(copy, readwrite, nullable) NSString *userAgentPrefix;
+
+/**
+ * Custom string that is suffixed to a request's user-agent header field after gRPC's internal
+ * user-agent string.
+ */
+@property(copy, readwrite, nullable) NSString *userAgentSuffix;
 
 /**
  * The size limit for the response received from server. If it is exceeded, an error with status

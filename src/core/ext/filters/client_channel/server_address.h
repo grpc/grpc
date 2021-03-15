@@ -25,8 +25,10 @@
 #include <memory>
 
 #include "absl/container/inlined_vector.h"
+#include "absl/strings/str_format.h"
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 namespace grpc_core {
@@ -107,6 +109,35 @@ class ServerAddress {
 //
 
 typedef absl::InlinedVector<ServerAddress, 1> ServerAddressList;
+
+//
+// ServerAddressWeightAttribute
+//
+class ServerAddressWeightAttribute : public ServerAddress::AttributeInterface {
+ public:
+  static const char* kServerAddressWeightAttributeKey;
+
+  explicit ServerAddressWeightAttribute(uint32_t weight) : weight_(weight) {}
+
+  uint32_t weight() const { return weight_; }
+
+  std::unique_ptr<AttributeInterface> Copy() const override {
+    return absl::make_unique<ServerAddressWeightAttribute>(weight_);
+  }
+
+  int Cmp(const AttributeInterface* other) const override {
+    const auto* other_locality_attr =
+        static_cast<const ServerAddressWeightAttribute*>(other);
+    return GPR_ICMP(weight_, other_locality_attr->weight_);
+  }
+
+  std::string ToString() const override {
+    return absl::StrFormat("%d", weight_);
+  }
+
+ private:
+  uint32_t weight_;
+};
 
 }  // namespace grpc_core
 

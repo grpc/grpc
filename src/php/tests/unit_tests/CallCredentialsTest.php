@@ -68,7 +68,7 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
         $deadline = Grpc\Timeval::infFuture();
         $status_text = 'xyz';
         $call = new Grpc\Call($this->channel,
-                              '/abc/dummy_method',
+                              '/abc/phony_method',
                               $deadline,
                               $this->host_override);
 
@@ -89,7 +89,7 @@ class CallCredentialsTest extends \PHPUnit\Framework\TestCase
         $this->assertSame($metadata['k1'], ['v1']);
         $this->assertSame($metadata['k2'], ['v2']);
 
-        $this->assertSame('/abc/dummy_method', $event->method);
+        $this->assertSame('/abc/phony_method', $event->method);
         $server_call = $event->call;
 
         $event = $server_call->startBatch([

@@ -397,6 +397,23 @@ cdef extern from "grpc/grpc.h":
   void grpc_server_register_completion_queue(grpc_server *server,
                                              grpc_completion_queue *cq,
                                              void *reserved) nogil
+
+  ctypedef struct grpc_server_config_fetcher:
+    pass
+
+  void grpc_server_set_config_fetcher(
+       grpc_server* server, grpc_server_config_fetcher* config_fetcher) nogil
+
+  ctypedef struct grpc_server_xds_status_notifier:
+    void (*on_serving_status_change)(void* user_data, const char* uri,
+                                   grpc_status_code code,
+                                   const char* error_message)
+    void* user_data;
+
+  grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
+       grpc_server_xds_status_notifier notifier) nogil
+
+
   int grpc_server_add_insecure_http2_port(
       grpc_server *server, const char *addr) nogil
   void grpc_server_start(grpc_server *server) nogil
@@ -513,6 +530,16 @@ cdef extern from "grpc/grpc_security.h":
       grpc_channel_credentials *creds1, grpc_call_credentials *creds2,
       void *reserved) nogil
   void grpc_channel_credentials_release(grpc_channel_credentials *creds) nogil
+
+  grpc_channel_credentials *grpc_xds_credentials_create(
+      grpc_channel_credentials *fallback_creds) nogil
+
+  grpc_channel_credentials *grpc_insecure_credentials_create() nogil
+
+  grpc_server_credentials *grpc_xds_server_credentials_create(
+      grpc_server_credentials *fallback_creds) nogil
+
+  grpc_server_credentials *grpc_insecure_server_credentials_create() nogil
 
   grpc_call_credentials *grpc_composite_call_credentials_create(
       grpc_call_credentials *creds1, grpc_call_credentials *creds2,

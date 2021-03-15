@@ -220,6 +220,7 @@ grpc_cc_library(
     external_deps = [
         "gtest",
     ],
+    linkstatic = True,
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -239,9 +240,19 @@ grpc_cc_library(
 grpc_cc_test(
     name = "channelz_service_test",
     srcs = ["channelz_service_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],
+    # TODO(yulin-liang): The test is not able to load the certificate files on
+    # iOS. Figure out why.
+    tags = ["no_test_ios"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -516,7 +527,7 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,  # TODO(b/144705388)
-    shard_count = 10,
+    shard_count = 20,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -540,10 +551,13 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
+        "//src/proto/grpc/testing/xds/v3:fault_common_proto",
+        "//src/proto/grpc/testing/xds/v3:fault_proto",
         "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
         "//src/proto/grpc/testing/xds/v3:listener_proto",
         "//src/proto/grpc/testing/xds/v3:lrs_proto",
         "//src/proto/grpc/testing/xds/v3:route_proto",
+        "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",

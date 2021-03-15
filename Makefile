@@ -371,7 +371,7 @@ CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
 endif
 CFLAGS += -g
-CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2 -Ithird_party/upb -Isrc/core/ext/upb-generated -Isrc/core/ext/upbdefs-generated
+CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2 -Ithird_party/upb -Isrc/core/ext/upb-generated -Isrc/core/ext/upbdefs-generated -Ithird_party/xxhash
 COREFLAGS += -fno-exceptions
 LDFLAGS += -g
 
@@ -455,8 +455,8 @@ Q = @
 endif
 
 CORE_VERSION = 15.0.0
-CPP_VERSION = 1.36.0-dev
-CSHARP_VERSION = 2.36.0-dev
+CPP_VERSION = 1.37.0-dev
+CSHARP_VERSION = 2.37.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -1094,6 +1094,8 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/filters/fault_injection/fault_injection_filter.cc \
+    src/core/ext/filters/fault_injection/service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
@@ -1172,6 +1174,9 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c \
     src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c \
     src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c \
+    src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c \
     src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c \
     src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c \
@@ -1218,14 +1223,15 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c \
     src/core/ext/upb-generated/udpa/annotations/status.upb.c \
     src/core/ext/upb-generated/udpa/annotations/versioning.upb.c \
-    src/core/ext/upb-generated/udpa/core/v1/authority.upb.c \
-    src/core/ext/upb-generated/udpa/core/v1/collection_entry.upb.c \
-    src/core/ext/upb-generated/udpa/core/v1/context_params.upb.c \
-    src/core/ext/upb-generated/udpa/core/v1/resource.upb.c \
-    src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.c \
-    src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
+    src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
+    src/core/ext/upb-generated/xds/core/v3/authority.upb.c \
+    src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c \
+    src/core/ext/upb-generated/xds/core/v3/context_params.upb.c \
+    src/core/ext/upb-generated/xds/core/v3/resource.upb.c \
+    src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c \
+    src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c \
     src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.c \
@@ -1258,6 +1264,9 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c \
+    src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c \
     src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c \
@@ -1297,13 +1306,14 @@ LIBGRPC_SRC = \
     src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c \
     src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c \
-    src/core/ext/upbdefs-generated/udpa/core/v1/authority.upbdefs.c \
-    src/core/ext/upbdefs-generated/udpa/core/v1/collection_entry.upbdefs.c \
-    src/core/ext/upbdefs-generated/udpa/core/v1/context_params.upbdefs.c \
-    src/core/ext/upbdefs-generated/udpa/core/v1/resource.upbdefs.c \
-    src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.c \
-    src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.c \
+    src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c \
     src/core/ext/upbdefs-generated/validate/validate.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c \
+    src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c \
     src/core/ext/xds/certificate_provider_registry.cc \
     src/core/ext/xds/certificate_provider_store.cc \
     src/core/ext/xds/file_watcher_certificate_provider_factory.cc \
@@ -1312,6 +1322,8 @@ LIBGRPC_SRC = \
     src/core/ext/xds/xds_certificate_provider.cc \
     src/core/ext/xds/xds_client.cc \
     src/core/ext/xds/xds_client_stats.cc \
+    src/core/ext/xds/xds_http_fault_filter.cc \
+    src/core/ext/xds/xds_http_filters.cc \
     src/core/ext/xds/xds_server_config_fetcher.cc \
     src/core/lib/avl/avl.cc \
     src/core/lib/backoff/backoff.cc \
@@ -1438,9 +1450,7 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
-    src/core/lib/security/authorization/authorization_engine.cc \
-    src/core/lib/security/authorization/evaluate_args.cc \
-    src/core/lib/security/authorization/matchers.cc \
+    src/core/lib/matchers/matchers.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -1665,15 +1675,15 @@ ifeq ($(SYSTEM),MINGW32)
 $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,--output-def=$(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).def -Wl,--out-implib=$(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE)-dll.a -o $(LIBDIR)/$(CONFIG)/grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
 $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE): $(LIBGRPC_CSHARP_EXT_OBJS)  $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_DEP)
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
 ifeq ($(SYSTEM),Darwin)
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -install_name $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) -dynamiclib -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 else
-	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.15 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
+	$(Q) $(LDXX) $(LDFLAGS) -L$(LIBDIR)/$(CONFIG) -shared -Wl,-soname,libgrpc_csharp_ext.so.15 -o $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBGRPC_CSHARP_EXT_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libaddress_sorting.a $(LIBDIR)/$(CONFIG)/libupb.a $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE) $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS) $(LDLIBS)
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).so.15
 	$(Q) ln -sf $(SHARED_PREFIX)grpc_csharp_ext$(SHARED_VERSION_CORE).$(SHARED_EXT_CORE) $(LIBDIR)/$(CONFIG)/libgrpc_csharp_ext$(SHARED_VERSION_CORE).so
 endif
@@ -1745,6 +1755,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/filters/fault_injection/fault_injection_filter.cc \
+    src/core/ext/filters/fault_injection/service_config_parser.cc \
     src/core/ext/filters/http/client/http_client_filter.cc \
     src/core/ext/filters/http/client_authority_filter.cc \
     src/core/ext/filters/http/http_filters_plugin.cc \
@@ -2067,6 +2079,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/bio/printf.c \
     third_party/boringssl-with-bazel/src/crypto/bio/socket.c \
     third_party/boringssl-with-bazel/src/crypto/bio/socket_helper.c \
+    third_party/boringssl-with-bazel/src/crypto/blake2/blake2.c \
     third_party/boringssl-with-bazel/src/crypto/bn_extra/bn_asn1.c \
     third_party/boringssl-with-bazel/src/crypto/bn_extra/convert.c \
     third_party/boringssl-with-bazel/src/crypto/buf/buf.c \
@@ -2091,6 +2104,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/conf/conf.c \
     third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-fuchsia.c \
     third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-linux.c \
+    third_party/boringssl-with-bazel/src/crypto/cpu-aarch64-win.c \
     third_party/boringssl-with-bazel/src/crypto/cpu-arm-linux.c \
     third_party/boringssl-with-bazel/src/crypto/cpu-arm.c \
     third_party/boringssl-with-bazel/src/crypto/cpu-intel.c \
@@ -2098,10 +2112,8 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/crypto.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/curve25519.c \
     third_party/boringssl-with-bazel/src/crypto/curve25519/spake25519.c \
-    third_party/boringssl-with-bazel/src/crypto/dh/check.c \
-    third_party/boringssl-with-bazel/src/crypto/dh/dh.c \
-    third_party/boringssl-with-bazel/src/crypto/dh/dh_asn1.c \
-    third_party/boringssl-with-bazel/src/crypto/dh/params.c \
+    third_party/boringssl-with-bazel/src/crypto/dh_extra/dh_asn1.c \
+    third_party/boringssl-with-bazel/src/crypto/dh_extra/params.c \
     third_party/boringssl-with-bazel/src/crypto/digest_extra/digest_extra.c \
     third_party/boringssl-with-bazel/src/crypto/dsa/dsa.c \
     third_party/boringssl-with-bazel/src/crypto/dsa/dsa_asn1.c \
@@ -2160,6 +2172,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/deterministic.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/forkunsafe.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/fuchsia.c \
+    third_party/boringssl-with-bazel/src/crypto/rand_extra/passive.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/rand_extra.c \
     third_party/boringssl-with-bazel/src/crypto/rand_extra/windows.c \
     third_party/boringssl-with-bazel/src/crypto/rc4/rc4.c \
@@ -2293,7 +2306,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/ssl/tls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/tls_record.cc \
 
-PUBLIC_HEADERS_C += \
 
 LIBBORINGSSL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBORINGSSL_SRC))))
 
@@ -2345,7 +2357,6 @@ LIBRE2_SRC = \
     third_party/re2/util/rune.cc \
     third_party/re2/util/strutil.cc \
 
-PUBLIC_HEADERS_C += \
 
 LIBRE2_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBRE2_SRC))))
 
@@ -2384,7 +2395,6 @@ LIBUPB_SRC = \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
     src/core/ext/upbdefs-generated/google/protobuf/descriptor.upbdefs.c \
 
-PUBLIC_HEADERS_C += \
 
 LIBUPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUPB_SRC))))
 
@@ -2442,7 +2452,6 @@ LIBZ_SRC = \
     third_party/zlib/uncompr.c \
     third_party/zlib/zutil.c \
 
-PUBLIC_HEADERS_C += \
 
 LIBZ_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBZ_SRC))))
 
@@ -2520,7 +2529,6 @@ LIBARES_SRC = \
     third_party/cares/cares/inet_ntop.c \
     third_party/cares/cares/windows_port.c \
 
-PUBLIC_HEADERS_C += \
 
 LIBARES_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBARES_SRC))))
 
@@ -2697,6 +2705,9 @@ src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c: $(OPENS
 src/core/ext/upb-generated/envoy/config/route/v3/scoped_route.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/config/trace/v3/http_tracer.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/clusters/aggregate/v3/cluster.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/extensions/filters/common/fault/v3/fault.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/extensions/filters/http/fault/v3/fault.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/envoy/extensions/filters/http/router/v3/router.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/cert.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/envoy/extensions/transport_sockets/tls/v3/common.upb.c: $(OPENSSL_DEP)
@@ -2730,12 +2741,13 @@ src/core/ext/upb-generated/udpa/annotations/security.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/sensitive.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/status.upb.c: $(OPENSSL_DEP)
 src/core/ext/upb-generated/udpa/annotations/versioning.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/udpa/core/v1/authority.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/udpa/core/v1/collection_entry.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/udpa/core/v1/context_params.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/udpa/core/v1/resource.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/udpa/core/v1/resource_locator.upb.c: $(OPENSSL_DEP)
-src/core/ext/upb-generated/udpa/core/v1/resource_name.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/udpa/type/v1/typed_struct.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/core/v3/authority.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/core/v3/collection_entry.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/core/v3/context_params.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/core/v3/resource.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.c: $(OPENSSL_DEP)
@@ -2768,6 +2780,9 @@ src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c:
 src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/config/trace/v3/http_tracer.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/clusters/aggregate/v3/cluster.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/extensions/filters/common/fault/v3/fault.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/extensions/filters/http/fault/v3/fault.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/envoy/extensions/filters/http/router/v3/router.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/cert.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/envoy/extensions/transport_sockets/tls/v3/common.upbdefs.c: $(OPENSSL_DEP)
@@ -2807,13 +2822,14 @@ src/core/ext/upbdefs-generated/udpa/annotations/security.upbdefs.c: $(OPENSSL_DE
 src/core/ext/upbdefs-generated/udpa/annotations/sensitive.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/annotations/status.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/udpa/annotations/versioning.upbdefs.c: $(OPENSSL_DEP)
-src/core/ext/upbdefs-generated/udpa/core/v1/authority.upbdefs.c: $(OPENSSL_DEP)
-src/core/ext/upbdefs-generated/udpa/core/v1/collection_entry.upbdefs.c: $(OPENSSL_DEP)
-src/core/ext/upbdefs-generated/udpa/core/v1/context_params.upbdefs.c: $(OPENSSL_DEP)
-src/core/ext/upbdefs-generated/udpa/core/v1/resource.upbdefs.c: $(OPENSSL_DEP)
-src/core/ext/upbdefs-generated/udpa/core/v1/resource_locator.upbdefs.c: $(OPENSSL_DEP)
-src/core/ext/upbdefs-generated/udpa/core/v1/resource_name.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/udpa/type/v1/typed_struct.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/upbdefs-generated/validate/validate.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/core/v3/authority.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/core/v3/collection_entry.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/core/v3/context_params.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/core/v3/resource.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/core/v3/resource_locator.upbdefs.c: $(OPENSSL_DEP)
+src/core/ext/upbdefs-generated/xds/core/v3/resource_name.upbdefs.c: $(OPENSSL_DEP)
 src/core/ext/xds/certificate_provider_registry.cc: $(OPENSSL_DEP)
 src/core/ext/xds/certificate_provider_store.cc: $(OPENSSL_DEP)
 src/core/ext/xds/file_watcher_certificate_provider_factory.cc: $(OPENSSL_DEP)
@@ -2822,11 +2838,11 @@ src/core/ext/xds/xds_bootstrap.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_certificate_provider.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_client_stats.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_http_fault_filter.cc: $(OPENSSL_DEP)
+src/core/ext/xds/xds_http_filters.cc: $(OPENSSL_DEP)
 src/core/ext/xds/xds_server_config_fetcher.cc: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
-src/core/lib/security/authorization/authorization_engine.cc: $(OPENSSL_DEP)
-src/core/lib/security/authorization/evaluate_args.cc: $(OPENSSL_DEP)
-src/core/lib/security/authorization/matchers.cc: $(OPENSSL_DEP)
+src/core/lib/matchers/matchers.cc: $(OPENSSL_DEP)
 src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/check_gcp_environment.cc: $(OPENSSL_DEP)

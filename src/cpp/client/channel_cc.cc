@@ -38,7 +38,9 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 #include <grpcpp/support/status.h>
+
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/surface/completion_queue.h"
 
 namespace grpc {
@@ -56,7 +58,12 @@ Channel::Channel(const std::string& host, grpc_channel* channel,
 Channel::~Channel() {
   grpc_channel_destroy(c_channel_);
   if (callback_cq_ != nullptr) {
-    callback_cq_->Shutdown();
+    if (grpc_iomgr_run_in_background()) {
+      // gRPC-core provides the backing needed for the preferred CQ type
+      callback_cq_->Shutdown();
+    } else {
+      CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq_);
+    }
   }
 }
 
@@ -238,13 +245,21 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
   // if there is no explicit per-channel CQ registered
   grpc::internal::MutexLock l(&mu_);
   if (callback_cq_ == nullptr) {
-    auto* shutdown_callback = new ShutdownCallback;
-    callback_cq_ = new ::grpc::CompletionQueue(grpc_completion_queue_attributes{
-        GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
-        shutdown_callback});
+    if (grpc_iomgr_run_in_background()) {
+      // gRPC-core provides the backing needed for the preferred CQ type
 
-    // Transfer ownership of the new cq to its own shutdown callback
-    shutdown_callback->TakeCQ(callback_cq_);
+      auto* shutdown_callback = new ShutdownCallback;
+      callback_cq_ =
+          new ::grpc::CompletionQueue(grpc_completion_queue_attributes{
+              GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK,
+              GRPC_CQ_DEFAULT_POLLING, shutdown_callback});
+
+      // Transfer ownership of the new cq to its own shutdown callback
+      shutdown_callback->TakeCQ(callback_cq_);
+    } else {
+      // Otherwise we need to use the alternative CQ variant
+      callback_cq_ = CompletionQueue::CallbackAlternativeCQ();
+    }
   }
   return callback_cq_;
 }

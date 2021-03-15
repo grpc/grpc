@@ -34,13 +34,11 @@ struct envoy_config_core_v3_DataSource;
 struct envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext;
 struct envoy_extensions_transport_sockets_tls_v3_TlsCertificate;
 struct envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys;
-struct udpa_core_v1_ResourceLocator;
 extern const upb_msglayout envoy_config_core_v3_ConfigSource_msginit;
 extern const upb_msglayout envoy_config_core_v3_DataSource_msginit;
 extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_CertificateValidationContext_msginit;
 extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_TlsCertificate_msginit;
 extern const upb_msglayout envoy_extensions_transport_sockets_tls_v3_TlsSessionTicketKeys_msginit;
-extern const upb_msglayout udpa_core_v1_ResourceLocator_msginit;
 
 
 /* envoy.extensions.transport_sockets.tls.v3.GenericSecret */
@@ -103,8 +101,6 @@ UPB_INLINE char *envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_seria
 UPB_INLINE upb_strview envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_name(const envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
 UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_has_sds_config(const envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *msg) { return _upb_hasbit(msg, 1); }
 UPB_INLINE const struct envoy_config_core_v3_ConfigSource* envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_sds_config(const envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct envoy_config_core_v3_ConfigSource*); }
-UPB_INLINE bool envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_has_sds_resource_locator(const envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *msg) { return _upb_hasbit(msg, 2); }
-UPB_INLINE const struct udpa_core_v1_ResourceLocator* envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_sds_resource_locator(const envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 32), const struct udpa_core_v1_ResourceLocator*); }
 
 UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_set_name(envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *msg, upb_strview value) {
   *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
@@ -119,19 +115,6 @@ UPB_INLINE struct envoy_config_core_v3_ConfigSource* envoy_extensions_transport_
     sub = (struct envoy_config_core_v3_ConfigSource*)_upb_msg_new(&envoy_config_core_v3_ConfigSource_msginit, arena);
     if (!sub) return NULL;
     envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_set_sds_config(msg, sub);
-  }
-  return sub;
-}
-UPB_INLINE void envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_set_sds_resource_locator(envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *msg, struct udpa_core_v1_ResourceLocator* value) {
-  _upb_sethas(msg, 2);
-  *UPB_PTR_AT(msg, UPB_SIZE(16, 32), struct udpa_core_v1_ResourceLocator*) = value;
-}
-UPB_INLINE struct udpa_core_v1_ResourceLocator* envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_mutable_sds_resource_locator(envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig *msg, upb_arena *arena) {
-  struct udpa_core_v1_ResourceLocator* sub = (struct udpa_core_v1_ResourceLocator*)envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_sds_resource_locator(msg);
-  if (sub == NULL) {
-    sub = (struct udpa_core_v1_ResourceLocator*)_upb_msg_new(&udpa_core_v1_ResourceLocator_msginit, arena);
-    if (!sub) return NULL;
-    envoy_extensions_transport_sockets_tls_v3_SdsSecretConfig_set_sds_resource_locator(msg, sub);
   }
   return sub;
 }

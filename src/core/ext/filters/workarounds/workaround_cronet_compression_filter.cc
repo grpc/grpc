@@ -192,7 +192,7 @@ static bool register_workaround_cronet_compression(
   if (a == nullptr) {
     return true;
   }
-  if (grpc_channel_arg_get_bool(a, false) == false) {
+  if (!grpc_channel_arg_get_bool(a, false)) {
     return true;
   }
   return grpc_channel_stack_builder_prepend_filter(

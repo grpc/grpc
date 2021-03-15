@@ -34,7 +34,7 @@ class Control(six.with_metaclass(abc.ABCMeta)):
   Systems under test passed a Control should call its control() method
   frequently during execution. The control() method may block, raise an
   exception, or do nothing, all according to the enclosing test's desire for
-  the system under test to simulate hanging, failing, or functioning.
+  the system under test to simulate freezing, failing, or functioning.
   """
 
     @abc.abstractmethod

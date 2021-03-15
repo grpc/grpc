@@ -12,61 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM debian:10
-  
-# Install Git and basic packages.
-RUN apt-get update && apt-get install -y \
-  autoconf \
-  autotools-dev \
-  build-essential \
-  bzip2 \
-  ccache \
-  curl \
-  dnsutils \
-  gcc \
-  gcc-multilib \
-  git \
-  golang \
-  gyp \
-  lcov \
-  libc6 \
-  libc6-dbg \
-  libc6-dev \
-  libgtest-dev \
-  libtool \
-  make \
-  perl \
-  strace \
-  python-dev \
-  python-setuptools \
-  python-yaml \
-  telnet \
-  unzip \
-  wget \
-  zip && apt-get clean
+FROM debian:bullseye
 
-#================
-# Build profiling
-RUN apt-get update && apt-get install -y time && apt-get clean
-
-# Install Python 2.7
-RUN apt-get update && apt-get install -y python2.7 python-all-dev
-RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
-
-# Google Cloud platform API libraries
-RUN pip install --upgrade google-api-python-client oauth2client
-
-
-RUN mkdir /var/local/jenkins
-
-
-
-# Add buster-backports for more recent clang packages
-RUN echo "deb http://deb.debian.org/debian buster-backports main" | tee /etc/apt/sources.list.d/buster-backports.list
-
-# Install clang-tidy 7
-RUN apt-get update && apt-get install -y clang-tidy-8 jq
-ENV CLANG_TIDY=clang-tidy-8
+# Install clang-tidy 11
+RUN apt-get update && apt-get install -y clang-tidy-11 jq
+ENV CLANG_TIDY=clang-tidy-11
 
 ADD clang_tidy_all_the_things.sh /
 

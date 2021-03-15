@@ -22,7 +22,7 @@ static const upb_msglayout *const envoy_config_cluster_v3_OutlierDetection_subms
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_config_cluster_v3_OutlierDetection__fields[20] = {
+static const upb_msglayout_field envoy_config_cluster_v3_OutlierDetection__fields[21] = {
   {1, UPB_SIZE(4, 8), 1, 1, 11, 1},
   {2, UPB_SIZE(8, 16), 2, 0, 11, 1},
   {3, UPB_SIZE(12, 24), 3, 0, 11, 1},
@@ -43,12 +43,13 @@ static const upb_msglayout_field envoy_config_cluster_v3_OutlierDetection__field
   {18, UPB_SIZE(68, 136), 17, 1, 11, 1},
   {19, UPB_SIZE(72, 144), 18, 1, 11, 1},
   {20, UPB_SIZE(76, 152), 19, 1, 11, 1},
+  {21, UPB_SIZE(80, 160), 20, 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_cluster_v3_OutlierDetection_msginit = {
   &envoy_config_cluster_v3_OutlierDetection_submsgs[0],
   &envoy_config_cluster_v3_OutlierDetection__fields[0],
-  UPB_SIZE(80, 160), 20, false, 255,
+  UPB_SIZE(88, 168), 21, false, 255,
 };
 
 #include "upb/port_undef.inc"

@@ -11,7 +11,6 @@
 #include "envoy/config/endpoint/v3/endpoint.upb.h"
 #include "envoy/config/endpoint/v3/endpoint_components.upb.h"
 #include "envoy/type/v3/percent.upb.h"
-#include "google/api/annotations.upb.h"
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "udpa/annotations/status.upb.h"

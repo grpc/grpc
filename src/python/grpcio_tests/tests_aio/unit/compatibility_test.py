@@ -35,27 +35,10 @@ _NUM_STREAM_RESPONSES = 5
 _REQUEST_PAYLOAD_SIZE = 7
 _RESPONSE_PAYLOAD_SIZE = 42
 _REQUEST = b'\x03\x07'
-_ADHOC_METHOD = '/test/AdHoc'
 
 
 def _unique_options() -> Sequence[Tuple[str, float]]:
     return (('iv', random.random()),)
-
-
-class _AdhocGenericHandler(grpc.GenericRpcHandler):
-    _handler: grpc.RpcMethodHandler
-
-    def __init__(self):
-        self._handler = None
-
-    def set_adhoc_handler(self, handler: grpc.RpcMethodHandler):
-        self._handler = handler
-
-    def service(self, handler_call_details):
-        if handler_call_details.method == _ADHOC_METHOD:
-            return self._handler
-        else:
-            return None
 
 
 @unittest.skipIf(
@@ -70,7 +53,7 @@ class TestCompatibility(AioTestBase):
 
         test_pb2_grpc.add_TestServiceServicer_to_server(TestServiceServicer(),
                                                         self._async_server)
-        self._adhoc_handlers = _AdhocGenericHandler()
+        self._adhoc_handlers = _common.AdhocGenericHandler()
         self._async_server.add_generic_rpc_handlers((self._adhoc_handlers,))
 
         port = self._async_server.add_insecure_port('[::]:0')
@@ -240,8 +223,8 @@ class TestCompatibility(AioTestBase):
             return request
 
         self._adhoc_handlers.set_adhoc_handler(echo_unary_unary)
-        response = await self._async_channel.unary_unary(_ADHOC_METHOD)(_REQUEST
-                                                                       )
+        response = await self._async_channel.unary_unary(_common.ADHOC_METHOD
+                                                        )(_REQUEST)
         self.assertEqual(_REQUEST, response)
 
     async def test_sync_unary_unary_metadata(self):
@@ -253,7 +236,7 @@ class TestCompatibility(AioTestBase):
             return request
 
         self._adhoc_handlers.set_adhoc_handler(metadata_unary_unary)
-        call = self._async_channel.unary_unary(_ADHOC_METHOD)(_REQUEST)
+        call = self._async_channel.unary_unary(_common.ADHOC_METHOD)(_REQUEST)
         self.assertTrue(
             _common.seen_metadata(aio.Metadata(*metadata), await
                                   call.initial_metadata()))
@@ -266,7 +249,8 @@ class TestCompatibility(AioTestBase):
 
         self._adhoc_handlers.set_adhoc_handler(abort_unary_unary)
         with self.assertRaises(aio.AioRpcError) as exception_context:
-            await self._async_channel.unary_unary(_ADHOC_METHOD)(_REQUEST)
+            await self._async_channel.unary_unary(_common.ADHOC_METHOD
+                                                 )(_REQUEST)
         self.assertEqual(grpc.StatusCode.INTERNAL,
                          exception_context.exception.code())
 
@@ -278,7 +262,8 @@ class TestCompatibility(AioTestBase):
 
         self._adhoc_handlers.set_adhoc_handler(set_code_unary_unary)
         with self.assertRaises(aio.AioRpcError) as exception_context:
-            await self._async_channel.unary_unary(_ADHOC_METHOD)(_REQUEST)
+            await self._async_channel.unary_unary(_common.ADHOC_METHOD
+                                                 )(_REQUEST)
         self.assertEqual(grpc.StatusCode.INTERNAL,
                          exception_context.exception.code())
 
@@ -290,7 +275,7 @@ class TestCompatibility(AioTestBase):
                 yield request
 
         self._adhoc_handlers.set_adhoc_handler(echo_unary_stream)
-        call = self._async_channel.unary_stream(_ADHOC_METHOD)(_REQUEST)
+        call = self._async_channel.unary_stream(_common.ADHOC_METHOD)(_REQUEST)
         async for response in call:
             self.assertEqual(_REQUEST, response)
 
@@ -303,7 +288,7 @@ class TestCompatibility(AioTestBase):
             raise RuntimeError('Test')
 
         self._adhoc_handlers.set_adhoc_handler(error_unary_stream)
-        call = self._async_channel.unary_stream(_ADHOC_METHOD)(_REQUEST)
+        call = self._async_channel.unary_stream(_common.ADHOC_METHOD)(_REQUEST)
         with self.assertRaises(aio.AioRpcError) as exception_context:
             async for response in call:
                 self.assertEqual(_REQUEST, response)
@@ -320,8 +305,8 @@ class TestCompatibility(AioTestBase):
 
         self._adhoc_handlers.set_adhoc_handler(echo_stream_unary)
         request_iterator = iter([_REQUEST] * _NUM_STREAM_RESPONSES)
-        response = await self._async_channel.stream_unary(_ADHOC_METHOD)(
-            request_iterator)
+        response = await self._async_channel.stream_unary(_common.ADHOC_METHOD
+                                                         )(request_iterator)
         self.assertEqual(_REQUEST, response)
 
     async def test_sync_stream_unary_error(self):
@@ -335,8 +320,8 @@ class TestCompatibility(AioTestBase):
         self._adhoc_handlers.set_adhoc_handler(echo_stream_unary)
         request_iterator = iter([_REQUEST] * _NUM_STREAM_RESPONSES)
         with self.assertRaises(aio.AioRpcError) as exception_context:
-            response = await self._async_channel.stream_unary(_ADHOC_METHOD)(
-                request_iterator)
+            response = await self._async_channel.stream_unary(
+                _common.ADHOC_METHOD)(request_iterator)
         self.assertEqual(grpc.StatusCode.UNKNOWN,
                          exception_context.exception.code())
 
@@ -350,8 +335,8 @@ class TestCompatibility(AioTestBase):
 
         self._adhoc_handlers.set_adhoc_handler(echo_stream_stream)
         request_iterator = iter([_REQUEST] * _NUM_STREAM_RESPONSES)
-        call = self._async_channel.stream_stream(_ADHOC_METHOD)(
-            request_iterator)
+        call = self._async_channel.stream_stream(
+            _common.ADHOC_METHOD)(request_iterator)
         async for response in call:
             self.assertEqual(_REQUEST, response)
 
@@ -366,8 +351,8 @@ class TestCompatibility(AioTestBase):
 
         self._adhoc_handlers.set_adhoc_handler(echo_stream_stream)
         request_iterator = iter([_REQUEST] * _NUM_STREAM_RESPONSES)
-        call = self._async_channel.stream_stream(_ADHOC_METHOD)(
-            request_iterator)
+        call = self._async_channel.stream_stream(
+            _common.ADHOC_METHOD)(request_iterator)
         with self.assertRaises(aio.AioRpcError) as exception_context:
             async for response in call:
                 self.assertEqual(_REQUEST, response)

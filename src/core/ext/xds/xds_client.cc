@@ -38,6 +38,7 @@
 #include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_client_stats.h"
+#include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -886,8 +887,9 @@ void XdsClient::ChannelState::AdsCallState::AcceptLdsUpdate(
               listener_name.c_str(), lds_update.ToString().c_str());
     }
     // Record the RDS resource names seen.
-    if (!lds_update.route_config_name.empty()) {
-      rds_resource_names_seen.insert(lds_update.route_config_name);
+    if (!lds_update.http_connection_manager.route_config_name.empty()) {
+      rds_resource_names_seen.insert(
+          lds_update.http_connection_manager.route_config_name);
     }
     // Ignore identical update.
     ListenerState& listener_state = xds_client()->listener_map_[listener_name];
@@ -1161,7 +1163,8 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
   recv_message_payload_ = nullptr;
   // Parse and validate the response.
   XdsApi::AdsParseResult result = xds_client()->api_.ParseAdsResponse(
-      response_slice, ResourceNamesForRequest(XdsApi::kLdsTypeUrl),
+      chand()->server_, response_slice,
+      ResourceNamesForRequest(XdsApi::kLdsTypeUrl),
       ResourceNamesForRequest(XdsApi::kRdsTypeUrl),
       ResourceNamesForRequest(XdsApi::kCdsTypeUrl),
       ResourceNamesForRequest(XdsApi::kEdsTypeUrl));
@@ -2196,13 +2199,17 @@ XdsApi::ClusterLoadReportMap XdsClient::BuildLoadReportSnapshotLocked(
 // accessors for global state
 //
 
-void XdsClientGlobalInit() { g_mu = new Mutex; }
+void XdsClientGlobalInit() {
+  g_mu = new Mutex;
+  XdsHttpFilterRegistry::Init();
+}
 
 void XdsClientGlobalShutdown() {
   delete g_mu;
   g_mu = nullptr;
   gpr_free(g_fallback_bootstrap_config);
   g_fallback_bootstrap_config = nullptr;
+  XdsHttpFilterRegistry::Shutdown();
 }
 
 RefCountedPtr<XdsClient> XdsClient::GetOrCreate(grpc_error** error) {

@@ -36,6 +36,12 @@ _FORCE_CLEANUP = flags.DEFINE_bool(
     "force_cleanup",
     default=False,
     help="Force resource cleanup, even if not created by this test run")
+# TODO(yashkt): We will no longer need this flag once Core exposes local certs
+# from channelz
+_CHECK_LOCAL_CERTS = flags.DEFINE_bool(
+    "check_local_certs",
+    default=True,
+    help="Security Tests also check the value of local certs")
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
@@ -45,6 +51,8 @@ XdsTestClient = client_app.XdsTestClient
 LoadBalancerStatsResponse = grpc_testing.LoadBalancerStatsResponse
 _ChannelState = grpc_channelz.ChannelState
 _timedelta = datetime.timedelta
+_DEFAULT_SECURE_MODE_MAINTENANCE_PORT = \
+    server_app.KubernetesServerRunner.DEFAULT_SECURE_MODE_MAINTENANCE_PORT
 
 
 class XdsKubernetesTestCase(absltest.TestCase):
@@ -68,6 +76,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.server_image = xds_k8s_flags.SERVER_IMAGE.value
         cls.server_name = xds_flags.SERVER_NAME.value
         cls.server_port = xds_flags.SERVER_PORT.value
+        cls.server_maintenance_port = xds_flags.SERVER_MAINTENANCE_PORT.value
         cls.server_xds_host = xds_flags.SERVER_NAME.value
         cls.server_xds_port = xds_flags.SERVER_XDS_PORT.value
 
@@ -80,6 +89,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.force_cleanup = _FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = \
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
+        cls.check_local_certs = _CHECK_LOCAL_CERTS.value
 
         # Resource managers
         cls.k8s_api_manager = k8s.KubernetesApiManager(
@@ -110,7 +120,9 @@ class XdsKubernetesTestCase(absltest.TestCase):
                                    force_namespace=self.force_cleanup)
 
     def setupTrafficDirectorGrpc(self):
-        self.td.setup_for_grpc(self.server_xds_host, self.server_xds_port)
+        self.td.setup_for_grpc(self.server_xds_host,
+                               self.server_xds_port,
+                               health_check_port=self.server_maintenance_port)
 
     def setupServerBackends(self, *, wait_for_healthy_status=True):
         # Load Backends
@@ -199,9 +211,11 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             reuse_namespace=self.server_namespace == self.client_namespace)
 
     def startTestServer(self, replica_count=1, **kwargs) -> XdsTestServer:
-        test_server = self.server_runner.run(replica_count=replica_count,
-                                             test_port=self.server_port,
-                                             **kwargs)
+        test_server = self.server_runner.run(
+            replica_count=replica_count,
+            test_port=self.server_port,
+            maintenance_port=self.server_maintenance_port,
+            **kwargs)
         test_server.set_xds_address(self.server_xds_host, self.server_xds_port)
         return test_server
 
@@ -219,6 +233,17 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         MTLS = enum.auto()
         TLS = enum.auto()
         PLAINTEXT = enum.auto()
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if cls.server_maintenance_port is None:
+            # In secure mode, the maintenance port is different from
+            # the test port to keep it insecure, and make
+            # Health Checks and Channelz tests available.
+            # When not provided, use explicit numeric port value, so
+            # Backend Health Checks are created on a fixed port.
+            cls.server_maintenance_port = _DEFAULT_SECURE_MODE_MAINTENANCE_PORT
 
     def setUp(self):
         super().setUp()
@@ -259,11 +284,12 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             debug_use_port_forwarding=self.debug_use_port_forwarding)
 
     def startSecureTestServer(self, replica_count=1, **kwargs) -> XdsTestServer:
-        test_server = self.server_runner.run(replica_count=replica_count,
-                                             test_port=self.server_port,
-                                             maintenance_port=8081,
-                                             secure_mode=True,
-                                             **kwargs)
+        test_server = self.server_runner.run(
+            replica_count=replica_count,
+            test_port=self.server_port,
+            maintenance_port=self.server_maintenance_port,
+            secure_mode=True,
+            **kwargs)
         test_server.set_xds_address(self.server_xds_host, self.server_xds_port)
         return test_server
 
@@ -321,26 +347,30 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         server_tls, client_tls = server_security.tls, client_security.tls
 
         # Confirm regular TLS: server local cert == client remote cert
-        self.assertNotEmpty(server_tls.local_certificate,
-                            msg="(mTLS) Server local certificate is missing")
         self.assertNotEmpty(client_tls.remote_certificate,
                             msg="(mTLS) Client remote certificate is missing")
-        self.assertEqual(
-            server_tls.local_certificate,
-            client_tls.remote_certificate,
-            msg="(mTLS) Server local certificate must match client's "
-            "remote certificate")
+        if self.check_local_certs:
+            self.assertNotEmpty(
+                server_tls.local_certificate,
+                msg="(mTLS) Server local certificate is missing")
+            self.assertEqual(
+                server_tls.local_certificate,
+                client_tls.remote_certificate,
+                msg="(mTLS) Server local certificate must match client's "
+                "remote certificate")
 
         # mTLS: server remote cert == client local cert
         self.assertNotEmpty(server_tls.remote_certificate,
                             msg="(mTLS) Server remote certificate is missing")
-        self.assertNotEmpty(client_tls.local_certificate,
-                            msg="(mTLS) Client local certificate is missing")
-        self.assertEqual(
-            server_tls.remote_certificate,
-            client_tls.local_certificate,
-            msg="(mTLS) Server remote certificate must match client's "
-            "local certificate")
+        if self.check_local_certs:
+            self.assertNotEmpty(
+                client_tls.local_certificate,
+                msg="(mTLS) Client local certificate is missing")
+            self.assertEqual(
+                server_tls.remote_certificate,
+                client_tls.local_certificate,
+                msg="(mTLS) Server remote certificate must match client's "
+                "local certificate")
 
     def assertSecurityTls(self, client_security: grpc_channelz.Security,
                           server_security: grpc_channelz.Security):
@@ -353,14 +383,16 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         server_tls, client_tls = server_security.tls, client_security.tls
 
         # Regular TLS: server local cert == client remote cert
-        self.assertNotEmpty(server_tls.local_certificate,
-                            msg="(TLS) Server local certificate is missing")
         self.assertNotEmpty(client_tls.remote_certificate,
                             msg="(TLS) Client remote certificate is missing")
-        self.assertEqual(server_tls.local_certificate,
-                         client_tls.remote_certificate,
-                         msg="(TLS) Server local certificate must match client "
-                         "remote certificate")
+        if self.check_local_certs:
+            self.assertNotEmpty(server_tls.local_certificate,
+                                msg="(TLS) Server local certificate is missing")
+            self.assertEqual(
+                server_tls.local_certificate,
+                client_tls.remote_certificate,
+                msg="(TLS) Server local certificate must match client "
+                "remote certificate")
 
         # mTLS must not be used
         self.assertEmpty(
@@ -438,9 +470,6 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
                        1,
                        msg="Client channel must have exactly one subchannel "
                        "in state TRANSIENT_FAILURE.")
-        sockets = list(
-            test_client.channelz.list_subchannels_sockets(subchannels[0]))
-        self.assertEmpty(sockets, msg="Client subchannel must have no sockets")
 
     @staticmethod
     def getConnectedSockets(
