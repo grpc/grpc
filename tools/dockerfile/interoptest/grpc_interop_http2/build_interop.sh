@@ -27,8 +27,5 @@ ${name}')
 cp -r /var/local/jenkins/service_account $HOME || true
 
 # compile the tests
-(cd /var/local/git/grpc/tools/http2_interop && \
-  go mod init github.com/grpc/grpc/tools/http2_interop && \
-  go mod tidy && \
-  go test -c)
+(cd /var/local/git/grpc/tools/http2_interop && go test -c)
 
