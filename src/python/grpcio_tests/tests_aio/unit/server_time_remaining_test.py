@@ -59,7 +59,6 @@ class TestServerTimeRemaining(AioTestBase):
         await self._channel.unary_unary(ADHOC_METHOD)(
             _REQUEST, timeout=_REQUEST_TIMEOUT_S)
         self.assertGreater(seen_time_remaining[0], _REQUEST_TIMEOUT_S / 2)
-        self.assertLess(seen_time_remaining[0], _REQUEST_TIMEOUT_S * 3 / 2)
         # Check if there is no timeout, the time_remaining will be None
         self._adhoc_handlers.set_adhoc_handler(log_time_remaining)
         await self._channel.unary_unary(ADHOC_METHOD)(_REQUEST)
