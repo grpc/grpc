@@ -260,16 +260,20 @@ class CSharpExtArtifact:
                                   use_workspace=True)
         else:
             if self.platform == 'linux':
+                dockerfile_dir = 'tools/dockerfile/grpc_artifact_centos6_{}'.format(
+                    self.arch)
+                if self.arch == 'aarch64':
+                    # for aarch64, use a dockcross manylinux image that will
+                    # give us both ready to use crosscompiler and sufficient backward compatibility
+                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
                 return create_docker_jobspec(
-                    self.name,
-                    'tools/dockerfile/grpc_artifact_centos6_{}'.format(
-                        self.arch),
+                    self.name, dockerfile_dir,
                     'tools/run_tests/artifacts/build_artifact_csharp.sh')
             else:
                 return create_jobspec(
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_csharp.sh'],
-                    timeout_seconds=45 * 60,,
+                    timeout_seconds=45 * 60,
                     use_workspace=True)
 
     def __str__(self):
@@ -354,6 +358,7 @@ def targets():
         ProtocArtifact('windows', 'x64'),
         ProtocArtifact('windows', 'x86'),
         CSharpExtArtifact('linux', 'x64'),
+        CSharpExtArtifact('linux', 'aarch64'),
         CSharpExtArtifact('macos', 'x64'),
         CSharpExtArtifact('windows', 'x64'),
         CSharpExtArtifact('windows', 'x86'),
