@@ -9877,48 +9877,48 @@ MATCHER_P2(EqUpdateFailureState, details, version_info,
 }
 
 MATCHER_P(UnpackListener, matcher, "is a Listener") {
-  bool ok = true;
   Listener config;
-  ok &= ::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(matcher, config, result_listener);
-  return ok;
+  if (!::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
+                                     result_listener)) {
+    return false;
+  }
+  return ::testing::ExplainMatchResult(matcher, config, result_listener);
 }
 
 MATCHER_P(UnpackRouteConfiguration, matcher, "is a RouteConfiguration") {
-  bool ok = true;
   RouteConfiguration config;
-  ok &= ::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(matcher, config, result_listener);
-  return ok;
+  if (!::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
+                                     result_listener)) {
+    return false;
+  }
+  return ::testing::ExplainMatchResult(matcher, config, result_listener);
 }
 
 MATCHER_P(UnpackHttpConnectionManager, matcher, "is a HttpConnectionManager") {
-  bool ok = true;
   HttpConnectionManager config;
-  ok &= ::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(matcher, config, result_listener);
-  return ok;
+  if (!::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
+                                     result_listener)) {
+    return false;
+  }
+  return ::testing::ExplainMatchResult(matcher, config, result_listener);
 }
 
 MATCHER_P(UnpackCluster, matcher, "is a Cluster") {
-  bool ok = true;
   Cluster config;
-  ok &= ::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(matcher, config, result_listener);
-  return ok;
+  if (!::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
+                                     result_listener)) {
+    return false;
+  }
+  return ::testing::ExplainMatchResult(matcher, config, result_listener);
 }
 
 MATCHER_P(UnpackClusterLoadAssignment, matcher, "is a ClusterLoadAssignment") {
-  bool ok = true;
   ClusterLoadAssignment config;
-  ok &= ::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(matcher, config, result_listener);
-  return ok;
+  if (!::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
+                                     result_listener)) {
+    return false;
+  }
+  return ::testing::ExplainMatchResult(matcher, config, result_listener);
 }
 
 MATCHER_P5(EqDynamicListener, name, version_info, client_status,
