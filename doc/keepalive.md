@@ -23,7 +23,7 @@ On the client side, this does not have any effect.
 * **GRPC_ARG_HTTP2_MAX_PING_STRIKES**
   * This arg controls the maximum number of bad pings that the server will tolerate before sending an HTTP2 GOAWAY frame and closing the transport. Setting it to 0 allows the server to accept any number of bad pings.
 
-**IMPORTANT NOTE** - Note that for the keepalive to work properly and as intended, all of the above channel arguments should be configured appropriately. The client-side keepalive settings should also be in `agreement` with the server-side settings. If a client sends pings more often than the server is willing to accept, the connection will be terminated with a GOAWAY frame with "too_many_pings" as the debug data. 
+**IMPORTANT NOTE** - For keepalive to work properly and as intended, all of the above channel arguments should be configured appropriately. The client-side keepalive settings should also be in `agreement` with the server-side settings. If a client sends pings more often than the server is willing to accept, the connection will be terminated with a GOAWAY frame with "too_many_pings" as the debug data. 
 
 ### Defaults Values
 
