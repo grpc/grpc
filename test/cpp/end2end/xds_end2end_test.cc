@@ -9720,26 +9720,34 @@ MATCHER_P4(EqNode, id, user_agent_name, user_agent_version, client_features,
            "equals Node") {
   bool ok = true;
   ok &= ::testing::ExplainMatchResult(id, arg.id(), result_listener);
-  ok &= ::testing::ExplainMatchResult(user_agent_name, arg.user_agent_name(), result_listener);
-  ok &= ::testing::ExplainMatchResult(user_agent_version, arg.user_agent_version(), result_listener);
-  ok &= ::testing::ExplainMatchResult(client_features, arg.client_features(), result_listener);
+  ok &= ::testing::ExplainMatchResult(user_agent_name, arg.user_agent_name(),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(
+      user_agent_version, arg.user_agent_version(), result_listener);
+  ok &= ::testing::ExplainMatchResult(client_features, arg.client_features(),
+                                      result_listener);
   return ok;
 }
 
 MATCHER_P2(EqListenersConfigDump, version_info, dynamic_listeners,
            "equals ListenerConfigDump") {
   bool ok = true;
-  ok &= ::testing::ExplainMatchResult(::testing::ElementsAre(), arg.static_listeners(), result_listener);
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(), result_listener);
-  ok &= ::testing::ExplainMatchResult(dynamic_listeners, arg.dynamic_listeners(), result_listener);
+  ok &= ::testing::ExplainMatchResult(::testing::ElementsAre(),
+                                      arg.static_listeners(), result_listener);
+  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(dynamic_listeners,
+                                      arg.dynamic_listeners(), result_listener);
   return ok;
 }
 
 MATCHER_P2(EqDynamicListenerState, version_info, listener,
            "equals DynamicListenerState") {
   bool ok = true;
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(), result_listener);
-  ok &= ::testing::ExplainMatchResult(listener, arg.listener(), result_listener);
+  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
+                                      result_listener);
+  ok &=
+      ::testing::ExplainMatchResult(listener, arg.listener(), result_listener);
   return ok;
 }
 
@@ -9754,7 +9762,8 @@ MATCHER_P2(EqListener, name, api_listener, "equals Listener") {
 MATCHER_P(EqHttpConnectionManagerNotRds, route_config,
           "equals HttpConnectionManager") {
   bool ok = true;
-  ok &= ::testing::ExplainMatchResult(route_config, arg.route_config(), result_listener);
+  ok &= ::testing::ExplainMatchResult(route_config, arg.route_config(),
+                                      result_listener);
   return ok;
 }
 
@@ -9783,18 +9792,25 @@ MATCHER_P2(EqRouteConfiguration, name, cluster_name,
 MATCHER_P(EqRoutesConfigDump, dynamic_route_configs,
           "equals RoutesConfigDump") {
   bool ok = true;
-  ok &= ::testing::ExplainMatchResult(::testing::ElementsAre(), arg.static_route_configs(), result_listener);
-  ok &= ::testing::ExplainMatchResult(dynamic_route_configs, arg.dynamic_route_configs(), result_listener);
+  ok &= ::testing::ExplainMatchResult(
+      ::testing::ElementsAre(), arg.static_route_configs(), result_listener);
+  ok &= ::testing::ExplainMatchResult(
+      dynamic_route_configs, arg.dynamic_route_configs(), result_listener);
   return ok;
 }
 
 MATCHER_P2(EqClustersConfigDump, version_info, dynamic_active_clusters,
            "equals ClustersConfigDump") {
   bool ok = true;
-  ok &= ::testing::ExplainMatchResult(::testing::ElementsAre(), arg.static_clusters(), result_listener);
-  ok &= ::testing::ExplainMatchResult(::testing::ElementsAre(), arg.dynamic_warming_clusters(), result_listener);
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(), result_listener);
-  ok &= ::testing::ExplainMatchResult(dynamic_active_clusters, arg.dynamic_active_clusters(), result_listener);
+  ok &= ::testing::ExplainMatchResult(::testing::ElementsAre(),
+                                      arg.static_clusters(), result_listener);
+  ok &= ::testing::ExplainMatchResult(::testing::ElementsAre(),
+                                      arg.dynamic_warming_clusters(),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(
+      dynamic_active_clusters, arg.dynamic_active_clusters(), result_listener);
   return ok;
 }
 
@@ -9807,7 +9823,9 @@ MATCHER_P(EqCluster, name, "equals Cluster") {
 MATCHER_P(EqEndpointsConfigDump, dynamic_endpoint_configs,
           "equals EndpointsConfigDump") {
   bool ok = true;
-  ok &= ::testing::ExplainMatchResult(dynamic_endpoint_configs, arg.dynamic_endpoint_configs(), result_listener);
+  ok &= ::testing::ExplainMatchResult(dynamic_endpoint_configs,
+                                      arg.dynamic_endpoint_configs(),
+                                      result_listener);
   return ok;
 }
 
@@ -9833,14 +9851,16 @@ MATCHER_P2(EqLocalityLbEndpoints, port, weight, "equals LocalityLbEndpoints") {
 MATCHER_P(EqClusterLoadAssignmentName, cluster_name,
           "equals ClusterLoadAssignment") {
   bool ok = true;
-  ok &= ::testing::ExplainMatchResult(cluster_name, arg.cluster_name(), result_listener);
+  ok &= ::testing::ExplainMatchResult(cluster_name, arg.cluster_name(),
+                                      result_listener);
   return ok;
 }
 
 MATCHER_P3(EqClusterLoadAssignment, cluster_name, port, weight,
            "equals ClusterLoadAssignment") {
   bool ok = true;
-  ok &= ::testing::ExplainMatchResult(cluster_name, arg.cluster_name(), result_listener);
+  ok &= ::testing::ExplainMatchResult(cluster_name, arg.cluster_name(),
+                                      result_listener);
   ok &= ::testing::ExplainMatchResult(
       ::testing::ElementsAre(EqLocalityLbEndpoints(port, weight)),
       arg.endpoints(), result_listener);
@@ -9851,47 +9871,66 @@ MATCHER_P2(EqUpdateFailureState, details, version_info,
            "equals UpdateFailureState") {
   bool ok = true;
   ok &= ::testing::ExplainMatchResult(details, arg.details(), result_listener);
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(), result_listener);
+  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
+                                      result_listener);
   return ok;
 }
 
 MATCHER_P(UnpackListener, matcher, "is a Listener") {
+  bool ok = true;
   Listener config;
-  arg.UnpackTo(&config);
-  return ::testing::ExplainMatchResult(matcher, config, result_listener);
+  ok &= ::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(matcher, config, result_listener);
+  return ok;
 }
 
 MATCHER_P(UnpackRouteConfiguration, matcher, "is a RouteConfiguration") {
+  bool ok = true;
   RouteConfiguration config;
-  arg.UnpackTo(&config);
-  return ::testing::ExplainMatchResult(matcher, config, result_listener);
+  ok &= ::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(matcher, config, result_listener);
+  return ok;
 }
 
 MATCHER_P(UnpackHttpConnectionManager, matcher, "is a HttpConnectionManager") {
+  bool ok = true;
   HttpConnectionManager config;
-  arg.UnpackTo(&config);
-  return ::testing::ExplainMatchResult(matcher, config, result_listener);
+  ok &= ::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(matcher, config, result_listener);
+  return ok;
 }
 
 MATCHER_P(UnpackCluster, matcher, "is a Cluster") {
+  bool ok = true;
   Cluster config;
-  arg.UnpackTo(&config);
-  return ::testing::ExplainMatchResult(matcher, config, result_listener);
+  ok &= ::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(matcher, config, result_listener);
+  return ok;
 }
 
 MATCHER_P(UnpackClusterLoadAssignment, matcher, "is a ClusterLoadAssignment") {
+  bool ok = true;
   ClusterLoadAssignment config;
-  arg.UnpackTo(&config);
-  return ::testing::ExplainMatchResult(matcher, config, result_listener);
+  ok &= ::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(matcher, config, result_listener);
+  return ok;
 }
 
 MATCHER_P5(EqDynamicListener, name, version_info, client_status,
            api_listener_matcher, error_state, "equals DynamicListener") {
   bool ok = true;
-  ok &= !arg.has_warming_state();
-  ok &= !arg.has_draining_state();
+  ok &= ::testing::ExplainMatchResult(false, arg.has_warming_state(),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(false, arg.has_draining_state(),
+                                      result_listener);
   ok &= ::testing::ExplainMatchResult(name, arg.name(), result_listener);
-  ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(), result_listener);
+  ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(),
+                                      result_listener);
   if (client_status == ClientResourceStatus::ACKED ||
       client_status == ClientResourceStatus::NACKED) {
     ok &= ::testing::ExplainMatchResult(
@@ -9899,14 +9938,16 @@ MATCHER_P5(EqDynamicListener, name, version_info, client_status,
                                                  name, api_listener_matcher))),
         arg.active_state(), result_listener);
   }
-  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(), result_listener);
+  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(),
+                                      result_listener);
   return ok;
 }
 
 MATCHER_P5(EqDynamicRouteConfig, name, version_info, client_status,
            cluster_name, error_state, "equals DynamicRouteConfig") {
   bool ok = true;
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(), result_listener);
+  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
+                                      result_listener);
   if (client_status == ClientResourceStatus::REQUESTED ||
       client_status == ClientResourceStatus::DOES_NOT_EXIST) {
     ok &= ::testing::ExplainMatchResult(
@@ -9917,8 +9958,10 @@ MATCHER_P5(EqDynamicRouteConfig, name, version_info, client_status,
         UnpackRouteConfiguration(EqRouteConfiguration(name, cluster_name)),
         arg.route_config(), result_listener);
   }
-  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(), result_listener);
-  ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(), result_listener);
+  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(),
+                                      result_listener);
   return ok;
 }
 
@@ -9927,9 +9970,12 @@ MATCHER_P4(EqDynamicCluster, name, version_info, client_status, error_state,
   bool ok = true;
   ok &= ::testing::ExplainMatchResult(UnpackCluster(EqCluster(name)),
                                       arg.cluster(), result_listener);
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(), result_listener);
-  ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(), result_listener);
-  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(), result_listener);
+  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(),
+                                      result_listener);
   return ok;
 }
 
@@ -9947,9 +9993,12 @@ MATCHER_P6(EqDynamicEndpointConfig, name, version_info, client_status, port,
             EqClusterLoadAssignment(name, port, weight)),
         arg.endpoint_config(), result_listener);
   }
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(), result_listener);
-  ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(), result_listener);
-  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(), result_listener);
+  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(),
+                                      result_listener);
+  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(),
+                                      result_listener);
   return ok;
 }
 
@@ -9991,9 +10040,9 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
                      ::testing::ElementsAre(
                          "envoy.lb.does_not_support_overprovisioning")));
   // Prepare matches for RDS on or off
-  ::testing::Matcher<google::protobuf::Any> api_listener_matcher = ::testing::_;
+  ::testing::Matcher<google::protobuf::Any> api_listener_matcher;
   ::testing::Matcher<envoy::admin::v3::RoutesConfigDump>
-      route_config_dump_matcher = ::testing::_;
+      route_config_dump_matcher;
   if (GetParam().enable_rds_testing()) {
     api_listener_matcher = IsRdsEnabledHCM();
     route_config_dump_matcher =
@@ -10057,6 +10106,13 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // The old xDS configs should still be effective.
   CheckRpcSendOk();
+  ::testing::Matcher<google::protobuf::Any> api_listener_matcher;
+  if (GetParam().enable_rds_testing()) {
+    api_listener_matcher = IsRdsEnabledHCM();
+  } else {
+    api_listener_matcher =
+        EqNoRdsHCM(kDefaultRouteConfigurationName, kDefaultClusterName);
+  }
   for (int o = 0; o < kFetchConfigRetries; o++) {
     auto csds_response = FetchCsdsResponse();
     // Check if error state is propagated
@@ -10068,7 +10124,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
                 "1",
                 ::testing::ElementsAre(EqDynamicListener(
                     kServerName, "1", ClientResourceStatus::NACKED,
-                    ::testing::_,
+                    api_listener_matcher,
                     EqUpdateFailureState(
                         ::testing::HasSubstr(
                             "Listener has neither address nor ApiListener"),
@@ -10314,9 +10370,10 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpRouteConfigDoesNotExist) {
       csds_response.config(0).xds_config(),
       ::testing::Contains(::testing::Property(
           &envoy::service::status::v3::PerXdsConfig::route_config,
-          EqRoutesConfigDump(::testing::ElementsAre(EqDynamicRouteConfig(
-              ::testing::_, ::testing::_, ClientResourceStatus::DOES_NOT_EXIST,
-              ::testing::_, ::testing::_))))));
+          EqRoutesConfigDump(::testing::ElementsAre(
+              EqDynamicRouteConfig(kDefaultRouteConfigurationName, ::testing::_,
+                                   ClientResourceStatus::DOES_NOT_EXIST,
+                                   ::testing::_, ::testing::_))))));
 }
 
 TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
