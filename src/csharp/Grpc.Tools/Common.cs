@@ -40,35 +40,14 @@ namespace Grpc.Tools
     // A few flags used to control the behavior under various platforms.
     internal static class Platform
     {
-        public enum OsKind { Unknown, Windows, Linux, MacOsX };
-        public static readonly OsKind Os;
+        public static readonly CommonPlatformDetection.OSKind Os = CommonPlatformDetection.GetOSKind();
 
-        public enum CpuKind { Unknown, X86, X64, Arm64 };
-        public static readonly CpuKind Cpu;
+        public static readonly CommonPlatformDetection.CpuArchitecture Cpu = CommonPlatformDetection.GetProcessArchitecture();
 
         // This is not necessarily true, but good enough. BCL lacks a per-FS
         // API to determine file case sensitivity.
-        public static bool IsFsCaseInsensitive => Os == OsKind.Windows;
-        public static bool IsWindows => Os == OsKind.Windows;
-
-        static Platform()
-        {
-            switch (CommonPlatformDetection.GetOSKind())
-            {
-                case CommonPlatformDetection.OSKind.Windows: Os = OsKind.Windows; break;
-                case CommonPlatformDetection.OSKind.Linux: Os = OsKind.Linux; break;
-                case CommonPlatformDetection.OSKind.MacOSX: Os = OsKind.MacOsX; break;
-                default: Os = OsKind.Unknown; break;
-            }
-
-            switch (CommonPlatformDetection.GetProcessArchitecture())
-            {
-                case CommonPlatformDetection.CpuArchitecture.X86: Cpu = CpuKind.X86; break;
-                case CommonPlatformDetection.CpuArchitecture.X64: Cpu = CpuKind.X64; break;
-                case CommonPlatformDetection.CpuArchitecture.Arm64: Cpu = CpuKind.Arm64; break;
-                default: Cpu = CpuKind.Unknown; break;
-            }
-        }
+        public static bool IsFsCaseInsensitive => Os == CommonPlatformDetection.OSKind.Windows;
+        public static bool IsWindows => Os == CommonPlatformDetection.OSKind.Windows;
     };
 
     // Exception handling helpers.
