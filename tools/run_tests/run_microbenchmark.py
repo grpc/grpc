@@ -214,7 +214,7 @@ def collect_summary(bm_name, args):
                     'tools/profiling/microbenchmarks/bm2bq.py',
                     '%s.counters.json' % bm_name,
                     '%s.opt.json' % bm_name
-                ]))
+                ]).decode('UTF-8'))
         subprocess.check_call([
             'bq', 'load', 'microbenchmarks.microbenchmarks',
             '%s.csv' % bm_name
