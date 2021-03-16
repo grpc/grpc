@@ -41,7 +41,6 @@ namespace grpc_core {
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
 const char* kXdsClusterAttribute = "xds_cluster_name";
-const char* kHeaderContentType = "application/grpc";
 
 namespace {
 
@@ -526,18 +525,18 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   }
 }
 
-absl::optional<absl::string_view> HeaderMatchHelper(
-    const std::string& header_matcher_name,
-    grpc_metadata_batch* initial_metadata, std::string* concatenated_value) {
+absl::optional<absl::string_view> GetHeaderValue(
+    grpc_metadata_batch* initial_metadata, absl::string_view header_name,
+    std::string* concatenated_value) {
   // Note: If we ever allow binary headers here, we still need to
   // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
   // they are not visible to the LB policy in grpc-go.
-  if (absl::EndsWith(header_matcher_name, "-bin")) {
+  if (absl::EndsWith(header_name, "-bin")) {
     return absl::nullopt;
-  } else if (header_matcher_name == "content-type") {
-    return kHeaderContentType;
+  } else if (header_name == "content-type") {
+    return "application/grpc";
   }
-  return grpc_metadata_batch_get_value(initial_metadata, header_matcher_name,
+  return grpc_metadata_batch_get_value(initial_metadata, header_name,
                                        concatenated_value);
 }
 
@@ -545,9 +544,10 @@ bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
                   grpc_metadata_batch* initial_metadata) {
   for (const auto& header_matcher : header_matchers) {
     std::string concatenated_value;
-    if (!header_matcher.Match(HeaderMatchHelper(
-            header_matcher.name(), initial_metadata, &concatenated_value)))
+    if (!header_matcher.Match(GetHeaderValue(
+            initial_metadata, header_matcher.name(), &concatenated_value))) {
       return false;
+    }
   }
   return true;
 }
@@ -556,22 +556,19 @@ absl::optional<uint64_t> HeaderHashHelper(
     const XdsApi::Route::HashPolicy& policy,
     grpc_metadata_batch* initial_metadata) {
   GPR_ASSERT(policy.type == XdsApi::Route::HashPolicy::HEADER);
-  std::string concatenated_value;
-  absl::optional<absl::string_view> matcher = HeaderMatchHelper(
-      policy.header_name, initial_metadata, &concatenated_value);
-  if (matcher.has_value()) {
-    const char* key = matcher->data();
-    size_t size = matcher->size();
-    if (policy.regex != nullptr) {
-      std::string modified_key(matcher->data(), matcher->size());
-      RE2::GlobalReplace(&modified_key, *policy.regex,
-                         policy.regex_substitution);
-      key = modified_key.c_str();
-      size = modified_key.size();
+  std::string value_buffer;
+  absl::optional<absl::string_view> header_value =
+      GetHeaderValue(initial_metadata, policy.header_name, &value_buffer);
+  if (policy.regex != nullptr) {
+    // If GetHeaderValue() did not already store the value in
+    // value_buffer, copy it there now, so we can modify it.
+    if (header_value->data() != value_buffer.data()) {
+      value_buffer = std::string(*header_value);
     }
-    return XXH64(key, size, 0);
+    RE2::GlobalReplace(&value_buffer, *policy.regex, policy.regex_substitution);
+    header_value = value_buffer;
   }
-  return absl::nullopt;
+  return XXH64(header_value->data(), header_value->size(), 0);
 }
 
 bool UnderFraction(const uint32_t fraction_per_million) {
