@@ -41,6 +41,7 @@ namespace grpc_core {
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
 const char* kXdsClusterAttribute = "xds_cluster_name";
+const char* kHeaderContentType = "application/grpc";
 
 namespace {
 
@@ -525,28 +526,28 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   }
 }
 
-bool HeaderMatchHelper(const HeaderMatcher& header_matcher,
-                       grpc_metadata_batch* initial_metadata) {
-  std::string concatenated_value;
-  absl::optional<absl::string_view> value;
+absl::optional<absl::string_view> HeaderMatchHelper(
+    const std::string& header_matcher_name,
+    grpc_metadata_batch* initial_metadata, std::string* concatenated_value) {
   // Note: If we ever allow binary headers here, we still need to
   // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
   // they are not visible to the LB policy in grpc-go.
-  if (absl::EndsWith(header_matcher.name(), "-bin")) {
-    value = absl::nullopt;
-  } else if (header_matcher.name() == "content-type") {
-    value = "application/grpc";
-  } else {
-    value = grpc_metadata_batch_get_value(
-        initial_metadata, header_matcher.name(), &concatenated_value);
+  if (absl::EndsWith(header_matcher_name, "-bin")) {
+    return absl::nullopt;
+  } else if (header_matcher_name == "content-type") {
+    return kHeaderContentType;
   }
-  return header_matcher.Match(value);
+  return grpc_metadata_batch_get_value(initial_metadata, header_matcher_name,
+                                       concatenated_value);
 }
 
 bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
                   grpc_metadata_batch* initial_metadata) {
   for (const auto& header_matcher : header_matchers) {
-    if (!HeaderMatchHelper(header_matcher, initial_metadata)) return false;
+    std::string concatenated_value;
+    if (!header_matcher.Match(HeaderMatchHelper(
+            header_matcher.name(), initial_metadata, &concatenated_value)))
+      return false;
   }
   return true;
 }
@@ -556,23 +557,19 @@ absl::optional<uint64_t> HeaderHashHelper(
     grpc_metadata_batch* initial_metadata) {
   GPR_ASSERT(policy.type == XdsApi::Route::HashPolicy::HEADER);
   std::string concatenated_value;
-  if (absl::EndsWith(policy.header_name, "-bin")) {
-    return absl::nullopt;
-  } else if (policy.header_name == "content-type") {
-    std::string key("application/grpc");
-    return XXH64(key.c_str(), key.size(), 0);
-  } else {
-    absl::optional<absl::string_view> value = grpc_metadata_batch_get_value(
-        initial_metadata, policy.header_name, &concatenated_value);
-    if (value.has_value()) {
-      if (policy.regex != nullptr) {
-        std::string key(*value);
-        RE2::GlobalReplace(&key, *policy.regex, policy.regex_substitution);
-        return XXH64(key.c_str(), key.size(), 0);
-      } else {
-        return XXH64(value->data(), value->size(), 0);
-      }
+  absl::optional<absl::string_view> matcher = HeaderMatchHelper(
+      policy.header_name, initial_metadata, &concatenated_value);
+  if (matcher.has_value()) {
+    const char* key = matcher->data();
+    size_t size = matcher->size();
+    if (policy.regex != nullptr) {
+      std::string modified_key(matcher->data(), matcher->size());
+      RE2::GlobalReplace(&modified_key, *policy.regex,
+                         policy.regex_substitution);
+      key = modified_key.c_str();
+      size = modified_key.size();
     }
+    return XXH64(key, size, 0);
   }
   return absl::nullopt;
 }
