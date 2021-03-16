@@ -16,14 +16,13 @@
 import argparse
 import collections
 import hashlib
-import itertools
 import json
 import math
 import sys
-import tabulate
 import time
 
 from six.moves import zip
+import tabulate
 
 SELF_TIME = object()
 TIME_FROM_SCOPE_START = object()

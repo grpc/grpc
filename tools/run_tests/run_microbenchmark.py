@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import html
 import multiprocessing
 import os
 import subprocess
 import sys
-import argparse
 
 import python_utils.jobset as jobset
 import python_utils.start_port_server as start_port_server
