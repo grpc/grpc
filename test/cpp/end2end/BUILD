@@ -515,8 +515,8 @@ grpc_cc_test(
     size = "large",
     srcs = ["xds_end2end_test.cc"],
     args = [
-        '--gtest_filter=*Fault*',
-        '--gtest_break_on_failure'
+        "--gtest_filter=*Fault*",
+        "--gtest_break_on_failure",
     ],
     data = [
         "//src/core/tsi/test_creds:badclient.key",

@@ -1617,6 +1617,7 @@ grpc_millis NowFromCycleCounter() {
 // k=0.01, n >= 37830.
 // Btw, p=0.5 is preferred, since it detects the skew of distribution better.
 size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
+  EXPECT_THAT(p, ::testing::AllOf(::testing::Ge(0), ::testing::Le(1)));
   return ceil(p * (1 - p) * 3.89 * 3.89 / error_tolerance / error_tolerance);
 }
 
@@ -2482,9 +2483,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           [rpc, &mu, &completed, &notification, num_rpcs, t0](Status s) {
             rpc->status = s;
             rpc->elapsed_time = NowFromCycleCounter() - t0;
-            {
-              absl::MutexLock lock(&mu);
-              if ((++completed) == num_rpcs) notification.Notify();
+            mu.Lock();
+            if ((++completed) == num_rpcs) {
+              mu.Unlock();
+              // This wakes up another thread, if we don't unlock first, the
+              // mutex might go away before before this thread can react.
+              notification.Notify();
+            } else {
+              mu.Unlock();
             }
           });
     }
@@ -4569,10 +4575,11 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   const char* kNotUsedClusterName = "not_used_cluster";
-  const size_t kNumEcho1Rpcs = 1000;
-  const size_t kNumEchoRpcs = 10;
   const size_t kWeight75 = 75;
   const size_t kWeight25 = 25;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumEchoRpcs = 10;  // RPCs that will go to a fixed backend.
+  const size_t kNumEcho1Rpcs = ComputeIdealNumRpcs(static_cast<double>(kWeight75)/100, kErrorTolerance);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -4639,24 +4646,18 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   const int weight_25_request_count =
       backends_[2]->backend_service1()->request_count();
-  const double kErrorTolerance = 0.2;
+  const double backend_1_percentage = static_cast<double>(weight_75_request_count)/kNumEcho1Rpcs;
   EXPECT_THAT(
-      weight_75_request_count,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight75 / 100 * (1 - kErrorTolerance)),
-                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight75 / 100 * (1 + kErrorTolerance))));
-  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
-  // test from flaking while debugging potential root cause.
-  const double kErrorToleranceSmallLoad = 0.3;
+    backend_1_percentage,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kWeight75) / 100 - kErrorTolerance),
+                       ::testing::Le(static_cast<double>(kWeight75) / 100 + kErrorTolerance)));
+  const double backend_2_percentage = static_cast<double>(weight_25_request_count)/kNumEcho1Rpcs;
+  EXPECT_THAT(
+    backend_2_percentage,
+      ::testing::AllOf(::testing::Ge(static_cast<double>(kWeight25) / 100 - kErrorTolerance),
+                       ::testing::Le(static_cast<double>(kWeight25) / 100 + kErrorTolerance)));
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
-  EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(
-                  ::testing::Ge(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
-                                100 * (1 - kErrorToleranceSmallLoad)),
-                  ::testing::Le(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
-                                100 * (1 + kErrorToleranceSmallLoad))));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
