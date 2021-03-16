@@ -20,18 +20,12 @@ FROM dockcross/linux-armv7
 RUN apt update && apt install -y build-essential zlib1g-dev libncurses5-dev libgdbm-dev \
                                  libnss3-dev libssl-dev libreadline-dev libffi-dev && apt-get clean
 
-RUN unset AS AR CC CPP CXX LD && \
-    curl -O https://www.python.org/ftp/python/3.7.9/Python-3.7.9.tar.xz && \
-    tar -xf Python-3.7.9.tar.xz && \
-    cd Python-3.7.9 && \
-    ./configure --prefix=/opt/python/cp37-cp37m && \
-    make -j 4 && \
-    make install
+ADD install_python_for_wheel_crosscompilation.sh /scripts/install_python_for_wheel_crosscompilation.sh
 
-# TODO: Dirty! overwrite the pyconfig.h that will be used for crosscompilation
-RUN cd Python-3.7.9 && ./configure && cp pyconfig.h /opt/python/cp37-cp37m/include/python3.7m
-
-RUN /opt/python/cp37-cp37m/bin/pip3 install --upgrade cython wheel
+RUN /scripts/install_python_for_wheel_crosscompilation.sh 3.6.13 /opt/python/cp36-cp36m
+RUN /scripts/install_python_for_wheel_crosscompilation.sh 3.7.10 /opt/python/cp37-cp37m
+RUN /scripts/install_python_for_wheel_crosscompilation.sh 3.8.8 /opt/python/cp38-cp38
+RUN /scripts/install_python_for_wheel_crosscompilation.sh 3.9.2 /opt/python/cp39-cp39
 
 ENV AUDITWHEEL_ARCH armv7l
 ENV AUDITWHEEL_PLAT linux_armv7l
