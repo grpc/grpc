@@ -8164,7 +8164,6 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
   // Invalid update does not lead to a change in the serving status.
   SetInvalidLdsUpdate();
-  constexpr int kRetryCount = 100;
   do {
     SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
   } while (balancers_[0]->ads_service()->lds_response_state().state ==
