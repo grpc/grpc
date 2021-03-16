@@ -22,6 +22,7 @@ import "src/proto/grpc/testing/xds/v3/address.proto";
 import "src/proto/grpc/testing/xds/v3/base.proto";
 
 import "google/protobuf/any.proto";
+import "google/protobuf/wrappers.proto";
 
 // [#protodoc-title: Listener configuration]
 // Listener :ref:`configuration overview <config_listeners>`
@@ -89,7 +90,7 @@ message FilterChain {
   // connections established with the listener. Order matters as the filters are
   // processed sequentially as connection events happen. Note: If the filter
   // list is empty, the connection will close by default.
-  repeated Filter filters = 3;  
+  repeated Filter filters = 3; 
 
   // Optional custom transport socket implementation to use for downstream connections.
   // To setup TLS, set a transport socket with name `tls` and
@@ -119,6 +120,13 @@ message Listener {
   // Example using SNI for filter chain selection can be found in the
   // :ref:`FAQ entry <faq_how_to_setup_sni>`.
   repeated FilterChain filter_chains = 3;
+
+  // If a connection is redirected using *iptables*, the port on which the proxy
+  // receives it might be different from the original destination address. When this flag is set to
+  // true, the listener hands off redirected connections to the listener associated with the
+  // original destination address. If there is no listener associated with the original destination
+  // address, the connection is handled by the listener that receives it. Defaults to false.
+  google.protobuf.BoolValue use_original_dst = 4;  
 
   // Used to represent an API listener, which is used in non-proxy clients. The type of API
   // exposed to the non-proxy application depends on the type of API listener.

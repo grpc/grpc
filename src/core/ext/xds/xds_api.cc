@@ -2037,6 +2037,14 @@ grpc_error* LdsResponseParseServer(
       AddressParse(envoy_config_listener_v3_Listener_address(listener),
                    &lds_update->address);
   if (error != GRPC_ERROR_NONE) return error;
+  const auto* use_original_dst =
+      envoy_config_listener_v3_Listener_use_original_dst(listener);
+  if (use_original_dst != nullptr) {
+    if (google_protobuf_BoolValue_value(use_original_dst)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Field \'use_original_dst\' is not supported.");
+    }
+  }
   // TODO(yashykt): As part of this, we'll need to refactor the code to process
   // the HttpConnectionManager config so that it is shared with the client-side
   // parsing.
