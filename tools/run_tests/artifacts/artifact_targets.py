@@ -130,7 +130,8 @@ class PythonArtifact:
 
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/grpc_artifact_python_linux_{}'.format(self.arch),
+                'tools/dockerfile/grpc_artifact_python_linux_{}'.format(
+                    self.arch),
                 'tools/run_tests/artifacts/build_artifact_python.sh',
                 environ=environ,
                 timeout_seconds=60 * 60)
