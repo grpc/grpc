@@ -81,6 +81,11 @@ inline bool UnderFraction(const uint32_t numerator,
   return random_number < numerator;
 }
 
+grpc_millis NowFromCycleCounter() {
+  gpr_cycle_counter now = gpr_get_cycle_counter();
+  return grpc_cycle_counter_to_millis_round_up(now);
+}
+
 class ChannelData {
  public:
   static grpc_error* Init(grpc_channel_element* elem,
@@ -425,7 +430,7 @@ void CallData::DelayBatch(grpc_call_element* elem,
   MutexLock lock(&delay_mu_);
   delayed_batch_ = batch;
   resume_batch_canceller_ = new ResumeBatchCanceller(elem);
-  grpc_millis resume_time = ExecCtx::Get()->Now() + fi_policy_->delay;
+  grpc_millis resume_time = NowFromCycleCounter() + fi_policy_->delay;
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, ResumeBatch, elem,
                     grpc_schedule_on_exec_ctx);
   grpc_timer_init(&delay_timer_, resume_time, &batch->handler_private.closure);

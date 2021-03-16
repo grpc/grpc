@@ -1596,6 +1596,29 @@ grpc_millis NowFromCycleCounter() {
   return grpc_cycle_counter_to_millis_round_up(now);
 }
 
+// Returns the number of RPCs needed to pass error_tolerance at 99.99% chance.
+// Rolling dices in drop/fault-injection generates a binomial distribution (if
+// our code is not horribly wrong). Let's make "n" the number of samples, "p"
+// the probabilty. If we have np>5 & n(1-p)>5, we can approximately treat the
+// binomial distribution as a normal distribution.
+//
+// For normal distribution, we can easily look up how many standard deviation we
+// need to reach 99.99%. Based on Wiki's table
+// https://en.wikipedia.org/wiki/Standard_normal_table, we need 3.89 sigma
+// (standard deviation) to cover the probability area of 99.99%. In another
+// word, for a sample with size "n" probability "p" error-tolerance "k", we want
+// the error always land within 3.89 sigma. The sigma of binominal distribution
+// and be computed as sqrt(np(1-p)). Hence, we have the equation:
+//
+//   kn <= 3.89 * sqrt(np(1-p))
+//
+// E.g., with p=0.5 k=0.1, n >= 378; with p=0.5 k=0.05, n >= 1599; with p=0.5
+// k=0.01, n >= 37830.
+// Btw, p=0.5 is preferred, since it detects the skew of distribution better.
+size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
+  return ceil(p * (1 - p) * 3.89 * 3.89 / error_tolerance / error_tolerance);
+}
+
 }  // namespace
 
 class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
@@ -2392,6 +2415,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   class LongRunningRpc {
    public:
+    // LongRunningRpc() = default;
+    // LongRunningRpc(LongRunningRpc&&) = default;
+    // LongRunningRpc(const LongRunningRpc&) = delete;
+    // LongRunningRpc& operator= (const LongRunningRpc&) = delete;
+
     void StartRpc(grpc::testing::EchoTestService::Stub* stub,
                   const RpcOptions& rpc_options =
                       RpcOptions().set_client_cancel_after_us(1 * 1000 *
@@ -2400,9 +2428,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         EchoRequest request;
         EchoResponse response;
         rpc_options.SetupRpc(&context_, &request);
+        grpc_millis t0 = NowFromCycleCounter();
         status_ = stub->Echo(&context_, request, &response);
+        elapsed_time_ = NowFromCycleCounter() - t0;
       });
     }
+
+    // void StartRpc(XdsEnd2endTest* xds_end2end_test, const RpcOptions& rpc_options) {
+    //   channel_ = xds_end2end_test->CreateChannel();
+    //   auto stub = grpc::testing::EchoTestService::NewStub(channel_);
+    //   StartRpc(stub.get(), rpc_options);
+    // };
 
     void CancelRpc() {
       context_.TryCancel();
@@ -2414,10 +2450,32 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       return status_;
     }
 
+    grpc_millis GetElapsedTime() {
+      if (sender_thread_.joinable()) sender_thread_.join();
+      return elapsed_time_;
+    }
+
+    // static int ConcurrentSendAndCount() {
+    //   std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+    //   for (size_t i=0;i<kNumRpcs;i++) {
+    //     auto rpc = absl::make_unique<LongRunningRpc>();
+    //     rpc->StartRpc(stub_.get(), rpc_options);
+    //     rpcs.push_back(std::move(rpc));
+    //   }
+    //   for (auto& rpc : rpcs) {
+    //     Status s = rpc->GetStatus();
+    //     if (s.error_code() == grpc::OK) continue;
+    //     EXPECT_EQ(grpc::DEADLINE_EXCEEDED, s.error_code()) << s.error_code() << s.error_message();
+    //     num_delayed++;
+    //   }
+    // }
+
    private:
+    std::shared_ptr<Channel> channel_;
     std::thread sender_thread_;
     ClientContext context_;
     Status status_;
+    grpc_millis elapsed_time_;
   };
 
   const size_t num_backends_;
@@ -9424,10 +9482,10 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 100;
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
-  const double kErrorTolerance = 0.2;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -9463,11 +9521,11 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 100;
   const uint32_t kAbortPercentageCap = 100;
   const uint32_t kAbortPercentage = 50;
   const double kAbortRate = kAbortPercentage / 100.0;
   const double kErrorTolerance = 0.2;
+  const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -9551,13 +9609,13 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 100;
   const uint32_t kFixedDelayMilliseconds = 100000;  // 100 seconds
-  const uint32_t kRpcTimeoutMilliseconds = 10;      // 10 ms
+  const uint32_t kRpcTimeoutMilliseconds = 500;    // 500 ms
   const uint32_t kDelayPercentageCap = 100;
   const uint32_t kDelayPercentage = 50;
   const double kDelayRate = kDelayPercentage / 100.0;
-  const double kErrorTolerance = 0.2;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs = ComputeIdealNumRpcs(kDelayRate, kErrorTolerance);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -9579,13 +9637,22 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
       {"x-envoy-fault-delay-request-percentage",
        std::to_string(kDelayPercentage)},
   };
-  int num_total = 0, num_ok = 0, num_delayed = 0, num_dropped = 0;
-  RpcOptions options = RpcOptions()
+  RpcOptions rpc_options = RpcOptions()
                            .set_metadata(metadata)
                            .set_timeout_ms(kRpcTimeoutMilliseconds)
                            .set_skip_cancelled_check(true);
-  for (size_t i = 0; i < kNumRpcs; ++i) {
-    SendRpcAndCount(&num_total, &num_ok, &num_delayed, &num_dropped, options);
+  int num_delayed = 0;
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i=0;i<kNumRpcs;i++) {
+    auto rpc = absl::make_unique<LongRunningRpc>();
+    rpc->StartRpc(stub_.get(), rpc_options);
+    rpcs.push_back(std::move(rpc));
+  }
+  for (auto& rpc : rpcs) {
+    Status s = rpc->GetStatus();
+    if (s.error_code() == grpc::OK) continue;
+    EXPECT_EQ(grpc::DEADLINE_EXCEEDED, s.error_code()) << s.error_code() << s.error_message();
+    num_delayed++;
   }
   // The delay rate should be roughly equal to the expectation.
   const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
@@ -9597,11 +9664,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  const size_t kNumRpcs = 100;
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
-  const uint32_t kFixedDelayNanos = 10 * 1000 * 1000;  // 10 ms
-  const double kErrorTolerance = 0.2;
+  const uint32_t kFixedDelaySeconds = 1;  // 1s
+  const uint32_t kRpcTimeoutMilliseconds = 10 * 1000;  // 10s should not reach
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
@@ -9621,20 +9689,25 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   delay_percentage->set_numerator(1000000);  // Always inject DELAY!
   delay_percentage->set_denominator(FractionalPercent::MILLION);
   auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
-  fixed_delay->set_nanos(kFixedDelayNanos);
+  fixed_delay->set_seconds(kFixedDelaySeconds);
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Send kNumRpcs RPCs and count the aborts.
-  int num_total = 0, num_ok = 0, num_failure = 0, num_aborted = 0;
-  for (size_t i = 0; i < kNumRpcs; ++i) {
-    grpc_millis t0 = NowFromCycleCounter();
-    SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_aborted,
-                    RpcOptions(), "Fault injected");
-    grpc_millis t1 = NowFromCycleCounter();
-    EXPECT_GE(t1, t0 + kFixedDelayNanos / 1000 / 1000);
+  int num_aborted = 0;
+  RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
+  std::vector<std::unique_ptr<LongRunningRpc>> rpcs;
+  for (size_t i=0;i<kNumRpcs;i++) {
+    auto rpc = absl::make_unique<LongRunningRpc>();
+    rpc->StartRpc(stub_.get(), rpc_options);
+    rpcs.push_back(std::move(rpc));
   }
-  EXPECT_EQ(kNumRpcs, num_total);
-  EXPECT_EQ(0, num_failure);
+  for (auto& rpc : rpcs) {
+    EXPECT_GE(rpc->GetElapsedTime(), kFixedDelaySeconds * 1000);
+    Status s = rpc->GetStatus();
+    if (s.error_code() == grpc::OK) continue;
+    EXPECT_EQ("Fault injected", s.error_message()) << s.error_code() << s.error_message();
+    num_aborted++;
+  }
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
   EXPECT_THAT(seen_abort_rate,
