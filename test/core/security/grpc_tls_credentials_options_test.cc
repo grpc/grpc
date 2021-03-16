@@ -66,11 +66,13 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
       int (*verify)(grpc_tls_certificate_verifier_external* external_verifier,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg),
+                    void* callback_arg, void* user_data),
       void (*cancel)(grpc_tls_certificate_verifier_external* external_verifier,
-                     grpc_tls_custom_verification_check_request* request),
+                     grpc_tls_custom_verification_check_request* request,
+                     void* user_data),
       void (*destruct)(
-          grpc_tls_certificate_verifier_external* external_verifier)) {
+          grpc_tls_certificate_verifier_external* external_verifier,
+          void* user_data)) {
     grpc_tls_certificate_verifier_external* external_verifier =
         new grpc_tls_certificate_verifier_external();
     external_verifier->verify = verify;
@@ -85,7 +87,7 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
       grpc_tls_certificate_verifier_external* external_verifier,
       grpc_tls_custom_verification_check_request* request,
       grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
+      void* callback_arg, void* user_data) {
     request->status = GRPC_STATUS_OK;
     return false;
   }
@@ -100,7 +102,7 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
       grpc_tls_certificate_verifier_external* external_verifier,
       grpc_tls_custom_verification_check_request* request,
       grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
+      void* callback_arg, void* user_data) {
     ThreadArgs* thread_args = new ThreadArgs();
     thread_args->request = request;
     thread_args->callback = callback;
@@ -109,9 +111,6 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
         "AsyncExternalVerifierGoodVerify", &AsyncExternalVerifierGoodVerifyCb,
         static_cast<void*>(thread_args));
     thread.Start();
-    // Question: This still behaves like a sync operation. I wanted to return
-    // true first, and then at the main thread or TearDown function we join the
-    // thread. Is it possible?
     thread.Join();
     return true;
   }
@@ -563,6 +562,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 //
 // Tests for ExternalCertificateVerifier.
+// It will only test the creation of security connector, so the actual verify
+// logic is not invoked.
 //
 
 TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsWithGoodExternalVerifier) {

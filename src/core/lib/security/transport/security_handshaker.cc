@@ -419,7 +419,7 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
 void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn(void* arg,
                                                            grpc_error* error) {
   RefCountedPtr<SecurityHandshaker> h(static_cast<SecurityHandshaker*>(arg));
-  MutexLock lock(&h->mu_);
+  //MutexLock lock(&h->mu_);
   if (error != GRPC_ERROR_NONE || h->is_shutdown_) {
     h->HandshakeFailedLocked(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Handshake read failed", &error, 1));
@@ -453,7 +453,7 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler(
 void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
                                                      grpc_error* error) {
   RefCountedPtr<SecurityHandshaker> h(static_cast<SecurityHandshaker*>(arg));
-  MutexLock lock(&h->mu_);
+  // MutexLock lock(&h->mu_);
   if (error != GRPC_ERROR_NONE || h->is_shutdown_) {
     h->HandshakeFailedLocked(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
         "Handshake write failed", &error, 1));

@@ -50,6 +50,12 @@ void grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(
     }
     delete[] request->peer_info.san_names.ip_names;
   }
+  if (request->peer_info.san_names.dns_names_size > 0) {
+    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
+      delete[] request->peer_info.san_names.dns_names[i];
+    }
+    delete[] request->peer_info.san_names.dns_names;
+  }
   if (request->peer_info.peer_cert != nullptr) {
     gpr_free(const_cast<char*>(request->peer_info.peer_cert));
   }
@@ -73,8 +79,9 @@ bool ExternalCertificateVerifier::Verify(
   }
   // Invoke the caller-specified verification logic embedded in
   // external_verifier_.
-  bool is_async = external_verifier_->verify(external_verifier_, request,
-                                             &OnVerifyDone, this, external_verifier_->user_data);
+  bool is_async =
+      external_verifier_->verify(external_verifier_, request, &OnVerifyDone,
+                                 this, external_verifier_->user_data);
   if (!is_async) {
     grpc_core::MutexLock lock(&mu_);
     request_map_.erase(request);
@@ -149,7 +156,7 @@ bool HostNameCertificateVerifier::Verify(
   if (target_name == nullptr) {
     request->status = GRPC_STATUS_UNAUTHENTICATED;
     request->error_details = gpr_strdup("Target name is not specified.");
-    return false; /* synchronous check */
+    return false; /*synchronous check*/
   }
   absl::string_view allocated_name;
   absl::string_view ignored_port;
@@ -157,7 +164,7 @@ bool HostNameCertificateVerifier::Verify(
   if (allocated_name.empty()) {
     request->status = GRPC_STATUS_UNAUTHENTICATED;
     request->error_details = gpr_strdup("Failed to split hostname and port.");
-    return false; /* synchronous check */
+    return false; /*synchronous check*/
   }
   // IPv6 zone-id should not be included in comparisons.
   const size_t zone_id = allocated_name.find('%');
@@ -165,13 +172,13 @@ bool HostNameCertificateVerifier::Verify(
     allocated_name.remove_suffix(allocated_name.size() - zone_id);
   }
   // Perform the hostname check.
-  // First check the URI field. We allow prefix or suffix wildcard matching.
-  char** uri_names = request->peer_info.san_names.uri_names;
-  size_t uri_names_size = request->peer_info.san_names.uri_names_size;
-  if (uri_names != nullptr && uri_names_size > 0) {
-    for (int i = 0; i < uri_names_size; ++i) {
-      const char* uri_name = uri_names[i];
-      if (internal::VerifyIdentityAsHostname(uri_name, allocated_name)) {
+  // First check the DNS field. We allow prefix or suffix wildcard matching.
+  char** dns_names = request->peer_info.san_names.dns_names;
+  size_t dns_names_size = request->peer_info.san_names.dns_names_size;
+  if (dns_names != nullptr && dns_names_size > 0) {
+    for (int i = 0; i < dns_names_size; ++i) {
+      const char* dns_name = dns_names[i];
+      if (internal::VerifyIdentityAsHostname(dns_name, allocated_name)) {
         request->status = GRPC_STATUS_OK;
         return false; /* synchronous check */
       }
@@ -186,16 +193,16 @@ bool HostNameCertificateVerifier::Verify(
       const char* ip_name = ip_names[i];
       if (strcmp(ip_name, target_ip.c_str()) == 0) {
         request->status = GRPC_STATUS_OK;
-        return false; /* synchronous check */
+        return false; /*synchronous check*/
       }
     }
   }
   // If there's no SAN, try the CN.
-  if (uri_names_size == 0) {
+  if (dns_names_size == 0) {
     const char* common_name = request->peer_info.common_name;
     if (internal::VerifyIdentityAsHostname(common_name, allocated_name)) {
       request->status = GRPC_STATUS_OK;
-      return false; /* synchronous check */
+      return false; /*synchronous check*/
     }
   }
   request->status = GRPC_STATUS_UNAUTHENTICATED;

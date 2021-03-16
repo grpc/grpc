@@ -197,28 +197,6 @@ void TlsChannelSecurityConnector::check_peer(
     tsi_peer peer, grpc_endpoint* /*ep*/,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
-  /*const char* target_name = overridden_target_name_.empty()
-                                ? target_name_.c_str()
-                                : overridden_target_name_.c_str();
-  grpc_error* error = grpc_ssl_check_alpn(&peer);
-  if (error != GRPC_ERROR_NONE) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
-    tsi_peer_destruct(&peer);
-    return;
-  }
-  *auth_context =
-      grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
-  tsi_peer_destruct(&peer);*/
-
-
-
-
-
-
-
-
-
   const char* target_name = overridden_target_name_.empty()
                                 ? target_name_.c_str()
                                 : overridden_target_name_.c_str();
@@ -235,6 +213,7 @@ void TlsChannelSecurityConnector::check_peer(
   auto* request = new grpc_tls_custom_verification_check_request();
   request->target_name = gpr_strdup(target_name);
   std::vector<char*> uri_names;
+  std::vector<char*> dns_names;
   for (size_t i = 0; i < peer.property_count; ++i) {
     const tsi_peer_property* prop = &peer.properties[i];
     if (prop->name == nullptr) continue;
@@ -263,6 +242,16 @@ void TlsChannelSecurityConnector::check_peer(
       memcpy(uri, prop->value.data, prop->value.length);
       uri[prop->value.length] = '\0';
       uri_names.emplace_back(uri);
+    } else if (strcmp(prop->name,
+                      TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
+      // TODO(ZhenLian): The logic here is wrong.
+      // We are passing all SAN names as DNS names, because the DNS names are
+      // not plumbed. Once it is plumbed, this should be changed.
+      char* dns = new char[prop->value.length + 1];
+      memcpy(dns, prop->value.data, prop->value.length);
+      dns[prop->value.length] = '\0';
+      dns_names.emplace_back(dns);
+      continue;
     } else {
       // Not supported fields.
       // TODO(ZhenLian): populate IP Address and other fields here as well.
@@ -278,6 +267,17 @@ void TlsChannelSecurityConnector::check_peer(
       // We directly point the char* string stored in vector to the |request|.
       // That string will be released when the |request| is destroyed.
       request->peer_info.san_names.uri_names[i] = uri_names[i];
+    }
+  }
+  GPR_ASSERT(request->peer_info.san_names.dns_names == nullptr);
+  request->peer_info.san_names.dns_names_size = dns_names.size();
+  if (!dns_names.empty()) {
+    request->peer_info.san_names.dns_names =
+        new char*[request->peer_info.san_names.dns_names_size];
+    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
+      request->peer_info.san_names.dns_names[i] = dns_names[i];
     }
   }
   tsi_peer_destruct(&peer);
@@ -309,10 +309,7 @@ void TlsChannelSecurityConnector::check_peer(
   }
   grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(request);
   delete request;
-  //grpc_core::ExecCtx exec_ctx;
-  gpr_log(GPR_ERROR, "3");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
-  gpr_log(GPR_ERROR, "4");
 }
 
 int TlsChannelSecurityConnector::cmp(
@@ -509,27 +506,6 @@ void TlsServerSecurityConnector::check_peer(
     tsi_peer peer, grpc_endpoint* /*ep*/,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
-  /*grpc_error* error = grpc_ssl_check_alpn(&peer);
-  *auth_context =
-      grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  tsi_peer_destruct(&peer);
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);*/
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
   grpc_error* error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
@@ -538,10 +514,11 @@ void TlsServerSecurityConnector::check_peer(
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  // GPR_ASSERT(options_->certificate_verifier() != nullptr);
+  GPR_ASSERT(options_->certificate_verifier() != nullptr);
   // Parse tsi_peer and feed in the values in the check request.
   auto* request = new grpc_tls_custom_verification_check_request();
   std::vector<char*> uri_names;
+  std::vector<char*> dns_names;
   for (size_t i = 0; i < peer.property_count; ++i) {
     const tsi_peer_property* prop = &peer.properties[i];
     if (prop->name == nullptr) continue;
@@ -570,6 +547,16 @@ void TlsServerSecurityConnector::check_peer(
       memcpy(uri, prop->value.data, prop->value.length);
       uri[prop->value.length] = '\0';
       uri_names.emplace_back(uri);
+    } else if (strcmp(prop->name,
+                      TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
+      // TODO(ZhenLian): The logic here is wrong.
+      // We are passing all SAN names as DNS names, because the DNS names are
+      // not plumbed. Once it is plumbed, this should be changed.
+      char* dns = new char[prop->value.length + 1];
+      memcpy(dns, prop->value.data, prop->value.length);
+      dns[prop->value.length] = '\0';
+      dns_names.emplace_back(dns);
+      continue;
     } else {
       // Not supported fields.
       // TODO(ZhenLian): populate IP Address and other fields here as well.
@@ -585,6 +572,17 @@ void TlsServerSecurityConnector::check_peer(
       // We directly point the char* string stored in vector to the |request|.
       // That string will be released when the |request| is destroyed.
       request->peer_info.san_names.uri_names[i] = uri_names[i];
+    }
+  }
+  GPR_ASSERT(request->peer_info.san_names.dns_names == nullptr);
+  request->peer_info.san_names.dns_names_size = dns_names.size();
+  if (!dns_names.empty()) {
+    request->peer_info.san_names.dns_names =
+        new char*[request->peer_info.san_names.dns_names_size];
+    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
+      request->peer_info.san_names.dns_names[i] = dns_names[i];
     }
   }
   tsi_peer_destruct(&peer);
@@ -616,7 +614,6 @@ void TlsServerSecurityConnector::check_peer(
   }
   grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(request);
   delete request;
-  //grpc_core::ExecCtx exec_ctx;
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 

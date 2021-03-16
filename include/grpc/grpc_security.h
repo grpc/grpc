@@ -932,6 +932,8 @@ struct grpc_tls_custom_verification_check_request {
       size_t uri_names_size = 0;
       char** ip_names = nullptr;
       size_t ip_names_size = 0;
+      char** dns_names = nullptr;
+      size_t dns_names_size = 0;
       /*TODO(ZhenLian): Other SAN name fields go here. This will likely require
        * changes in TSI, which might go into  another PR... */
     } san_names;
@@ -1010,7 +1012,8 @@ struct grpc_tls_certificate_verifier_external {
    * retrieved later here.
    */
   void (*cancel)(grpc_tls_certificate_verifier_external* external_verifier,
-                 grpc_tls_custom_verification_check_request* request, void* user_data);
+                 grpc_tls_custom_verification_check_request* request,
+                 void* user_data);
   /**
    * A function pointer that does some additional destruction work when the
    * verifier is destroyed. This is used when the caller wants to associate some
@@ -1025,7 +1028,8 @@ struct grpc_tls_certificate_verifier_external {
    * grpc_tls_certificate_verifier_external during construction time can be
    * retrieved later here.
    */
-  void (*destruct)(grpc_tls_certificate_verifier_external* external_verifier, void* user_data);
+  void (*destruct)(grpc_tls_certificate_verifier_external* external_verifier,
+                   void* user_data);
 };
 
 /**
