@@ -60,7 +60,7 @@ class GreeterClient {
     bool done = false;
     Status status;
     stub_->async()->SayHello(&context, &request, &reply,
-			     [&mu, &cv, &done](Status s) {
+			     [&mu, &cv, &done, &status](Status s) {
 			       status = std::move(s);
 			       std::lock_guard<std::mutex> lock(mu);
 			       done = true;
