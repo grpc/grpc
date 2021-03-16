@@ -95,7 +95,7 @@ def collect_latency(bm_name, args):
     for line in subprocess.check_output([
             'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
             '--benchmark_list_tests'
-    ], text=True).splitlines():
+    ]).decode('UTF-8').splitlines():
         link(line, '%s.txt' % fnize(line))
         benchmarks.append(
             jobset.JobSpec([
@@ -149,7 +149,7 @@ def collect_perf(bm_name, args):
     for line in subprocess.check_output([
             'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
             '--benchmark_list_tests'
-    ], text=True).splitlines():
+    ]).decode('UTF-8').splitlines():
         link(line, '%s.svg' % fnize(line))
         benchmarks.append(
             jobset.JobSpec([
@@ -199,7 +199,7 @@ def run_summary(bm_name, cfg, base_json_name):
     ]
     if args.summary_time is not None:
         cmd += ['--benchmark_min_time=%d' % args.summary_time]
-    return subprocess.check_output(cmd, text=True)
+    return subprocess.check_output(cmd).decode('UTF-8')
 
 
 def collect_summary(bm_name, args):
@@ -214,7 +214,7 @@ def collect_summary(bm_name, args):
                     'tools/profiling/microbenchmarks/bm2bq.py',
                     '%s.counters.json' % bm_name,
                     '%s.opt.json' % bm_name
-                ], text=True))
+                ]))
         subprocess.check_call([
             'bq', 'load', 'microbenchmarks.microbenchmarks',
             '%s.csv' % bm_name
