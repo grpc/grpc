@@ -143,6 +143,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
     void Orphan() override;
 
+    void SendGoAway();
+
     void Start(RefCountedPtr<Chttp2ServerListener> listener,
                grpc_endpoint* endpoint, grpc_channel_args* args);
 
@@ -284,6 +286,11 @@ void Chttp2ServerListener::ConfigFetcherWatcher::StopServing() {
     listener_->is_serving_ = false;
     connections = std::move(listener_->connections_);
   }
+  // Send GOAWAYs on the transports so that they disconnected when existing RPCs
+  // finish.
+  for (auto& connection : connections) {
+    connection.first->SendGoAway();
+  }
 }
 
 //
@@ -374,6 +381,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   OrphanablePtr<HandshakingState> handshaking_state_ref;
   RefCountedPtr<HandshakeManager> handshake_mgr;
   bool cleanup_connection = false;
+  bool free_resource_quota = false;
   grpc_resource_user* resource_user =
       self->connection_->listener_->server_->default_resource_user();
   {
@@ -382,6 +390,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
       const char* error_str = grpc_error_string(error);
       gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
       cleanup_connection = true;
+      free_resource_quota = true;
       if (error == GRPC_ERROR_NONE && args->endpoint != nullptr) {
         // We were shut down or stopped serving after handshaking completed
         // successfully, so destroy the endpoint here.
@@ -432,6 +441,10 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
             // Refs helds by OnClose()
             self->connection_->Ref().release();
             on_close = &self->connection_->on_close_;
+          } else {
+            // Remove the connection from the connections_ map since OnClose()
+            // will not be invoked when a config fetcher is set.
+            cleanup_connection = true;
           }
           grpc_chttp2_transport_start_reading(transport, args->read_buffer,
                                               &self->on_receive_settings_,
@@ -450,10 +463,12 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
           grpc_slice_buffer_destroy_internal(args->read_buffer);
           gpr_free(args->read_buffer);
           cleanup_connection = true;
+          free_resource_quota = true;
           grpc_channel_args_destroy(args->args);
         }
       } else {
         cleanup_connection = true;
+        free_resource_quota = true;
       }
     }
     // Since the handshake manager is done, the connection no longer needs to
@@ -465,10 +480,10 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   }
   gpr_free(self->acceptor_);
   OrphanablePtr<ActiveConnection> connection;
+  if (free_resource_quota && resource_user != nullptr) {
+    grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
+  }
   if (cleanup_connection) {
-    if (resource_user != nullptr) {
-      grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
-    }
     MutexLock listener_lock(&self->connection_->listener_->mu_);
     auto it = self->connection_->listener_->connections_.find(
         self->connection_.get());
@@ -501,13 +516,20 @@ Chttp2ServerListener::ActiveConnection::~ActiveConnection() {
 
 void Chttp2ServerListener::ActiveConnection::Orphan() {
   OrphanablePtr<HandshakingState> handshaking_state;
-  grpc_chttp2_transport* transport = nullptr;
   {
     MutexLock lock(&mu_);
     shutdown_ = true;
     // Reset handshaking_state_ since we have been orphaned by the listener
     // signaling that the listener has stopped serving.
     handshaking_state = std::move(handshaking_state_);
+  }
+  Unref();
+}
+
+void Chttp2ServerListener::ActiveConnection::SendGoAway() {
+  grpc_chttp2_transport* transport = nullptr;
+  {
+    MutexLock lock(&mu_);
     transport = transport_;
   }
   if (transport != nullptr) {
@@ -516,7 +538,6 @@ void Chttp2ServerListener::ActiveConnection::Orphan() {
         "Server is stopping to serve requests.");
     grpc_transport_perform_op(&transport->base, op);
   }
-  Unref();
 }
 
 void Chttp2ServerListener::ActiveConnection::Start(

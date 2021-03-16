@@ -22,6 +22,8 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
 #include "re2/re2.h"
+#define XXH_INLINE_ALL
+#include "xxhash.h"
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"

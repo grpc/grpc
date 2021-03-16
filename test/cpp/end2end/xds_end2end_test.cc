@@ -1638,10 +1638,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Construct LDS resource.
     default_listener_.set_name(kServerName);
     HttpConnectionManager http_connection_manager;
-    auto* filter = http_connection_manager.add_http_filters();
-    filter->set_name("router");
-    filter->mutable_typed_config()->PackFrom(
-        envoy::extensions::filters::http::router::v3::Router());
+    if (!GetParam().use_v2()) {
+      auto* filter = http_connection_manager.add_http_filters();
+      filter->set_name("router");
+      filter->mutable_typed_config()->PackFrom(
+          envoy::extensions::filters::http::router::v3::Router());
+    }
     default_listener_.mutable_api_listener()->mutable_api_listener()->PackFrom(
         http_connection_manager);
     // Construct RDS resource.
@@ -3292,6 +3294,30 @@ TEST_P(LdsTest, HttpFiltersEnabled) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
+// Tests that we ignore filters after the router filter.
+TEST_P(LdsTest, IgnoresHttpFiltersAfterRouterFilter) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  SetNextResolutionForLbChannelAllBalancers();
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("unknown");
+  filter->mutable_typed_config()->set_type_url(
+      "grpc.testing.client_only_http_filter");
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForAllBackends();
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
 // Test that we fail RPCs if there is no router filter.
 TEST_P(LdsTest, FailRpcsIfNoHttpRouterFilter) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
@@ -3322,9 +3348,6 @@ TEST_P(LdsTest, FailRpcsIfNoHttpRouterFilter) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
-
-// TODO(lidiz): As part of adding the fault injection filter, add a test
-// that we ignore filters after the router filter.
 
 // Test that we NACK empty filter names.
 TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
@@ -3577,6 +3600,34 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
   WaitForBackend(0);
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+using LdsV2Test = LdsTest;
+
+// Tests that we ignore the HTTP filter list in v2.
+// TODO(roth): The test framework is not set up to allow us to test
+// the server sending v2 resources when the client requests v3, so this
+// just tests a pure v2 setup.  When we have time, fix this.
+TEST_P(LdsV2Test, IgnoresHttpFilters) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("unknown");
+  filter->mutable_typed_config()->PackFrom(Listener());
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendOk();
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
@@ -6337,10 +6388,6 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInClusterWeight) {
       ::testing::HasSubstr("router filter does not support config override"));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
-
-// TODO(lidiz): As part of adding the fault injection filter, add tests
-// for overriding filter configs in the typed_per_filter_config fields in
-// each of VirtualHost, Route, and ClusterWeight.
 
 using CdsTest = BasicTest;
 
@@ -9813,6 +9860,58 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   http_fault.mutable_abort()->set_grpc_status(
       static_cast<uint32_t>(StatusCode::ABORTED));
   auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
+  delay_percentage->set_numerator(1000000);  // Always inject DELAY!
+  delay_percentage->set_denominator(FractionalPercent::MILLION);
+  auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
+  fixed_delay->set_nanos(kFixedDelayNanos);
+  // Config fault injection via different setup
+  SetFilterConfig(http_fault);
+  // Send kNumRpcs RPCs and count the aborts.
+  int num_total = 0, num_ok = 0, num_failure = 0, num_aborted = 0;
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    grpc_millis t0 = NowFromCycleCounter();
+    SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_aborted,
+                    RpcOptions(), "Fault injected");
+    grpc_millis t1 = NowFromCycleCounter();
+    EXPECT_GE(t1, t0 + kFixedDelayNanos / 1000 / 1000);
+  }
+  EXPECT_EQ(kNumRpcs, num_total);
+  EXPECT_EQ(0, num_failure);
+  // The abort rate should be roughly equal to the expectation.
+  const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
+  EXPECT_THAT(seen_abort_rate,
+              ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
+                               ::testing::Le(kAbortRate + kErrorTolerance)));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
+}
+
+// This test and the above test apply different denominators to delay and abort.
+// This ensures that we are using the right denominator for each injected fault
+// in our code.
+TEST_P(FaultInjectionTest,
+       XdsFaultInjectionAlwaysDelayPercentageAbortSwitchDenominator) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
+  const size_t kNumRpcs = 100;
+  const uint32_t kAbortPercentagePerMillion = 500000;
+  const double kAbortRate = kAbortPercentagePerMillion / 1000000.0;
+  const uint32_t kFixedDelayNanos = 10 * 1000 * 1000;  // 10 ms
+  const double kErrorTolerance = 0.2;
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Create an EDS resource
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Construct the fault injection filter config
+  HTTPFault http_fault;
+  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
+  abort_percentage->set_numerator(kAbortPercentagePerMillion);
+  abort_percentage->set_denominator(FractionalPercent::MILLION);
+  http_fault.mutable_abort()->set_grpc_status(
+      static_cast<uint32_t>(StatusCode::ABORTED));
+  auto* delay_percentage = http_fault.mutable_delay()->mutable_percentage();
   delay_percentage->set_numerator(100);  // Always inject DELAY!
   delay_percentage->set_denominator(FractionalPercent::HUNDRED);
   auto* fixed_delay = http_fault.mutable_delay()->mutable_fixed_delay();
@@ -9927,6 +10026,9 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
 
 // LDS depends on XdsResolver.
 INSTANTIATE_TEST_SUITE_P(XdsTest, LdsTest, ::testing::Values(TestType()),
+                         &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(XdsTest, LdsV2Test,
+                         ::testing::Values(TestType().set_use_v2()),
                          &TestTypeName);
 
 // LDS/RDS commmon tests depend on XdsResolver.

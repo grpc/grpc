@@ -35,7 +35,10 @@ Clients should accept these arguments:
     * OAuth scope. For example, "https://www.googleapis.com/auth/xapi.zoo"
 * --service_account_key_file=PATH
     * The path to the service account JSON key file generated from GCE developer
-    console.
+      console.
+* --service_config_json=SERVICE_CONFIG_JSON
+    * Disables service config lookups and sets the provided string as the
+      default service config.
 
 Clients must support TLS with ALPN. Clients must not disable certificate
 checking.

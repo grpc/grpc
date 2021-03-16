@@ -384,7 +384,7 @@ void CallData::DecideWhetherToInjectFaults(
   // Roll the dice
   delay_request_ = fi_policy_->delay != 0 &&
                    UnderFraction(fi_policy_->delay_percentage_numerator,
-                                 fi_policy_->abort_percentage_denominator);
+                                 fi_policy_->delay_percentage_denominator);
   abort_request_ = fi_policy_->abort_code != GRPC_STATUS_OK &&
                    UnderFraction(fi_policy_->abort_percentage_numerator,
                                  fi_policy_->abort_percentage_denominator);

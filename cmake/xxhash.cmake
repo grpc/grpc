@@ -12,15 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
-
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/windows/grpc_build_artifacts.bat"
-timeout_mins: 240
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "github/grpc/reports/**"
-    regex: "github/grpc/artifacts/**"
-  }
-}
+set(_gRPC_XXHASH_INCLUDE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/xxhash")

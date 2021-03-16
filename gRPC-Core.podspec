@@ -1369,7 +1369,8 @@ Pod::Spec.new do |s|
                       'third_party/upb/upb/upb.c',
                       'third_party/upb/upb/upb.h',
                       'third_party/upb/upb/upb.hpp',
-                      'third_party/upb/upb/upb.int.h'
+                      'third_party/upb/upb/upb.int.h',
+                      'third_party/xxhash/xxhash.h'
     ss.private_header_files = 'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
@@ -1932,7 +1933,8 @@ Pod::Spec.new do |s|
                               'third_party/upb/upb/text_encode.h',
                               'third_party/upb/upb/upb.h',
                               'third_party/upb/upb/upb.hpp',
-                              'third_party/upb/upb/upb.int.h'
+                              'third_party/upb/upb/upb.int.h',
+                              'third_party/xxhash/xxhash.h'
   end
 
   # CFStream is now default. Leaving this subspec only for compatibility purpose.
@@ -2124,5 +2126,8 @@ Pod::Spec.new do |s|
     find third_party/re2/re2/ third_party/re2/util/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g;s;#include "util/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/util/\\1"\\\n#else\\\n  #include  "util/\\1"\\\n#endif;g'
     find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "re2/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/re2/re2/\\1"\\\n#else\\\n  #include  "re2/\\1"\\\n#endif;g'
     find src/core/ third_party/re2/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ -type f \\( -name '*.h' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "xxhash.h";#if COCOAPODS==1\\\n  #include  "third_party/xxhash/xxhash.h"\\\n#else\\\n  #include  "xxhash.h"\\\n#endif;g'
+    find third_party/xxhash  -type f -name xxhash.h -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;@param([^,]*),;@param\\1 ,;g'
+    find src/core/ third_party/xxhash/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end
