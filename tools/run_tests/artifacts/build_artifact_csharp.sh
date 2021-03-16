@@ -26,7 +26,19 @@ cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
       ../..
 
 make grpc_csharp_ext -j2
+
+if [ -f "libgrpc_csharp_ext.so" ]
+then
+    # The .so file with all debug symbols is too large to
+    # package in the default nuget package.
+    # But we still want to keep the version with symbols
+    # to include it in a special "debug" package.
+    cp libgrpc_csharp_ext.so libgrpc_csharp_ext.dbginfo.so
+    strip --strip-unneeded libgrpc_csharp_ext.so
+    objcopy --add-gnu-debuglink=libgrpc_csharp_ext.dbginfo.so libgrpc_csharp_ext.so
+fi
+
 cd ../..
 
 mkdir -p "${ARTIFACTS_OUT}"
-cp cmake/build/libgrpc_csharp_ext.so "${ARTIFACTS_OUT}" || cp cmake/build/libgrpc_csharp_ext.dylib "${ARTIFACTS_OUT}"
+cp cmake/build/libgrpc_csharp_ext.so cmake/build/libgrpc_csharp_ext.dbginfo.so "${ARTIFACTS_OUT}" || cp cmake/build/libgrpc_csharp_ext.dylib "${ARTIFACTS_OUT}"
