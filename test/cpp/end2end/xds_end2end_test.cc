@@ -7373,7 +7373,6 @@ TEST_P(XdsEnabledServerTest, Basic) {
       HttpConnectionManager());
   balancers_[0]->ads_service()->SetLdsResource(listener);
   WaitForBackend(0);
-  CheckRpcSendOk();
 }
 
 TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
@@ -7384,7 +7383,10 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateNoApiListenerNorAddress) {
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -7408,7 +7410,10 @@ TEST_P(XdsEnabledServerTest, BadLdsUpdateBothApiListenerAndAddress) {
       HttpConnectionManager());
   listener.mutable_api_listener();
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -7429,7 +7434,10 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
       backends_[0]->port());
   listener.add_filter_chains()->add_filters()->mutable_typed_config()->PackFrom(default_listener_ /* any proto object other than HttpConnectionManager */);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -7460,7 +7468,10 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
       absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
                    backends_[0]->port()));
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -7493,7 +7504,10 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
       absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
                    backends_[0]->port()));
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
@@ -7550,19 +7564,13 @@ TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
       HttpConnectionManager());
   balancers_[0]->ads_service()->SetLdsResource(listener);
   WaitForBackend(0);
-  CheckRpcSendOk();
   // Set a different listening address in the LDS update
   listener.mutable_address()->mutable_socket_address()->set_address(
       "192.168.1.1");
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  bool rpc_failed = false;
-  for (int i = 0; i < 100; ++i) {
-    if (!SendRpc().ok()) {
-      rpc_failed = true;
-      break;
-    }
-  }
-  EXPECT_TRUE(rpc_failed);
+  backends_[0]->notifier()->WaitOnServingStatusChange(
+      absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
+      grpc::StatusCode::FAILED_PRECONDITION);
 }
 
 TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
@@ -7579,9 +7587,13 @@ TEST_P(XdsEnabledServerTest, UseOriginalDstNotSupported) {
       HttpConnectionManager());
   listener.mutable_use_original_dst()->set_value(true);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  CheckRpcSendFailure(1, RpcOptions().set_wait_for_ready(true));
-  EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state();
-                .state, AdsServiceImpl::ResponseState::NACKED);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(
       response_state.error_message,
       ::testing::HasSubstr("Field \'use_original_dst\' is not supported."));
@@ -8099,7 +8111,6 @@ class XdsEnabledServerStatusNotificationTest : public XdsServerSecurityTest {
   void SetValidLdsUpdate() { SetLdsUpdate("", "", "", "", false); }
 
   void SetInvalidLdsUpdate() {
-    // Set LDS update without root provider instance.
     Listener listener;
     listener.set_name(absl::StrCat(
         "grpc/server?xds.resource.listening_address=",
@@ -8108,9 +8119,14 @@ class XdsEnabledServerStatusNotificationTest : public XdsServerSecurityTest {
     socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
     socket_address->set_port_value(backends_[0]->port());
     auto* filter_chain = listener.add_filter_chains();
+    filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+        HttpConnectionManager());
     auto* transport_socket = filter_chain->mutable_transport_socket();
     transport_socket->set_name("envoy.transport_sockets.tls");
     DownstreamTlsContext downstream_tls_context;
+    downstream_tls_context.mutable_common_tls_context()
+        ->mutable_tls_certificate_certificate_provider_instance()
+        ->set_instance_name("unknown");
     transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
     balancers_[0]->ads_service()->SetLdsResource(listener);
   }
@@ -8149,14 +8165,10 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ErrorUpdateWhenAlreadyServing) {
   // Invalid update does not lead to a change in the serving status.
   SetInvalidLdsUpdate();
   constexpr int kRetryCount = 100;
-  auto response_state = balancers_[0]->ads_service()->lds_response_state();
-  for (int i = 0; i < kRetryCount &&
-                  response_state.state != AdsServiceImpl::ResponseState::NACKED;
-       i++) {
+  do {
     SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
-    response_state = balancers_[0]->ads_service()->lds_response_state();
-  }
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
   backends_[0]->notifier()->WaitOnServingStatusChange(
       absl::StrCat(ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()),
       grpc::StatusCode::OK);
