@@ -34,7 +34,7 @@ namespace Grpc.Tools
         public string Os { get; set; }
 
         /// <summary>
-        /// Return one of 'x64' or 'x86'.
+        /// Return one of 'x64', 'x86', 'arm64'.
         /// If the CPU is unknown, the property is not set.
         /// </summary>
         [Output]
@@ -55,6 +55,7 @@ namespace Grpc.Tools
             {
                 case Platform.CpuKind.X86: Cpu = "x86"; break;
                 case Platform.CpuKind.X64: Cpu = "x64"; break;
+                case Platform.CpuKind.Arm64: Cpu = "arm64"; break;
                 default: Cpu = ""; break;
             }
             return true;
