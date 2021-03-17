@@ -29,13 +29,17 @@ make grpc_csharp_ext -j2
 
 if [ -f "libgrpc_csharp_ext.so" ]
 then
+    # in case we are in a crosscompilation environment
+    STRIP=${STRIP:-strip}
+    OBJCOPY=${OBJCOPY:-objcopy}
+    
     # The .so file with all debug symbols is too large to
     # package in the default nuget package.
     # But we still want to keep the version with symbols
     # to include it in a special "debug" package.
     cp libgrpc_csharp_ext.so libgrpc_csharp_ext.dbginfo.so
-    strip --strip-unneeded libgrpc_csharp_ext.so
-    objcopy --add-gnu-debuglink=libgrpc_csharp_ext.dbginfo.so libgrpc_csharp_ext.so
+    ${STRIP} --strip-unneeded libgrpc_csharp_ext.so
+    ${OBJCOPY} --add-gnu-debuglink=libgrpc_csharp_ext.dbginfo.so libgrpc_csharp_ext.so
 fi
 
 cd ../..
