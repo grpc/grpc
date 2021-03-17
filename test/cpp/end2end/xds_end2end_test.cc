@@ -1597,6 +1597,10 @@ grpc_millis NowFromCycleCounter() {
   return grpc_cycle_counter_to_millis_round_up(now);
 }
 
+void ExpectBetween(double value, double a, double b) {
+  EXPECT_THAT(value, ::testing::AllOf(::testing::Ge(a), ::testing::Le(b)));
+}
+
 // Returns the number of RPCs needed to pass error_tolerance at 99.99% chance.
 // Rolling dices in drop/fault-injection generates a binomial distribution (if
 // our code is not horribly wrong). Let's make "n" the number of samples, "p"
@@ -1617,7 +1621,7 @@ grpc_millis NowFromCycleCounter() {
 // k=0.01, n >= 37830.
 // Btw, p=0.5 is preferred, since it detects the skew of distribution better.
 size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
-  EXPECT_THAT(p, ::testing::AllOf(::testing::Ge(0), ::testing::Le(1)));
+  ExpectBetween(p, 0, 1);
   return ceil(p * (1 - p) * 3.89 * 3.89 / error_tolerance / error_tolerance);
 }
 
@@ -4575,11 +4579,14 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   const char* kNotUsedClusterName = "not_used_cluster";
+  const size_t kNumEchoRpcs = 10;  // RPCs that will go to a fixed backend.
   const size_t kWeight75 = 75;
   const size_t kWeight25 = 25;
   const double kErrorTolerance = 0.05;
-  const size_t kNumEchoRpcs = 10;  // RPCs that will go to a fixed backend.
-  const size_t kNumEcho1Rpcs = ComputeIdealNumRpcs(static_cast<double>(kWeight75)/100, kErrorTolerance);
+  const double kWeight75Percent = static_cast<double>(kWeight75) / 100;
+  const double kWeight25Percent = static_cast<double>(kWeight25) / 100;
+  const size_t kNumEcho1Rpcs =
+      ComputeIdealNumRpcs(kWeight75Percent, kErrorTolerance);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -4646,18 +4653,14 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   EXPECT_EQ(0, backends_[2]->backend_service()->request_count());
   const int weight_25_request_count =
       backends_[2]->backend_service1()->request_count();
-  const double backend_1_percentage = static_cast<double>(weight_75_request_count)/kNumEcho1Rpcs;
-  EXPECT_THAT(
-    backend_1_percentage,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kWeight75) / 100 - kErrorTolerance),
-                       ::testing::Le(static_cast<double>(kWeight75) / 100 + kErrorTolerance)));
-  const double backend_2_percentage = static_cast<double>(weight_25_request_count)/kNumEcho1Rpcs;
-  EXPECT_THAT(
-    backend_2_percentage,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kWeight25) / 100 - kErrorTolerance),
-                       ::testing::Le(static_cast<double>(kWeight25) / 100 + kErrorTolerance)));
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
+  ExpectBetween(static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs,
+                kWeight75Percent - kErrorTolerance,
+                kWeight75Percent + kErrorTolerance);
+  ExpectBetween(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs,
+                kWeight25Percent - kErrorTolerance,
+                kWeight25Percent + kErrorTolerance);
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
@@ -4665,9 +4668,13 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
   const char* kNewEdsService1Name = "new_eds_service_name_1";
   const char* kNewCluster2Name = "new_cluster_2";
   const char* kNewEdsService2Name = "new_eds_service_name_2";
-  const size_t kNumEchoRpcs = 1000;
   const size_t kWeight75 = 75;
   const size_t kWeight25 = 25;
+  const double kErrorTolerance = 0.05;
+  const double kWeight75Percent = static_cast<double>(kWeight75) / 100;
+  const double kWeight25Percent = static_cast<double>(kWeight25) / 100;
+  const size_t kNumEchoRpcs =
+      ComputeIdealNumRpcs(kWeight75Percent, kErrorTolerance);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -4721,24 +4728,14 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
       backends_[1]->backend_service()->request_count();
   const int weight_25_request_count =
       backends_[2]->backend_service()->request_count();
-  const double kErrorTolerance = 0.2;
-  EXPECT_THAT(
-      weight_75_request_count,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEchoRpcs) *
-                                     kWeight75 / 100 * (1 - kErrorTolerance)),
-                       ::testing::Le(static_cast<double>(kNumEchoRpcs) *
-                                     kWeight75 / 100 * (1 + kErrorTolerance))));
-  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
-  // test from flaking while debugging potential root cause.
-  const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
-  EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(
-                  ::testing::Ge(static_cast<double>(kNumEchoRpcs) * kWeight25 /
-                                100 * (1 - kErrorToleranceSmallLoad)),
-                  ::testing::Le(static_cast<double>(kNumEchoRpcs) * kWeight25 /
-                                100 * (1 + kErrorToleranceSmallLoad))));
+  ExpectBetween(static_cast<double>(weight_75_request_count) / kNumEchoRpcs,
+                kWeight75Percent - kErrorTolerance,
+                kWeight75Percent + kErrorTolerance);
+  ExpectBetween(static_cast<double>(weight_25_request_count) / kNumEchoRpcs,
+                kWeight25Percent - kErrorTolerance,
+                kWeight25Percent + kErrorTolerance);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
@@ -4748,11 +4745,18 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   const char* kNewCluster3Name = "new_cluster_3";
   const char* kNewEdsService3Name = "new_eds_service_name_3";
-  const size_t kNumEcho1Rpcs = 1000;
   const size_t kNumEchoRpcs = 10;
   const size_t kWeight75 = 75;
   const size_t kWeight25 = 25;
   const size_t kWeight50 = 50;
+  const double kErrorTolerance = 0.05;
+  const double kWeight75Percent = static_cast<double>(kWeight75) / 100;
+  const double kWeight25Percent = static_cast<double>(kWeight25) / 100;
+  const double kWeight50Percent = static_cast<double>(kWeight50) / 100;
+  const size_t kNumEcho1Rpcs7525 =
+      ComputeIdealNumRpcs(kWeight75Percent, kErrorTolerance);
+  const size_t kNumEcho1Rpcs5050 =
+      ComputeIdealNumRpcs(kWeight50Percent, kErrorTolerance);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -4814,7 +4818,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   WaitForAllBackends(0, 1);
   WaitForAllBackends(1, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEcho1Rpcs7525,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -4827,24 +4832,14 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  const double kErrorTolerance = 0.2;
-  EXPECT_THAT(
-      weight_75_request_count,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight75 / 100 * (1 - kErrorTolerance)),
-                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight75 / 100 * (1 + kErrorTolerance))));
-  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
-  // test from flaking while debugging potential root cause.
-  const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
-  EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(
-                  ::testing::Ge(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
-                                100 * (1 - kErrorToleranceSmallLoad)),
-                  ::testing::Le(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
-                                100 * (1 + kErrorToleranceSmallLoad))));
+  ExpectBetween(
+      static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
+      kWeight75Percent - kErrorTolerance, kWeight75Percent + kErrorTolerance);
+  ExpectBetween(
+      static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
+      kWeight25Percent - kErrorTolerance, kWeight25Percent + kErrorTolerance);
   // Change Route Configurations: same clusters different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
@@ -4855,7 +4850,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   ResetBackendCounters();
   WaitForAllBackends(3, 4);
   CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEcho1Rpcs5050,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -4867,18 +4863,12 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(kNumEchoRpcs, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  EXPECT_THAT(
-      weight_50_request_count_1,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight50 / 100 * (1 - kErrorTolerance)),
-                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight50 / 100 * (1 + kErrorTolerance))));
-  EXPECT_THAT(
-      weight_50_request_count_2,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight50 / 100 * (1 - kErrorTolerance)),
-                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight50 / 100 * (1 + kErrorTolerance))));
+  ExpectBetween(
+      static_cast<double>(weight_50_request_count_1) / kNumEcho1Rpcs5050,
+      kWeight50Percent - kErrorTolerance, kWeight50Percent + kErrorTolerance);
+  ExpectBetween(
+      static_cast<double>(weight_50_request_count_2) / kNumEcho1Rpcs5050,
+      kWeight50Percent - kErrorTolerance, kWeight50Percent + kErrorTolerance);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
@@ -4888,11 +4878,18 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   const char* kNewEdsService2Name = "new_eds_service_name_2";
   const char* kNewCluster3Name = "new_cluster_3";
   const char* kNewEdsService3Name = "new_eds_service_name_3";
-  const size_t kNumEcho1Rpcs = 1000;
   const size_t kNumEchoRpcs = 10;
   const size_t kWeight75 = 75;
   const size_t kWeight25 = 25;
   const size_t kWeight50 = 50;
+  const double kErrorTolerance = 0.05;
+  const double kWeight75Percent = static_cast<double>(kWeight75) / 100;
+  const double kWeight25Percent = static_cast<double>(kWeight25) / 100;
+  const double kWeight50Percent = static_cast<double>(kWeight50) / 100;
+  const size_t kNumEcho1Rpcs7525 =
+      ComputeIdealNumRpcs(kWeight75Percent, kErrorTolerance);
+  const size_t kNumEcho1Rpcs5050 =
+      ComputeIdealNumRpcs(kWeight50Percent, kErrorTolerance);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -4954,7 +4951,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   WaitForAllBackends(0, 1);
   WaitForAllBackends(1, 2, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEcho1Rpcs7525,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   int weight_25_request_count =
@@ -4966,24 +4964,14 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  const double kErrorTolerance = 0.2;
-  EXPECT_THAT(
-      weight_75_request_count,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight75 / 100 * (1 - kErrorTolerance)),
-                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight75 / 100 * (1 + kErrorTolerance))));
-  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
-  // test from flaking while debugging potential root cause.
-  const double kErrorToleranceSmallLoad = 0.3;
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
-  EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(
-                  ::testing::Ge(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
-                                100 * (1 - kErrorToleranceSmallLoad)),
-                  ::testing::Le(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
-                                100 * (1 + kErrorToleranceSmallLoad))));
+  ExpectBetween(
+      static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
+      kWeight75Percent - kErrorTolerance, kWeight75Percent + kErrorTolerance);
+  ExpectBetween(
+      static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
+      kWeight25Percent - kErrorTolerance, kWeight25Percent + kErrorTolerance);
   // Change Route Configurations: new set of clusters with different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->set_name(kNewCluster2Name);
@@ -4992,7 +4980,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   ResetBackendCounters();
   WaitForAllBackends(2, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEcho1Rpcs5050,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -5004,18 +4993,12 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  EXPECT_THAT(
-      weight_50_request_count_1,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight50 / 100 * (1 - kErrorTolerance)),
-                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight50 / 100 * (1 + kErrorTolerance))));
-  EXPECT_THAT(
-      weight_50_request_count_2,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight50 / 100 * (1 - kErrorTolerance)),
-                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight50 / 100 * (1 + kErrorTolerance))));
+  ExpectBetween(
+      static_cast<double>(weight_50_request_count_1) / kNumEcho1Rpcs5050,
+      kWeight50Percent - kErrorTolerance, kWeight50Percent + kErrorTolerance);
+  ExpectBetween(
+      static_cast<double>(weight_50_request_count_2) / kNumEcho1Rpcs5050,
+      kWeight50Percent - kErrorTolerance, kWeight50Percent + kErrorTolerance);
   // Change Route Configurations.
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
   weighted_cluster2->set_name(kNewCluster3Name);
@@ -5024,7 +5007,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   ResetBackendCounters();
   WaitForAllBackends(3, 4, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
-  CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  CheckRpcSendOk(kNumEcho1Rpcs7525,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
   EXPECT_EQ(kNumEchoRpcs, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -5034,22 +5018,14 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   EXPECT_EQ(0, backends_[2]->backend_service1()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   weight_25_request_count = backends_[3]->backend_service1()->request_count();
-  EXPECT_THAT(
-      weight_75_request_count,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight75 / 100 * (1 - kErrorTolerance)),
-                       ::testing::Le(static_cast<double>(kNumEcho1Rpcs) *
-                                     kWeight75 / 100 * (1 + kErrorTolerance))));
-  // TODO(@donnadionne): Reduce tolerance: increased the tolerance to keep the
-  // test from flaking while debugging potential root cause.
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
-  EXPECT_THAT(weight_25_request_count,
-              ::testing::AllOf(
-                  ::testing::Ge(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
-                                100 * (1 - kErrorToleranceSmallLoad)),
-                  ::testing::Le(static_cast<double>(kNumEcho1Rpcs) * kWeight25 /
-                                100 * (1 + kErrorToleranceSmallLoad))));
+  ExpectBetween(
+      static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
+      kWeight75Percent - kErrorTolerance, kWeight75Percent + kErrorTolerance);
+  ExpectBetween(
+      static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
+      kWeight25Percent - kErrorTolerance, kWeight25Percent + kErrorTolerance);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
@@ -5734,7 +5710,12 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
 TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
   const char* kNewClusterName = "new_cluster";
   const char* kNewEdsServiceName = "new_eds_service_name";
-  const size_t kNumRpcs = 1000;
+  const double kErrorTolerance = 0.05;
+  const size_t kRouteMatchNumerator = 25;
+  const double kRouteMatchPercent =
+      static_cast<double>(kRouteMatchNumerator) / 100;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kRouteMatchPercent, kErrorTolerance);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
@@ -5759,7 +5740,7 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
   route1->mutable_match()
       ->mutable_runtime_fraction()
       ->mutable_default_value()
-      ->set_numerator(25);
+      ->set_numerator(kRouteMatchNumerator);
   route1->mutable_route()->set_cluster(kNewClusterName);
   auto* default_route = route_config.mutable_virtual_hosts(0)->add_routes();
   default_route->mutable_match()->set_prefix("");
@@ -5771,19 +5752,12 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
       backends_[0]->backend_service()->request_count();
   const int matched_backend_count =
       backends_[1]->backend_service()->request_count();
-  const double kErrorTolerance = 0.2;
-  EXPECT_THAT(
-      default_backend_count,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumRpcs) * 75 / 100 *
-                                     (1 - kErrorTolerance)),
-                       ::testing::Le(static_cast<double>(kNumRpcs) * 75 / 100 *
-                                     (1 + kErrorTolerance))));
-  EXPECT_THAT(
-      matched_backend_count,
-      ::testing::AllOf(::testing::Ge(static_cast<double>(kNumRpcs) * 25 / 100 *
-                                     (1 - kErrorTolerance)),
-                       ::testing::Le(static_cast<double>(kNumRpcs) * 25 / 100 *
-                                     (1 + kErrorTolerance))));
+  ExpectBetween(static_cast<double>(default_backend_count) / kNumRpcs,
+                (1 - kRouteMatchPercent) - kErrorTolerance,
+                (1 - kRouteMatchPercent) + kErrorTolerance);
+  ExpectBetween(static_cast<double>(matched_backend_count) / kNumRpcs,
+                kRouteMatchPercent - kErrorTolerance,
+                kRouteMatchPercent + kErrorTolerance);
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
 }
@@ -8176,7 +8150,6 @@ using LocalityMapTest = BasicTest;
 TEST_P(LocalityMapTest, WeightedRoundRobin) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcs = 5000;
   const int kLocalityWeight0 = 2;
   const int kLocalityWeight1 = 8;
   const int kTotalLocalityWeight = kLocalityWeight0 + kLocalityWeight1;
@@ -8184,6 +8157,9 @@ TEST_P(LocalityMapTest, WeightedRoundRobin) {
       static_cast<double>(kLocalityWeight0) / kTotalLocalityWeight;
   const double kLocalityWeightRate1 =
       static_cast<double>(kLocalityWeight1) / kTotalLocalityWeight;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kLocalityWeightRate0, kErrorTolerance);
   // ADS response contains 2 localities, each of which contains 1 backend.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts(0, 1), kLocalityWeight0},
@@ -8202,15 +8178,10 @@ TEST_P(LocalityMapTest, WeightedRoundRobin) {
   const double locality_picked_rate_1 =
       static_cast<double>(backends_[1]->backend_service()->request_count()) /
       kNumRpcs;
-  const double kErrorTolerance = 0.2;
-  EXPECT_THAT(locality_picked_rate_0,
-              ::testing::AllOf(
-                  ::testing::Ge(kLocalityWeightRate0 * (1 - kErrorTolerance)),
-                  ::testing::Le(kLocalityWeightRate0 * (1 + kErrorTolerance))));
-  EXPECT_THAT(locality_picked_rate_1,
-              ::testing::AllOf(
-                  ::testing::Ge(kLocalityWeightRate1 * (1 - kErrorTolerance)),
-                  ::testing::Le(kLocalityWeightRate1 * (1 + kErrorTolerance))));
+  ExpectBetween(locality_picked_rate_0, kLocalityWeightRate0 - kErrorTolerance,
+                kLocalityWeightRate0 + kErrorTolerance);
+  ExpectBetween(locality_picked_rate_1, kLocalityWeightRate1 - kErrorTolerance,
+                kLocalityWeightRate1 + kErrorTolerance);
 }
 
 // Tests that we correctly handle a locality containing no endpoints.
@@ -8627,13 +8598,15 @@ using DropTest = BasicTest;
 TEST_P(DropTest, Vanilla) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcs = 5000;
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
   const double KDropRateForLbAndThrottle =
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(KDropRateForLbAndThrottle, kErrorTolerance);
   // The ADS response contains two drop categories.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts()},
@@ -8659,21 +8632,18 @@ TEST_P(DropTest, Vanilla) {
   }
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  const double kErrorTolerance = 0.2;
-  EXPECT_THAT(
-      seen_drop_rate,
-      ::testing::AllOf(
-          ::testing::Ge(KDropRateForLbAndThrottle * (1 - kErrorTolerance)),
-          ::testing::Le(KDropRateForLbAndThrottle * (1 + kErrorTolerance))));
+  ExpectBetween(seen_drop_rate, KDropRateForLbAndThrottle - kErrorTolerance,
+                KDropRateForLbAndThrottle + kErrorTolerance);
 }
 
 // Tests that drop config is converted correctly from per hundred.
 TEST_P(DropTest, DropPerHundred) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcs = 5000;
   const uint32_t kDropPerHundredForLb = 10;
   const double kDropRateForLb = kDropPerHundredForLb / 100.0;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs = ComputeIdealNumRpcs(kDropRateForLb, kErrorTolerance);
   // The ADS response contains one drop category.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts()},
@@ -8699,20 +8669,18 @@ TEST_P(DropTest, DropPerHundred) {
   }
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  const double kErrorTolerance = 0.2;
-  EXPECT_THAT(
-      seen_drop_rate,
-      ::testing::AllOf(::testing::Ge(kDropRateForLb * (1 - kErrorTolerance)),
-                       ::testing::Le(kDropRateForLb * (1 + kErrorTolerance))));
+  ExpectBetween(seen_drop_rate, kDropRateForLb - kErrorTolerance,
+                kDropRateForLb + kErrorTolerance);
 }
 
 // Tests that drop config is converted correctly from per ten thousand.
 TEST_P(DropTest, DropPerTenThousand) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcs = 5000;
   const uint32_t kDropPerTenThousandForLb = 1000;
   const double kDropRateForLb = kDropPerTenThousandForLb / 10000.0;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs = ComputeIdealNumRpcs(kDropRateForLb, kErrorTolerance);
   // The ADS response contains one drop category.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts()},
@@ -8738,24 +8706,25 @@ TEST_P(DropTest, DropPerTenThousand) {
   }
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  const double kErrorTolerance = 0.2;
-  EXPECT_THAT(
-      seen_drop_rate,
-      ::testing::AllOf(::testing::Ge(kDropRateForLb * (1 - kErrorTolerance)),
-                       ::testing::Le(kDropRateForLb * (1 + kErrorTolerance))));
+  ExpectBetween(seen_drop_rate, kDropRateForLb - kErrorTolerance,
+                kDropRateForLb + kErrorTolerance);
 }
 
 // Tests that drop is working correctly after update.
 TEST_P(DropTest, Update) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcs = 3000;
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
+  const double kErrorTolerance = 0.05;
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
   const double KDropRateForLbAndThrottle =
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
+  const size_t kNumRpcsLbOnly =
+      ComputeIdealNumRpcs(kDropRateForLb, kErrorTolerance);
+  const size_t kNumRpcsBoth =
+      ComputeIdealNumRpcs(KDropRateForLbAndThrottle, kErrorTolerance);
   // The first ADS response contains one drop category.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts()},
@@ -8764,10 +8733,10 @@ TEST_P(DropTest, Update) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   WaitForAllBackends();
-  // Send kNumRpcs RPCs and count the drops.
+  // Send kNumRpcsLbOnly RPCs and count the drops.
   size_t num_drops = 0;
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
-  for (size_t i = 0; i < kNumRpcs; ++i) {
+  for (size_t i = 0; i < kNumRpcsLbOnly; ++i) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
@@ -8781,13 +8750,10 @@ TEST_P(DropTest, Update) {
   }
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // The drop rate should be roughly equal to the expectation.
-  double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
+  double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsLbOnly;
   gpr_log(GPR_INFO, "First batch drop rate %f", seen_drop_rate);
-  const double kErrorTolerance = 0.3;
-  EXPECT_THAT(
-      seen_drop_rate,
-      ::testing::AllOf(::testing::Ge(kDropRateForLb * (1 - kErrorTolerance)),
-                       ::testing::Le(kDropRateForLb * (1 + kErrorTolerance))));
+  ExpectBetween(seen_drop_rate, kDropRateForLb - kErrorTolerance,
+                kDropRateForLb + kErrorTolerance);
   // The second ADS response contains two drop categories, send an update EDS
   // response.
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
@@ -8798,7 +8764,7 @@ TEST_P(DropTest, Update) {
   // implies that the update has been in effect.
   const double kDropRateThreshold =
       (kDropRateForLb + KDropRateForLbAndThrottle) / 2;
-  size_t num_rpcs = kNumRpcs;
+  size_t num_rpcs = kNumRpcsBoth;
   while (seen_drop_rate < kDropRateThreshold) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
@@ -8813,10 +8779,10 @@ TEST_P(DropTest, Update) {
     }
     seen_drop_rate = static_cast<double>(num_drops) / num_rpcs;
   }
-  // Send kNumRpcs RPCs and count the drops.
+  // Send kNumRpcsBoth RPCs and count the drops.
   num_drops = 0;
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
-  for (size_t i = 0; i < kNumRpcs; ++i) {
+  for (size_t i = 0; i < kNumRpcsBoth; ++i) {
     EchoResponse response;
     const Status status = SendRpc(RpcOptions(), &response);
     if (!status.ok() &&
@@ -8830,13 +8796,10 @@ TEST_P(DropTest, Update) {
   }
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // The new drop rate should be roughly equal to the expectation.
-  seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
+  seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsBoth;
   gpr_log(GPR_INFO, "Second batch drop rate %f", seen_drop_rate);
-  EXPECT_THAT(
-      seen_drop_rate,
-      ::testing::AllOf(
-          ::testing::Ge(KDropRateForLbAndThrottle * (1 - kErrorTolerance)),
-          ::testing::Le(KDropRateForLbAndThrottle * (1 + kErrorTolerance))));
+  ExpectBetween(seen_drop_rate, KDropRateForLbAndThrottle - kErrorTolerance,
+                KDropRateForLbAndThrottle + kErrorTolerance);
 }
 
 // Tests that all the RPCs are dropped if any drop category drops 100%.
@@ -9301,13 +9264,15 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   }
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcs = 3000;
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
+  const double kErrorTolerance = 0.05;
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
   const double KDropRateForLbAndThrottle =
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(KDropRateForLbAndThrottle, kErrorTolerance);
   // The ADS response contains two drop categories.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts()},
@@ -9336,12 +9301,8 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   }
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  const double kErrorTolerance = 0.2;
-  EXPECT_THAT(
-      seen_drop_rate,
-      ::testing::AllOf(
-          ::testing::Ge(KDropRateForLbAndThrottle * (1 - kErrorTolerance)),
-          ::testing::Le(KDropRateForLbAndThrottle * (1 + kErrorTolerance))));
+  ExpectBetween(seen_drop_rate, KDropRateForLbAndThrottle - kErrorTolerance,
+                KDropRateForLbAndThrottle + kErrorTolerance);
   // Check client stats.
   const size_t total_rpc = num_warmup + kNumRpcs;
   ClientStats client_stats;
@@ -9355,17 +9316,15 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
                client_stats.total_dropped_requests() <
            total_rpc);
   EXPECT_EQ(num_drops, client_stats.total_dropped_requests());
-  EXPECT_THAT(
-      client_stats.dropped_requests(kLbDropType),
-      ::testing::AllOf(
-          ::testing::Ge(total_rpc * kDropRateForLb * (1 - kErrorTolerance)),
-          ::testing::Le(total_rpc * kDropRateForLb * (1 + kErrorTolerance))));
-  EXPECT_THAT(client_stats.dropped_requests(kThrottleDropType),
-              ::testing::AllOf(
-                  ::testing::Ge(total_rpc * (1 - kDropRateForLb) *
-                                kDropRateForThrottle * (1 - kErrorTolerance)),
-                  ::testing::Le(total_rpc * (1 - kDropRateForLb) *
-                                kDropRateForThrottle * (1 + kErrorTolerance))));
+  ExpectBetween(
+      static_cast<double>(client_stats.dropped_requests(kLbDropType)) /
+          total_rpc,
+      kDropRateForLb - kErrorTolerance, kDropRateForLb + kErrorTolerance);
+  ExpectBetween(
+      static_cast<double>(client_stats.dropped_requests(kThrottleDropType)) /
+          (total_rpc * (1 - kDropRateForLb)),
+      kDropRateForThrottle - kErrorTolerance,
+      kDropRateForThrottle + kErrorTolerance);
 }
 
 class FaultInjectionTest : public XdsEnd2endTest {
