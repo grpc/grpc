@@ -69,18 +69,23 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
-#include "src/cpp/server/csds/csds.h"
 #include "src/cpp/server/secure_server_credentials.h"
+
+#include "test/core/util/port.h"
+#include "test/core/util/resolve_localhost_ip46.h"
+#include "test/core/util/test_config.h"
+#include "test/cpp/end2end/test_service_impl.h"
+
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/lds_rds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
+
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
@@ -90,10 +95,6 @@
 #include "src/proto/grpc/testing/xds/v3/route.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/router.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/tls.grpc.pb.h"
-#include "test/core/util/port.h"
-#include "test/core/util/resolve_localhost_ip46.h"
-#include "test/core/util/test_config.h"
-#include "test/cpp/end2end/test_service_impl.h"
 
 namespace grpc {
 namespace testing {
@@ -101,7 +102,6 @@ namespace {
 
 using std::chrono::system_clock;
 
-using ::envoy::admin::v3::ClientResourceStatus;
 using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::cluster::v3::Cluster;
 using ::envoy::config::cluster::v3::CustomClusterType;
@@ -1341,11 +1341,6 @@ class TestType {
     return *this;
   }
 
-  TestType& set_use_csds_streaming() {
-    use_csds_streaming_ = true;
-    return *this;
-  }
-
   TestType& set_filter_config_setup(const FilterConfigSetup& setup) {
     filter_config_setup_ = setup;
     return *this;
@@ -1356,7 +1351,6 @@ class TestType {
   bool enable_rds_testing() const { return enable_rds_testing_; }
   bool use_v2() const { return use_v2_; }
   bool use_xds_credentials() const { return use_xds_credentials_; }
-  bool use_csds_streaming() const { return use_csds_streaming_; }
   const FilterConfigSetup& filter_config_setup() const {
     return filter_config_setup_;
   }
@@ -1367,7 +1361,6 @@ class TestType {
     if (enable_load_reporting_) retval += "WithLoadReporting";
     if (enable_rds_testing_) retval += "Rds";
     if (use_xds_credentials_) retval += "XdsCreds";
-    if (use_csds_streaming_) retval += "CsdsStreaming";
     if (filter_config_setup_ == kRouteOverride) {
       retval += "FilterPerRouteOverride";
     }
@@ -1380,7 +1373,6 @@ class TestType {
   bool enable_rds_testing_ = false;
   bool use_v2_ = false;
   bool use_xds_credentials_ = false;
-  bool use_csds_streaming_ = false;
   FilterConfigSetup filter_config_setup_ = kHTTPConnectionManagerOriginal;
 };
 
@@ -1886,7 +1878,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       case METHOD_ECHO2:
         return (*stub)->Echo2(context, request, response);
     }
-    GPR_UNREACHABLE_CODE();
   }
 
   void ResetBackendCounters(size_t start_index = 0, size_t stop_index = 0) {
@@ -2426,19 +2417,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     std::shared_ptr<AdsServiceImpl> ads_service_;
     std::shared_ptr<LrsServiceImpl> lrs_service_;
-  };
-
-  class AdminServerThread : public ServerThread {
-   private:
-    void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(&csds_service_);
-    }
-    void StartAllServices() override {}
-    void ShutdownAllServices() override {}
-
-    const char* Type() override { return "Admin"; }
-
-    grpc::xds::experimental::ClientStatusDiscoveryService csds_service_;
   };
 
   class LongRunningRpc {
@@ -10016,768 +9994,6 @@ TEST_P(BootstrapContentsFromEnvVarTest, Vanilla) {
   WaitForAllBackends();
 }
 
-class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
- public:
-  ClientStatusDiscoveryServiceTest() : XdsEnd2endTest(1, 1) {}
-
-  void SetUp() override {
-    XdsEnd2endTest::SetUp();
-    admin_server_thread_ = absl::make_unique<AdminServerThread>();
-    admin_server_thread_->Start();
-    std::string admin_server_address = absl::StrCat(
-        ipv6_only_ ? "[::1]:" : "127.0.0.1:", admin_server_thread_->port());
-    admin_channel_ = grpc::CreateChannel(
-        admin_server_address,
-        std::make_shared<SecureChannelCredentials>(
-            grpc_fake_transport_security_credentials_create()));
-    csds_stub_ =
-        envoy::service::status::v3::ClientStatusDiscoveryService::NewStub(
-            admin_channel_);
-    if (GetParam().use_csds_streaming()) {
-      stream_ = csds_stub_->StreamClientStatus(&stream_context_);
-    }
-  }
-
-  void TearDown() override {
-    if (stream_ != nullptr) {
-      EXPECT_TRUE(stream_->WritesDone());
-      Status status = stream_->Finish();
-      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                               << " message=" << status.error_message();
-    }
-    admin_server_thread_->Shutdown();
-    XdsEnd2endTest::TearDown();
-  }
-
-  envoy::service::status::v3::ClientStatusResponse FetchCsdsResponse() {
-    envoy::service::status::v3::ClientStatusResponse response;
-    if (!GetParam().use_csds_streaming()) {
-      // Fetch through unary pulls
-      ClientContext context;
-      Status status = csds_stub_->FetchClientStatus(
-          &context, envoy::service::status::v3::ClientStatusRequest(),
-          &response);
-      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
-                               << " message=" << status.error_message();
-    } else {
-      // Fetch through streaming pulls
-      EXPECT_TRUE(
-          stream_->Write(envoy::service::status::v3::ClientStatusRequest()));
-      EXPECT_TRUE(stream_->Read(&response));
-    }
-    return response;
-  }
-
- private:
-  std::unique_ptr<AdminServerThread> admin_server_thread_;
-  std::shared_ptr<Channel> admin_channel_;
-  std::unique_ptr<
-      envoy::service::status::v3::ClientStatusDiscoveryService::Stub>
-      csds_stub_;
-  ClientContext stream_context_;
-  std::unique_ptr<
-      ClientReaderWriter<envoy::service::status::v3::ClientStatusRequest,
-                         envoy::service::status::v3::ClientStatusResponse>>
-      stream_;
-};
-
-MATCHER_P4(EqNode, id, user_agent_name, user_agent_version, client_features,
-           "equals Node") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(id, arg.id(), result_listener);
-  ok &= ::testing::ExplainMatchResult(user_agent_name, arg.user_agent_name(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      user_agent_version, arg.user_agent_version(), result_listener);
-  ok &= ::testing::ExplainMatchResult(client_features, arg.client_features(),
-                                      result_listener);
-  return ok;
-}
-
-MATCHER_P2(EqListenersConfigDump, version_info, dynamic_listeners,
-           "equals ListenerConfigDump") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(::testing::ElementsAre(),
-                                      arg.static_listeners(), result_listener);
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(dynamic_listeners,
-                                      arg.dynamic_listeners(), result_listener);
-  return ok;
-}
-
-MATCHER_P2(EqDynamicListenerState, version_info, listener,
-           "equals DynamicListenerState") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
-                                      result_listener);
-  ok &=
-      ::testing::ExplainMatchResult(listener, arg.listener(), result_listener);
-  return ok;
-}
-
-MATCHER_P2(EqListener, name, api_listener, "equals Listener") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(name, arg.name(), result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      api_listener, arg.api_listener().api_listener(), result_listener);
-  return ok;
-}
-
-MATCHER_P(EqHttpConnectionManagerNotRds, route_config,
-          "equals HttpConnectionManager") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(route_config, arg.route_config(),
-                                      result_listener);
-  return ok;
-}
-
-MATCHER_P(EqRouteConfigurationName, name, "equals RouteConfiguration") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(name, arg.name(), result_listener);
-  return ok;
-}
-
-MATCHER_P2(EqRouteConfiguration, name, cluster_name,
-           "equals RouteConfiguration") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(name, arg.name(), result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      ::testing::ElementsAre(::testing::Property(
-          &envoy::config::route::v3::VirtualHost::routes,
-          ::testing::ElementsAre(::testing::Property(
-              &envoy::config::route::v3::Route::route,
-              ::testing::Property(
-                  &envoy::config::route::v3::RouteAction::cluster,
-                  cluster_name))))),
-      arg.virtual_hosts(), result_listener);
-  return ok;
-}
-
-MATCHER_P(EqRoutesConfigDump, dynamic_route_configs,
-          "equals RoutesConfigDump") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(
-      ::testing::ElementsAre(), arg.static_route_configs(), result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      dynamic_route_configs, arg.dynamic_route_configs(), result_listener);
-  return ok;
-}
-
-MATCHER_P2(EqClustersConfigDump, version_info, dynamic_active_clusters,
-           "equals ClustersConfigDump") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(::testing::ElementsAre(),
-                                      arg.static_clusters(), result_listener);
-  ok &= ::testing::ExplainMatchResult(::testing::ElementsAre(),
-                                      arg.dynamic_warming_clusters(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      dynamic_active_clusters, arg.dynamic_active_clusters(), result_listener);
-  return ok;
-}
-
-MATCHER_P(EqCluster, name, "equals Cluster") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(name, arg.name(), result_listener);
-  return ok;
-}
-
-MATCHER_P(EqEndpointsConfigDump, dynamic_endpoint_configs,
-          "equals EndpointsConfigDump") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(dynamic_endpoint_configs,
-                                      arg.dynamic_endpoint_configs(),
-                                      result_listener);
-  return ok;
-}
-
-MATCHER_P(EqEndpoint, port, "equals Endpoint") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(
-      port, arg.address().socket_address().port_value(), result_listener);
-  return ok;
-}
-
-MATCHER_P2(EqLocalityLbEndpoints, port, weight, "equals LocalityLbEndpoints") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(
-      ::testing::ElementsAre(::testing::Property(
-          &envoy::config::endpoint::v3::LbEndpoint::endpoint,
-          EqEndpoint(port))),
-      arg.lb_endpoints(), result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      weight, arg.load_balancing_weight().value(), result_listener);
-  return ok;
-}
-
-MATCHER_P(EqClusterLoadAssignmentName, cluster_name,
-          "equals ClusterLoadAssignment") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(cluster_name, arg.cluster_name(),
-                                      result_listener);
-  return ok;
-}
-
-MATCHER_P3(EqClusterLoadAssignment, cluster_name, port, weight,
-           "equals ClusterLoadAssignment") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(cluster_name, arg.cluster_name(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(
-      ::testing::ElementsAre(EqLocalityLbEndpoints(port, weight)),
-      arg.endpoints(), result_listener);
-  return ok;
-}
-
-MATCHER_P2(EqUpdateFailureState, details, version_info,
-           "equals UpdateFailureState") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(details, arg.details(), result_listener);
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
-                                      result_listener);
-  return ok;
-}
-
-MATCHER_P(UnpackListener, matcher, "is a Listener") {
-  Listener config;
-  if (!::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
-                                     result_listener)) {
-    return false;
-  }
-  return ::testing::ExplainMatchResult(matcher, config, result_listener);
-}
-
-MATCHER_P(UnpackRouteConfiguration, matcher, "is a RouteConfiguration") {
-  RouteConfiguration config;
-  if (!::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
-                                     result_listener)) {
-    return false;
-  }
-  return ::testing::ExplainMatchResult(matcher, config, result_listener);
-}
-
-MATCHER_P(UnpackHttpConnectionManager, matcher, "is a HttpConnectionManager") {
-  HttpConnectionManager config;
-  if (!::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
-                                     result_listener)) {
-    return false;
-  }
-  return ::testing::ExplainMatchResult(matcher, config, result_listener);
-}
-
-MATCHER_P(UnpackCluster, matcher, "is a Cluster") {
-  Cluster config;
-  if (!::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
-                                     result_listener)) {
-    return false;
-  }
-  return ::testing::ExplainMatchResult(matcher, config, result_listener);
-}
-
-MATCHER_P(UnpackClusterLoadAssignment, matcher, "is a ClusterLoadAssignment") {
-  ClusterLoadAssignment config;
-  if (!::testing::ExplainMatchResult(true, arg.UnpackTo(&config),
-                                     result_listener)) {
-    return false;
-  }
-  return ::testing::ExplainMatchResult(matcher, config, result_listener);
-}
-
-MATCHER_P5(EqDynamicListener, name, version_info, client_status,
-           api_listener_matcher, error_state, "equals DynamicListener") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(false, arg.has_warming_state(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(false, arg.has_draining_state(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(name, arg.name(), result_listener);
-  ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(),
-                                      result_listener);
-  if (client_status == ClientResourceStatus::ACKED ||
-      client_status == ClientResourceStatus::NACKED) {
-    ok &= ::testing::ExplainMatchResult(
-        EqDynamicListenerState(version_info, UnpackListener(EqListener(
-                                                 name, api_listener_matcher))),
-        arg.active_state(), result_listener);
-  }
-  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(),
-                                      result_listener);
-  return ok;
-}
-
-MATCHER_P5(EqDynamicRouteConfig, name, version_info, client_status,
-           cluster_name, error_state, "equals DynamicRouteConfig") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
-                                      result_listener);
-  if (client_status == ClientResourceStatus::REQUESTED ||
-      client_status == ClientResourceStatus::DOES_NOT_EXIST) {
-    ok &= ::testing::ExplainMatchResult(
-        UnpackRouteConfiguration(EqRouteConfigurationName(name)),
-        arg.route_config(), result_listener);
-  } else {
-    ok &= ::testing::ExplainMatchResult(
-        UnpackRouteConfiguration(EqRouteConfiguration(name, cluster_name)),
-        arg.route_config(), result_listener);
-  }
-  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(),
-                                      result_listener);
-  return ok;
-}
-
-MATCHER_P4(EqDynamicCluster, name, version_info, client_status, error_state,
-           "equals DynamicCluster") {
-  bool ok = true;
-  ok &= ::testing::ExplainMatchResult(UnpackCluster(EqCluster(name)),
-                                      arg.cluster(), result_listener);
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(),
-                                      result_listener);
-  return ok;
-}
-
-MATCHER_P6(EqDynamicEndpointConfig, name, version_info, client_status, port,
-           weight, error_state, "equals DynamicEndpointConfig") {
-  bool ok = true;
-  if (client_status == ClientResourceStatus::REQUESTED ||
-      client_status == ClientResourceStatus::DOES_NOT_EXIST) {
-    ok &= ::testing::ExplainMatchResult(
-        UnpackClusterLoadAssignment(EqClusterLoadAssignmentName(name)),
-        arg.endpoint_config(), result_listener);
-  } else {
-    ok &= ::testing::ExplainMatchResult(
-        UnpackClusterLoadAssignment(
-            EqClusterLoadAssignment(name, port, weight)),
-        arg.endpoint_config(), result_listener);
-  }
-  ok &= ::testing::ExplainMatchResult(version_info, arg.version_info(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(client_status, arg.client_status(),
-                                      result_listener);
-  ok &= ::testing::ExplainMatchResult(error_state, arg.error_state(),
-                                      result_listener);
-  return ok;
-}
-
-MATCHER(IsRdsEnabledHCM, "is a RDS enabled HttpConnectionManager") {
-  return ::testing::ExplainMatchResult(
-      UnpackHttpConnectionManager(
-          ::testing::Property(&HttpConnectionManager::has_rds, true)),
-      arg, result_listener);
-}
-
-MATCHER_P2(EqNoRdsHCM, route_configuration_name, cluster_name,
-           "equals RDS disabled HttpConnectionManager") {
-  return ::testing::ExplainMatchResult(
-      UnpackHttpConnectionManager(EqHttpConnectionManagerNotRds(
-          EqRouteConfiguration(route_configuration_name, cluster_name))),
-      arg, result_listener);
-}
-
-TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpVanilla) {
-  const size_t kNumRpcs = 5;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {backends_[0]->port()}},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  // Send several RPCs to ensure the xDS setup works
-  CheckRpcSendOk(kNumRpcs);
-  // Fetches the client config
-  auto csds_response = FetchCsdsResponse();
-  gpr_log(GPR_INFO, "xDS config dump: %s", csds_response.DebugString().c_str());
-  EXPECT_EQ(1, csds_response.config_size());
-  const auto& client_config = csds_response.config(0);
-  // Validate the Node information
-  EXPECT_THAT(client_config.node(),
-              EqNode("xds_end2end_test", ::testing::HasSubstr("C-core"),
-                     ::testing::HasSubstr(grpc_version_string()),
-                     ::testing::ElementsAre(
-                         "envoy.lb.does_not_support_overprovisioning")));
-  // Prepare matches for RDS on or off
-  ::testing::Matcher<google::protobuf::Any> api_listener_matcher;
-  ::testing::Matcher<envoy::admin::v3::RoutesConfigDump>
-      route_config_dump_matcher;
-  if (GetParam().enable_rds_testing()) {
-    api_listener_matcher = IsRdsEnabledHCM();
-    route_config_dump_matcher =
-        EqRoutesConfigDump(::testing::ElementsAre(EqDynamicRouteConfig(
-            kDefaultRouteConfigurationName, "1", ClientResourceStatus::ACKED,
-            kDefaultClusterName, ::testing::_)));
-  } else {
-    api_listener_matcher =
-        EqNoRdsHCM(kDefaultRouteConfigurationName, kDefaultClusterName);
-    route_config_dump_matcher = EqRoutesConfigDump(::testing::ElementsAre());
-  }
-  // Validate the dumped xDS configs
-  EXPECT_THAT(
-      client_config.xds_config(),
-      ::testing::UnorderedElementsAre(
-          ::testing::Property(
-              &envoy::service::status::v3::PerXdsConfig::listener_config,
-              EqListenersConfigDump(
-                  "1", ::testing::ElementsAre(EqDynamicListener(
-                           kServerName, "1", ClientResourceStatus::ACKED,
-                           api_listener_matcher, ::testing::_)))),
-          ::testing::Property(
-              &envoy::service::status::v3::PerXdsConfig::route_config,
-              route_config_dump_matcher),
-          ::testing::Property(
-              &envoy::service::status::v3::PerXdsConfig::cluster_config,
-              EqClustersConfigDump(
-                  "1", ::testing::ElementsAre(EqDynamicCluster(
-                           kDefaultClusterName, "1",
-                           ClientResourceStatus::ACKED, ::testing::_)))),
-          ::testing::Property(
-              &envoy::service::status::v3::PerXdsConfig::endpoint_config,
-              EqEndpointsConfigDump(
-                  ::testing::ElementsAre(EqDynamicEndpointConfig(
-                      kDefaultEdsServiceName, "1", ClientResourceStatus::ACKED,
-                      backends_[0]->port(), kDefaultLocalityWeight,
-                      ::testing::_))))));
-}
-
-TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEmpty) {
-  // The CSDS service should not fail if XdsClient is not initialized or there
-  // is no working xDS configs.
-  FetchCsdsResponse();
-}
-
-TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerError) {
-  int kFetchConfigRetries = 3;
-  int kFetchIntervalMilliseconds = 200;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {backends_[0]->port()}},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  // Ensure the xDS resolver has working configs.
-  CheckRpcSendOk();
-  // Bad Listener should be rejected.
-  Listener listener;
-  listener.set_name(kServerName);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  // The old xDS configs should still be effective.
-  CheckRpcSendOk();
-  ::testing::Matcher<google::protobuf::Any> api_listener_matcher;
-  if (GetParam().enable_rds_testing()) {
-    api_listener_matcher = IsRdsEnabledHCM();
-  } else {
-    api_listener_matcher =
-        EqNoRdsHCM(kDefaultRouteConfigurationName, kDefaultClusterName);
-  }
-  for (int o = 0; o < kFetchConfigRetries; o++) {
-    auto csds_response = FetchCsdsResponse();
-    // Check if error state is propagated
-    bool ok = ::testing::Value(
-        csds_response.config(0).xds_config(),
-        ::testing::Contains(::testing::Property(
-            &envoy::service::status::v3::PerXdsConfig::listener_config,
-            EqListenersConfigDump(
-                "1",
-                ::testing::ElementsAre(EqDynamicListener(
-                    kServerName, "1", ClientResourceStatus::NACKED,
-                    api_listener_matcher,
-                    EqUpdateFailureState(
-                        ::testing::HasSubstr(
-                            "Listener has neither address nor ApiListener"),
-                        "2")))))));
-    if (ok) return;  // TEST PASSED!
-    gpr_sleep_until(
-        grpc_timeout_milliseconds_to_deadline(kFetchIntervalMilliseconds));
-  }
-  FAIL() << "error_state not seen in CSDS responses";
-}
-
-TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpRouteError) {
-  int kFetchConfigRetries = 3;
-  int kFetchIntervalMilliseconds = 200;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {backends_[0]->port()}},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  // Ensure the xDS resolver has working configs.
-  CheckRpcSendOk();
-  // Bad route config will be rejected.
-  RouteConfiguration route_config;
-  route_config.set_name(kDefaultRouteConfigurationName);
-  route_config.add_virtual_hosts();
-  SetRouteConfiguration(0, route_config);
-  // The old xDS configs should still be effective.
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendOk();
-  for (int o = 0; o < kFetchConfigRetries; o++) {
-    auto csds_response = FetchCsdsResponse();
-    bool ok = false;
-    if (GetParam().enable_rds_testing()) {
-      ok = ::testing::Value(
-          csds_response.config(0).xds_config(),
-          ::testing::Contains(::testing::Property(
-              &envoy::service::status::v3::PerXdsConfig::route_config,
-              EqRoutesConfigDump(::testing::ElementsAre(EqDynamicRouteConfig(
-                  kDefaultRouteConfigurationName, "1",
-                  ClientResourceStatus::NACKED, kDefaultClusterName,
-                  EqUpdateFailureState(
-                      ::testing::HasSubstr("VirtualHost has no domains"),
-                      "2")))))));
-    } else {
-      ok = ::testing::Value(
-          csds_response.config(0).xds_config(),
-          ::testing::Contains(::testing::Property(
-              &envoy::service::status::v3::PerXdsConfig::listener_config,
-              EqListenersConfigDump(
-                  "1",
-                  ::testing::ElementsAre(EqDynamicListener(
-                      kServerName, "1", ClientResourceStatus::NACKED,
-                      EqNoRdsHCM(kDefaultRouteConfigurationName,
-                                 kDefaultClusterName),
-                      EqUpdateFailureState(
-                          ::testing::HasSubstr("VirtualHost has no domains"),
-                          "2")))))));
-    }
-    if (ok) return;  // TEST PASSED!
-    gpr_sleep_until(
-        grpc_timeout_milliseconds_to_deadline(kFetchIntervalMilliseconds));
-  }
-  FAIL() << "error_state not seen in CSDS responses";
-}
-
-TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterError) {
-  int kFetchConfigRetries = 3;
-  int kFetchIntervalMilliseconds = 200;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {backends_[0]->port()}},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  // Ensure the xDS resolver has working configs.
-  CheckRpcSendOk();
-  // Listener without any route, will be rejected.
-  Cluster cluster;
-  cluster.set_name(kDefaultClusterName);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  // The old xDS configs should still be effective.
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendOk();
-  for (int o = 0; o < kFetchConfigRetries; o++) {
-    auto csds_response = FetchCsdsResponse();
-    // Check if error state is propagated
-    bool ok = ::testing::Value(
-        csds_response.config(0).xds_config(),
-        ::testing::Contains(::testing::Property(
-            &envoy::service::status::v3::PerXdsConfig::cluster_config,
-            EqClustersConfigDump(
-                "1", ::testing::ElementsAre(EqDynamicCluster(
-                         kDefaultClusterName, "1", ClientResourceStatus::NACKED,
-                         EqUpdateFailureState(
-                             ::testing::HasSubstr("DiscoveryType not found"),
-                             "2")))))));
-    if (ok) return;  // TEST PASSED!
-    gpr_sleep_until(
-        grpc_timeout_milliseconds_to_deadline(kFetchIntervalMilliseconds));
-  }
-  FAIL() << "error_state not seen in CSDS responses";
-}
-
-TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpEndpointError) {
-  int kFetchConfigRetries = 3;
-  int kFetchIntervalMilliseconds = 200;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {backends_[0]->port()}},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  // Ensure the xDS resolver has working configs.
-  CheckRpcSendOk();
-  // Bad endpoint config will be rejected.
-  ClusterLoadAssignment cluster_load_assignment;
-  cluster_load_assignment.set_cluster_name(kDefaultEdsServiceName);
-  auto* endpoints = cluster_load_assignment.add_endpoints();
-  endpoints->mutable_load_balancing_weight()->set_value(1);
-  auto* endpoint = endpoints->add_lb_endpoints()->mutable_endpoint();
-  endpoint->mutable_address()->mutable_socket_address()->set_port_value(1 << 1);
-  balancers_[0]->ads_service()->SetEdsResource(cluster_load_assignment);
-  // The old xDS configs should still be effective.
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendOk();
-  for (int o = 0; o < kFetchConfigRetries; o++) {
-    auto csds_response = FetchCsdsResponse();
-
-    // Check if error state is propagated
-    bool ok = ::testing::Value(
-        csds_response.config(0).xds_config(),
-        ::testing::Contains(::testing::Property(
-            &envoy::service::status::v3::PerXdsConfig::endpoint_config,
-            EqEndpointsConfigDump(
-                ::testing::ElementsAre(EqDynamicEndpointConfig(
-                    kDefaultEdsServiceName, "1", ClientResourceStatus::NACKED,
-                    backends_[0]->port(), kDefaultLocalityWeight,
-                    EqUpdateFailureState(::testing::HasSubstr("Empty locality"),
-                                         "2")))))));
-    if (ok) return;  // TEST PASSED!
-    gpr_sleep_until(
-        grpc_timeout_milliseconds_to_deadline(kFetchIntervalMilliseconds));
-  }
-  FAIL() << "error_state not seen in CSDS responses";
-}
-
-TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerRequested) {
-  int kTimeoutMillisecond = 1000;
-  balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      grpc::DEADLINE_EXCEEDED);
-  auto csds_response = FetchCsdsResponse();
-  EXPECT_THAT(csds_response.config(0).xds_config(),
-              ::testing::Contains(::testing::Property(
-                  &envoy::service::status::v3::PerXdsConfig::listener_config,
-                  EqListenersConfigDump(
-                      ::testing::_, ::testing::ElementsAre(EqDynamicListener(
-                                        kServerName, ::testing::_,
-                                        ClientResourceStatus::REQUESTED,
-                                        ::testing::_, ::testing::_))))));
-}
-
-TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
-  int kTimeoutMillisecond = 1000;
-  std::string kClusterName1 = "cluster-1";
-  std::string kClusterName2 = "cluster-2";
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Create a route config requesting two non-existing clusters
-  RouteConfiguration route_config;
-  route_config.set_name(kDefaultRouteConfigurationName);
-  auto* vh = route_config.add_virtual_hosts();
-  // The VirtualHost must match the domain name, otherwise will cause resolver
-  // transient failure.
-  vh->add_domains("*");
-  auto* routes1 = vh->add_routes();
-  routes1->mutable_match()->set_prefix("");
-  routes1->mutable_route()->set_cluster(kClusterName1);
-  auto* routes2 = vh->add_routes();
-  routes2->mutable_match()->set_prefix("");
-  routes2->mutable_route()->set_cluster(kClusterName2);
-  SetRouteConfiguration(0, route_config);
-  // Try to get the configs plumb through
-  CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      grpc::DEADLINE_EXCEEDED);
-  auto csds_response = FetchCsdsResponse();
-  EXPECT_THAT(csds_response.config(0).xds_config(),
-              ::testing::Contains(::testing::Property(
-                  &envoy::service::status::v3::PerXdsConfig::cluster_config,
-                  EqClustersConfigDump(
-                      ::testing::_,
-                      ::testing::UnorderedElementsAre(
-                          EqDynamicCluster(kClusterName1, ::testing::_,
-                                           ClientResourceStatus::REQUESTED,
-                                           ::testing::_),
-                          EqDynamicCluster(kClusterName2, ::testing::_,
-                                           ClientResourceStatus::REQUESTED,
-                                           ::testing::_))))));
-}
-
-class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
-  void SetUp() override {
-    // Shorten the ADS subscription timeout to speed up the test run.
-    xds_resource_does_not_exist_timeout_ms_ = 500;
-    ClientStatusDiscoveryServiceTest::SetUp();
-  }
-};
-
-TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpListenerDoesNotExist) {
-  int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
-  balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
-  CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      grpc::UNAVAILABLE);
-  auto csds_response = FetchCsdsResponse();
-  EXPECT_THAT(csds_response.config(0).xds_config(),
-              ::testing::Contains(::testing::Property(
-                  &envoy::service::status::v3::PerXdsConfig::listener_config,
-                  EqListenersConfigDump(
-                      ::testing::_, ::testing::ElementsAre(EqDynamicListener(
-                                        kServerName, ::testing::_,
-                                        ClientResourceStatus::DOES_NOT_EXIST,
-                                        ::testing::_, ::testing::_))))));
-}
-
-TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpRouteConfigDoesNotExist) {
-  if (!GetParam().enable_rds_testing()) return;
-  int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  balancers_[0]->ads_service()->UnsetResource(kRdsTypeUrl,
-                                              kDefaultRouteConfigurationName);
-  CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      grpc::UNAVAILABLE);
-  auto csds_response = FetchCsdsResponse();
-  EXPECT_THAT(
-      csds_response.config(0).xds_config(),
-      ::testing::Contains(::testing::Property(
-          &envoy::service::status::v3::PerXdsConfig::route_config,
-          EqRoutesConfigDump(::testing::ElementsAre(
-              EqDynamicRouteConfig(kDefaultRouteConfigurationName, ::testing::_,
-                                   ClientResourceStatus::DOES_NOT_EXIST,
-                                   ::testing::_, ::testing::_))))));
-}
-
-TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpClusterDoesNotExist) {
-  int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  balancers_[0]->ads_service()->UnsetResource(kCdsTypeUrl, kDefaultClusterName);
-  CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      grpc::UNAVAILABLE);
-  auto csds_response = FetchCsdsResponse();
-  EXPECT_THAT(csds_response.config(0).xds_config(),
-              ::testing::Contains(::testing::Property(
-                  &envoy::service::status::v3::PerXdsConfig::cluster_config,
-                  EqClustersConfigDump(::testing::_,
-                                       ::testing::ElementsAre(EqDynamicCluster(
-                                           kDefaultClusterName, ::testing::_,
-                                           ClientResourceStatus::DOES_NOT_EXIST,
-                                           ::testing::_))))));
-}
-
-TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
-  int kTimeoutMillisecond = 1000000;  // 1000s wait for the transient failure.
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  balancers_[0]->ads_service()->UnsetResource(kEdsTypeUrl,
-                                              kDefaultEdsServiceName);
-  CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      grpc::UNAVAILABLE);
-  auto csds_response = FetchCsdsResponse();
-  EXPECT_THAT(
-      csds_response.config(0).xds_config(),
-      ::testing::Contains(::testing::Property(
-          &envoy::service::status::v3::PerXdsConfig::endpoint_config,
-          EqEndpointsConfigDump(::testing::ElementsAre(EqDynamicEndpointConfig(
-              kDefaultEdsServiceName, ::testing::_,
-              ClientResourceStatus::DOES_NOT_EXIST, ::testing::_, ::testing::_,
-              ::testing::_))))));
-}
-
 std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
@@ -10932,23 +10148,6 @@ INSTANTIATE_TEST_SUITE_P(
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, BootstrapContentsFromEnvVarTest,
                          ::testing::Values(TestType()), &TestTypeName);
-
-// Run CSDS tests with RDS enabled and disabled.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, ClientStatusDiscoveryServiceTest,
-    ::testing::Values(
-        TestType(), TestType().set_enable_rds_testing(),
-        TestType().set_use_csds_streaming(),
-        TestType().set_enable_rds_testing().set_use_csds_streaming()),
-    &TestTypeName);
-
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, CsdsShortAdsTimeoutTest,
-    ::testing::Values(
-        TestType(), TestType().set_enable_rds_testing(),
-        TestType().set_use_csds_streaming(),
-        TestType().set_enable_rds_testing().set_use_csds_streaming()),
-    &TestTypeName);
 
 }  // namespace
 }  // namespace testing
