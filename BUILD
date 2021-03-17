@@ -1612,6 +1612,22 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_lb_policy_ring_hash",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_lb_subchannel_list",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_lb_policy_round_robin",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc",
@@ -1870,6 +1886,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_lb_policy_ring_hash",
         "grpc_xds_client",
     ],
 )

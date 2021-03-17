@@ -480,6 +480,7 @@
         'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc',
         'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
         'src/core/ext/filters/client_channel/lb_policy/priority/priority.cc',
+        'src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc',
         'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
         'src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc',
         'src/core/ext/filters/client_channel/lb_policy/xds/cds.cc',

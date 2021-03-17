@@ -91,7 +91,31 @@ class XdsApi {
       std::string ToString() const;
     };
 
+    struct HashPolicy {
+      enum Type { HEADER, CHANNEL_ID };
+      Type type;
+      bool terminal = false;
+      // Fields used for type HEADER.
+      std::string header_name;
+      std::unique_ptr<RE2> regex = nullptr;
+      std::string regex_substitution;
+
+      HashPolicy() {}
+
+      // Copyable.
+      HashPolicy(const HashPolicy& other);
+      HashPolicy& operator=(const HashPolicy& other);
+
+      // Moveable.
+      HashPolicy(HashPolicy&& other) noexcept;
+      HashPolicy& operator=(HashPolicy&& other) noexcept;
+
+      bool operator==(const HashPolicy& other) const;
+      std::string ToString() const;
+    };
+
     Matchers matchers;
+    std::vector<HashPolicy> hash_policies;
 
     // Action for this route.
     // TODO(roth): When we can use absl::variant<>, consider using that
