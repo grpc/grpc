@@ -2595,12 +2595,7 @@ try:
         client_env['GRPC_XDS_BOOTSTRAP'] = bootstrap_path
         client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
         client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
-        # Temporarily turn off fault injection, because HTTPFault filter isn't
-        # handled correctly yet in CPP and Go. And setting would break all the
-        # other tests. Uncomment the following line when the support is
-        # complete.
-        #
-        # client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
+        client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
         test_results = {}
         failed_tests = []
         for test_case in args.test_case:
