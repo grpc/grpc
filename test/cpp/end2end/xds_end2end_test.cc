@@ -1617,9 +1617,8 @@ void ExpectBetween(double value, double a, double b) {
 //
 //   kn <= 3.89 * sqrt(np(1-p))
 //
-// E.g., with p=0.5 k=0.1, n >= 378; with p=0.5 k=0.05, n >= 1599; with p=0.5
+// E.g., with p=0.5 k=0.1, n >= 378; with p=0.5 k=0.05, n >= 1513; with p=0.5
 // k=0.01, n >= 37830.
-// Btw, p=0.5 is preferred, since it detects the skew of distribution better.
 size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
   ExpectBetween(p, 0, 1);
   return ceil(p * (1 - p) * 3.89 * 3.89 / error_tolerance / error_tolerance);
@@ -2429,9 +2428,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         EchoRequest request;
         EchoResponse response;
         rpc_options.SetupRpc(&context_, &request);
-        grpc_millis t0 = NowFromCycleCounter();
         status_ = stub->Echo(&context_, request, &response);
-        elapsed_time_ = NowFromCycleCounter() - t0;
       });
     }
 
@@ -2445,16 +2442,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       return status_;
     }
 
-    grpc_millis GetElapsedTime() {
-      if (sender_thread_.joinable()) sender_thread_.join();
-      return elapsed_time_;
-    }
-
    private:
     std::thread sender_thread_;
     ClientContext context_;
     Status status_;
-    grpc_millis elapsed_time_;
   };
 
   struct ConcurrentRpc {
@@ -2491,7 +2482,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             if ((++completed) == num_rpcs) {
               mu.Unlock();
               // This wakes up another thread, if we don't unlock first, the
-              // mutex might go away before before this thread can react.
+              // mutex might go away before this thread can react.
               notification.Notify();
             } else {
               mu.Unlock();
@@ -9540,7 +9531,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const uint32_t kFixedDelaySeconds = 100;
-  const uint32_t kRpcTimeoutMilliseconds = 1000;  // 1s
+  const uint32_t kRpcTimeoutMilliseconds = 2000;  // 2s
   const uint32_t kDelayPercentagePerHundred = 50;
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.05;
@@ -9585,7 +9576,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const uint32_t kFixedDelayMilliseconds = 100000;  // 100 seconds
-  const uint32_t kRpcTimeoutMilliseconds = 1000;    // 1s
+  const uint32_t kRpcTimeoutMilliseconds = 2000;    // 2s
   const uint32_t kDelayPercentageCap = 100;
   const uint32_t kDelayPercentage = 50;
   const double kDelayRate = kDelayPercentage / 100.0;
