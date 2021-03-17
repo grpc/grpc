@@ -22,5 +22,5 @@
 #include <grpcpp/grpcpp.h>
 
 namespace grpc {
-std::string Version() { return "1.36.1"; }
+std::string Version() { return "1.36.4"; }
 }  // namespace grpc
