@@ -54,27 +54,26 @@ namespace Grpc.Core.Internal
 
         static PlatformApis()
         {
-#if NETSTANDARD
-            isLinux = RuntimeInformation.IsOSPlatform(OSPlatform.Linux);
-            isMacOSX = RuntimeInformation.IsOSPlatform(OSPlatform.OSX);
-            isWindows = RuntimeInformation.IsOSPlatform(OSPlatform.Windows);
-#if NETSTANDARD2_0
-            isNet5OrHigher = Environment.Version.Major >= 5;
-#else
-            // assume that on .NET 5+, the netstandard2.0 TFM is going to be selected.
+            // Detect OS
+            var osKind = CommonPlatformDetection.GetOSKind();
+            isLinux = osKind == CommonPlatformDetection.OSKind.Linux;
+            isMacOSX = osKind == CommonPlatformDetection.OSKind.MacOSX;
+            isWindows = osKind == CommonPlatformDetection.OSKind.Windows;
+
+#if NETSTANDARD1_5
+            // assume that on .NET 5+, the netstandard2.0 or newer TFM is always going to be selected
+            // so for netstandard1.5 we assume we are never on .NET5+
             isNet5OrHigher = false;
-#endif
+            isNetCore = isNet5OrHigher || RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
+#elif NETSTANDARD
+            isNet5OrHigher = Environment.Version.Major >= 5;
             isNetCore = isNet5OrHigher || RuntimeInformation.FrameworkDescription.StartsWith(".NET Core");
 #else
-            var platform = Environment.OSVersion.Platform;
-
-            // PlatformID.MacOSX is never returned, commonly used trick is to identify Mac is by using uname.
-            isMacOSX = (platform == PlatformID.Unix && GetUname() == "Darwin");
-            isLinux = (platform == PlatformID.Unix && !isMacOSX);
-            isWindows = (platform == PlatformID.Win32NT || platform == PlatformID.Win32S || platform == PlatformID.Win32Windows);
             isNet5OrHigher = false;
             isNetCore = false;
 #endif
+
+            // Detect mono runtime
             isMono = Type.GetType("Mono.Runtime") != null;
 
             // Unity
@@ -131,6 +130,8 @@ namespace Grpc.Core.Internal
         public static bool IsNetCore => isNetCore;
 
         public static bool Is64Bit => IntPtr.Size == 8;
+
+        public static CommonPlatformDetection.CpuArchitecture ProcessArchitecture => CommonPlatformDetection.GetProcessArchitecture();
 
         /// <summary>
         /// Returns <c>UnityEngine.Application.platform</c> as a string.

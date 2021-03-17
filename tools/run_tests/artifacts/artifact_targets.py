@@ -260,30 +260,20 @@ class CSharpExtArtifact:
                                   use_workspace=True)
         else:
             if self.platform == 'linux':
-                cmake_arch_option = ''  # x64 is the default architecture
-                if self.arch == 'x86':
-                    # TODO(jtattermusch): more work needed to enable
-                    # boringssl assembly optimizations for 32-bit linux.
-                    # Problem: currently we are building the artifact under
-                    # 32-bit docker image, but CMAKE_SYSTEM_PROCESSOR is still
-                    # set to x86_64, so the resulting boringssl binary
-                    # would have undefined symbols.
-                    cmake_arch_option = '-DOPENSSL_NO_ASM=ON'
+                dockerfile_dir = 'tools/dockerfile/grpc_artifact_centos6_{}'.format(
+                    self.arch)
+                if self.arch == 'aarch64':
+                    # for aarch64, use a dockcross manylinux image that will
+                    # give us both ready to use crosscompiler and sufficient backward compatibility
+                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
                 return create_docker_jobspec(
-                    self.name,
-                    'tools/dockerfile/grpc_artifact_centos6_{}'.format(
-                        self.arch),
-                    'tools/run_tests/artifacts/build_artifact_csharp.sh',
-                    environ={'CMAKE_ARCH_OPTION': cmake_arch_option})
+                    self.name, dockerfile_dir,
+                    'tools/run_tests/artifacts/build_artifact_csharp.sh')
             else:
-                cmake_arch_option = ''  # x64 is the default architecture
-                if self.arch == 'x86':
-                    cmake_arch_option = '-DCMAKE_OSX_ARCHITECTURES=i386'
                 return create_jobspec(
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_csharp.sh'],
                     timeout_seconds=45 * 60,
-                    environ={'CMAKE_ARCH_OPTION': cmake_arch_option},
                     use_workspace=True)
 
     def __str__(self):
@@ -325,11 +315,16 @@ class ProtocArtifact:
         if self.platform != 'windows':
             environ = {'CXXFLAGS': '', 'LDFLAGS': ''}
             if self.platform == 'linux':
+                dockerfile_dir = 'tools/dockerfile/grpc_artifact_centos6_{}'.format(
+                    self.arch)
+                if self.arch == 'aarch64':
+                    # for aarch64, use a dockcross manylinux image that will
+                    # give us both ready to use crosscompiler and sufficient backward compatibility
+                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
                 environ['LDFLAGS'] += ' -static-libgcc -static-libstdc++ -s'
                 return create_docker_jobspec(
                     self.name,
-                    'tools/dockerfile/grpc_artifact_centos6_{}'.format(
-                        self.arch),
+                    dockerfile_dir,
                     'tools/run_tests/artifacts/build_artifact_protoc.sh',
                     environ=environ)
             else:
@@ -358,10 +353,12 @@ def targets():
     return [
         ProtocArtifact('linux', 'x64'),
         ProtocArtifact('linux', 'x86'),
+        ProtocArtifact('linux', 'aarch64'),
         ProtocArtifact('macos', 'x64'),
         ProtocArtifact('windows', 'x64'),
         ProtocArtifact('windows', 'x86'),
         CSharpExtArtifact('linux', 'x64'),
+        CSharpExtArtifact('linux', 'aarch64'),
         CSharpExtArtifact('macos', 'x64'),
         CSharpExtArtifact('windows', 'x64'),
         CSharpExtArtifact('windows', 'x86'),
