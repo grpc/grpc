@@ -1436,6 +1436,7 @@ grpc_cc_library(
         "absl/functional:bind_front",
         "upb_lib",
         "upb_textformat_lib",
+        "upb_json_lib",
         "re2",
     ],
     language = "c++",
@@ -2596,6 +2597,24 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpcpp_csds",
+    srcs = [
+        "src/cpp/server/csds/csds.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/csds/csds.h",
+    ],
+    language = "c++",
+    public_hdrs = [
+    ],
+    deps = [
+        ":grpc++",
+        "//src/proto/grpc/testing/xds/v3:csds_proto",
+    ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
     name = "grpc++_test",
     srcs = [
         "src/cpp/client/channel_test_peer.cc",
@@ -2728,7 +2747,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "envoy_ads_upb",
     srcs = [
+        "src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c",
         "src/core/ext/upb-generated/envoy/config/accesslog/v3/accesslog.upb.c",
+        "src/core/ext/upb-generated/envoy/config/bootstrap/v3/bootstrap.upb.c",
         "src/core/ext/upb-generated/envoy/config/cluster/v3/circuit_breaker.upb.c",
         "src/core/ext/upb-generated/envoy/config/cluster/v3/cluster.upb.c",
         "src/core/ext/upb-generated/envoy/config/cluster/v3/filter.upb.c",
@@ -2740,6 +2761,8 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c",
         "src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c",
         "src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c",
+        "src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c",
+        "src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c",
         "src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c",
         "src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c",
         "src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c",
@@ -2762,9 +2785,12 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c",
         "src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c",
         "src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c",
+        "src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c",
     ],
     hdrs = [
+        "src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.h",
         "src/core/ext/upb-generated/envoy/config/accesslog/v3/accesslog.upb.h",
+        "src/core/ext/upb-generated/envoy/config/bootstrap/v3/bootstrap.upb.h",
         "src/core/ext/upb-generated/envoy/config/cluster/v3/circuit_breaker.upb.h",
         "src/core/ext/upb-generated/envoy/config/cluster/v3/cluster.upb.h",
         "src/core/ext/upb-generated/envoy/config/cluster/v3/filter.upb.h",
@@ -2776,6 +2802,8 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.h",
         "src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.h",
         "src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.h",
+        "src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.h",
+        "src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.h",
         "src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.h",
         "src/core/ext/upb-generated/envoy/config/route/v3/route.upb.h",
         "src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.h",
@@ -2798,6 +2826,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.h",
         "src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.h",
         "src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.h",
+        "src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.h",
     ],
     external_deps = [
         "upb_lib",
@@ -2818,7 +2847,9 @@ grpc_cc_library(
 grpc_cc_library(
     name = "envoy_ads_upbdefs",
     srcs = [
+        "src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/config/bootstrap/v3/bootstrap.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/cluster/v3/circuit_breaker.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/cluster/v3/cluster.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/cluster/v3/filter.upbdefs.c",
@@ -2830,6 +2861,8 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c",
@@ -2851,9 +2884,12 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/service/load_stats/v3/lrs.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c",
     ],
     hdrs = [
+        "src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/config/bootstrap/v3/bootstrap.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/cluster/v3/circuit_breaker.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/cluster/v3/cluster.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/cluster/v3/filter.upbdefs.h",
@@ -2865,6 +2901,8 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.h",
@@ -2886,6 +2924,7 @@ grpc_cc_library(
         "src/core/ext/upbdefs-generated/envoy/service/load_stats/v3/lrs.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.h",
     ],
     external_deps = [
         "upb_lib",
@@ -3044,10 +3083,12 @@ grpc_cc_library(
     name = "envoy_type_upb",
     srcs = [
         "src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c",
+        "src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c",
+        "src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c",
         "src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c",
         "src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c",
@@ -3058,10 +3099,12 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h",
+        "src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.h",
+        "src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.h",
         "src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.h",
         "src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.h",
         "src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.h",
@@ -3087,10 +3130,12 @@ grpc_cc_library(
     name = "envoy_type_upbdefs",
     srcs = [
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.c",
+        "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/type/metadata/v3/metadata.upbdefs.c",
         "src/core/ext/upbdefs-generated/envoy/type/tracing/v3/custom_tag.upbdefs.c",
@@ -3101,10 +3146,12 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.h",
+        "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/type/metadata/v3/metadata.upbdefs.h",
         "src/core/ext/upbdefs-generated/envoy/type/tracing/v3/custom_tag.upbdefs.h",
