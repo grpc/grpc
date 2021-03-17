@@ -34,6 +34,10 @@ class AuthorizationEngine : public AuthorizationEngineInterface {
   explicit AuthorizationEngine(Rbac::Action action) : action_(action) {}
   // Builds AuthorizationEngine with allow/deny policy.
   explicit AuthorizationEngine(const Rbac& rbac_policy);
+  // Used only for testing purposes.
+  AuthorizationEngine(Rbac::Action action,
+                      std::map<std::string, std::unique_ptr<Matcher>> policies)
+      : action_(action), policies_(std::move(policies)) {}
   // Evaluate incoming request against RBAC policy and make a decision to
   // allow/deny this request.
   AuthorizationEngineInterface::AuthorizationDecision Evaluate(
@@ -41,7 +45,7 @@ class AuthorizationEngine : public AuthorizationEngineInterface {
 
  private:
   Rbac::Action action_;
-  std::map<std::string, std::unique_ptr<PolicyMatcher>> policies_;
+  std::map<std::string, std::unique_ptr<Matcher>> policies_;
 };
 
 }  // namespace grpc_core

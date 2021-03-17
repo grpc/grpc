@@ -250,9 +250,7 @@ TEST(AuthorizationEngine, DenyAllRequests) {
 }
 
 TEST(AuthorizationEngine, EmptyPoliciesinAllowRbacPolicy) {
-  Rbac rbac;
-  rbac.action = Rbac::Action::ALLOW;
-  AuthorizationEngine engine(rbac);
+  AuthorizationEngine engine(Rbac::Action::ALLOW);
   EvaluateArgs args(/*metadata=*/nullptr, /*auth_context=*/nullptr,
                     /*endpoint=*/nullptr);
   AuthorizationEngineInterface::AuthorizationDecision decision =
@@ -264,9 +262,7 @@ TEST(AuthorizationEngine, EmptyPoliciesinAllowRbacPolicy) {
 }
 
 TEST(AuthorizationEngine, EmptyPoliciesinDenyRbacPolicy) {
-  Rbac rbac;
-  rbac.action = Rbac::Action::DENY;
-  AuthorizationEngine engine(rbac);
+  AuthorizationEngine engine(Rbac::Action::DENY);
   EvaluateArgs args(/*metadata=*/nullptr, /*auth_context=*/nullptr,
                     /*endpoint=*/nullptr);
   AuthorizationEngineInterface::AuthorizationDecision decision =
@@ -275,6 +271,36 @@ TEST(AuthorizationEngine, EmptyPoliciesinDenyRbacPolicy) {
       decision.type,
       AuthorizationEngineInterface::AuthorizationDecision::DecisionType::ALLOW);
   EXPECT_TRUE(decision.matching_policy_name.empty());
+}
+
+class MockMatcher : public Matcher {
+ public:
+  MOCK_METHOD(bool, Matches, (const EvaluateArgs&), (const));
+};
+
+TEST(AuthorizationEngine, AllowsAllRequestsTestTestTest) {
+  std::map<std::string, std::unique_ptr<Matcher>> matchers;
+  auto matcher1 = absl::make_unique<::testing::StrictMock<MockMatcher>>();
+  auto* matcher1_ptr = matcher1.get();
+  auto matcher2 = absl::make_unique<::testing::StrictMock<MockMatcher>>();
+  auto* matcher2_ptr = matcher2.get();
+  EXPECT_CALL(*matcher1_ptr, Matches)
+      .Times(1)
+      .WillOnce(::testing::Return(false));
+  EXPECT_CALL(*matcher2_ptr, Matches)
+      .Times(1)
+      .WillOnce(::testing::Return(true));
+  matchers["policy1"] = std::move(matcher1);
+  matchers["policy2"] = std::move(matcher2);
+  AuthorizationEngine engine(Rbac::Action::ALLOW, std::move(matchers));
+  EvaluateArgs args(/*metadata=*/nullptr, /*auth_context=*/nullptr,
+                    /*endpoint=*/nullptr);
+  AuthorizationEngineInterface::AuthorizationDecision decision =
+      engine.Evaluate(args);
+  EXPECT_EQ(
+      decision.type,
+      AuthorizationEngineInterface::AuthorizationDecision::DecisionType::ALLOW);
+  EXPECT_EQ(decision.matching_policy_name, "policy2");
 }
 
 }  // namespace grpc_core
