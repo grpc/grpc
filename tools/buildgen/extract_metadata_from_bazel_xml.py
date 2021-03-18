@@ -287,10 +287,10 @@ def _compute_transitive_metadata(
     direct_deps = _extract_deps(bazel_rule, bazel_rules)
     transitive_deps = set()
     collapsed_deps = set()
+    exclude_deps = set()
     collapsed_srcs = set(_extract_sources(bazel_rule))
     collapsed_public_headers = set(_extract_public_headers(bazel_rule))
     collapsed_headers = set(_extract_nonpublic_headers(bazel_rule))
-    exclude_deps = set()
 
     for dep in direct_deps:
         external_dep_name_maybe = _external_dep_name_from_bazel_dependency(dep)
@@ -318,9 +318,8 @@ def _compute_transitive_metadata(
                                   [bazel_label_to_dep_name[dep]])
             # Add all the transitive deps of our every public dep to exclude
             # list since we want to avoid building sources that are already
-            # built our dependencies
+            # built by our dependencies
             exclude_deps.update(bazel_rules[dep]['_TRANSITIVE_DEPS'])
-            exclude_deps.add(dep)
             continue
 
         # This dep is an external target, add it as a dependency
@@ -332,10 +331,14 @@ def _compute_transitive_metadata(
     # Direct dependencies are part of transitive dependencies
     transitive_deps.update(direct_deps)
 
+    # Calculate transitive public deps
+    transitive_public_deps = set(
+        filter(lambda x: x in bazel_label_to_dep_name, transitive_deps))
+
     # Remove intermediate targets that our public dependencies already depend
     # on. This is the step that further shorten the deps list.
-    collapsed_deps = list(
-        filter(lambda x: x not in exclude_deps, collapsed_deps))
+    collapsed_deps = set(filter(lambda x: x not in exclude_deps,
+                                collapsed_deps))
 
     # Compute the final source files and headers for this build target whose
     # name is `rule_name` (input argument of this function).
@@ -357,7 +360,7 @@ def _compute_transitive_metadata(
     # Target PX should include source files and headers of [PX, IA, IB] as final
     # build metadata.
     for dep in transitive_deps:
-        if dep not in exclude_deps:
+        if dep not in exclude_deps and dep not in transitive_public_deps:
             if dep in bazel_rules:
                 collapsed_srcs.update(_extract_sources(bazel_rules[dep]))
                 collapsed_public_headers.update(
