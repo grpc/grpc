@@ -178,10 +178,6 @@
       'type': 'static_library',
       'dependencies': [
         'grpc_test_util',
-        'grpc',
-        'gpr',
-        'address_sorting',
-        'upb',
       ],
       'sources': [
         'test/core/end2end/cq_verifier.cc',
@@ -280,10 +276,6 @@
       'type': 'static_library',
       'dependencies': [
         'grpc_test_util',
-        'grpc',
-        'gpr',
-        'address_sorting',
-        'upb',
       ],
       'sources': [
         'test/core/end2end/cq_verifier.cc',
@@ -382,14 +374,14 @@
       'target_name': 'gpr',
       'type': 'static_library',
       'dependencies': [
-        'absl/types:optional',
-        'absl/time:time',
-        'absl/synchronization:synchronization',
-        'absl/strings:strings',
-        'absl/strings:str_format',
-        'absl/status:status',
-        'absl/memory:memory',
         'absl/base:base',
+        'absl/memory:memory',
+        'absl/status:status',
+        'absl/strings:str_format',
+        'absl/strings:strings',
+        'absl/synchronization:synchronization',
+        'absl/time:time',
+        'absl/types:optional',
       ],
       'sources': [
         'src/core/lib/gpr/alloc.cc',
@@ -443,16 +435,13 @@
       'target_name': 'grpc',
       'type': 'static_library',
       'dependencies': [
+        'absl/container:flat_hash_map',
+        'absl/container:inlined_vector',
+        'absl/functional:bind_front',
+        'absl/status:statusor',
         'gpr',
         'address_sorting',
         'upb',
-        'absl/types:optional',
-        'absl/strings:strings',
-        'absl/status:statusor',
-        'absl/status:status',
-        'absl/functional:bind_front',
-        'absl/container:inlined_vector',
-        'absl/container:flat_hash_map',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
@@ -1001,9 +990,6 @@
       'type': 'static_library',
       'dependencies': [
         'grpc',
-        'gpr',
-        'address_sorting',
-        'upb',
       ],
       'sources': [
         'src/csharp/ext/grpc_csharp_ext.c',
@@ -1013,13 +999,10 @@
       'target_name': 'grpc_test_util',
       'type': 'static_library',
       'dependencies': [
-        'grpc',
-        'gpr',
-        'address_sorting',
-        'upb',
-        'absl/debugging:symbolize',
-        'absl/debugging:stacktrace',
         'absl/debugging:failure_signal_handler',
+        'absl/debugging:stacktrace',
+        'absl/debugging:symbolize',
+        'grpc',
       ],
       'sources': [
         'test/core/util/cmdline.cc',
@@ -1051,13 +1034,10 @@
       'target_name': 'grpc_test_util_unsecure',
       'type': 'static_library',
       'dependencies': [
-        'grpc_unsecure',
-        'gpr',
-        'address_sorting',
-        'upb',
-        'absl/debugging:symbolize',
-        'absl/debugging:stacktrace',
         'absl/debugging:failure_signal_handler',
+        'absl/debugging:stacktrace',
+        'absl/debugging:symbolize',
+        'grpc_unsecure',
       ],
       'sources': [
         'test/core/util/cmdline.cc',
@@ -1088,15 +1068,12 @@
       'target_name': 'grpc_unsecure',
       'type': 'static_library',
       'dependencies': [
+        'absl/container:flat_hash_map',
+        'absl/container:inlined_vector',
+        'absl/status:statusor',
         'gpr',
         'address_sorting',
         'upb',
-        'absl/types:optional',
-        'absl/strings:strings',
-        'absl/status:statusor',
-        'absl/status:status',
-        'absl/container:inlined_vector',
-        'absl/container:flat_hash_map',
       ],
       'sources': [
         'src/core/ext/filters/census/grpc_context.cc',
@@ -1385,14 +1362,10 @@
       'target_name': 'benchmark_helpers',
       'type': 'static_library',
       'dependencies': [
-        'grpc_test_util_unsecure',
-        'grpc++_unsecure',
-        'grpc_unsecure',
-        'grpc++_test_config',
-        'gpr',
-        'address_sorting',
-        'upb',
         'benchmark',
+        'grpc++_unsecure',
+        'grpc_test_util_unsecure',
+        'grpc++_test_config',
       ],
       'sources': [
         'src/proto/grpc/testing/echo.proto',
@@ -1406,10 +1379,6 @@
       'type': 'static_library',
       'dependencies': [
         'grpc',
-        'gpr',
-        'address_sorting',
-        'upb',
-        'absl/synchronization:synchronization',
       ],
       'sources': [
         'src/cpp/client/channel_cc.cc',
@@ -1469,10 +1438,6 @@
       'type': 'static_library',
       'dependencies': [
         'grpc++',
-        'grpc',
-        'gpr',
-        'address_sorting',
-        'upb',
       ],
       'sources': [
         'src/cpp/common/alts_context.cc',
@@ -1484,10 +1449,6 @@
       'type': 'static_library',
       'dependencies': [
         'grpc++',
-        'grpc',
-        'gpr',
-        'address_sorting',
-        'upb',
       ],
       'sources': [
         'src/cpp/util/error_details.cc',
@@ -1498,10 +1459,6 @@
       'type': 'static_library',
       'dependencies': [
         'grpc++',
-        'grpc',
-        'gpr',
-        'address_sorting',
-        'upb',
       ],
       'sources': [
         'src/proto/grpc/reflection/v1alpha/reflection.proto',
@@ -1514,10 +1471,6 @@
       'type': 'static_library',
       'dependencies': [
         'grpc++',
-        'grpc',
-        'gpr',
-        'address_sorting',
-        'upb',
       ],
       'sources': [
         'src/cpp/client/channel_test_peer.cc',
@@ -1527,8 +1480,8 @@
       'target_name': 'grpc++_test_config',
       'type': 'static_library',
       'dependencies': [
-        'gpr',
         'absl/flags:parse',
+        'gpr',
       ],
       'sources': [
         'test/cpp/util/test_config_cc.cc',
@@ -1538,13 +1491,9 @@
       'target_name': 'grpc++_test_util',
       'type': 'static_library',
       'dependencies': [
-        'grpc_test_util',
-        'grpc++',
-        'grpc',
-        'gpr',
-        'address_sorting',
-        'upb',
         'absl/flags:flag',
+        'grpc++',
+        'grpc_test_util',
       ],
       'sources': [
         'test/core/end2end/data/client_certs.cc',
@@ -1563,10 +1512,6 @@
       'type': 'static_library',
       'dependencies': [
         'grpc_unsecure',
-        'gpr',
-        'address_sorting',
-        'upb',
-        'absl/synchronization:synchronization',
       ],
       'sources': [
         'src/cpp/client/channel_cc.cc',
@@ -1631,10 +1576,6 @@
       'type': 'static_library',
       'dependencies': [
         'grpc++',
-        'grpc',
-        'gpr',
-        'address_sorting',
-        'upb',
       ],
       'sources': [
         'src/proto/grpc/channelz/channelz.proto',
