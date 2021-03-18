@@ -244,17 +244,6 @@ def _external_dep_name_from_bazel_dependency(bazel_dep: str) -> Optional[str]:
         return None
 
 
-def _deduplicate_append(target: List[str], pending: List[str]) -> None:
-    """Append the list without duplicated items in place.
-    
-    Expected to be used to create a order-stable dependency list.
-    """
-    seen = set(target)
-    for dep in pending:
-        if dep not in seen:
-            target.append(dep)
-
-
 def _compute_transitive_metadata(
         rule_name: str, bazel_rules: Any,
         bazel_label_to_dep_name: Dict[str, str]) -> None:
@@ -296,10 +285,8 @@ def _compute_transitive_metadata(
     """
     bazel_rule = bazel_rules[rule_name]
     direct_deps = _extract_deps(bazel_rule, bazel_rules)
-    transitive_deps = []
-    # We care about the order of dependencies list, so it will be a list.
+    transitive_deps = set()
     collapsed_deps = set()
-    # We don't care about the order of srcs and headers, they will be sorted.
     collapsed_srcs = set(_extract_sources(bazel_rule))
     collapsed_public_headers = set(_extract_public_headers(bazel_rule))
     collapsed_headers = set(_extract_nonpublic_headers(bazel_rule))
@@ -317,16 +304,16 @@ def _compute_transitive_metadata(
                     # This item is not processed before, compute now
                     _compute_transitive_metadata(dep, bazel_rules,
                                                  bazel_label_to_dep_name)
-                _deduplicate_append(
-                    transitive_deps,
-                    bazel_rules[dep].get('_TRANSITIVE_DEPS', []))
+
+                transitive_deps.update(bazel_rules[dep].get(
+                    '_TRANSITIVE_DEPS', []))
                 collapsed_deps.update(
                     collapsed_deps, bazel_rules[dep].get('_COLLAPSED_DEPS', []))
                 exclude_deps.update(bazel_rules[dep].get('_EXCLUDE_DEPS', []))
 
         # This dep is a public target, add it as a dependency
         if dep in bazel_label_to_dep_name:
-            _deduplicate_append(transitive_deps, [bazel_label_to_dep_name[dep]])
+            transitive_deps.update([bazel_label_to_dep_name[dep]])
             collapsed_deps.update(collapsed_deps,
                                   [bazel_label_to_dep_name[dep]])
             # Add all the transitive deps of our every public dep to exclude
@@ -338,12 +325,12 @@ def _compute_transitive_metadata(
 
         # This dep is an external target, add it as a dependency
         if external_dep_name_maybe is not None:
-            _deduplicate_append(transitive_deps, [external_dep_name_maybe])
+            transitive_deps.update([external_dep_name_maybe])
             collapsed_deps.update(collapsed_deps, [external_dep_name_maybe])
             continue
 
     # Direct dependencies are part of transitive dependencies
-    _deduplicate_append(transitive_deps, direct_deps)
+    transitive_deps.update(direct_deps)
 
     # Remove intermediate targets that our public dependencies already depend
     # on. This is the step that further shorten the deps list.
@@ -381,7 +368,7 @@ def _compute_transitive_metadata(
     # This item is a "visited" flag
     bazel_rule['_PROCESSING_DONE'] = True
     # Following items are described in the docstinrg.
-    bazel_rule['_TRANSITIVE_DEPS'] = transitive_deps
+    bazel_rule['_TRANSITIVE_DEPS'] = list(sorted(transitive_deps))
     bazel_rule['_COLLAPSED_DEPS'] = list(sorted(collapsed_deps))
     bazel_rule['_COLLAPSED_SRCS'] = list(sorted(collapsed_srcs))
     bazel_rule['_COLLAPSED_PUBLIC_HEADERS'] = list(
