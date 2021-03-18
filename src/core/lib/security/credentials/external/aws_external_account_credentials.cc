@@ -30,6 +30,7 @@ namespace {
 const char* kExpectedEnvironmentId = "aws1";
 
 const char* kRegionEnvVar = "AWS_REGION";
+const char* kDefaultRegionEnvVar = "AWS_REGION";
 const char* kAccessKeyIdEnvVar = "AWS_ACCESS_KEY_ID";
 const char* kSecretAccessKeyEnvVar = "AWS_SECRET_ACCESS_KEY";
 const char* kSessionTokenEnvVar = "AWS_SESSION_TOKEN";
@@ -140,6 +141,10 @@ void AwsExternalAccountCredentials::RetrieveSubjectToken(
 
 void AwsExternalAccountCredentials::RetrieveRegion() {
   UniquePtr<char> region_from_env(gpr_getenv(kRegionEnvVar));
+  if (region_from_env == nullptr) {
+    UniquePtr<char> default_region_from_env(gpr_getenv(kDefaultRegionEnvVar));
+    region_from_env = std::move(default_region_from_env);
+  }
   if (region_from_env != nullptr) {
     region_ = std::string(region_from_env.get());
     if (url_.empty()) {
