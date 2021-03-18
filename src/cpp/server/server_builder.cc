@@ -109,7 +109,7 @@ ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
     gpr_log(GPR_ERROR,
             "Adding multiple generic services is unsupported for now. "
             "Dropping the service %p",
-            (void*)service);
+            service);
   } else {
     callback_generic_service_ = service;
   }

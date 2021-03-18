@@ -85,4 +85,3 @@ cc_binary(
         "//examples/protos:helloworld_cc_grpc",
     ],
 )
-
