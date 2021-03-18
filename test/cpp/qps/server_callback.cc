@@ -33,20 +33,20 @@ namespace testing {
 class BenchmarkCallbackServiceImpl final
     : public BenchmarkService::ExperimentalCallbackService {
  public:
-  ::grpc::ServerUnaryReactor* UnaryCall(
-      ::grpc::CallbackServerContext* context,
-      const SimpleRequest* request, SimpleResponse* response) override {
+  ::grpc::ServerUnaryReactor* UnaryCall(::grpc::CallbackServerContext* context,
+                                        const SimpleRequest* request,
+                                        SimpleResponse* response) override {
     auto* reactor = context->DefaultReactor();
     reactor->Finish(SetResponse(request, response));
     return reactor;
   }
 
   ::grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
-                                          ::grpc::testing::SimpleResponse>*
+                            ::grpc::testing::SimpleResponse>*
   StreamingCall(::grpc::CallbackServerContext*) override {
     class Reactor
-        : public ::grpc::ServerBidiReactor<
-              ::grpc::testing::SimpleRequest, ::grpc::testing::SimpleResponse> {
+        : public ::grpc::ServerBidiReactor<::grpc::testing::SimpleRequest,
+                                           ::grpc::testing::SimpleResponse> {
      public:
       Reactor() { StartRead(&request_); }
 

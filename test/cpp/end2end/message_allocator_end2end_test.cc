@@ -61,9 +61,9 @@ class CallbackTestServiceImpl
     allocator_mutator_ = std::move(mutator);
   }
 
-  ServerUnaryReactor* Echo(
-      CallbackServerContext* context, const EchoRequest* request,
-      EchoResponse* response) override {
+  ServerUnaryReactor* Echo(CallbackServerContext* context,
+                           const EchoRequest* request,
+                           EchoResponse* response) override {
     response->set_message(request->message());
     if (allocator_mutator_) {
       allocator_mutator_(context->GetRpcAllocatorState(), request, response);
@@ -74,8 +74,8 @@ class CallbackTestServiceImpl
   }
 
  private:
-  std::function<void(RpcAllocatorState* allocator_state,
-                     const EchoRequest* req, EchoResponse* resp)>
+  std::function<void(RpcAllocatorState* allocator_state, const EchoRequest* req,
+                     EchoResponse* resp)>
       allocator_mutator_;
 };
 
@@ -110,8 +110,7 @@ class MessageAllocatorEnd2endTestBase
 
   ~MessageAllocatorEnd2endTestBase() override = default;
 
-  void CreateServer(
-      MessageAllocator<EchoRequest, EchoResponse>* allocator) {
+  void CreateServer(MessageAllocator<EchoRequest, EchoResponse>* allocator) {
     ServerBuilder builder;
 
     auto server_creds = GetCredentialsProvider()->GetServerCredentials(
@@ -209,11 +208,9 @@ TEST_P(NullAllocatorTest, SimpleRpc) {
 
 class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
  public:
-  class SimpleAllocator
-      : public MessageAllocator<EchoRequest, EchoResponse> {
+  class SimpleAllocator : public MessageAllocator<EchoRequest, EchoResponse> {
    public:
-    class MessageHolderImpl
-        : public MessageHolder<EchoRequest, EchoResponse> {
+    class MessageHolderImpl : public MessageHolder<EchoRequest, EchoResponse> {
      public:
       MessageHolderImpl(std::atomic_int* request_deallocation_count,
                         std::atomic_int* messages_deallocation_count)
@@ -244,8 +241,7 @@ class SimpleAllocatorTest : public MessageAllocatorEnd2endTestBase {
       std::atomic_int* const request_deallocation_count_;
       std::atomic_int* const messages_deallocation_count_;
     };
-    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
-        override {
+    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages() override {
       allocation_count++;
       return new MessageHolderImpl(&request_deallocation_count,
                                    &messages_deallocation_count);
@@ -273,8 +269,8 @@ TEST_P(SimpleAllocatorTest, SimpleRpc) {
 TEST_P(SimpleAllocatorTest, RpcWithEarlyFreeRequest) {
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
-  auto mutator = [](RpcAllocatorState* allocator_state,
-                    const EchoRequest* req, EchoResponse* resp) {
+  auto mutator = [](RpcAllocatorState* allocator_state, const EchoRequest* req,
+                    EchoResponse* resp) {
     auto* info =
         static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
     EXPECT_EQ(req, info->request());
@@ -298,9 +294,9 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
   const int kRpcCount = 10;
   std::unique_ptr<SimpleAllocator> allocator(new SimpleAllocator);
   std::vector<EchoRequest*> released_requests;
-  auto mutator = [&released_requests](
-                     RpcAllocatorState* allocator_state,
-                     const EchoRequest* req, EchoResponse* resp) {
+  auto mutator = [&released_requests](RpcAllocatorState* allocator_state,
+                                      const EchoRequest* req,
+                                      EchoResponse* resp) {
     auto* info =
         static_cast<SimpleAllocator::MessageHolderImpl*>(allocator_state);
     EXPECT_EQ(req, info->request());
@@ -326,11 +322,9 @@ TEST_P(SimpleAllocatorTest, RpcWithReleaseRequest) {
 
 class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
  public:
-  class ArenaAllocator
-      : public MessageAllocator<EchoRequest, EchoResponse> {
+  class ArenaAllocator : public MessageAllocator<EchoRequest, EchoResponse> {
    public:
-    class MessageHolderImpl
-        : public MessageHolder<EchoRequest, EchoResponse> {
+    class MessageHolderImpl : public MessageHolder<EchoRequest, EchoResponse> {
      public:
       MessageHolderImpl() {
         set_request(
@@ -344,8 +338,7 @@ class ArenaAllocatorTest : public MessageAllocatorEnd2endTestBase {
      private:
       google::protobuf::Arena arena_;
     };
-    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages()
-        override {
+    MessageHolder<EchoRequest, EchoResponse>* AllocateMessages() override {
       allocation_count++;
       return new MessageHolderImpl;
     }

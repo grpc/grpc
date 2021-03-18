@@ -163,9 +163,9 @@ class FakeClient {
 class CallbackTestServiceImpl
     : public EchoTestService::ExperimentalCallbackService {
  public:
-  ServerUnaryReactor* Echo(
-      CallbackServerContext* context, const EchoRequest* request,
-      EchoResponse* response) override {
+  ServerUnaryReactor* Echo(CallbackServerContext* context,
+                           const EchoRequest* request,
+                           EchoResponse* response) override {
     // Make the mock service explicitly treat empty input messages as invalid
     // arguments so that we can test various results of status. In general, a
     // mocked service should just use the original service methods, but we are

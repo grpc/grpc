@@ -34,8 +34,7 @@ namespace testing {
  * BENCHMARKING KERNELS
  */
 
-class BidiClient
-    : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
+class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
  public:
   BidiClient(benchmark::State* state, EchoTestService::Stub* stub,
              ClientContext* cli_ctx, EchoRequest* request,

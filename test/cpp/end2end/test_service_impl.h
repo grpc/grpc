@@ -58,8 +58,8 @@ typedef enum {
 namespace internal {
 // When echo_deadline is requested, deadline seen in the ServerContext is set in
 // the response in seconds.
-void MaybeEchoDeadline(ServerContextBase* context,
-                       const EchoRequest* request, EchoResponse* response);
+void MaybeEchoDeadline(ServerContextBase* context, const EchoRequest* request,
+                       EchoResponse* response);
 
 void CheckServerAuthContext(const ServerContextBase* context,
                             const std::string& expected_transport_security_type,
@@ -448,21 +448,19 @@ class CallbackTestServiceImpl
   explicit CallbackTestServiceImpl(const std::string& host)
       : signal_client_(false), host_(new std::string(host)) {}
 
-  ServerUnaryReactor* Echo(
-      CallbackServerContext* context, const EchoRequest* request,
-      EchoResponse* response) override;
+  ServerUnaryReactor* Echo(CallbackServerContext* context,
+                           const EchoRequest* request,
+                           EchoResponse* response) override;
 
-  ServerUnaryReactor* CheckClientInitialMetadata(
-      CallbackServerContext* context, const SimpleRequest*,
-      SimpleResponse*) override;
+  ServerUnaryReactor* CheckClientInitialMetadata(CallbackServerContext* context,
+                                                 const SimpleRequest*,
+                                                 SimpleResponse*) override;
 
   ServerReadReactor<EchoRequest>* RequestStream(
-      CallbackServerContext* context,
-      EchoResponse* response) override;
+      CallbackServerContext* context, EchoResponse* response) override;
 
   ServerWriteReactor<EchoResponse>* ResponseStream(
-      CallbackServerContext* context,
-      const EchoRequest* request) override;
+      CallbackServerContext* context, const EchoRequest* request) override;
 
   ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
       CallbackServerContext* context) override;

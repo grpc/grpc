@@ -259,8 +259,7 @@ class ClientCallbackEnd2endTest
     std::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
       test_string += "Hello world. ";
-      class Client : public grpc::ClientBidiReactor<ByteBuffer,
-                                                                  ByteBuffer> {
+      class Client : public grpc::ClientBidiReactor<ByteBuffer, ByteBuffer> {
        public:
         Client(ClientCallbackEnd2endTest* test, const std::string& method_name,
                const std::string& test_str, int reuses, bool do_writes_done)
@@ -1038,8 +1037,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStreamServerCancelAfter) {
   }
 }
 
-class BidiClient
-    : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
+class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
  public:
   BidiClient(grpc::testing::EchoTestService::Stub* stub,
              ServerTryCancelRequestPhase server_try_cancel,
@@ -1294,8 +1292,7 @@ TEST_P(ClientCallbackEnd2endTest, BidiStreamServerCancelAfter) {
 
 TEST_P(ClientCallbackEnd2endTest, SimultaneousReadAndWritesDone) {
   ResetStub();
-  class Client : public grpc::ClientBidiReactor<EchoRequest,
-                                                              EchoResponse> {
+  class Client : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
    public:
     explicit Client(grpc::testing::EchoTestService::Stub* stub) {
       request_.set_message("Hello bidi ");
