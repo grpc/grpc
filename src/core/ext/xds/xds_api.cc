@@ -2745,11 +2745,21 @@ grpc_error* ServerAddressParseAndAppend(
   if (GPR_UNLIKELY(port >> 16) != 0) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port.");
   }
+  // Find load_balancing_weight for the endpoint.
+  const google_protobuf_UInt32Value* load_balancing_weight =
+      envoy_config_endpoint_v3_LbEndpoint_load_balancing_weight(lb_endpoint);
+  const int32_t weight =
+      load_balancing_weight != nullptr
+          ? google_protobuf_UInt32Value_value(load_balancing_weight)
+          : 500;
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
   grpc_string_to_sockaddr(&addr, address_str.c_str(), port);
   // Append the address to the list.
-  list->emplace_back(addr, nullptr);
+  ServerAddress server_address(addr, nullptr);
+  list->emplace_back(server_address.WithAttribute(
+      ServerAddressWeightAttribute::kServerAddressWeightAttributeKey,
+      absl::make_unique<ServerAddressWeightAttribute>(weight)));
   return GRPC_ERROR_NONE;
 }
 

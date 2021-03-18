@@ -1619,6 +1619,10 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h",
     ],
     language = "c++",
+    external_deps = [
+        "absl/strings",
+        "xxhash",
+    ],
     deps = [
         "grpc_base",
         "grpc_client_channel",
