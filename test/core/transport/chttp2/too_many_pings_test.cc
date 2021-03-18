@@ -40,6 +40,7 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
+#include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -58,6 +59,48 @@
 #include "test/core/end2end/cq_verifier.h"
 
 namespace {
+
+class TransportCounter {
+ public:
+  static void CounterInitCallback() {
+    absl::MutexLock lock(&mu());
+    ++count_;
+  }
+
+  static void CounterDestructCallback() {
+    absl::MutexLock lock(&mu());
+    if (--count_ == 0) {
+      cv().SignalAll();
+    }
+  }
+
+  static void WaitForTransportsToBeDestroyed() {
+    absl::MutexLock lock(&mu());
+    while (count_ != 0) {
+      ASSERT_FALSE(cv().WaitWithTimeout(&mu(), absl::Seconds(10)));
+    }
+  }
+
+  static int count() {
+    absl::MutexLock lock(&mu());
+    return count_;
+  }
+
+  static absl::Mutex& mu() {
+    static absl::Mutex* mu = new absl::Mutex();
+    return *mu;
+  }
+
+  static absl::CondVar& cv() {
+    static absl::CondVar* cv = new absl::CondVar();
+    return *cv;
+  }
+
+ private:
+  static int count_;
+};
+
+int TransportCounter::count_ = 0;
 
 void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
@@ -681,8 +724,8 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   grpc_channel* channel = grpc_insecure_channel_create(
       server_address.c_str(), &client_channel_args, nullptr);
   VerifyChannelReady(channel, cq);
+  EXPECT_EQ(TransportCounter::count(), 2 /* one each for server and client */);
   cq_verifier* cqv = cq_verifier_create(cq);
-  cq_verify_empty_timeout(cqv, 1);
   // Channel should be able to send two pings without disconnect if there was no
   // BDP sent.
   grpc_channel_ping(channel, cq, tag(1), nullptr);
@@ -707,9 +750,67 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
   grpc_channel_ping(channel, cq, tag(4), nullptr);
   CQ_EXPECT_COMPLETION(cqv, tag(4), 1);
   cq_verify(cqv, 5);
-  // Give some time for the server to disconnect if it hasn't already.
-  cq_verify_empty_timeout(cqv, 3);
+  // Make sure that the transports have been destroyed
   VerifyChannelDisconnected(channel, cq);
+  TransportCounter::WaitForTransportsToBeDestroyed();
+  cq_verifier_destroy(cqv);
+  // shutdown and destroy the client and server
+  ServerShutdownAndDestroy(server, cq);
+  grpc_channel_destroy(channel);
+  grpc_completion_queue_shutdown(cq);
+  while (grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_REALTIME),
+                                    nullptr)
+             .type != GRPC_QUEUE_SHUTDOWN) {
+  }
+  grpc_completion_queue_destroy(cq);
+}
+
+TEST(TooManyPings, TransportsGetCleanedUpOnDisconnect) {
+  grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
+  // create the client and server
+  std::string server_address =
+      grpc_core::JoinHostPort("localhost", grpc_pick_unused_port_or_die());
+  grpc_arg server_args[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(
+              GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS),
+          60 * 1000),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PING_STRIKES), 1)};
+  grpc_channel_args server_channel_args = {GPR_ARRAY_SIZE(server_args),
+                                           server_args};
+  grpc_server* server = grpc_server_create(&server_channel_args, nullptr);
+  grpc_server_register_completion_queue(server, cq, nullptr);
+  GPR_ASSERT(
+      grpc_server_add_insecure_http2_port(server, server_address.c_str()));
+  grpc_server_start(server);
+  grpc_arg client_args[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA), 0),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS), 1)};
+  grpc_channel_args client_channel_args = {GPR_ARRAY_SIZE(client_args),
+                                           client_args};
+  grpc_channel* channel = grpc_insecure_channel_create(
+      server_address.c_str(), &client_channel_args, nullptr);
+  VerifyChannelReady(channel, cq);
+  EXPECT_EQ(TransportCounter::count(), 2 /* one each for server and client */);
+  cq_verifier* cqv = cq_verifier_create(cq);
+  // First ping
+  grpc_channel_ping(channel, cq, tag(1), nullptr);
+  CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
+  cq_verify(cqv, 5);
+  // Second ping
+  grpc_channel_ping(channel, cq, tag(2), nullptr);
+  CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
+  cq_verify(cqv, 5);
+  // Third ping caused disconnect
+  grpc_channel_ping(channel, cq, tag(2), nullptr);
+  CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
+  cq_verify(cqv, 5);
+  // Make sure that the transports have been destroyed
+  VerifyChannelDisconnected(channel, cq);
+  TransportCounter::WaitForTransportsToBeDestroyed();
   cq_verifier_destroy(cqv);
   // shutdown and destroy the client and server
   ServerShutdownAndDestroy(server, cq);
@@ -727,6 +828,10 @@ TEST(TooManyPings, BdpPingNotSentWithoutReceiveSideActivity) {
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::TestEnvironment env(argc, argv);
+  grpc_core::TestOnlySetGlobalHttp2TransportInitCallback(
+      TransportCounter::CounterInitCallback);
+  grpc_core::TestOnlySetGlobalHttp2TransportDestructCallback(
+      TransportCounter::CounterDestructCallback);
   grpc_init();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

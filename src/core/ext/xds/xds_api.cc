@@ -149,6 +149,83 @@ bool XdsFaultInjectionEnabled() {
 }
 
 //
+// XdsApi::Route::HashPolicy
+//
+
+XdsApi::Route::HashPolicy::HashPolicy(const HashPolicy& other)
+    : type(other.type),
+      header_name(other.header_name),
+      regex_substitution(other.regex_substitution) {
+  if (other.regex != nullptr) {
+    regex =
+        absl::make_unique<RE2>(other.regex->pattern(), other.regex->options());
+  }
+}
+
+XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
+    const HashPolicy& other) {
+  type = other.type;
+  header_name = other.header_name;
+  if (other.regex != nullptr) {
+    regex =
+        absl::make_unique<RE2>(other.regex->pattern(), other.regex->options());
+  }
+  regex_substitution = other.regex_substitution;
+  return *this;
+}
+
+XdsApi::Route::HashPolicy::HashPolicy(HashPolicy&& other) noexcept
+    : type(other.type),
+      header_name(std::move(other.header_name)),
+      regex(std::move(other.regex)),
+      regex_substitution(std::move(other.regex_substitution)) {}
+
+XdsApi::Route::HashPolicy& XdsApi::Route::HashPolicy::operator=(
+    HashPolicy&& other) noexcept {
+  type = other.type;
+  header_name = std::move(other.header_name);
+  regex = std::move(other.regex);
+  regex_substitution = std::move(other.regex_substitution);
+  return *this;
+}
+
+bool XdsApi::Route::HashPolicy::HashPolicy::operator==(
+    const HashPolicy& other) const {
+  if (type != other.type) return false;
+  if (type == Type::HEADER) {
+    if (regex == nullptr) {
+      if (other.regex != nullptr) return false;
+    } else {
+      if (other.regex == nullptr) return false;
+      return header_name == other.header_name &&
+             regex->pattern() == other.regex->pattern() &&
+             regex_substitution == other.regex_substitution;
+    }
+  }
+  return true;
+}
+
+std::string XdsApi::Route::HashPolicy::ToString() const {
+  std::vector<std::string> contents;
+  switch (type) {
+    case Type::HEADER:
+      contents.push_back("type=HEADER");
+      break;
+    case Type::CHANNEL_ID:
+      contents.push_back("type=CHANNEL_ID");
+      break;
+  }
+  contents.push_back(
+      absl::StrFormat("terminal=%s", terminal ? "true" : "false"));
+  if (type == Type::HEADER) {
+    contents.push_back(absl::StrFormat(
+        "Header %s:/%s/%s", header_name,
+        (regex == nullptr) ? "" : regex->pattern(), regex_substitution));
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
+//
 // XdsApi::Route
 //
 
@@ -186,6 +263,9 @@ std::string XdsApi::Route::ClusterWeight::ToString() const {
 std::string XdsApi::Route::ToString() const {
   std::vector<std::string> contents;
   contents.push_back(matchers.ToString());
+  for (const HashPolicy& hash_policy : hash_policies) {
+    contents.push_back(absl::StrCat("hash_policy=", hash_policy.ToString()));
+  }
   if (!cluster_name.empty()) {
     contents.push_back(absl::StrFormat("Cluster name: %s", cluster_name));
   }
@@ -688,8 +768,13 @@ const char* kCdsV2TypeUrl = "type.googleapis.com/envoy.api.v2.Cluster";
 const char* kEdsV2TypeUrl =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 
-bool IsLds(absl::string_view type_url) {
-  return type_url == XdsApi::kLdsTypeUrl || type_url == kLdsV2TypeUrl;
+bool IsLds(absl::string_view type_url, bool* is_v2 = nullptr) {
+  if (type_url == XdsApi::kLdsTypeUrl) return true;
+  if (type_url == kLdsV2TypeUrl) {
+    if (is_v2 != nullptr) *is_v2 = true;
+    return true;
+  }
+  return false;
 }
 
 bool IsRds(absl::string_view type_url) {
@@ -1404,7 +1489,7 @@ grpc_error* RouteActionParse(const EncodingContext& context,
       cluster.weight = google_protobuf_UInt32Value_value(weight);
       if (cluster.weight == 0) continue;
       sum_of_weights += cluster.weight;
-      if ((XdsSecurityEnabled() && XdsFaultInjectionEnabled()) &&
+      if ((XdsSecurityEnabled() || XdsFaultInjectionEnabled()) &&
           context.use_v3) {
         grpc_error* error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_WeightedCluster_ClusterWeight,
@@ -1451,6 +1536,88 @@ grpc_error* RouteActionParse(const EncodingContext& context,
       }
     }
   }
+  // Get HashPolicy from RouteAction
+  if (XdsRingHashEnabled()) {
+    size_t size = 0;
+    const envoy_config_route_v3_RouteAction_HashPolicy* const* hash_policies =
+        envoy_config_route_v3_RouteAction_hash_policy(route_action, &size);
+    for (size_t i = 0; i < size; ++i) {
+      const envoy_config_route_v3_RouteAction_HashPolicy* hash_policy =
+          hash_policies[i];
+      XdsApi::Route::HashPolicy policy;
+      policy.terminal =
+          envoy_config_route_v3_RouteAction_HashPolicy_terminal(hash_policy);
+      const envoy_config_route_v3_RouteAction_HashPolicy_Header* header;
+      const envoy_config_route_v3_RouteAction_HashPolicy_FilterState*
+          filter_state;
+      if ((header = envoy_config_route_v3_RouteAction_HashPolicy_header(
+               hash_policy)) != nullptr) {
+        policy.type = XdsApi::Route::HashPolicy::Type::HEADER;
+        policy.header_name = UpbStringToStdString(
+            envoy_config_route_v3_RouteAction_HashPolicy_Header_header_name(
+                header));
+        const struct envoy_type_matcher_v3_RegexMatchAndSubstitute*
+            regex_rewrite =
+                envoy_config_route_v3_RouteAction_HashPolicy_Header_regex_rewrite(
+                    header);
+        if (regex_rewrite == nullptr) {
+          gpr_log(
+              GPR_DEBUG,
+              "RouteAction HashPolicy contains policy specifier Header with "
+              "RegexMatchAndSubstitution but Regex is missing");
+          continue;
+        }
+        const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
+            envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
+                regex_rewrite);
+        if (regex_matcher == nullptr) {
+          gpr_log(
+              GPR_DEBUG,
+              "RouteAction HashPolicy contains policy specifier Header with "
+              "RegexMatchAndSubstitution but RegexMatcher pattern is "
+              "missing");
+          continue;
+        }
+        RE2::Options options;
+        policy.regex = absl::make_unique<RE2>(
+            UpbStringToStdString(
+                envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
+            options);
+        if (!policy.regex->ok()) {
+          gpr_log(
+              GPR_DEBUG,
+              "RouteAction HashPolicy contains policy specifier Header with "
+              "RegexMatchAndSubstitution but RegexMatcher pattern does not "
+              "compile");
+          continue;
+        }
+        policy.regex_substitution = UpbStringToStdString(
+            envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
+                regex_rewrite));
+      } else if ((filter_state =
+                      envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
+                          hash_policy)) != nullptr) {
+        std::string key = UpbStringToStdString(
+            envoy_config_route_v3_RouteAction_HashPolicy_FilterState_key(
+                filter_state));
+        if (key == "io.grpc.channel_id") {
+          policy.type = XdsApi::Route::HashPolicy::Type::CHANNEL_ID;
+        } else {
+          gpr_log(GPR_DEBUG,
+                  "RouteAction HashPolicy contains policy specifier "
+                  "FilterState but "
+                  "key is not io.grpc.channel_id.");
+          continue;
+        }
+      } else {
+        gpr_log(
+            GPR_DEBUG,
+            "RouteAction HashPolicy contains unsupported policy specifier.");
+        continue;
+      }
+      route->hash_policies.emplace_back(std::move(policy));
+    }
+  }
   return GRPC_ERROR_NONE;
 }
 
@@ -1485,7 +1652,7 @@ grpc_error* RouteConfigParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("VirtualHost has no domains");
     }
     // Parse typed_per_filter_config.
-    if ((XdsSecurityEnabled() && XdsFaultInjectionEnabled()) &&
+    if ((XdsSecurityEnabled() || XdsFaultInjectionEnabled()) &&
         context.use_v3) {
       grpc_error* error = ParseTypedPerFilterConfig<
           envoy_config_route_v3_VirtualHost,
@@ -1527,7 +1694,7 @@ grpc_error* RouteConfigParse(
       error = RouteActionParse(context, routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
-      if ((XdsSecurityEnabled() && XdsFaultInjectionEnabled()) &&
+      if ((XdsSecurityEnabled() || XdsFaultInjectionEnabled()) &&
           context.use_v3) {
         grpc_error* error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_Route,
@@ -1664,6 +1831,7 @@ grpc_error* HttpConnectionManagerParse(
     bool is_client, const EncodingContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
         http_connection_manager_proto,
+    bool is_v2,
     XdsApi::LdsUpdate::HttpConnectionManager* http_connection_manager) {
   MaybeLogHttpConnectionManager(context, http_connection_manager_proto);
   if (XdsTimeoutEnabled()) {
@@ -1683,70 +1851,81 @@ grpc_error* HttpConnectionManagerParse(
     }
   }
   // Parse filters.
-  if ((XdsSecurityEnabled() && XdsFaultInjectionEnabled()) && context.use_v3) {
-    size_t num_filters = 0;
-    const auto* http_filters =
-        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
-            http_connection_manager_proto, &num_filters);
-    std::set<absl::string_view> names_seen;
-    for (size_t i = 0; i < num_filters; ++i) {
-      const auto* http_filter = http_filters[i];
-      absl::string_view name = UpbStringToAbsl(
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
-              http_filter));
-      if (name.empty()) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("empty filter name at index ", i).c_str());
+  if (XdsSecurityEnabled() || XdsFaultInjectionEnabled()) {
+    if (!is_v2) {
+      size_t num_filters = 0;
+      const auto* http_filters =
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
+              http_connection_manager_proto, &num_filters);
+      std::set<absl::string_view> names_seen;
+      for (size_t i = 0; i < num_filters; ++i) {
+        const auto* http_filter = http_filters[i];
+        absl::string_view name = UpbStringToAbsl(
+            envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
+                http_filter));
+        if (name.empty()) {
+          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("empty filter name at index ", i).c_str());
+        }
+        if (names_seen.find(name) != names_seen.end()) {
+          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("duplicate HTTP filter name: ", name).c_str());
+        }
+        names_seen.insert(name);
+        const bool is_optional =
+            envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
+                http_filter);
+        const google_protobuf_Any* any =
+            envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
+                http_filter);
+        if (any == nullptr) {
+          if (is_optional) continue;
+          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("no filter config specified for filter name ", name)
+                  .c_str());
+        }
+        absl::string_view filter_type;
+        grpc_error* error =
+            ExtractHttpFilterTypeName(context, any, &filter_type);
+        if (error != GRPC_ERROR_NONE) return error;
+        const XdsHttpFilterImpl* filter_impl =
+            XdsHttpFilterRegistry::GetFilterForType(filter_type);
+        if (filter_impl == nullptr) {
+          if (is_optional) continue;
+          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("no filter registered for config type ", filter_type)
+                  .c_str());
+        }
+        if ((is_client && !filter_impl->IsSupportedOnClients()) ||
+            (!is_client && !filter_impl->IsSupportedOnServers())) {
+          if (is_optional) continue;
+          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrFormat("Filter %s is not supported on %s", filter_type,
+                              is_client ? "clients" : "servers")
+                  .c_str());
+        }
+        absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
+            filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
+                                              context.arena);
+        if (!filter_config.ok()) {
+          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat(
+                  "filter config for type ", filter_type,
+                  " failed to parse: ", filter_config.status().ToString())
+                  .c_str());
+        }
+        http_connection_manager->http_filters.emplace_back(
+            XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
+                std::string(name), std::move(*filter_config)});
       }
-      if (names_seen.find(name) != names_seen.end()) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("duplicate HTTP filter name: ", name).c_str());
-      }
-      names_seen.insert(name);
-      const bool is_optional =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
-              http_filter);
-      const google_protobuf_Any* any =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
-              http_filter);
-      if (any == nullptr) {
-        if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("no filter config specified for filter name ", name)
-                .c_str());
-      }
-      absl::string_view filter_type;
-      grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
-      if (error != GRPC_ERROR_NONE) return error;
-      const XdsHttpFilterImpl* filter_impl =
-          XdsHttpFilterRegistry::GetFilterForType(filter_type);
-      if (filter_impl == nullptr) {
-        if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("no filter registered for config type ", filter_type)
-                .c_str());
-      }
-      if ((is_client && !filter_impl->IsSupportedOnClients()) ||
-          (!is_client && !filter_impl->IsSupportedOnServers())) {
-        if (is_optional) continue;
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrFormat("Filter %s is not supported on %s", filter_type,
-                            is_client ? "clients" : "servers")
-                .c_str());
-      }
-      absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
-          filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
-                                            context.arena);
-      if (!filter_config.ok()) {
-        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(
-                "filter config for type ", filter_type,
-                " failed to parse: ", filter_config.status().ToString())
-                .c_str());
-      }
+    } else {
+      // If using a v2 config, we just hard-code a list containing only the
+      // router filter without actually looking at the config.  This ensures
+      // that the right thing happens in the xds resolver without having
+      // to expose whether the resource we received was v2 or v3.
       http_connection_manager->http_filters.emplace_back(
           XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
-              std::string(name), std::move(*filter_config)});
+              "router", {kXdsHttpRouterFilterConfigName, Json()}});
     }
   }
   if (is_client) {
@@ -1792,7 +1971,7 @@ grpc_error* HttpConnectionManagerParse(
 
 grpc_error* LdsResponseParseClient(
     const EncodingContext& context,
-    const envoy_config_listener_v3_ApiListener* api_listener,
+    const envoy_config_listener_v3_ApiListener* api_listener, bool is_v2,
     XdsApi::LdsUpdate* lds_update) {
   lds_update->type = XdsApi::LdsUpdate::ListenerType::kHttpApiListener;
   const upb_strview encoded_api_listener = google_protobuf_Any_value(
@@ -1805,7 +1984,7 @@ grpc_error* LdsResponseParseClient(
         "Could not parse HttpConnectionManager config from ApiListener");
   }
   return HttpConnectionManagerParse(true /* is_client */, context,
-                                    http_connection_manager,
+                                    http_connection_manager, is_v2,
                                     &lds_update->http_connection_manager);
 }
 
@@ -1926,7 +2105,7 @@ grpc_error* DownstreamTlsContextParse(
 
 grpc_error* FilterChainParse(
     const EncodingContext& context,
-    const envoy_config_listener_v3_FilterChain* filter_chain_proto,
+    const envoy_config_listener_v3_FilterChain* filter_chain_proto, bool is_v2,
     XdsApi::LdsUpdate::FilterChain* filter_chain) {
   grpc_error* error = GRPC_ERROR_NONE;
   auto* filter_chain_match =
@@ -1971,7 +2150,7 @@ grpc_error* FilterChainParse(
         "typed_config");
   }
   error = HttpConnectionManagerParse(false /* is_client */, context,
-                                     http_connection_manager,
+                                     http_connection_manager, is_v2,
                                      &filter_chain->http_connection_manager);
   if (error != GRPC_ERROR_NONE) return error;
   // Get the DownstreamTlsContext for the filter chain
@@ -2013,13 +2192,21 @@ grpc_error* AddressParse(const envoy_config_core_v3_Address* address_proto,
 
 grpc_error* LdsResponseParseServer(
     const EncodingContext& context,
-    const envoy_config_listener_v3_Listener* listener,
+    const envoy_config_listener_v3_Listener* listener, bool is_v2,
     XdsApi::LdsUpdate* lds_update) {
   lds_update->type = XdsApi::LdsUpdate::ListenerType::kTcpListener;
   grpc_error* error =
       AddressParse(envoy_config_listener_v3_Listener_address(listener),
                    &lds_update->address);
   if (error != GRPC_ERROR_NONE) return error;
+  const auto* use_original_dst =
+      envoy_config_listener_v3_Listener_use_original_dst(listener);
+  if (use_original_dst != nullptr) {
+    if (google_protobuf_BoolValue_value(use_original_dst)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "Field \'use_original_dst\' is not supported.");
+    }
+  }
   // TODO(yashykt): As part of this, we'll need to refactor the code to process
   // the HttpConnectionManager config so that it is shared with the client-side
   // parsing.
@@ -2035,7 +2222,7 @@ grpc_error* LdsResponseParseServer(
   lds_update->filter_chains.reserve(size);
   for (size_t i = 0; i < size; i++) {
     XdsApi::LdsUpdate::FilterChain filter_chain;
-    error = FilterChainParse(context, filter_chains[0], &filter_chain);
+    error = FilterChainParse(context, filter_chains[0], is_v2, &filter_chain);
     if (error != GRPC_ERROR_NONE) return error;
     lds_update->filter_chains.push_back(std::move(filter_chain));
   }
@@ -2043,7 +2230,8 @@ grpc_error* LdsResponseParseServer(
       envoy_config_listener_v3_Listener_default_filter_chain(listener);
   if (default_filter_chain != nullptr) {
     XdsApi::LdsUpdate::FilterChain filter_chain;
-    error = FilterChainParse(context, default_filter_chain, &filter_chain);
+    error =
+        FilterChainParse(context, default_filter_chain, is_v2, &filter_chain);
     if (error != GRPC_ERROR_NONE) return error;
     lds_update->default_filter_chain = std::move(filter_chain);
   }
@@ -2068,7 +2256,8 @@ grpc_error* LdsResponseParse(
     // Check the type_url of the resource.
     absl::string_view type_url =
         UpbStringToAbsl(google_protobuf_Any_type_url(resources[i]));
-    if (!IsLds(type_url)) {
+    bool is_v2 = false;
+    if (!IsLds(type_url, &is_v2)) {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
           absl::StrCat("resource index ", i, ": Resource is not LDS.")
               .c_str()));
@@ -2125,9 +2314,9 @@ grpc_error* LdsResponseParse(
     }
     grpc_error* error = GRPC_ERROR_NONE;
     if (api_listener != nullptr) {
-      error = LdsResponseParseClient(context, api_listener, &lds_update);
+      error = LdsResponseParseClient(context, api_listener, is_v2, &lds_update);
     } else {
-      error = LdsResponseParseServer(context, listener, &lds_update);
+      error = LdsResponseParseServer(context, listener, is_v2, &lds_update);
     }
     if (error != GRPC_ERROR_NONE) {
       errors.push_back(grpc_error_add_child(

@@ -36,6 +36,10 @@
       <PackagePath>runtimes/linux-x64/native/libgrpc_csharp_ext.x64.so</PackagePath>
       <Pack>true</Pack>
     </Content>
+    <Content Include="..\nativelibs\csharp_ext_linux_aarch64\libgrpc_csharp_ext.so">
+      <PackagePath>runtimes/linux-arm64/native/libgrpc_csharp_ext.arm64.so</PackagePath>
+      <Pack>true</Pack>
+    </Content>
     <Content Include="..\nativelibs\csharp_ext_windows_x64\grpc_csharp_ext.dll">
       <PackagePath>runtimes/win-x64/native/grpc_csharp_ext.x64.dll</PackagePath>
       <Pack>true</Pack>

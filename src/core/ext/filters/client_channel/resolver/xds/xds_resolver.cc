@@ -26,6 +26,7 @@
 #include "xxhash.h"
 
 #include "src/core/ext/filters/client_channel/config_selector.h"
+#include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_http_filters.h"
@@ -524,31 +525,50 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   }
 }
 
-bool HeaderMatchHelper(const HeaderMatcher& header_matcher,
-                       grpc_metadata_batch* initial_metadata) {
-  std::string concatenated_value;
-  absl::optional<absl::string_view> value;
+absl::optional<absl::string_view> GetHeaderValue(
+    grpc_metadata_batch* initial_metadata, absl::string_view header_name,
+    std::string* concatenated_value) {
   // Note: If we ever allow binary headers here, we still need to
   // special-case ignore "grpc-tags-bin" and "grpc-trace-bin", since
   // they are not visible to the LB policy in grpc-go.
-  if (absl::EndsWith(header_matcher.name(), "-bin") ||
-      header_matcher.name() == "grpc-previous-rpc-attempts") {
-    value = absl::nullopt;
-  } else if (header_matcher.name() == "content-type") {
-    value = "application/grpc";
-  } else {
-    value = grpc_metadata_batch_get_value(
-        initial_metadata, header_matcher.name(), &concatenated_value);
+  if (absl::EndsWith(header_name, "-bin")) {
+    return absl::nullopt;
+  } else if (header_name == "content-type") {
+    return "application/grpc";
   }
-  return header_matcher.Match(value);
+  return grpc_metadata_batch_get_value(initial_metadata, header_name,
+                                       concatenated_value);
 }
 
 bool HeadersMatch(const std::vector<HeaderMatcher>& header_matchers,
                   grpc_metadata_batch* initial_metadata) {
   for (const auto& header_matcher : header_matchers) {
-    if (!HeaderMatchHelper(header_matcher, initial_metadata)) return false;
+    std::string concatenated_value;
+    if (!header_matcher.Match(GetHeaderValue(
+            initial_metadata, header_matcher.name(), &concatenated_value))) {
+      return false;
+    }
   }
   return true;
+}
+
+absl::optional<uint64_t> HeaderHashHelper(
+    const XdsApi::Route::HashPolicy& policy,
+    grpc_metadata_batch* initial_metadata) {
+  GPR_ASSERT(policy.type == XdsApi::Route::HashPolicy::HEADER);
+  std::string value_buffer;
+  absl::optional<absl::string_view> header_value =
+      GetHeaderValue(initial_metadata, policy.header_name, &value_buffer);
+  if (policy.regex != nullptr) {
+    // If GetHeaderValue() did not already store the value in
+    // value_buffer, copy it there now, so we can modify it.
+    if (header_value->data() != value_buffer.data()) {
+      value_buffer = std::string(*header_value);
+    }
+    RE2::GlobalReplace(&value_buffer, *policy.regex, policy.regex_substitution);
+    header_value = value_buffer;
+  }
+  return XXH64(header_value->data(), header_value->size(), 0);
 }
 
 bool UnderFraction(const uint32_t fraction_per_million) {
@@ -612,6 +632,38 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     XdsResolver* resolver =
         static_cast<XdsResolver*>(resolver_->Ref().release());
     ClusterState* cluster_state = it->second->Ref().release();
+    // Generate a hash
+    absl::optional<uint64_t> hash;
+    for (const auto& hash_policy : entry.route.hash_policies) {
+      absl::optional<uint64_t> new_hash;
+      switch (hash_policy.type) {
+        case XdsApi::Route::HashPolicy::HEADER:
+          new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
+          break;
+        case XdsApi::Route::HashPolicy::CHANNEL_ID:
+          new_hash =
+              static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
+          break;
+        default:
+          GPR_ASSERT(0);
+      }
+      if (new_hash.has_value()) {
+        // Rotating the old value prevents duplicate hash rules from cancelling
+        // each other out and preserves all of the entropy
+        const uint64_t old_value =
+            hash.has_value() ? ((hash.value() << 1) | (hash.value() >> 63)) : 0;
+        hash = old_value ^ new_hash.value();
+      }
+      // If the policy is a terminal policy and a hash has been generated,
+      // ignore the rest of the hash policies.
+      if (hash_policy.terminal && hash.has_value()) {
+        break;
+      }
+    }
+    if (!hash.has_value()) {
+      // If there is no hash, we just choose a random value as a default.
+      hash = rand();
+    }
     CallConfig call_config;
     if (method_config != nullptr) {
       call_config.method_configs =
@@ -619,6 +671,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       call_config.service_config = std::move(method_config);
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
+    call_config.call_attributes[kRequestRingHashAttribute] =
+        absl::StrFormat("%" PRIu64, hash.value());
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
       ExecCtx::Run(

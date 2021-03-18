@@ -1,5 +1,5 @@
-#!/bin/bash
-# Copyright 2016 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,21 +12,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 set -ex
 
-cd "$(dirname "$0")/../../.."
+# Enter the gRPC repo root
+cd $(dirname $0)/../../..
 
-mkdir -p cmake/build
-cd cmake/build
+source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-cmake -DCMAKE_BUILD_TYPE=RelWithDebInfo \
-      -DgRPC_BACKWARDS_COMPATIBILITY_MODE=ON \
-      -DgRPC_BUILD_TESTS=OFF \
-      ../..
+echo "TODO: Add gRPC OSS Benchmarks here..."
 
-make grpc_csharp_ext -j2
-cd ../..
-
-mkdir -p "${ARTIFACTS_OUT}"
-cp cmake/build/libgrpc_csharp_ext.so "${ARTIFACTS_OUT}" || cp cmake/build/libgrpc_csharp_ext.dylib "${ARTIFACTS_OUT}"

@@ -406,8 +406,6 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
 class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
     """Describes an RPC to be invoked.
 
-    This is an EXPERIMENTAL API.
-
     Attributes:
       method: The method name of the RPC.
       timeout: An optional duration of time in seconds to allow for the RPC.
@@ -422,10 +420,7 @@ class ClientCallDetails(six.with_metaclass(abc.ABCMeta)):
 
 
 class UnaryUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
-    """Affords intercepting unary-unary invocations.
-
-    This is an EXPERIMENTAL API.
-    """
+    """Affords intercepting unary-unary invocations."""
 
     @abc.abstractmethod
     def intercept_unary_unary(self, continuation, client_call_details, request):
@@ -459,10 +454,7 @@ class UnaryUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
 
 
 class UnaryStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
-    """Affords intercepting unary-stream invocations.
-
-    This is an EXPERIMENTAL API.
-    """
+    """Affords intercepting unary-stream invocations."""
 
     @abc.abstractmethod
     def intercept_unary_stream(self, continuation, client_call_details,
@@ -496,10 +488,7 @@ class UnaryStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
 
 
 class StreamUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
-    """Affords intercepting stream-unary invocations.
-
-    This is an EXPERIMENTAL API.
-    """
+    """Affords intercepting stream-unary invocations."""
 
     @abc.abstractmethod
     def intercept_stream_unary(self, continuation, client_call_details,
@@ -533,10 +522,7 @@ class StreamUnaryClientInterceptor(six.with_metaclass(abc.ABCMeta)):
 
 
 class StreamStreamClientInterceptor(six.with_metaclass(abc.ABCMeta)):
-    """Affords intercepting stream-stream invocations.
-
-    This is an EXPERIMENTAL API.
-    """
+    """Affords intercepting stream-stream invocations."""
 
     @abc.abstractmethod
     def intercept_stream_stream(self, continuation, client_call_details,
@@ -1351,10 +1337,7 @@ class ServiceRpcHandler(six.with_metaclass(abc.ABCMeta, GenericRpcHandler)):
 
 
 class ServerInterceptor(six.with_metaclass(abc.ABCMeta)):
-    """Affords intercepting incoming RPCs on the service-side.
-
-    This is an EXPERIMENTAL API.
-    """
+    """Affords intercepting incoming RPCs on the service-side."""
 
     @abc.abstractmethod
     def intercept_service(self, continuation, handler_call_details):
@@ -1990,8 +1973,6 @@ def secure_channel(target, credentials, options=None, compression=None):
 
 def intercept_channel(channel, *interceptors):
     """Intercepts a channel through a set of interceptors.
-
-    This is an EXPERIMENTAL API.
 
     Args:
       channel: A Channel.

@@ -26,6 +26,12 @@
 #include "test/cpp/util/config_grpc_cli.h"
 #include "test/cpp/util/proto_reflection_descriptor_database.h"
 
+#if defined(_WIN32) && !defined(__CYGWIN__)
+#define GRPC_CLI_PATH_SEPARATOR ";"
+#else
+#define GRPC_CLI_PATH_SEPARATOR ":"
+#endif
+
 namespace grpc {
 namespace testing {
 class ErrorPrinter;

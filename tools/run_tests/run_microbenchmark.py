@@ -13,12 +13,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import cgi
+import argparse
+import html
 import multiprocessing
 import os
 import subprocess
 import sys
-import argparse
 
 import python_utils.jobset as jobset
 import python_utils.start_port_server as start_port_server
@@ -66,13 +66,13 @@ def heading(name):
 
 def link(txt, tgt):
     global index_html
-    index_html += "<p><a href=\"%s\">%s</a></p>\n" % (cgi.escape(
-        tgt, quote=True), cgi.escape(txt))
+    index_html += "<p><a href=\"%s\">%s</a></p>\n" % (html.escape(
+        tgt, quote=True), html.escape(txt))
 
 
 def text(txt):
     global index_html
-    index_html += "<p><pre>%s</pre></p>\n" % cgi.escape(txt)
+    index_html += "<p><pre>%s</pre></p>\n" % html.escape(txt)
 
 
 def _bazel_build_benchmark(bm_name, cfg):
@@ -95,8 +95,7 @@ def collect_latency(bm_name, args):
     for line in subprocess.check_output([
             'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
             '--benchmark_list_tests'
-    ]).splitlines():
-        line = line.decode('UTF-8')
+    ]).decode('UTF-8').splitlines():
         link(line, '%s.txt' % fnize(line))
         benchmarks.append(
             jobset.JobSpec([
@@ -150,8 +149,7 @@ def collect_perf(bm_name, args):
     for line in subprocess.check_output([
             'bazel-bin/test/cpp/microbenchmarks/%s' % bm_name,
             '--benchmark_list_tests'
-    ]).splitlines():
-        line = line.decode('UTF-8')
+    ]).decode('UTF-8').splitlines():
         link(line, '%s.svg' % fnize(line))
         benchmarks.append(
             jobset.JobSpec([
@@ -201,7 +199,7 @@ def run_summary(bm_name, cfg, base_json_name):
     ]
     if args.summary_time is not None:
         cmd += ['--benchmark_min_time=%d' % args.summary_time]
-    return subprocess.check_output(cmd)
+    return subprocess.check_output(cmd).decode('UTF-8')
 
 
 def collect_summary(bm_name, args):
@@ -216,7 +214,7 @@ def collect_summary(bm_name, args):
                     'tools/profiling/microbenchmarks/bm2bq.py',
                     '%s.counters.json' % bm_name,
                     '%s.opt.json' % bm_name
-                ]))
+                ]).decode('UTF-8'))
         subprocess.check_call([
             'bq', 'load', 'microbenchmarks.microbenchmarks',
             '%s.csv' % bm_name

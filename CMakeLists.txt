@@ -29,9 +29,9 @@ set(PACKAGE_VERSION       "1.37.0-dev")
 set(gRPC_CORE_VERSION     "15.0.0")
 set(gRPC_CORE_SOVERSION   "15")
 set(gRPC_CPP_VERSION      "1.37.0-dev")
-set(gRPC_CPP_SOVERSION    "1")
+set(gRPC_CPP_SOVERSION    "1.37")
 set(gRPC_CSHARP_VERSION   "2.37.0-dev")
-set(gRPC_CSHARP_SOVERSION "2")
+set(gRPC_CSHARP_SOVERSION "2.37")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -1491,6 +1491,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
+  src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy/xds/cds.cc

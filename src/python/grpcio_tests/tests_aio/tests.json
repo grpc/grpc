@@ -36,6 +36,7 @@
   "unit.secure_call_test.TestUnaryUnarySecureCall",
   "unit.server_interceptor_test.TestServerInterceptor",
   "unit.server_test.TestServer",
+  "unit.server_time_remaining_test.TestServerTimeRemaining",
   "unit.timeout_test.TestTimeout",
   "unit.wait_for_connection_test.TestWaitForConnection",
   "unit.wait_for_ready_test.TestWaitForReady"

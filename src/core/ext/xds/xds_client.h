@@ -88,7 +88,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
   explicit XdsClient(grpc_error** error);
   ~XdsClient() override;
 
-  const XdsBootstrap* bootstrap() const { return bootstrap_.get(); }
+  const XdsBootstrap& bootstrap() const {
+    // bootstrap_ is guaranteed to be non-null since XdsClient::GetOrCreate()
+    // would return a null object if bootstrap_ was null.
+    return *bootstrap_;
+  }
 
   CertificateProviderStore& certificate_provider_store() {
     return *certificate_provider_store_;
