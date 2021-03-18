@@ -268,8 +268,8 @@ def _compute_transitive_metadata(
     * _COLLAPSED_SRCS:  the merged source files;
     * _COLLAPSED_PUBLIC_HEADERS: the merged public headers;
     * _COLLAPSED_HEADERS: the merged non-public headers;
-    * _EXCLUDE_DEPS: transitive dependencies of public deps that this build
-      target depends on, and they will be excluded in the final build metadata.
+    * _EXCLUDE_DEPS: intermediate targets to exclude when performing collapsing
+      of sources and dependencies. 
 
     For the collapsed_deps, the algorithm improved cases like:
 
@@ -329,7 +329,7 @@ def _compute_transitive_metadata(
     # Direct dependencies are part of transitive dependencies
     transitive_deps.update(direct_deps)
 
-    # Calculate transitive public deps
+    # Calculate transitive public deps (needed for collapsing sources)
     transitive_public_deps = set(
         filter(lambda x: x in bazel_label_to_dep_name, transitive_deps))
 
