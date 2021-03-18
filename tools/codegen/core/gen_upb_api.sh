@@ -43,9 +43,11 @@ $bazel build @upb//upbc:protoc-gen-upbdefs
 UPBDEFS_PLUGIN=$PWD/bazel-bin/external/upb/upbc/protoc-gen-upbdefs
 
 proto_files=( \
+  "envoy/admin/v3/config_dump.proto" \
   "envoy/annotations/deprecation.proto" \
   "envoy/annotations/resource.proto" \
   "envoy/config/accesslog/v3/accesslog.proto" \
+  "envoy/config/bootstrap/v3/bootstrap.proto" \
   "envoy/config/cluster/v3/circuit_breaker.proto" \
   "envoy/config/cluster/v3/cluster.proto" \
   "envoy/config/cluster/v3/filter.proto" \
@@ -70,6 +72,8 @@ proto_files=( \
   "envoy/config/listener/v3/listener.proto" \
   "envoy/config/listener/v3/listener_components.proto" \
   "envoy/config/listener/v3/udp_listener_config.proto" \
+  "envoy/config/metrics/v3/stats.proto" \
+  "envoy/config/overload/v3/overload.proto" \
   "envoy/config/rbac/v3/rbac.proto" \
   "envoy/config/route/v3/route.proto" \
   "envoy/config/route/v3/route_components.proto" \
@@ -92,11 +96,14 @@ proto_files=( \
   "envoy/service/load_stats/v3/lrs.proto" \
   "envoy/service/route/v3/rds.proto" \
   "envoy/service/route/v3/srds.proto" \
+  "envoy/service/status/v3/csds.proto" \
   "envoy/type/matcher/v3/metadata.proto" \
+  "envoy/type/matcher/v3/node.proto" \
   "envoy/type/matcher/v3/number.proto" \
   "envoy/type/matcher/v3/path.proto" \
   "envoy/type/matcher/v3/regex.proto" \
   "envoy/type/matcher/v3/string.proto" \
+  "envoy/type/matcher/v3/struct.proto" \
   "envoy/type/matcher/v3/value.proto" \
   "envoy/type/metadata/v3/metadata.proto" \
   "envoy/type/tracing/v3/custom_tag.proto" \

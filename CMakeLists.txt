@@ -467,7 +467,13 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/cluster.proto
 )
 protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/config_dump.proto
+)
+protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/config_source.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/v3/csds.proto
 )
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/v3/discovery.proto
@@ -1564,9 +1570,11 @@ add_library(grpc
   src/core/ext/transport/chttp2/transport/writing.cc
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
+  src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c
   src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c
   src/core/ext/upb-generated/envoy/annotations/resource.upb.c
   src/core/ext/upb-generated/envoy/config/accesslog/v3/accesslog.upb.c
+  src/core/ext/upb-generated/envoy/config/bootstrap/v3/bootstrap.upb.c
   src/core/ext/upb-generated/envoy/config/cluster/v3/circuit_breaker.upb.c
   src/core/ext/upb-generated/envoy/config/cluster/v3/cluster.upb.c
   src/core/ext/upb-generated/envoy/config/cluster/v3/filter.upb.c
@@ -1591,6 +1599,8 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/config/listener/v3/listener.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.c
   src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c
+  src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c
+  src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c
   src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c
   src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c
   src/core/ext/upb-generated/envoy/config/route/v3/route_components.upb.c
@@ -1613,11 +1623,14 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/service/load_stats/v3/lrs.upb.c
   src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.c
   src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c
+  src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c
+  src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c
   src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c
   src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c
   src/core/ext/upb-generated/envoy/type/tracing/v3/custom_tag.upb.c
@@ -1655,9 +1668,11 @@ add_library(grpc
   src/core/ext/upb-generated/xds/core/v3/resource.upb.c
   src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.c
   src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c
+  src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/config/bootstrap/v3/bootstrap.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/cluster/v3/circuit_breaker.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/cluster/v3/cluster.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/cluster/v3/filter.upbdefs.c
@@ -1682,6 +1697,8 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/config/route/v3/scoped_route.upbdefs.c
@@ -1703,11 +1720,14 @@ add_library(grpc
   src/core/ext/upbdefs-generated/envoy/service/load_stats/v3/lrs.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.c
+  src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/metadata/v3/metadata.upbdefs.c
   src/core/ext/upbdefs-generated/envoy/type/tracing/v3/custom_tag.upbdefs.c
@@ -3773,8 +3793,6 @@ add_library(upb
   third_party/upb/upb/decode.c
   third_party/upb/upb/def.c
   third_party/upb/upb/encode.c
-  third_party/upb/upb/json_decode.c
-  third_party/upb/upb/json_encode.c
   third_party/upb/upb/msg.c
   third_party/upb/upb/reflection.c
   third_party/upb/upb/table.c
@@ -14617,10 +14635,18 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_source.grpc.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.cc
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.h
+    ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/discovery.pb.h
@@ -14685,6 +14711,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.cc
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/tls.grpc.pb.h
+    src/cpp/server/csds/csds.cc
     test/cpp/end2end/test_service_impl.cc
     test/cpp/end2end/xds_end2end_test.cc
     third_party/googletest/googletest/src/gtest-all.cc
