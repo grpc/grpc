@@ -296,10 +296,8 @@ def _compute_transitive_metadata(
         external_dep_name_maybe = _external_dep_name_from_bazel_dependency(dep)
 
         if dep in bazel_rules:
-            # Suppress expanding absl libs; expanding absl deps are technically
-            # correct but creates too much noise
-            if external_dep_name_maybe is None or not external_dep_name_maybe.startswith(
-                    'absl'):
+            # Descend recursively, but no need to do that for external deps
+            if external_dep_name_maybe is None:
                 if "_PROCESSING_DONE" not in bazel_rules[dep]:
                     # This item is not processed before, compute now
                     _compute_transitive_metadata(dep, bazel_rules,
