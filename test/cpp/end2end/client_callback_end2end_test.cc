@@ -259,7 +259,7 @@ class ClientCallbackEnd2endTest
     std::string test_string("");
     for (int i = 0; i < num_rpcs; i++) {
       test_string += "Hello world. ";
-      class Client : public grpc::experimental::ClientBidiReactor<ByteBuffer,
+      class Client : public grpc::ClientBidiReactor<ByteBuffer,
                                                                   ByteBuffer> {
        public:
         Client(ClientCallbackEnd2endTest* test, const std::string& method_name,
@@ -613,7 +613,7 @@ struct ClientCancelInfo {
   explicit ClientCancelInfo(int ops) : cancel{true}, ops_before_cancel{ops} {}
 };
 
-class WriteClient : public grpc::experimental::ClientWriteReactor<EchoRequest> {
+class WriteClient : public grpc::ClientWriteReactor<EchoRequest> {
  public:
   WriteClient(grpc::testing::EchoTestService::Stub* stub,
               ServerTryCancelRequestPhase server_try_cancel,
@@ -765,7 +765,7 @@ TEST_P(ClientCallbackEnd2endTest, RequestStreamServerCancelAfterReads) {
 
 TEST_P(ClientCallbackEnd2endTest, UnaryReactor) {
   ResetStub();
-  class UnaryClient : public grpc::experimental::ClientUnaryReactor {
+  class UnaryClient : public grpc::ClientUnaryReactor {
    public:
     explicit UnaryClient(grpc::testing::EchoTestService::Stub* stub) {
       cli_ctx_.AddMetadata("key1", "val1");
@@ -824,7 +824,7 @@ TEST_P(ClientCallbackEnd2endTest, UnaryReactor) {
 TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
   ResetStub();
   const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
-  class UnaryClient : public grpc::experimental::ClientUnaryReactor {
+  class UnaryClient : public grpc::ClientUnaryReactor {
    public:
     UnaryClient(grpc::GenericStub* stub, const std::string& method_name) {
       cli_ctx_.AddMetadata("key1", "val1");
@@ -886,7 +886,7 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
   }
 }
 
-class ReadClient : public grpc::experimental::ClientReadReactor<EchoResponse> {
+class ReadClient : public grpc::ClientReadReactor<EchoResponse> {
  public:
   ReadClient(grpc::testing::EchoTestService::Stub* stub,
              ServerTryCancelRequestPhase server_try_cancel,
@@ -1039,7 +1039,7 @@ TEST_P(ClientCallbackEnd2endTest, ResponseStreamServerCancelAfter) {
 }
 
 class BidiClient
-    : public grpc::experimental::ClientBidiReactor<EchoRequest, EchoResponse> {
+    : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
  public:
   BidiClient(grpc::testing::EchoTestService::Stub* stub,
              ServerTryCancelRequestPhase server_try_cancel,
@@ -1294,7 +1294,7 @@ TEST_P(ClientCallbackEnd2endTest, BidiStreamServerCancelAfter) {
 
 TEST_P(ClientCallbackEnd2endTest, SimultaneousReadAndWritesDone) {
   ResetStub();
-  class Client : public grpc::experimental::ClientBidiReactor<EchoRequest,
+  class Client : public grpc::ClientBidiReactor<EchoRequest,
                                                               EchoResponse> {
    public:
     explicit Client(grpc::testing::EchoTestService::Stub* stub) {
@@ -1376,7 +1376,7 @@ TEST_P(ClientCallbackEnd2endTest,
        ResponseStreamExtraReactionFlowReadsUntilDone) {
   ResetStub();
   class ReadAllIncomingDataClient
-      : public grpc::experimental::ClientReadReactor<EchoResponse> {
+      : public grpc::ClientReadReactor<EchoResponse> {
    public:
     explicit ReadAllIncomingDataClient(
         grpc::testing::EchoTestService::Stub* stub) {

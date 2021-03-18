@@ -43,12 +43,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-using ::grpc::experimental::CallbackGenericService;
-using ::grpc::experimental::GenericCallbackServerContext;
-using ::grpc::experimental::ServerGenericBidiReactor;
-#endif
-
 void* tag(int i) { return reinterpret_cast<void*>(i); }
 
 bool VerifyReturnSuccess(CompletionQueue* cq, int i) {
