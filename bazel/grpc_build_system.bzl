@@ -128,6 +128,7 @@ def grpc_cc_library(
         linkstatic = linkstatic,
     )
 
+# TODO(lidiz) remove this rule once we can depend on the xDS protos internally
 def grpc_cc_library_xds(
         *args,
         **kwargs):
@@ -247,6 +248,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         **args
     )
 
+# TODO(lidiz) remove this rule once we can depend on the xDS protos internally
 def grpc_cc_test_xds(*args, **kwargs):
     grpc_cc_test(*args, **kwargs)
 
