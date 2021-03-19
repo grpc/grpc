@@ -40,9 +40,6 @@
 
 using grpc::Channel;
 using grpc::ClientContext;
-using grpc::ClientReader;
-using grpc::ClientReaderWriter;
-using grpc::ClientWriter;
 using grpc::Status;
 using routeguide::Point;
 using routeguide::Feature;
