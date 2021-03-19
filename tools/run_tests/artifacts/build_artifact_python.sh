@@ -59,6 +59,22 @@ then
   export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-aarch64"
 fi
 
+# check whether we are crosscompiling. AUDITWHEEL_ARCH is set by the dockcross docker image.
+if [ "$AUDITWHEEL_ARCH" == "armv7l" ]
+then
+  # when crosscompiling for arm, --plat-name needs to be set explicitly
+  # to end up with correctly named wheel file
+  # our dockcross-based docker image onveniently provides the value in the AUDITWHEEL_PLAT env
+  WHEEL_PLAT_NAME_FLAG="--plat-name=$AUDITWHEEL_PLAT"
+
+  # override the value of EXT_SUFFIX to make sure the crosscompiled .so files in the wheel have the correct filename suffix
+  GRPC_PYTHON_OVERRIDE_EXT_SUFFIX="$(${PYTHON} -c 'import sysconfig; print(sysconfig.get_config_var("EXT_SUFFIX").replace("-x86_64-linux-gnu.so", "-arm-linux-gnueabihf.so"))')"
+  export GRPC_PYTHON_OVERRIDE_EXT_SUFFIX
+
+  # since we're crosscompiling, we need to explicitly choose the right platform for boringssl assembly optimizations
+  export GRPC_BUILD_OVERRIDE_BORING_SSL_ASM_PLATFORM="linux-arm"
+fi
+
 # Build the source distribution first because MANIFEST.in cannot override
 # exclusion of built shared objects among package resources (for some
 # inexplicable reason).

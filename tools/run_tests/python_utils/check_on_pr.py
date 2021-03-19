@@ -65,8 +65,8 @@ def _access_token():
                     'exp': time.time() + 60
                 }
                 break
-            except (KeyError, ValueError) as e:
-                traceback.print_exc(e)
+            except (KeyError, ValueError):
+                traceback.print_exc()
                 print('HTTP Status %d %s' % (resp.status_code, resp.reason))
                 print("Fetch access token from Github API failed:")
                 print(resp.text)

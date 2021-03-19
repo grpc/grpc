@@ -18,6 +18,7 @@
 
 using Microsoft.Build.Framework;
 using Microsoft.Build.Utilities;
+using Grpc.Core.Internal;
 
 namespace Grpc.Tools
 {
@@ -34,7 +35,7 @@ namespace Grpc.Tools
         public string Os { get; set; }
 
         /// <summary>
-        /// Return one of 'x64' or 'x86'.
+        /// Return one of 'x64', 'x86', 'arm64'.
         /// If the CPU is unknown, the property is not set.
         /// </summary>
         [Output]
@@ -45,16 +46,17 @@ namespace Grpc.Tools
         {
             switch (Platform.Os)
             {
-                case Platform.OsKind.Linux: Os = "linux"; break;
-                case Platform.OsKind.MacOsX: Os = "macosx"; break;
-                case Platform.OsKind.Windows: Os = "windows"; break;
+                case CommonPlatformDetection.OSKind.Linux: Os = "linux"; break;
+                case CommonPlatformDetection.OSKind.MacOSX: Os = "macosx"; break;
+                case CommonPlatformDetection.OSKind.Windows: Os = "windows"; break;
                 default: Os = ""; break;
             }
 
             switch (Platform.Cpu)
             {
-                case Platform.CpuKind.X86: Cpu = "x86"; break;
-                case Platform.CpuKind.X64: Cpu = "x64"; break;
+                case CommonPlatformDetection.CpuArchitecture.X86: Cpu = "x86"; break;
+                case CommonPlatformDetection.CpuArchitecture.X64: Cpu = "x64"; break;
+                case CommonPlatformDetection.CpuArchitecture.Arm64: Cpu = "arm64"; break;
                 default: Cpu = ""; break;
             }
             return true;
