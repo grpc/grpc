@@ -8272,7 +8272,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add a filter-chain that will never get matched
+  // Add a filter chain that will never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -8297,7 +8297,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add filter-chain with destination port that should never get matched
+  // Add filter chain with destination port that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -8319,11 +8319,32 @@ TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add filter-chain with server name that should never get matched
+  // Add filter chain with server name that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // RPC should fail since no matching filter chain was found and no default
+  // filter chain is configured.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
+       FilterChainsWithTransportProtocolsOtherThanRawBufferDontMatch) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with transport protocol "tls" that should never match
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->set_transport_protocol("tls");
   balancers_[0]->ads_service()->SetLdsResource(listener);
   // RPC should fail since no matching filter chain was found and no default
   // filter chain is configured.
@@ -8340,7 +8361,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add filter-chain with application protocol that should never get matched
+  // Add filter chain with application protocol that should never get matched
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -8353,6 +8374,33 @@ TEST_P(XdsServerFilterChainMatchTest,
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
+       FilterChainsWithTransportProtocolRawBufferIsPreferred) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with "raw_buffer" transport protocol
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->set_transport_protocol(
+      "raw_buffer");
+  // Add another filter chain with no transport protocol set but application
+  // protocol set (fails match)
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // A successful RPC proves that filter chains that mention "raw_buffer" as the
+  // transport protocol are chosen as the best match in the round.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
        FilterChainsWithMoreSpecificPrefixRangesArePreferred) {
   Listener listener;
   listener.set_name(
@@ -8361,7 +8409,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add filter-chain with prefix range (lenth 16) but with server name
+  // Add filter chain with prefix range (lenth 16) but with server name
   // mentioned. (Prefix range is matched first.)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -8371,7 +8419,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(16);
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
-  // Add filter-chain with two prefix ranges (length 8 and 24). Since 24 is the
+  // Add filter chain with two prefix ranges (length 8 and 24). Since 24 is the
   // highest match, it should be chosen.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -8384,7 +8432,7 @@ TEST_P(XdsServerFilterChainMatchTest,
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(24);
-  // Add another filter-chain with a non-matching prefix range (with length 30)
+  // Add another filter chain with a non-matching prefix range (with length 30)
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -8393,13 +8441,13 @@ TEST_P(XdsServerFilterChainMatchTest,
   prefix_range->set_address_prefix("192.168.1.1");
   prefix_range->mutable_prefix_len()->set_value(30);
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
-  // Add another filter-chain with no prefix range mentioned
+  // Add another filter chain with no prefix range mentioned
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  // A successful RPC proves that the filter-chain with the longest matching
+  // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
@@ -8413,13 +8461,13 @@ TEST_P(XdsServerFilterChainMatchTest,
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add filter-chain with the local source type (best match)
+  // Add filter chain with the local source type (best match)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
-  // Add filter-chain with the external source type but bad source port.
+  // Add filter chain with the external source type but bad source port.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -8427,14 +8475,14 @@ TEST_P(XdsServerFilterChainMatchTest,
       FilterChainMatch::EXTERNAL);
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
-  // Add filter-chain with the default source type (ANY) but bad source port.
+  // Add filter chain with the default source type (ANY) but bad source port.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  // A successful RPC proves that the filter-chain with the longest matching
+  // A successful RPC proves that the filter chain with the longest matching
   // prefix range was the best match.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
@@ -8448,7 +8496,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add filter-chain with source prefix range (lenth 16) but with a bad source
+  // Add filter chain with source prefix range (lenth 16) but with a bad source
   // port mentioned. (Prefix range is matched first.)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -8459,7 +8507,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   source_prefix_range->mutable_prefix_len()->set_value(16);
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
-  // Add filter-chain with two source prefix ranges (length 8 and 24). Since 24
+  // Add filter chain with two source prefix ranges (length 8 and 24). Since 24
   // is the highest match, it should be chosen.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -8472,7 +8520,7 @@ TEST_P(XdsServerFilterChainMatchTest,
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
   source_prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
   source_prefix_range->mutable_prefix_len()->set_value(24);
-  // Add another filter-chain with a non-matching source prefix range (with
+  // Add another filter chain with a non-matching source prefix range (with
   // length 30) and bad source port
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -8483,7 +8531,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   source_prefix_range->mutable_prefix_len()->set_value(30);
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
-  // Add another filter-chain with no source prefix range mentioned and bad
+  // Add another filter chain with no source prefix range mentioned and bad
   // source port
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -8491,7 +8539,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  // A successful RPC proves that the filter-chain with the longest matching
+  // A successful RPC proves that the filter chain with the longest matching
   // source prefix range was the best match.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
@@ -8505,7 +8553,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add filter-chain with source prefix range (lenth 16) but with a bad source
+  // Add filter chain with source prefix range (lenth 16) but with a bad source
   // port mentioned. (Prefix range is matched first.)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -8515,7 +8563,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   for (int i = 1; i < 65536; i++) {
     filter_chain->mutable_filter_chain_match()->add_source_ports(i);
   }
-  // Add another filter-chain with no source prefix range mentioned with a bad
+  // Add another filter chain with no source prefix range mentioned with a bad
   // DownstreamTlsContext configuration.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -8528,7 +8576,7 @@ TEST_P(XdsServerFilterChainMatchTest,
       ->set_instance_name("unknown");
   transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  // A successful RPC proves that the filter-chain with source ports mentioned
+  // A successful RPC proves that the filter chain with matching source port
   // was chosen.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }

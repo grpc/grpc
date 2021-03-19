@@ -335,7 +335,8 @@ void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
     } else if (mask_bits >= 128) {
       return;
     }
-    // We cannot use s6_addr32 since it is not defined on all platforms that we need it on.
+    // We cannot use s6_addr32 since it is not defined on all platforms that we
+    // need it on.
     uint32_t address_parts[4];
     GPR_ASSERT(sizeof(addr6->sin6_addr) == sizeof(address_parts));
     memcpy(address_parts, &addr6->sin6_addr, sizeof(grpc_in6_addr));
@@ -380,15 +381,17 @@ bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
     auto* addr4 = reinterpret_cast<const grpc_sockaddr_in*>(addr);
     auto* subnet_addr4 = reinterpret_cast<const grpc_sockaddr_in*>(subnet_addr);
     if (memcmp(&addr4->sin_addr, &subnet_addr4->sin_addr,
-               sizeof(addr4->sin_addr)) == 0)
+               sizeof(addr4->sin_addr)) == 0) {
       return true;
+    }
   } else if (addr->sa_family == GRPC_AF_INET6) {
     auto* addr6 = reinterpret_cast<const grpc_sockaddr_in6*>(addr);
     auto* subnet_addr6 =
         reinterpret_cast<const grpc_sockaddr_in6*>(subnet_addr);
     if (memcmp(&addr6->sin6_addr, &subnet_addr6->sin6_addr,
-               sizeof(addr6->sin6_addr)) == 0)
+               sizeof(addr6->sin6_addr)) == 0) {
       return true;
+    }
   }
   return false;
 }

@@ -59,7 +59,7 @@ class FilterChainMatchManager : public RefCounted<FilterChainMatchManager> {
   static absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
       grpc_channel_args* args, grpc_endpoint* tcp);
 
-  const std::vector<XdsApi::LdsUpdate::FilterChain> filter_chains() const {
+  const std::vector<XdsApi::LdsUpdate::FilterChain>& filter_chains() const {
     return filter_chains_;
   }
 
