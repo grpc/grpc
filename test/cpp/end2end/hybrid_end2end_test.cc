@@ -267,12 +267,7 @@ class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
       builder.RegisterAsyncGenericService(generic_service);
     }
     if (callback_generic_service) {
-#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       builder.RegisterCallbackGenericService(callback_generic_service);
-#else
-      builder.experimental().RegisterCallbackGenericService(
-          callback_generic_service);
-#endif
     }
 
     if (max_message_size != 0) {

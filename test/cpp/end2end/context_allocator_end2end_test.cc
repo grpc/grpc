@@ -49,10 +49,6 @@ namespace {
 
 enum class Protocol { INPROC, TCP };
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
-using experimental::GenericCallbackServerContext;
-#endif
-
 class TestScenario {
  public:
   TestScenario(Protocol protocol, const std::string& creds_type)
