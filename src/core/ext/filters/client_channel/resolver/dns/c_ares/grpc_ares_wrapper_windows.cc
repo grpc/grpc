@@ -29,10 +29,6 @@
 #include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 
-namespace grpc_core {
-
-bool AresQueryIPv6() { return grpc_ipv6_loopback_available(); }
-
-}  // namespace grpc_core
+bool grpc_ares_query_ipv6() { return grpc_ipv6_loopback_available(); }
 
 #endif /* GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER) */
