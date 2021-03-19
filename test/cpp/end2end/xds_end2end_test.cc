@@ -69,7 +69,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
-#include "src/cpp/server/csds/csds.h"
 #include "src/cpp/server/secure_server_credentials.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
@@ -80,7 +79,6 @@
 #include "src/proto/grpc/testing/xds/v3/ads.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/aggregate_cluster.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/cluster.grpc.pb.h"
-#include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/discovery.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/endpoint.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/v3/fault.grpc.pb.h"
@@ -95,13 +93,20 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
+#ifndef DISABLED_XDS_PROTO_IN_CC
+#include "src/cpp/server/csds/csds.h"
+#include "src/proto/grpc/testing/xds/v3/csds.grpc.pb.h"
+#endif  // DISABLED_XDS_PROTO_IN_CC
+
 namespace grpc {
 namespace testing {
 namespace {
 
 using std::chrono::system_clock;
 
+#ifndef DISABLED_XDS_PROTO_IN_CC
 using ::envoy::admin::v3::ClientResourceStatus;
+#endif  // DISABLED_XDS_PROTO_IN_CC
 using ::envoy::config::cluster::v3::CircuitBreakers;
 using ::envoy::config::cluster::v3::Cluster;
 using ::envoy::config::cluster::v3::CustomClusterType;
@@ -2428,6 +2433,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     std::shared_ptr<LrsServiceImpl> lrs_service_;
   };
 
+#ifndef DISABLED_XDS_PROTO_IN_CC
   class AdminServerThread : public ServerThread {
    private:
     void RegisterAllServices(ServerBuilder* builder) override {
@@ -2440,6 +2446,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
     grpc::xds::experimental::ClientStatusDiscoveryService csds_service_;
   };
+#endif  // DISABLED_XDS_PROTO_IN_CC
 
   class LongRunningRpc {
    public:
@@ -10016,6 +10023,7 @@ TEST_P(BootstrapContentsFromEnvVarTest, Vanilla) {
   WaitForAllBackends();
 }
 
+#ifndef DISABLED_XDS_PROTO_IN_CC
 class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
  public:
   ClientStatusDiscoveryServiceTest() : XdsEnd2endTest(1, 1) {}
@@ -10777,6 +10785,7 @@ TEST_P(CsdsShortAdsTimeoutTest, XdsConfigDumpEndpointDoesNotExist) {
               ClientResourceStatus::DOES_NOT_EXIST, ::testing::_, ::testing::_,
               ::testing::_))))));
 }
+#endif  // DISABLED_XDS_PROTO_IN_CC
 
 std::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
@@ -10933,6 +10942,7 @@ INSTANTIATE_TEST_SUITE_P(
 INSTANTIATE_TEST_SUITE_P(XdsTest, BootstrapContentsFromEnvVarTest,
                          ::testing::Values(TestType()), &TestTypeName);
 
+#ifndef DISABLED_XDS_PROTO_IN_CC
 // Run CSDS tests with RDS enabled and disabled.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, ClientStatusDiscoveryServiceTest,
@@ -10949,6 +10959,7 @@ INSTANTIATE_TEST_SUITE_P(
         TestType().set_use_csds_streaming(),
         TestType().set_enable_rds_testing().set_use_csds_streaming()),
     &TestTypeName);
+#endif  // DISABLED_XDS_PROTO_IN_CC
 
 }  // namespace
 }  // namespace testing
