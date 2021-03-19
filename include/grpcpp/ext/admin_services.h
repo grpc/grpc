@@ -22,14 +22,12 @@
 #include <grpcpp/server_builder.h>
 
 namespace grpc {
-namespace experimental {
 
 // Registers admin services to the given ServerBuilder. This function will add
 // admin services based on build time dependencies, for example, it only adds
 // CSDS service if xDS is enabled in this binary.
 void AddAdminServices(grpc::ServerBuilder* builder);
 
-}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_EXT_ADMIN_SERVICES_H

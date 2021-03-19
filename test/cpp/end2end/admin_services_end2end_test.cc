@@ -19,6 +19,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_cat.h"
+
 #include <grpcpp/ext/admin_services.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
@@ -30,31 +32,20 @@
 namespace grpc {
 namespace testing {
 
-namespace {
-
-std::string GetAddress() {
-  std::ostringstream s;
-  int p = grpc_pick_unused_port_or_die();
-  s << "localhost:" << p;
-  return s.str();
-}
-
-}  // namespace
-
 class AdminServicesTest : public ::testing::Test {
  public:
   void SetUp() {
-    std::string address = GetAddress();
+    std::string address =
+        absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
     // Create admin server
     grpc::reflection::InitProtoReflectionServerBuilderPlugin();
     ServerBuilder builder;
     builder.AddListeningPort(address, InsecureServerCredentials());
-    ::grpc::experimental::AddAdminServices(&builder);
+    ::grpc::AddAdminServices(&builder);
     server_ = builder.BuildAndStart();
     // Create channel
-    channel_ = CreateChannel(address, InsecureChannelCredentials());
-    auto reflection_stub =
-        reflection::v1alpha::ServerReflection::NewStub(channel_);
+    auto reflection_stub = reflection::v1alpha::ServerReflection::NewStub(
+        CreateChannel(address, InsecureChannelCredentials()));
     stream_ = reflection_stub->ServerReflectionInfo(&reflection_ctx_);
   }
 
@@ -71,11 +62,8 @@ class AdminServicesTest : public ::testing::Test {
     return services;
   }
 
-  std::shared_ptr<Channel> GetChannel() { return channel_; }
-
  private:
   std::unique_ptr<Server> server_;
-  std::shared_ptr<Channel> channel_;
   ClientContext reflection_ctx_;
   std::shared_ptr<
       ClientReaderWriter<reflection::v1alpha::ServerReflectionRequest,
@@ -83,24 +71,15 @@ class AdminServicesTest : public ::testing::Test {
       stream_;
 };
 
-#ifndef GRPC_NO_XDS
 TEST_F(AdminServicesTest, XdsEnabled) {
   EXPECT_THAT(GetServiceList(),
               ::testing::UnorderedElementsAre(
+#ifndef GRPC_NO_XDS
                   "envoy.service.status.v3.ClientStatusDiscoveryService",
+#endif  // GRPC_NO_XDS
                   "grpc.channelz.v1.Channelz",
                   "grpc.reflection.v1alpha.ServerReflection"));
 }
-#endif  // GRPC_NO_XDS
-
-#ifdef GRPC_NO_XDS
-TEST_F(AdminServicesTest, XdsDisabled) {
-  EXPECT_THAT(GetServiceList(),
-              ::testing::UnorderedElementsAre(
-                  "grpc.channelz.v1.Channelz",
-                  "grpc.reflection.v1alpha.ServerReflection"));
-}
-#endif  // GRPC_NO_XDS
 
 }  // namespace testing
 }  // namespace grpc
