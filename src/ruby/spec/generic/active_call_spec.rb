@@ -75,7 +75,7 @@ describe GRPC::ActiveCall do
       it 'exposes a fixed subset of the ActiveCall.methods' do
         want = %w(cancelled?, deadline, each_remote_read, metadata, \
                   shutdown, peer, peer_cert, send_initial_metadata, \
-                  initial_metadata_sent)
+                  initial_metadata_sent, method)
         v = @client_call.multi_req_view
         want.each do |w|
           expect(v.methods.include?(w))
@@ -87,7 +87,7 @@ describe GRPC::ActiveCall do
       it 'exposes a fixed subset of the ActiveCall.methods' do
         want = %w(cancelled?, deadline, metadata, shutdown, \
                   send_initial_metadata, metadata_to_send, \
-                  merge_metadata_to_send, initial_metadata_sent)
+                  method, merge_metadata_to_send, initial_metadata_sent)
         v = @client_call.single_req_view
         want.each do |w|
           expect(v.methods.include?(w))

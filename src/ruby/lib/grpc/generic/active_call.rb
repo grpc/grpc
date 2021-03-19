@@ -43,7 +43,7 @@ module GRPC
     include Core::TimeConsts
     include Core::CallOps
     extend Forwardable
-    attr_reader :deadline, :metadata_sent, :metadata_to_send, :peer, :peer_cert
+    attr_reader :deadline, :metadata_sent, :metadata_to_send, :peer, :peer_cert, :method
     def_delegators :@call, :cancel, :metadata, :write_flag, :write_flag=,
                    :trailing_metadata, :status
 
@@ -85,11 +85,12 @@ module GRPC
     # @param started [true|false] indicates that metadata was sent
     # @param metadata_received [true|false] indicates if metadata has already
     #     been received. Should always be true for server calls
-    def initialize(call, marshal, unmarshal, deadline, started: true,
+    def initialize(call, marshal, unmarshal, deadline, method = nil, started: true,
                    metadata_received: false, metadata_to_send: nil)
       fail(TypeError, '!Core::Call') unless call.is_a? Core::Call
       @call = call
       @deadline = deadline
+      @method = method
       @marshal = marshal
       @unmarshal = unmarshal
       @metadata_received = metadata_received
@@ -639,7 +640,7 @@ module GRPC
 
     # SingleReqView limits access to an ActiveCall's methods for use in server
     # handlers that receive just one request.
-    SingleReqView = view_class(:cancelled?, :deadline, :metadata,
+    SingleReqView = view_class(:cancelled?, :deadline, :metadata, :method,
                                :output_metadata, :peer, :peer_cert,
                                :send_initial_metadata,
                                :metadata_to_send,
@@ -648,7 +649,7 @@ module GRPC
 
     # MultiReqView limits access to an ActiveCall's methods for use in
     # server client_streamer handlers.
-    MultiReqView = view_class(:cancelled?, :deadline,
+    MultiReqView = view_class(:cancelled?, :deadline, :method,
                               :each_remote_read, :metadata, :output_metadata,
                               :peer, :peer_cert,
                               :send_initial_metadata,
