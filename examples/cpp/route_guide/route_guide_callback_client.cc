@@ -26,6 +26,7 @@
 #include <thread>
 
 #include <grpc/grpc.h>
+#include <grpcpp/alarm.h>
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
@@ -102,7 +103,7 @@ class RouteGuideClient {
 
     class Reader : public grpc::ClientReadReactor<Feature> {
     public:
-      Reader(RouteGuide::Stub* stub, const routeguide::Rectangle& rect) {
+      Reader(RouteGuide::Stub* stub, float coord_factor, const routeguide::Rectangle& rect): coord_factor_(coord_factor) {
 	stub->async()->ListFeatures(&context_, &rect, this);
 	StartRead(&feature_);
 	StartCall();
@@ -111,8 +112,8 @@ class RouteGuideClient {
 	if (ok) {
       std::cout << "Found feature called "
                 << feature_.name() << " at "
-                << feature_.location().latitude()/kCoordFactor_ << ", "
-                << feature_.location().longitude()/kCoordFactor_ << std::endl;
+                << feature_.location().latitude()/coord_factor_ << ", "
+                << feature_.location().longitude()/coord_factor_ << std::endl;
 	StartRead(&feature_);
 	}
       }
@@ -124,19 +125,20 @@ class RouteGuideClient {
       }
       Status Await() {
     std::unique_lock<std::mutex> l(mu_);
-    cv_.wait(l, [this] {return done;});
+    cv_.wait(l, [this] {return done_;});
 	return std::move(status_);
       }
       
     private:
       ClientContext context_;
+      float coord_factor_;
       Feature feature_;      
       std::mutex mu_;
       std::condition_variable cv_;
       Status status_;
       bool done_ = false;
     };
-    Reader reader(stub_.get(), rect);
+    Reader reader(stub_.get(), kCoordFactor_, rect);
     Status status = std::move(reader.Await());
     if (status.ok()) {
       std::cout << "ListFeatures rpc succeeded." << std::endl;
@@ -146,34 +148,64 @@ class RouteGuideClient {
   }
 
   void RecordRoute() {
-    Point point;
-    RouteSummary stats;
-    ClientContext context;
-    const int kPoints = 10;
-    unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
-
-    std::default_random_engine generator(seed);
-    std::uniform_int_distribution<int> feature_distribution(
-        0, feature_list_.size() - 1);
-    std::uniform_int_distribution<int> delay_distribution(
-        500, 1500);
-
-    std::unique_ptr<ClientWriter<Point> > writer(
-        stub_->RecordRoute(&context, &stats));
-    for (int i = 0; i < kPoints; i++) {
-      const Feature& f = feature_list_[feature_distribution(generator)];
-      std::cout << "Visiting point "
-                << f.location().latitude()/kCoordFactor_ << ", "
-                << f.location().longitude()/kCoordFactor_ << std::endl;
-      if (!writer->Write(f.location())) {
-        // Broken stream.
-        break;
+    class Recorder : public grpc::ClientWriteReactor<Point> {
+    public:
+      Recorder(RouteGuide::Stub* stub, float coord_factor, const std::vector<Feature>* feature_list): coord_factor_(coord_factor), feature_list_(feature_list), generator_(std::chrono::system_clock::now().time_since_epoch().count()), feature_distribution_(0, feature_list->size() - 1),delay_distribution_(500,1500)  {
+	stub->async()->RecordRoute(&context_, &stats_, this);
+	// Use a hold since some StartWrites are invoked indirectly from a delayed lambda in OnWriteDone rather than directly from the reaction itself
+	AddHold();
+	NextWrite();
+	StartCall();
       }
-      std::this_thread::sleep_for(std::chrono::milliseconds(
-          delay_distribution(generator)));
-    }
-    writer->WritesDone();
-    Status status = writer->Finish();
+      void OnWriteDone(bool ok) override {
+	// Delay and then do the next write or WritesDone
+	alarm_.Set(std::chrono::system_clock::now()+std::chrono::milliseconds(delay_distribution_(generator_)), [this](bool /*ok*/) { NextWrite(); });
+      }
+      void OnDone(const Status& s) override {
+    std::unique_lock<std::mutex> l(mu_);
+    status_ = s;
+    done_ = true;
+    cv_.notify_one();	
+      }
+      Status Await(RouteSummary* stats) {
+    std::unique_lock<std::mutex> l(mu_);
+    cv_.wait(l, [this] {return done_;});
+    *stats = stats_;
+	return std::move(status_);
+      }
+
+    private:
+      void NextWrite() {
+	if (points_remaining_ != 0) {
+  	  const Feature& f = (*feature_list_)[feature_distribution_(generator_)];
+          std::cout << "Visiting point "
+                    << f.location().latitude()/coord_factor_ << ", "
+                    << f.location().longitude()/coord_factor_ << std::endl;
+  	  StartWrite(&f.location());
+	  points_remaining_--;
+	} else {
+	  StartWritesDone();
+	  RemoveHold();
+	}
+      }
+      ClientContext context_;
+      float coord_factor_;
+      int points_remaining_ = 10;
+      Point point_;
+      RouteSummary stats_;
+      const std::vector<Feature>* feature_list_;
+      std::default_random_engine generator_;
+      std::uniform_int_distribution<int> feature_distribution_;
+      std::uniform_int_distribution<int> delay_distribution_;
+      grpc::Alarm alarm_;
+      std::mutex mu_;
+      std::condition_variable cv_;
+      Status status_;
+      bool done_ = false;
+    };
+    Recorder recorder(stub_.get(), kCoordFactor_, &feature_list_);
+    RouteSummary stats;
+    Status status = std::move(recorder.Await(&stats));    
     if (status.ok()) {
       std::cout << "Finished trip with " << stats.point_count() << " points\n"
                 << "Passed " << stats.feature_count() << " features\n"
@@ -186,34 +218,65 @@ class RouteGuideClient {
   }
 
   void RouteChat() {
-    ClientContext context;
-
-    std::shared_ptr<ClientReaderWriter<RouteNote, RouteNote> > stream(
-        stub_->RouteChat(&context));
-
-    std::thread writer([stream]() {
-      std::vector<RouteNote> notes{
+    class Chatter : public grpc::ClientBidiReactor<RouteNote, RouteNote> {
+    public:
+      explicit Chatter(RouteGuide::Stub* stub): notes_{
         MakeRouteNote("First message", 0, 0),
         MakeRouteNote("Second message", 0, 1),
         MakeRouteNote("Third message", 1, 0),
-        MakeRouteNote("Fourth message", 0, 0)};
-      for (const RouteNote& note : notes) {
-        std::cout << "Sending message " << note.message()
-                  << " at " << note.location().latitude() << ", "
-                  << note.location().longitude() << std::endl;
-        stream->Write(note);
+        MakeRouteNote("Fourth message", 0, 0)}, notes_iterator_(notes_.begin()) {
+	stub->async()->RouteChat(&context_, this);
+	NextWrite();
+	StartRead(&server_note_);
+	StartCall();
       }
-      stream->WritesDone();
-    });
+      void OnWriteDone(bool /*ok*/) override {
+	NextWrite();
+      }
+      void OnReadDone(bool ok) override {
+	if (ok) {
+          std::cout << "Got message " << server_note_.message()
+                    << " at " << server_note_.location().latitude() << ", "
+                    << server_note_.location().longitude() << std::endl;
+          StartRead(&server_note_);
+	}
+      }
+      void OnDone(const Status& s) override {
+    std::unique_lock<std::mutex> l(mu_);
+    status_ = s;
+    done_ = true;
+    cv_.notify_one();	
+      }
+      Status Await() {
+    std::unique_lock<std::mutex> l(mu_);
+    cv_.wait(l, [this] {return done_;});
+	return std::move(status_);
+      }
+    private:
+      void NextWrite() {
+	if (notes_iterator_ != notes_.end()) {
+	  const auto& note = *notes_iterator_;
+          std::cout << "Sending message " << note.message()
+                    << " at " << note.location().latitude() << ", "
+                    << note.location().longitude() << std::endl;
+          StartWrite(&note);
+	  notes_iterator_++;
+	} else {
+	  StartWritesDone();
+	}
+      }
+      ClientContext context_;
+      const std::vector<RouteNote> notes_;
+      std::vector<RouteNote>::const_iterator notes_iterator_;
+      RouteNote server_note_;
+      std::mutex mu_;
+      std::condition_variable cv_;
+      Status status_;
+      bool done_ = false;
+    };
 
-    RouteNote server_note;
-    while (stream->Read(&server_note)) {
-      std::cout << "Got message " << server_note.message()
-                << " at " << server_note.location().latitude() << ", "
-                << server_note.location().longitude() << std::endl;
-    }
-    writer.join();
-    Status status = stream->Finish();
+    Chatter chatter(stub_.get());
+    Status status = std::move(chatter.Await());
     if (!status.ok()) {
       std::cout << "RouteChat rpc failed." << std::endl;
     }
