@@ -442,7 +442,7 @@ class TestMultipleServiceImpl : public RpcService {
 };
 
 class CallbackTestServiceImpl
-    : public ::grpc::testing::EchoTestService::ExperimentalCallbackService {
+    : public ::grpc::testing::EchoTestService::CallbackService {
  public:
   CallbackTestServiceImpl() : signal_client_(false), host_() {}
   explicit CallbackTestServiceImpl(const std::string& host)

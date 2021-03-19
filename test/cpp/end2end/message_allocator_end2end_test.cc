@@ -49,8 +49,7 @@ namespace grpc {
 namespace testing {
 namespace {
 
-class CallbackTestServiceImpl
-    : public EchoTestService::ExperimentalCallbackService {
+class CallbackTestServiceImpl : public EchoTestService::CallbackService {
  public:
   explicit CallbackTestServiceImpl() {}
 

@@ -31,7 +31,7 @@ namespace grpc {
 namespace testing {
 
 class BenchmarkCallbackServiceImpl final
-    : public BenchmarkService::ExperimentalCallbackService {
+    : public BenchmarkService::CallbackService {
  public:
   ::grpc::ServerUnaryReactor* UnaryCall(::grpc::CallbackServerContext* context,
                                         const SimpleRequest* request,

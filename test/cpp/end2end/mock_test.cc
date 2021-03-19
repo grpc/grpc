@@ -160,8 +160,7 @@ class FakeClient {
   EchoTestService::StubInterface* stub_;
 };
 
-class CallbackTestServiceImpl
-    : public EchoTestService::ExperimentalCallbackService {
+class CallbackTestServiceImpl : public EchoTestService::CallbackService {
  public:
   ServerUnaryReactor* Echo(CallbackServerContext* context,
                            const EchoRequest* request,
