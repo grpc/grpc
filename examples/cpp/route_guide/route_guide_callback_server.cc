@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2021 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <thread>
 
 #include <grpc/grpc.h>
 #include <grpcpp/server.h>
@@ -35,12 +36,9 @@
 #include "route_guide.grpc.pb.h"
 #endif
 
+using grpc::CallbackServerContext;
 using grpc::Server;
 using grpc::ServerBuilder;
-using grpc::ServerContext;
-using grpc::ServerReader;
-using grpc::ServerReaderWriter;
-using grpc::ServerWriter;
 using grpc::Status;
 using routeguide::Point;
 using routeguide::Feature;
@@ -86,84 +84,161 @@ std::string GetFeatureName(const Point& point,
   return "";
 }
 
-class RouteGuideImpl final : public RouteGuide::Service {
+class RouteGuideImpl final : public RouteGuide::CallbackService {
  public:
   explicit RouteGuideImpl(const std::string& db) {
     routeguide::ParseDb(db, &feature_list_);
   }
 
-  Status GetFeature(ServerContext* context, const Point* point,
+  grpc::ServerUnaryReactor* GetFeature(CallbackServerContext* context, const Point* point,
                     Feature* feature) override {
     feature->set_name(GetFeatureName(*point, feature_list_));
     feature->mutable_location()->CopyFrom(*point);
-    return Status::OK;
+    auto* reactor = context->DefaultReactor();
+    reactor->Finish(Status::OK);
+    return reactor;
   }
 
-  Status ListFeatures(ServerContext* context,
-                      const routeguide::Rectangle* rectangle,
-                      ServerWriter<Feature>* writer) override {
-    auto lo = rectangle->lo();
-    auto hi = rectangle->hi();
-    long left = (std::min)(lo.longitude(), hi.longitude());
-    long right = (std::max)(lo.longitude(), hi.longitude());
-    long top = (std::max)(lo.latitude(), hi.latitude());
-    long bottom = (std::min)(lo.latitude(), hi.latitude());
-    for (const Feature& f : feature_list_) {
-      if (f.location().longitude() >= left &&
-          f.location().longitude() <= right &&
-          f.location().latitude() >= bottom &&
-          f.location().latitude() <= top) {
-        writer->Write(f);
+  grpc::ServerWriteReactor<Feature>*
+  ListFeatures(CallbackServerContext* context,
+	       const routeguide::Rectangle* rectangle) override {
+    class Lister : public grpc::ServerWriteReactor<Feature> {
+    public:
+      Lister(const routeguide::Rectangle* rectangle,
+	     const std::vector<Feature>* feature_list):
+	left_((std::min)(rectangle->lo().longitude(), rectangle->hi().longitude())),
+	right_((std::max)(rectangle->lo().longitude(), rectangle->hi().longitude())),
+	top_((std::max)(rectangle->lo().latitude(), rectangle->hi().latitude())),
+	bottom_((std::min)(rectangle->lo().latitude(), rectangle->hi().latitude())),
+	feature_list_(feature_list), next_feature_(feature_list_->begin()) {
+	NextWrite();
       }
-    }
-    return Status::OK;
+      void OnDone() override { delete this; }
+      void OnWriteDone(bool /*ok*/) override { NextWrite(); }
+    private:
+      void NextWrite() {
+	while (next_feature_ != feature_list_->end()) {
+	  const Feature& f = *next_feature_;
+	  next_feature_++;
+	  if (f.location().longitude() >= left_ &&
+	      f.location().longitude() <= right_ &&
+	      f.location().latitude() >= bottom_ &&
+	      f.location().latitude() <= top_) {
+	    StartWrite(&f);
+	    return;
+	  }
+	}
+	// Didn't write anything, all is done.
+	Finish(Status::OK);
+      }
+      const long left_;
+      const long right_;
+      const long top_;
+      const long bottom_;
+      const std::vector<Feature>* feature_list_;
+      std::vector<Feature>::const_iterator next_feature_;
+    };
+    return new Lister(rectangle, &feature_list_);
   }
 
-  Status RecordRoute(ServerContext* context, ServerReader<Point>* reader,
+  grpc::ServerReadReactor<Point>* RecordRoute(CallbackServerContext* context,
                      RouteSummary* summary) override {
-    Point point;
-    int point_count = 0;
-    int feature_count = 0;
-    float distance = 0.0;
-    Point previous;
-
-    system_clock::time_point start_time = system_clock::now();
-    while (reader->Read(&point)) {
-      point_count++;
-      if (!GetFeatureName(point, feature_list_).empty()) {
-        feature_count++;
+    class Recorder : public grpc::ServerReadReactor<Point> {
+    public:
+      Recorder(RouteSummary* summary, const std::vector<Feature>* feature_list): start_time_(system_clock::now()), summary_(summary), feature_list_(feature_list) {
+	StartRead(&point_);
       }
-      if (point_count != 1) {
-        distance += GetDistance(previous, point);
+      void OnDone() { delete this; }
+      void OnReadDone(bool ok) {
+	if (ok) {
+	  point_count_++;
+	  if (!GetFeatureName(point_, *feature_list_).empty()) {
+	    feature_count_++;
+	  }
+	  if (point_count_ != 1) {
+	    distance_ += GetDistance(previous_, point_);
+	  }
+	  previous_ = point_;	  
+	  StartRead(&point_);
+	} else {
+	  summary_->set_point_count(point_count_);
+	  summary_->set_feature_count(feature_count_);
+	  summary_->set_distance(static_cast<long>(distance_));
+	  auto secs = std::chrono::duration_cast<std::chrono::seconds>(
+		         system_clock::now() - start_time_);
+	  summary_->set_elapsed_time(secs.count());
+	  Finish(Status::OK);
+	}
       }
-      previous = point;
-    }
-    system_clock::time_point end_time = system_clock::now();
-    summary->set_point_count(point_count);
-    summary->set_feature_count(feature_count);
-    summary->set_distance(static_cast<long>(distance));
-    auto secs = std::chrono::duration_cast<std::chrono::seconds>(
-        end_time - start_time);
-    summary->set_elapsed_time(secs.count());
-
-    return Status::OK;
+    private:      
+      system_clock::time_point start_time_;
+      RouteSummary* summary_;
+      const std::vector<Feature>* feature_list_;
+      Point point_;
+      int point_count_ = 0;
+      int feature_count_ = 0;
+      float distance_ = 0.0;
+      Point previous_;
+    };
+    return new Recorder(summary, &feature_list_);
   }
 
-  Status RouteChat(ServerContext* context,
-                   ServerReaderWriter<RouteNote, RouteNote>* stream) override {
-    RouteNote note;
-    while (stream->Read(&note)) {
-      std::unique_lock<std::mutex> lock(mu_);
-      for (const RouteNote& n : received_notes_) {
-        if (n.location().latitude() == note.location().latitude() &&
-            n.location().longitude() == note.location().longitude()) {
-          stream->Write(n);
-        }
+  grpc::ServerBidiReactor<RouteNote,RouteNote>* RouteChat(CallbackServerContext* context) override {
+    class Chatter : public grpc::ServerBidiReactor<RouteNote,RouteNote> {
+    public:
+      Chatter(std::mutex* mu, std::vector<RouteNote>* received_notes): mu_(mu), received_notes_(received_notes) {
+	StartRead(&note_);
       }
-      received_notes_.push_back(note);
-    }
-
-    return Status::OK;
+      void OnDone() override {
+	// Collect the read_starter thread if needed
+	if (read_starter_.joinable()) {
+	  read_starter_.join();
+	}
+	delete this;
+      }
+      void OnReadDone(bool ok) override {
+	if (ok) {
+	  // We may need to wait an arbitary amount of time on this mutex
+	  // and we cannot delay the reaction, so start it in a thread
+	  // Collect the previous read_starter thread if needed
+	  if (read_starter_.joinable()) {
+	    read_starter_.join();
+	  }
+	  read_starter_ = std::thread([this]{
+	    mu_->lock();
+	    notes_iterator_ = received_notes_->begin();
+	    NextWrite();
+	  });
+	} else {
+	  Finish(Status::OK);
+	}
+      }
+      void OnWriteDone(bool /*ok*/) override {
+	NextWrite();
+      }
+    private:
+      void NextWrite() {
+	while (notes_iterator_ != received_notes_->end()) {
+	  const RouteNote& n = *notes_iterator_;
+	  notes_iterator_++;
+	  if (n.location().latitude() == note_.location().latitude() &&
+	      n.location().longitude() == note_.location().longitude()) {
+	    StartWrite(&n);
+	    return;
+	  }
+	}
+	// Didn't write anything, so all done with this note
+	received_notes_->push_back(note_);
+	mu_->unlock();
+	StartRead(&note_);
+      }
+      RouteNote note_;
+      std::mutex* mu_;
+      std::vector<RouteNote>* received_notes_;
+      std::vector<RouteNote>::iterator notes_iterator_;
+      std::thread read_starter_;
+    };
+    return new Chatter(&mu_, &received_notes_);
   }
 
  private:
