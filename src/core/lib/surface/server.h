@@ -22,6 +22,7 @@
 #include <list>
 #include <vector>
 
+#include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -31,6 +32,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/atomic.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -475,6 +477,9 @@ struct grpc_server_config_fetcher {
                           grpc_channel_args* args,
                           std::unique_ptr<WatcherInterface> watcher) = 0;
   virtual void CancelWatch(WatcherInterface* watcher) = 0;
+  // Ownership of \a args is transfered.
+  virtual absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
+      grpc_channel_args* args, grpc_endpoint* tcp) = 0;
   virtual grpc_pollset_set* interested_parties() = 0;
 };
 

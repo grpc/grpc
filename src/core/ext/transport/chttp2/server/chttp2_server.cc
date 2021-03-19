@@ -238,13 +238,6 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 
 void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConfig(
     grpc_channel_args* args) {
-  grpc_error* error = GRPC_ERROR_NONE;
-  args = listener_->args_modifier_(args, &error);
-  if (error != GRPC_ERROR_NONE) {
-    // TODO(yashykt): Set state to close down connections immediately
-    // after accepting.
-    GPR_ASSERT(0);
-  }
   grpc_channel_args* args_to_destroy = nullptr;
   {
     MutexLock lock(&listener_->channel_args_mu_);
@@ -261,8 +254,8 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConfig(
     if (listener_->started_) return;
   }
   int port_temp;
-  error = grpc_tcp_server_add_port(listener_->tcp_server_,
-                                   &listener_->resolved_address_, &port_temp);
+  grpc_error* error = grpc_tcp_server_add_port(
+      listener_->tcp_server_, &listener_->resolved_address_, &port_temp);
   if (error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(error);
     gpr_log(GPR_ERROR, "Error adding port to server: %s",
@@ -708,6 +701,32 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
   {
     MutexLock lock(&self->channel_args_mu_);
     args = grpc_channel_args_copy(self->args_);
+  }
+  if (self->server_->config_fetcher() != nullptr) {
+    // TODO(yashykt): Maybe combine the following two arg modifiers into a
+    // single one.
+    absl::StatusOr<grpc_channel_args*> args_result =
+        self->server_->config_fetcher()->UpdateChannelArgsForConnection(args,
+                                                                        tcp);
+    if (!args_result.ok()) {
+      gpr_log(GPR_DEBUG, "Closing connection: %s",
+              args_result.status().ToString().c_str());
+      grpc_endpoint_shutdown(tcp, GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                                      args_result.status().ToString().c_str()));
+      grpc_endpoint_destroy(tcp);
+      gpr_free(acceptor);
+      return;
+    }
+    grpc_error* error = GRPC_ERROR_NONE;
+    args = self->args_modifier_(*args_result, &error);
+    if (error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_DEBUG, "Closing connection: %s", grpc_error_string(error));
+      grpc_endpoint_shutdown(tcp, error);
+      grpc_endpoint_destroy(tcp);
+      gpr_free(acceptor);
+      grpc_channel_args_destroy(args);
+      return;
+    }
   }
   auto connection =
       MakeOrphanable<ActiveConnection>(accepting_pollset, acceptor, args);

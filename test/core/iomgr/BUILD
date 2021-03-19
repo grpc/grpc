@@ -237,6 +237,9 @@ grpc_cc_test(
     name = "sockaddr_utils_test",
     srcs = ["sockaddr_utils_test.cc"],
     language = "C++",
+    external_deps = [
+        "gtest",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",

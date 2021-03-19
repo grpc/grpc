@@ -320,20 +320,59 @@ class XdsApi {
         std::string ToString() const;
       } filter_chain_match;
 
-      DownstreamTlsContext downstream_tls_context;
-
-      // This is in principle the filter list.
-      // We currently require exactly one filter, which is the HCM.
-      HttpConnectionManager http_connection_manager;
+      struct FilterChainData {
+        DownstreamTlsContext downstream_tls_context;
+        // This is in principle the filter list.
+        // We currently require exactly one filter, which is the HCM.
+        HttpConnectionManager http_connection_manager;
+      } filter_chain_data;
 
       bool operator==(const FilterChain& other) const {
         return filter_chain_match == other.filter_chain_match &&
-               downstream_tls_context == other.downstream_tls_context &&
-               http_connection_manager == other.http_connection_manager;
+               filter_chain_data.downstream_tls_context ==
+                   other.filter_chain_data.downstream_tls_context &&
+               filter_chain_data.http_connection_manager ==
+                   other.filter_chain_data.http_connection_manager;
       }
 
       std::string ToString() const;
     };
+
+    using SourcePortsMap =
+        std::map<uint16_t, std::shared_ptr<FilterChain::FilterChainData>>;
+    struct SourceIp {
+      grpc_resolved_address address;
+      int prefix_len;
+      SourcePortsMap ports_map;
+
+      bool operator==(const SourceIp& other) const {
+        return memcmp(&address, &other.address, sizeof(address)) == 0 &&
+               prefix_len == other.prefix_len && ports_map == other.ports_map;
+      }
+    };
+    using SourceIpMap = std::map<std::string, SourceIp>;
+    using SourceTypesArray = std::array<SourceIpMap, 3>;
+    // We always fail match on applicaton protocols so those not included
+    // While build time, we only store either filter chains without transport
+    // protocol or with transport protocols. If we find transport protocols,
+    // then discard the entries without transport protocols We always fail match
+    // on server name, so those filter chains not included
+    struct DestinationIp {
+      grpc_resolved_address address;
+      int prefix_len;
+      bool transport_protocol_raw_buffer_provided = false;
+      SourceTypesArray source_types_array;
+
+      bool operator==(const DestinationIp& other) const {
+        return memcmp(&address, &other.address, sizeof(address)) == 0 &&
+               prefix_len == other.prefix_len &&
+               transport_protocol_raw_buffer_provided ==
+                   other.transport_protocol_raw_buffer_provided &&
+               source_types_array == other.source_types_array;
+      }
+    };
+    using DestinationIpMap = std::map<std::string, DestinationIp>;
+    // We always fail match on destination ports map
 
     // Populated for type=kHttpApiListener.
     HttpConnectionManager http_connection_manager;
@@ -342,6 +381,7 @@ class XdsApi {
     // host:port listening_address set when type is kTcpListener
     std::string address;
     std::vector<FilterChain> filter_chains;
+    DestinationIpMap destination_ip_map;
     absl::optional<FilterChain> default_filter_chain;
 
     bool operator==(const LdsUpdate& other) const {
