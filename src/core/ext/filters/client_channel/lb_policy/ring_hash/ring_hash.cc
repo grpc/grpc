@@ -20,6 +20,8 @@
 #include <string.h>
 
 #include "absl/strings/str_cat.h"
+#define XXH_INLINE_ALL
+#include "xxhash.h"
 
 #include <grpc/support/alloc.h>
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
@@ -35,21 +37,18 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
 
-#define XXH_INLINE_ALL
-#include "xxhash.h"
-
 namespace grpc_core {
 
 const char* kRequestRingHashAttribute = "request_ring_hash";
-TraceFlag grpc_lb_ring_hash_trace(false, "ring_hash");
+TraceFlag grpc_lb_ring_hash_trace(false, "ring_hash_lb");
 
 namespace {
 
-constexpr char kRingHash[] = "ring_hash";
+constexpr char kRingHash[] = "ring_hash_experimental";
 
 class RingHashLbConfig : public LoadBalancingPolicy::Config {
  public:
-  RingHashLbConfig(const size_t min_ring_size, const size_t max_ring_size)
+  RingHashLbConfig(size_t min_ring_size, size_t max_ring_size)
       : min_ring_size_(min_ring_size), max_ring_size_(max_ring_size) {}
   const char* name() const override { return kRingHash; }
   size_t min_ring_size() const { return min_ring_size_; }
@@ -161,7 +160,7 @@ class RingHash : public LoadBalancingPolicy {
   class Picker : public SubchannelPicker {
    public:
     struct RingEntry {
-      uint64_t hash_;
+      uint64_t hash;
       RefCountedPtr<SubchannelInterface> subchannel;
     };
 
@@ -179,12 +178,12 @@ class RingHash : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  // Current config from resolver
+  // Current config from resolver.
   RefCountedPtr<RingHashLbConfig> config_;
 
-  /** list of subchannels */
+  // list of subchannels.
   OrphanablePtr<RingHashSubchannelList> subchannel_list_;
-  /** are we shutting down? */
+  // indicating if we are shutting down.
   bool shutdown_ = false;
 };
 
@@ -210,9 +209,11 @@ RingHash::Picker::Picker(RingHash* parent,
     const ServerAddressWeightAttribute* weight_attribute = static_cast<
         const ServerAddressWeightAttribute*>(sd->address().GetAttribute(
         ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-    if (weight_attribute != nullptr && weight_attribute->weight() != 0) {
+    if (weight_attribute != nullptr) {
+      GPR_ASSERT(weight_attribute->weight() != 0);
       AddressWeights address_weights;
-      address_weights.address = std::string(sd->address().address().addr);
+      address_weights.address = sd->address().ToString();
+      ;
       address_weights.weight = weight_attribute->weight();
       sum += weight_attribute->weight();
       gpr_log(GPR_INFO, "donna retrieve weight %d", weight_attribute->weight());
@@ -283,7 +284,7 @@ RingHash::Picker::Picker(RingHash* parent,
   }
   std::sort(ring_.begin(), ring_.end(),
             [](const RingEntry& lhs, const RingEntry& rhs) -> bool {
-              return lhs.hash_ < rhs.hash_;
+              return lhs.hash < rhs.hash;
             });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(GPR_INFO,
@@ -311,8 +312,8 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       midp = 0;
       break;
     }
-    uint64_t midval = ring_[midp].hash_;
-    uint64_t midval1 = midp == 0 ? 0 : ring_[midp - 1].hash_;
+    uint64_t midval = ring_[midp].hash;
+    uint64_t midval1 = midp == 0 ? 0 : ring_[midp - 1].hash;
     if (h <= midval && h > midval1) {
       break;
     }
