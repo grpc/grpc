@@ -20,9 +20,9 @@
 #include <memory>
 #include <string>
 
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/health_check_service_interface.h>
-#include <grpcpp/ext/proto_server_reflection_plugin.h>
 
 #ifdef BAZEL_BUILD
 #include "examples/protos/helloworld.grpc.pb.h"
@@ -30,14 +30,14 @@
 #include "helloworld.grpc.pb.h"
 #endif
 
+using grpc::CallbackServerContext;
 using grpc::Server;
 using grpc::ServerBuilder;
-using grpc::CallbackServerContext;
 using grpc::ServerUnaryReactor;
 using grpc::Status;
-using helloworld::HelloRequest;
-using helloworld::HelloReply;
 using helloworld::Greeter;
+using helloworld::HelloReply;
+using helloworld::HelloRequest;
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::CallbackService {

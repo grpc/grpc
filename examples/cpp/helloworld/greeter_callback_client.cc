@@ -33,9 +33,9 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using helloworld::HelloRequest;
-using helloworld::HelloReply;
 using helloworld::Greeter;
+using helloworld::HelloReply;
+using helloworld::HelloRequest;
 
 class GreeterClient {
  public:
@@ -62,17 +62,17 @@ class GreeterClient {
     bool done = false;
     Status status;
     stub_->async()->SayHello(&context, &request, &reply,
-			     [&mu, &cv, &done, &status](Status s) {
-			       status = std::move(s);
-			       std::lock_guard<std::mutex> lock(mu);
-			       done = true;
-			       cv.notify_one();
-			     });
+                             [&mu, &cv, &done, &status](Status s) {
+                               status = std::move(s);
+                               std::lock_guard<std::mutex> lock(mu);
+                               done = true;
+                               cv.notify_one();
+                             });
 
-  std::unique_lock<std::mutex> lock(mu);
-  while (!done) {
-    cv.wait(lock);
-  }
+    std::unique_lock<std::mutex> lock(mu);
+    while (!done) {
+      cv.wait(lock);
+    }
 
     // Act upon its status.
     if (status.ok()) {
@@ -104,7 +104,8 @@ int main(int argc, char** argv) {
       if (arg_val[start_pos] == '=') {
         target_str = arg_val.substr(start_pos + 1);
       } else {
-        std::cout << "The only correct argument syntax is --target=" << std::endl;
+        std::cout << "The only correct argument syntax is --target="
+                  << std::endl;
         return 0;
       }
     } else {
@@ -114,8 +115,8 @@ int main(int argc, char** argv) {
   } else {
     target_str = "localhost:50051";
   }
-  GreeterClient greeter(grpc::CreateChannel(
-      target_str, grpc::InsecureChannelCredentials()));
+  GreeterClient greeter(
+      grpc::CreateChannel(target_str, grpc::InsecureChannelCredentials()));
   std::string user("world");
   std::string reply = greeter.SayHello(user);
   std::cout << "Greeter received: " << reply << std::endl;
