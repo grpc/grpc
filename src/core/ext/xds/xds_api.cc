@@ -2752,6 +2752,10 @@ grpc_error* ServerAddressParseAndAppend(
       load_balancing_weight != nullptr
           ? google_protobuf_UInt32Value_value(load_balancing_weight)
           : 500;
+  if (weight == 0) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid endpoint weight of 0.");
+  }
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
   grpc_string_to_sockaddr(&addr, address_str.c_str(), port);

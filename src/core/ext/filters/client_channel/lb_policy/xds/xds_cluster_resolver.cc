@@ -842,13 +842,11 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
       std::vector<std::string> hierarchical_path = {
           priority_child_name, locality_name->AsHumanReadableString()};
       for (const auto& endpoint : locality.endpoints) {
-        gpr_log(GPR_INFO, "donna added something %s",
-                endpoint.ToString().c_str());
         const ServerAddressWeightAttribute* weight_attribute = static_cast<
             const ServerAddressWeightAttribute*>(endpoint.GetAttribute(
             ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
         uint32_t weight = locality.lb_weight;
-        if (weight_attribute != nullptr && weight_attribute->weight() != 0) {
+        if (weight_attribute != nullptr) {
           weight = locality.lb_weight * weight_attribute->weight();
         }
         addresses.emplace_back(

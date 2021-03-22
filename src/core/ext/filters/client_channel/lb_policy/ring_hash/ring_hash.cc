@@ -386,31 +386,8 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
 }
 
 //
-// RingHash
+// RingHash::RingHashSubchannelList
 //
-
-RingHash::RingHash(Args args) : LoadBalancingPolicy(std::move(args)) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-    gpr_log(GPR_INFO, "[RH %p] Created", this);
-  }
-}
-
-RingHash::~RingHash() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-    gpr_log(GPR_INFO, "[RH %p] Destroying Ring Hash policy", this);
-  }
-  GPR_ASSERT(subchannel_list_ == nullptr);
-}
-
-void RingHash::ShutdownLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-    gpr_log(GPR_INFO, "[RH %p] Shutting down", this);
-  }
-  shutdown_ = true;
-  subchannel_list_.reset();
-}
-
-void RingHash::ResetBackoffLocked() { subchannel_list_->ResetBackoffLocked(); }
 
 void RingHash::RingHashSubchannelList::StartWatchingLocked() {
   if (num_subchannels() == 0) return;
@@ -497,6 +474,10 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
   }
 }
 
+//
+// RingHash::RingHashSubchannelData
+//
+
 void RingHash::RingHashSubchannelData::UpdateConnectivityStateLocked(
     grpc_connectivity_state connectivity_state) {
   RingHash* p = static_cast<RingHash*>(subchannel_list()->policy());
@@ -557,6 +538,33 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   // ring.
   subchannel_list()->UpdateRingHashConnectivityStateLocked();
 }
+
+//
+// RingHash
+//
+
+RingHash::RingHash(Args args) : LoadBalancingPolicy(std::move(args)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+    gpr_log(GPR_INFO, "[RH %p] Created", this);
+  }
+}
+
+RingHash::~RingHash() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+    gpr_log(GPR_INFO, "[RH %p] Destroying Ring Hash policy", this);
+  }
+  GPR_ASSERT(subchannel_list_ == nullptr);
+}
+
+void RingHash::ShutdownLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
+    gpr_log(GPR_INFO, "[RH %p] Shutting down", this);
+  }
+  shutdown_ = true;
+  subchannel_list_.reset();
+}
+
+void RingHash::ResetBackoffLocked() { subchannel_list_->ResetBackoffLocked(); }
 
 void RingHash::UpdateLocked(UpdateArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
