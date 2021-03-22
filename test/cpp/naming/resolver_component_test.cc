@@ -44,7 +44,6 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/executor.h"
@@ -126,8 +125,6 @@ ABSL_FLAG(
 ABSL_FLAG(std::string, expected_lb_policy, "",
           "Expected lb policy name that appears in resolver result channel "
           "arg. Empty for none.");
-
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_abort_on_leaks);
 
 namespace {
 
@@ -587,7 +584,7 @@ void RunResolvesRelevantRecordsTest(
         absl::make_unique<grpc::testing::FakeNonResponsiveDNSServer>(
 
             g_fake_non_responsive_dns_server_port);
-    grpc_core::internal::AresTestOnlyInjectConfig = InjectBrokenNameServerList;
+    grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
     whole_uri = absl::StrCat("dns:///", absl::GetFlag(FLAGS_target_name));
   } else if (absl::GetFlag(FLAGS_inject_broken_nameserver_list) == "False") {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
@@ -671,10 +668,6 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
 int main(int argc, char** argv) {
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
-  // see notes in
-  // https://github.com/grpc/grpc/pull/25108#pullrequestreview-577881514 for
-  // motivation.
-  GPR_GLOBAL_CONFIG_SET(grpc_abort_on_leaks, true);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   if (absl::GetFlag(FLAGS_target_name).empty()) {
