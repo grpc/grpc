@@ -36,12 +36,8 @@ namespace grpc {
 namespace {
 
 static auto* g_channelz_service = new ChannelzService();
-static_assert(std::is_trivially_destructible<ChannelzService*>::value, "");
 #ifndef GRPC_NO_XDS
 static auto* g_csds = new xds::experimental::ClientStatusDiscoveryService();
-static_assert(std::is_trivially_destructible<
-                  xds::experimental::ClientStatusDiscoveryService*>::value,
-              "");
 #endif  // GRPC_NO_XDS
 
 }  // namespace
