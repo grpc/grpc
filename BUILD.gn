@@ -1513,8 +1513,6 @@ config("grpc_config") {
         "src/cpp/server/async_generic_service.cc",
         "src/cpp/server/channel_argument_option.cc",
         "src/cpp/server/create_default_thread_pool.cc",
-        "src/cpp/server/csds/csds.cc",
-        "src/cpp/server/csds/csds.h",
         "src/cpp/server/dynamic_thread_pool.cc",
         "src/cpp/server/dynamic_thread_pool.h",
         "src/cpp/server/external_connection_acceptor_impl.cc",
@@ -1540,10 +1538,6 @@ config("grpc_config") {
         "src/cpp/util/status.cc",
         "src/cpp/util/string_ref.cc",
         "src/cpp/util/time_cc.cc",
-        "src/proto/grpc/testing/xds/v3/base.proto",
-        "src/proto/grpc/testing/xds/v3/config_dump.proto",
-        "src/proto/grpc/testing/xds/v3/csds.proto",
-        "src/proto/grpc/testing/xds/v3/percent.proto",
     ]
     deps = [
         "//third_party/protobuf:protobuf_lite",

@@ -371,7 +371,6 @@ grpc_cc_library(
         "//conditions:default": [
             "grpc++_xds_client",
             "grpc++_xds_server",
-            "grpcpp_csds",
         ],
     },
     standalone = True,
@@ -2637,6 +2636,10 @@ grpc_cc_library(
         "src/cpp/server/admin/admin_services.cc",
     ],
     hdrs = [],
+    defines = select({
+        "grpc_no_xds": ["GRPC_NO_XDS"],
+        "//conditions:default": [],
+    }),
     external_deps = [
         "absl/memory",
     ],
@@ -2644,6 +2647,10 @@ grpc_cc_library(
     public_hdrs = [
         "include/grpcpp/ext/admin_services.h",
     ],
+    select_deps = {
+        "grpc_no_xds": [],
+        "//conditions:default": ["//:grpcpp_csds"],
+    },
     deps = [
         ":grpc++",
         ":grpcpp_channelz",

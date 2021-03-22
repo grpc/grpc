@@ -2321,7 +2321,6 @@ libs:
   - src/cpp/common/channel_filter.h
   - src/cpp/common/secure_auth_context.h
   - src/cpp/common/tls_credentials_options_util.h
-  - src/cpp/server/csds/csds.h
   - src/cpp/server/dynamic_thread_pool.h
   - src/cpp/server/external_connection_acceptor_impl.h
   - src/cpp/server/health/default_health_check_service.h
@@ -2329,10 +2328,6 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
-  - src/proto/grpc/testing/xds/v3/base.proto
-  - src/proto/grpc/testing/xds/v3/config_dump.proto
-  - src/proto/grpc/testing/xds/v3/csds.proto
-  - src/proto/grpc/testing/xds/v3/percent.proto
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -2364,7 +2359,6 @@ libs:
   - src/cpp/server/async_generic_service.cc
   - src/cpp/server/channel_argument_option.cc
   - src/cpp/server/create_default_thread_pool.cc
-  - src/cpp/server/csds/csds.cc
   - src/cpp/server/dynamic_thread_pool.cc
   - src/cpp/server/external_connection_acceptor_impl.cc
   - src/cpp/server/health/default_health_check_service.cc
@@ -4141,9 +4135,15 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers: []
+  headers:
+  - src/cpp/server/csds/csds.h
   src:
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/config_dump.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
   - src/cpp/server/admin/admin_services.cc
+  - src/cpp/server/csds/csds.cc
   - test/cpp/end2end/admin_services_end2end_test.cc
   deps:
   - grpc++_reflection
@@ -6594,6 +6594,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/address.proto
   - src/proto/grpc/testing/xds/v3/ads.proto
   - src/proto/grpc/testing/xds/v3/aggregate_cluster.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
   - src/proto/grpc/testing/xds/v3/cluster.proto
   - src/proto/grpc/testing/xds/v3/config_source.proto
   - src/proto/grpc/testing/xds/v3/discovery.proto
@@ -6604,6 +6605,7 @@ targets:
   - src/proto/grpc/testing/xds/v3/listener.proto
   - src/proto/grpc/testing/xds/v3/load_report.proto
   - src/proto/grpc/testing/xds/v3/lrs.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
   - src/proto/grpc/testing/xds/v3/protocol.proto
   - src/proto/grpc/testing/xds/v3/range.proto
   - src/proto/grpc/testing/xds/v3/regex.proto
