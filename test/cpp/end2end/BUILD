@@ -879,6 +879,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = [
+        # TODO(https://github.com/grpc/grpc/issues/25783) enable iOS test
+        "no_test_ios",
+    ],
     deps = [
         "//:grpc++",
         "//:grpc++_reflection",
