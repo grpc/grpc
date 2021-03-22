@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H_
-#define GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H_
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -43,4 +43,4 @@ class ResolvedAddress {
 
 }  // namespace grpc_io
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H_
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H

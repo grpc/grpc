@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_SLICE_ALLOCATOR_H_
-#define GRPC_CORE_LIB_EVENT_ENGINE_SLICE_ALLOCATOR_H_
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_SLICE_ALLOCATOR_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_SLICE_ALLOCATOR_H
 
 #include <grpc/support/port_platform.h>
 
@@ -70,4 +70,4 @@ class SliceAllocatorFactory {
 
 }  // namespace grpc_io
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_SLICE_ALLOCATOR_H_
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_SLICE_ALLOCATOR_H
