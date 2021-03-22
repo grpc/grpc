@@ -165,6 +165,10 @@ class RingHash : public LoadBalancingPolicy {
 
     Picker(RingHash* parent, RingHashSubchannelList* subchannel_list);
 
+    // Picker helper which returns false if subchannel is in TRANSIENT_FAILURE,
+    // true otherwise.
+    static bool MaybePickSubchannel(const RingEntry& entry, PickResult* result);
+
     PickResult Pick(PickArgs args) override;
 
    private:
@@ -294,6 +298,28 @@ RingHash::Picker::Picker(RingHash* parent,
   }
 }
 
+// Returns false if subchannel is in TRANSIENT_FAILURE, true otherwise.
+bool RingHash::Picker::MaybePickSubchannel(const RingEntry& entry,
+                                           PickResult* result) {
+  if (entry.last_connectivity_state == GRPC_CHANNEL_READY) {
+    result->type = PickResult::PICK_COMPLETE;
+    result->subchannel = entry.subchannel;
+    return true;
+  }
+  if (entry.last_connectivity_state == GRPC_CHANNEL_IDLE) {
+    // ...trigger connection attempt...
+    result->type = PickResult::PICK_QUEUE;
+    return true;
+  }
+  if (entry.last_connectivity_state == GRPC_CHANNEL_CONNECTING) {
+    result->type = PickResult::PICK_QUEUE;
+    return true;
+  }
+  // TRANSIENT_FAILURE
+  // ...trigger connection attempt...
+  return false;
+}
+
 RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   PickResult result;
   result.type = PickResult::PICK_FAILED;
@@ -334,55 +360,40 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
             "[RH %p picker %p] hashed to index %" PRIuPTR ", subchannel=%p",
             parent_, this, midp, ring_[midp].subchannel.get());
   }
-  // Return pick result based on subchannel state, re-pick if necessary.
-  grpc_connectivity_state state = ring_[midp].last_connectivity_state;
-  switch (state) {
-    case GRPC_CHANNEL_READY:
-      result.type = PickResult::PICK_COMPLETE;
-      result.subchannel = ring_[midp].subchannel;
-      return result;
-    case GRPC_CHANNEL_IDLE:
-    case GRPC_CHANNEL_CONNECTING:
-      result.type = PickResult::PICK_QUEUE;
-      return result;
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
-      // Reconnect and find the next one. TODO (donnadionne): Reconnect
-      midp = (midp + 1) % ring_.size();
-      state = ring_[midp].last_connectivity_state;
-      switch (state) {
-        case GRPC_CHANNEL_READY:
-          result.type = PickResult::PICK_COMPLETE;
-          result.subchannel = ring_[midp].subchannel;
-          return result;
-        case GRPC_CHANNEL_IDLE:
-        case GRPC_CHANNEL_CONNECTING:
-          result.type = PickResult::PICK_QUEUE;
-          return result;
-        case GRPC_CHANNEL_TRANSIENT_FAILURE:
-          // Reconnect and find the next one. TODO (donnadionne): Reconnect
-          midp = (midp == highp) ? 0 : midp + 1;
-          state = ring_[midp].last_connectivity_state;
-          switch (state) {
-            case GRPC_CHANNEL_READY:
-              result.type = PickResult::PICK_COMPLETE;
-              result.subchannel = ring_[midp].subchannel;
-              return result;
-            case GRPC_CHANNEL_IDLE:
-            case GRPC_CHANNEL_CONNECTING:
-            case GRPC_CHANNEL_TRANSIENT_FAILURE:
-              // TODO: Try all for a ready channel before sending back
-              // PICK_FAILED.
-              break;
-            default:
-              break;
-          }
-          return result;
-        default:
-          break;
-      }
-    default:
-      break;
+  if (MaybePickSubchannel(ring_[midp], &result)) {
+    return result;
   }
+  // Subchannel is in TRANSIENT_FAILURE.
+  // Check the next one.
+  midp = (midp + 1) % ring_.size();
+  if (MaybePickSubchannel(ring_[midp], &result)) {
+    return result;
+  }
+  // Second subchannel was in TRANSIENT_FAILURE.
+  // Loop through remaining subchannels to find one in READY.
+  // On the way, we make sure the right set of connection attempts
+  // will happen.
+  midp = (midp + 1) % ring_.size();
+  bool found_first_non_failed = false;
+  for (size_t i = 0; i < ring_.size() - 2; ++i) {
+    const RingEntry& entry = ring_[(midp + i) % ring_.size()];
+    if (entry.last_connectivity_state == GRPC_CHANNEL_READY) {
+      result.type = PickResult::PICK_COMPLETE;
+      result.subchannel = entry.subchannel;
+      return result;
+    }
+    if (!found_first_non_failed) {
+      if (entry.last_connectivity_state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        // ...trigger connection attempt...
+      } else {
+        if (entry.last_connectivity_state == GRPC_CHANNEL_IDLE) {
+          // ...trigger connection attempt...
+        }
+        found_first_non_failed = true;
+      }
+    }
+  }
+  result.type = PickResult::PICK_FAILED;
   return result;
 }
 
