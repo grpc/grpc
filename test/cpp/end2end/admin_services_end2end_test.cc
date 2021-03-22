@@ -71,15 +71,26 @@ class AdminServicesTest : public ::testing::Test {
       stream_;
 };
 
+#ifndef GRPC_NO_XDS
+// The ifndef conflicts with TEST_F and EXPECT_THAT macros, so we better isolate
+// the condition at test case level.
 TEST_F(AdminServicesTest, XdsEnabled) {
   EXPECT_THAT(GetServiceList(),
               ::testing::UnorderedElementsAre(
-#ifndef GRPC_NO_XDS
                   "envoy.service.status.v3.ClientStatusDiscoveryService",
-#endif  // GRPC_NO_XDS
                   "grpc.channelz.v1.Channelz",
                   "grpc.reflection.v1alpha.ServerReflection"));
 }
+#endif  // GRPC_NO_XDS
+
+#ifdef GRPC_NO_XDS
+TEST_F(AdminServicesTest, XdsDisabled) {
+  EXPECT_THAT(GetServiceList(),
+              ::testing::UnorderedElementsAre(
+                  "grpc.channelz.v1.Channelz",
+                  "grpc.reflection.v1alpha.ServerReflection"));
+}
+#endif  // GRPC_NO_XDS
 
 }  // namespace testing
 }  // namespace grpc
