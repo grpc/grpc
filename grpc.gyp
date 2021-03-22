@@ -1395,6 +1395,10 @@
         'grpc',
       ],
       'sources': [
+        'src/proto/grpc/testing/xds/v3/base.proto',
+        'src/proto/grpc/testing/xds/v3/config_dump.proto',
+        'src/proto/grpc/testing/xds/v3/csds.proto',
+        'src/proto/grpc/testing/xds/v3/percent.proto',
         'src/cpp/client/channel_cc.cc',
         'src/cpp/client/client_callback.cc',
         'src/cpp/client/client_context.cc',
@@ -1426,6 +1430,7 @@
         'src/cpp/server/async_generic_service.cc',
         'src/cpp/server/channel_argument_option.cc',
         'src/cpp/server/create_default_thread_pool.cc',
+        'src/cpp/server/csds/csds.cc',
         'src/cpp/server/dynamic_thread_pool.cc',
         'src/cpp/server/external_connection_acceptor_impl.cc',
         'src/cpp/server/health/default_health_check_service.cc',

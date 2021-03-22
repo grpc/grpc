@@ -34,7 +34,7 @@ namespace testing {
 
 class AdminServicesTest : public ::testing::Test {
  public:
-  void SetUp() {
+  void SetUp() override {
     std::string address =
         absl::StrCat("localhost:", grpc_pick_unused_port_or_die());
     // Create admin server
