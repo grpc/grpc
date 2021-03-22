@@ -93,7 +93,9 @@ class Chttp2ServerListener : public Server::ListenerInterface {
     explicit ConfigFetcherWatcher(RefCountedPtr<Chttp2ServerListener> listener)
         : listener_(std::move(listener)) {}
 
-    void UpdateConfig(grpc_channel_args* args) override;
+    void UpdateConnectionManager(
+        RefCountedPtr<grpc_server_config_fetcher::ConnectionManager> manager)
+        override;
 
     void StopServing() override;
 
@@ -216,6 +218,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
   ConfigFetcherWatcher* config_fetcher_watcher_ = nullptr;
   Mutex channel_args_mu_;
   grpc_channel_args* args_ ABSL_GUARDED_BY(channel_args_mu_);
+  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+      connection_manager_ ABSL_GUARDED_BY(channel_args_mu_);
   Mutex mu_;
   // Signals whether grpc_tcp_server_start() has been called.
   bool started_ ABSL_GUARDED_BY(mu_) = false;
@@ -236,15 +240,15 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 // Chttp2ServerListener::ConfigFetcherWatcher
 //
 
-void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConfig(
-    grpc_channel_args* args) {
-  grpc_channel_args* args_to_destroy = nullptr;
+void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
+    RefCountedPtr<grpc_server_config_fetcher::ConnectionManager> manager) {
+  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+      connection_manager_to_destroy;
   {
     MutexLock lock(&listener_->channel_args_mu_);
-    args_to_destroy = listener_->args_;
-    listener_->args_ = args;
+    connection_manager_to_destroy = listener_->connection_manager_;
+    listener_->connection_manager_ = std::move(manager);
   }
-  grpc_channel_args_destroy(args_to_destroy);
   {
     MutexLock lock(&listener_->mu_);
     if (listener_->shutdown_) {
@@ -698,32 +702,40 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
                                     grpc_tcp_server_acceptor* acceptor) {
   Chttp2ServerListener* self = static_cast<Chttp2ServerListener*>(arg);
   grpc_channel_args* args = nullptr;
+  RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+      connection_manager;
   {
     MutexLock lock(&self->channel_args_mu_);
     args = grpc_channel_args_copy(self->args_);
+    connection_manager = self->connection_manager_;
   }
+  auto endpoint_cleanup = [&](grpc_error* error) {
+    grpc_endpoint_shutdown(tcp, error);
+    grpc_endpoint_destroy(tcp);
+    gpr_free(acceptor);
+  };
   if (self->server_->config_fetcher() != nullptr) {
+    if (connection_manager == nullptr) {
+      grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "No ConnectionManager configured. Closing connection.");
+      endpoint_cleanup(error);
+    }
     // TODO(yashykt): Maybe combine the following two arg modifiers into a
     // single one.
     absl::StatusOr<grpc_channel_args*> args_result =
-        self->server_->config_fetcher()->UpdateChannelArgsForConnection(args,
-                                                                        tcp);
+        connection_manager->UpdateChannelArgsForConnection(args, tcp);
     if (!args_result.ok()) {
       gpr_log(GPR_DEBUG, "Closing connection: %s",
               args_result.status().ToString().c_str());
-      grpc_endpoint_shutdown(tcp, GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                                      args_result.status().ToString().c_str()));
-      grpc_endpoint_destroy(tcp);
-      gpr_free(acceptor);
+      endpoint_cleanup(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          args_result.status().ToString().c_str()));
       return;
     }
     grpc_error* error = GRPC_ERROR_NONE;
     args = self->args_modifier_(*args_result, &error);
     if (error != GRPC_ERROR_NONE) {
       gpr_log(GPR_DEBUG, "Closing connection: %s", grpc_error_string(error));
-      grpc_endpoint_shutdown(tcp, error);
-      grpc_endpoint_destroy(tcp);
-      gpr_free(acceptor);
+      endpoint_cleanup(error);
       grpc_channel_args_destroy(args);
       return;
     }
@@ -758,9 +770,7 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     }
   }
   if (connection != nullptr) {
-    grpc_endpoint_shutdown(tcp, GRPC_ERROR_NONE);
-    grpc_endpoint_destroy(tcp);
-    gpr_free(acceptor);
+    endpoint_cleanup(GRPC_ERROR_NONE);
   } else {
     connection_ref->Start(std::move(listener_ref), tcp, args);
   }

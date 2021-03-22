@@ -42,7 +42,8 @@ namespace {
 const char* kFilterChainManagerChannelArgName =
     "grpc.internal.xds_filter_chain_manager";
 
-class FilterChainMatchManager : public RefCounted<FilterChainMatchManager> {
+class FilterChainMatchManager
+    : public grpc_server_config_fetcher::ConnectionManager {
  public:
   FilterChainMatchManager(
       RefCountedPtr<XdsClient> xds_client,
@@ -54,10 +55,8 @@ class FilterChainMatchManager : public RefCounted<FilterChainMatchManager> {
         destination_ip_map_(std::move(destination_ip_map)),
         default_filter_chain_(std::move(default_filter_chain)) {}
 
-  grpc_arg MakeChannelArg() const;
-
-  static absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
-      grpc_channel_args* args, grpc_endpoint* tcp);
+  absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
+      grpc_channel_args* args, grpc_endpoint* tcp) override;
 
   const std::vector<XdsApi::LdsUpdate::FilterChain>& filter_chains() const {
     return filter_chains_;
@@ -79,9 +78,6 @@ class FilterChainMatchManager : public RefCounted<FilterChainMatchManager> {
     RefCountedPtr<XdsCertificateProvider> xds;
   };
 
-  static RefCountedPtr<FilterChainMatchManager> GetFromChannelArgs(
-      const grpc_channel_args* args);
-
   absl::StatusOr<RefCountedPtr<XdsCertificateProvider>>
   CreateOrGetXdsCertificateProviderFromFilterChainData(
       const XdsApi::LdsUpdate::FilterChain::FilterChainData* filter_chain);
@@ -95,36 +91,6 @@ class FilterChainMatchManager : public RefCounted<FilterChainMatchManager> {
            CertificateProviders>
       certificate_providers_map_ ABSL_GUARDED_BY(mu_);
 };
-
-void* FilterChainMatchManagerArgCopy(void* p) {
-  FilterChainMatchManager* manager = static_cast<FilterChainMatchManager*>(p);
-  return manager->Ref().release();
-}
-
-void FilterChainMatchManagerArgDestroy(void* p) {
-  FilterChainMatchManager* manager = static_cast<FilterChainMatchManager*>(p);
-  manager->Unref();
-}
-
-int FilterChainMatchManagerArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
-
-const grpc_arg_pointer_vtable kChannelArgVtable = {
-    FilterChainMatchManagerArgCopy, FilterChainMatchManagerArgDestroy,
-    FilterChainMatchManagerArgCmp};
-
-grpc_arg FilterChainMatchManager::MakeChannelArg() const {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(kFilterChainManagerChannelArgName),
-      const_cast<FilterChainMatchManager*>(this), &kChannelArgVtable);
-}
-
-RefCountedPtr<FilterChainMatchManager>
-FilterChainMatchManager::GetFromChannelArgs(const grpc_channel_args* args) {
-  FilterChainMatchManager* manager =
-      grpc_channel_args_find_pointer<FilterChainMatchManager>(
-          args, kFilterChainManagerChannelArgName);
-  return manager != nullptr ? manager->Ref() : nullptr;
-}
 
 bool IsLoopbackIp(const grpc_resolved_address* address) {
   const grpc_sockaddr* sock_addr =
@@ -344,15 +310,10 @@ FilterChainMatchManager::CreateOrGetXdsCertificateProviderFromFilterChainData(
 absl::StatusOr<grpc_channel_args*>
 FilterChainMatchManager::UpdateChannelArgsForConnection(grpc_channel_args* args,
                                                         grpc_endpoint* tcp) {
-  RefCountedPtr<FilterChainMatchManager> manager = GetFromChannelArgs(args);
-  if (manager == nullptr) {
-    grpc_channel_args_destroy(args);
-    return absl::UnavailableError("No FilterChains found");
-  }
   const auto* filter_chain =
-      FindFilterChainDataForDestinationIp(manager->destination_ip_map_, tcp);
-  if (filter_chain == nullptr && manager->default_filter_chain_) {
-    filter_chain = &manager->default_filter_chain_->filter_chain_data;
+      FindFilterChainDataForDestinationIp(destination_ip_map_, tcp);
+  if (filter_chain == nullptr && default_filter_chain_) {
+    filter_chain = &default_filter_chain_->filter_chain_data;
   }
   if (filter_chain == nullptr) {
     grpc_channel_args_destroy(args);
@@ -369,8 +330,7 @@ FilterChainMatchManager::UpdateChannelArgsForConnection(grpc_channel_args* args,
     return updated_args;
   }
   absl::StatusOr<RefCountedPtr<XdsCertificateProvider>> result =
-      manager->CreateOrGetXdsCertificateProviderFromFilterChainData(
-          filter_chain);
+      CreateOrGetXdsCertificateProviderFromFilterChainData(filter_chain);
   if (!result.ok()) {
     grpc_channel_args_destroy(args);
     return result.status();
@@ -431,11 +391,6 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
     return xds_client_->interested_parties();
   }
 
-  absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
-      grpc_channel_args* args, grpc_endpoint* tcp) override {
-    return FilterChainMatchManager::UpdateChannelArgsForConnection(args, tcp);
-  }
-
  private:
   class ListenerWatcher : public XdsClient::ListenerWatcherInterface {
    public:
@@ -490,10 +445,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
             xds_client_, std::move(listener.filter_chains),
             std::move(listener.destination_ip_map),
             std::move(listener.default_filter_chain));
-        grpc_arg arg_to_add = filter_chain_match_manager_->MakeChannelArg();
-        grpc_channel_args* updated_args =
-            grpc_channel_args_copy_and_add(args_, &arg_to_add, 1);
-        server_config_watcher_->UpdateConfig(updated_args);
+        server_config_watcher_->UpdateConnectionManager(
+            filter_chain_match_manager_);
       }
     }
 
