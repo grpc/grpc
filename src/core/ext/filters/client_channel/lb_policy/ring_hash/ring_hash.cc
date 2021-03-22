@@ -19,6 +19,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #define XXH_INLINE_ALL
 #include "xxhash.h"
@@ -209,31 +210,28 @@ RingHash::Picker::Picker(RingHash* parent,
     const ServerAddressWeightAttribute* weight_attribute = static_cast<
         const ServerAddressWeightAttribute*>(sd->address().GetAttribute(
         ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
+    AddressWeights address_weights;
+    address_weights.address = sd->address().ToString();
     if (weight_attribute != nullptr) {
       GPR_ASSERT(weight_attribute->weight() != 0);
-      AddressWeights address_weights;
-      address_weights.address = sd->address().ToString();
-      ;
       address_weights.weight = weight_attribute->weight();
-      sum += weight_attribute->weight();
-      gpr_log(GPR_INFO, "donna retrieve weight %d", weight_attribute->weight());
-      address_weights_info.push_back(std::move(address_weights));
     } else {
-      GPR_ASSERT(0);
+      // If a weight is not provided, each occurrence of the address
+      // will be counted a weight value of one.
+      address_weights.weight = 1;
     }
+    sum += address_weights.weight;
+    address_weights_info.push_back(std::move(address_weights));
   }
   // Calculating normalized weights and find min and max.
   double min_normalized_weight = 1.0;
   double max_normalized_weight = 0.0;
-  for (size_t i = 0; i < num_subchannels; ++i) {
-    address_weights_info[i].normalized_weight =
-        address_weights_info[i].weight / sum;
-    if (address_weights_info[i].normalized_weight < min_normalized_weight) {
-      min_normalized_weight = address_weights_info[i].normalized_weight;
-    }
-    if (address_weights_info[i].normalized_weight > max_normalized_weight) {
-      max_normalized_weight = address_weights_info[i].normalized_weight;
-    }
+  for (auto& address : address_weights_info) {
+    address.normalized_weight = address.weight / sum;
+    min_normalized_weight =
+        std::min(address.normalized_weight, min_normalized_weight);
+    max_normalized_weight =
+        std::max(address.normalized_weight, max_normalized_weight);
   }
   // Scale up the number of hashes per host such that the least-weighted host
   // gets a whole number of hashes on the ring. Other hosts might not end up
@@ -270,7 +268,7 @@ RingHash::Picker::Picker(RingHash* parent,
     while (current_hashes < target_hashes) {
       const std::string count_str = absl::StrCat("", count);
       hash_key_buffer.insert(offset_start, count_str.begin(), count_str.end());
-      absl::string_view hash_key(static_cast<char*>(hash_key_buffer.data()),
+      absl::string_view hash_key(hash_key_buffer.data(),
                                  hash_key_buffer.size());
       const uint64_t hash = XXH64(hash_key.data(), hash_key.size(), 0);
       ring_.push_back(
@@ -295,14 +293,16 @@ RingHash::Picker::Picker(RingHash* parent,
 }
 
 RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
-  auto hash =
+  PickResult result;
+  result.type = PickResult::PICK_FAILED;
+  absl::string_view hash =
       args.call_state->ExperimentalGetCallAttribute(kRequestRingHashAttribute);
-  uint64_t h = std::stoul(std::string(hash));
+  uint64_t h;
+  if (!absl::SimpleAtoi(hash, &h)) return result;
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) I've generally kept the variable names to make the code
   // easier to compare. NOTE: The algorithm depends on using signed integers for
-  // lowp, midp, and highp. Do not
-  //       change them!
+  // lowp, midp, and highp. Do not change them!
   int64_t lowp = 0;
   int64_t highp = ring_.size();
   int64_t midp = 0;
@@ -329,13 +329,12 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(GPR_INFO,
-            "[RH %p picker %p] returning index %" PRIuPTR ", subchannel=%p",
+            "[RH %p picker %p] hashed to index %" PRIuPTR ", subchannel=%p",
             parent_, this, midp, ring_[midp].subchannel.get());
   }
   // Return pick result based on subchannel state, re-pick if necessary.
   grpc_connectivity_state state =
       ring_[midp].subchannel->CheckConnectivityState();
-  PickResult result;
   switch (state) {
     case GRPC_CHANNEL_READY:
       result.type = PickResult::PICK_COMPLETE;
@@ -347,7 +346,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       return result;
     case GRPC_CHANNEL_TRANSIENT_FAILURE:
       // Reconnect and find the next one. TODO (donnadionne): Reconnect
-      midp = (midp == highp) ? 0 : midp + 1;
+      midp = (midp + 1) % ring_.size();
       state = ring_[midp].subchannel->CheckConnectivityState();
       switch (state) {
         case GRPC_CHANNEL_READY:
@@ -376,7 +375,6 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
             default:
               break;
           }
-          result.type = PickResult::PICK_FAILED;
           return result;
         default:
           break;
@@ -384,7 +382,6 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     default:
       break;
   }
-  result.type = PickResult::PICK_FAILED;
   return result;
 }
 
@@ -553,9 +550,7 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
               p, subchannel());
     }
     p->channel_control_helper()->RequestReresolution();
-    // This is not needed anymore: subchannel()->AttemptToConnect();
   }
-
   // Update state counters.
   UpdateConnectivityStateLocked(connectivity_state);
   // Update the RH policy's connectivity state, creating new picker and new
@@ -610,30 +605,28 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
     size_t min_ring_size = 1024;
     size_t max_ring_size = 8388608;
     auto ring_hash_it = ring_hash.find("min_ring_size");
-    if (ring_hash_it == ring_hash.end()) {
-      error_list.push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("field:min_ring_size missing"));
-    } else if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:min_ring_size error: should be of "
-          "number"));
-    } else {
-      min_ring_size = gpr_parse_nonnegative_int(
-          ring_hash_it->second.string_value().c_str());
+    if (ring_hash_it != ring_hash.end()) {
+      if (ring_hash_it->second.type() != Json::Type::NUMBER) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:min_ring_size error: should be of "
+            "number"));
+      } else {
+        min_ring_size = gpr_parse_nonnegative_int(
+            ring_hash_it->second.string_value().c_str());
+      }
     }
     ring_hash_it = ring_hash.find("max_ring_size");
-    if (ring_hash_it == ring_hash.end()) {
-      error_list.push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("field:max_ring_size missing"));
-    } else if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:max_ring_size error: should be of "
-          "number"));
-    } else {
-      max_ring_size = gpr_parse_nonnegative_int(
-          ring_hash_it->second.string_value().c_str());
+    if (ring_hash_it != ring_hash.end()) {
+      if (ring_hash_it->second.type() != Json::Type::NUMBER) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "field:max_ring_size error: should be of "
+            "number"));
+      } else {
+        max_ring_size = gpr_parse_nonnegative_int(
+            ring_hash_it->second.string_value().c_str());
+      }
     }
-    if (min_ring_size <= 0 || min_ring_size > 8388608 || max_ring_size <= 0 ||
+    if (min_ring_size == 0 || min_ring_size > 8388608 || max_ring_size == 0 ||
         max_ring_size > 8388608 || min_ring_size > max_ring_size) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:max_ring_size and or min_ring_size error: "
