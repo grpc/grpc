@@ -277,12 +277,16 @@
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_plugin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/inproc/inproc_transport.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/admin/v3/config_dump.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/annotations/deprecation.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/annotations/deprecation.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/annotations/resource.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/annotations/resource.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/accesslog/v3/accesslog.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/accesslog/v3/accesslog.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/bootstrap/v3/bootstrap.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/bootstrap/v3/bootstrap.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/cluster/v3/circuit_breaker.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/cluster/v3/circuit_breaker.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/cluster/v3/cluster.upb.c" role="src" />
@@ -331,6 +335,10 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/listener_components.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/listener/v3/udp_listener_config.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/metrics/v3/stats.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/overload/v3/overload.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/rbac/v3/rbac.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/config/route/v3/route.upb.c" role="src" />
@@ -375,8 +383,12 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/route/v3/rds.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/route/v3/srds.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/service/status/v3/csds.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/metadata.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/node.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/number.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/path.upb.c" role="src" />
@@ -385,6 +397,8 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/regex.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/string.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/struct.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/matcher/v3/value.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/metadata/v3/metadata.upb.c" role="src" />
@@ -461,12 +475,16 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/resource_locator.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/resource_name.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/xds/core/v3/resource_name.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/admin/v3/config_dump.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/annotations/deprecation.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/annotations/resource.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/accesslog/v3/accesslog.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/bootstrap/v3/bootstrap.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/bootstrap/v3/bootstrap.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/cluster/v3/circuit_breaker.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/cluster/v3/circuit_breaker.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/cluster/v3/cluster.upbdefs.c" role="src" />
@@ -515,6 +533,10 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/listener/v3/listener_components.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/listener/v3/udp_listener_config.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/metrics/v3/stats.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/overload/v3/overload.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/route/v3/route.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/config/route/v3/route_components.upbdefs.c" role="src" />
@@ -557,8 +579,12 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/service/route/v3/rds.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/service/route/v3/srds.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/service/status/v3/csds.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/metadata.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/node.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/number.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/path.upbdefs.c" role="src" />
@@ -567,6 +593,8 @@
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/regex.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/string.upbdefs.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/struct.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/matcher/v3/value.upbdefs.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upbdefs-generated/envoy/type/metadata/v3/metadata.upbdefs.c" role="src" />
@@ -1987,10 +2015,6 @@
     <file baseinstalldir="/" name="third_party/upb/upb/def.hpp" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/json_decode.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/json_decode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/json_encode.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/json_encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port_def.inc" role="src" />

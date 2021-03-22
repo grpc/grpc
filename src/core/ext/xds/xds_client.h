@@ -191,6 +191,15 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Resets connection backoff state.
   void ResetBackoff();
 
+  // Dumps the active xDS config in JSON format.
+  // Individual xDS resource is encoded as envoy.admin.v3.*ConfigDump. Returns
+  // envoy.service.status.v3.ClientConfig which also includes the config
+  // status (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
+  //
+  // Expected to be invoked by wrapper languages in their CSDS service
+  // implementation.
+  std::string DumpClientConfigBinary();
+
  private:
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
@@ -221,6 +230,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void MaybeStartLrsCall();
     void StopLrsCall();
 
+    bool HasAdsCall() const;
     bool HasActiveAdsCall() const;
 
     void StartConnectivityWatchLocked();
@@ -254,6 +264,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from LDS.
     absl::optional<XdsApi::LdsUpdate> update;
+    XdsApi::ResourceMetadata meta;
   };
 
   struct RouteConfigState {
@@ -262,6 +273,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from RDS.
     absl::optional<XdsApi::RdsUpdate> update;
+    XdsApi::ResourceMetadata meta;
   };
 
   struct ClusterState {
@@ -269,6 +281,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from CDS.
     absl::optional<XdsApi::CdsUpdate> update;
+    XdsApi::ResourceMetadata meta;
   };
 
   struct EndpointState {
@@ -277,6 +290,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from EDS.
     absl::optional<XdsApi::EdsUpdate> update;
+    XdsApi::ResourceMetadata meta;
   };
 
   struct LoadReportState {
@@ -298,6 +312,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
       bool send_all_clusters, const std::set<std::string>& clusters);
+
+  void UpdateResourceMetadataWithFailedParseResult(
+      grpc_millis update_time, const XdsApi::AdsParseResult& result);
+  void UpdatePendingResources(
+      const std::string& type_url,
+      XdsApi::ResourceMetadataMap* resource_metadata_map);
 
   const grpc_millis request_timeout_;
   grpc_pollset_set* interested_parties_;
