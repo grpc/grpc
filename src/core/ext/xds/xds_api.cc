@@ -2228,7 +2228,7 @@ grpc_error* AddFilterChainDataForSourcePort(
       ports_map->emplace(port, filter_chain_data);
   if (!insert_result.second) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Filter chains with matching rules detected");
+        "Filter chains with duplicate matching rules detected");
   }
   return GRPC_ERROR_NONE;
 }
@@ -2239,10 +2239,13 @@ grpc_error* AddFilterChainDataForSourcePorts(
         filter_chain_data,
     XdsApi::LdsUpdate::SourcePortsMap* ports_map) {
   if (filter_chain_match.source_ports.empty()) {
-    AddFilterChainDataForSourcePort(std::move(filter_chain_data), ports_map, 0);
+    return AddFilterChainDataForSourcePort(std::move(filter_chain_data),
+                                           ports_map, 0);
   } else {
     for (const auto& port : filter_chain_match.source_ports) {
-      AddFilterChainDataForSourcePort(filter_chain_data, ports_map, port);
+      grpc_error* error =
+          AddFilterChainDataForSourcePort(filter_chain_data, ports_map, port);
+      if (error != GRPC_ERROR_NONE) return error;
     }
   }
   return GRPC_ERROR_NONE;
