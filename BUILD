@@ -2623,11 +2623,37 @@ grpc_cc_library_xds(
         "src/cpp/server/csds/csds.h",
     ],
     language = "c++",
-    public_hdrs = [
+    deps = [
+        ":grpc++_internals",
+        "//src/proto/grpc/testing/xds/v3:csds_proto",
     ],
+    alwayslink = 1,
+)
+
+grpc_cc_library(
+    name = "grpcpp_admin",
+    srcs = [
+        "src/cpp/server/admin/admin_services.cc",
+    ],
+    hdrs = [],
+    defines = select({
+        "grpc_no_xds": ["GRPC_NO_XDS"],
+        "//conditions:default": [],
+    }),
+    external_deps = [
+        "absl/memory",
+    ],
+    language = "c++",
+    public_hdrs = [
+        "include/grpcpp/ext/admin_services.h",
+    ],
+    select_deps = {
+        "grpc_no_xds": [],
+        "//conditions:default": ["//:grpcpp_csds"],
+    },
     deps = [
         ":grpc++",
-        "//src/proto/grpc/testing/xds/v3:csds_proto",
+        ":grpcpp_channelz",
     ],
     alwayslink = 1,
 )

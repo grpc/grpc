@@ -4131,6 +4131,24 @@ targets:
   - linux
   - posix
   - mac
+- name: admin_services_end2end_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/cpp/server/csds/csds.h
+  src:
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/config_dump.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/server/admin/admin_services.cc
+  - src/cpp/server/csds/csds.cc
+  - test/cpp/end2end/admin_services_end2end_test.cc
+  deps:
+  - grpc++_reflection
+  - grpcpp_channelz
+  - grpc++_test_util
 - name: alarm_test
   gtest: true
   build: test
