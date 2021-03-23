@@ -326,12 +326,7 @@ class XdsApi {
         // This is in principle the filter list.
         // We currently require exactly one filter, which is the HCM.
         HttpConnectionManager http_connection_manager;
-      };
-      DownstreamTlsContext downstream_tls_context;
-      // This is in principle the filter list.
-      // We currently require exactly one filter, which is the HCM.
-      HttpConnectionManager http_connection_manager;      
-      FilterChainData filter_chain_data;
+      } filter_chain_data;
 
       bool operator==(const FilterChain& other) const {
         return filter_chain_match == other.filter_chain_match &&

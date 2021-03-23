@@ -632,8 +632,8 @@ std::string XdsApi::LdsUpdate::FilterChain::ToString() const {
   return absl::StrFormat(
       "{filter_chain_match=%s, downstream_tls_context=%s, "
       "http_connection_manager=%s}",
-      filter_chain_match.ToString(), downstream_tls_context.ToString(),
-      http_connection_manager.ToString());
+      filter_chain_match.ToString(), filter_chain_data.downstream_tls_context.ToString(),
+      filter_chain_data.http_connection_manager.ToString());
 }
 
 //
@@ -2166,7 +2166,7 @@ grpc_error* FilterChainParse(
   }
   error = HttpConnectionManagerParse(false /* is_client */, context,
                                      http_connection_manager, is_v2,
-                                     &filter_chain->http_connection_manager);
+                                     &filter_chain->filter_chain_data.http_connection_manager);
   if (error != GRPC_ERROR_NONE) return error;
   // Get the DownstreamTlsContext for the filter chain
   if (XdsSecurityEnabled()) {
@@ -2175,7 +2175,7 @@ grpc_error* FilterChainParse(
             filter_chain_proto);
     if (transport_socket != nullptr) {
       error = DownstreamTlsContextParse(context, transport_socket,
-                                        &filter_chain->downstream_tls_context);
+                                        &filter_chain->filter_chain_data.downstream_tls_context);
     }
   }
   return error;
