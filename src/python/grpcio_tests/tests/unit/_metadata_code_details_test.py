@@ -661,13 +661,13 @@ class MetadataCodeDetailsTest(unittest.TestCase):
 class _InspectServicer(_Servicer):
 
     def __init__(self):
-        super().__init__()
+        super(_InspectServicer, self).__init__()
         self.actual_code = None
         self.actual_details = None
         self.actual_trailing_metadata = None
 
     def unary_unary(self, request, context):
-        super().unary_unary(request, context)
+        super(_InspectServicer, self).unary_unary(request, context)
 
         self.actual_code = context.code()
         self.actual_details = context.details()
