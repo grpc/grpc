@@ -3461,6 +3461,32 @@ TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
             AdsServiceImpl::ResponseState::ACKED);
 }
 
+// Test that we NACK filters without configs.
+TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
+  auto listener = default_listener_;
+  HttpConnectionManager http_connection_manager;
+  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
+      &http_connection_manager);
+  auto* filter = http_connection_manager.add_http_filters();
+  filter->set_name("unknown");
+  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
+      http_connection_manager);
+  SetListenerAndRouteConfiguration(0, listener, default_route_config_);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  // Wait until xDS server sees NACK.
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr(
+                  "no filter config specified for filter name unknown"));
+}
+
 // Test that we ignore optional filters without configs.
 TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
   auto listener = default_listener_;
