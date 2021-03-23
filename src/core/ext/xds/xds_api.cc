@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -90,7 +88,6 @@
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/slice/slice_utils.h"
 
 namespace grpc_core {
@@ -2195,32 +2192,6 @@ grpc_error* AddressParse(const envoy_config_core_v3_Address* address_proto,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* ParseCidrRangeToGrpcResolvedAddress(
-    const XdsApi::LdsUpdate::FilterChain::FilterChainMatch::CidrRange&
-        cidr_range,
-    grpc_resolved_address* address) {
-  memset(address, 0, sizeof(grpc_resolved_address));
-  grpc_sockaddr_in6* addr6 =
-      reinterpret_cast<grpc_sockaddr_in6*>(address->addr);
-  grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(address->addr);
-  if (grpc_inet_pton(GRPC_AF_INET6, cidr_range.address_prefix.c_str(),
-                     &addr6->sin6_addr) == 1) {
-    addr6->sin6_family = GRPC_AF_INET6;
-    address->len = sizeof(grpc_sockaddr_in6);
-  } else if (grpc_inet_pton(GRPC_AF_INET, cidr_range.address_prefix.c_str(),
-                            &addr4->sin_addr) == 1) {
-    addr4->sin_family = GRPC_AF_INET;
-    address->len = sizeof(grpc_sockaddr_in);
-  } else {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Failed to parse CidrAddress:", cidr_range.address_prefix)
-            .c_str());
-  }
-  // Normalize the network address by masking it with prefix_len
-  grpc_sockaddr_mask_bits(address, cidr_range.prefix_len);
-  return GRPC_ERROR_NONE;
-}
-
 grpc_error* AddFilterChainDataForSourcePort(
     std::shared_ptr<XdsApi::LdsUpdate::FilterChain::FilterChainData>
         filter_chain_data,
@@ -2269,32 +2240,6 @@ grpc_error* AddFilterChainDataForSourceIpRange(
         filter_chain_match, std::move(filter_chain_data),
         &insert_result.first->second.ports_map);
     if (error != GRPC_ERROR_NONE) return error;
-  } else {
-    for (const auto& prefix_range : filter_chain_match.source_prefix_ranges) {
-      grpc_resolved_address address;
-      grpc_error* error =
-          ParseCidrRangeToGrpcResolvedAddress(prefix_range, &address);
-      if (error != GRPC_ERROR_NONE) return error;
-      std::string normalized_address = grpc_sockaddr_to_string(&address, true);
-      uint32_t prefix_len = std::min(
-          prefix_range.prefix_len,
-          (reinterpret_cast<const grpc_sockaddr*>(address.addr))->sa_family ==
-                  GRPC_AF_INET
-              ? uint32_t(32)
-              : uint32_t(128));
-      std::pair<XdsApi::LdsUpdate::SourceIpMap::iterator, bool> insert_result =
-          source_ip_map->emplace(
-              absl::StrCat(normalized_address, "/", prefix_len),
-              XdsApi::LdsUpdate::SourceIp());
-      if (insert_result.second) {
-        insert_result.first->second.address = address;
-        insert_result.first->second.prefix_len = prefix_len;
-      }
-      error = AddFilterChainDataForSourcePorts(
-          filter_chain_match, filter_chain_data,
-          &insert_result.first->second.ports_map);
-      if (error != GRPC_ERROR_NONE) return error;
-    }
   }
   return GRPC_ERROR_NONE;
 }
@@ -2380,31 +2325,6 @@ grpc_error* AddFilterChainDataForDestinationIpRange(
     return AddFilterChainDataForServerNames(filter_chain_match,
                                             std::move(filter_chain_data),
                                             &insert_result.first->second);
-  } else {
-    for (const auto& prefix_range : filter_chain_match.prefix_ranges) {
-      grpc_resolved_address address;
-      grpc_error* error =
-          ParseCidrRangeToGrpcResolvedAddress(prefix_range, &address);
-      if (error != GRPC_ERROR_NONE) return error;
-      std::string normalized_address = grpc_sockaddr_to_string(&address, true);
-      uint32_t prefix_len = std::min(
-          prefix_range.prefix_len,
-          (reinterpret_cast<const grpc_sockaddr*>(address.addr))->sa_family ==
-                  GRPC_AF_INET
-              ? uint32_t(32)
-              : uint32_t(128));
-      std::pair<XdsApi::LdsUpdate::DestinationIpMap::iterator, bool>
-          insert_result = destination_ip_map->emplace(
-              absl::StrCat(normalized_address, "/", prefix_len),
-              XdsApi::LdsUpdate::DestinationIp());
-      if (insert_result.second) {
-        insert_result.first->second.address = address;
-        insert_result.first->second.prefix_len = prefix_len;
-      }
-      error = AddFilterChainDataForServerNames(
-          filter_chain_match, filter_chain_data, &insert_result.first->second);
-      if (error != GRPC_ERROR_NONE) return error;
-    }
   }
   return GRPC_ERROR_NONE;
 }

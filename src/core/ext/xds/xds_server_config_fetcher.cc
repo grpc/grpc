@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/sockaddr.h"
-
 #include "absl/strings/str_replace.h"
 
 #include "src/core/ext/xds/xds_certificate_provider.h"
@@ -27,7 +25,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/server.h"
@@ -93,24 +90,7 @@ class FilterChainMatchManager
       certificate_providers_map_ ABSL_GUARDED_BY(mu_);
 };
 
-bool IsLoopbackIp(const grpc_resolved_address* address) {
-  const grpc_sockaddr* sock_addr =
-      reinterpret_cast<const grpc_sockaddr*>(&address->addr);
-  if (sock_addr->sa_family == GRPC_AF_INET) {
-    const grpc_sockaddr_in* addr4 =
-        reinterpret_cast<const grpc_sockaddr_in*>(sock_addr);
-    if (addr4->sin_addr.s_addr == grpc_htonl(INADDR_LOOPBACK)) {
-      return true;
-    }
-    // IPv6
-  } else if (sock_addr->sa_family == GRPC_AF_INET6) {
-    const grpc_sockaddr_in6* addr6 =
-        reinterpret_cast<const grpc_sockaddr_in6*>(sock_addr);
-    if (memcmp(&addr6->sin6_addr, &in6addr_loopback,
-               sizeof(in6addr_loopback)) == 0) {
-      return true;
-    }
-  }
+bool IsLoopbackIp(const grpc_resolved_address* /* address */) {
   return false;
 }
 
