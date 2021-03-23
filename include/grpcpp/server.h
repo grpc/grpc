@@ -58,13 +58,13 @@ class ExternalConnectionAcceptorImpl;
 /// \a Server instances.
 class Server : public ServerInterface, private GrpcLibraryCodegen {
  public:
-  ~Server() override;
+  ~Server() ABSL_LOCKS_EXCLUDED(mu_) override;
 
   /// Block until the server shuts down.
   ///
   /// \warning The server must be either shutting down or some other thread must
   /// call \a Shutdown for this function to ever return.
-  void Wait() override;
+  void Wait() ABSL_LOCKS_EXCLUDED(mu_) override;
 
   /// Global callbacks are a set of hooks that are called when server
   /// events occur.  \a SetGlobalCallbacks method is used to register
@@ -179,6 +179,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
          int min_pollers, int max_pollers, int sync_cq_timeout_msec,
          std::vector<std::shared_ptr<internal::ExternalConnectionAcceptorImpl>>
              acceptors,
+         grpc_server_config_fetcher* server_config_fetcher = nullptr,
          grpc_resource_quota* server_rq = nullptr,
          std::vector<
              std::unique_ptr<experimental::ServerInterceptorFactoryInterface>>
@@ -201,6 +202,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
       std::unique_ptr<HealthCheckServiceInterface> service) {
     health_check_service_ = std::move(service);
   }
+
+  ContextAllocator* context_allocator() { return context_allocator_.get(); }
 
   /// NOTE: This method is not part of the public API for this class.
   bool health_check_service_disabled() const {
@@ -239,6 +242,12 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   /// ownership of theservice. The service must exist for the lifetime of the
   /// Server instance.
   void RegisterCallbackGenericService(CallbackGenericService* service) override;
+
+  void RegisterContextAllocator(
+      std::unique_ptr<ContextAllocator> context_allocator) {
+    context_allocator_ = std::move(context_allocator);
+  }
+
 #else
   /// NOTE: class experimental_registration_type is not part of the public API
   /// of this class
@@ -251,6 +260,11 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
     void RegisterCallbackGenericService(
         experimental::CallbackGenericService* service) override {
       server_->RegisterCallbackGenericService(service);
+    }
+
+    void RegisterContextAllocator(
+        std::unique_ptr<ContextAllocator> context_allocator) override {
+      server_->context_allocator_ = std::move(context_allocator);
     }
 
    private:
@@ -272,13 +286,14 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   void PerformOpsOnCall(internal::CallOpSetInterface* ops,
                         internal::Call* call) override;
 
-  void ShutdownInternal(gpr_timespec deadline) override;
+  void ShutdownInternal(gpr_timespec deadline)
+      ABSL_LOCKS_EXCLUDED(mu_) override;
 
   int max_receive_message_size() const override {
     return max_receive_message_size_;
   }
 
-  CompletionQueue* CallbackCQ() override;
+  CompletionQueue* CallbackCQ() ABSL_LOCKS_EXCLUDED(mu_) override;
 
   ServerInitializer* initializer();
 
@@ -286,8 +301,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // the ref count are the running state of the server (take a ref at start and
   // drop it at shutdown) and each running callback RPC.
   void Ref();
-  void UnrefWithPossibleNotify() /* LOCKS_EXCLUDED(mu_) */;
-  void UnrefAndWaitLocked() /* EXCLUSIVE_LOCKS_REQUIRED(mu_) */;
+  void UnrefWithPossibleNotify() ABSL_LOCKS_EXCLUDED(mu_);
+  void UnrefAndWaitLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::vector<std::shared_ptr<internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
@@ -321,10 +336,11 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // Server status
   internal::Mutex mu_;
   bool started_;
-  bool shutdown_;
-  bool shutdown_notified_;  // Was notify called on the shutdown_cv_
+  bool shutdown_ ABSL_GUARDED_BY(mu_);
+  bool shutdown_notified_
+      ABSL_GUARDED_BY(mu_);  // Was notify called on the shutdown_cv_
   internal::CondVar shutdown_done_cv_;
-  bool shutdown_done_ = false;
+  bool shutdown_done_ ABSL_GUARDED_BY(mu_) = false;
   std::atomic_int shutdown_refs_outstanding_{1};
 
   internal::CondVar shutdown_cv_;
@@ -340,6 +356,8 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   grpc_server* server_;
 
   std::unique_ptr<ServerInitializer> server_initializer_;
+
+  std::unique_ptr<ContextAllocator> context_allocator_;
 
   std::unique_ptr<HealthCheckServiceInterface> health_check_service_;
   bool health_check_service_disabled_;
@@ -362,7 +380,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // with this server (if any). It is set on the first call to CallbackCQ().
   // It is _not owned_ by the server; ownership belongs with its internal
   // shutdown callback tag (invoked when the CQ is fully shutdown).
-  CompletionQueue* callback_cq_ /* GUARDED_BY(mu_) */ = nullptr;
+  CompletionQueue* callback_cq_ ABSL_GUARDED_BY(mu_) = nullptr;
 
   // List of CQs passed in by user that must be Shutdown only after Server is
   // Shutdown.  Even though this is only used with NDEBUG, instantiate it in all

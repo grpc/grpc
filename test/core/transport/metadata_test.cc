@@ -23,6 +23,7 @@
 
 #include <string>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
 #include <grpc/grpc.h>
@@ -34,6 +35,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "test/core/util/test_config.h"
 
@@ -392,6 +394,67 @@ static void test_copied_static_metadata(bool dup_key, bool dup_value) {
   grpc_shutdown();
 }
 
+static void test_grpc_metadata_batch_get_value_with_absent_key(void) {
+  grpc_init();
+  grpc_metadata_batch metadata;
+  grpc_metadata_batch_init(&metadata);
+  std::string concatenated_value;
+  absl::optional<absl::string_view> value = grpc_metadata_batch_get_value(
+      &metadata, "absent_key", &concatenated_value);
+  GPR_ASSERT(value == absl::nullopt);
+  grpc_metadata_batch_destroy(&metadata);
+  grpc_shutdown();
+}
+
+static void test_grpc_metadata_batch_get_value_returns_one_value(void) {
+  grpc_init();
+  const char* kKey = "some_key";
+  const char* kValue = "some_value";
+  grpc_metadata_batch metadata;
+  grpc_metadata_batch_init(&metadata);
+  grpc_linked_mdelem storage;
+  storage.md = grpc_mdelem_from_slices(
+      grpc_slice_intern(grpc_slice_from_static_string(kKey)),
+      grpc_slice_intern(grpc_slice_from_static_string(kValue)));
+  GPR_ASSERT(grpc_metadata_batch_link_head(&metadata, &storage) ==
+             GRPC_ERROR_NONE);
+  std::string concatenated_value;
+  absl::optional<absl::string_view> value =
+      grpc_metadata_batch_get_value(&metadata, kKey, &concatenated_value);
+  GPR_ASSERT(value.has_value());
+  GPR_ASSERT(value.value() == kValue);
+  grpc_metadata_batch_destroy(&metadata);
+  grpc_shutdown();
+}
+
+static void test_grpc_metadata_batch_get_value_returns_multiple_values(void) {
+  grpc_init();
+  const char* kKey = "some_key";
+  const char* kValue1 = "value1";
+  const char* kValue2 = "value2";
+  grpc_metadata_batch metadata;
+  grpc_metadata_batch_init(&metadata);
+  grpc_linked_mdelem storage1;
+  storage1.md = grpc_mdelem_from_slices(
+      grpc_slice_intern(grpc_slice_from_static_string(kKey)),
+      grpc_slice_intern(grpc_slice_from_static_string(kValue1)));
+  GPR_ASSERT(grpc_metadata_batch_link_tail(&metadata, &storage1) ==
+             GRPC_ERROR_NONE);
+  grpc_linked_mdelem storage2;
+  storage2.md = grpc_mdelem_from_slices(
+      grpc_slice_intern(grpc_slice_from_static_string(kKey)),
+      grpc_slice_intern(grpc_slice_from_static_string(kValue2)));
+  GPR_ASSERT(grpc_metadata_batch_link_tail(&metadata, &storage2) ==
+             GRPC_ERROR_NONE);
+  std::string concatenated_value;
+  absl::optional<absl::string_view> value =
+      grpc_metadata_batch_get_value(&metadata, kKey, &concatenated_value);
+  GPR_ASSERT(value.has_value());
+  GPR_ASSERT(value.value() == absl::StrCat(kValue1, ",", kValue2));
+  grpc_metadata_batch_destroy(&metadata);
+  grpc_shutdown();
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -410,6 +473,9 @@ int main(int argc, char** argv) {
   test_things_stick_around();
   test_user_data_works();
   test_user_data_works_for_allocated_md();
+  test_grpc_metadata_batch_get_value_with_absent_key();
+  test_grpc_metadata_batch_get_value_returns_one_value();
+  test_grpc_metadata_batch_get_value_returns_multiple_values();
   grpc_shutdown();
   return 0;
 }

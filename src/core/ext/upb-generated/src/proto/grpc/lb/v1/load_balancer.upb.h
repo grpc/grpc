@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -61,6 +62,12 @@ UPB_INLINE grpc_lb_v1_LoadBalanceRequest *grpc_lb_v1_LoadBalanceRequest_parse(co
                         upb_arena *arena) {
   grpc_lb_v1_LoadBalanceRequest *ret = grpc_lb_v1_LoadBalanceRequest_new(arena);
   return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_LoadBalanceRequest_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE grpc_lb_v1_LoadBalanceRequest *grpc_lb_v1_LoadBalanceRequest_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  grpc_lb_v1_LoadBalanceRequest *ret = grpc_lb_v1_LoadBalanceRequest_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_LoadBalanceRequest_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *grpc_lb_v1_LoadBalanceRequest_serialize(const grpc_lb_v1_LoadBalanceRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_LoadBalanceRequest_msginit, arena, len);
@@ -113,6 +120,12 @@ UPB_INLINE grpc_lb_v1_InitialLoadBalanceRequest *grpc_lb_v1_InitialLoadBalanceRe
   grpc_lb_v1_InitialLoadBalanceRequest *ret = grpc_lb_v1_InitialLoadBalanceRequest_new(arena);
   return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_InitialLoadBalanceRequest_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE grpc_lb_v1_InitialLoadBalanceRequest *grpc_lb_v1_InitialLoadBalanceRequest_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  grpc_lb_v1_InitialLoadBalanceRequest *ret = grpc_lb_v1_InitialLoadBalanceRequest_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_InitialLoadBalanceRequest_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *grpc_lb_v1_InitialLoadBalanceRequest_serialize(const grpc_lb_v1_InitialLoadBalanceRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_InitialLoadBalanceRequest_msginit, arena, len);
 }
@@ -132,6 +145,12 @@ UPB_INLINE grpc_lb_v1_ClientStatsPerToken *grpc_lb_v1_ClientStatsPerToken_parse(
                         upb_arena *arena) {
   grpc_lb_v1_ClientStatsPerToken *ret = grpc_lb_v1_ClientStatsPerToken_new(arena);
   return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_ClientStatsPerToken_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE grpc_lb_v1_ClientStatsPerToken *grpc_lb_v1_ClientStatsPerToken_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  grpc_lb_v1_ClientStatsPerToken *ret = grpc_lb_v1_ClientStatsPerToken_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_ClientStatsPerToken_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *grpc_lb_v1_ClientStatsPerToken_serialize(const grpc_lb_v1_ClientStatsPerToken *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_ClientStatsPerToken_msginit, arena, len);
@@ -157,21 +176,28 @@ UPB_INLINE grpc_lb_v1_ClientStats *grpc_lb_v1_ClientStats_parse(const char *buf,
   grpc_lb_v1_ClientStats *ret = grpc_lb_v1_ClientStats_new(arena);
   return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_ClientStats_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE grpc_lb_v1_ClientStats *grpc_lb_v1_ClientStats_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  grpc_lb_v1_ClientStats *ret = grpc_lb_v1_ClientStats_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_ClientStats_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *grpc_lb_v1_ClientStats_serialize(const grpc_lb_v1_ClientStats *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_ClientStats_msginit, arena, len);
 }
 
-UPB_INLINE bool grpc_lb_v1_ClientStats_has_timestamp(const grpc_lb_v1_ClientStats *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(32, 32)); }
-UPB_INLINE const struct google_protobuf_Timestamp* grpc_lb_v1_ClientStats_timestamp(const grpc_lb_v1_ClientStats *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 32), const struct google_protobuf_Timestamp*); }
-UPB_INLINE int64_t grpc_lb_v1_ClientStats_num_calls_started(const grpc_lb_v1_ClientStats *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t); }
-UPB_INLINE int64_t grpc_lb_v1_ClientStats_num_calls_finished(const grpc_lb_v1_ClientStats *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t); }
-UPB_INLINE int64_t grpc_lb_v1_ClientStats_num_calls_finished_with_client_failed_to_send(const grpc_lb_v1_ClientStats *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int64_t); }
-UPB_INLINE int64_t grpc_lb_v1_ClientStats_num_calls_finished_known_received(const grpc_lb_v1_ClientStats *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), int64_t); }
-UPB_INLINE bool grpc_lb_v1_ClientStats_has_calls_finished_with_drop(const grpc_lb_v1_ClientStats *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(36, 40)); }
-UPB_INLINE const grpc_lb_v1_ClientStatsPerToken* const* grpc_lb_v1_ClientStats_calls_finished_with_drop(const grpc_lb_v1_ClientStats *msg, size_t *len) { return (const grpc_lb_v1_ClientStatsPerToken* const*)_upb_array_accessor(msg, UPB_SIZE(36, 40), len); }
+UPB_INLINE bool grpc_lb_v1_ClientStats_has_timestamp(const grpc_lb_v1_ClientStats *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct google_protobuf_Timestamp* grpc_lb_v1_ClientStats_timestamp(const grpc_lb_v1_ClientStats *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(40, 40), const struct google_protobuf_Timestamp*); }
+UPB_INLINE int64_t grpc_lb_v1_ClientStats_num_calls_started(const grpc_lb_v1_ClientStats *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t); }
+UPB_INLINE int64_t grpc_lb_v1_ClientStats_num_calls_finished(const grpc_lb_v1_ClientStats *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int64_t); }
+UPB_INLINE int64_t grpc_lb_v1_ClientStats_num_calls_finished_with_client_failed_to_send(const grpc_lb_v1_ClientStats *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(24, 24), int64_t); }
+UPB_INLINE int64_t grpc_lb_v1_ClientStats_num_calls_finished_known_received(const grpc_lb_v1_ClientStats *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(32, 32), int64_t); }
+UPB_INLINE bool grpc_lb_v1_ClientStats_has_calls_finished_with_drop(const grpc_lb_v1_ClientStats *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(44, 48)); }
+UPB_INLINE const grpc_lb_v1_ClientStatsPerToken* const* grpc_lb_v1_ClientStats_calls_finished_with_drop(const grpc_lb_v1_ClientStats *msg, size_t *len) { return (const grpc_lb_v1_ClientStatsPerToken* const*)_upb_array_accessor(msg, UPB_SIZE(44, 48), len); }
 
 UPB_INLINE void grpc_lb_v1_ClientStats_set_timestamp(grpc_lb_v1_ClientStats *msg, struct google_protobuf_Timestamp* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(32, 32), struct google_protobuf_Timestamp*) = value;
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(40, 40), struct google_protobuf_Timestamp*) = value;
 }
 UPB_INLINE struct google_protobuf_Timestamp* grpc_lb_v1_ClientStats_mutable_timestamp(grpc_lb_v1_ClientStats *msg, upb_arena *arena) {
   struct google_protobuf_Timestamp* sub = (struct google_protobuf_Timestamp*)grpc_lb_v1_ClientStats_timestamp(msg);
@@ -183,27 +209,27 @@ UPB_INLINE struct google_protobuf_Timestamp* grpc_lb_v1_ClientStats_mutable_time
   return sub;
 }
 UPB_INLINE void grpc_lb_v1_ClientStats_set_num_calls_started(grpc_lb_v1_ClientStats *msg, int64_t value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), int64_t) = value;
-}
-UPB_INLINE void grpc_lb_v1_ClientStats_set_num_calls_finished(grpc_lb_v1_ClientStats *msg, int64_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(8, 8), int64_t) = value;
 }
-UPB_INLINE void grpc_lb_v1_ClientStats_set_num_calls_finished_with_client_failed_to_send(grpc_lb_v1_ClientStats *msg, int64_t value) {
+UPB_INLINE void grpc_lb_v1_ClientStats_set_num_calls_finished(grpc_lb_v1_ClientStats *msg, int64_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(16, 16), int64_t) = value;
 }
-UPB_INLINE void grpc_lb_v1_ClientStats_set_num_calls_finished_known_received(grpc_lb_v1_ClientStats *msg, int64_t value) {
+UPB_INLINE void grpc_lb_v1_ClientStats_set_num_calls_finished_with_client_failed_to_send(grpc_lb_v1_ClientStats *msg, int64_t value) {
   *UPB_PTR_AT(msg, UPB_SIZE(24, 24), int64_t) = value;
 }
+UPB_INLINE void grpc_lb_v1_ClientStats_set_num_calls_finished_known_received(grpc_lb_v1_ClientStats *msg, int64_t value) {
+  *UPB_PTR_AT(msg, UPB_SIZE(32, 32), int64_t) = value;
+}
 UPB_INLINE grpc_lb_v1_ClientStatsPerToken** grpc_lb_v1_ClientStats_mutable_calls_finished_with_drop(grpc_lb_v1_ClientStats *msg, size_t *len) {
-  return (grpc_lb_v1_ClientStatsPerToken**)_upb_array_mutable_accessor(msg, UPB_SIZE(36, 40), len);
+  return (grpc_lb_v1_ClientStatsPerToken**)_upb_array_mutable_accessor(msg, UPB_SIZE(44, 48), len);
 }
 UPB_INLINE grpc_lb_v1_ClientStatsPerToken** grpc_lb_v1_ClientStats_resize_calls_finished_with_drop(grpc_lb_v1_ClientStats *msg, size_t len, upb_arena *arena) {
-  return (grpc_lb_v1_ClientStatsPerToken**)_upb_array_resize_accessor(msg, UPB_SIZE(36, 40), len, UPB_TYPE_MESSAGE, arena);
+  return (grpc_lb_v1_ClientStatsPerToken**)_upb_array_resize_accessor2(msg, UPB_SIZE(44, 48), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct grpc_lb_v1_ClientStatsPerToken* grpc_lb_v1_ClientStats_add_calls_finished_with_drop(grpc_lb_v1_ClientStats *msg, upb_arena *arena) {
   struct grpc_lb_v1_ClientStatsPerToken* sub = (struct grpc_lb_v1_ClientStatsPerToken*)_upb_msg_new(&grpc_lb_v1_ClientStatsPerToken_msginit, arena);
-  bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(36, 40), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(44, 48), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -217,6 +243,12 @@ UPB_INLINE grpc_lb_v1_LoadBalanceResponse *grpc_lb_v1_LoadBalanceResponse_parse(
                         upb_arena *arena) {
   grpc_lb_v1_LoadBalanceResponse *ret = grpc_lb_v1_LoadBalanceResponse_new(arena);
   return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_LoadBalanceResponse_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE grpc_lb_v1_LoadBalanceResponse *grpc_lb_v1_LoadBalanceResponse_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  grpc_lb_v1_LoadBalanceResponse *ret = grpc_lb_v1_LoadBalanceResponse_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_LoadBalanceResponse_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *grpc_lb_v1_LoadBalanceResponse_serialize(const grpc_lb_v1_LoadBalanceResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_LoadBalanceResponse_msginit, arena, len);
@@ -284,19 +316,26 @@ UPB_INLINE grpc_lb_v1_InitialLoadBalanceResponse *grpc_lb_v1_InitialLoadBalanceR
   grpc_lb_v1_InitialLoadBalanceResponse *ret = grpc_lb_v1_InitialLoadBalanceResponse_new(arena);
   return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_InitialLoadBalanceResponse_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE grpc_lb_v1_InitialLoadBalanceResponse *grpc_lb_v1_InitialLoadBalanceResponse_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  grpc_lb_v1_InitialLoadBalanceResponse *ret = grpc_lb_v1_InitialLoadBalanceResponse_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_InitialLoadBalanceResponse_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *grpc_lb_v1_InitialLoadBalanceResponse_serialize(const grpc_lb_v1_InitialLoadBalanceResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_InitialLoadBalanceResponse_msginit, arena, len);
 }
 
-UPB_INLINE upb_strview grpc_lb_v1_InitialLoadBalanceResponse_load_balancer_delegate(const grpc_lb_v1_InitialLoadBalanceResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview); }
-UPB_INLINE bool grpc_lb_v1_InitialLoadBalanceResponse_has_client_stats_report_interval(const grpc_lb_v1_InitialLoadBalanceResponse *msg) { return _upb_has_submsg_nohasbit(msg, UPB_SIZE(8, 16)); }
-UPB_INLINE const struct google_protobuf_Duration* grpc_lb_v1_InitialLoadBalanceResponse_client_stats_report_interval(const grpc_lb_v1_InitialLoadBalanceResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(8, 16), const struct google_protobuf_Duration*); }
+UPB_INLINE upb_strview grpc_lb_v1_InitialLoadBalanceResponse_load_balancer_delegate(const grpc_lb_v1_InitialLoadBalanceResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview); }
+UPB_INLINE bool grpc_lb_v1_InitialLoadBalanceResponse_has_client_stats_report_interval(const grpc_lb_v1_InitialLoadBalanceResponse *msg) { return _upb_hasbit(msg, 1); }
+UPB_INLINE const struct google_protobuf_Duration* grpc_lb_v1_InitialLoadBalanceResponse_client_stats_report_interval(const grpc_lb_v1_InitialLoadBalanceResponse *msg) { return *UPB_PTR_AT(msg, UPB_SIZE(12, 24), const struct google_protobuf_Duration*); }
 
 UPB_INLINE void grpc_lb_v1_InitialLoadBalanceResponse_set_load_balancer_delegate(grpc_lb_v1_InitialLoadBalanceResponse *msg, upb_strview value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(0, 0), upb_strview) = value;
+  *UPB_PTR_AT(msg, UPB_SIZE(4, 8), upb_strview) = value;
 }
 UPB_INLINE void grpc_lb_v1_InitialLoadBalanceResponse_set_client_stats_report_interval(grpc_lb_v1_InitialLoadBalanceResponse *msg, struct google_protobuf_Duration* value) {
-  *UPB_PTR_AT(msg, UPB_SIZE(8, 16), struct google_protobuf_Duration*) = value;
+  _upb_sethas(msg, 1);
+  *UPB_PTR_AT(msg, UPB_SIZE(12, 24), struct google_protobuf_Duration*) = value;
 }
 UPB_INLINE struct google_protobuf_Duration* grpc_lb_v1_InitialLoadBalanceResponse_mutable_client_stats_report_interval(grpc_lb_v1_InitialLoadBalanceResponse *msg, upb_arena *arena) {
   struct google_protobuf_Duration* sub = (struct google_protobuf_Duration*)grpc_lb_v1_InitialLoadBalanceResponse_client_stats_report_interval(msg);
@@ -318,6 +357,12 @@ UPB_INLINE grpc_lb_v1_ServerList *grpc_lb_v1_ServerList_parse(const char *buf, s
   grpc_lb_v1_ServerList *ret = grpc_lb_v1_ServerList_new(arena);
   return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_ServerList_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE grpc_lb_v1_ServerList *grpc_lb_v1_ServerList_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  grpc_lb_v1_ServerList *ret = grpc_lb_v1_ServerList_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_ServerList_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *grpc_lb_v1_ServerList_serialize(const grpc_lb_v1_ServerList *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_ServerList_msginit, arena, len);
 }
@@ -329,12 +374,12 @@ UPB_INLINE grpc_lb_v1_Server** grpc_lb_v1_ServerList_mutable_servers(grpc_lb_v1_
   return (grpc_lb_v1_Server**)_upb_array_mutable_accessor(msg, UPB_SIZE(0, 0), len);
 }
 UPB_INLINE grpc_lb_v1_Server** grpc_lb_v1_ServerList_resize_servers(grpc_lb_v1_ServerList *msg, size_t len, upb_arena *arena) {
-  return (grpc_lb_v1_Server**)_upb_array_resize_accessor(msg, UPB_SIZE(0, 0), len, UPB_TYPE_MESSAGE, arena);
+  return (grpc_lb_v1_Server**)_upb_array_resize_accessor2(msg, UPB_SIZE(0, 0), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct grpc_lb_v1_Server* grpc_lb_v1_ServerList_add_servers(grpc_lb_v1_ServerList *msg, upb_arena *arena) {
   struct grpc_lb_v1_Server* sub = (struct grpc_lb_v1_Server*)_upb_msg_new(&grpc_lb_v1_Server_msginit, arena);
-  bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(0, 0), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(0, 0), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
@@ -348,6 +393,12 @@ UPB_INLINE grpc_lb_v1_Server *grpc_lb_v1_Server_parse(const char *buf, size_t si
                         upb_arena *arena) {
   grpc_lb_v1_Server *ret = grpc_lb_v1_Server_new(arena);
   return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_Server_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE grpc_lb_v1_Server *grpc_lb_v1_Server_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  grpc_lb_v1_Server *ret = grpc_lb_v1_Server_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_Server_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *grpc_lb_v1_Server_serialize(const grpc_lb_v1_Server *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_Server_msginit, arena, len);
@@ -380,6 +431,12 @@ UPB_INLINE grpc_lb_v1_FallbackResponse *grpc_lb_v1_FallbackResponse_parse(const 
                         upb_arena *arena) {
   grpc_lb_v1_FallbackResponse *ret = grpc_lb_v1_FallbackResponse_new(arena);
   return (ret && upb_decode(buf, size, ret, &grpc_lb_v1_FallbackResponse_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE grpc_lb_v1_FallbackResponse *grpc_lb_v1_FallbackResponse_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  grpc_lb_v1_FallbackResponse *ret = grpc_lb_v1_FallbackResponse_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &grpc_lb_v1_FallbackResponse_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *grpc_lb_v1_FallbackResponse_serialize(const grpc_lb_v1_FallbackResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &grpc_lb_v1_FallbackResponse_msginit, arena, len);

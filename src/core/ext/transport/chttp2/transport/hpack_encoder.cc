@@ -104,7 +104,7 @@ struct SliceRefComparator {
 
 struct MetadataComparator {
   typedef grpc_mdelem Type;
-  static const grpc_mdelem Null() { return {0}; }
+  static grpc_mdelem Null() { return {0}; }
   static bool IsNull(const grpc_mdelem md) { return md.payload == 0; }
   static bool Equals(const grpc_mdelem md1, const grpc_mdelem md2) {
     return md1.payload == md2.payload;

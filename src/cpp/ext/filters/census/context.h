@@ -96,9 +96,8 @@ size_t ServerStatsDeserialize(const char* buf, size_t buf_size,
 // Deserialize the incoming SpanContext and generate a new server context based
 // on that. This new span will never be a root span. This should only be called
 // with a blank CensusContext as it overwrites it.
-void GenerateServerContext(absl::string_view tracing, absl::string_view stats,
-                           absl::string_view primary_role,
-                           absl::string_view method, CensusContext* context);
+void GenerateServerContext(absl::string_view tracing, absl::string_view method,
+                           CensusContext* context);
 
 // Creates a new client context that is by default a new root context.
 // If the current context is the default context then the newly created

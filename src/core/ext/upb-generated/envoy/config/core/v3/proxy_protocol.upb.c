@@ -10,7 +10,6 @@
 #include "upb/msg.h"
 #include "envoy/config/core/v3/proxy_protocol.upb.h"
 #include "udpa/annotations/status.upb.h"
-#include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
 
@@ -21,7 +20,7 @@ static const upb_msglayout_field envoy_config_core_v3_ProxyProtocolConfig__field
 const upb_msglayout envoy_config_core_v3_ProxyProtocolConfig_msginit = {
   NULL,
   &envoy_config_core_v3_ProxyProtocolConfig__fields[0],
-  UPB_SIZE(8, 8), 1, false,
+  UPB_SIZE(8, 8), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

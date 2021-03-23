@@ -394,8 +394,8 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
       for (int i = 1; i <= kNumMessagePingPongsPerCall; i++) {
         {
           grpc_core::MutexLock lock(&ping_pong_round_mu);
-          ping_pong_round_cv.Broadcast();
-          while (ping_pong_round != i) {
+          ping_pong_round_cv.SignalAll();
+          while (int(ping_pong_round) != i) {
             ping_pong_round_cv.Wait(&ping_pong_round_mu);
           }
         }
@@ -404,7 +404,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
         {
           grpc_core::MutexLock lock(&ping_pong_round_mu);
           ping_pongs_done++;
-          ping_pong_round_cv.Broadcast();
+          ping_pong_round_cv.SignalAll();
         }
       }
       gpr_log(GPR_DEBUG, "now receive status on call with server address:%s",
@@ -425,7 +425,7 @@ TEST(Pollers, TestReadabilityNotificationsDontGetStrandedOnOneCq) {
         ping_pong_round_cv.Wait(&ping_pong_round_mu);
       }
       ping_pong_round++;
-      ping_pong_round_cv.Broadcast();
+      ping_pong_round_cv.SignalAll();
       gpr_log(GPR_DEBUG, "initiate ping pong round: %ld", ping_pong_round);
     }
   }

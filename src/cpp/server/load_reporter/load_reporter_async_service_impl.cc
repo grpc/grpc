@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <inttypes.h>
+
 #include "absl/memory/memory.h"
 
 #include "src/cpp/server/load_reporter/load_reporter_async_service_impl.h"
@@ -169,7 +171,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnRequestDelivered(
   {
     grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.Unlock();
+      lock.Release();
       Shutdown(std::move(self), "OnRequestDelivered");
       return;
     }
@@ -216,18 +218,18 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnReadDone(
       load_report_interval_ms_ =
           static_cast<unsigned long>(load_report_interval.seconds() * 1000 +
                                      load_report_interval.nanos() / 1000);
-      gpr_log(
-          GPR_INFO,
-          "[LRS %p] Initial request received. Start load reporting (load "
-          "balanced host: %s, interval: %lu ms, lb_id_: %s, handler: %p)...",
-          service_, load_balanced_hostname_.c_str(), load_report_interval_ms_,
-          lb_id_.c_str(), this);
+      gpr_log(GPR_INFO,
+              "[LRS %p] Initial request received. Start load reporting (load "
+              "balanced host: %s, interval: %" PRIu64
+              " ms, lb_id_: %s, handler: %p)...",
+              service_, load_balanced_hostname_.c_str(),
+              load_report_interval_ms_, lb_id_.c_str(), this);
       SendReport(self, true /* ok */);
       // Expect this read to fail.
       {
         grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
         if (service_->shutdown_) {
-          lock.Unlock();
+          lock.Release();
           Shutdown(std::move(self), "OnReadDone");
           return;
         }
@@ -259,7 +261,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::ScheduleNextReport(
   {
     grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.Unlock();
+      lock.Release();
       Shutdown(std::move(self), "ScheduleNextReport");
       return;
     }
@@ -299,7 +301,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::SendReport(
   {
     grpc_core::ReleasableMutexLock lock(&service_->cq_shutdown_mu_);
     if (service_->shutdown_) {
-      lock.Unlock();
+      lock.Release();
       Shutdown(std::move(self), "SendReport");
       return;
     }
@@ -362,7 +364,7 @@ void LoadReporterAsyncServiceImpl::ReportLoadHandler::Shutdown(
 
 void LoadReporterAsyncServiceImpl::ReportLoadHandler::OnFinishDone(
     // NOLINTNEXTLINE(performance-unnecessary-value-param)
-    std::shared_ptr<ReportLoadHandler> self, bool ok) {
+    std::shared_ptr<ReportLoadHandler> /*self*/, bool ok) {
   if (ok) {
     gpr_log(GPR_INFO,
             "[LRS %p] Load reporting finished (lb_id_: %s, handler: %p).",

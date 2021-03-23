@@ -59,7 +59,7 @@ class FakeHandshakerService : public HandshakerService::Service {
       : expected_max_concurrent_rpcs_(expected_max_concurrent_rpcs) {}
 
   Status DoHandshake(
-      ServerContext* server_context,
+      ServerContext* /*server_context*/,
       ServerReaderWriter<HandshakerResp, HandshakerReq>* stream) override {
     ConcurrentRpcsCheck concurrent_rpcs_check(this);
     Status status;
@@ -236,6 +236,7 @@ class FakeHandshakerService : public HandshakerService::Service {
     result.mutable_local_identity()->set_service_account("local_identity");
     string key(1024, '\0');
     result.set_key_data(key);
+    result.set_max_frame_size(16384);
     result.mutable_peer_rpc_versions()->mutable_max_rpc_version()->set_major(2);
     result.mutable_peer_rpc_versions()->mutable_max_rpc_version()->set_minor(1);
     result.mutable_peer_rpc_versions()->mutable_min_rpc_version()->set_major(2);

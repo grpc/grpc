@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -36,6 +37,12 @@ UPB_INLINE google_rpc_Status *google_rpc_Status_parse(const char *buf, size_t si
   google_rpc_Status *ret = google_rpc_Status_new(arena);
   return (ret && upb_decode(buf, size, ret, &google_rpc_Status_msginit, arena)) ? ret : NULL;
 }
+UPB_INLINE google_rpc_Status *google_rpc_Status_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  google_rpc_Status *ret = google_rpc_Status_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &google_rpc_Status_msginit, arena, options))
+      ? ret : NULL;
+}
 UPB_INLINE char *google_rpc_Status_serialize(const google_rpc_Status *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_rpc_Status_msginit, arena, len);
 }
@@ -55,12 +62,12 @@ UPB_INLINE struct google_protobuf_Any** google_rpc_Status_mutable_details(google
   return (struct google_protobuf_Any**)_upb_array_mutable_accessor(msg, UPB_SIZE(12, 24), len);
 }
 UPB_INLINE struct google_protobuf_Any** google_rpc_Status_resize_details(google_rpc_Status *msg, size_t len, upb_arena *arena) {
-  return (struct google_protobuf_Any**)_upb_array_resize_accessor(msg, UPB_SIZE(12, 24), len, UPB_TYPE_MESSAGE, arena);
+  return (struct google_protobuf_Any**)_upb_array_resize_accessor2(msg, UPB_SIZE(12, 24), len, UPB_SIZE(2, 3), arena);
 }
 UPB_INLINE struct google_protobuf_Any* google_rpc_Status_add_details(google_rpc_Status *msg, upb_arena *arena) {
   struct google_protobuf_Any* sub = (struct google_protobuf_Any*)_upb_msg_new(&google_protobuf_Any_msginit, arena);
-  bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(12, 24), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+  bool ok = _upb_array_append_accessor2(
+      msg, UPB_SIZE(12, 24), UPB_SIZE(2, 3), &sub, arena);
   if (!ok) return NULL;
   return sub;
 }

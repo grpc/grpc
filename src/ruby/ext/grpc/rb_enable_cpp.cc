@@ -18,5 +18,5 @@
 
 #include <ruby/ruby.h>
 
-// This is a dummy C++ source file to trigger ruby extension builder to
+// This is a phony C++ source file to trigger ruby extension builder to
 // pick C++ rather than C linker to link with c++ library properly.

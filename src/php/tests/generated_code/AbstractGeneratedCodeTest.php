@@ -52,21 +52,17 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $this->assertTrue(is_string(self::$client->getTarget()));
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testClose()
     {
+        $this->expectException(\InvalidArgumentException::class);
         self::$client->close();
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidMetadata()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg, [' ' => 'abc123']);
     }
@@ -74,26 +70,37 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
     public function testMetadata()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, ['somekey' => ['abc123']]);
+        // $this->assertNotNull($call);
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
     public function testMetadataKey()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, ['somekey_-1' => ['abc123']]);
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
     public function testMetadataKeyWithDot()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, ['someKEY._-1' => ['abc123']]);
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testMetadataInvalidKey()
     {
+        $this->expectException(\InvalidArgumentException::class);
         $div_arg = new Math\DivArgs();
         $call = self::$client->Div($div_arg, ['(somekey)' => ['abc123']]);
     }
@@ -127,58 +134,60 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
     public function testCallCredentialsCallback()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, array(), array(
             'call_credentials_callback' => function ($context) {
                 return array();
             },
         ));
-        $call->cancel();
         list($response, $status) = $call->wait();
-        $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
 
-    public function testCallCredentialsCallback2()
+    public function testInsecureChannelCallCredentialsCallback()
     {
         $div_arg = new Math\DivArgs();
-        $call = self::$client->Div($div_arg);
-        $call_credentials = Grpc\CallCredentials::createFromPlugin(
-            function ($context) {
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
+        $client = new Math\MathClient(
+            getenv('GRPC_TEST_INSECURE_HOST'), [
+               'credentials' => Grpc\ChannelCredentials::createInsecure(),        
+            ]);
+        $call = $client->Div($div_arg, array(), array(
+            'call_credentials_callback' => function ($context) {
                 return array();
-            }
-        );
-        $call->setCallCredentials($call_credentials);
-        $call->cancel();
+            },
+        ));
         list($response, $status) = $call->wait();
-        $this->assertSame(\Grpc\STATUS_CANCELLED, $status->code);
+        $this->assertSame(\Grpc\STATUS_UNAUTHENTICATED, $status->code);
     }
 
-    /**
-     * @expectedException InvalidArgumentException
-     */
     public function testInvalidMethodName()
     {
-        $invalid_client = new DummyInvalidClient('host', [
+        $this->expectException(\InvalidArgumentException::class);
+        $invalid_client = new PhonyInvalidClient('host', [
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
         ]);
         $div_arg = new Math\DivArgs();
         $invalid_client->InvalidUnaryCall($div_arg);
     }
 
-    /**
-     * @expectedException Exception
-     */
     public function testMissingCredentials()
     {
-        $invalid_client = new DummyInvalidClient('host', [
+        $this->expectException(\Exception::class);
+        $this->expectExceptionMessage("The opts['credentials'] key is now required.");
+        $invalid_client = new PhonyInvalidClient('host', [
         ]);
     }
 
     public function testPrimaryUserAgentString()
     {
-        $invalid_client = new DummyInvalidClient('host', [
+        $invalid_client = new PhonyInvalidClient('host', [
             'credentials' => Grpc\ChannelCredentials::createInsecure(),
             'grpc.primary_user_agent' => 'testUserAgent',
         ]);
+        $this->assertTrue(TRUE); // to avoid no assert warning
     }
 
     public function testWriteFlags()
@@ -289,9 +298,23 @@ abstract class AbstractGeneratedCodeTest extends \PHPUnit\Framework\TestCase
         $status = $call->getStatus();
         $this->assertSame(\Grpc\STATUS_OK, $status->code);
     }
+
+    public function testReuseCall()
+    {
+        $this->expectException(\LogicException::class);
+        $this->expectExceptionMessage("start_batch was called incorrectly");
+        $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
+        $call = self::$client->Div($div_arg, [], ['timeout' => 1000000]);
+
+        list($response, $status) = $call->wait();
+        $this->assertSame(\Grpc\STATUS_OK, $status->code);
+        list($response, $status) = $call->wait();
+    }
 }
 
-class DummyInvalidClient extends \Grpc\BaseStub
+class PhonyInvalidClient extends \Grpc\BaseStub
 {
     public function InvalidUnaryCall(\Math\DivArgs $argument,
                                      $metadata = [],

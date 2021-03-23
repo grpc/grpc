@@ -130,9 +130,9 @@ class ServiceA final {
       // MethodA2 trailing comment 1
       // Method A3 leading comment 1
       #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      virtual void MethodA3(::grpc::ClientContext* context, ::grpc::testing::Request* request, ::grpc::ClientReadReactor< ::grpc::testing::Response>* reactor) = 0;
+      virtual void MethodA3(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::ClientReadReactor< ::grpc::testing::Response>* reactor) = 0;
       #else
-      virtual void MethodA3(::grpc::ClientContext* context, ::grpc::testing::Request* request, ::grpc::experimental::ClientReadReactor< ::grpc::testing::Response>* reactor) = 0;
+      virtual void MethodA3(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::experimental::ClientReadReactor< ::grpc::testing::Response>* reactor) = 0;
       #endif
       // Method A3 trailing comment 1
       // Method A4 leading comment 1
@@ -215,9 +215,9 @@ class ServiceA final {
       void MethodA2(::grpc::ClientContext* context, ::grpc::testing::Response* response, ::grpc::experimental::ClientWriteReactor< ::grpc::testing::Request>* reactor) override;
       #endif
       #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
-      void MethodA3(::grpc::ClientContext* context, ::grpc::testing::Request* request, ::grpc::ClientReadReactor< ::grpc::testing::Response>* reactor) override;
+      void MethodA3(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::ClientReadReactor< ::grpc::testing::Response>* reactor) override;
       #else
-      void MethodA3(::grpc::ClientContext* context, ::grpc::testing::Request* request, ::grpc::experimental::ClientReadReactor< ::grpc::testing::Response>* reactor) override;
+      void MethodA3(::grpc::ClientContext* context, const ::grpc::testing::Request* request, ::grpc::experimental::ClientReadReactor< ::grpc::testing::Response>* reactor) override;
       #endif
       #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
       void MethodA4(::grpc::ClientContext* context, ::grpc::ClientBidiReactor< ::grpc::testing::Request,::grpc::testing::Response>* reactor) override;

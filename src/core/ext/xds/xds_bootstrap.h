@@ -29,7 +29,6 @@
 #include <grpc/slice.h>
 
 #include "src/core/ext/xds/certificate_provider_store.h"
-#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
@@ -55,7 +54,7 @@ class XdsBootstrap {
     std::string cluster;
     std::string locality_region;
     std::string locality_zone;
-    std::string locality_subzone;
+    std::string locality_sub_zone;
     Json metadata;
   };
 
@@ -68,11 +67,19 @@ class XdsBootstrap {
     bool ShouldUseV3() const;
   };
 
+  // Creates bootstrap object, obtaining the bootstrap JSON as appropriate
+  // for the environment:
+  // - If the GRPC_XDS_BOOTSTRAP env var is set, reads the file it specifies
+  //   to obtain the bootstrap JSON.
+  // - Otherwise, if the GRPC_XDS_BOOTSTRAP_CONFIG env var is set, reads the
+  //   content of that env var to obtain the bootstrap JSON.
+  // - Otherwise, the JSON will be read from fallback_config (if non-null).
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
-  // error reading the file.
-  static std::unique_ptr<XdsBootstrap> ReadFromFile(XdsClient* client,
-                                                    TraceFlag* tracer,
-                                                    grpc_error** error);
+  // error (e.g., no config found or error reading the file).
+  static std::unique_ptr<XdsBootstrap> Create(XdsClient* client,
+                                              TraceFlag* tracer,
+                                              const char* fallback_config,
+                                              grpc_error** error);
 
   // Do not instantiate directly -- use ReadFromFile() above instead.
   XdsBootstrap(Json json, grpc_error** error);
@@ -81,6 +88,9 @@ class XdsBootstrap {
   // add support for fallback for the xds channel.
   const XdsServer& server() const { return servers_[0]; }
   const Node* node() const { return node_.get(); }
+  const std::string& server_listener_resource_name_template() const {
+    return server_listener_resource_name_template_;
+  }
 
   const CertificateProviderStore::PluginDefinitionMap& certificate_providers()
       const {
@@ -101,6 +111,7 @@ class XdsBootstrap {
 
   absl::InlinedVector<XdsServer, 1> servers_;
   std::unique_ptr<Node> node_;
+  std::string server_listener_resource_name_template_;
   CertificateProviderStore::PluginDefinitionMap certificate_providers_;
 };
 

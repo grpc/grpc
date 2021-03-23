@@ -205,7 +205,7 @@ TEST_F(MockCallbackTest, MockedCallSucceedsWithWait) {
 
   req.set_message("mock 1");
   auto* reactor = service_.Echo(&ctx, &req, &resp);
-  cv.WaitUntil(&mu, [&] {
+  grpc::internal::WaitUntil(&cv, &mu, [&] {
     grpc::internal::MutexLock l(&mu);
     return status_set;
   });
@@ -288,7 +288,7 @@ class TestServiceImpl : public EchoTestService::Service {
   }
 
  private:
-  const vector<std::string> split(const std::string& input) {
+  vector<std::string> split(const std::string& input) {
     std::string buff("");
     vector<std::string> result;
 

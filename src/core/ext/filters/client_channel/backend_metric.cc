@@ -23,20 +23,18 @@
 #include "udpa/data/orca/v1/orca_load_report.upb.h"
 #include "upb/upb.hpp"
 
-#include "src/core/lib/gprpp/map.h"
-
 namespace grpc_core {
 
 namespace {
 
 template <typename EntryType>
-std::map<absl::string_view, double, StringLess> ParseMap(
+std::map<absl::string_view, double> ParseMap(
     udpa_data_orca_v1_OrcaLoadReport* msg,
     const EntryType* (*entry_func)(const udpa_data_orca_v1_OrcaLoadReport*,
                                    size_t*),
     upb_strview (*key_func)(const EntryType*),
     double (*value_func)(const EntryType*), Arena* arena) {
-  std::map<absl::string_view, double, StringLess> result;
+  std::map<absl::string_view, double> result;
   size_t i = UPB_MAP_BEGIN;
   while (true) {
     const auto* entry = entry_func(msg, &i);

@@ -1,5 +1,5 @@
 
-#include "upb/upb.h"
+#include "upb/upb.int.h"
 
 #include <errno.h>
 #include <stdarg.h>
@@ -40,7 +40,7 @@ void upb_status_seterrf(upb_status *status, const char *fmt, ...) {
 void upb_status_vseterrf(upb_status *status, const char *fmt, va_list args) {
   if (!status) return;
   status->ok = false;
-  _upb_vsnprintf(status->msg, sizeof(status->msg), fmt, args);
+  vsnprintf(status->msg, sizeof(status->msg), fmt, args);
   status->msg[UPB_STATUS_MAX_MESSAGE - 1] = '\0';
 }
 
@@ -49,7 +49,7 @@ void upb_status_vappenderrf(upb_status *status, const char *fmt, va_list args) {
   if (!status) return;
   status->ok = false;
   len = strlen(status->msg);
-  _upb_vsnprintf(status->msg + len, sizeof(status->msg) - len, fmt, args);
+  vsnprintf(status->msg + len, sizeof(status->msg) - len, fmt, args);
   status->msg[UPB_STATUS_MAX_MESSAGE - 1] = '\0';
 }
 
@@ -73,36 +73,17 @@ upb_alloc upb_alloc_global = {&upb_global_allocfunc};
 
 /* Be conservative and choose 16 in case anyone is using SSE. */
 
-typedef struct mem_block {
+struct mem_block {
   struct mem_block *next;
   uint32_t size;
   uint32_t cleanups;
   /* Data follows. */
-} mem_block;
+};
 
 typedef struct cleanup_ent {
   upb_cleanup_func *cleanup;
   void *ud;
 } cleanup_ent;
-
-struct upb_arena {
-  _upb_arena_head head;
-  uint32_t *cleanups;
-
-  /* Allocator to allocate arena blocks.  We are responsible for freeing these
-   * when we are destroyed. */
-  upb_alloc *block_alloc;
-  uint32_t last_size;
-
-  /* When multiple arenas are fused together, each arena points to a parent
-   * arena (root points to itself). The root tracks how many live arenas
-   * reference it. */
-  uint32_t refcount;  /* Only used when a->parent == a */
-  struct upb_arena *parent;
-
-  /* Linked list of blocks to free/cleanup. */
-  mem_block *freelist, *freelist_tail;
-};
 
 static const size_t memblock_reserve = UPB_ALIGN_UP(sizeof(mem_block), 16);
 
@@ -117,9 +98,9 @@ static upb_arena *arena_findroot(upb_arena *a) {
   return a;
 }
 
-static void upb_arena_addblock(upb_arena *a, void *ptr, size_t size) {
+static void upb_arena_addblock(upb_arena *a, upb_arena *root, void *ptr,
+                               size_t size) {
   mem_block *block = ptr;
-  upb_arena *root = arena_findroot(a);
 
   /* The block is for arena |a|, but should appear in the freelist of |root|. */
   block->next = root->freelist;
@@ -133,26 +114,22 @@ static void upb_arena_addblock(upb_arena *a, void *ptr, size_t size) {
   a->head.end = UPB_PTR_AT(block, size, char);
   a->cleanups = &block->cleanups;
 
-  /* TODO(haberman): ASAN poison. */
+  UPB_POISON_MEMORY_REGION(a->head.ptr, a->head.end - a->head.ptr);
 }
 
 static bool upb_arena_allocblock(upb_arena *a, size_t size) {
+  upb_arena *root = arena_findroot(a);
   size_t block_size = UPB_MAX(size, a->last_size * 2) + memblock_reserve;
-  mem_block *block = upb_malloc(a->block_alloc, block_size);
+  mem_block *block = upb_malloc(root->block_alloc, block_size);
 
   if (!block) return false;
-  upb_arena_addblock(a, block, block_size);
+  upb_arena_addblock(a, root, block, block_size);
   return true;
-}
-
-static bool arena_has(upb_arena *a, size_t size) {
-  _upb_arena_head *h = (_upb_arena_head*)a;
-  return (size_t)(h->end - h->ptr) >= size;
 }
 
 void *_upb_arena_slowmalloc(upb_arena *a, size_t size) {
   if (!upb_arena_allocblock(a, size)) return NULL;  /* Out of memory. */
-  UPB_ASSERT(arena_has(a, size));
+  UPB_ASSERT(_upb_arenahas(a) >= size);
   return upb_arena_malloc(a, size);
 }
 
@@ -184,7 +161,7 @@ upb_arena *arena_initslow(void *mem, size_t n, upb_alloc *alloc) {
   a->freelist = NULL;
   a->freelist_tail = NULL;
 
-  upb_arena_addblock(a, mem, n);
+  upb_arena_addblock(a, a, mem, n);
 
   return a;
 }
@@ -201,15 +178,14 @@ upb_arena *upb_arena_init(void *mem, size_t n, upb_alloc *alloc) {
   }
 
   a = UPB_PTR_AT(mem, n - sizeof(*a), upb_arena);
-  n -= sizeof(*a);
 
   a->head.alloc.func = &upb_arena_doalloc;
   a->block_alloc = alloc;
   a->parent = a;
   a->refcount = 1;
-  a->last_size = 128;
+  a->last_size = UPB_MAX(128, n);
   a->head.ptr = mem;
-  a->head.end = UPB_PTR_AT(mem, n, char);
+  a->head.end = UPB_PTR_AT(mem, n - sizeof(*a), char);
   a->freelist = NULL;
   a->cleanups = NULL;
 
@@ -247,14 +223,15 @@ void upb_arena_free(upb_arena *a) {
 bool upb_arena_addcleanup(upb_arena *a, void *ud, upb_cleanup_func *func) {
   cleanup_ent *ent;
 
-  if (!a->cleanups || !arena_has(a, sizeof(cleanup_ent))) {
+  if (!a->cleanups || _upb_arenahas(a) < sizeof(cleanup_ent)) {
     if (!upb_arena_allocblock(a, 128)) return false;  /* Out of memory. */
-    UPB_ASSERT(arena_has(a, sizeof(cleanup_ent)));
+    UPB_ASSERT(_upb_arenahas(a) >= sizeof(cleanup_ent));
   }
 
   a->head.end -= sizeof(cleanup_ent);
   ent = (cleanup_ent*)a->head.end;
   (*a->cleanups)++;
+  UPB_UNPOISON_MEMORY_REGION(ent, sizeof(cleanup_ent));
 
   ent->cleanup = func;
   ent->ud = ud;

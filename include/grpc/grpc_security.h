@@ -330,6 +330,14 @@ grpc_service_account_jwt_access_credentials_create(const char* json_key,
                                                    gpr_timespec token_lifetime,
                                                    void* reserved);
 
+/** Builds External Account credentials.
+ - json_string is the JSON string containing the credentials options.
+ - scopes_string contains the scopes to be binded with the credentials.
+   This API is used for experimental purposes for now and may change in the
+ future. */
+GRPCAPI grpc_call_credentials* grpc_external_account_credentials_create(
+    const char* json_string, const char* scopes_string);
+
 /** Creates an Oauth2 Refresh Token credentials object for connecting to Google.
    May return NULL if the input is invalid.
    WARNING: Do NOT use this credentials to connect to a non-google service as
@@ -848,8 +856,8 @@ GRPCAPI grpc_tls_credentials_options* grpc_tls_credentials_options_create(void);
 
 /**
  * Sets the options of whether to request and verify client certs. This should
- * be called only on the server side. It returns 1 on success and 0 on failure.
- * It is used for experimental purpose for now and subject to change.
+ * be called only on the server side. It is used for experimental purpose for
+ * now and subject to change.
  */
 GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
@@ -860,8 +868,7 @@ GRPCAPI void grpc_tls_credentials_options_set_cert_request_type(
  * hostname check, etc. This should be called only on the client side. If
  * |server_verification_option| is not GRPC_TLS_SERVER_VERIFICATION, use of a
  * custom authorization check (grpc_tls_server_authorization_check_config) is
- * mandatory. It returns 1 on success and 0 on failure. It is used for
- * experimental purpose for now and subject to change.
+ * mandatory. It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI void grpc_tls_credentials_options_set_server_verification_option(
     grpc_tls_credentials_options* options,
@@ -870,7 +877,6 @@ GRPCAPI void grpc_tls_credentials_options_set_server_verification_option(
 /**
  * Sets the credential provider in the options.
  * The |options| will implicitly take a new ref to the |provider|.
- * It returns 1 on success and 0 on failure.
  * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI void grpc_tls_credentials_options_set_certificate_provider(
@@ -879,8 +885,14 @@ GRPCAPI void grpc_tls_credentials_options_set_certificate_provider(
 
 /**
  * If set, gRPC stack will keep watching the root certificates with
- * name |root_cert_name|. It returns 1 on success and 0 on failure. It is used
- * for experimental purpose for now and subject to change.
+ * name |root_cert_name|.
+ * If this is not set on the client side, we will use the root certificates
+ * stored in the default system location, since client side must provide root
+ * certificates in TLS.
+ * If this is not set on the server side, we will not watch any root certificate
+ * updates, and assume no root certificates needed for the server(single-side
+ * TLS). Default root certs on the server side is not supported.
+ * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI void grpc_tls_credentials_options_watch_root_certs(
     grpc_tls_credentials_options* options);
@@ -895,8 +907,9 @@ GRPCAPI void grpc_tls_credentials_options_set_root_cert_name(
 
 /**
  * If set, gRPC stack will keep watching the identity key-cert pairs
- * with name |identity_cert_name|. It returns 1 on success and 0 on failure. It
- * is used for experimental purpose for now and subject to change.
+ * with name |identity_cert_name|.
+ * This is required on the server side, and optional on the client side.
+ * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
     grpc_tls_credentials_options* options);
@@ -912,8 +925,8 @@ GRPCAPI void grpc_tls_credentials_options_set_identity_cert_name(
 /**
  * Sets the configuration for a custom authorization check performed at the end
  * of the handshake. The |options| will implicitly take a new ref to the
- * |config|. It returns 1 on success and 0 on failure. It is used for
- * experimental purpose for now and subject to change.
+ * |config|.
+ * It is used for experimental purpose for now and subject to change.
  */
 GRPCAPI void grpc_tls_credentials_options_set_server_authorization_check_config(
     grpc_tls_credentials_options* options,

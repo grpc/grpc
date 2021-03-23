@@ -29,6 +29,8 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal sealed class NativeExtension
     {
+        // Enviroment variable can be used to force loading the native extension from given location.
+        private const string CsharpExtOverrideLocationEnvVarName = "GRPC_CSHARP_EXT_OVERRIDE_LOCATION";
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<NativeExtension>();
         static readonly object staticLock = new object();
         static volatile NativeExtension instance;
@@ -78,27 +80,86 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// Detects which configuration of native extension to load and load it.
+        /// Detects which configuration of native extension to load and explicitly loads the dynamic library.
+        /// The explicit load makes sure that we can detect any loading problems early on.
         /// </summary>
-        private static NativeMethods LoadNativeMethodsLegacyNetFramework()
+        private static NativeMethods LoadNativeMethodsUsingExplicitLoad()
         {
-            // TODO: allow customizing path to native extension (possibly through exposing a GrpcEnvironment property).
-            // See https://github.com/grpc/grpc/pull/7303 for one option.
+            // NOTE: a side effect of searching the native extension's library file relatively to the assembly location is that when Grpc.Core assembly
+            // is loaded via reflection from a different app's context, the native extension is still loaded correctly
+            // (while if we used [DllImport], the native extension won't be on the other app's search path for shared libraries).
             var assemblyDirectory = GetAssemblyDirectory();
 
             // With "classic" VS projects, the native libraries get copied using a .targets rule to the build output folder
             // alongside the compiled assembly.
+            // With dotnet SDK projects targeting net45 framework, the native libraries (just the required ones)
+            // are similarly copied to the built output folder, through the magic of Microsoft.NETCore.Platforms.
             var classicPath = Path.Combine(assemblyDirectory, GetNativeLibraryFilename());
 
-            // Look for the native library in all possible locations in given order.
-            string[] paths = new[] { classicPath };
+            // With dotnet SDK project targeting netcoreappX.Y, projects will use Grpc.Core assembly directly in the location where it got restored
+            // by nuget. We locate the native libraries based on known structure of Grpc.Core nuget package.
+            // When "dotnet publish" is used, the runtimes directory is copied next to the published assemblies.
+            string runtimesDirectory = string.Format("runtimes/{0}/native", GetRuntimeIdString());
+            var netCorePublishedAppStylePath = Path.Combine(assemblyDirectory, runtimesDirectory, GetNativeLibraryFilename());
+            var netCoreAppStylePath = Path.Combine(assemblyDirectory, "../..", runtimesDirectory, GetNativeLibraryFilename());
 
-            // TODO(jtattermusch): the UnmanagedLibrary mechanism for loading the native extension while avoiding
-            // direct use of DllImport is quite complicated and is currently only needed to cover some niche scenarios
-            // (such legacy .NET Framework projects that use assembly shadowing) - everything else can be covered
-            // by using the [DllImport]. We should investigate the possibility of eliminating UnmanagedLibrary completely
-            // in the future.
+            // Look for the native library in all possible locations in given order.
+            string[] paths = new[] { classicPath, netCorePublishedAppStylePath, netCoreAppStylePath};
+
+            // The UnmanagedLibrary mechanism for loading the native extension while avoiding
+            // direct use of DllImport is quite complicated but it is currently needed to ensure:
+            // 1.) the native extension is loaded eagerly (needed to avoid startup issues)
+            // 2.) less common scenarios (such as loading Grpc.Core.dll by reflection) still work
+            // 3.) loading native extension from an arbitrary location when set by an enviroment variable
+            // TODO(jtattermusch): revisit the possibility of eliminating UnmanagedLibrary completely in the future.
             return new NativeMethods(new UnmanagedLibrary(paths));
+        }
+
+        /// <summary>
+        /// Loads native methods using the <c>[DllImport(LIBRARY_NAME)]</c> attributes.
+        /// Note that this way of loading the native extension is "lazy" and doesn't
+        /// detect any "missing library" problems until we actually try to invoke the native methods
+        /// (which could be too late and could cause weird hangs at startup)
+        /// </summary>
+        private static NativeMethods LoadNativeMethodsUsingDllImports()
+        {
+            // While in theory, we could just use [DllImport("grpc_csharp_ext")] for all the platforms
+            // and operating systems, the native libraries in the nuget package
+            // need to be laid out in a way that still allows things to work well under
+            // the legacy .NET Framework (where native libraries are a concept unknown to the runtime).
+            // Therefore, we use several flavors of the DllImport attribute
+            // (e.g. the ".x86" vs ".x64" suffix) and we choose the one we want at runtime.
+            // The classes with the list of DllImport'd methods are code generated,
+            // so having more than just one doesn't really bother us.
+
+            // on Windows, the DllImport("grpc_csharp_ext.x64") doesn't work
+            // but DllImport("grpc_csharp_ext.x64.dll") does, so we need a special case for that.
+            // See https://github.com/dotnet/coreclr/pull/17505 (fixed in .NET Core 3.1+)
+            bool useDllSuffix = PlatformApis.IsWindows;
+            if (PlatformApis.ProcessArchitecture == CommonPlatformDetection.CpuArchitecture.X64)
+            {
+                if (useDllSuffix)
+                {
+                    return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x64_dll());
+                }
+                return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x64());
+            }
+            else if (PlatformApis.ProcessArchitecture == CommonPlatformDetection.CpuArchitecture.X86)
+            {
+                if (useDllSuffix)
+                {
+                    return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86_dll());
+                }
+                return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86());
+            }
+            else if (PlatformApis.ProcessArchitecture == CommonPlatformDetection.CpuArchitecture.Arm64)
+            {
+                return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_arm64());
+            }
+            else
+            {
+                throw new InvalidOperationException($"Unsupported architecture \"{PlatformApis.ProcessArchitecture}\".");
+            }
         }
 
         /// <summary>
@@ -114,43 +175,27 @@ namespace Grpc.Core.Internal
             {
                 return LoadNativeMethodsXamarin();
             }
-            if (PlatformApis.IsNetCore)
-            {
-                // On .NET Core, native libraries are a supported feature and the SDK makes
-                // sure that the native library is made available in the right location and that
-                // they will be discoverable by the [DllImport] default loading mechanism,
-                // even in some of the more exotic situations such as single file apps.
-                //
-                // While in theory, we could just [DllImport("grpc_csharp_ext")] for all the platforms
-                // and operating systems, the native libraries in the nuget package
-                // need to be laid out in a way that still allows things to work well under
-                // the legacy .NET Framework (where native libraries are a concept unknown to the runtime).
-                // Therefore, we use several flavors of the DllImport attribute
-                // (e.g. the ".x86" vs ".x64" suffix) and we choose the one we want at runtime.
-                // The classes with the list of DllImport'd methods are code generated,
-                // so having more than just one doesn't really bother us.
 
-                // on Windows, the DllImport("grpc_csharp_ext.x64") doesn't work for some reason,
-                // but DllImport("grpc_csharp_ext.x64.dll") does, so we need a special case for that.
-                bool useDllSuffix = PlatformApis.IsWindows;
-                if (PlatformApis.Is64Bit)
-                {
-                    if (useDllSuffix)
-                    {
-                        return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x64_dll());
-                    }
-                    return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x64());
-                }
-                else
-                {
-                    if (useDllSuffix)
-                    {
-                        return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86_dll());
-                    }
-                    return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86());
-                }
+            // Override location of grpc_csharp_ext native library with an environment variable
+            // Use at your own risk! By doing this you take all the responsibility that the dynamic library
+            // is of the correct version (needs to match the Grpc.Core assembly exactly) and of the correct platform/architecture.
+            var nativeExtPathFromEnv = System.Environment.GetEnvironmentVariable(CsharpExtOverrideLocationEnvVarName);
+            if (!string.IsNullOrEmpty(nativeExtPathFromEnv))
+            {
+                return new NativeMethods(new UnmanagedLibrary(new string[] { nativeExtPathFromEnv }));
             }
-            return LoadNativeMethodsLegacyNetFramework();
+
+            if (IsNet5SingleFileApp())
+            {
+                // Ideally we'd want to always load the native extension explicitly
+                // (to detect any potential problems early on and to avoid hard-to-debug startup issues)
+                // but the mechanism we normally use doesn't work when running
+                // as a single file app (see https://github.com/grpc/grpc/pull/24744).
+                // Therefore in this case we simply rely
+                // on the automatic [DllImport] loading logic to do the right thing.
+                return LoadNativeMethodsUsingDllImports();
+            }
+            return LoadNativeMethodsUsingExplicitLoad();
         }
 
         /// <summary>
@@ -194,13 +239,14 @@ namespace Grpc.Core.Internal
             // Assembly.EscapedCodeBase does not exist under CoreCLR, but assemblies imported from a nuget package
             // don't seem to be shadowed by DNX-based projects at all.
             var assemblyLocation = assembly.Location;
-            if (!string.IsNullOrEmpty(assemblyLocation))
+            if (string.IsNullOrEmpty(assemblyLocation))
             {
-                return Path.GetDirectoryName(assemblyLocation);
+                // In .NET5 single-file deployments, assembly.Location won't be available
+                // and we can use it for detecting whether we are running as a single file app.
+                // Also see https://docs.microsoft.com/en-us/dotnet/core/deploying/single-file#other-considerations
+                return null;
             }
-            // In .NET5 single-file deployments, assembly.Location won't be available
-            // Also see https://docs.microsoft.com/en-us/dotnet/core/deploying/single-file#other-considerations
-            return AppContext.BaseDirectory;
+            return Path.GetDirectoryName(assemblyLocation);
 #else
             // If assembly is shadowed (e.g. in a webapp), EscapedCodeBase is pointing
             // to the original location of the assembly, and Location is pointing
@@ -214,6 +260,12 @@ namespace Grpc.Core.Internal
             }
             return Path.GetDirectoryName(assembly.Location);
 #endif
+        }
+
+        private static bool IsNet5SingleFileApp()
+        {
+            // Use a heuristic that GetAssemblyDirectory() will return null for single file apps.
+            return PlatformApis.IsNet5OrHigher && GetAssemblyDirectory() == null;
         }
 
 #if !NETSTANDARD
@@ -241,16 +293,18 @@ namespace Grpc.Core.Internal
             throw new InvalidOperationException("Unsupported platform.");
         }
 
-        // Currently, only Intel platform is supported.
         private static string GetArchitectureString()
         {
-            if (PlatformApis.Is64Bit)
+            switch (PlatformApis.ProcessArchitecture)
             {
-                return "x64";
-            }
-            else
-            {
-                return "x86";
+                case CommonPlatformDetection.CpuArchitecture.X86:
+                  return "x86";
+                case CommonPlatformDetection.CpuArchitecture.X64:
+                  return "x64";
+                case CommonPlatformDetection.CpuArchitecture.Arm64:
+                  return "arm64";
+                default:
+                  throw new InvalidOperationException($"Unsupported architecture \"{PlatformApis.ProcessArchitecture}\".");
             }
         }
 

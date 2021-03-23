@@ -11,6 +11,16 @@ config_setting(
 )
 
 config_setting(
+    name = "darwin_arm64",
+    values = {"cpu": "darwin_arm64"},
+)
+
+config_setting(
+    name = "darwin_arm64e",
+    values = {"cpu": "darwin_arm64e"},
+)
+
+config_setting(
     name = "windows",
     values = {"cpu": "x64_windows"},
 )
@@ -99,6 +109,8 @@ copy_file(
         ":watchos_arm64_32": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":darwin": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":darwin_x86_64": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
+        ":darwin_arm64": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
+        ":darwin_arm64e": "@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h",
         ":windows": "@com_github_grpc_grpc//third_party/cares:config_windows/ares_config.h",
         ":android": "@com_github_grpc_grpc//third_party/cares:config_android/ares_config.h",
         "//conditions:default": "@com_github_grpc_grpc//third_party/cares:config_linux/ares_config.h",

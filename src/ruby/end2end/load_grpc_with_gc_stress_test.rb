@@ -25,7 +25,7 @@ GC.stress = 0x04
 
 require 'grpc'
 
-GRPC::Core::Channel.new('dummy_host', nil, :this_channel_is_insecure)
+GRPC::Core::Channel.new('phony_host', nil, :this_channel_is_insecure)
 GRPC::Core::Server.new({})
 GRPC::Core::ChannelCredentials.new
 GRPC::Core::CallCredentials.new(proc { |noop| noop })

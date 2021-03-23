@@ -430,10 +430,10 @@ static const NSTimeInterval kInvertedTimeout = 2;
   const double kMargin = 0.1;
 
   __weak XCTestExpectation *completion = [self expectationWithDescription:@"Timeout in a second."];
-  NSString *const kDummyAddress = [NSString stringWithFormat:@"127.0.0.1:10000"];
+  NSString *const kPhonyAddress = [NSString stringWithFormat:@"127.0.0.1:10000"];
   GRPCRequestOptions *requestOptions =
-      [[GRPCRequestOptions alloc] initWithHost:kDummyAddress
-                                          path:@"/dummy/path"
+      [[GRPCRequestOptions alloc] initWithHost:kPhonyAddress
+                                          path:@"/phony/path"
                                         safety:GRPCCallSafetyDefault];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.connectMinTimeout = timeout;

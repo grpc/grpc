@@ -33,7 +33,7 @@ tools/internal_ci/linux/run_if_c_cpp_modified.sh tools/profiling/microbenchmarks
   --no-counters \
   --pr_comment_name trickle || FAILED="true"
 
-# kill port_server.py to prevent the build from hanging
+# kill port_server.py to prevent the build from freezing
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
 
 if [ "$FAILED" != "" ]

@@ -21,14 +21,14 @@ static const upb_msglayout *const envoy_config_cluster_v3_Filter_submsgs[1] = {
 };
 
 static const upb_msglayout_field envoy_config_cluster_v3_Filter__fields[2] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {2, UPB_SIZE(12, 24), 1, 0, 11, 1},
 };
 
 const upb_msglayout envoy_config_cluster_v3_Filter_msginit = {
   &envoy_config_cluster_v3_Filter_submsgs[0],
   &envoy_config_cluster_v3_Filter__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 #include "upb/port_undef.inc"

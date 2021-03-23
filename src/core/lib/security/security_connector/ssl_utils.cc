@@ -41,11 +41,13 @@
 
 /* -- Constants. -- */
 
-#ifndef INSTALL_PREFIX
-static const char* installed_roots_path = "/usr/share/grpc/roots.pem";
-#else
+#if defined(GRPC_ROOT_PEM_PATH)
+static const char* installed_roots_path = GRPC_ROOT_PEM_PATH;
+#elif defined(INSTALL_PREFIX)
 static const char* installed_roots_path =
-    INSTALL_PREFIX "/share/grpc/roots.pem";
+    INSTALL_PREFIX "/usr/share/grpc/roots.pem";
+#else
+static const char* installed_roots_path = "/usr/share/grpc/roots.pem";
 #endif
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
@@ -395,6 +397,9 @@ grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
   const char* root_certs;
   const tsi_ssl_root_certs_store* root_store;
   if (pem_root_certs == nullptr) {
+    gpr_log(GPR_INFO,
+            "No root certificates specified; use ones stored in system default "
+            "locations instead");
     // Use default root certificates.
     root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
     if (root_certs == nullptr) {

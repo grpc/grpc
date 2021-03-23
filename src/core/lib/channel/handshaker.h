@@ -94,19 +94,6 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   HandshakeManager();
   ~HandshakeManager() override;
 
-  /// Add \a mgr to the server side list of all pending handshake managers, the
-  /// list starts with \a *head.
-  // Not thread-safe. Caller needs to synchronize.
-  void AddToPendingMgrList(HandshakeManager** head);
-
-  /// Remove \a mgr from the server side list of all pending handshake managers.
-  // Not thread-safe. Caller needs to synchronize.
-  void RemoveFromPendingMgrList(HandshakeManager** head);
-
-  /// Shutdown all pending handshake managers starting at head on the server
-  /// side. Not thread-safe. Caller needs to synchronize.
-  void ShutdownAllPending(grpc_error* why);
-
   /// Adds a handshaker to the handshake manager.
   /// Takes ownership of \a handshaker.
   void Add(RefCountedPtr<Handshaker> handshaker);
@@ -144,7 +131,7 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
 
   static const size_t HANDSHAKERS_INIT_SIZE = 2;
 
-  gpr_mu mu_;
+  Mutex mu_;
   bool is_shutdown_ = false;
   // An array of handshakers added via grpc_handshake_manager_add().
   absl::InlinedVector<RefCountedPtr<Handshaker>, HANDSHAKERS_INIT_SIZE>
@@ -161,10 +148,6 @@ class HandshakeManager : public RefCounted<HandshakeManager> {
   grpc_closure on_handshake_done_;
   // Handshaker args.
   HandshakerArgs args_;
-  // Links to the previous and next managers in a list of all pending handshakes
-  // Used at server side only.
-  HandshakeManager* prev_ = nullptr;
-  HandshakeManager* next_ = nullptr;
 };
 
 }  // namespace grpc_core

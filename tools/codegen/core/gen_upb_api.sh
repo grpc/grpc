@@ -25,22 +25,29 @@ if [ $# -eq 0 ]; then
   rm -rf $UPB_OUTPUT_DIR
   rm -rf $UPBDEFS_OUTPUT_DIR
   mkdir -p $UPB_OUTPUT_DIR
+  mkdir -p $UPBDEFS_OUTPUT_DIR
 else
   UPB_OUTPUT_DIR=$1/upb-generated
   UPBDEFS_OUTPUT_DIR=$1/upbdefs-generated
   mkdir $UPB_OUTPUT_DIR
+  mkdir $UPBDEFS_OUTPUT_DIR
 fi
 
 $bazel build @com_google_protobuf//:protoc
 PROTOC=$PWD/bazel-bin/external/com_google_protobuf/protoc
 
-$bazel build @upb//:protoc-gen-upb
-UPB_PLUGIN=$PWD/bazel-bin/external/upb/protoc-gen-upb
+$bazel build @upb//upbc:protoc-gen-upb
+UPB_PLUGIN=$PWD/bazel-bin/external/upb/upbc/protoc-gen-upb
+
+$bazel build @upb//upbc:protoc-gen-upbdefs
+UPBDEFS_PLUGIN=$PWD/bazel-bin/external/upb/upbc/protoc-gen-upbdefs
 
 proto_files=( \
+  "envoy/admin/v3/config_dump.proto" \
   "envoy/annotations/deprecation.proto" \
   "envoy/annotations/resource.proto" \
   "envoy/config/accesslog/v3/accesslog.proto" \
+  "envoy/config/bootstrap/v3/bootstrap.proto" \
   "envoy/config/cluster/v3/circuit_breaker.proto" \
   "envoy/config/cluster/v3/cluster.proto" \
   "envoy/config/cluster/v3/filter.proto" \
@@ -65,11 +72,17 @@ proto_files=( \
   "envoy/config/listener/v3/listener.proto" \
   "envoy/config/listener/v3/listener_components.proto" \
   "envoy/config/listener/v3/udp_listener_config.proto" \
+  "envoy/config/metrics/v3/stats.proto" \
+  "envoy/config/overload/v3/overload.proto" \
   "envoy/config/rbac/v3/rbac.proto" \
   "envoy/config/route/v3/route.proto" \
   "envoy/config/route/v3/route_components.proto" \
   "envoy/config/route/v3/scoped_route.proto" \
   "envoy/config/trace/v3/http_tracer.proto" \
+  "envoy/extensions/clusters/aggregate/v3/cluster.proto" \
+  "envoy/extensions/filters/http/router/v3/router.proto" \
+  "envoy/extensions/filters/common/fault/v3/fault.proto" \
+  "envoy/extensions/filters/http/fault/v3/fault.proto" \
   "envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.proto" \
   "envoy/extensions/transport_sockets/tls/v3/cert.proto" \
   "envoy/extensions/transport_sockets/tls/v3/common.proto" \
@@ -83,11 +96,14 @@ proto_files=( \
   "envoy/service/load_stats/v3/lrs.proto" \
   "envoy/service/route/v3/rds.proto" \
   "envoy/service/route/v3/srds.proto" \
+  "envoy/service/status/v3/csds.proto" \
   "envoy/type/matcher/v3/metadata.proto" \
+  "envoy/type/matcher/v3/node.proto" \
   "envoy/type/matcher/v3/number.proto" \
   "envoy/type/matcher/v3/path.proto" \
   "envoy/type/matcher/v3/regex.proto" \
   "envoy/type/matcher/v3/string.proto" \
+  "envoy/type/matcher/v3/struct.proto" \
   "envoy/type/matcher/v3/value.proto" \
   "envoy/type/metadata/v3/metadata.proto" \
   "envoy/type/tracing/v3/custom_tag.proto" \
@@ -107,6 +123,7 @@ proto_files=( \
   "google/protobuf/timestamp.proto" \
   "google/protobuf/wrappers.proto" \
   "google/rpc/status.proto" \
+  "src/proto/grpc/auth/v1/authz_policy.proto" \
   "src/proto/grpc/gcp/altscontext.proto" \
   "src/proto/grpc/gcp/handshaker.proto" \
   "src/proto/grpc/gcp/transport_security_common.proto" \
@@ -119,40 +136,36 @@ proto_files=( \
   "udpa/annotations/sensitive.proto" \
   "udpa/annotations/status.proto" \
   "udpa/annotations/versioning.proto" \
-  "udpa/core/v1/authority.proto" \
-  "udpa/core/v1/collection_entry.proto" \
-  "udpa/core/v1/context_params.proto" \
-  "udpa/core/v1/resource_locator.proto" \
-  "udpa/core/v1/resource_name.proto" \
-  "udpa/core/v1/resource.proto" \
+  "udpa/type/v1/typed_struct.proto" \
+  "xds/core/v3/authority.proto" \
+  "xds/core/v3/collection_entry.proto" \
+  "xds/core/v3/context_params.proto" \
+  "xds/core/v3/resource_locator.proto" \
+  "xds/core/v3/resource_name.proto" \
+  "xds/core/v3/resource.proto" \
   "validate/validate.proto")
+
+INCLUDE_OPTIONS="-I=$PWD/third_party/udpa \
+  -I=$PWD/third_party/envoy-api \
+  -I=$PWD/third_party/googleapis \
+  -I=$PWD/third_party/protobuf/src \
+  -I=$PWD/third_party/protoc-gen-validate \
+  -I=$PWD"
 
 for i in "${proto_files[@]}"
 do
   echo "Compiling: ${i}"
   $PROTOC \
-    -I=$PWD/third_party/udpa \
-    -I=$PWD/third_party/envoy-api \
-    -I=$PWD/third_party/googleapis \
-    -I=$PWD/third_party/protobuf/src \
-    -I=$PWD/third_party/protoc-gen-validate \
-    -I=$PWD \
+    $INCLUDE_OPTIONS \
     $i \
     --upb_out=$UPB_OUTPUT_DIR \
     --plugin=protoc-gen-upb=$UPB_PLUGIN
+  # In PHP build Makefile, the files with .upb.c suffix collide .upbdefs.c suffix due to a PHP buildsystem bug.
+  # Work around this by placing the generated files with ".upbdefs.h" and ".upbdefs.c" suffix under a different directory.
+  # See https://github.com/grpc/grpc/issues/23307
+  $PROTOC \
+    $INCLUDE_OPTIONS \
+    $i \
+    --upb_out=$UPBDEFS_OUTPUT_DIR \
+    --plugin=protoc-gen-upb=$UPBDEFS_PLUGIN    
 done
-
-# In PHP build Makefile, the files with .upb.c suffix collide .upbdefs.c suffix due to a PHP buildsystem bug.
-# Work around this by placing the generated files with ".upbdefs.h" and ".upbdefs.c" suffix under a different directory.
-# See https://github.com/grpc/grpc/issues/23307
-
-# move all .upbdefs.h and .upbdefs.c files from under src/core/ext/upb-generated to src/core/ext/upbdefs-generated
-cp -r $UPB_OUTPUT_DIR $UPBDEFS_OUTPUT_DIR
-
-# remove files that don't belong under upb-generated
-find $UPB_OUTPUT_DIR -name "*.upbdefs.c" -type f -delete
-find $UPB_OUTPUT_DIR -name "*.upbdefs.h" -type f -delete
-
-# remove files that don't belong under upbdefs-generated
-find $UPBDEFS_OUTPUT_DIR -name "*.upb.h" -type f -delete
-find $UPBDEFS_OUTPUT_DIR -name "*.upb.c" -type f -delete

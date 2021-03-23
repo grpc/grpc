@@ -212,7 +212,7 @@ void grpc_run_bad_client_test(
   grpc_server_start(a.server);
   transport = grpc_create_chttp2_transport(nullptr, sfd.server, false);
   server_setup_transport(&a, transport);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
   /* Bind fds to pollsets */
   grpc_endpoint_add_to_pollset(sfd.client, grpc_cq_pollset(client_cq));
@@ -263,10 +263,7 @@ bool client_connection_preface_validator(grpc_slice_buffer* incoming,
   }
   const uint8_t* p = GRPC_SLICE_START_PTR(slice);
   /* Check the frame type (SETTINGS) */
-  if (*(p + 3) != 4) {
-    return false;
-  }
-  return true;
+  return *(p + 3) == 4;
 }
 
 /* connection preface and settings frame to be sent by the client */

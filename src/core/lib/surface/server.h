@@ -49,21 +49,23 @@ class Server : public InternallyRefCounted<Server> {
   // An object to represent the most relevant characteristics of a
   // newly-allocated call object when using an AllocatingRequestMatcherBatch.
   struct BatchCallAllocation {
-    grpc_experimental_completion_queue_functor* tag;
+    void* tag;
     grpc_call** call;
     grpc_metadata_array* initial_metadata;
     grpc_call_details* details;
+    grpc_completion_queue* cq;
   };
 
   // An object to represent the most relevant characteristics of a
   // newly-allocated call object when using an
   // AllocatingRequestMatcherRegistered.
   struct RegisteredCallAllocation {
-    grpc_experimental_completion_queue_functor* tag;
+    void* tag;
     grpc_call** call;
     grpc_metadata_array* initial_metadata;
     gpr_timespec* deadline;
     grpc_byte_buffer** optional_payload;
+    grpc_completion_queue* cq;
   };
 
   /// Interface for listeners.
@@ -90,7 +92,7 @@ class Server : public InternallyRefCounted<Server> {
   explicit Server(const grpc_channel_args* args);
   ~Server() override;
 
-  void Orphan() override;
+  void Orphan() ABSL_LOCKS_EXCLUDED(mu_global_) override;
 
   const grpc_channel_args* channel_args() const { return channel_args_; }
   grpc_resource_user* default_resource_user() const {
@@ -103,7 +105,16 @@ class Server : public InternallyRefCounted<Server> {
   // result is valid for the lifetime of the server.
   const std::vector<grpc_pollset*>& pollsets() const { return pollsets_; }
 
-  bool HasOpenConnections();
+  grpc_server_config_fetcher* config_fetcher() const {
+    return config_fetcher_.get();
+  }
+
+  void set_config_fetcher(
+      std::unique_ptr<grpc_server_config_fetcher> config_fetcher) {
+    config_fetcher_ = std::move(config_fetcher);
+  }
+
+  bool HasOpenConnections() ABSL_LOCKS_EXCLUDED(mu_global_);
 
   // Adds a listener to the server.  When the server starts, it will call
   // the listener's Start() method, and when it shuts down, it will orphan
@@ -111,7 +122,7 @@ class Server : public InternallyRefCounted<Server> {
   void AddListener(OrphanablePtr<ListenerInterface> listener);
 
   // Starts listening for connections.
-  void Start();
+  void Start() ABSL_LOCKS_EXCLUDED(mu_global_);
 
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
@@ -149,9 +160,10 @@ class Server : public InternallyRefCounted<Server> {
       grpc_completion_queue* cq_bound_to_call,
       grpc_completion_queue* cq_for_notification, void* tag_new);
 
-  void ShutdownAndNotify(grpc_completion_queue* cq, void* tag);
+  void ShutdownAndNotify(grpc_completion_queue* cq, void* tag)
+      ABSL_LOCKS_EXCLUDED(mu_global_, mu_call_);
 
-  void CancelAllCalls();
+  void CancelAllCalls() ABSL_LOCKS_EXCLUDED(mu_global_);
 
  private:
   struct RequestedCall;
@@ -198,7 +210,7 @@ class Server : public InternallyRefCounted<Server> {
     static void AcceptStream(void* arg, grpc_transport* /*transport*/,
                              const void* transport_server_data);
 
-    void Destroy();
+    void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
 
     static void FinishDestroy(void* arg, grpc_error* error);
 
@@ -334,9 +346,11 @@ class Server : public InternallyRefCounted<Server> {
   void FailCall(size_t cq_idx, RequestedCall* rc, grpc_error* error);
   grpc_call_error QueueRequestedCall(size_t cq_idx, RequestedCall* rc);
 
-  void MaybeFinishShutdown();
+  void MaybeFinishShutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_)
+      ABSL_LOCKS_EXCLUDED(mu_call_);
 
-  void KillPendingWorkLocked(grpc_error* error);
+  void KillPendingWorkLocked(grpc_error* error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_call_);
 
   static grpc_call_error ValidateServerRequest(
       grpc_completion_queue* cq_for_notification, void* tag,
@@ -347,9 +361,43 @@ class Server : public InternallyRefCounted<Server> {
 
   std::vector<grpc_channel*> GetChannelsLocked() const;
 
+  // Take a shutdown ref for a request (increment by 2) and return if shutdown
+  // has already been called.
+  bool ShutdownRefOnRequest() {
+    int old_value = shutdown_refs_.FetchAdd(2, MemoryOrder::ACQ_REL);
+    return (old_value & 1) != 0;
+  }
+
+  // Decrement the shutdown ref counter by either 1 (for shutdown call) or 2
+  // (for in-flight request) and possibly call MaybeFinishShutdown if
+  // appropriate.
+  void ShutdownUnrefOnRequest() ABSL_LOCKS_EXCLUDED(mu_global_) {
+    if (shutdown_refs_.FetchSub(2, MemoryOrder::ACQ_REL) == 2) {
+      MutexLock lock(&mu_global_);
+      MaybeFinishShutdown();
+    }
+  }
+  void ShutdownUnrefOnShutdownCall() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_) {
+    if (shutdown_refs_.FetchSub(1, MemoryOrder::ACQ_REL) == 1) {
+      MaybeFinishShutdown();
+    }
+  }
+
+  bool ShutdownCalled() const {
+    return (shutdown_refs_.Load(MemoryOrder::ACQUIRE) & 1) == 0;
+  }
+
+  // Returns whether there are no more shutdown refs, which means that shutdown
+  // has been called and all accepted requests have been published if using an
+  // AllocatingRequestMatcher.
+  bool ShutdownReady() const {
+    return shutdown_refs_.Load(MemoryOrder::ACQUIRE) == 0;
+  }
+
   grpc_channel_args* const channel_args_;
   grpc_resource_user* default_resource_user_ = nullptr;
   RefCountedPtr<channelz::ServerNode> channelz_node_;
+  std::unique_ptr<grpc_server_config_fetcher> config_fetcher_;
 
   std::vector<grpc_completion_queue*> cqs_;
   std::vector<grpc_pollset*> pollsets_;
@@ -375,9 +423,15 @@ class Server : public InternallyRefCounted<Server> {
   // Request matcher for unregistered methods.
   std::unique_ptr<RequestMatcherInterface> unregistered_request_matcher_;
 
-  std::atomic_bool shutdown_flag_{false};
-  bool shutdown_published_ = false;
-  std::vector<ShutdownTag> shutdown_tags_;
+  // The shutdown refs counter tracks whether or not shutdown has been called
+  // and whether there are any AllocatingRequestMatcher requests that have been
+  // accepted but not yet started (+2 on each one). If shutdown has been called,
+  // the lowest bit will be 0 (defaults to 1) and the counter will be even. The
+  // server should not notify on shutdown until the counter is 0 (shutdown is
+  // called and there are no requests that are accepted but not started).
+  Atomic<int> shutdown_refs_{1};
+  bool shutdown_published_ ABSL_GUARDED_BY(mu_global_) = false;
+  std::vector<ShutdownTag> shutdown_tags_ ABSL_GUARDED_BY(mu_global_);
 
   std::list<ChannelData*> channels_;
 
@@ -392,6 +446,36 @@ class Server : public InternallyRefCounted<Server> {
 
 struct grpc_server {
   grpc_core::OrphanablePtr<grpc_core::Server> core_server;
+};
+
+// TODO(roth): Eventually, will need a way to modify configuration even after
+// a connection is established (e.g., to change things like L7 rate
+// limiting, RBAC, and fault injection configs).  One possible option
+// would be to do something like ServiceConfig and ConfigSelector, but
+// that might add unnecessary per-call overhead.  Need to consider other
+// approaches here.
+struct grpc_server_config_fetcher {
+ public:
+  class WatcherInterface {
+   public:
+    virtual ~WatcherInterface() = default;
+    // UpdateConfig() is invoked the config fetcher when a new config is
+    // available. Implementations should update the configuration and start
+    // serving if not already serving. Ownership of \a args is transferred.
+    virtual void UpdateConfig(grpc_channel_args* args) = 0;
+    // Implementations should stop serving when this is called. Serving should
+    // only resume when UpdateConfig() is invoked.
+    virtual void StopServing() = 0;
+  };
+
+  virtual ~grpc_server_config_fetcher() = default;
+
+  // Ownership of \a args is transferred.
+  virtual void StartWatch(std::string listening_address,
+                          grpc_channel_args* args,
+                          std::unique_ptr<WatcherInterface> watcher) = 0;
+  virtual void CancelWatch(WatcherInterface* watcher) = 0;
+  virtual grpc_pollset_set* interested_parties() = 0;
 };
 
 #endif /* GRPC_CORE_LIB_SURFACE_SERVER_H */

@@ -11,6 +11,7 @@
 
 #include "upb/msg.h"
 #include "upb/decode.h"
+#include "upb/decode_fast.h"
 #include "upb/encode.h"
 
 #include "upb/port_def.inc"
@@ -38,6 +39,12 @@ UPB_INLINE envoy_config_listener_v3_UdpListenerConfig *envoy_config_listener_v3_
                         upb_arena *arena) {
   envoy_config_listener_v3_UdpListenerConfig *ret = envoy_config_listener_v3_UdpListenerConfig_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_config_listener_v3_UdpListenerConfig_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_config_listener_v3_UdpListenerConfig *envoy_config_listener_v3_UdpListenerConfig_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_config_listener_v3_UdpListenerConfig *ret = envoy_config_listener_v3_UdpListenerConfig_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_listener_v3_UdpListenerConfig_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *envoy_config_listener_v3_UdpListenerConfig_serialize(const envoy_config_listener_v3_UdpListenerConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_listener_v3_UdpListenerConfig_msginit, arena, len);
@@ -78,6 +85,12 @@ UPB_INLINE envoy_config_listener_v3_ActiveRawUdpListenerConfig *envoy_config_lis
                         upb_arena *arena) {
   envoy_config_listener_v3_ActiveRawUdpListenerConfig *ret = envoy_config_listener_v3_ActiveRawUdpListenerConfig_new(arena);
   return (ret && upb_decode(buf, size, ret, &envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit, arena)) ? ret : NULL;
+}
+UPB_INLINE envoy_config_listener_v3_ActiveRawUdpListenerConfig *envoy_config_listener_v3_ActiveRawUdpListenerConfig_parse_ex(const char *buf, size_t size,
+                           upb_arena *arena, int options) {
+  envoy_config_listener_v3_ActiveRawUdpListenerConfig *ret = envoy_config_listener_v3_ActiveRawUdpListenerConfig_new(arena);
+  return (ret && _upb_decode(buf, size, ret, &envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit, arena, options))
+      ? ret : NULL;
 }
 UPB_INLINE char *envoy_config_listener_v3_ActiveRawUdpListenerConfig_serialize(const envoy_config_listener_v3_ActiveRawUdpListenerConfig *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_config_listener_v3_ActiveRawUdpListenerConfig_msginit, arena, len);

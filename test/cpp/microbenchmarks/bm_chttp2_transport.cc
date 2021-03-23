@@ -41,9 +41,9 @@
 // Helper classes
 //
 
-class DummyEndpoint : public grpc_endpoint {
+class PhonyEndpoint : public grpc_endpoint {
  public:
-  DummyEndpoint() {
+  PhonyEndpoint() {
     static const grpc_endpoint_vtable my_vtable = {read,
                                                    write,
                                                    add_to_pollset,
@@ -58,7 +58,7 @@ class DummyEndpoint : public grpc_endpoint {
                                                    can_track_err};
     grpc_endpoint::vtable = &my_vtable;
     ru_ = grpc_resource_user_create(LibraryInitializer::get().rq(),
-                                    "dummy_endpoint");
+                                    "phony_endpoint");
   }
 
   void PushInput(grpc_slice slice) {
@@ -94,7 +94,7 @@ class DummyEndpoint : public grpc_endpoint {
 
   static void read(grpc_endpoint* ep, grpc_slice_buffer* slices,
                    grpc_closure* cb, bool /*urgent*/) {
-    static_cast<DummyEndpoint*>(ep)->QueueRead(slices, cb);
+    static_cast<PhonyEndpoint*>(ep)->QueueRead(slices, cb);
   }
 
   static void write(grpc_endpoint* /*ep*/, grpc_slice_buffer* /*slices*/,
@@ -112,18 +112,18 @@ class DummyEndpoint : public grpc_endpoint {
                                       grpc_pollset_set* /*pollset*/) {}
 
   static void shutdown(grpc_endpoint* ep, grpc_error* why) {
-    grpc_resource_user_shutdown(static_cast<DummyEndpoint*>(ep)->ru_);
+    grpc_resource_user_shutdown(static_cast<PhonyEndpoint*>(ep)->ru_);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                            static_cast<DummyEndpoint*>(ep)->read_cb_, why);
+                            static_cast<PhonyEndpoint*>(ep)->read_cb_, why);
   }
 
   static void destroy(grpc_endpoint* ep) {
-    grpc_resource_user_unref(static_cast<DummyEndpoint*>(ep)->ru_);
-    delete static_cast<DummyEndpoint*>(ep);
+    grpc_resource_user_unref(static_cast<PhonyEndpoint*>(ep)->ru_);
+    delete static_cast<PhonyEndpoint*>(ep);
   }
 
   static grpc_resource_user* get_resource_user(grpc_endpoint* ep) {
-    return static_cast<DummyEndpoint*>(ep)->ru_;
+    return static_cast<PhonyEndpoint*>(ep)->ru_;
   }
   static absl::string_view get_peer(grpc_endpoint* /*ep*/) { return "test"; }
   static absl::string_view get_local_address(grpc_endpoint* /*ep*/) {
@@ -137,9 +137,9 @@ class Fixture {
  public:
   Fixture(const grpc::ChannelArguments& args, bool client) {
     grpc_channel_args c_args = args.c_channel_args();
-    ep_ = new DummyEndpoint;
+    ep_ = new PhonyEndpoint;
     t_ = grpc_create_chttp2_transport(&c_args, ep_, client);
-    grpc_chttp2_transport_start_reading(t_, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(t_, nullptr, nullptr, nullptr);
     FlushExecCtx();
   }
 
@@ -155,7 +155,7 @@ class Fixture {
   void PushInput(grpc_slice slice) { ep_->PushInput(slice); }
 
  private:
-  DummyEndpoint* ep_;
+  PhonyEndpoint* ep_;
   grpc_transport* t_;
 };
 

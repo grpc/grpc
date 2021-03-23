@@ -39,6 +39,9 @@ argp.add_argument('--dns_resolver_bin_path', default=None, type=str,
                   help=('Path to the DNS health check utility.'))
 argp.add_argument('--tcp_connect_bin_path', default=None, type=str,
                   help=('Path to the TCP health check utility.'))
+argp.add_argument('--extra_args', default='', type=str,
+                  help=('Comma-separate list of command args to '
+		        'plumb through to --test_bin_path'))
 args = argp.parse_args()
 
 def test_runner_log(msg):
@@ -77,9 +80,9 @@ def wait_until_dns_server_is_up(args,
           '--server_host', '127.0.0.1',
           '--server_port', str(args.dns_server_port)]),
           stdout=subprocess.PIPE)
-      dns_resolver_stdout, _ = dns_resolver_subprocess.communicate()
+      dns_resolver_stdout, _ = dns_resolver_subprocess.communicate(str.encode('ascii'))
       if dns_resolver_subprocess.returncode == 0:
-        if '123.123.123.123' in dns_resolver_stdout:
+        if '123.123.123.123'.encode('ascii') in dns_resolver_stdout:
           test_runner_log(('DNS server is up! '
                            'Successfully reached it over UDP and TCP.'))
         return
@@ -130,7 +133,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -147,7 +151,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -164,7 +169,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -181,7 +187,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -198,7 +205,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -215,7 +223,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -232,7 +241,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -249,7 +259,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -266,7 +277,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -283,7 +295,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -300,7 +313,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -317,7 +331,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -334,7 +349,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -351,7 +367,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -368,7 +385,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'False',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -385,7 +403,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'False',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -402,7 +421,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'False',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -419,7 +439,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'False',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -436,7 +457,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'False',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -453,7 +475,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'False',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -470,7 +493,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'False',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -487,7 +511,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'False',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -504,7 +529,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -521,7 +547,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -538,7 +565,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -555,7 +583,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -572,7 +601,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'True',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -589,7 +619,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'True',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1
@@ -606,7 +637,8 @@ current_test_subprocess = subprocess.Popen([
   '--enable_srv_queries', 'True',
   '--enable_txt_queries', 'True',
   '--inject_broken_nameserver_list', 'False',
-  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port])
+  '--local_dns_server_address', '127.0.0.1:%d' % args.dns_server_port
+  ] + args.extra_args.split(','))
 current_test_subprocess.communicate()
 if current_test_subprocess.returncode != 0:
   num_test_failures += 1

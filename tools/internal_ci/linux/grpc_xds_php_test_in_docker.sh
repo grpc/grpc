@@ -23,9 +23,9 @@ ${name}')
 cd /var/local/git/grpc
 
 VIRTUAL_ENV=$(mktemp -d)
-virtualenv "$VIRTUAL_ENV"
+virtualenv "$VIRTUAL_ENV" -p python3
 PYTHON="$VIRTUAL_ENV"/bin/python
-"$PYTHON" -m pip install --upgrade pip
+"$PYTHON" -m pip install --upgrade pip==19.3.1
 "$PYTHON" -m pip install --upgrade grpcio-tools google-api-python-client google-auth-httplib2 oauth2client
 
 # Prepare generated Python code.
@@ -70,12 +70,14 @@ export CC=/usr/bin/gcc
   composer install && \
   ./bin/generate_proto_php.sh)
 
-GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,eds_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
+GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb "$PYTHON" \
   tools/run_tests/run_xds_tests.py \
   --test_case="all,path_matching,header_matching" \
   --project_id=grpc-testing \
+  --project_num=830293263384 \
   --source_image=projects/grpc-testing/global/images/xds-test-server-2 \
   --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
   --gcp_suffix=$(date '+%s') \
   --verbose \
+  ${XDS_V3_OPT-} \
   --client_cmd='php -d extension=grpc.so -d extension=pthreads.so src/php/tests/interop/xds_client.php --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {fail_on_failed_rpc} {rpcs_to_send} {metadata_to_send}'

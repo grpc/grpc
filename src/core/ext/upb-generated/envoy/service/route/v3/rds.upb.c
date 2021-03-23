@@ -11,18 +11,16 @@
 #include "envoy/service/route/v3/rds.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "google/api/annotations.upb.h"
-#include "google/protobuf/wrappers.upb.h"
 #include "envoy/annotations/resource.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
-#include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
 
 const upb_msglayout envoy_service_route_v3_RdsDummy_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false,
+  UPB_SIZE(0, 0), 0, false, 255,
 };
 
 #include "upb/port_undef.inc"

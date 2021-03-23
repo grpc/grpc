@@ -34,13 +34,18 @@ trap cleanup EXIT
 function upload {
   local file="$1"
 
-  echo "Downloading https://${file}"
-  curl -L --fail --output "${tmpdir}/archive" "https://${file}"
+  if gsutil stat "gs://grpc-bazel-mirror/${file}" > /dev/null
+  then
+    echo "Skipping ${file}"
+  else
+    echo "Downloading https://${file}"
+    curl -L --fail --output "${tmpdir}/archive" "https://${file}"
 
-  echo "Uploading https://${file} to https://storage.googleapis.com/grpc-bazel-mirror/${file}"
-  gsutil cp -n "${tmpdir}/archive" "gs://grpc-bazel-mirror/${file}"  # "-n" will skip existing files
+    echo "Uploading https://${file} to https://storage.googleapis.com/grpc-bazel-mirror/${file}"
+    gsutil cp "${tmpdir}/archive" "gs://grpc-bazel-mirror/${file}"
 
-  rm -rf "${tmpdir}/archive"
+    rm -rf "${tmpdir}/archive"
+  fi
 }
 
 # How to check that all mirror URLs work:
@@ -59,6 +64,10 @@ upload github.com/bazelbuild/bazel/releases/download/1.0.0/bazel-1.0.0-windows-x
 upload github.com/bazelbuild/bazel/releases/download/2.2.0/bazel-2.2.0-linux-x86_64
 upload github.com/bazelbuild/bazel/releases/download/2.2.0/bazel-2.2.0-darwin-x86_64
 upload github.com/bazelbuild/bazel/releases/download/2.2.0/bazel-2.2.0-windows-x86_64.exe
+
+upload github.com/bazelbuild/bazel/releases/download/3.7.1/bazel-3.7.1-linux-x86_64
+upload github.com/bazelbuild/bazel/releases/download/3.7.1/bazel-3.7.1-darwin-x86_64
+upload github.com/bazelbuild/bazel/releases/download/3.7.1/bazel-3.7.1-windows-x86_64.exe
 
 # Collect the github archives to mirror from grpc_deps.bzl
 grep -o '"https://github.com/[^"]*"' bazel/grpc_deps.bzl | sed 's/^"https:\/\///' | sed 's/"$//' | while read -r line ; do

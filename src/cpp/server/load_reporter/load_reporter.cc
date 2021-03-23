@@ -18,6 +18,7 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <chrono>
@@ -227,7 +228,7 @@ std::string LoadReporter::GenerateLbId() {
     GPR_ASSERT(lb_id >= 0);
     // Convert to padded hex string for a 32-bit LB ID. E.g, "0000ca5b".
     char buf[kLbIdLength + 1];
-    snprintf(buf, sizeof(buf), "%08lx", lb_id);
+    snprintf(buf, sizeof(buf), "%08" PRIx64, lb_id);
     std::string lb_id_str(buf, kLbIdLength);
     // The client may send requests with LB ID that has never been allocated
     // by this load reporter. Those IDs are tracked and will be skipped when
@@ -278,7 +279,7 @@ LoadReporter::GenerateLoadBalancingFeedback() {
   double cpu_limit = newest->cpu_limit - oldest->cpu_limit;
   std::chrono::duration<double> duration_seconds =
       newest->end_time - oldest->end_time;
-  lock.Unlock();
+  lock.Release();
   ::grpc::lb::v1::LoadBalancingFeedback feedback;
   feedback.set_server_utilization(static_cast<float>(cpu_usage / cpu_limit));
   feedback.set_calls_per_second(

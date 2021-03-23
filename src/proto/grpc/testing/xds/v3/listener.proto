@@ -18,7 +18,11 @@ syntax = "proto3";
 
 package envoy.config.listener.v3;
 
+import "src/proto/grpc/testing/xds/v3/address.proto";
+import "src/proto/grpc/testing/xds/v3/base.proto";
+
 import "google/protobuf/any.proto";
+import "google/protobuf/wrappers.proto";
 
 // [#protodoc-title: Listener configuration]
 // Listener :ref:`configuration overview <config_listeners>`
@@ -37,12 +41,92 @@ message ApiListener {
   google.protobuf.Any api_listener = 1;
 }
 
+message Filter {
+  reserved 3;
+
+  // The name of the filter to instantiate. The name must match a
+  // :ref:`supported filter <config_network_filters>`.
+  string name = 1;
+
+  // [#extension-category: envoy.filters.network]
+  oneof config_type {
+    // Filter specific configuration which depends on the filter being
+    // instantiated. See the supported filters for further documentation.
+    google.protobuf.Any typed_config = 4;
+  }
+}
+
+message FilterChainMatch {
+  // If non-empty, a list of application protocols (e.g. ALPN for TLS protocol) to consider when
+  // determining a filter chain match. Those values will be compared against the application
+  // protocols of a new connection, when detected by one of the listener filters.
+  //
+  // Suggested values include:
+  //
+  // * ``http/1.1`` - set by :ref:`envoy.filters.listener.tls_inspector
+  //   <config_listener_filters_tls_inspector>`,
+  // * ``h2`` - set by :ref:`envoy.filters.listener.tls_inspector <config_listener_filters_tls_inspector>`
+  //
+  // .. attention::
+  //
+  //   Currently, only :ref:`TLS Inspector <config_listener_filters_tls_inspector>` provides
+  //   application protocol detection based on the requested
+  //   `ALPN <https://en.wikipedia.org/wiki/Application-Layer_Protocol_Negotiation>`_ values.
+  //
+  //   However, the use of ALPN is pretty much limited to the HTTP/2 traffic on the Internet,
+  //   and matching on values other than ``h2`` is going to lead to a lot of false negatives,
+  //   unless all connecting clients are known to use ALPN.
+  repeated string application_protocols = 10;
+}
+
+// A filter chain wraps a set of match criteria, an option TLS context, a set of filters, and
+// various other parameters.
+// [#next-free-field: 10]
+message FilterChain {
+  // The criteria to use when matching a connection to this filter chain.
+  FilterChainMatch filter_chain_match = 1;
+
+  // A list of individual network filters that make up the filter chain for
+  // connections established with the listener. Order matters as the filters are
+  // processed sequentially as connection events happen. Note: If the filter
+  // list is empty, the connection will close by default.
+  repeated Filter filters = 3; 
+
+  // Optional custom transport socket implementation to use for downstream connections.
+  // To setup TLS, set a transport socket with name `tls` and
+  // :ref:`DownstreamTlsContext <envoy_api_msg_extensions.transport_sockets.tls.v3.DownstreamTlsContext>` in the `typed_config`.
+  // If no transport socket configuration is specified, new connections
+  // will be set up with plaintext.
+  core.v3.TransportSocket transport_socket = 6;
+}
+
 // [#next-free-field: 23]
 message Listener {
   // The unique name by which this listener is known. If no name is provided,
   // Envoy will allocate an internal UUID for the listener. If the listener is to be dynamically
   // updated or removed via :ref:`LDS <config_listeners_lds>` a unique name must be provided.
   string name = 1;
+
+  // The address that the listener should listen on. In general, the address must be unique, though
+  // that is governed by the bind rules of the OS. E.g., multiple listeners can listen on port 0 on
+  // Linux as the actual port will be allocated by the OS.
+  core.v3.Address address = 2;
+
+  // A list of filter chains to consider for this listener. The
+  // :ref:`FilterChain <envoy_api_msg_config.listener.v3.FilterChain>` with the most specific
+  // :ref:`FilterChainMatch <envoy_api_msg_config.listener.v3.FilterChainMatch>` criteria is used on a
+  // connection.
+  //
+  // Example using SNI for filter chain selection can be found in the
+  // :ref:`FAQ entry <faq_how_to_setup_sni>`.
+  repeated FilterChain filter_chains = 3;
+
+  // If a connection is redirected using *iptables*, the port on which the proxy
+  // receives it might be different from the original destination address. When this flag is set to
+  // true, the listener hands off redirected connections to the listener associated with the
+  // original destination address. If there is no listener associated with the original destination
+  // address, the connection is handled by the listener that receives it. Defaults to false.
+  google.protobuf.BoolValue use_original_dst = 4;  
 
   // Used to represent an API listener, which is used in non-proxy clients. The type of API
   // exposed to the non-proxy application depends on the type of API listener.

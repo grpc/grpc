@@ -22,15 +22,15 @@ static const upb_msglayout *const envoy_type_matcher_v3_MetadataMatcher_submsgs[
 };
 
 static const upb_msglayout_field envoy_type_matcher_v3_MetadataMatcher__fields[3] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(12, 24), 0, 0, 11, 3},
-  {3, UPB_SIZE(8, 16), 0, 1, 11, 1},
+  {1, UPB_SIZE(4, 8), 0, 0, 9, 1},
+  {2, UPB_SIZE(16, 32), 0, 0, 11, 3},
+  {3, UPB_SIZE(12, 24), 1, 1, 11, 1},
 };
 
 const upb_msglayout envoy_type_matcher_v3_MetadataMatcher_msginit = {
   &envoy_type_matcher_v3_MetadataMatcher_submsgs[0],
   &envoy_type_matcher_v3_MetadataMatcher__fields[0],
-  UPB_SIZE(16, 32), 3, false,
+  UPB_SIZE(24, 48), 3, false, 255,
 };
 
 static const upb_msglayout_field envoy_type_matcher_v3_MetadataMatcher_PathSegment__fields[1] = {
@@ -40,7 +40,7 @@ static const upb_msglayout_field envoy_type_matcher_v3_MetadataMatcher_PathSegme
 const upb_msglayout envoy_type_matcher_v3_MetadataMatcher_PathSegment_msginit = {
   NULL,
   &envoy_type_matcher_v3_MetadataMatcher_PathSegment__fields[0],
-  UPB_SIZE(16, 32), 1, false,
+  UPB_SIZE(16, 32), 1, false, 255,
 };
 
 #include "upb/port_undef.inc"

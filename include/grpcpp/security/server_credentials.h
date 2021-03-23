@@ -67,9 +67,10 @@ std::shared_ptr<ServerCredentials> XdsServerCredentials(
 }  // namespace experimental
 
 /// Wrapper around \a grpc_server_credentials, a way to authenticate a server.
-class ServerCredentials {
+class ServerCredentials : private grpc::GrpcLibraryCodegen {
  public:
-  virtual ~ServerCredentials();
+  ServerCredentials();
+  ~ServerCredentials() override;
 
   /// This method is not thread-safe and has to be called before the server is
   /// started. The last call to this function wins.

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 # Copyright 2016 gRPC authors.
 #
@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
 import argparse
 import os
 import os.path
@@ -102,13 +101,15 @@ class GuardValidator(object):
         if not running_guard.endswith('_H'):
             fcontents = self.fail(fpath, match.re, match.string, match.group(1),
                                   valid_guard, fix)
-            if fix: save(fpath, fcontents)
+            if fix:
+                save(fpath, fcontents)
 
         # Is it the expected one based on the file path?
         if running_guard != valid_guard:
             fcontents = self.fail(fpath, match.re, match.string, match.group(1),
                                   valid_guard, fix)
-            if fix: save(fpath, fcontents)
+            if fix:
+                save(fpath, fcontents)
 
         # Is there a #define? Is it the same as the #ifndef one?
         match = self.define_re.search(fcontents)
@@ -121,7 +122,8 @@ class GuardValidator(object):
         if match.group(1) != running_guard:
             fcontents = self.fail(fpath, match.re, match.string, match.group(1),
                                   valid_guard, fix)
-            if fix: save(fpath, fcontents)
+            if fix:
+                save(fpath, fcontents)
 
         # Is there a properly commented #endif?
         flines = fcontents.rstrip().splitlines()
@@ -149,7 +151,8 @@ class GuardValidator(object):
             # Is the #endif guard the same as the #ifndef and #define guards?
             fcontents = self.fail(fpath, endif_re, fcontents, match.group(1),
                                   valid_guard, fix)
-            if fix: save(fpath, fcontents)
+            if fix:
+                save(fpath, fcontents)
 
         return not self.failed  # Did the check succeed? (ie, not failed)
 
@@ -177,7 +180,7 @@ ok = True
 filename_list = []
 try:
     filename_list = subprocess.check_output(FILE_LIST_COMMAND,
-                                            shell=True).splitlines()
+                                            shell=True).decode().splitlines()
     # Filter out non-existent files (ie, file removed or renamed)
     filename_list = (f for f in filename_list if os.path.isfile(f))
 except subprocess.CalledProcessError:

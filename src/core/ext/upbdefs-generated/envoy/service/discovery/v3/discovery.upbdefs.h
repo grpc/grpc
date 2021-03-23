@@ -51,6 +51,11 @@ UPB_INLINE const upb_msgdef *envoy_service_discovery_v3_Resource_getmsgdef(upb_s
   return upb_symtab_lookupmsg(s, "envoy.service.discovery.v3.Resource");
 }
 
+UPB_INLINE const upb_msgdef *envoy_service_discovery_v3_Resource_CacheControl_getmsgdef(upb_symtab *s) {
+  _upb_symtab_loaddefinit(s, &envoy_service_discovery_v3_discovery_proto_upbdefinit);
+  return upb_symtab_lookupmsg(s, "envoy.service.discovery.v3.Resource.CacheControl");
+}
+
 #ifdef __cplusplus
 }  /* extern "C" */
 #endif

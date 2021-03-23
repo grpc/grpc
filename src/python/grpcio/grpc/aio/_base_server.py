@@ -169,10 +169,11 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    async def abort(self,
-                    code: grpc.StatusCode,
-                    details: str = '',
-                    trailing_metadata: Metadata = tuple()) -> None:
+    async def abort(
+        self,
+        code: grpc.StatusCode,
+        details: str = '',
+        trailing_metadata: Metadata = tuple()) -> None:
         """Raises an exception to terminate the RPC with a non-OK status.
 
         The code and details passed as arguments will supercede any existing
@@ -293,4 +294,13 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
 
         Returns:
           A map of strings to an iterable of bytes for each auth property.
+        """
+
+    def time_remaining(self) -> float:
+        """Describes the length of allowed time remaining for the RPC.
+
+        Returns:
+          A nonnegative float indicating the length of allowed time in seconds
+          remaining for the RPC to complete before it is considered to have
+          timed out, or None if no deadline was specified for the RPC.
         """

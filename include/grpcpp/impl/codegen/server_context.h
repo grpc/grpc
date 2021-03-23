@@ -100,6 +100,7 @@ class CompletionQueue;
 class GenericServerContext;
 class Server;
 class ServerInterface;
+class ContextAllocator;
 
 // TODO(vjpai): Remove namespace experimental when de-experimentalized fully.
 namespace experimental {
@@ -340,6 +341,12 @@ class ServerContextBase {
   ServerContextBase();
   ServerContextBase(gpr_timespec deadline, grpc_metadata_array* arr);
 
+  void set_context_allocator(ContextAllocator* context_allocator) {
+    context_allocator_ = context_allocator;
+  }
+
+  ContextAllocator* context_allocator() const { return context_allocator_; }
+
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
   friend class ::grpc::testing::ServerContextTestSpouse;
@@ -463,6 +470,7 @@ class ServerContextBase {
 
   ::grpc::experimental::ServerRpcInfo* rpc_info_ = nullptr;
   ::grpc::experimental::RpcAllocatorState* message_allocator_state_ = nullptr;
+  ContextAllocator* context_allocator_ = nullptr;
 
   class Reactor : public ::grpc::ServerUnaryReactor {
    public:
@@ -590,12 +598,14 @@ class CallbackServerContext : public ServerContextBase {
   using ServerContextBase::compression_algorithm;
   using ServerContextBase::compression_level;
   using ServerContextBase::compression_level_set;
+  using ServerContextBase::context_allocator;
   using ServerContextBase::deadline;
   using ServerContextBase::IsCancelled;
   using ServerContextBase::peer;
   using ServerContextBase::raw_deadline;
   using ServerContextBase::set_compression_algorithm;
   using ServerContextBase::set_compression_level;
+  using ServerContextBase::set_context_allocator;
   using ServerContextBase::SetLoadReportingCosts;
   using ServerContextBase::TryCancel;
 
@@ -610,6 +620,37 @@ class CallbackServerContext : public ServerContextBase {
   /// Prevent copying.
   CallbackServerContext(const CallbackServerContext&) = delete;
   CallbackServerContext& operator=(const CallbackServerContext&) = delete;
+};
+
+/// A CallbackServerContext allows users to use the contents of the
+/// CallbackServerContext or GenericCallbackServerContext structure for the
+/// callback API.
+/// The library will invoke the allocator any time a new call is initiated.
+/// and call the Release method after the server OnDone.
+class ContextAllocator {
+ public:
+  virtual ~ContextAllocator() {}
+
+  virtual CallbackServerContext* NewCallbackServerContext() { return nullptr; }
+
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  virtual experimental::GenericCallbackServerContext*
+  NewGenericCallbackServerContext() {
+    return nullptr;
+  }
+#else
+  virtual GenericCallbackServerContext* NewGenericCallbackServerContext() {
+    return nullptr;
+  }
+#endif
+
+  virtual void Release(CallbackServerContext*) {}
+
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  virtual void Release(experimental::GenericCallbackServerContext*) {}
+#else
+  virtual void Release(GenericCallbackServerContext*) {}
+#endif
 };
 
 }  // namespace grpc

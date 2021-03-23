@@ -96,7 +96,8 @@ class Arena {
   //   where we wish to create an arena and then perform an immediate
   //   allocation.
   explicit Arena(size_t initial_size, size_t initial_alloc = 0)
-      : total_used_(initial_alloc), initial_zone_size_(initial_size) {}
+      : total_used_(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(initial_alloc)),
+        initial_zone_size_(initial_size) {}
 
   ~Arena();
 

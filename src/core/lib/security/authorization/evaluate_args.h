@@ -23,6 +23,8 @@
 
 #include <map>
 
+#include "absl/types/optional.h"
+
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -39,6 +41,15 @@ class EvaluateArgs {
   absl::string_view GetHost() const;
   absl::string_view GetMethod() const;
   std::multimap<absl::string_view, absl::string_view> GetHeaders() const;
+  // Returns metadata value(s) for the specified key.
+  // If the key is not present in the batch, returns absl::nullopt.
+  // If the key is present exactly once in the batch, returns a string_view of
+  // that value.
+  // If the key is present more than once in the batch, constructs a
+  // comma-concatenated string of all values in concatenated_value and returns a
+  // string_view of that string.
+  absl::optional<absl::string_view> GetHeaderValue(
+      absl::string_view key, std::string* concatenated_value) const;
   absl::string_view GetLocalAddress() const;
   int GetLocalPort() const;
   absl::string_view GetPeerAddress() const;

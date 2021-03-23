@@ -150,7 +150,7 @@ void bad_server_thread(void* vargs) {
   gpr_event_set(&args->ready, reinterpret_cast<void*>(1));
 
   gpr_mu_lock(args->mu);
-  while (args->stop.load(std::memory_order_acquire) == false) {
+  while (!args->stop.load(std::memory_order_acquire)) {
     grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() + 100;
 
     grpc_pollset_worker* worker = nullptr;

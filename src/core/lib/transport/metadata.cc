@@ -252,7 +252,7 @@ void grpc_mdctx_global_shutdown() {
     if (shard->count != 0) {
       gpr_log(GPR_ERROR, "WARNING: %" PRIuPTR " metadata elements were leaked",
               shard->count);
-      for (int i = 0; i < shard->capacity; i++) {
+      for (size_t i = 0; i < shard->capacity; i++) {
         for (InternedMetadata* md = shard->elems[i].next; md;
              md = md->bucket_next()) {
           char* key_str = grpc_slice_to_c_string(md->key());
@@ -596,7 +596,7 @@ static void* set_user_data(UserData* ud, void (*destroy_func)(void*),
   grpc_core::ReleasableMutexLock lock(&ud->mu_user_data);
   if (ud->destroy_user_data.Load(grpc_core::MemoryOrder::RELAXED)) {
     /* user data can only be set once */
-    lock.Unlock();
+    lock.Release();
     if (destroy_func != nullptr) {
       destroy_func(data);
     }
@@ -673,6 +673,10 @@ void grpc_mdelem_do_unref(grpc_mdelem gmd DEBUG_ARGS) {
 
 void grpc_mdelem_on_final_unref(grpc_mdelem_data_storage storage, void* ptr,
                                 uint32_t hash DEBUG_ARGS) {
+#ifndef NDEBUG
+  (void)file;
+  (void)line;
+#endif
   switch (storage) {
     case GRPC_MDELEM_STORAGE_EXTERNAL:
     case GRPC_MDELEM_STORAGE_STATIC:

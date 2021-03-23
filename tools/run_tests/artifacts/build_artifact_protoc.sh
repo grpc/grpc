@@ -17,7 +17,13 @@ set -ex
 
 cd "$(dirname "$0")/../../.."
 
-EMBED_ZLIB=true PROTOBUF_CONFIG_OPTS=--with-zlib=no make plugins
+mkdir -p cmake/build
+pushd cmake/build
+
+cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ../..
+make protoc plugins -j2
+
+popd
 
 mkdir -p "${ARTIFACTS_OUT}"
-cp bins/opt/protobuf/protoc bins/opt/*_plugin "${ARTIFACTS_OUT}"/
+cp cmake/build/third_party/protobuf/protoc cmake/build/*_plugin "${ARTIFACTS_OUT}"/

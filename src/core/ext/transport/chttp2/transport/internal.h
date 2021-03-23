@@ -301,6 +301,7 @@ struct grpc_chttp2_transport {
   grpc_core::Combiner* combiner;
 
   grpc_closure* notify_on_receive_settings = nullptr;
+  grpc_closure* notify_on_close = nullptr;
 
   /** write execution state of the transport */
   grpc_chttp2_write_state write_state = GRPC_CHTTP2_WRITE_STATE_IDLE;

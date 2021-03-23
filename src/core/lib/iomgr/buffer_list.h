@@ -146,7 +146,7 @@ class TracedBuffer {
 #else  /* GRPC_LINUX_ERRQUEUE */
 class TracedBuffer {
  public:
-  /* Dummy shutdown function */
+  /* Phony shutdown function */
   static void Shutdown(grpc_core::TracedBuffer** /*head*/, void* /*remaining*/,
                        grpc_error* shutdown_err) {
     GRPC_ERROR_UNREF(shutdown_err);

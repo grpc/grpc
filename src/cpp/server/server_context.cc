@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/time.h>
 
@@ -36,6 +37,8 @@
 #include "src/core/lib/surface/call.h"
 
 namespace grpc {
+
+static internal::GrpcLibraryInitializer g_gli_initializer;
 
 // CompletionOp
 
@@ -126,7 +129,7 @@ class ServerContextBase::CompletionOp final
       // Unref can delete this, so do not access anything from this afterward.
       return;
     }
-    /* Start a dummy op so that we can return the tag */
+    /* Start a phony op so that we can return the tag */
     GPR_ASSERT(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag_,
                                      nullptr) == GRPC_CALL_OK);
   }
@@ -233,7 +236,9 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
 // ServerContextBase body
 
 ServerContextBase::ServerContextBase()
-    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {}
+    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {
+  g_gli_initializer.summon();
+}
 
 ServerContextBase::ServerContextBase(gpr_timespec deadline,
                                      grpc_metadata_array* arr)

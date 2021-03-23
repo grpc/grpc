@@ -251,7 +251,7 @@ class GrpcPolledFdWindows {
     }
   }
 
-  bool IsFdStillReadableLocked() { return GRPC_SLICE_LENGTH(read_buf_) > 0; }
+  bool IsFdStillReadableLocked() { return read_buf_has_data_; }
 
   void ShutdownLocked(grpc_error* error) {
     grpc_winsocket_shutdown(winsocket_);
@@ -362,6 +362,8 @@ class GrpcPolledFdWindows {
     DWORD bytes_sent = 0;
     int wsa_error_code = 0;
     if (SendWriteBuf(&bytes_sent, nullptr, &wsa_error_code) != 0) {
+      grpc_slice_unref_internal(write_buf_);
+      write_buf_ = grpc_empty_slice();
       wsa_error_ctx->SetWSAError(wsa_error_code);
       char* msg = gpr_format_message(wsa_error_code);
       GRPC_CARES_TRACE_LOG(

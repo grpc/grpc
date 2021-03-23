@@ -130,15 +130,15 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
         try:
             if platform_string() == 'windows' or not sys.stdout.isatty():
                 if explanatory_text:
-                    logging.info(explanatory_text)
+                    logging.info(explanatory_text.decode('utf8'))
                 logging.info('%s: %s', tag, msg)
             else:
                 sys.stdout.write(
                     '%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' %
                     (_BEGINNING_OF_LINE, _CLEAR_LINE, '\n%s' %
-                     explanatory_text if explanatory_text is not None else '',
-                     _COLORS[_TAG_COLOR[tag]][1], _COLORS[_TAG_COLOR[tag]][0],
-                     tag, msg, '\n'
+                     explanatory_text.decode('utf8') if explanatory_text
+                     is not None else '', _COLORS[_TAG_COLOR[tag]][1],
+                     _COLORS[_TAG_COLOR[tag]][0], tag, msg, '\n'
                      if do_newline or explanatory_text is not None else ''))
             sys.stdout.flush()
             return
@@ -212,6 +212,9 @@ class JobSpec(object):
     def __cmp__(self, other):
         return self.identity() == other.identity()
 
+    def __lt__(self, other):
+        return self.identity() < other.identity()
+
     def __repr__(self):
         return 'JobSpec(shortname=%s, cmdline=%s)' % (self.shortname,
                                                       self.cmdline)
@@ -274,7 +277,10 @@ class Job(object):
                 os.makedirs(logfile_dir)
             self._logfile = open(self._spec.logfilename, 'w+')
         else:
-            self._logfile = tempfile.TemporaryFile()
+            # macOS: a series of quick os.unlink invocation might cause OS
+            # error during the creation of temporary file. By using
+            # NamedTemporaryFile, we defer the removal of file and directory.
+            self._logfile = tempfile.NamedTemporaryFile()
         env = dict(os.environ)
         env.update(self._spec.environ)
         env.update(self._add_env)
@@ -456,14 +462,17 @@ class Jobset(object):
                 message('SKIPPED', spec.shortname, do_newline=True)
                 self.resultset[spec.shortname] = [skipped_job_result]
                 return True
-            if self.cancelled(): return False
+            if self.cancelled():
+                return False
             current_cpu_cost = self.cpu_cost()
-            if current_cpu_cost == 0: break
+            if current_cpu_cost == 0:
+                break
             if current_cpu_cost + spec.cpu_cost <= self._maxjobs:
                 if len(self._running) < self._maxjobs_cpu_agnostic:
                     break
             self.reap(spec.shortname, spec.cpu_cost)
-        if self.cancelled(): return False
+        if self.cancelled():
+            return False
         job = Job(spec, self._newline_on_success, self._travis, self._add_env,
                   self._quiet_success)
         self._running.add(job)
@@ -477,7 +486,8 @@ class Jobset(object):
             dead = set()
             for job in self._running:
                 st = eintr_be_gone(lambda: job.state())
-                if st == _RUNNING: continue
+                if st == _RUNNING:
+                    continue
                 if st == _FAILURE or st == _KILLED:
                     self._failures += 1
                     if self._stop_on_failure:
@@ -491,7 +501,8 @@ class Jobset(object):
                 if not self._quiet_success or job.result.state != 'PASSED':
                     self.resultset[job.GetSpec().shortname].append(job.result)
                 self._running.remove(job)
-            if dead: return
+            if dead:
+                return
             if not self._travis and platform_string() != 'windows':
                 rstr = '' if self._remaining is None else '%d queued, ' % self._remaining
                 if self._remaining is not None and self._completed > 0:
@@ -518,8 +529,10 @@ class Jobset(object):
 
     def cancelled(self):
         """Poll for cancellation."""
-        if self._cancelled: return True
-        if not self._check_cancelled(): return False
+        if self._cancelled:
+            return True
+        if not self._check_cancelled():
+            return False
         for job in self._running:
             job.kill()
         self._cancelled = True
@@ -527,7 +540,8 @@ class Jobset(object):
 
     def finish(self):
         while self._running:
-            if self.cancelled(): pass  # poll cancellation
+            if self.cancelled():
+                pass  # poll cancellation
             self.reap()
         if platform_string() != 'windows':
             signal.alarm(0)

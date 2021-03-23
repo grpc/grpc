@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2016 gRPC authors.
 #
@@ -14,8 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
-
 import ast
 import os
 import re
@@ -27,8 +25,8 @@ os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../..'))
 git_hash_pattern = re.compile('[0-9a-f]{40}')
 
 # Parse git hashes from submodules
-git_submodules = subprocess.check_output('git submodule',
-                                         shell=True).strip().split('\n')
+git_submodules = subprocess.check_output(
+    'git submodule', shell=True).decode().strip().split('\n')
 git_submodule_hashes = {
     re.search(git_hash_pattern, s).group() for s in git_submodules
 }
@@ -43,30 +41,16 @@ _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME = 'com_github_zopefoundation_zope_interf
 _TWISTED_CONSTANTLY_DEP_NAME = 'com_github_twisted_constantly'
 
 _GRPC_DEP_NAMES = [
-    'upb',
-    'boringssl',
-    'zlib',
-    'com_google_protobuf',
-    'com_google_googletest',
-    'rules_cc',
-    'com_github_google_benchmark',
-    'com_github_cares_cares',
-    'com_google_absl',
-    'io_opencensus_cpp',
-    'envoy_api',
-    _BAZEL_SKYLIB_DEP_NAME,
-    _BAZEL_TOOLCHAINS_DEP_NAME,
-    _BAZEL_COMPDB_DEP_NAME,
-    _TWISTED_TWISTED_DEP_NAME,
-    _YAML_PYYAML_DEP_NAME,
-    _TWISTED_INCREMENTAL_DEP_NAME,
-    _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
-    _TWISTED_CONSTANTLY_DEP_NAME,
-    'io_bazel_rules_go',
-    'build_bazel_rules_apple',
-    'build_bazel_apple_support',
-    'libuv',
-    'com_github_google_re2',
+    'upb', 'boringssl', 'zlib', 'com_google_protobuf', 'com_google_googletest',
+    'rules_cc', 'com_github_google_benchmark', 'com_github_cares_cares',
+    'com_google_absl', 'io_opencensus_cpp', 'envoy_api', _BAZEL_SKYLIB_DEP_NAME,
+    _BAZEL_TOOLCHAINS_DEP_NAME, _BAZEL_COMPDB_DEP_NAME,
+    _TWISTED_TWISTED_DEP_NAME, _YAML_PYYAML_DEP_NAME,
+    _TWISTED_INCREMENTAL_DEP_NAME, _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
+    _TWISTED_CONSTANTLY_DEP_NAME, 'io_bazel_rules_go',
+    'build_bazel_rules_apple', 'build_bazel_apple_support', 'libuv',
+    'com_googlesource_code_re2', 'bazel_gazelle', 'opencensus_proto',
+    'com_envoyproxy_protoc_gen_validate', 'com_google_googleapis'
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -85,6 +69,11 @@ _GRPC_BAZEL_ONLY_DEPS = [
     'io_bazel_rules_go',
     'build_bazel_rules_apple',
     'build_bazel_apple_support',
+    'com_googlesource_code_re2',
+    'bazel_gazelle',
+    'opencensus_proto',
+    'com_envoyproxy_protoc_gen_validate',
+    'com_google_googleapis',
 ]
 
 
@@ -148,17 +137,14 @@ build_rules = {
     'git_repository': lambda **args: eval_state.git_repository(**args),
     'grpc_python_deps': lambda: None,
 }
-exec(bazel_file) in build_rules
+exec((bazel_file), build_rules)
 for name in _GRPC_DEP_NAMES:
-    assert name in names_and_urls.keys()
-if len(_GRPC_DEP_NAMES) != len(names_and_urls.keys()):
-    assert False, "Diff: " + (str(set(_GRPC_DEP_NAMES) - set(names_and_urls)) +
-                              "," +
-                              str(set(names_and_urls) - set(_GRPC_DEP_NAMES)))
+    assert name in list(names_and_urls.keys())
+assert len(_GRPC_DEP_NAMES) == len(list(names_and_urls.keys()))
 
 # There are some "bazel-only" deps that are exceptions to this sanity check,
 # we don't require that there is a corresponding git module for these.
-names_without_bazel_only_deps = names_and_urls.keys()
+names_without_bazel_only_deps = list(names_and_urls.keys())
 for dep_name in _GRPC_BAZEL_ONLY_DEPS:
     names_without_bazel_only_deps.remove(dep_name)
 archive_urls = [names_and_urls[name] for name in names_without_bazel_only_deps]
@@ -195,7 +181,7 @@ for name in _GRPC_DEP_NAMES:
         'git_repository': lambda **args: state.git_repository(**args),
         'grpc_python_deps': lambda *args, **kwargs: None,
     }
-    exec(bazel_file) in rules
-    assert name not in names_and_urls_with_overridden_name.keys()
+    exec((bazel_file), rules)
+    assert name not in list(names_and_urls_with_overridden_name.keys())
 
 sys.exit(0)

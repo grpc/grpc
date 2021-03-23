@@ -46,7 +46,7 @@ TraceFlag grpc_health_check_client_trace(false, "health_check_client");
 //
 
 HealthCheckClient::HealthCheckClient(
-    const char* service_name,
+    std::string service_name,
     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
     grpc_pollset_set* interested_parties,
     RefCountedPtr<channelz::SubchannelNode> channelz_node,
@@ -55,7 +55,7 @@ HealthCheckClient::HealthCheckClient(
           GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)
               ? "HealthCheckClient"
               : nullptr),
-      service_name_(service_name),
+      service_name_(std::move(service_name)),
       connected_subchannel_(std::move(connected_subchannel)),
       interested_parties_(interested_parties),
       channelz_node_(std::move(channelz_node)),
@@ -180,13 +180,14 @@ void HealthCheckClient::OnRetryTimer(void* arg, grpc_error* error) {
 
 namespace {
 
-void EncodeRequest(const char* service_name,
+void EncodeRequest(const std::string& service_name,
                    ManualConstructor<SliceBufferByteStream>* send_message) {
   upb::Arena arena;
   grpc_health_v1_HealthCheckRequest* request_struct =
       grpc_health_v1_HealthCheckRequest_new(arena.ptr());
   grpc_health_v1_HealthCheckRequest_set_service(
-      request_struct, upb_strview_makez(service_name));
+      request_struct,
+      upb_strview_make(service_name.data(), service_name.size()));
   size_t buf_length;
   char* buf = grpc_health_v1_HealthCheckRequest_serialize(
       request_struct, arena.ptr(), &buf_length);
@@ -252,7 +253,7 @@ HealthCheckClient::CallState::CallState(
     : health_check_client_(std::move(health_check_client)),
       pollent_(grpc_polling_entity_create_from_pollset_set(interested_parties)),
       arena_(Arena::Create(health_check_client_->connected_subchannel_
-                               ->GetInitialCallSizeEstimate(0))),
+                               ->GetInitialCallSizeEstimate())),
       payload_(context_) {}
 
 HealthCheckClient::CallState::~CallState() {
@@ -291,7 +292,6 @@ void HealthCheckClient::CallState::StartCall() {
       arena_,
       context_,
       &call_combiner_,
-      0,  // parent_data_size
   };
   grpc_error* error = GRPC_ERROR_NONE;
   call_ = SubchannelCall::Create(std::move(args), &error).release();

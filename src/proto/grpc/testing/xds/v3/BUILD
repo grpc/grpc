@@ -107,6 +107,10 @@ grpc_proto_library(
         "listener.proto",
     ],
     well_known_protos = True,
+    deps = [
+        "address_proto",
+        "base_proto",
+    ],
 )
 
 grpc_proto_library(
@@ -182,10 +186,18 @@ grpc_proto_library(
     srcs = [
         "http_connection_manager.proto",
     ],
+    well_known_protos = True,
     deps = [
         "config_source_proto",
         "protocol_proto",
         "route_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "router_proto",
+    srcs = [
+        "router.proto",
     ],
 )
 
@@ -201,6 +213,28 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "aggregate_cluster_proto",
+    srcs = [
+        "aggregate_cluster.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "string_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "fault_common_proto",
+    srcs = [
+        "fault_common.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "percent_proto",
+    ],
+)
+
+grpc_proto_library(
     name = "tls_proto",
     srcs = [
         "tls.proto",
@@ -208,5 +242,38 @@ grpc_proto_library(
     well_known_protos = True,
     deps = [
         "string_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "config_dump_proto",
+    srcs = [
+        "config_dump.proto",
+    ],
+    well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "csds_proto",
+    srcs = [
+        "csds.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "base_proto",
+        "config_dump_proto",
+    ],
+)
+
+grpc_proto_library(
+    name = "fault_proto",
+    srcs = [
+        "fault.proto",
+    ],
+    well_known_protos = True,
+    deps = [
+        "fault_common_proto",
+        "percent_proto",
+        "route_proto",
     ],
 )

@@ -63,16 +63,15 @@ extern void grpc_register_built_in_plugins(void);
 #define MAX_PLUGINS 128
 
 static gpr_once g_basic_init = GPR_ONCE_INIT;
-static gpr_mu g_init_mu;
+static grpc_core::Mutex* g_init_mu;
 static int g_initializations;
-static gpr_cv* g_shutting_down_cv;
+static grpc_core::CondVar* g_shutting_down_cv;
 static bool g_shutting_down;
 
 static void do_basic_init(void) {
   gpr_log_verbosity_init();
-  gpr_mu_init(&g_init_mu);
-  g_shutting_down_cv = static_cast<gpr_cv*>(malloc(sizeof(gpr_cv)));
-  gpr_cv_init(g_shutting_down_cv);
+  g_init_mu = new grpc_core::Mutex();
+  g_shutting_down_cv = new grpc_core::CondVar();
   g_shutting_down = false;
   grpc_register_built_in_plugins();
   grpc_cq_global_init();
@@ -130,11 +129,11 @@ void grpc_init(void) {
   int i;
   gpr_once_init(&g_basic_init, do_basic_init);
 
-  grpc_core::MutexLock lock(&g_init_mu);
+  grpc_core::MutexLock lock(g_init_mu);
   if (++g_initializations == 1) {
     if (g_shutting_down) {
       g_shutting_down = false;
-      gpr_cv_broadcast(g_shutting_down_cv);
+      g_shutting_down_cv->SignalAll();
     }
     grpc_core::Fork::GlobalInit();
     grpc_fork_handlers_auto_register();
@@ -196,14 +195,14 @@ void grpc_shutdown_internal_locked(void) {
   grpc_core::ExecCtx::GlobalShutdown();
   grpc_core::ApplicationCallbackExecCtx::GlobalShutdown();
   g_shutting_down = false;
-  gpr_cv_broadcast(g_shutting_down_cv);
+  g_shutting_down_cv->SignalAll();
   // Absolute last action will be to delete static metadata context.
   grpc_destroy_static_metadata_ctx();
 }
 
 void grpc_shutdown_internal(void* /*ignored*/) {
   GRPC_API_TRACE("grpc_shutdown_internal", 0, ());
-  grpc_core::MutexLock lock(&g_init_mu);
+  grpc_core::MutexLock lock(g_init_mu);
   // We have released lock from the shutdown thread and it is possible that
   // another grpc_init has been called, and do nothing if that is the case.
   if (--g_initializations != 0) {
@@ -214,7 +213,7 @@ void grpc_shutdown_internal(void* /*ignored*/) {
 
 void grpc_shutdown(void) {
   GRPC_API_TRACE("grpc_shutdown(void)", 0, ());
-  grpc_core::MutexLock lock(&g_init_mu);
+  grpc_core::MutexLock lock(g_init_mu);
 
   if (--g_initializations == 0) {
     grpc_core::ApplicationCallbackExecCtx* acec =
@@ -243,7 +242,7 @@ void grpc_shutdown(void) {
 
 void grpc_shutdown_blocking(void) {
   GRPC_API_TRACE("grpc_shutdown_blocking(void)", 0, ());
-  grpc_core::MutexLock lock(&g_init_mu);
+  grpc_core::MutexLock lock(g_init_mu);
   if (--g_initializations == 0) {
     g_shutting_down = true;
     grpc_shutdown_internal_locked();
@@ -253,16 +252,15 @@ void grpc_shutdown_blocking(void) {
 int grpc_is_initialized(void) {
   int r;
   gpr_once_init(&g_basic_init, do_basic_init);
-  grpc_core::MutexLock lock(&g_init_mu);
+  grpc_core::MutexLock lock(g_init_mu);
   r = g_initializations > 0;
   return r;
 }
 
 void grpc_maybe_wait_for_async_shutdown(void) {
   gpr_once_init(&g_basic_init, do_basic_init);
-  grpc_core::MutexLock lock(&g_init_mu);
+  grpc_core::MutexLock lock(g_init_mu);
   while (g_shutting_down) {
-    gpr_cv_wait(g_shutting_down_cv, &g_init_mu,
-                gpr_inf_future(GPR_CLOCK_REALTIME));
+    g_shutting_down_cv->Wait(g_init_mu);
   }
 }

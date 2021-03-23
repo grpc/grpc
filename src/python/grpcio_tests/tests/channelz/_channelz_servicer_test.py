@@ -350,6 +350,15 @@ class ChannelzServicerTest(unittest.TestCase):
             self.assertEqual(gsc_resp.subchannel.data.calls_succeeded,
                              gs_resp.socket.data.messages_received)
 
+            if gs_resp.socket.remote.HasField("tcpip_address"):
+                address = gs_resp.socket.remote.tcpip_address.ip_address
+                self.assertTrue(
+                    len(address) == 4 or len(address) == 16, address)
+            if gs_resp.socket.local.HasField("tcpip_address"):
+                address = gs_resp.socket.local.tcpip_address.ip_address
+                self.assertTrue(
+                    len(address) == 4 or len(address) == 16, address)
+
     def test_streaming_rpc(self):
         self._pairs = _generate_channel_server_pairs(1)
         # In C++, the argument for _send_successful_stream_stream is message length.
@@ -413,6 +422,7 @@ class ChannelzServicerTest(unittest.TestCase):
         gs_resp = self._channelz_stub.GetSocket(
             channelz_pb2.GetSocketRequest(
                 socket_id=gss_resp.server[0].listen_socket[0].socket_id))
+
         # If the RPC call failed, it will raise a grpc.RpcError
         # So, if there is no exception raised, considered pass
 

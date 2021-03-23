@@ -28,7 +28,7 @@ static const upb_msglayout_field envoy_type_matcher_v3_DoubleMatcher__fields[2] 
 const upb_msglayout envoy_type_matcher_v3_DoubleMatcher_msginit = {
   &envoy_type_matcher_v3_DoubleMatcher_submsgs[0],
   &envoy_type_matcher_v3_DoubleMatcher__fields[0],
-  UPB_SIZE(16, 16), 2, false,
+  UPB_SIZE(16, 16), 2, false, 255,
 };
 
 #include "upb/port_undef.inc"

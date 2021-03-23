@@ -29,7 +29,7 @@ static const upb_msglayout_field udpa_data_orca_v1_OrcaLoadReport__fields[5] = {
 const upb_msglayout udpa_data_orca_v1_OrcaLoadReport_msginit = {
   &udpa_data_orca_v1_OrcaLoadReport_submsgs[0],
   &udpa_data_orca_v1_OrcaLoadReport__fields[0],
-  UPB_SIZE(32, 40), 5, false,
+  UPB_SIZE(32, 40), 5, false, 255,
 };
 
 static const upb_msglayout_field udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry__fields[2] = {
@@ -40,7 +40,7 @@ static const upb_msglayout_field udpa_data_orca_v1_OrcaLoadReport_RequestCostEnt
 const upb_msglayout udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_msginit = {
   NULL,
   &udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 static const upb_msglayout_field udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry__fields[2] = {
@@ -51,7 +51,7 @@ static const upb_msglayout_field udpa_data_orca_v1_OrcaLoadReport_UtilizationEnt
 const upb_msglayout udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_msginit = {
   NULL,
   &udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry__fields[0],
-  UPB_SIZE(16, 32), 2, false,
+  UPB_SIZE(16, 32), 2, false, 255,
 };
 
 #include "upb/port_undef.inc"

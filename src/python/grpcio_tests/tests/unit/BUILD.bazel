@@ -40,6 +40,7 @@ GRPCIO_TESTS_UNIT = [
     "_server_shutdown_test.py",
     "_server_wait_for_termination_test.py",
     "_session_cache_test.py",
+    "_xds_credentials_test.py",
 ]
 
 py_library(

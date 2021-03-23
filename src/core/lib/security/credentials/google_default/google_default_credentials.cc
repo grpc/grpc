@@ -27,6 +27,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
@@ -37,6 +38,7 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
 #include "src/core/lib/security/credentials/alts/check_gcp_environment.h"
+#include "src/core/lib/security/credentials/external/external_account_credentials.h"
 #include "src/core/lib/security/credentials/google_default/google_default_credentials.h"
 #include "src/core/lib/security/credentials/jwt/jwt_credentials.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
@@ -59,7 +61,7 @@ using grpc_core::Json;
  * means the detection is done via network test that is unreliable and the
  * unreliable result should not be referred by successive calls. */
 static int g_metadata_server_available = 0;
-static gpr_mu g_state_mu;
+static grpc_core::Mutex* g_state_mu;
 /* Protect a metadata_server_detector instance that can be modified by more than
  * one gRPC threads */
 static gpr_mu* g_polling_mu;
@@ -67,7 +69,9 @@ static gpr_once g_once = GPR_ONCE_INIT;
 static grpc_core::internal::grpc_gce_tenancy_checker g_gce_tenancy_checker =
     grpc_alts_is_running_on_gcp;
 
-static void init_default_credentials(void) { gpr_mu_init(&g_state_mu); }
+static void init_default_credentials(void) {
+  g_state_mu = new grpc_core::Mutex();
+}
 
 struct metadata_server_detector {
   grpc_polling_entity pollent;
@@ -80,21 +84,22 @@ grpc_google_default_channel_credentials::create_security_connector(
     grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char* target, const grpc_channel_args* args,
     grpc_channel_args** new_args) {
-  bool is_grpclb_load_balancer = grpc_channel_arg_get_bool(
-      grpc_channel_args_find(args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER),
-      false);
-  bool is_backend_from_grpclb_load_balancer = grpc_channel_arg_get_bool(
-      grpc_channel_args_find(
-          args, GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER),
-      false);
-  bool use_alts =
-      is_grpclb_load_balancer || is_backend_from_grpclb_load_balancer;
+  const bool is_grpclb_load_balancer = grpc_channel_args_find_bool(
+      args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER, false);
+  const bool is_backend_from_grpclb_load_balancer = grpc_channel_args_find_bool(
+      args, GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER, false);
+  const char* xds_cluster =
+      grpc_channel_args_find_string(args, GRPC_ARG_XDS_CLUSTER_NAME);
+  const bool is_xds_non_cfe_cluster =
+      xds_cluster != nullptr && strcmp(xds_cluster, "google_cfe") != 0;
+  const bool use_alts = is_grpclb_load_balancer ||
+                        is_backend_from_grpclb_load_balancer ||
+                        is_xds_non_cfe_cluster;
   /* Return failure if ALTS is selected but not running on GCE. */
   if (use_alts && alts_creds_ == nullptr) {
     gpr_log(GPR_ERROR, "ALTS is selected, but not running on GCE.");
     return nullptr;
   }
-
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       use_alts ? alts_creds_->create_security_connector(call_creds, target,
                                                         args, new_args)
@@ -267,6 +272,9 @@ static grpc_error* create_default_creds_from_path(
     goto end;
   }
 
+  /* Finally try an external account credentials.*/
+  result = grpc_core::ExternalAccountCredentials::Create(json, {}, &error);
+
 end:
   GPR_ASSERT((result == nullptr) + (error == GRPC_ERROR_NONE) == 1);
   grpc_slice_unref_internal(creds_data);
@@ -276,7 +284,7 @@ end:
 
 static void update_tenancy() {
   gpr_once_init(&g_once, init_default_credentials);
-  grpc_core::MutexLock lock(&g_state_mu);
+  grpc_core::MutexLock lock(g_state_mu);
 
   /* Try a platform-provided hint for GCE. */
   if (!g_metadata_server_available) {
@@ -291,7 +299,7 @@ static void update_tenancy() {
 }
 
 static bool metadata_server_available() {
-  grpc_core::MutexLock lock(&g_state_mu);
+  grpc_core::MutexLock lock(g_state_mu);
   return static_cast<bool>(g_metadata_server_available);
 }
 
@@ -381,9 +389,8 @@ void set_gce_tenancy_checker_for_testing(grpc_gce_tenancy_checker checker) {
 void grpc_flush_cached_google_default_credentials(void) {
   grpc_core::ExecCtx exec_ctx;
   gpr_once_init(&g_once, init_default_credentials);
-  gpr_mu_lock(&g_state_mu);
+  grpc_core::MutexLock lock(g_state_mu);
   g_metadata_server_available = 0;
-  gpr_mu_unlock(&g_state_mu);
 }
 
 }  // namespace internal

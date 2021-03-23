@@ -200,7 +200,7 @@ echo 4096 | sudo tee /proc/sys/kernel/perf_event_mlock_kb
 git clone -v https://github.com/brendangregg/FlameGraph ~/FlameGraph
 
 # Install scipy and numpy for benchmarking scripts
-sudo apt-get install -y python-scipy python-numpy
+sudo apt-get install -y python3-scipy python3-numpy
 
 # Install docker
 curl -sSL https://get.docker.com/ | sh

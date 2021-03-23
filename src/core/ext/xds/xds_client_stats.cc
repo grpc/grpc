@@ -45,7 +45,7 @@ XdsClusterDropStats::XdsClusterDropStats(RefCountedPtr<XdsClient> xds_client,
                                          absl::string_view lrs_server_name,
                                          absl::string_view cluster_name,
                                          absl::string_view eds_service_name)
-    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)
+    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace)
                      ? "XdsClusterDropStats"
                      : nullptr),
       xds_client_(std::move(xds_client)),
@@ -98,7 +98,7 @@ XdsClusterLocalityStats::XdsClusterLocalityStats(
     RefCountedPtr<XdsClient> xds_client, absl::string_view lrs_server_name,
     absl::string_view cluster_name, absl::string_view eds_service_name,
     RefCountedPtr<XdsLocalityName> name)
-    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)
+    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace)
                      ? "XdsClusterLocalityStats"
                      : nullptr),
       xds_client_(std::move(xds_client)),
@@ -137,7 +137,8 @@ XdsClusterLocalityStats::GetSnapshotAndReset() {
                        // not related to a single reporting interval.
                        total_requests_in_progress_.Load(MemoryOrder::RELAXED),
                        GetAndResetCounter(&total_error_requests_),
-                       GetAndResetCounter(&total_issued_requests_)};
+                       GetAndResetCounter(&total_issued_requests_),
+                       {}};
   MutexLock lock(&backend_metrics_mu_);
   snapshot.backend_metrics = std::move(backend_metrics_);
   return snapshot;

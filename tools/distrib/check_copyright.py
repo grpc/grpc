@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 
 # Copyright 2015 gRPC authors.
 #
@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from __future__ import print_function
 import argparse
 import datetime
 import os
@@ -107,7 +106,7 @@ RE_LICENSE = dict(
     (k, r'\n'.join(LICENSE_PREFIX[k] +
                    (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
                    for line in LICENSE_NOTICE))
-    for k, v in LICENSE_PREFIX.iteritems())
+    for k, v in LICENSE_PREFIX.items())
 
 if args.precommit:
     FILE_LIST_COMMAND = 'git status -z | grep -Poz \'(?<=^[MARC][MARCD ] )[^\s]+\''
@@ -131,7 +130,8 @@ assert (re.search(RE_LICENSE['Makefile'], load('Makefile')))
 
 
 def log(cond, why, filename):
-    if not cond: return
+    if not cond:
+        return
     if args.output == 'details':
         print('%s: %s' % (why, filename))
     else:
@@ -143,7 +143,7 @@ ok = True
 filename_list = []
 try:
     filename_list = subprocess.check_output(FILE_LIST_COMMAND,
-                                            shell=True).splitlines()
+                                            shell=True).decode().splitlines()
 except subprocess.CalledProcessError:
     sys.exit(0)
 

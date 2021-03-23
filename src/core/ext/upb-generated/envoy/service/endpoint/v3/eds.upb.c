@@ -11,19 +11,16 @@
 #include "envoy/service/endpoint/v3/eds.upb.h"
 #include "envoy/service/discovery/v3/discovery.upb.h"
 #include "google/api/annotations.upb.h"
-#include "google/protobuf/duration.upb.h"
-#include "google/protobuf/wrappers.upb.h"
 #include "envoy/annotations/resource.upb.h"
 #include "udpa/annotations/status.upb.h"
 #include "udpa/annotations/versioning.upb.h"
-#include "validate/validate.upb.h"
 
 #include "upb/port_def.inc"
 
 const upb_msglayout envoy_service_endpoint_v3_EdsDummy_msginit = {
   NULL,
   NULL,
-  UPB_SIZE(0, 0), 0, false,
+  UPB_SIZE(0, 0), 0, false, 255,
 };
 
 #include "upb/port_undef.inc"

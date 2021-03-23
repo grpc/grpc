@@ -1200,7 +1200,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
-    } else if (stream_state->rs.read_stream_closed == true) {
+    } else if (stream_state->rs.read_stream_closed) {
       /* No more data will be received */
       CRONET_LOG(GPR_DEBUG, "read stream closed");
       grpc_core::ExecCtx::Run(
@@ -1217,7 +1217,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
-    } else if (stream_state->rs.length_field_received == false) {
+    } else if (!stream_state->rs.length_field_received) {
       if (stream_state->rs.received_bytes == GRPC_HEADER_SIZE_IN_BYTES &&
           stream_state->rs.remaining_bytes == 0) {
         /* Start a read operation for data */
@@ -1420,19 +1420,20 @@ inline stream_obj::~stream_obj() {
 }
 
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
-                       grpc_stream_refcount* refcount, const void* server_data,
-                       grpc_core::Arena* arena) {
+                       grpc_stream_refcount* refcount,
+                       const void* /*server_data*/, grpc_core::Arena* arena) {
   new (gs) stream_obj(gt, gs, refcount, arena);
   return 0;
 }
 
-static void set_pollset_do_nothing(grpc_transport* gt, grpc_stream* gs,
-                                   grpc_pollset* pollset) {}
+static void set_pollset_do_nothing(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
+                                   grpc_pollset* /*pollset*/) {}
 
-static void set_pollset_set_do_nothing(grpc_transport* gt, grpc_stream* gs,
-                                       grpc_pollset_set* pollset_set) {}
+static void set_pollset_set_do_nothing(grpc_transport* /*gt*/,
+                                       grpc_stream* /*gs*/,
+                                       grpc_pollset_set* /*pollset_set*/) {}
 
-static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
+static void perform_stream_op(grpc_transport* /*gt*/, grpc_stream* gs,
                               grpc_transport_stream_op_batch* op) {
   CRONET_LOG(GPR_DEBUG, "perform_stream_op");
   if (op->send_initial_metadata &&
@@ -1466,7 +1467,7 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   execute_from_storage(s);
 }
 
-static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
+static void destroy_stream(grpc_transport* /*gt*/, grpc_stream* gs,
                            grpc_closure* then_schedule_closure) {
   stream_obj* s = reinterpret_cast<stream_obj*>(gs);
   s->~stream_obj();
@@ -1474,11 +1475,11 @@ static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
                           GRPC_ERROR_NONE);
 }
 
-static void destroy_transport(grpc_transport* gt) {}
+static void destroy_transport(grpc_transport* /*gt*/) {}
 
-static grpc_endpoint* get_endpoint(grpc_transport* gt) { return nullptr; }
+static grpc_endpoint* get_endpoint(grpc_transport* /*gt*/) { return nullptr; }
 
-static void perform_op(grpc_transport* gt, grpc_transport_op* op) {}
+static void perform_op(grpc_transport* /*gt*/, grpc_transport_op* /*op*/) {}
 
 static const grpc_transport_vtable grpc_cronet_vtable = {
     sizeof(stream_obj),
@@ -1494,7 +1495,7 @@ static const grpc_transport_vtable grpc_cronet_vtable = {
 
 grpc_transport* grpc_create_cronet_transport(void* engine, const char* target,
                                              const grpc_channel_args* args,
-                                             void* reserved) {
+                                             void* /*reserved*/) {
   grpc_cronet_transport* ct = static_cast<grpc_cronet_transport*>(
       gpr_malloc(sizeof(grpc_cronet_transport)));
   if (!ct) {

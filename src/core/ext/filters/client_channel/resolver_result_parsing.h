@@ -49,15 +49,11 @@ class ClientChannelGlobalParsedConfig
       RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config,
       std::string parsed_deprecated_lb_policy,
       const absl::optional<RetryThrottling>& retry_throttling,
-      const char* health_check_service_name)
+      absl::optional<std::string> health_check_service_name)
       : parsed_lb_config_(std::move(parsed_lb_config)),
         parsed_deprecated_lb_policy_(std::move(parsed_deprecated_lb_policy)),
         retry_throttling_(retry_throttling),
-        health_check_service_name_(health_check_service_name) {}
-
-  absl::optional<RetryThrottling> retry_throttling() const {
-    return retry_throttling_;
-  }
+        health_check_service_name_(std::move(health_check_service_name)) {}
 
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config() const {
     return parsed_lb_config_;
@@ -67,7 +63,11 @@ class ClientChannelGlobalParsedConfig
     return parsed_deprecated_lb_policy_;
   }
 
-  const char* health_check_service_name() const {
+  absl::optional<RetryThrottling> retry_throttling() const {
+    return retry_throttling_;
+  }
+
+  const absl::optional<std::string>& health_check_service_name() const {
     return health_check_service_name_;
   }
 
@@ -75,7 +75,7 @@ class ClientChannelGlobalParsedConfig
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config_;
   std::string parsed_deprecated_lb_policy_;
   absl::optional<RetryThrottling> retry_throttling_;
-  const char* health_check_service_name_;
+  absl::optional<std::string> health_check_service_name_;
 };
 
 class ClientChannelMethodParsedConfig

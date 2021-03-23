@@ -101,7 +101,7 @@ TEST_P(XdsBootstrapTest, Basic) {
       "    \"locality\": {"
       "      \"region\": \"milky_way\","
       "      \"zone\": \"sol_system\","
-      "      \"subzone\": \"earth\","
+      "      \"sub_zone\": \"earth\","
       "      \"ignore\": {}"
       "    },"
       "    \"metadata\": {"
@@ -110,6 +110,7 @@ TEST_P(XdsBootstrapTest, Basic) {
       "    },"
       "    \"ignore\": \"whee\""
       "  },"
+      "  \"server_listener_resource_name_template\": \"example/resource\","
       "  \"ignore\": {}"
       "}";
   grpc_error* error = GRPC_ERROR_NONE;
@@ -126,7 +127,7 @@ TEST_P(XdsBootstrapTest, Basic) {
   EXPECT_EQ(bootstrap.node()->cluster, "bar");
   EXPECT_EQ(bootstrap.node()->locality_region, "milky_way");
   EXPECT_EQ(bootstrap.node()->locality_zone, "sol_system");
-  EXPECT_EQ(bootstrap.node()->locality_subzone, "earth");
+  EXPECT_EQ(bootstrap.node()->locality_sub_zone, "earth");
   ASSERT_EQ(bootstrap.node()->metadata.type(), Json::Type::OBJECT);
   EXPECT_THAT(bootstrap.node()->metadata.object_value(),
               ::testing::ElementsAre(
@@ -140,6 +141,8 @@ TEST_P(XdsBootstrapTest, Basic) {
                       ::testing::AllOf(
                           ::testing::Property(&Json::type, Json::Type::NUMBER),
                           ::testing::Property(&Json::string_value, "1")))));
+  EXPECT_EQ(bootstrap.server_listener_resource_name_template(),
+            "example/resource");
 }
 
 TEST_P(XdsBootstrapTest, ValidWithoutNode) {
@@ -271,6 +274,7 @@ TEST_P(XdsBootstrapTest, TopFieldsWrongTypes) {
       "{"
       "  \"xds_servers\":1,"
       "  \"node\":1,"
+      "  \"server_listener_resource_name_template\":1,"
       "  \"certificate_providers\":1"
       "}";
   grpc_error* error = GRPC_ERROR_NONE;
@@ -279,7 +283,9 @@ TEST_P(XdsBootstrapTest, TopFieldsWrongTypes) {
   XdsBootstrap bootstrap(std::move(json), &error);
   EXPECT_THAT(grpc_error_string(error),
               ::testing::ContainsRegex("\"xds_servers\" field is not an array.*"
-                                       "\"node\" field is not an object.*"));
+                                       "\"node\" field is not an object.*"
+                                       "\"server_listener_resource_name_"
+                                       "template\" field is not a string.*"));
   if (GetParam().parse_xds_certificate_providers()) {
     EXPECT_THAT(grpc_error_string(error),
                 ::testing::ContainsRegex(
@@ -387,7 +393,7 @@ TEST_P(XdsBootstrapTest, LocalityFieldsWrongType) {
       "    \"locality\":{"
       "      \"region\":0,"
       "      \"zone\":0,"
-      "      \"subzone\":0"
+      "      \"sub_zone\":0"
       "    }"
       "  }"
       "}";
@@ -400,7 +406,7 @@ TEST_P(XdsBootstrapTest, LocalityFieldsWrongType) {
                                        "errors parsing \"locality\" object.*"
                                        "\"region\" field is not a string.*"
                                        "\"zone\" field is not a string.*"
-                                       "\"subzone\" field is not a string"));
+                                       "\"sub_zone\" field is not a string"));
   GRPC_ERROR_UNREF(error);
 }
 
@@ -507,7 +513,7 @@ class FakeCertificateProviderFactory : public CertificateProviderFactory {
   }
 
   RefCountedPtr<grpc_tls_certificate_provider> CreateCertificateProvider(
-      RefCountedPtr<CertificateProviderFactory::Config> config) override {
+      RefCountedPtr<CertificateProviderFactory::Config> /*config*/) override {
     return nullptr;
   }
 };

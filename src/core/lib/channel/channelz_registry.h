@@ -28,7 +28,6 @@
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
-#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/sync.h"
 
 namespace grpc_core {

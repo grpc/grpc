@@ -60,6 +60,10 @@ void grpc_client_authority_filter_init(void);
 void grpc_client_authority_filter_shutdown(void);
 void grpc_workaround_cronet_compression_filter_init(void);
 void grpc_workaround_cronet_compression_filter_shutdown(void);
+namespace grpc_core {
+void FaultInjectionFilterInit(void);
+void FaultInjectionFilterShutdown(void);
+}  // namespace grpc_core
 
 #ifndef GRPC_NO_XDS
 namespace grpc_core {
@@ -74,14 +78,18 @@ void FileWatcherCertificateProviderShutdown();
 }  // namespace grpc_core
 void grpc_lb_policy_cds_init(void);
 void grpc_lb_policy_cds_shutdown(void);
-void grpc_lb_policy_eds_init(void);
-void grpc_lb_policy_eds_shutdown(void);
 void grpc_lb_policy_xds_cluster_impl_init(void);
 void grpc_lb_policy_xds_cluster_impl_shutdown(void);
+void grpc_lb_policy_xds_cluster_resolver_init(void);
+void grpc_lb_policy_xds_cluster_resolver_shutdown(void);
 void grpc_lb_policy_xds_cluster_manager_init(void);
 void grpc_lb_policy_xds_cluster_manager_shutdown(void);
 void grpc_resolver_xds_init(void);
 void grpc_resolver_xds_shutdown(void);
+namespace grpc_core {
+void GoogleCloud2ProdResolverInit();
+void GoogleCloud2ProdResolverShutdown();
+}
 #endif
 
 void grpc_register_built_in_plugins(void) {
@@ -119,6 +127,8 @@ void grpc_register_built_in_plugins(void) {
                        grpc_max_age_filter_shutdown);
   grpc_register_plugin(grpc_message_size_filter_init,
                        grpc_message_size_filter_shutdown);
+  grpc_register_plugin(grpc_core::FaultInjectionFilterInit,
+                       grpc_core::FaultInjectionFilterShutdown);
   grpc_register_plugin(grpc_service_config_channel_arg_filter_init,
                        grpc_service_config_channel_arg_filter_shutdown);
   grpc_register_plugin(grpc_client_authority_filter_init,
@@ -134,13 +144,15 @@ void grpc_register_built_in_plugins(void) {
                        grpc_core::FileWatcherCertificateProviderShutdown);
   grpc_register_plugin(grpc_lb_policy_cds_init,
                        grpc_lb_policy_cds_shutdown);
-  grpc_register_plugin(grpc_lb_policy_eds_init,
-                       grpc_lb_policy_eds_shutdown);
   grpc_register_plugin(grpc_lb_policy_xds_cluster_impl_init,
                        grpc_lb_policy_xds_cluster_impl_shutdown);
+  grpc_register_plugin(grpc_lb_policy_xds_cluster_resolver_init,
+                       grpc_lb_policy_xds_cluster_resolver_shutdown);
   grpc_register_plugin(grpc_lb_policy_xds_cluster_manager_init,
                        grpc_lb_policy_xds_cluster_manager_shutdown);
   grpc_register_plugin(grpc_resolver_xds_init,
                        grpc_resolver_xds_shutdown);
+  grpc_register_plugin(grpc_core::GoogleCloud2ProdResolverInit,
+                       grpc_core::GoogleCloud2ProdResolverShutdown);
 #endif
 }

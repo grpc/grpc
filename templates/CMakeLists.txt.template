@@ -47,14 +47,19 @@
         ret.append(get_absl_dep(dep).replace("::", "_"))
     return ret
 
+  def is_shared_only_lib(lib_name):
+    """Returns True if only shared library should be generated."""
+    # grpc_csharp_ext is loaded by C# runtime and it
+    # only makes sense as a shared lib.
+    return lib_name in ['grpc_csharp_ext']
+
+
   def get_deps(target_dict):
     deps = []
     if target_dict.get('baselib', False) or target_dict['name'] == 'address_sorting':
       deps.append("${_gRPC_BASELIB_LIBRARIES}")
     if target_dict.get('build', None) in ['protoc']:
       deps.append("${_gRPC_PROTOBUF_PROTOC_LIBRARIES}")
-    if target_dict.get('secure', False):
-      deps.append("${_gRPC_SSL_LIBRARIES}")
     if target_dict.language == 'c++':
       deps.append("${_gRPC_PROTOBUF_LIBRARIES}")
     if target_dict['name'] in ['grpc', 'grpc_cronet', 'grpc_unsecure']:
@@ -67,6 +72,8 @@
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
         deps.append("${_gRPC_BENCHMARK_LIBRARIES}")
+      elif d == 'libssl':
+        deps.append("${_gRPC_SSL_LIBRARIES}")
       elif is_absl_lib(d):
         deps.append(get_absl_dep(d))
       else:
@@ -138,9 +145,9 @@
   set(gRPC_CORE_VERSION     "${settings.core_version}")
   set(gRPC_CORE_SOVERSION   "${settings.core_version.major}")
   set(gRPC_CPP_VERSION      "${settings.cpp_version}")
-  set(gRPC_CPP_SOVERSION    "${settings.cpp_version.major}")
+  set(gRPC_CPP_SOVERSION    "${settings.cpp_version.major}.${settings.cpp_version.minor}")
   set(gRPC_CSHARP_VERSION   "${settings.csharp_version}")
-  set(gRPC_CSHARP_SOVERSION "${settings.csharp_version.major}")
+  set(gRPC_CSHARP_SOVERSION "${settings.csharp_version.major}.${settings.csharp_version.minor}")
   set(PACKAGE_STRING        "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
   set(PACKAGE_TARNAME       "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -313,6 +320,7 @@
   include(cmake/re2.cmake)
   include(cmake/ssl.cmake)
   include(cmake/upb.cmake)
+  include(cmake/xxhash.cmake)
   include(cmake/zlib.cmake)
 
   if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
@@ -453,7 +461,7 @@
     for lib in libs:
       if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
       if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 're2', 'z']: continue  # we build these using CMake instead
+      if lib.name in ['ares', 'benchmark', 're2', 'xxhash', 'z']: continue  # we build these using CMake instead
       if is_absl_lib(lib.name): continue  # we build these using CMake instead
       cmake_libs.append(lib)
   %>
@@ -516,7 +524,7 @@
   if(gRPC_BUILD_CODEGEN)
   % endif
   % endif
-  add_library(${lib.name}${' SHARED' if lib.get('dll', None) == 'only' else ''}
+  add_library(${lib.name}${' SHARED' if is_shared_only_lib(lib.name) else ''}
   % for src in lib.src:
   % if not proto_re.match(src):
     ${src}
@@ -566,6 +574,7 @@
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
       third_party/googletest/googletest/include
@@ -646,6 +655,7 @@
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
+      <%text>${_gRPC_XXHASH_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
       third_party/googletest/googletest/include

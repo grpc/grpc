@@ -48,8 +48,8 @@ bool XdsChannelCredsRegistry::IsSupported(const std::string& creds_type) {
          creds_type == "fake";
 }
 
-bool XdsChannelCredsRegistry::IsValidConfig(const std::string& creds_type,
-                                            const Json& config) {
+bool XdsChannelCredsRegistry::IsValidConfig(const std::string& /*creds_type*/,
+                                            const Json& /*config*/) {
   // Currently, none of the creds types actually take a config, but we
   // ignore whatever might be specified in the bootstrap file for
   // forward compatibility reasons.
@@ -58,7 +58,7 @@ bool XdsChannelCredsRegistry::IsValidConfig(const std::string& creds_type,
 
 RefCountedPtr<grpc_channel_credentials>
 XdsChannelCredsRegistry::MakeChannelCreds(const std::string& creds_type,
-                                          const Json& config) {
+                                          const Json& /*config*/) {
   if (creds_type == "google_default") {
     return grpc_google_default_credentials_create(nullptr);
   } else if (creds_type == "insecure") {
@@ -93,13 +93,14 @@ std::string BootstrapString(const XdsBootstrap& bootstrap) {
         "  locality={\n"
         "    region=\"%s\",\n"
         "    zone=\"%s\",\n"
-        "    subzone=\"%s\"\n"
+        "    sub_zone=\"%s\"\n"
         "  },\n"
         "  metadata=%s,\n"
         "},\n",
         bootstrap.node()->id, bootstrap.node()->cluster,
         bootstrap.node()->locality_region, bootstrap.node()->locality_zone,
-        bootstrap.node()->locality_subzone, bootstrap.node()->metadata.Dump()));
+        bootstrap.node()->locality_sub_zone,
+        bootstrap.node()->metadata.Dump()));
   }
   parts.push_back(absl::StrFormat(
       "servers=[\n"
@@ -118,6 +119,11 @@ std::string BootstrapString(const XdsBootstrap& bootstrap) {
         absl::StrJoin(bootstrap.server().server_features, ", "), "],\n"));
   }
   parts.push_back("  }\n],\n");
+  if (!bootstrap.server_listener_resource_name_template().empty()) {
+    parts.push_back(
+        absl::StrFormat("server_listener_resource_name_template=\"%s\",\n",
+                        bootstrap.server_listener_resource_name_template()));
+  }
   parts.push_back("certificate_providers={\n");
   for (const auto& entry : bootstrap.certificate_providers()) {
     parts.push_back(
@@ -132,36 +138,14 @@ std::string BootstrapString(const XdsBootstrap& bootstrap) {
   return absl::StrJoin(parts, "");
 }
 
-}  // namespace
-
-std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(XdsClient* client,
-                                                         TraceFlag* tracer,
-                                                         grpc_error** error) {
-  grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
-  if (path == nullptr) {
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Environment variable GRPC_XDS_BOOTSTRAP not defined");
-    return nullptr;
-  }
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] Got bootstrap file location from "
-            "GRPC_XDS_BOOTSTRAP environment variable: %s",
-            client, path.get());
-  }
-  grpc_slice contents;
-  *error = grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
-  if (*error != GRPC_ERROR_NONE) return nullptr;
-  absl::string_view contents_str_view = StringViewFromSlice(contents);
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
-    gpr_log(GPR_DEBUG, "[xds_client %p] Bootstrap file contents: %s", client,
-            std::string(contents_str_view).c_str());
-  }
-  Json json = Json::Parse(contents_str_view, error);
-  grpc_slice_unref_internal(contents);
+std::unique_ptr<XdsBootstrap> ParseJsonAndCreate(
+    XdsClient* client, TraceFlag* tracer, absl::string_view json_string,
+    absl::string_view bootstrap_source, grpc_error** error) {
+  Json json = Json::Parse(json_string, error);
   if (*error != GRPC_ERROR_NONE) {
     grpc_error* error_out = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
-        absl::StrCat("Failed to parse bootstrap file ", path.get()).c_str(),
+        absl::StrCat("Failed to parse bootstrap from ", bootstrap_source)
+            .c_str(),
         error, 1);
     GRPC_ERROR_UNREF(*error);
     *error = error_out;
@@ -175,6 +159,55 @@ std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(XdsClient* client,
             client, BootstrapString(*result).c_str());
   }
   return result;
+}
+
+}  // namespace
+
+std::unique_ptr<XdsBootstrap> XdsBootstrap::Create(XdsClient* client,
+                                                   TraceFlag* tracer,
+                                                   const char* fallback_config,
+                                                   grpc_error** error) {
+  // First, try GRPC_XDS_BOOTSTRAP env var.
+  grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
+  if (path != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
+      gpr_log(GPR_INFO,
+              "[xds_client %p] Got bootstrap file location from "
+              "GRPC_XDS_BOOTSTRAP environment variable: %s",
+              client, path.get());
+    }
+    grpc_slice contents;
+    *error =
+        grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
+    if (*error != GRPC_ERROR_NONE) return nullptr;
+    absl::string_view contents_str_view = StringViewFromSlice(contents);
+    if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
+      gpr_log(GPR_DEBUG, "[xds_client %p] Bootstrap file contents: %s", client,
+              std::string(contents_str_view).c_str());
+    }
+    std::string bootstrap_source = absl::StrCat("file ", path.get());
+    auto result = ParseJsonAndCreate(client, tracer, contents_str_view,
+                                     bootstrap_source, error);
+    grpc_slice_unref_internal(contents);
+    return result;
+  }
+  // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
+  grpc_core::UniquePtr<char> env_config(
+      gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG"));
+  if (env_config != nullptr) {
+    return ParseJsonAndCreate(client, tracer, env_config.get(),
+                              "GRPC_XDS_BOOTSTRAP_CONFIG env var", error);
+  }
+  // Finally, try fallback config.
+  if (fallback_config != nullptr) {
+    return ParseJsonAndCreate(client, tracer, fallback_config,
+                              "fallback config", error);
+  }
+  // No bootstrap config found.
+  *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Environment variables GRPC_XDS_BOOTSTRAP or GRPC_XDS_BOOTSTRAP_CONFIG "
+      "not defined");
+  return nullptr;
 }
 
 XdsBootstrap::XdsBootstrap(Json json, grpc_error** error) {
@@ -203,6 +236,16 @@ XdsBootstrap::XdsBootstrap(Json json, grpc_error** error) {
     } else {
       grpc_error* parse_error = ParseNode(&it->second);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    }
+  }
+  it = json.mutable_object()->find("server_listener_resource_name_template");
+  if (it != json.mutable_object()->end()) {
+    if (it->second.type() != Json::Type::STRING) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "\"server_listener_resource_name_template\" field is not a string"));
+    } else {
+      server_listener_resource_name_template_ =
+          std::move(*it->second.mutable_string_value());
     }
   }
   if (XdsSecurityEnabled()) {
@@ -357,15 +400,7 @@ grpc_error* XdsBootstrap::ParseServerFeaturesArray(Json* json,
     Json& child = json->mutable_array()->at(i);
     if (child.type() == Json::Type::STRING &&
         child.string_value() == "xds_v3") {
-      // TODO(roth): Remove env var check once we do interop testing and
-      // are sure that the v3 code actually works.
-      grpc_core::UniquePtr<char> enable_str(
-          gpr_getenv("GRPC_XDS_EXPERIMENTAL_V3_SUPPORT"));
-      bool enabled = false;
-      if (gpr_parse_bool_value(enable_str.get(), &enabled) && enabled) {
-        server->server_features.insert(
-            std::move(*child.mutable_string_value()));
-      }
+      server->server_features.insert(std::move(*child.mutable_string_value()));
     }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR(
@@ -436,13 +471,13 @@ grpc_error* XdsBootstrap::ParseLocality(Json* json) {
       node_->locality_zone = std::move(*it->second.mutable_string_value());
     }
   }
-  it = json->mutable_object()->find("subzone");
+  it = json->mutable_object()->find("sub_zone");
   if (it != json->mutable_object()->end()) {
     if (it->second.type() != Json::Type::STRING) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "\"subzone\" field is not a string"));
+          "\"sub_zone\" field is not a string"));
     } else {
-      node_->locality_subzone = std::move(*it->second.mutable_string_value());
+      node_->locality_sub_zone = std::move(*it->second.mutable_string_value());
     }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"locality\" object",

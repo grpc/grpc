@@ -43,7 +43,7 @@ class ChanellCredentialsTest extends \PHPUnit\Framework\TestCase
     public function testCreateInsecure()
     {
         $channel_credentials = Grpc\ChannelCredentials::createInsecure();
-        $this->assertNull($channel_credentials);
+        $this->assertNotNull($channel_credentials);
     }
 
     public function testDefaultRootsPem()

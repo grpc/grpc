@@ -14,7 +14,7 @@
 
 licenses(["notice"])
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_cc_test_xds", "grpc_package")
 
 grpc_package(
     name = "test/cpp/end2end",
@@ -220,6 +220,7 @@ grpc_cc_library(
     external_deps = [
         "gtest",
     ],
+    linkstatic = True,
     deps = [
         ":interceptors_util",
         ":test_service_impl",
@@ -239,9 +240,19 @@ grpc_cc_library(
 grpc_cc_test(
     name = "channelz_service_test",
     srcs = ["channelz_service_test.cc"],
+    data = [
+        "//src/core/tsi/test_creds:ca.pem",
+        "//src/core/tsi/test_creds:client.key",
+        "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:server1.key",
+        "//src/core/tsi/test_creds:server1.pem",
+    ],
     external_deps = [
         "gtest",
     ],
+    # TODO(yulin-liang): The test is not able to load the certificate files on
+    # iOS. Figure out why.
+    tags = ["no_test_ios"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -499,7 +510,7 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_test_xds(
     name = "xds_end2end_test",
     size = "large",
     srcs = ["xds_end2end_test.cc"],
@@ -516,7 +527,7 @@ grpc_cc_test(
         "gtest",
     ],
     flaky = True,  # TODO(b/144705388)
-    shard_count = 10,
+    shard_count = 20,
     tags = [
         "no_test_ios",
         "no_windows",
@@ -527,6 +538,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
+        "//:grpcpp_csds",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -536,13 +548,17 @@ grpc_cc_test(
         "//src/proto/grpc/testing/xds:lds_rds_for_test_proto",
         "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//src/proto/grpc/testing/xds/v3:ads_proto",
+        "//src/proto/grpc/testing/xds/v3:aggregate_cluster_proto",
         "//src/proto/grpc/testing/xds/v3:cluster_proto",
         "//src/proto/grpc/testing/xds/v3:discovery_proto",
         "//src/proto/grpc/testing/xds/v3:endpoint_proto",
+        "//src/proto/grpc/testing/xds/v3:fault_common_proto",
+        "//src/proto/grpc/testing/xds/v3:fault_proto",
         "//src/proto/grpc/testing/xds/v3:http_connection_manager_proto",
         "//src/proto/grpc/testing/xds/v3:listener_proto",
         "//src/proto/grpc/testing/xds/v3:lrs_proto",
         "//src/proto/grpc/testing/xds/v3:route_proto",
+        "//src/proto/grpc/testing/xds/v3:router_proto",
         "//src/proto/grpc/testing/xds/v3:tls_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
@@ -787,6 +803,25 @@ grpc_cc_test(
 grpc_cc_test(
     name = "message_allocator_end2end_test",
     srcs = ["message_allocator_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:simple_messages_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "context_allocator_end2end_test",
+    srcs = ["context_allocator_end2end_test.cc"],
     external_deps = [
         "gtest",
     ],

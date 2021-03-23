@@ -25,10 +25,10 @@ To add gRPC as a dependency in bazel:
       ],
       strip_prefix = "grpc-YOUR_GRPC_COMMIT_SHA",
   )
-
   load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
-
   grpc_deps()
+  load("@com_github_grpc_grpc//bazel:grpc_extra_deps.bzl", "grpc_extra_deps")
+  grpc_extra_deps()
   ```
 
 ## CMake

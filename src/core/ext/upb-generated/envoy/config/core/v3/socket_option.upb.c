@@ -16,7 +16,7 @@
 #include "upb/port_def.inc"
 
 static const upb_msglayout_field envoy_config_core_v3_SocketOption__fields[6] = {
-  {1, UPB_SIZE(24, 24), 0, 0, 9, 1},
+  {1, UPB_SIZE(20, 24), 0, 0, 9, 1},
   {2, UPB_SIZE(0, 0), 0, 0, 3, 1},
   {3, UPB_SIZE(8, 8), 0, 0, 3, 1},
   {4, UPB_SIZE(32, 40), UPB_SIZE(-41, -57), 0, 3, 1},
@@ -27,7 +27,7 @@ static const upb_msglayout_field envoy_config_core_v3_SocketOption__fields[6] = 
 const upb_msglayout envoy_config_core_v3_SocketOption_msginit = {
   NULL,
   &envoy_config_core_v3_SocketOption__fields[0],
-  UPB_SIZE(48, 64), 6, false,
+  UPB_SIZE(48, 64), 6, false, 255,
 };
 
 #include "upb/port_undef.inc"
