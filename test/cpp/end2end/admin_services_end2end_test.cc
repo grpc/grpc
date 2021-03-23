@@ -16,6 +16,8 @@
 //
 //
 
+#ifndef DISABLED_XDS_PROTO_IN_CC
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -101,3 +103,5 @@ int main(int argc, char** argv) {
   int ret = RUN_ALL_TESTS();
   return ret;
 }
+
+#endif  // DISABLED_XDS_PROTO_IN_CC
