@@ -1177,6 +1177,8 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
     def trailing_metadata(self):
         """Access value to be used as trailing metadata upon RPC completion.
 
+        This is an EXPERIMENTAL API.
+
         Returns:
           The trailing :term:`metadata` for the RPC.
         """
@@ -1248,6 +1250,8 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
     def code(self):
         """Accesses the value to be used as status code upon RPC completion.
 
+        This is an EXPERIMENTAL API.
+
         Returns:
           The StatusCode value for the RPC.
         """
@@ -1255,6 +1259,8 @@ class ServicerContext(six.with_metaclass(abc.ABCMeta, RpcContext)):
 
     def details(self):
         """Accesses the value to be used as detail string upon RPC completion.
+
+        This is an EXPERIMENTAL API.
 
         Returns:
           The details string of the RPC.
