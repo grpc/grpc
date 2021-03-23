@@ -314,84 +314,12 @@ std::string grpc_sockaddr_get_packed_host(
   }
 }
 
-void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
-                             uint32_t mask_bits) {
-  grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(address->addr);
-  if (addr->sa_family == GRPC_AF_INET) {
-    grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(addr);
-    if (mask_bits == 0) {
-      memset(&addr4->sin_addr, 0, sizeof(addr4->sin_addr));
-      return;
-    } else if (mask_bits >= 32) {
-      return;
-    }
-    uint32_t mask_ip_addr = (~(uint32_t(0))) << (32 - mask_bits);
-    addr4->sin_addr.s_addr &= grpc_htonl(mask_ip_addr);
-  } else if (addr->sa_family == GRPC_AF_INET6) {
-    grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(addr);
-    if (mask_bits == 0) {
-      memset(&addr6->sin6_addr, 0, sizeof(addr6->sin6_addr));
-      return;
-    } else if (mask_bits >= 128) {
-      return;
-    }
-    // We cannot use s6_addr32 since it is not defined on all platforms that we
-    // need it on.
-    uint32_t address_parts[4];
-    GPR_ASSERT(sizeof(addr6->sin6_addr) == sizeof(address_parts));
-    memcpy(address_parts, &addr6->sin6_addr, sizeof(grpc_in6_addr));
-    if (mask_bits <= 32) {
-      uint32_t mask_ip_addr = (~(uint32_t(0))) << (32 - mask_bits);
-      address_parts[0] &= grpc_htonl(mask_ip_addr);
-      memset(&address_parts[1], 0, sizeof(uint32_t));
-      memset(&address_parts[2], 0, sizeof(uint32_t));
-      memset(&address_parts[3], 0, sizeof(uint32_t));
-    } else if (mask_bits <= 64) {
-      mask_bits -= 32;
-      uint32_t mask_ip_addr = (~(uint32_t(0))) << (32 - mask_bits);
-      address_parts[1] &= grpc_htonl(mask_ip_addr);
-      memset(&address_parts[2], 0, sizeof(uint32_t));
-      memset(&address_parts[3], 0, sizeof(uint32_t));
-    } else if (mask_bits <= 96) {
-      mask_bits -= 64;
-      uint32_t mask_ip_addr = (~(uint32_t(0))) << (32 - mask_bits);
-      address_parts[2] &= grpc_htonl(mask_ip_addr);
-      memset(&address_parts[3], 0, sizeof(uint32_t));
-    } else {
-      mask_bits -= 96;
-      uint32_t mask_ip_addr = (~(uint32_t(0))) << (32 - mask_bits);
-      address_parts[3] &= grpc_htonl(mask_ip_addr);
-    }
-    memcpy(&addr6->sin6_addr, address_parts, sizeof(grpc_in6_addr));
-  }
+void grpc_sockaddr_mask_bits(grpc_resolved_address* /* address */,
+                             uint32_t /* mask_bits */) {
 }
 
-bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
-                                const grpc_resolved_address* subnet_address,
-                                uint32_t mask_bits) {
-  auto* addr = reinterpret_cast<const grpc_sockaddr*>(address->addr);
-  auto* subnet_addr =
-      reinterpret_cast<const grpc_sockaddr*>(subnet_address->addr);
-  if (addr->sa_family != subnet_addr->sa_family) return false;
-  grpc_resolved_address masked_address;
-  memcpy(&masked_address, address, sizeof(grpc_resolved_address));
-  addr = reinterpret_cast<grpc_sockaddr*>((&masked_address)->addr);
-  grpc_sockaddr_mask_bits(&masked_address, mask_bits);
-  if (addr->sa_family == GRPC_AF_INET) {
-    auto* addr4 = reinterpret_cast<const grpc_sockaddr_in*>(addr);
-    auto* subnet_addr4 = reinterpret_cast<const grpc_sockaddr_in*>(subnet_addr);
-    if (memcmp(&addr4->sin_addr, &subnet_addr4->sin_addr,
-               sizeof(addr4->sin_addr)) == 0) {
-      return true;
-    }
-  } else if (addr->sa_family == GRPC_AF_INET6) {
-    auto* addr6 = reinterpret_cast<const grpc_sockaddr_in6*>(addr);
-    auto* subnet_addr6 =
-        reinterpret_cast<const grpc_sockaddr_in6*>(subnet_addr);
-    if (memcmp(&addr6->sin6_addr, &subnet_addr6->sin6_addr,
-               sizeof(addr6->sin6_addr)) == 0) {
-      return true;
-    }
-  }
+bool grpc_sockaddr_match_subnet(const grpc_resolved_address* /* address */,
+                                const grpc_resolved_address* /* subnet_address */,
+                                uint32_t /* mask_bits */) {
   return false;
 }
