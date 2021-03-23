@@ -208,7 +208,7 @@ def main() -> None:
                   file=sys.stdout)
             total += count
 
-        print('\n{:>5} total scenarios (category: {})'.format(
+        print('\n{:>5}  total scenarios (category: {})'.format(
             total, args.category))
 
 
