@@ -197,6 +197,9 @@ cdef class _ServicerContext:
     def set_trailing_metadata(self, object metadata):
         self._rpc_state.trailing_metadata = tuple(metadata)
 
+    def trailing_metadata(self):
+        return self._rpc_state.trailing_metadata
+
     def invocation_metadata(self):
         return self._rpc_state.invocation_metadata()
 

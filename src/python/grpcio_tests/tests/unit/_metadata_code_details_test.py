@@ -664,7 +664,7 @@ class _InspectServicer(_Servicer):
         super().__init__()
         self.actual_code = None
         self.actual_details = None
-        self.actual_trailing_metadata=None
+        self.actual_trailing_metadata = None
 
     def unary_unary(self, request, context):
         super().unary_unary(request, context)
@@ -674,7 +674,7 @@ class _InspectServicer(_Servicer):
         self.actual_trailing_metadata = context.trailing_metadata()
 
 
-class InspectContextInterceptorTest(unittest.TestCase):
+class InspectContextTest(unittest.TestCase):
 
     def setUp(self):
         self._servicer = _InspectServicer()
