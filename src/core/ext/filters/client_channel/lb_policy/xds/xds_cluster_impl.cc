@@ -69,7 +69,7 @@ class CircuitBreakerCallCounterMap {
 
  private:
   Mutex mu_;
-  std::map<Key, CallCounter*> map_;
+  std::map<Key, CallCounter*> map_ ABSL_GUARDED_BY(mu_);
 };
 
 CircuitBreakerCallCounterMap* g_call_counter_map = nullptr;
