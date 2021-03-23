@@ -2225,7 +2225,8 @@ grpc_error* AddFilterChainDataForSourcePort(
         filter_chain_data,
     XdsApi::LdsUpdate::SourcePortsMap* ports_map, uint32_t port) {
   std::pair<XdsApi::LdsUpdate::SourcePortsMap::iterator, bool> insert_result =
-      ports_map->emplace(port, filter_chain_data);
+      ports_map->emplace(port, XdsApi::LdsUpdate::FilterChainDataSharedPtr{
+                                   std::move(filter_chain_data)});
   if (!insert_result.second) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Filter chains with duplicate matching rules detected");

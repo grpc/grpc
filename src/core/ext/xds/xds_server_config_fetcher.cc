@@ -47,20 +47,14 @@ class FilterChainMatchManager
  public:
   FilterChainMatchManager(
       RefCountedPtr<XdsClient> xds_client,
-      std::vector<XdsApi::LdsUpdate::FilterChain> filter_chains,
       XdsApi::LdsUpdate::DestinationIpMap destination_ip_map,
       absl::optional<XdsApi::LdsUpdate::FilterChain> default_filter_chain)
       : xds_client_(xds_client),
-        filter_chains_(std::move(filter_chains)),
         destination_ip_map_(std::move(destination_ip_map)),
         default_filter_chain_(std::move(default_filter_chain)) {}
 
   absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
       grpc_channel_args* args, grpc_endpoint* tcp) override;
-
-  const std::vector<XdsApi::LdsUpdate::FilterChain>& filter_chains() const {
-    return filter_chains_;
-  }
 
   const XdsApi::LdsUpdate::DestinationIpMap& destination_ip_map() const {
     return destination_ip_map_;
@@ -83,7 +77,6 @@ class FilterChainMatchManager
       const XdsApi::LdsUpdate::FilterChain::FilterChainData* filter_chain);
 
   const RefCountedPtr<XdsClient> xds_client_;
-  const std::vector<XdsApi::LdsUpdate::FilterChain> filter_chains_;
   const XdsApi::LdsUpdate::DestinationIpMap destination_ip_map_;
   const absl::optional<XdsApi::LdsUpdate::FilterChain> default_filter_chain_;
   Mutex mu_;
@@ -101,7 +94,6 @@ bool IsLoopbackIp(const grpc_resolved_address* address) {
     if (addr4->sin_addr.s_addr == grpc_htonl(INADDR_LOOPBACK)) {
       return true;
     }
-    // IPv6
   } else if (sock_addr->sa_family == GRPC_AF_INET6) {
     const grpc_sockaddr_in6* addr6 =
         reinterpret_cast<const grpc_sockaddr_in6*>(sock_addr);
@@ -121,12 +113,12 @@ FindFilterChainDataForSourcePort(
   if (!absl::SimpleAtoi(port_str, &port)) return nullptr;
   const auto& match = source_ports_map.find(port);
   if (match != source_ports_map.end()) {
-    return match->second.get();
+    return match->second.data.get();
   }
   // Search for the catch-all port 0 since we didn't get a direct match
   const auto& catch_all_match = source_ports_map.find(0);
   if (catch_all_match != source_ports_map.end()) {
-    return catch_all_match->second.get();
+    return catch_all_match->second.data.get();
   }
   return nullptr;
 }
@@ -437,13 +429,12 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         }
       }
       if (filter_chain_match_manager_ == nullptr ||
-          !(listener.filter_chains ==
-                filter_chain_match_manager_->filter_chains() &&
+          !(listener.destination_ip_map ==
+                filter_chain_match_manager_->destination_ip_map() &&
             listener.default_filter_chain ==
                 filter_chain_match_manager_->default_filter_chain())) {
         filter_chain_match_manager_ = MakeRefCounted<FilterChainMatchManager>(
-            xds_client_, std::move(listener.filter_chains),
-            std::move(listener.destination_ip_map),
+            xds_client_, std::move(listener.destination_ip_map),
             std::move(listener.default_filter_chain));
         server_config_watcher_->UpdateConnectionManager(
             filter_chain_match_manager_);

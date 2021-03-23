@@ -325,6 +325,11 @@ class XdsApi {
         // This is in principle the filter list.
         // We currently require exactly one filter, which is the HCM.
         HttpConnectionManager http_connection_manager;
+
+        bool operator==(const FilterChainData& other) const {
+          return downstream_tls_context == other.downstream_tls_context &&
+                 http_connection_manager == other.http_connection_manager;
+        }
       } filter_chain_data;
 
       bool operator==(const FilterChain& other) const {
@@ -338,8 +343,13 @@ class XdsApi {
       std::string ToString() const;
     };
 
-    using SourcePortsMap =
-        std::map<uint16_t, std::shared_ptr<FilterChain::FilterChainData>>;
+    struct FilterChainDataSharedPtr {
+      std::shared_ptr<FilterChain::FilterChainData> data;
+      bool operator==(const FilterChainDataSharedPtr& other) const {
+        return *data == *other.data;
+      }
+    };
+    using SourcePortsMap = std::map<uint16_t, FilterChainDataSharedPtr>;
     struct SourceIp {
       grpc_resolved_address address;
       int prefix_len;
@@ -352,15 +362,16 @@ class XdsApi {
     };
     using SourceIpMap = std::map<std::string, SourceIp>;
     using SourceTypesArray = std::array<SourceIpMap, 3>;
-    // We always fail match on applicaton protocols so those not included
-    // While build time, we only store either filter chains without transport
-    // protocol or with transport protocols. If we find transport protocols,
-    // then discard the entries without transport protocols We always fail match
-    // on server name, so those filter chains not included
     struct DestinationIp {
       grpc_resolved_address address;
       int prefix_len;
+      // We always fail match on applicaton protocols so those are not included
+      // here.
+      // We only store either filter chains without transport protocol or with
+      // the transport protocol "raw_buffer".
       bool transport_protocol_raw_buffer_provided = false;
+      // We always fail match on server name, so those filter chains are not
+      // included here.
       SourceTypesArray source_types_array;
 
       bool operator==(const DestinationIp& other) const {
