@@ -31,7 +31,8 @@ def gen_content_strings(input_files: Iterable[str]) -> Iterable[str]:
         return
 
     with open(input_files[0]) as f:
-        yield f.read()
+        content = f.read()
+    yield content
 
     for input_file in input_files[1:]:
         with open(input_file) as f:
