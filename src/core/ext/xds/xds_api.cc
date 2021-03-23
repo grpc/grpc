@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include <algorithm>
 #include <cctype>
 #include <cstdint>
@@ -87,7 +89,6 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/slice/slice_utils.h"

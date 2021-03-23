@@ -18,13 +18,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/sockaddr.h"
+
 #include "absl/strings/str_replace.h"
 
 #include "src/core/ext/xds/xds_certificate_provider.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/security/credentials/xds/xds_credentials.h"
