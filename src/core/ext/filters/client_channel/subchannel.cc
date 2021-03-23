@@ -459,7 +459,8 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 
   bool HasWatchers() const { return !watcher_list_.empty(); }
 
-  void NotifyLocked(grpc_connectivity_state state, const absl::Status& status) {
+  void NotifyLocked(grpc_connectivity_state state, const absl::Status& status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(subchannel_->mu_) {
     if (state == GRPC_CHANNEL_READY) {
       // If we had not already notified for CONNECTING state, do so now.
       // (We may have missed this earlier, because if the transition
@@ -498,7 +499,8 @@ class Subchannel::HealthWatcherMap::HealthWatcher
     }
   }
 
-  void StartHealthCheckingLocked() {
+  void StartHealthCheckingLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(subchannel_->mu_) {
     GPR_ASSERT(health_check_client_ == nullptr);
     health_check_client_ = MakeOrphanable<HealthCheckClient>(
         health_check_service_name_, subchannel_->connected_subchannel_,
