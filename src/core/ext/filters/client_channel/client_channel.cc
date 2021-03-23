@@ -185,7 +185,9 @@ class ChannelData {
   RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannelInDataPlane(
       SubchannelInterface* subchannel) const;
 
-  WorkSerializer* work_serializer() const { return work_serializer_.get(); }
+  WorkSerializer* work_serializer() const ABSL_LOCK_RETURNED(work_serializer_) {
+    return work_serializer_.get();
+  }
 
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
 
@@ -269,11 +271,13 @@ class ChannelData {
       GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "ResolverResultHandler");
     }
 
-    void ReturnResult(Resolver::Result result) override {
+    void ReturnResult(Resolver::Result result) override
+        ABSL_NO_THREAD_SAFETY_ANALYSIS {
       chand_->OnResolverResultChangedLocked(std::move(result));
     }
 
-    void ReturnError(grpc_error* error) override {
+    void ReturnError(grpc_error* error) override
+        ABSL_NO_THREAD_SAFETY_ANALYSIS {
       chand_->OnResolverErrorLocked(error);
     }
 
@@ -287,36 +291,45 @@ class ChannelData {
   // Note: All methods with "Locked" suffix must be invoked from within
   // work_serializer_.
 
-  void OnResolverResultChangedLocked(Resolver::Result result);
-  void OnResolverErrorLocked(grpc_error* error);
+  void OnResolverResultChangedLocked(Resolver::Result result)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void OnResolverErrorLocked(grpc_error* error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   void CreateOrUpdateLbPolicyLocked(
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
-      Resolver::Result result);
+      Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
-      const grpc_channel_args& args);
+      const grpc_channel_args& args)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   void UpdateStateAndPickerLocked(
       grpc_connectivity_state state, const absl::Status& status,
       const char* reason,
-      std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker);
+      std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   void UpdateServiceConfigInControlPlaneLocked(
       RefCountedPtr<ServiceConfig> service_config,
       RefCountedPtr<ConfigSelector> config_selector,
       const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
-      const char* lb_policy_name);
+      const char* lb_policy_name)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
-  void UpdateServiceConfigInDataPlaneLocked();
+  void UpdateServiceConfigInDataPlaneLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
-  void CreateResolverLocked();
-  void DestroyResolverAndLbPolicyLocked();
+  void CreateResolverLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
+  void DestroyResolverAndLbPolicyLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
-  grpc_error* DoPingLocked(grpc_transport_op* op);
+  grpc_error* DoPingLocked(grpc_transport_op* op)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
-  void StartTransportOpLocked(grpc_transport_op* op);
+  void StartTransportOpLocked(grpc_transport_op* op)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
-  void TryToConnectLocked();
+  void TryToConnectLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   //
   // Fields set at construction and never modified.
@@ -1427,7 +1440,10 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     ~WatcherWrapper() override {
       auto* parent = parent_.release();  // ref owned by lambda
       parent->chand_->work_serializer_->Run(
-          [parent]() { parent->Unref(DEBUG_LOCATION, "WatcherWrapper"); },
+          [parent]()
+              ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->chand_->work_serializer_) {
+                parent->Unref(DEBUG_LOCATION, "WatcherWrapper");
+              },
           DEBUG_LOCATION);
     }
 
@@ -1440,10 +1456,11 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       }
       Ref().release();  // ref owned by lambda
       parent_->chand_->work_serializer_->Run(
-          [this]() {
-            ApplyUpdateInControlPlaneWorkSerializer();
-            Unref();
-          },
+          [this]()
+              ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->chand_->work_serializer_) {
+                ApplyUpdateInControlPlaneWorkSerializer();
+                Unref();
+              },
           DEBUG_LOCATION);
     }
 
@@ -1464,7 +1481,8 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     grpc_connectivity_state last_seen_state() const { return last_seen_state_; }
 
    private:
-    void ApplyUpdateInControlPlaneWorkSerializer() {
+    void ApplyUpdateInControlPlaneWorkSerializer()
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(parent_->chand_->work_serializer_) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p: processing connectivity change in work serializer "
@@ -1580,7 +1598,7 @@ ChannelData::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
   }
   // Pass the ref from creating the object to Start().
   chand_->work_serializer_->Run(
-      [this]() {
+      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
         // The ref is passed to AddWatcherLocked().
         AddWatcherLocked();
       },
@@ -1628,8 +1646,11 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
   if (state != GRPC_CHANNEL_SHUTDOWN) {
-    chand_->work_serializer_->Run([this]() { RemoveWatcherLocked(); },
-                                  DEBUG_LOCATION);
+    chand_->work_serializer_->Run(
+        [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
+          RemoveWatcherLocked();
+        },
+        DEBUG_LOCATION);
   }
 }
 
@@ -1645,14 +1666,16 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
                                 DEBUG_LOCATION);
 }
 
-void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked() {
+void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
   Closure::Run(DEBUG_LOCATION, watcher_timer_init_, GRPC_ERROR_NONE);
   // Add new watcher. Pass the ref of the object from creation to OrphanablePtr.
   chand_->state_tracker_.AddWatcher(
       initial_state_, OrphanablePtr<ConnectivityStateWatcherInterface>(this));
 }
 
-void ChannelData::ExternalConnectivityWatcher::RemoveWatcherLocked() {
+void ChannelData::ExternalConnectivityWatcher::RemoveWatcherLocked()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
   chand_->state_tracker_.RemoveWatcher(this);
 }
 
@@ -1669,12 +1692,16 @@ class ChannelData::ConnectivityWatcherAdder {
         initial_state_(initial_state),
         watcher_(std::move(watcher)) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherAdder");
-    chand_->work_serializer_->Run([this]() { AddWatcherLocked(); },
-                                  DEBUG_LOCATION);
+    chand_->work_serializer_->Run(
+        [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
+          AddWatcherLocked();
+        },
+        DEBUG_LOCATION);
   }
 
  private:
-  void AddWatcherLocked() {
+  void AddWatcherLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
     chand_->state_tracker_.AddWatcher(initial_state_, std::move(watcher_));
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "ConnectivityWatcherAdder");
     delete this;
@@ -1695,12 +1722,16 @@ class ChannelData::ConnectivityWatcherRemover {
                              AsyncConnectivityStateWatcherInterface* watcher)
       : chand_(chand), watcher_(watcher) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherRemover");
-    chand_->work_serializer_->Run([this]() { RemoveWatcherLocked(); },
-                                  DEBUG_LOCATION);
+    chand_->work_serializer_->Run(
+        [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
+          RemoveWatcherLocked();
+        },
+        DEBUG_LOCATION);
   }
 
  private:
-  void RemoveWatcherLocked() {
+  void RemoveWatcherLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
     chand_->state_tracker_.RemoveWatcher(watcher_);
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_,
                              "ConnectivityWatcherRemover");
@@ -1769,9 +1800,9 @@ class ChannelData::ClientChannelControlHelper
         chand_, std::move(subchannel), std::move(health_check_service_name));
   }
 
-  void UpdateState(
-      grpc_connectivity_state state, const absl::Status& status,
-      std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) override {
+  void UpdateState(grpc_connectivity_state state, const absl::Status& status,
+                   std::unique_ptr<LoadBalancingPolicy::SubchannelPicker>
+                       picker) override ABSL_NO_THREAD_SAFETY_ANALYSIS {
     if (chand_->resolver_ == nullptr) return;  // Shutting down.
     grpc_error* disconnect_error = chand_->disconnect_error();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
@@ -2551,7 +2582,10 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
   // Pop into control plane work_serializer for remaining ops.
   GRPC_CHANNEL_STACK_REF(chand->owning_stack_, "start_transport_op");
   chand->work_serializer_->Run(
-      [chand, op]() { chand->StartTransportOpLocked(op); }, DEBUG_LOCATION);
+      [chand, op]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand->work_serializer_) {
+        chand->StartTransportOpLocked(op);
+      },
+      DEBUG_LOCATION);
 }
 
 void ChannelData::GetChannelInfo(grpc_channel_element* elem,
@@ -2602,7 +2636,8 @@ ChannelData::GetConnectedSubchannelInDataPlane(
   return connected_subchannel->Ref();
 }
 
-void ChannelData::TryToConnectLocked() {
+void ChannelData::TryToConnectLocked()
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_) {
   if (lb_policy_ != nullptr) {
     lb_policy_->ExitIdleLocked();
   } else if (resolver_ == nullptr) {
@@ -2616,7 +2651,9 @@ grpc_connectivity_state ChannelData::CheckConnectivityState(
   grpc_connectivity_state out = state_tracker_.state();
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     GRPC_CHANNEL_STACK_REF(owning_stack_, "TryToConnect");
-    work_serializer_->Run([this]() { TryToConnectLocked(); }, DEBUG_LOCATION);
+    work_serializer_->Run([this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
+                              work_serializer_) { TryToConnectLocked(); },
+                          DEBUG_LOCATION);
   }
   return out;
 }
@@ -3110,11 +3147,12 @@ bool CallData::CheckResolutionLocked(grpc_call_element* elem,
             [](void* arg, grpc_error* /*error*/) {
               auto* chand = static_cast<ChannelData*>(arg);
               chand->work_serializer()->Run(
-                  [chand]() {
-                    chand->CheckConnectivityState(/*try_to_connect=*/true);
-                    GRPC_CHANNEL_STACK_UNREF(chand->owning_stack(),
-                                             "CheckResolutionLocked");
-                  },
+                  [chand]()
+                      ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand->work_serializer()) {
+                        chand->CheckConnectivityState(/*try_to_connect=*/true);
+                        GRPC_CHANNEL_STACK_UNREF(chand->owning_stack(),
+                                                 "CheckResolutionLocked");
+                      },
                   DEBUG_LOCATION);
             },
             chand, nullptr),
