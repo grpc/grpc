@@ -36,6 +36,6 @@ const struct sockaddr* ResolvedAddress::Sockaddr() const {
   return reinterpret_cast<const struct sockaddr*>(buffer_);
 }
 
-const int ResolvedAddress::Length() const { return len_; }
+int ResolvedAddress::Length() const { return len_; }
 
 }  // namespace grpc_io

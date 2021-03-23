@@ -724,6 +724,13 @@
     <file baseinstalldir="/" name="src/core/lib/debug/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/channel_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/event_engine.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/port.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/slice_allocator.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/slice_allocator.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.h" role="src" />

@@ -34,7 +34,7 @@ class ResolvedAddress {
  public:
   ResolvedAddress(const void* addr, int len);
   const struct sockaddr* Sockaddr() const;
-  const int Length() const;
+  int Length() const;
 
  private:
   char buffer_[128];
