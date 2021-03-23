@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#ifndef LOCAL_GOOGLE_HOME_HORK_PROJ_GRPC_SRC_CORE_LIB_EVENT_ENGINE_PORT_H
-#define LOCAL_GOOGLE_HOME_HORK_PROJ_GRPC_SRC_CORE_LIB_EVENT_ENGINE_PORT_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_PORT_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_PORT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -41,4 +41,4 @@ typedef struct sockaddr grpc_sockaddr;
 typedef struct sockaddr_in grpc_sockaddr_in;
 typedef struct sockaddr_in6 grpc_sockaddr_in6;
 
-#endif  // LOCAL_GOOGLE_HOME_HORK_PROJ_GRPC_SRC_CORE_LIB_EVENT_ENGINE_PORT_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_PORT_H
