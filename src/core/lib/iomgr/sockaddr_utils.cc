@@ -313,13 +313,3 @@ std::string grpc_sockaddr_get_packed_host(
     GPR_ASSERT(false);
   }
 }
-
-void grpc_sockaddr_mask_bits(grpc_resolved_address* /* address */,
-                             uint32_t /* mask_bits */) {
-}
-
-bool grpc_sockaddr_match_subnet(const grpc_resolved_address* /* address */,
-                                const grpc_resolved_address* /* subnet_address */,
-                                uint32_t /* mask_bits */) {
-  return false;
-}

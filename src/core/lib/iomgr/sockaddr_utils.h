@@ -80,11 +80,4 @@ int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr);
 std::string grpc_sockaddr_get_packed_host(
     const grpc_resolved_address* resolved_addr);
 
-void grpc_sockaddr_mask_bits(grpc_resolved_address* address,
-                             uint32_t mask_bits);
-
-bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
-                                const grpc_resolved_address* subnet_address,
-                                uint32_t mask_bits);
-
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H */
