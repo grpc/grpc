@@ -163,7 +163,8 @@ class RingHash : public LoadBalancingPolicy {
       grpc_connectivity_state last_connectivity_state;
     };
 
-    Picker(RingHash* parent, RingHashSubchannelList* subchannel_list);
+    Picker(RefCountedPtr<RingHash> parent,
+           RingHashSubchannelList* subchannel_list);
 
     // Picker helper which returns false if subchannel is in TRANSIENT_FAILURE,
     // true otherwise.
@@ -172,8 +173,7 @@ class RingHash : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args) override;
 
    private:
-    // Using pointer value only, no ref held -- do not dereference!
-    RingHash* parent_;
+    RefCountedPtr<RingHash> parent_;
 
     // A ring of subchannels.
     std::vector<RingEntry> ring_;
@@ -194,9 +194,9 @@ class RingHash : public LoadBalancingPolicy {
 // RingHash::Picker
 //
 
-RingHash::Picker::Picker(RingHash* parent,
+RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
                          RingHashSubchannelList* subchannel_list)
-    : parent_(parent) {
+    : parent_(std::move(parent)) {
   size_t num_subchannels = subchannel_list->num_subchannels();
   // Store the weights while finding the sum.
   struct AddressWeights {
@@ -294,7 +294,7 @@ RingHash::Picker::Picker(RingHash* parent,
     gpr_log(GPR_INFO,
             "[RH %p picker %p] created picker from subchannel_list=%p "
             "with %" PRIuPTR " subchannels" PRIuPTR,
-            parent_, this, subchannel_list, ring_.size());
+            parent_.get(), this, subchannel_list, ring_.size());
   }
 }
 
@@ -358,7 +358,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(GPR_INFO,
             "[RH %p picker %p] hashed to index %" PRIuPTR ", subchannel=%p",
-            parent_, this, midp, ring_[midp].subchannel.get());
+            parent_.get(), this, midp, ring_[midp].subchannel.get());
   }
   if (MaybePickSubchannel(ring_[midp], &result)) {
     return result;
@@ -411,8 +411,10 @@ void RingHash::RingHashSubchannelList::StartWatchingLocked() {
   }
   RingHash* p = static_cast<RingHash*>(policy());
   // Sending up the initial picker while all subchannels are in IDLE state.
-  p->channel_control_helper()->UpdateState(GRPC_CHANNEL_READY, absl::Status(),
-                                           absl::make_unique<Picker>(p, this));
+  p->channel_control_helper()->UpdateState(
+      GRPC_CHANNEL_READY, absl::Status(),
+      absl::make_unique<Picker>(p->Ref(DEBUG_LOCATION, "RingHashPicker"),
+                                this));
 }
 
 void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
@@ -447,7 +449,9 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
   if (num_transient_failure_ < 2) {
     /* READY */
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_READY, absl::Status(), absl::make_unique<Picker>(p, this));
+        GRPC_CHANNEL_READY, absl::Status(),
+        absl::make_unique<Picker>(p->Ref(DEBUG_LOCATION, "RingHashPicker"),
+                                  this));
   } else if (num_ready_ == 0 && num_connecting_ == 0) {
     /* TRANSIENT_FAILURE >= 2 and everything else is IDLE */
     grpc_error* error =
