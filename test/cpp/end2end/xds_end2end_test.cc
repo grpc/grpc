@@ -7490,6 +7490,9 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
+// TODO(yashykt): Re-enable when control-plane is fixed for server-side HTTP
+// filters.
+#if 0
 TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   // Set env var to enable filters parsing.
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
@@ -7558,6 +7561,7 @@ TEST_P(XdsEnabledServerTest,
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
+#endif
 
 // Verify that a mismatch of listening address results in "not serving" status.
 TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {

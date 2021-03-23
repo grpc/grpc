@@ -1866,7 +1866,9 @@ grpc_error* HttpConnectionManagerParse(
     }
   }
   // Parse filters.
-  if (XdsSecurityEnabled() || XdsFaultInjectionEnabled()) {
+  // TODO(yashykt): Enable for server-side when control-plane is fixed for
+  // server-side HTTP filters.
+  if (is_client && (XdsSecurityEnabled() || XdsFaultInjectionEnabled())) {
     if (!is_v2) {
       size_t num_filters = 0;
       const auto* http_filters =
