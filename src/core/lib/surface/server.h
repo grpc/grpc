@@ -22,7 +22,6 @@
 #include <list>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -32,7 +31,6 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/atomic.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -458,22 +456,13 @@ struct grpc_server {
 // approaches here.
 struct grpc_server_config_fetcher {
  public:
-  class ConnectionManager : public grpc_core::RefCounted<ConnectionManager> {
-   public:
-    // Ownership of \a args is transfered.
-    virtual absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
-        grpc_channel_args* args, grpc_endpoint* tcp) = 0;
-  };
-
   class WatcherInterface {
    public:
     virtual ~WatcherInterface() = default;
-    // UpdateConnectionManager() is invoked by the config fetcher when a new
-    // config is available. Implementations should update the connection manager
-    // and start serving if not already serving. Ownership of \a args is
-    // transferred.
-    virtual void UpdateConnectionManager(
-        grpc_core::RefCountedPtr<ConnectionManager> manager) = 0;
+    // UpdateConfig() is invoked the config fetcher when a new config is
+    // available. Implementations should update the configuration and start
+    // serving if not already serving. Ownership of \a args is transferred.
+    virtual void UpdateConfig(grpc_channel_args* args) = 0;
     // Implementations should stop serving when this is called. Serving should
     // only resume when UpdateConfig() is invoked.
     virtual void StopServing() = 0;
@@ -486,7 +475,6 @@ struct grpc_server_config_fetcher {
                           grpc_channel_args* args,
                           std::unique_ptr<WatcherInterface> watcher) = 0;
   virtual void CancelWatch(WatcherInterface* watcher) = 0;
-
   virtual grpc_pollset_set* interested_parties() = 0;
 };
 
