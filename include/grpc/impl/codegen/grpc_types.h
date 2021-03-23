@@ -417,6 +417,9 @@ typedef struct {
 #define GRPC_ARG_CHANNEL_POOL_DOMAIN "grpc.channel_pooling_domain"
 /** gRPC Objective-C channel pooling id. */
 #define GRPC_ARG_CHANNEL_ID "grpc.channel_id"
+/** If set, this is a shared_ptr<EventEngine> that will be used instead of the
+ * default */
+#define GRPC_ARG_EVENT_ENGINE "grpc.event_engine"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

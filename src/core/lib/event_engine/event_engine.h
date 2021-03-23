@@ -43,6 +43,7 @@
 // - Add EventEngine to the public ChannelArgs (not EventEngine-specific).
 // - Research server acceptor
 namespace grpc_io {
+namespace experimental {
 
 ////////////////////////////////////////////////////////////////////////////////
 // The EventEngine encapsulates all platform-specific behaviors related to low
@@ -223,6 +224,7 @@ absl::StatusOr<std::vector<ResolvedAddress>> BlockingLookupHostname(
 // instantiated.
 std::shared_ptr<EventEngine> grpc_get_default_event_engine();
 
+}  // namespace experimental
 }  // namespace grpc_io
 
 #endif /* GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_IOMGR_EVENT_ENGINE_H */
