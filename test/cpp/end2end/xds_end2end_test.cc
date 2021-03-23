@@ -3309,23 +3309,8 @@ TEST_P(LdsTest, MultipleBadResources) {
                            ": Listener has neither address nor ApiListener"))));
 }
 
-// TODO(roth): Remove this test when we remove the
-// GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION environment variable guard.
-TEST_P(LdsTest, HttpFiltersEnabled) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
-  SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForAllBackends();
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
-}
-
 // Tests that we ignore filters after the router filter.
 TEST_P(LdsTest, IgnoresHttpFiltersAfterRouterFilter) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   SetNextResolutionForLbChannelAllBalancers();
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
@@ -3344,12 +3329,10 @@ TEST_P(LdsTest, IgnoresHttpFiltersAfterRouterFilter) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   WaitForAllBackends();
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we fail RPCs if there is no router filter.
 TEST_P(LdsTest, FailRpcsIfNoHttpRouterFilter) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   SetNextResolutionForLbChannelAllBalancers();
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
@@ -3375,12 +3358,10 @@ TEST_P(LdsTest, FailRpcsIfNoHttpRouterFilter) {
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK empty filter names.
 TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3402,12 +3383,10 @@ TEST_P(LdsTest, RejectsEmptyHttpFilterName) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("empty filter name at index 1"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK duplicate HTTP filter names.
 TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3429,12 +3408,10 @@ TEST_P(LdsTest, RejectsDuplicateHttpFilterName) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("duplicate HTTP filter name: router"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK unknown filter types.
 TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3458,12 +3435,10 @@ TEST_P(LdsTest, RejectsUnknownHttpFilterType) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("no filter registered for config type "
                                    "envoy.config.listener.v3.Listener"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we ignore optional unknown filter types.
 TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3484,12 +3459,10 @@ TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
   WaitForAllBackends();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK filters without configs.
 TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3512,12 +3485,10 @@ TEST_P(LdsTest, RejectsHttpFilterWithoutConfig) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we ignore optional filters without configs.
 TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3537,12 +3508,10 @@ TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
   WaitForAllBackends();
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK unparseable filter configs.
 TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3570,12 +3539,10 @@ TEST_P(LdsTest, RejectsUnparseableHttpFilterType) {
       ::testing::HasSubstr(
           "filter config for type "
           "envoy.extensions.filters.http.router.v3.Router failed to parse"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK HTTP filters unsupported on client-side.
 TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3601,12 +3568,10 @@ TEST_P(LdsTest, RejectsHttpFiltersNotSupportedOnClients) {
       response_state.error_message,
       ::testing::HasSubstr("Filter grpc.testing.server_only_http_filter is not "
                            "supported on clients"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we ignore optional HTTP filters unsupported on client-side.
 TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3629,7 +3594,6 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
   WaitForBackend(0);
   EXPECT_EQ(balancers_[0]->ads_service()->lds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 using LdsV2Test = LdsTest;
@@ -3639,7 +3603,6 @@ using LdsV2Test = LdsTest;
 // the server sending v2 resources when the client requests v3, so this
 // just tests a pure v2 setup.  When we have time, fix this.
 TEST_P(LdsV2Test, IgnoresHttpFilters) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
   listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
@@ -3657,7 +3620,6 @@ TEST_P(LdsV2Test, IgnoresHttpFilters) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendOk();
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 using LdsRdsTest = BasicTest;
@@ -5917,7 +5879,6 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
 // Test that we NACK unknown filter types in VirtualHost.
 TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
@@ -5935,13 +5896,11 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInVirtualHost) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("no filter registered for config type "
                                    "envoy.config.listener.v3.Listener"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we ignore optional unknown filter types in VirtualHost.
 TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
@@ -5960,13 +5919,11 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
   WaitForAllBackends();
   EXPECT_EQ(RouteConfigurationResponseState(0).state,
             AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK filters without configs in VirtualHost.
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
@@ -5984,13 +5941,11 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInVirtualHost) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK filters without configs in FilterConfig in VirtualHost.
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
@@ -6009,13 +5964,11 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInVirtualHost) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we ignore optional filters without configs in VirtualHost.
 TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
@@ -6033,13 +5986,11 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
   WaitForAllBackends();
   EXPECT_EQ(RouteConfigurationResponseState(0).state,
             AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK unparseable filter types in VirtualHost.
 TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInVirtualHost) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config =
       route_config.mutable_virtual_hosts(0)->mutable_typed_per_filter_config();
@@ -6058,13 +6009,11 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInVirtualHost) {
   EXPECT_THAT(
       response_state.error_message,
       ::testing::HasSubstr("router filter does not support config override"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK unknown filter types in Route.
 TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
@@ -6083,13 +6032,11 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInRoute) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("no filter registered for config type "
                                    "envoy.config.listener.v3.Listener"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we ignore optional unknown filter types in Route.
 TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
@@ -6109,13 +6056,11 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
   WaitForAllBackends();
   EXPECT_EQ(RouteConfigurationResponseState(0).state,
             AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK filters without configs in Route.
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
@@ -6134,13 +6079,11 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInRoute) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK filters without configs in FilterConfig in Route.
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
@@ -6160,13 +6103,11 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInFilterConfigInRoute) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we ignore optional filters without configs in Route.
 TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
@@ -6185,13 +6126,11 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
   WaitForAllBackends();
   EXPECT_EQ(RouteConfigurationResponseState(0).state,
             AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK unparseable filter types in Route.
 TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInRoute) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* per_filter_config = route_config.mutable_virtual_hosts(0)
                                 ->mutable_routes(0)
@@ -6211,13 +6150,11 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInRoute) {
   EXPECT_THAT(
       response_state.error_message,
       ::testing::HasSubstr("router filter does not support config override"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK unknown filter types in ClusterWeight.
 TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
@@ -6241,13 +6178,11 @@ TEST_P(LdsRdsTest, RejectsUnknownHttpFilterTypeInClusterWeight) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("no filter registered for config type "
                                    "envoy.config.listener.v3.Listener"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we ignore optional unknown filter types in ClusterWeight.
 TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
@@ -6272,13 +6207,11 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
   WaitForAllBackends();
   EXPECT_EQ(RouteConfigurationResponseState(0).state,
             AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK filters without configs in ClusterWeight.
 TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
@@ -6302,14 +6235,12 @@ TEST_P(LdsRdsTest, RejectsHttpFilterWithoutConfigInClusterWeight) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK filters without configs in FilterConfig in ClusterWeight.
 TEST_P(LdsRdsTest,
        RejectsHttpFilterWithoutConfigInFilterConfigInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
@@ -6334,13 +6265,11 @@ TEST_P(LdsRdsTest,
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
                   "no filter config specified for filter name unknown"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we ignore optional filters without configs in ClusterWeight.
 TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
@@ -6364,13 +6293,11 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
   WaitForAllBackends();
   EXPECT_EQ(RouteConfigurationResponseState(0).state,
             AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Test that we NACK unparseable filter types in ClusterWeight.
 TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInClusterWeight) {
   if (GetParam().use_v2()) return;  // Filters supported in v3 only.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   RouteConfiguration route_config = default_route_config_;
   auto* cluster_weight = route_config.mutable_virtual_hosts(0)
                              ->mutable_routes(0)
@@ -6395,7 +6322,6 @@ TEST_P(LdsRdsTest, RejectsUnparseableHttpFilterTypeInClusterWeight) {
   EXPECT_THAT(
       response_state.error_message,
       ::testing::HasSubstr("router filter does not support config override"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 using CdsTest = BasicTest;
@@ -7456,7 +7382,6 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
 
 TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
   // Set env var to enable filters parsing.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   Listener listener;
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
@@ -7487,12 +7412,10 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("no filter registered for config type "
                                    "grpc.testing.unsupported_http_filter"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
   // Set env var to enable filters parsing.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   Listener listener;
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
@@ -7524,13 +7447,11 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
       response_state.error_message,
       ::testing::HasSubstr("Filter grpc.testing.client_only_http_filter is not "
                            "supported on servers"));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 TEST_P(XdsEnabledServerTest,
        HttpFilterNotSupportedOnServerIgnoredWhenOptional) {
   // Set env var to enable filters parsing.
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   Listener listener;
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
@@ -7556,7 +7477,6 @@ TEST_P(XdsEnabledServerTest,
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // Verify that a mismatch of listening address results in "not serving" status.
@@ -9613,7 +9533,6 @@ class FaultInjectionTest : public XdsEnd2endTest {
 
 // Test to ensure the most basic fault injection config works.
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const uint32_t kAbortPercentagePerHundred = 100;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -9629,36 +9548,10 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysAbort) {
   // Fire several RPCs, and expect all of them to be aborted.
   CheckRpcSendFailure(5, RpcOptions().set_wait_for_ready(true),
                       StatusCode::ABORTED);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
-}
-
-// Without the env, the fault injection won't be enabled.
-TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutEnv) {
-  const uint32_t kAbortPercentagePerHundred = 100;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Create an EDS resource
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  // Construct the fault injection filter config
-  HTTPFault http_fault;
-  auto* abort_percentage = http_fault.mutable_abort()->mutable_percentage();
-  abort_percentage->set_numerator(kAbortPercentagePerHundred);
-  abort_percentage->set_denominator(FractionalPercent::HUNDRED);
-  http_fault.mutable_abort()->set_grpc_status(
-      static_cast<uint32_t>(StatusCode::ABORTED));
-  // Config fault injection via different setup
-  SetFilterConfig(http_fault);
-  // Fire several RPCs, and expect all of them to pass.
-  CheckRpcSendOk(5, RpcOptions().set_wait_for_ready(true));
 }
 
 // Without the listener config, the fault injection won't be enabled.
 TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const uint32_t kAbortPercentagePerHundred = 100;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -9681,11 +9574,9 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
   SetListenerAndRouteConfiguration(0, default_listener_, route);
   // Fire several RPCs, and expect all of them to be pass.
   CheckRpcSendOk(5, RpcOptions().set_wait_for_ready(true));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const size_t kNumRpcs = 100;
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
@@ -9720,11 +9611,9 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
   EXPECT_THAT(seen_abort_rate,
               ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
                                ::testing::Le(kAbortRate + kErrorTolerance)));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const size_t kNumRpcs = 100;
   const uint32_t kAbortPercentageCap = 100;
   const uint32_t kAbortPercentage = 50;
@@ -9763,13 +9652,11 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
   EXPECT_THAT(seen_abort_rate,
               ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
                                ::testing::Le(kAbortRate + kErrorTolerance)));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // TODO(lidiz) reduce the error tolerance to a lower level without dramatically
 // increase the duration of fault injection tests.
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const size_t kNumRpcs = 100;
   const uint32_t kFixedDelaySeconds = 100;
   const uint32_t kRpcTimeoutMilliseconds = 10;  // 10 ms
@@ -9808,11 +9695,9 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   EXPECT_THAT(seen_delay_rate,
               ::testing::AllOf(::testing::Ge(kDelayRate - kErrorTolerance),
                                ::testing::Le(kDelayRate + kErrorTolerance)));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const size_t kNumRpcs = 100;
   const uint32_t kFixedDelayMilliseconds = 100000;  // 100 seconds
   const uint32_t kRpcTimeoutMilliseconds = 10;      // 10 ms
@@ -9854,11 +9739,9 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   EXPECT_THAT(seen_delay_rate,
               ::testing::AllOf(::testing::Ge(kDelayRate - kErrorTolerance),
                                ::testing::Le(kDelayRate + kErrorTolerance)));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const size_t kNumRpcs = 100;
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
@@ -9902,7 +9785,6 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   EXPECT_THAT(seen_abort_rate,
               ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
                                ::testing::Le(kAbortRate + kErrorTolerance)));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 // This test and the above test apply different denominators to delay and abort.
@@ -9910,7 +9792,6 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
 // in our code.
 TEST_P(FaultInjectionTest,
        XdsFaultInjectionAlwaysDelayPercentageAbortSwitchDenominator) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const size_t kNumRpcs = 100;
   const uint32_t kAbortPercentagePerMillion = 500000;
   const double kAbortRate = kAbortPercentagePerMillion / 1000000.0;
@@ -9954,11 +9835,9 @@ TEST_P(FaultInjectionTest,
   EXPECT_THAT(seen_abort_rate,
               ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
                                ::testing::Le(kAbortRate + kErrorTolerance)));
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION", "true");
   const uint32_t kMaxFault = 10;
   const uint32_t kNumRpcs = 30;  // kNumRpcs should be bigger than kMaxFault
   const uint32_t kRpcTimeoutMs = 2000;     // 2 seconds
@@ -10004,7 +9883,6 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   EXPECT_EQ(kMaxFault, num_delayed);
   // Other RPCs should be ok.
   EXPECT_EQ(kNumRpcs - kMaxFault, num_ok);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
 }
 
 class BootstrapContentsFromEnvVarTest : public XdsEnd2endTest {
