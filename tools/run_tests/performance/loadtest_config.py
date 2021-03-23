@@ -37,7 +37,7 @@ import scenario_config_exporter
 
 def default_prefix() -> str:
     """Constructs and returns a default prefix for LoadTest names."""
-    user = os.environ.get('USER', 'loadtest')
+    return os.environ.get('USER', 'loadtest')
 
 
 def now_string() -> str:
