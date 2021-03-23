@@ -191,10 +191,11 @@ def main() -> None:
                       default='.*',
                       type=str,
                       help='Regex to select scenarios to run.')
-    argp.add_argument('--category',
-                      choices=['all', 'scalable', 'smoketest', 'sweep'],
-                      default='all',
-                      help='Select a category of tests to run.')
+    argp.add_argument(
+        '--category',
+        choices=['all', 'inproc', 'scalable', 'smoketest', 'sweep'],
+        default='all',
+        help='Select a category of tests to run.')
     argp.add_argument(
         '--client_language',
         choices=language_choices,

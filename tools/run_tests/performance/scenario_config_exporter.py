@@ -48,7 +48,7 @@ def category_string(categories: Iterable[str], category: str) -> str:
     if category != 'all':
         return category if category in categories else ''
 
-    main_categories = ('scalable', 'smoketest', 'inproc')
+    main_categories = ('scalable', 'smoketest')
     s = set(categories)
 
     c = [m for m in main_categories if m in s]
@@ -65,7 +65,7 @@ def gen_scenario_languages(
             client_language = scenario.get('CLIENT_LANGUAGE')
             server_language = scenario.get('SERVER_LANGUAGE')
             categories = scenario.get('CATEGORIES', [])
-            if not categories:
+            if category != 'all' and category not in categories:
                 continue
             yield (language, client_language, server_language,
                    category_string(categories, category))
@@ -161,10 +161,11 @@ def main() -> None:
                       default='.*',
                       type=str,
                       help='Regex to select scenarios to run.')
-    argp.add_argument('--category',
-                      default='all',
-                      choices=['all', 'scalable', 'smoketest', 'sweep'],
-                      help='Select scenarios for a category of tests.')
+    argp.add_argument(
+        '--category',
+        default='all',
+        choices=['all', 'inproc', 'scalable', 'smoketest', 'sweep'],
+        help='Select scenarios for a category of tests.')
     argp.add_argument(
         '--client_language',
         choices=language_choices,
@@ -193,11 +194,11 @@ def main() -> None:
         print('Scenario count for all languages (category: {}):'.format(
             args.category),
               file=sys.stderr)
-        print('{:>5}  {:16} {:8} {:8} {:8}'.format('Count', 'Language',
-                                                   'Client', 'Server',
-                                                   'Categories'),
+        print('{:>5}  {:16} {:8} {:8} {}'.format('Count', 'Language', 'Client',
+                                                 'Server', 'Categories'),
               file=sys.stdout)
         c = collections.Counter(gen_scenario_languages(args.category))
+        total = 0
         for ((l, cl, sl, cat), count) in c.most_common():
             print('{count:5}  {l:16} {cl:8} {sl:8} {cat}'.format(l=l,
                                                                  cl=str(cl),
@@ -205,6 +206,10 @@ def main() -> None:
                                                                  count=count,
                                                                  cat=cat),
                   file=sys.stdout)
+            total += count
+
+        print('\n{:>5} total scenarios (category: {})'.format(
+            total, args.category))
 
 
 if __name__ == "__main__":
