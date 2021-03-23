@@ -43,8 +43,11 @@ from typing import Any, Callable, Dict, Iterable, Optional, Tuple
 import scenario_config
 
 
-def category_string(categories: Iterable[str]) -> str:
+def category_string(categories: Iterable[str], category: str) -> str:
     """Converts a list of categories into a single string for counting."""
+    if category != 'all':
+        return category if category in categories else ''
+
     main_categories = ('scalable', 'smoketest', 'inproc')
     s = set(categories)
 
@@ -54,15 +57,18 @@ def category_string(categories: Iterable[str]) -> str:
     return ' '.join(c)
 
 
-def gen_scenario_languages() -> Iterable[Tuple[str, str, str, str]]:
+def gen_scenario_languages(
+        category: str) -> Iterable[Tuple[str, str, str, str]]:
     """Generates tuples containing the languages specified in each scenario."""
     for language in scenario_config.LANGUAGES:
         for scenario in scenario_config.LANGUAGES[language].scenarios():
-            client_language = scenario.get('ÇLIENT_LANGUAGE')
+            client_language = scenario.get('CLIENT_LANGUAGE')
             server_language = scenario.get('SERVER_LANGUAGE')
-            categories = category_string(scenario.get('CATEGORIES', []))
-
-            yield (language, client_language, server_language, categories)
+            categories = scenario.get('CATEGORIES', [])
+            if not categories:
+                continue
+            yield (language, client_language, server_language,
+                   category_string(categories, category))
 
 
 def scenario_filter(
@@ -184,12 +190,14 @@ def main() -> None:
         dump_to_json_files(scenarios, args.filename_prefix)
 
     if args.count_scenarios:
-        print('Scenario count for all languages:', file=sys.stderr)
+        print('Scenario count for all languages (category: {}):'.format(
+            args.category),
+              file=sys.stderr)
         print('{:>5}  {:16} {:8} {:8} {:8}'.format('Count', 'Language',
                                                    'Client', 'Server',
                                                    'Categories'),
               file=sys.stdout)
-        c = collections.Counter(gen_scenario_languages())
+        c = collections.Counter(gen_scenario_languages(args.category))
         for ((l, cl, sl, cat), count) in c.most_common():
             print('{count:5}  {l:16} {cl:8} {sl:8} {cat}'.format(l=l,
                                                                  cl=str(cl),
