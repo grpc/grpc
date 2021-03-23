@@ -632,9 +632,8 @@ std::string XdsApi::LdsUpdate::FilterChain::ToString() const {
   return absl::StrFormat(
       "{filter_chain_match=%s, downstream_tls_context=%s, "
       "http_connection_manager=%s}",
-      filter_chain_match.ToString(),
-      filter_chain_data.downstream_tls_context.ToString(),
-      filter_chain_data.http_connection_manager.ToString());
+      filter_chain_match.ToString(), downstream_tls_context.ToString(),
+      http_connection_manager.ToString());
 }
 
 //
@@ -2165,9 +2164,9 @@ grpc_error* FilterChainParse(
         "Could not parse HttpConnectionManager config from filter "
         "typed_config");
   }
-  error = HttpConnectionManagerParse(
-      false /* is_client */, context, http_connection_manager, is_v2,
-      &filter_chain->filter_chain_data.http_connection_manager);
+  error = HttpConnectionManagerParse(false /* is_client */, context,
+                                     http_connection_manager, is_v2,
+                                     &filter_chain->http_connection_manager);
   if (error != GRPC_ERROR_NONE) return error;
   // Get the DownstreamTlsContext for the filter chain
   if (XdsSecurityEnabled()) {
@@ -2175,9 +2174,8 @@ grpc_error* FilterChainParse(
         envoy_config_listener_v3_FilterChain_transport_socket(
             filter_chain_proto);
     if (transport_socket != nullptr) {
-      error = DownstreamTlsContextParse(
-          context, transport_socket,
-          &filter_chain->filter_chain_data.downstream_tls_context);
+      error = DownstreamTlsContextParse(context, transport_socket,
+                                        &filter_chain->downstream_tls_context);
     }
   }
   return error;
@@ -2224,13 +2222,22 @@ grpc_error* LdsResponseParseServer(
           "Field \'use_original_dst\' is not supported.");
     }
   }
+  // TODO(yashykt): As part of this, we'll need to refactor the code to process
+  // the HttpConnectionManager config so that it is shared with the client-side
+  // parsing.
   size_t size = 0;
   auto* filter_chains =
       envoy_config_listener_v3_Listener_filter_chains(listener, &size);
+  // TODO(yashykt): Remove following if block when FilterChainMatch
+  // implementation is in
+  if (size == 0) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "At least one filter chain needed.");
+  }
   lds_update->filter_chains.reserve(size);
   for (size_t i = 0; i < size; i++) {
     XdsApi::LdsUpdate::FilterChain filter_chain;
-    error = FilterChainParse(context, filter_chains[i], is_v2, &filter_chain);
+    error = FilterChainParse(context, filter_chains[0], is_v2, &filter_chain);
     if (error != GRPC_ERROR_NONE) return error;
     lds_update->filter_chains.push_back(std::move(filter_chain));
   }
