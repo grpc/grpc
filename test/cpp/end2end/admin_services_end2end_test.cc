@@ -21,13 +21,15 @@
 
 #include "absl/strings/str_cat.h"
 
-#include <grpcpp/ext/admin_services.h>
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 
 #include "src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#ifndef DISABLED_XDS_PROTO_IN_CC
+#include <grpcpp/ext/admin_services.h>
 
 namespace grpc {
 namespace testing {
@@ -94,6 +96,8 @@ TEST_F(AdminServicesTest, XdsDisabled) {
 
 }  // namespace testing
 }  // namespace grpc
+
+#endif  // DISABLED_XDS_PROTO_IN_CC
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
