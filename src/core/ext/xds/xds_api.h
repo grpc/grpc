@@ -47,10 +47,6 @@ namespace grpc_core {
 // default.
 bool XdsSecurityEnabled();
 
-// TODO(lidiz): This will be removed once the fault injection feature is
-// fully integration-tested and enabled by default.
-bool XdsFaultInjectionEnabled();
-
 class XdsClient;
 
 class XdsApi {

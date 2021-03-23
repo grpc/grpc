@@ -146,16 +146,6 @@ bool XdsSecurityEnabled() {
   return parse_succeeded && parsed_value;
 }
 
-// TODO(lidiz): This will be removed once the fault injection feature is
-// fully integration-tested and enabled by default.
-bool XdsFaultInjectionEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
 //
 // XdsApi::Route::HashPolicy
 //
@@ -1501,8 +1491,7 @@ grpc_error* RouteActionParse(const EncodingContext& context,
       cluster.weight = google_protobuf_UInt32Value_value(weight);
       if (cluster.weight == 0) continue;
       sum_of_weights += cluster.weight;
-      if ((XdsSecurityEnabled() || XdsFaultInjectionEnabled()) &&
-          context.use_v3) {
+      if (context.use_v3) {
         grpc_error* error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_WeightedCluster_ClusterWeight,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
@@ -1664,8 +1653,7 @@ grpc_error* RouteConfigParse(
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("VirtualHost has no domains");
     }
     // Parse typed_per_filter_config.
-    if ((XdsSecurityEnabled() || XdsFaultInjectionEnabled()) &&
-        context.use_v3) {
+    if (context.use_v3) {
       grpc_error* error = ParseTypedPerFilterConfig<
           envoy_config_route_v3_VirtualHost,
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry>(
@@ -1709,8 +1697,7 @@ grpc_error* RouteConfigParse(
       error = RouteActionParse(context, routes[j], &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
-      if ((XdsSecurityEnabled() || XdsFaultInjectionEnabled()) &&
-          context.use_v3) {
+      if (context.use_v3) {
         grpc_error* error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_Route,
             envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(
@@ -1866,82 +1853,79 @@ grpc_error* HttpConnectionManagerParse(
     }
   }
   // Parse filters.
-  if (XdsSecurityEnabled() || XdsFaultInjectionEnabled()) {
-    if (!is_v2) {
-      size_t num_filters = 0;
-      const auto* http_filters =
-          envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
-              http_connection_manager_proto, &num_filters);
-      std::set<absl::string_view> names_seen;
-      for (size_t i = 0; i < num_filters; ++i) {
-        const auto* http_filter = http_filters[i];
-        absl::string_view name = UpbStringToAbsl(
-            envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
-                http_filter));
-        if (name.empty()) {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("empty filter name at index ", i).c_str());
-        }
-        if (names_seen.find(name) != names_seen.end()) {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("duplicate HTTP filter name: ", name).c_str());
-        }
-        names_seen.insert(name);
-        const bool is_optional =
-            envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
-                http_filter);
-        const google_protobuf_Any* any =
-            envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
-                http_filter);
-        if (any == nullptr) {
-          if (is_optional) continue;
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("no filter config specified for filter name ", name)
-                  .c_str());
-        }
-        absl::string_view filter_type;
-        grpc_error* error =
-            ExtractHttpFilterTypeName(context, any, &filter_type);
-        if (error != GRPC_ERROR_NONE) return error;
-        const XdsHttpFilterImpl* filter_impl =
-            XdsHttpFilterRegistry::GetFilterForType(filter_type);
-        if (filter_impl == nullptr) {
-          if (is_optional) continue;
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat("no filter registered for config type ", filter_type)
-                  .c_str());
-        }
-        if ((is_client && !filter_impl->IsSupportedOnClients()) ||
-            (!is_client && !filter_impl->IsSupportedOnServers())) {
-          if (is_optional) continue;
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrFormat("Filter %s is not supported on %s", filter_type,
-                              is_client ? "clients" : "servers")
-                  .c_str());
-        }
-        absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
-            filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
-                                              context.arena);
-        if (!filter_config.ok()) {
-          return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(
-                  "filter config for type ", filter_type,
-                  " failed to parse: ", filter_config.status().ToString())
-                  .c_str());
-        }
-        http_connection_manager->http_filters.emplace_back(
-            XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
-                std::string(name), std::move(*filter_config)});
+  if (!is_v2) {
+    size_t num_filters = 0;
+    const auto* http_filters =
+        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_http_filters(
+            http_connection_manager_proto, &num_filters);
+    std::set<absl::string_view> names_seen;
+    for (size_t i = 0; i < num_filters; ++i) {
+      const auto* http_filter = http_filters[i];
+      absl::string_view name = UpbStringToAbsl(
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_name(
+              http_filter));
+      if (name.empty()) {
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("empty filter name at index ", i).c_str());
       }
-    } else {
-      // If using a v2 config, we just hard-code a list containing only the
-      // router filter without actually looking at the config.  This ensures
-      // that the right thing happens in the xds resolver without having
-      // to expose whether the resource we received was v2 or v3.
+      if (names_seen.find(name) != names_seen.end()) {
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("duplicate HTTP filter name: ", name).c_str());
+      }
+      names_seen.insert(name);
+      const bool is_optional =
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
+              http_filter);
+      const google_protobuf_Any* any =
+          envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
+              http_filter);
+      if (any == nullptr) {
+        if (is_optional) continue;
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("no filter config specified for filter name ", name)
+                .c_str());
+      }
+      absl::string_view filter_type;
+      grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
+      if (error != GRPC_ERROR_NONE) return error;
+      const XdsHttpFilterImpl* filter_impl =
+          XdsHttpFilterRegistry::GetFilterForType(filter_type);
+      if (filter_impl == nullptr) {
+        if (is_optional) continue;
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("no filter registered for config type ", filter_type)
+                .c_str());
+      }
+      if ((is_client && !filter_impl->IsSupportedOnClients()) ||
+          (!is_client && !filter_impl->IsSupportedOnServers())) {
+        if (is_optional) continue;
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrFormat("Filter %s is not supported on %s", filter_type,
+                            is_client ? "clients" : "servers")
+                .c_str());
+      }
+      absl::StatusOr<XdsHttpFilterImpl::FilterConfig> filter_config =
+          filter_impl->GenerateFilterConfig(google_protobuf_Any_value(any),
+                                            context.arena);
+      if (!filter_config.ok()) {
+        return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(
+                "filter config for type ", filter_type,
+                " failed to parse: ", filter_config.status().ToString())
+                .c_str());
+      }
       http_connection_manager->http_filters.emplace_back(
           XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
-              "router", {kXdsHttpRouterFilterConfigName, Json()}});
+              std::string(name), std::move(*filter_config)});
     }
+  } else {
+    // If using a v2 config, we just hard-code a list containing only the
+    // router filter without actually looking at the config.  This ensures
+    // that the right thing happens in the xds resolver without having
+    // to expose whether the resource we received was v2 or v3.
+    http_connection_manager->http_filters.emplace_back(
+        XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter{
+            "router", {kXdsHttpRouterFilterConfigName, Json()}});
   }
   if (is_client) {
     // Found inlined route_config. Parse it to find the cluster_name.
