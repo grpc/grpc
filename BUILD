@@ -2630,7 +2630,7 @@ grpc_cc_library_xds(
     alwayslink = 1,
 )
 
-grpc_cc_library(
+grpc_cc_library_xds(
     name = "grpcpp_admin",
     srcs = [
         "src/cpp/server/admin/admin_services.cc",

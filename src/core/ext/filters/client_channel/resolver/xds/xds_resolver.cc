@@ -366,35 +366,33 @@ XdsResolver::XdsConfigSelector::XdsConfigSelector(
     }
   }
   // Populate filter list.
-  if (XdsFaultInjectionEnabled()) {
-    bool found_router = false;
-    for (const auto& http_filter :
-         resolver_->current_listener_.http_connection_manager.http_filters) {
-      // Stop at the router filter.  It's a no-op for us, and we ignore
-      // anything that may come after it, for compatibility with Envoy.
-      if (http_filter.config.config_proto_type_name ==
-          kXdsHttpRouterFilterConfigName) {
-        found_router = true;
-        break;
-      }
-      // Find filter.  This is guaranteed to succeed, because it's checked
-      // at config validation time in the XdsApi code.
-      const XdsHttpFilterImpl* filter_impl =
-          XdsHttpFilterRegistry::GetFilterForType(
-              http_filter.config.config_proto_type_name);
-      GPR_ASSERT(filter_impl != nullptr);
-      // Add C-core filter to list.
-      filters_.push_back(filter_impl->channel_filter());
+  bool found_router = false;
+  for (const auto& http_filter :
+       resolver_->current_listener_.http_connection_manager.http_filters) {
+    // Stop at the router filter.  It's a no-op for us, and we ignore
+    // anything that may come after it, for compatibility with Envoy.
+    if (http_filter.config.config_proto_type_name ==
+        kXdsHttpRouterFilterConfigName) {
+      found_router = true;
+      break;
     }
-    // For compatibility with Envoy, if the router filter is not
-    // configured, we fail all RPCs.
-    if (!found_router) {
-      filter_error_ = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "no xDS HTTP router filter configured"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-      filters_.push_back(&grpc_lame_filter);
-    }
+    // Find filter.  This is guaranteed to succeed, because it's checked
+    // at config validation time in the XdsApi code.
+    const XdsHttpFilterImpl* filter_impl =
+        XdsHttpFilterRegistry::GetFilterForType(
+            http_filter.config.config_proto_type_name);
+    GPR_ASSERT(filter_impl != nullptr);
+    // Add C-core filter to list.
+    filters_.push_back(filter_impl->channel_filter());
+  }
+  // For compatibility with Envoy, if the router filter is not
+  // configured, we fail all RPCs.
+  if (!found_router) {
+    filter_error_ =
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "no xDS HTTP router filter configured"),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    filters_.push_back(&grpc_lame_filter);
   }
 }
 

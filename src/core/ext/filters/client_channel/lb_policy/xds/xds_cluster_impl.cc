@@ -107,17 +107,6 @@ CircuitBreakerCallCounterMap::CallCounter::~CallCounter() {
 
 constexpr char kXdsClusterImpl[] = "xds_cluster_impl_experimental";
 
-// TODO (donnadionne): Check to see if circuit breaking is enabled, this will be
-// removed once circuit breaking feature is fully integrated and enabled by
-// default.
-bool XdsCircuitBreakingEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
 // Config for xDS Cluster Impl LB policy.
 class XdsClusterImplLbConfig : public LoadBalancingPolicy::Config {
  public:
@@ -208,7 +197,6 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 
    private:
     RefCountedPtr<CircuitBreakerCallCounterMap::CallCounter> call_counter_;
-    bool xds_circuit_breaking_enabled_;
     uint32_t max_concurrent_requests_;
     RefCountedPtr<XdsApi::EdsUpdate::DropConfig> drop_config_;
     RefCountedPtr<XdsClusterDropStats> drop_stats_;
@@ -277,7 +265,6 @@ class XdsClusterImplLb : public LoadBalancingPolicy {
 XdsClusterImplLb::Picker::Picker(XdsClusterImplLb* xds_cluster_impl_lb,
                                  RefCountedPtr<RefCountedPicker> picker)
     : call_counter_(xds_cluster_impl_lb->call_counter_),
-      xds_circuit_breaking_enabled_(XdsCircuitBreakingEnabled()),
       max_concurrent_requests_(
           xds_cluster_impl_lb->config_->max_concurrent_requests()),
       drop_config_(xds_cluster_impl_lb->config_->drop_config()),
@@ -301,15 +288,13 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
   }
   // Handle circuit breaking.
   uint32_t current = call_counter_->Increment();
-  if (xds_circuit_breaking_enabled_) {
-    // Check and see if we exceeded the max concurrent requests count.
-    if (current >= max_concurrent_requests_) {
-      call_counter_->Decrement();
-      if (drop_stats_ != nullptr) drop_stats_->AddUncategorizedDrops();
-      PickResult result;
-      result.type = PickResult::PICK_COMPLETE;
-      return result;
-    }
+  // Check and see if we exceeded the max concurrent requests count.
+  if (current >= max_concurrent_requests_) {
+    call_counter_->Decrement();
+    if (drop_stats_ != nullptr) drop_stats_->AddUncategorizedDrops();
+    PickResult result;
+    result.type = PickResult::PICK_COMPLETE;
+    return result;
   }
   // If we're not dropping the call, we should always have a child picker.
   if (picker_ == nullptr) {  // Should never happen.
