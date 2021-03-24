@@ -15,32 +15,18 @@
  * limitations under the License.
  *
  */
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_H
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/port.h"
-
-// Platforms are expected to provide definitions for:
-// * sockaddr
-// * sockaddr_in
-// * sockaddr_in6
 namespace grpc_io {
+namespace experimental {
 
-// A thin wrapper around a platform-specific sockaddr type. A sockaddr struct
-// exists on all platforms that gRPC supports.
-class ResolvedAddress {
- public:
-  ResolvedAddress(const void* addr, int len);
-  const struct sockaddr* Sockaddr() const;
-  int Length() const;
+// TODO(hork): define
+class ChannelArgs;
 
- private:
-  char buffer_[128];
-  int len_;
-};
-
+}  // namespace experimental
 }  // namespace grpc_io
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_H

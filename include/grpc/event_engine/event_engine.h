@@ -28,8 +28,8 @@
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
 
-#include "src/core/lib/event_engine/slice_allocator.h"
-#include "src/core/lib/event_engine/sockaddr.h"
+#include "grpc/event_engine/slice_allocator.h"
+#include "grpc/event_engine/sockaddr.h"
 
 // TODO(hork):
 // - Define the Endpoint::Write metrics collection objects and ownership

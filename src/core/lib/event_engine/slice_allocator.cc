@@ -17,13 +17,13 @@
  */
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/slice_allocator.h"
+#include "grpc/event_engine/slice_allocator.h"
 
 #include <functional>
 
 #include "absl/status/status.h"
 
-#include "src/core/lib/event_engine/channel_args.h"
+#include "grpc/event_engine/channel_args.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 
 namespace grpc_io {

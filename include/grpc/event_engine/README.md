@@ -7,18 +7,22 @@ integrators to bring their own functionality. This allows for integration with
 external event loops, siloing I/O and task execution between channels or
 servers, and various custom integrations that were previously unsupported.
 
-## Key differences
+*WARNING*: This is experimental code and is subject to change.
 
-An EventEngine is similar to the former `iomgr` system, in that is provides the
-low-level functionality described above.
+## Key differences with iomgr
 
-However, gRPC no longer borrows threads from the application, EventEngines are
+An EventEngine is similar to the former `iomgr` system, in that it provides the
+same low-level functionality described above.
+
+However, gRPC no longer borrows threads from the application; EventEngines are
 expected to bring all resources required to perform I/O and execute callbacks.
-This also enables a means of support for the public Callback API in C++.
+This also enables a means to support the public Callback API in C++.
 
-Also, EventEngines can be provided to gRPC at runtime, per Channel or Server.
+Another key difference is that EventEngines can be provided to gRPC at runtime,
+either per Channel or Server.
 
 ## TODO: documentation
 
 * Example usage
 * Link to gRFC
+* Note on blocking behavior of callbacks and I/O

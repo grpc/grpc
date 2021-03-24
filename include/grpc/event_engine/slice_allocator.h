@@ -24,7 +24,7 @@
 
 #include "absl/status/status.h"
 
-#include "src/core/lib/event_engine/channel_args.h"
+#include "grpc/event_engine/channel_args.h"
 
 // forward-declaring an internal struct, not used publicly.
 struct grpc_resource_quota;
