@@ -17,6 +17,8 @@ require 'mkmf'
 
 windows = RUBY_PLATFORM =~ /mingw|mswin/
 bsd = RUBY_PLATFORM =~ /bsd/
+darwin = RUBY_PLATFORM =~ /darwin/
+linux = RUBY_PLATFORM =~ /linux/
 
 grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
@@ -37,7 +39,7 @@ if ENV['LD'].nil? || ENV['LD'].size == 0
     ENV['LD'] = ENV['CC']
 end
 
-if RUBY_PLATFORM =~ /darwin/
+if darwin
   ENV['AR'] = 'libtool'
   ENV['ARFLAGS'] = '-o'
 end
@@ -47,7 +49,7 @@ ENV['EMBED_ZLIB'] = 'true'
 ENV['EMBED_CARES'] = 'true'
 
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
-if RUBY_PLATFORM =~ /darwin/
+if darwin
   if RUBY_PLATFORM =~ /arm64/
     ENV['ARCH_FLAGS'] = '-arch arm64'
   else
@@ -75,8 +77,8 @@ end
 $CFLAGS << ' -I' + File.join(grpc_root, 'include')
 
 ext_export_file = File.join(grpc_root, 'src', 'ruby', 'ext', 'grpc', 'ext-export')
-$LDFLAGS << ' -Wl,--version-script="' + ext_export_file + '.gcc"' if RUBY_PLATFORM =~ /linux/
-$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if RUBY_PLATFORM =~ /darwin/
+$LDFLAGS << ' -Wl,--version-script="' + ext_export_file + '.gcc"' if linux
+$LDFLAGS << ' -Wl,-exported_symbols_list,"' + ext_export_file + '.clang"' if darwin
 
 $LDFLAGS << ' ' + File.join(grpc_lib_dir, 'libgrpc.a') unless windows
 if grpc_config == 'gcov'
@@ -88,8 +90,8 @@ if grpc_config == 'dbg'
   $CFLAGS << ' -O0 -ggdb3'
 end
 
-$LDFLAGS << ' -Wl,-wrap,memcpy' if RUBY_PLATFORM =~ /linux/
-$LDFLAGS << ' -static-libgcc -static-libstdc++' if RUBY_PLATFORM =~ /linux/
+$LDFLAGS << ' -Wl,-wrap,memcpy' if linux
+$LDFLAGS << ' -static-libgcc -static-libstdc++' if linux
 $LDFLAGS << ' -static' if windows
 
 $CFLAGS << ' -std=c99 '
@@ -102,7 +104,7 @@ puts 'Generating Makefile for ' + output
 create_makefile(output)
 
 strip_tool = RbConfig::CONFIG['STRIP']
-strip_tool = 'strip -x' if RUBY_PLATFORM =~ /darwin/
+strip_tool = 'strip -x' if darwin
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|
