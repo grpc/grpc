@@ -34,8 +34,7 @@
 // TODO(hork):
 // - Define the Endpoint::Write metrics collection objects and ownership
 // - explicitly define lifetimes and ownership of all objects.
-// - elaborate on constraints & pre-conditions for API usage.
-// - Add minimal tests to exercise the API against dummy impl
+// - Add minimal tests
 // - Add EventEngine to the public ChannelArgs (not EventEngine-specific).
 // - Research server acceptor
 namespace grpc_io {
@@ -131,7 +130,8 @@ class EventEngine {
     // TODO(hork): define cleanup operations, lifetimes, responsibilities.
     virtual void Close(Callback on_close) = 0;
     // These methods return an address in the format described in DNSResolver.
-    // TODO(hork): be clear about lifetime of addresses.
+    // The returned values are owned by the Endpoint and are expected to remain
+    // valid for the life of the Endpoint.
     virtual const ResolvedAddress* GetPeerAddress() const = 0;
     virtual const ResolvedAddress* GetLocalAddress() const = 0;
   };
