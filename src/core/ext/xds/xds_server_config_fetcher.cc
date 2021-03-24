@@ -322,8 +322,6 @@ FilterChainMatchManager::UpdateChannelArgsForConnection(grpc_channel_args* args,
       std::move(*result);
   GPR_ASSERT(xds_certificate_provider != nullptr);
   grpc_arg arg_to_add = xds_certificate_provider->MakeChannelArg();
-  // Not removing this now leads to a deadlock when the certificate providers
-  // are destroyed lower in the stack.
   grpc_channel_args* updated_args =
       grpc_channel_args_copy_and_add(args, &arg_to_add, 1);
   grpc_channel_args_destroy(args);

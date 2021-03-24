@@ -2526,8 +2526,10 @@ grpc_error* LdsResponseParseServer(
     error =
         FilterChainParse(context, default_filter_chain, is_v2, &filter_chain);
     if (error != GRPC_ERROR_NONE) return error;
-    lds_update->default_filter_chain =
-        std::move(*filter_chain.filter_chain_data);
+    if (filter_chain.filter_chain_data != nullptr) {
+      lds_update->default_filter_chain =
+          std::move(*filter_chain.filter_chain_data);
+    }
   }
   if (size == 0 && default_filter_chain == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No filter chain provided.");
