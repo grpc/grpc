@@ -2864,7 +2864,6 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
 }
 
 TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING", "true");
   constexpr size_t kMaxConcurrentRequests = 10;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -2906,11 +2905,9 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   // Make sure RPCs go to the correct backend:
   EXPECT_EQ(kMaxConcurrentRequests + 1,
             backends_[0]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING");
 }
 
 TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING", "true");
   constexpr size_t kMaxConcurrentRequests = 10;
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
@@ -2957,45 +2954,6 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   status = SendRpc();
   EXPECT_TRUE(status.ok());
   for (size_t i = 1; i < kMaxConcurrentRequests; ++i) {
-    rpcs[i].CancelRpc();
-  }
-  // Make sure RPCs go to the correct backend:
-  EXPECT_EQ(kMaxConcurrentRequests + 1,
-            backends_[0]->backend_service()->request_count());
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING");
-}
-
-TEST_P(XdsResolverOnlyTest, CircuitBreakingDisabled) {
-  constexpr size_t kMaxConcurrentRequests = 10;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Populate new EDS resources.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
-  // Update CDS resource to set max concurrent request.
-  CircuitBreakers circuit_breaks;
-  Cluster cluster = default_cluster_;
-  auto* threshold = cluster.mutable_circuit_breakers()->add_thresholds();
-  threshold->set_priority(RoutingPriority::DEFAULT);
-  threshold->mutable_max_requests()->set_value(kMaxConcurrentRequests);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  // Send exactly max_concurrent_requests long RPCs.
-  LongRunningRpc rpcs[kMaxConcurrentRequests];
-  for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
-    rpcs[i].StartRpc(stub_.get());
-  }
-  // Wait for all RPCs to be in flight.
-  while (backends_[0]->backend_service()->RpcsWaitingForClientCancel() <
-         kMaxConcurrentRequests) {
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
-                                 gpr_time_from_micros(1 * 1000, GPR_TIMESPAN)));
-  }
-  // Sending a RPC now should not fail as circuit breaking is disabled.
-  Status status = SendRpc();
-  EXPECT_TRUE(status.ok());
-  for (size_t i = 0; i < kMaxConcurrentRequests; ++i) {
     rpcs[i].CancelRpc();
   }
   // Make sure RPCs go to the correct backend:
@@ -5093,7 +5051,6 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT", "true");
   const int64_t kTimeoutMillis = 500;
   const int64_t kTimeoutNano = kTimeoutMillis * 1000000;
   const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
@@ -5226,89 +5183,9 @@ TEST_P(LdsRdsTest, XdsRoutingApplyXdsTimeout) {
   t0 = NowFromCycleCounter();
   EXPECT_GE(t0, t1);
   EXPECT_LT(t0, t2);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
-}
-
-TEST_P(LdsRdsTest, XdsRoutingXdsTimeoutDisabled) {
-  const int64_t kTimeoutMillis = 500;
-  const int64_t kTimeoutNano = kTimeoutMillis * 1000000;
-  const int64_t kTimeoutGrpcTimeoutHeaderMaxSecond = 1;
-  const int64_t kTimeoutApplicationSecond = 4;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Populate new EDS resources.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {grpc_pick_unused_port_or_die()}},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
-  RouteConfiguration new_route_config = default_route_config_;
-  // route 1: Set grpc_timeout_header_max of 1.5
-  auto* route1 = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* max_stream_duration =
-      route1->mutable_route()->mutable_max_stream_duration();
-  auto* duration = max_stream_duration->mutable_grpc_timeout_header_max();
-  duration->set_seconds(kTimeoutGrpcTimeoutHeaderMaxSecond);
-  duration->set_nanos(kTimeoutNano);
-  SetRouteConfiguration(0, new_route_config);
-  // Test grpc_timeout_header_max of 1.5 seconds is not applied
-  gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
-  gpr_timespec est_timeout_time = gpr_time_add(
-      t0, gpr_time_from_millis(
-              kTimeoutGrpcTimeoutHeaderMaxSecond * 1000 + kTimeoutMillis,
-              GPR_TIMESPAN));
-  CheckRpcSendFailure(1,
-                      RpcOptions()
-                          .set_rpc_service(SERVICE_ECHO1)
-                          .set_rpc_method(METHOD_ECHO1)
-                          .set_wait_for_ready(true)
-                          .set_timeout_ms(kTimeoutApplicationSecond * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
-  gpr_timespec timeout_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  EXPECT_GT(gpr_time_cmp(timeout_time, est_timeout_time), 0);
-}
-
-TEST_P(LdsRdsTest, XdsRoutingHttpTimeoutDisabled) {
-  const int64_t kTimeoutMillis = 500;
-  const int64_t kTimeoutNano = kTimeoutMillis * 1000000;
-  const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
-  const int64_t kTimeoutApplicationSecond = 4;
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  // Populate new EDS resources.
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", {grpc_pick_unused_port_or_die()}},
-  });
-  // Construct listener.
-  auto listener = default_listener_;
-  HttpConnectionManager http_connection_manager;
-  listener.mutable_api_listener()->mutable_api_listener()->UnpackTo(
-      &http_connection_manager);
-  // Set up HTTP max_stream_duration of 3.5 seconds
-  auto* duration =
-      http_connection_manager.mutable_common_http_protocol_options()
-          ->mutable_max_stream_duration();
-  duration->set_seconds(kTimeoutHttpMaxStreamDurationSecond);
-  duration->set_nanos(kTimeoutNano);
-  listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
-      http_connection_manager);
-  SetListenerAndRouteConfiguration(0, std::move(listener),
-                                   default_route_config_);
-  // Test http_stream_duration of 3.5 seconds is not applied
-  auto t0 = gpr_now(GPR_CLOCK_MONOTONIC);
-  auto est_timeout_time = gpr_time_add(
-      t0, gpr_time_from_millis(
-              kTimeoutHttpMaxStreamDurationSecond * 1000 + kTimeoutMillis,
-              GPR_TIMESPAN));
-  CheckRpcSendFailure(1,
-                      RpcOptions().set_wait_for_ready(true).set_timeout_ms(
-                          kTimeoutApplicationSecond * 1000),
-                      StatusCode::DEADLINE_EXCEEDED);
-  auto timeout_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  EXPECT_GT(gpr_time_cmp(timeout_time, est_timeout_time), 0);
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT", "true");
   const int64_t kTimeoutNano = 500000000;
   const int64_t kTimeoutMaxStreamDurationSecond = 2;
   const int64_t kTimeoutHttpMaxStreamDurationSecond = 3;
@@ -5410,11 +5287,9 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenXdsTimeoutExplicit0) {
       system_clock::now() - t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT", "true");
   const int64_t kTimeoutApplicationSecond = 4;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5449,13 +5324,11 @@ TEST_P(LdsRdsTest, XdsRoutingApplyApplicationTimeoutWhenHttpTimeoutExplicit0) {
                                                            t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
 }
 
 // Test to ensure application-specified deadline won't be affected when
 // the xDS config does not specify a timeout.
 TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT", "true");
   const int64_t kTimeoutApplicationSecond = 4;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -5474,7 +5347,6 @@ TEST_P(LdsRdsTest, XdsRoutingWithOnlyApplicationTimeout) {
                                                            t0);
   EXPECT_GT(ellapsed_nano_seconds.count(),
             kTimeoutApplicationSecond * 1000000000);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
 }
 
 TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {

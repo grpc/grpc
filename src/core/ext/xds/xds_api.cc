@@ -100,17 +100,6 @@
 
 namespace grpc_core {
 
-// TODO(donnadionne): Check to see if timeout is enabled, this will be
-// removed once timeout feature is fully integration-tested and enabled by
-// default.
-bool XdsTimeoutEnabled() {
-  char* value = gpr_getenv("GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT");
-  bool parsed_value;
-  bool parse_succeeded = gpr_parse_bool_value(value, &parsed_value);
-  gpr_free(value);
-  return parse_succeeded && parsed_value;
-}
-
 // TODO(donnadionne): Check to see if cluster types aggregate_cluster and
 // logical_dns are enabled, this will be
 // removed once the cluster types are fully integration-tested and enabled by
@@ -1516,7 +1505,7 @@ grpc_error* RouteActionParse(const EncodingContext& context,
     // No cluster or weighted_clusters found in RouteAction, ignore this route.
     *ignore_route = true;
   }
-  if (XdsTimeoutEnabled() && !*ignore_route) {
+  if (!*ignore_route) {
     const envoy_config_route_v3_RouteAction_MaxStreamDuration*
         max_stream_duration =
             envoy_config_route_v3_RouteAction_max_stream_duration(route_action);
@@ -1836,20 +1825,18 @@ grpc_error* HttpConnectionManagerParse(
     bool is_v2,
     XdsApi::LdsUpdate::HttpConnectionManager* http_connection_manager) {
   MaybeLogHttpConnectionManager(context, http_connection_manager_proto);
-  if (XdsTimeoutEnabled()) {
-    // Obtain max_stream_duration from Http Protocol Options.
-    const envoy_config_core_v3_HttpProtocolOptions* options =
-        envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_common_http_protocol_options(
-            http_connection_manager_proto);
-    if (options != nullptr) {
-      const google_protobuf_Duration* duration =
-          envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
-      if (duration != nullptr) {
-        http_connection_manager->http_max_stream_duration.seconds =
-            google_protobuf_Duration_seconds(duration);
-        http_connection_manager->http_max_stream_duration.nanos =
-            google_protobuf_Duration_nanos(duration);
-      }
+  // Obtain max_stream_duration from Http Protocol Options.
+  const envoy_config_core_v3_HttpProtocolOptions* options =
+      envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_common_http_protocol_options(
+          http_connection_manager_proto);
+  if (options != nullptr) {
+    const google_protobuf_Duration* duration =
+        envoy_config_core_v3_HttpProtocolOptions_max_stream_duration(options);
+    if (duration != nullptr) {
+      http_connection_manager->http_max_stream_duration.seconds =
+          google_protobuf_Duration_seconds(duration);
+      http_connection_manager->http_max_stream_duration.nanos =
+          google_protobuf_Duration_nanos(duration);
     }
   }
   // Parse filters.
