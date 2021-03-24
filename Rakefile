@@ -47,6 +47,8 @@ Rake::ExtensionTask.new('grpc_c', spec) do |ext|
   end
 end
 
+CLEAN.add "src/ruby/lib/grpc/[0-9].[0-9]", "src/ruby/lib/grpc/grpc_c.{bundle,so}"
+
 # Define the test suites
 SPEC_SUITES = [
   { id: :wrapper, title: 'wrapper layer', files: %w(src/ruby/spec/*.rb) },
@@ -137,6 +139,7 @@ task 'gem:native' do
       run_rake_compiler(plat, <<~EOT)
         gem update --system --no-document && \
         bundle && \
+        bundle exec rake clean && \
         bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
           RUBY_CC_VERSION=#{ruby_cc_versions} \
           V=#{verbose} \
@@ -150,6 +153,7 @@ task 'gem:native' do
       run_rake_compiler(plat, <<~EOT)
         gem update --system --no-document && \
         bundle && \
+        bundle exec rake clean && \
         bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
           RUBY_CC_VERSION=#{ruby_cc_versions} \
           V=#{verbose} \
