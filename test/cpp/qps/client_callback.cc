@@ -188,7 +188,7 @@ class CallbackUnaryClient final : public CallbackClient {
   void IssueUnaryCallbackRpc(Thread* t, size_t vector_idx) {
     GPR_TIMER_SCOPE("CallbackUnaryClient::ThreadFunc", 0);
     double start = UsageTimer::Now();
-    ctx_[vector_idx]->stub_->experimental_async()->UnaryCall(
+    ctx_[vector_idx]->stub_->async()->UnaryCall(
         (&ctx_[vector_idx]->context_), &request_, &ctx_[vector_idx]->response_,
         [this, t, start, vector_idx](grpc::Status s) {
           // Update Histogram with data from the callback run
@@ -260,7 +260,7 @@ class CallbackStreamingPingPongReactor final
       : client_(client), ctx_(std::move(ctx)), messages_issued_(0) {}
 
   void StartNewRpc() {
-    ctx_->stub_->experimental_async()->StreamingCall(&(ctx_->context_), this);
+    ctx_->stub_->async()->StreamingCall(&(ctx_->context_), this);
     write_time_ = UsageTimer::Now();
     StartWrite(client_->request());
     writes_done_started_.clear();

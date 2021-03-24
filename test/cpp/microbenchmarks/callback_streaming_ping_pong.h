@@ -83,7 +83,7 @@ class BidiClient : public grpc::ClientBidiReactor<EchoRequest, EchoResponse> {
     cli_ctx_->~ClientContext();
     new (cli_ctx_) ClientContext();
     cli_ctx_->AddMetadata(kServerMessageSize, std::to_string(msgs_size_));
-    stub_->experimental_async()->BidiStream(cli_ctx_, this);
+    stub_->async()->BidiStream(cli_ctx_, this);
     MaybeWrite();
     StartCall();
   }

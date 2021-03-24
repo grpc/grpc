@@ -42,7 +42,7 @@ inline void SendCallbackUnaryPingPong(
     std::mutex* mu, std::condition_variable* cv) {
   int response_msgs_size = state->range(1);
   cli_ctx->AddMetadata(kServerMessageSize, std::to_string(response_msgs_size));
-  stub_->experimental_async()->Echo(
+  stub_->async()->Echo(
       cli_ctx, request, response,
       [state, cli_ctx, request, response, stub_, done, mu, cv](Status s) {
         GPR_ASSERT(s.ok());

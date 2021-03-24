@@ -172,7 +172,7 @@ class MessageAllocatorEnd2endTestBase
       std::mutex mu;
       std::condition_variable cv;
       bool done = false;
-      stub_->experimental_async()->Echo(
+      stub_->async()->Echo(
           &cli_ctx, &request, &response,
           [&request, &response, &done, &mu, &cv, val](Status s) {
             GPR_ASSERT(s.ok());
