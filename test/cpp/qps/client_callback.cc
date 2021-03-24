@@ -251,8 +251,7 @@ class CallbackStreamingPingPongClient : public CallbackStreamingClient {
 };
 
 class CallbackStreamingPingPongReactor final
-    : public grpc::experimental::ClientBidiReactor<SimpleRequest,
-                                                   SimpleResponse> {
+    : public grpc::ClientBidiReactor<SimpleRequest, SimpleResponse> {
  public:
   CallbackStreamingPingPongReactor(
       CallbackStreamingPingPongClient* client,
