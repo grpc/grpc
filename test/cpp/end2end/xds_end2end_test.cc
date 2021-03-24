@@ -8099,7 +8099,6 @@ class XdsEnabledServerStatusNotificationTest : public XdsServerSecurityTest {
     auto* socket_address = listener.mutable_address()->mutable_socket_address();
     socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
     socket_address->set_port_value(backends_[0]->port());
-    listener.add_filter_chains();
     balancers_[0]->ads_service()->SetLdsResource(listener);
   }
 
@@ -8401,7 +8400,7 @@ TEST_P(XdsServerFilterChainMatchTest,
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
-       FilterChainsWithMoreSpecificPrefixRangesArePreferred) {
+       FilterChainsWithMoreSpecificDestinationPrefixRangesArePreferred) {
   Listener listener;
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
@@ -8409,12 +8408,16 @@ TEST_P(XdsServerFilterChainMatchTest,
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add filter chain with prefix range (lenth 16) but with server name
+  // Add filter chain with prefix range (length 4 and 16) but with server name
   // mentioned. (Prefix range is matched first.)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   auto* prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(4);
+  prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(16);
@@ -8468,6 +8471,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
   // Add filter chain with the external source type but bad source port.
+  // Note that backends_[0]->port() will never be a match for the source port
+  // because it is already being used by a backend.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -8496,7 +8501,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add filter chain with source prefix range (lenth 16) but with a bad source
+  // Add filter chain with source prefix range (length 16) but with a bad source
   // port mentioned. (Prefix range is matched first.)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
@@ -8553,7 +8558,7 @@ TEST_P(XdsServerFilterChainMatchTest,
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add filter chain with source prefix range (lenth 16) but with a bad source
+  // Add filter chain with source prefix range (length 16) but with a bad source
   // port mentioned. (Prefix range is matched first.)
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(

@@ -1,25 +1,23 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2015 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
-/* With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
-   using that endpoint. Because of various transitive includes in uv.h,
-   including windows.h on Windows, uv.h must be included before other system
-   headers. Therefore, sockaddr.h must always be included first */
+// With the addition of a libuv endpoint, sockaddr.h now includes uv.h when
+//   using that endpoint. Because of various transitive includes in uv.h,
+//   including windows.h on Windows, uv.h must be included before other system
+//   headers. Therefore, sockaddr.h must always be included first
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
@@ -36,7 +34,7 @@
 
 namespace {
 
-grpc_resolved_address make_addr4(const uint8_t* data, size_t data_len) {
+grpc_resolved_address MakeAddr4(const uint8_t* data, size_t data_len) {
   grpc_resolved_address resolved_addr4;
   grpc_sockaddr_in* addr4 =
       reinterpret_cast<grpc_sockaddr_in*>(resolved_addr4.addr);
@@ -49,7 +47,7 @@ grpc_resolved_address make_addr4(const uint8_t* data, size_t data_len) {
   return resolved_addr4;
 }
 
-grpc_resolved_address make_addr6(const uint8_t* data, size_t data_len) {
+grpc_resolved_address MakeAddr6(const uint8_t* data, size_t data_len) {
   grpc_resolved_address resolved_addr6;
   grpc_sockaddr_in6* addr6 =
       reinterpret_cast<grpc_sockaddr_in6*>(resolved_addr6.addr);
@@ -62,7 +60,7 @@ grpc_resolved_address make_addr6(const uint8_t* data, size_t data_len) {
   return resolved_addr6;
 }
 
-void set_addr6_scope_id(grpc_resolved_address* addr, uint32_t scope_id) {
+void SetIPv6ScopeId(grpc_resolved_address* addr, uint32_t scope_id) {
   grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(addr->addr);
   ASSERT_EQ(addr6->sin6_family, GRPC_AF_INET6);
   addr6->sin6_scope_id = scope_id;
@@ -79,183 +77,144 @@ const uint8_t kIPv6[] = {0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
                          0,    0,    0,    0,    0, 0, 0, 1};
 
 TEST(SockAddrUtilsTest, SockAddrIsV4Mapped) {
-  grpc_resolved_address input4;
-  grpc_resolved_address input6;
-  grpc_resolved_address output4;
-  grpc_resolved_address expect4;
-
-  /* v4mapped input should succeed. */
-  input6 = make_addr6(kMapped, sizeof(kMapped));
+  // v4mapped input should succeed.
+  grpc_resolved_address input6 = MakeAddr6(kMapped, sizeof(kMapped));
   ASSERT_TRUE(grpc_sockaddr_is_v4mapped(&input6, nullptr));
+  grpc_resolved_address output4;
   ASSERT_TRUE(grpc_sockaddr_is_v4mapped(&input6, &output4));
-  expect4 = make_addr4(kIPv4, sizeof(kIPv4));
+  grpc_resolved_address expect4 = MakeAddr4(kIPv4, sizeof(kIPv4));
   ASSERT_EQ(memcmp(&expect4, &output4, sizeof(expect4)), 0);
 
-  /* Non-v4mapped input should fail. */
-  input6 = make_addr6(kNotQuiteMapped, sizeof(kNotQuiteMapped));
+  // Non-v4mapped input should fail.
+  input6 = MakeAddr6(kNotQuiteMapped, sizeof(kNotQuiteMapped));
   ASSERT_FALSE(grpc_sockaddr_is_v4mapped(&input6, nullptr));
   ASSERT_FALSE(grpc_sockaddr_is_v4mapped(&input6, &output4));
-  /* Output is unchanged. */
+  // Output is unchanged.
   ASSERT_EQ(memcmp(&expect4, &output4, sizeof(expect4)), 0);
 
-  /* Plain IPv4 input should also fail. */
-  input4 = make_addr4(kIPv4, sizeof(kIPv4));
+  // Plain IPv4 input should also fail.
+  grpc_resolved_address input4 = MakeAddr4(kIPv4, sizeof(kIPv4));
   ASSERT_FALSE(grpc_sockaddr_is_v4mapped(&input4, nullptr));
 }
 
 TEST(SockAddrUtilsTest, SockAddrToV4Mapped) {
-  grpc_resolved_address input4;
-  grpc_resolved_address input6;
+  // IPv4 input should succeed.
+  grpc_resolved_address input4 = MakeAddr4(kIPv4, sizeof(kIPv4));
   grpc_resolved_address output6;
-  grpc_resolved_address expect6;
-
-  gpr_log(GPR_INFO, "%s", "test_sockaddr_to_v4mapped");
-
-  /* IPv4 input should succeed. */
-  input4 = make_addr4(kIPv4, sizeof(kIPv4));
   ASSERT_TRUE(grpc_sockaddr_to_v4mapped(&input4, &output6));
-  expect6 = make_addr6(kMapped, sizeof(kMapped));
+  grpc_resolved_address expect6 = MakeAddr6(kMapped, sizeof(kMapped));
   ASSERT_EQ(memcmp(&expect6, &output6, sizeof(output6)), 0);
 
-  /* IPv6 input should fail. */
-  input6 = make_addr6(kIPv6, sizeof(kIPv6));
+  // IPv6 input should fail.
+  grpc_resolved_address input6 = MakeAddr6(kIPv6, sizeof(kIPv6));
   ASSERT_TRUE(!grpc_sockaddr_to_v4mapped(&input6, &output6));
-  /* Output is unchanged. */
+  // Output is unchanged.
   ASSERT_EQ(memcmp(&expect6, &output6, sizeof(output6)), 0);
 
-  /* Already-v4mapped input should also fail. */
-  input6 = make_addr6(kMapped, sizeof(kMapped));
+  // Already-v4mapped input should also fail.
+  input6 = MakeAddr6(kMapped, sizeof(kMapped));
   ASSERT_TRUE(!grpc_sockaddr_to_v4mapped(&input6, &output6));
 }
 
 TEST(SockAddrUtilsTest, SockAddrIsWildCard) {
+  // Generate wildcards.
   grpc_resolved_address wild4;
   grpc_resolved_address wild6;
-  grpc_resolved_address wild_mapped;
-  grpc_resolved_address phony;
-  grpc_sockaddr_in* wild4_addr;
-  grpc_sockaddr_in6* wild6_addr;
-  grpc_sockaddr_in6* wild_mapped_addr;
-  int port;
-
-  gpr_log(GPR_INFO, "%s", "test_sockaddr_is_wildcard");
-
-  /* Generate wildcards. */
   grpc_sockaddr_make_wildcards(555, &wild4, &wild6);
+  grpc_resolved_address wild_mapped;
   ASSERT_TRUE(grpc_sockaddr_to_v4mapped(&wild4, &wild_mapped));
 
-  /* Test 0.0.0.0:555 */
-  port = -1;
+  // Test 0.0.0.0:555
+  int port = -1;
   ASSERT_TRUE(grpc_sockaddr_is_wildcard(&wild4, &port));
   ASSERT_TRUE(port == 555);
-  wild4_addr = reinterpret_cast<grpc_sockaddr_in*>(&wild4.addr);
+  grpc_sockaddr_in* wild4_addr =
+      reinterpret_cast<grpc_sockaddr_in*>(&wild4.addr);
   memset(&wild4_addr->sin_addr.s_addr, 0xbd, 1);
   ASSERT_FALSE(grpc_sockaddr_is_wildcard(&wild4, &port));
 
-  /* Test [::]:555 */
+  // Test [::]:555
   port = -1;
   ASSERT_TRUE(grpc_sockaddr_is_wildcard(&wild6, &port));
   ASSERT_EQ(port, 555);
-  wild6_addr = reinterpret_cast<grpc_sockaddr_in6*>(&wild6.addr);
+  grpc_sockaddr_in6* wild6_addr =
+      reinterpret_cast<grpc_sockaddr_in6*>(&wild6.addr);
   memset(&wild6_addr->sin6_addr.s6_addr, 0xbd, 1);
   ASSERT_FALSE(grpc_sockaddr_is_wildcard(&wild6, &port));
 
-  /* Test [::ffff:0.0.0.0]:555 */
+  // Test [::ffff:0.0.0.0]:555
   port = -1;
   ASSERT_TRUE(grpc_sockaddr_is_wildcard(&wild_mapped, &port));
   ASSERT_EQ(port, 555);
-  wild_mapped_addr = reinterpret_cast<grpc_sockaddr_in6*>(&wild_mapped.addr);
+  grpc_sockaddr_in6* wild_mapped_addr =
+      reinterpret_cast<grpc_sockaddr_in6*>(&wild_mapped.addr);
   memset(&wild_mapped_addr->sin6_addr.s6_addr, 0xbd, 1);
   ASSERT_FALSE(grpc_sockaddr_is_wildcard(&wild_mapped, &port));
 
-  /* Test AF_UNSPEC. */
+  // Test AF_UNSPEC.
   port = -1;
+  grpc_resolved_address phony;
   memset(&phony, 0, sizeof(phony));
   ASSERT_FALSE(grpc_sockaddr_is_wildcard(&phony, &port));
   ASSERT_EQ(port, -1);
 }
 
-void expect_sockaddr_str(const char* expected, grpc_resolved_address* addr,
-                         int normalize) {
-  gpr_log(GPR_INFO, "  expect_sockaddr_str(%s)", expected);
-  std::string actual = grpc_sockaddr_to_string(addr, normalize);
-  ASSERT_EQ(actual, expected);
-}
-
-void expect_sockaddr_uri(const char* expected, grpc_resolved_address* addr) {
-  gpr_log(GPR_INFO, "  expect_sockaddr_uri(%s)", expected);
-  std::string actual = grpc_sockaddr_to_uri(addr);
-  ASSERT_EQ(actual, expected);
-}
-
 TEST(SockAddrUtilsTest, SockAddrToString) {
-  grpc_resolved_address input4;
-  grpc_resolved_address input6;
-  grpc_resolved_address phony;
-  grpc_sockaddr* phony_addr;
-
-  gpr_log(GPR_INFO, "%s", "test_sockaddr_to_string");
-
   errno = 0x7EADBEEF;
 
-  input4 = make_addr4(kIPv4, sizeof(kIPv4));
-  expect_sockaddr_str("192.0.2.1:12345", &input4, 0);
-  expect_sockaddr_str("192.0.2.1:12345", &input4, 1);
-  expect_sockaddr_uri("ipv4:192.0.2.1:12345", &input4);
+  grpc_resolved_address input4 = MakeAddr4(kIPv4, sizeof(kIPv4));
+  EXPECT_EQ(grpc_sockaddr_to_string(&input4, 0), "192.0.2.1:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input4, 1), "192.0.2.1:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input4), "ipv4:192.0.2.1:12345");
 
-  input6 = make_addr6(kIPv6, sizeof(kIPv6));
-  expect_sockaddr_str("[2001:db8::1]:12345", &input6, 0);
-  expect_sockaddr_str("[2001:db8::1]:12345", &input6, 1);
-  expect_sockaddr_uri("ipv6:[2001:db8::1]:12345", &input6);
+  grpc_resolved_address input6 = MakeAddr6(kIPv6, sizeof(kIPv6));
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, 0), "[2001:db8::1]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, 1), "[2001:db8::1]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv6:[2001:db8::1]:12345");
 
-  set_addr6_scope_id(&input6, 2);
-  expect_sockaddr_str("[2001:db8::1%252]:12345", &input6, 0);
-  expect_sockaddr_str("[2001:db8::1%252]:12345", &input6, 1);
-  expect_sockaddr_uri("ipv6:[2001:db8::1%252]:12345", &input6);
+  SetIPv6ScopeId(&input6, 2);
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, 0), "[2001:db8::1%252]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, 1), "[2001:db8::1%252]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv6:[2001:db8::1%252]:12345");
 
-  set_addr6_scope_id(&input6, 101);
-  expect_sockaddr_str("[2001:db8::1%25101]:12345", &input6, 0);
-  expect_sockaddr_str("[2001:db8::1%25101]:12345", &input6, 1);
-  expect_sockaddr_uri("ipv6:[2001:db8::1%25101]:12345", &input6);
+  SetIPv6ScopeId(&input6, 101);
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, 0), "[2001:db8::1%25101]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, 1), "[2001:db8::1%25101]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv6:[2001:db8::1%25101]:12345");
 
-  input6 = make_addr6(kMapped, sizeof(kMapped));
-  expect_sockaddr_str("[::ffff:192.0.2.1]:12345", &input6, 0);
-  expect_sockaddr_str("192.0.2.1:12345", &input6, 1);
-  expect_sockaddr_uri("ipv4:192.0.2.1:12345", &input6);
+  input6 = MakeAddr6(kMapped, sizeof(kMapped));
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, 0), "[::ffff:192.0.2.1]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, 1), "192.0.2.1:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv4:192.0.2.1:12345");
 
-  input6 = make_addr6(kNotQuiteMapped, sizeof(kNotQuiteMapped));
-  expect_sockaddr_str("[::fffe:c000:263]:12345", &input6, 0);
-  expect_sockaddr_str("[::fffe:c000:263]:12345", &input6, 1);
-  expect_sockaddr_uri("ipv6:[::fffe:c000:263]:12345", &input6);
+  input6 = MakeAddr6(kNotQuiteMapped, sizeof(kNotQuiteMapped));
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, 0), "[::fffe:c000:263]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_string(&input6, 1), "[::fffe:c000:263]:12345");
+  EXPECT_EQ(grpc_sockaddr_to_uri(&input6), "ipv6:[::fffe:c000:263]:12345");
 
+  grpc_resolved_address phony;
   memset(&phony, 0, sizeof(phony));
-  phony_addr = reinterpret_cast<grpc_sockaddr*>(phony.addr);
+  grpc_sockaddr* phony_addr = reinterpret_cast<grpc_sockaddr*>(phony.addr);
   phony_addr->sa_family = 123;
-  expect_sockaddr_str("(sockaddr family=123)", &phony, 0);
-  expect_sockaddr_str("(sockaddr family=123)", &phony, 1);
-  ASSERT_TRUE(grpc_sockaddr_to_uri(&phony).empty());
+  EXPECT_EQ(grpc_sockaddr_to_string(&phony, 0), "(sockaddr family=123)");
+  EXPECT_EQ(grpc_sockaddr_to_string(&phony, 1), "(sockaddr family=123)");
+  EXPECT_TRUE(grpc_sockaddr_to_uri(&phony).empty());
 }
 
 TEST(SockAddrUtilsTest, SockAddrSetGetPort) {
-  grpc_resolved_address input4;
-  grpc_resolved_address input6;
-  grpc_resolved_address phony;
-  grpc_sockaddr* phony_addr;
-
-  gpr_log(GPR_DEBUG, "test_sockaddr_set_get_port");
-
-  input4 = make_addr4(kIPv4, sizeof(kIPv4));
+  grpc_resolved_address input4 = MakeAddr4(kIPv4, sizeof(kIPv4));
   ASSERT_EQ(grpc_sockaddr_get_port(&input4), 12345);
   ASSERT_TRUE(grpc_sockaddr_set_port(&input4, 54321));
   ASSERT_EQ(grpc_sockaddr_get_port(&input4), 54321);
 
-  input6 = make_addr6(kIPv6, sizeof(kIPv6));
+  grpc_resolved_address input6 = MakeAddr6(kIPv6, sizeof(kIPv6));
   ASSERT_EQ(grpc_sockaddr_get_port(&input6), 12345);
   ASSERT_TRUE(grpc_sockaddr_set_port(&input6, 54321));
   ASSERT_EQ(grpc_sockaddr_get_port(&input6), 54321);
 
+  grpc_resolved_address phony;
   memset(&phony, 0, sizeof(phony));
-  phony_addr = reinterpret_cast<grpc_sockaddr*>(phony.addr);
+  grpc_sockaddr* phony_addr = reinterpret_cast<grpc_sockaddr*>(phony.addr);
   phony_addr->sa_family = 123;
   ASSERT_EQ(grpc_sockaddr_get_port(&phony), 0);
   ASSERT_EQ(grpc_sockaddr_set_port(&phony, 1234), 0);
@@ -264,15 +223,15 @@ TEST(SockAddrUtilsTest, SockAddrSetGetPort) {
 void VerifySocketAddressMatch(const std::string& ip_address,
                               const std::string& subnet, uint32_t mask_bits,
                               bool success) {
-  gpr_log(GPR_ERROR, "IP: %s Subnet: %s Mask: %u", ip_address.c_str(),
-          subnet.c_str(), mask_bits);
   grpc_resolved_address addr;
-  grpc_resolved_address subnet_addr;
   grpc_string_to_sockaddr(&addr, ip_address.c_str(), 0);
+  // Setting the port has no effect on the match.
+  grpc_sockaddr_set_port(&addr, 12345);
+  grpc_resolved_address subnet_addr;
   grpc_string_to_sockaddr(&subnet_addr, subnet.c_str(), 0);
   grpc_sockaddr_mask_bits(&subnet_addr, mask_bits);
-  EXPECT_EQ(grpc_sockaddr_match_subnet(&addr, &subnet_addr, mask_bits),
-            success);
+  EXPECT_EQ(grpc_sockaddr_match_subnet(&addr, &subnet_addr, mask_bits), success)
+      << "IP=" << ip_address << " Subnet=" << subnet << " Mask=" << mask_bits;
 }
 
 void VerifySocketAddressMatchSuccess(const std::string& ip_address,

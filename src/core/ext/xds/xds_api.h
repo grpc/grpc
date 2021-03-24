@@ -330,14 +330,13 @@ class XdsApi {
           return downstream_tls_context == other.downstream_tls_context &&
                  http_connection_manager == other.http_connection_manager;
         }
+
+        std::string ToString() const;
       } filter_chain_data;
 
       bool operator==(const FilterChain& other) const {
         return filter_chain_match == other.filter_chain_match &&
-               filter_chain_data.downstream_tls_context ==
-                   other.filter_chain_data.downstream_tls_context &&
-               filter_chain_data.http_connection_manager ==
-                   other.filter_chain_data.http_connection_manager;
+               filter_chain_data == other.filter_chain_data;
       }
 
       std::string ToString() const;
@@ -349,6 +348,21 @@ class XdsApi {
         return *data == *other.data;
       }
     };
+
+    // A multi-level map used to determine which filter chain to use for a given
+    // incoming connection. Determining the right filter chain for a given
+    // connection checks the following properties, in order:
+    // - destination port (never matched, so not present in map)
+    // - destination IP address
+    // - server name (never matched, so not present in map)
+    // - transport protocol (allows only "raw_buffer" or unset, prefers the
+    // former)
+    // - application protocol (never matched, so not present in map)
+    // - connection source type (any, local or external)
+    // - source IP address
+    // - source port
+    // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener_components.proto#config-listener-v3-filterchainmatch
+    // for more details
     using SourcePortsMap = std::map<uint16_t, FilterChainDataSharedPtr>;
     struct SourceIp {
       grpc_resolved_address address;
@@ -361,7 +375,7 @@ class XdsApi {
       }
     };
     using SourceIpMap = std::map<std::string, SourceIp>;
-    using SourceTypesArray = std::array<SourceIpMap, 3>;
+    using ConnectionSourceTypesArray = std::array<SourceIpMap, 3>;
     struct DestinationIp {
       grpc_resolved_address address;
       int prefix_len;
@@ -372,7 +386,7 @@ class XdsApi {
       bool transport_protocol_raw_buffer_provided = false;
       // We always fail match on server name, so those filter chains are not
       // included here.
-      SourceTypesArray source_types_array;
+      ConnectionSourceTypesArray source_types_array;
 
       bool operator==(const DestinationIp& other) const {
         return memcmp(&address, &other.address, sizeof(address)) == 0 &&
@@ -391,13 +405,13 @@ class XdsApi {
     // Populated for type=kTcpListener.
     // host:port listening_address set when type is kTcpListener
     std::string address;
-    std::vector<FilterChain> filter_chains;
     DestinationIpMap destination_ip_map;
     absl::optional<FilterChain> default_filter_chain;
 
     bool operator==(const LdsUpdate& other) const {
       return http_connection_manager == other.http_connection_manager &&
-             address == other.address && filter_chains == other.filter_chains &&
+             address == other.address &&
+             destination_ip_map == other.destination_ip_map &&
              default_filter_chain == other.default_filter_chain;
     }
 

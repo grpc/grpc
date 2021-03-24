@@ -39,9 +39,6 @@ TraceFlag grpc_xds_server_config_fetcher_trace(false,
 
 namespace {
 
-const char* kFilterChainManagerChannelArgName =
-    "grpc.internal.xds_filter_chain_manager";
-
 class FilterChainMatchManager
     : public grpc_server_config_fetcher::ConnectionManager {
  public:
@@ -111,14 +108,14 @@ FindFilterChainDataForSourcePort(
     absl::string_view port_str) {
   int port = 0;
   if (!absl::SimpleAtoi(port_str, &port)) return nullptr;
-  const auto& match = source_ports_map.find(port);
-  if (match != source_ports_map.end()) {
-    return match->second.data.get();
+  auto it = source_ports_map.find(port);
+  if (it != source_ports_map.end()) {
+    return it->second.data.get();
   }
   // Search for the catch-all port 0 since we didn't get a direct match
-  const auto& catch_all_match = source_ports_map.find(0);
-  if (catch_all_match != source_ports_map.end()) {
-    return catch_all_match->second.data.get();
+  it = source_ports_map.find(0);
+  if (it != source_ports_map.end()) {
+    return it->second.data.get();
   }
   return nullptr;
 }
@@ -151,7 +148,7 @@ FindFilterChainDataForSourceIp(
 
 const XdsApi::LdsUpdate::FilterChain::FilterChainData*
 FindFilterChainDataForSourceType(
-    const XdsApi::LdsUpdate::SourceTypesArray& source_types_array,
+    const XdsApi::LdsUpdate::ConnectionSourceTypesArray& source_types_array,
     grpc_endpoint* tcp, absl::string_view destination_ip) {
   auto source_uri = URI::Parse(grpc_endpoint_get_peer(tcp));
   if (source_uri->scheme() != "ipv4" && source_uri->scheme() != "ipv6") {
@@ -159,7 +156,7 @@ FindFilterChainDataForSourceType(
   }
   std::string host;
   std::string port;
-  if (!SplitHostPort(source_uri->path(), &host, &port)) {
+  if (source_uri.ok() && !SplitHostPort(source_uri->path(), &host, &port)) {
     return nullptr;
   }
   grpc_resolved_address source_addr;
@@ -200,8 +197,8 @@ FindFilterChainDataForDestinationIp(
     const XdsApi::LdsUpdate::DestinationIpMap destination_ip_map,
     grpc_endpoint* tcp) {
   auto destination_uri = URI::Parse(grpc_endpoint_get_local_address(tcp));
-  if (destination_uri->scheme() != "ipv4" &&
-      destination_uri->scheme() != "ipv6") {
+  if (!destination_uri.ok() || (destination_uri->scheme() != "ipv4" &&
+                                destination_uri->scheme() != "ipv6")) {
     return nullptr;
   }
   std::string host;
@@ -304,7 +301,7 @@ FilterChainMatchManager::UpdateChannelArgsForConnection(grpc_channel_args* args,
                                                         grpc_endpoint* tcp) {
   const auto* filter_chain =
       FindFilterChainDataForDestinationIp(destination_ip_map_, tcp);
-  if (filter_chain == nullptr && default_filter_chain_) {
+  if (filter_chain == nullptr && default_filter_chain_.has_value()) {
     filter_chain = &default_filter_chain_->filter_chain_data;
   }
   if (filter_chain == nullptr) {
@@ -314,12 +311,8 @@ FilterChainMatchManager::UpdateChannelArgsForConnection(grpc_channel_args* args,
   // Nothing to update if credentials are not xDS.
   grpc_server_credentials* server_creds =
       grpc_find_server_credentials_in_args(args);
-  const char* args_to_remove[] = {kFilterChainManagerChannelArgName};
   if (server_creds == nullptr || server_creds->type() != kCredentialsTypeXds) {
-    grpc_channel_args* updated_args =
-        grpc_channel_args_copy_and_remove(args, args_to_remove, 1);
-    grpc_channel_args_destroy(args);
-    return updated_args;
+    return args;
   }
   absl::StatusOr<RefCountedPtr<XdsCertificateProvider>> result =
       CreateOrGetXdsCertificateProviderFromFilterChainData(filter_chain);
@@ -327,13 +320,14 @@ FilterChainMatchManager::UpdateChannelArgsForConnection(grpc_channel_args* args,
     grpc_channel_args_destroy(args);
     return result.status();
   }
-  RefCountedPtr<XdsCertificateProvider> xds_certificate_provider = *result;
+  RefCountedPtr<XdsCertificateProvider> xds_certificate_provider =
+      std::move(*result);
   GPR_ASSERT(xds_certificate_provider != nullptr);
   grpc_arg arg_to_add = xds_certificate_provider->MakeChannelArg();
   // Not removing this now leads to a deadlock when the certificate providers
   // are destroyed lower in the stack.
-  grpc_channel_args* updated_args = grpc_channel_args_copy_and_add_and_remove(
-      args, args_to_remove, 1, &arg_to_add, 1);
+  grpc_channel_args* updated_args =
+      grpc_channel_args_copy_and_add(args, &arg_to_add, 1);
   grpc_channel_args_destroy(args);
   return updated_args;
 }
