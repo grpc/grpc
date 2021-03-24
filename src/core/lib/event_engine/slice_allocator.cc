@@ -39,6 +39,7 @@ SliceAllocator::~SliceAllocator() { grpc_resource_user_unref(resource_user_); };
 absl::Status SliceAllocator::Allocate(size_t size, SliceBuffer* dest,
                                       SliceAllocator::AllocateCallback cb){
     // TODO(hork): implement
+    return absl::OkStatus();
 };
 
 SliceAllocatorFactory::SliceAllocatorFactory(grpc_resource_quota* quota)

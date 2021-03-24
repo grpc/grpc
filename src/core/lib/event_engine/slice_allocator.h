@@ -26,11 +26,10 @@
 
 #include "src/core/lib/event_engine/channel_args.h"
 
-namespace {
 // forward-declaring an internal struct, not used publicly.
 struct grpc_resource_quota;
 struct grpc_resource_user;
-}  // namespace
+
 namespace grpc_io {
 namespace experimental {
 
