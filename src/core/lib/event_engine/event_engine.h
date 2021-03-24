@@ -33,12 +33,8 @@
 
 // TODO(hork):
 // - Define the Endpoint::Write metrics collection objects and ownership
-// - supporting an escape hatch for those who want to work with FDs. Discussed
-//   specifically treating our default & g3 EE impls specially using EE
-//   identifiers.
 // - explicitly define lifetimes and ownership of all objects.
 // - elaborate on constraints & pre-conditions for API usage.
-// - Add examples
 // - Add minimal tests to exercise the API against dummy impl
 // - Add EventEngine to the public ChannelArgs (not EventEngine-specific).
 // - Research server acceptor
@@ -62,6 +58,27 @@ namespace experimental {
 // gRPC takes shared ownership of EventEngines via std::shared_ptrs to ensure
 // that the engines remain available until they are no longer needed. Depending
 // on the use case, engines may live until gRPC is shut down.
+//
+// EXAMPLE USAGE
+//
+// Custom EventEngines can be specified per channel, and allow configuration
+// for both clients and servers. To set a custom EventEngine for a client
+// channel, you can do something like the following:
+//
+//    ChannelArguments args;
+//    std::shared_ptr<EventEngine> engine = std::make_shared<MyEngine>(...);
+//    args.SetEventEngine(engine);
+//    MyAppClient client(grpc::CreateCustomChannel(
+//        "localhost:50051", grpc::InsecureChannelCredentials(), args));
+//
+// A gRPC server can be set using the ServerBuild::SetEventEngine method:
+//
+//    ServerBuilder builder;
+//    std::shared_ptr<EventEngine> engine = std::make_shared<MyEngine>(...);
+//    builder.SetEventEngine(engine);
+//    std::unique_ptr<Server> server(builder.BuildAndStart());
+//    server->Wait();
+//
 ////////////////////////////////////////////////////////////////////////////////
 class EventEngine {
  public:

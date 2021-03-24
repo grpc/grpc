@@ -21,8 +21,6 @@
 #include <grpc/support/port_platform.h>
 
 // TODO(hork): Extract required macros from iomgr's port.h and sockaddr_*.h.
-// TODO(hork): These are EventEngine implementation-specific. Move these to our
-// impl. They are here for reference at the moment.
 
 #ifdef GRPC_UV
 #include <uv.h>
@@ -37,6 +35,7 @@
 #error UNKNOWN PLATFORM
 #endif
 
+// TODO(hork): should live elsewhere. They are not part of the public API.
 typedef struct sockaddr grpc_sockaddr;
 typedef struct sockaddr_in grpc_sockaddr_in;
 typedef struct sockaddr_in6 grpc_sockaddr_in6;
