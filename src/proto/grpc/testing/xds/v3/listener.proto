@@ -57,7 +57,7 @@ message Filter {
 }
 
 message FilterChainMatch {
-enum ConnectionSourceType {
+  enum ConnectionSourceType {
     // Any connection source matches.
     ANY = 0;
 

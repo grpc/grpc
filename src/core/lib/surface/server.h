@@ -470,8 +470,7 @@ struct grpc_server_config_fetcher {
     virtual ~WatcherInterface() = default;
     // UpdateConnectionManager() is invoked by the config fetcher when a new
     // config is available. Implementations should update the connection manager
-    // and start serving if not already serving. Ownership of \a args is
-    // transferred.
+    // and start serving if not already serving.
     virtual void UpdateConnectionManager(
         grpc_core::RefCountedPtr<ConnectionManager> manager) = 0;
     // Implementations should stop serving when this is called. Serving should

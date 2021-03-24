@@ -94,8 +94,8 @@ class Chttp2ServerListener : public Server::ListenerInterface {
         : listener_(std::move(listener)) {}
 
     void UpdateConnectionManager(
-        RefCountedPtr<grpc_server_config_fetcher::ConnectionManager> manager)
-        override;
+        RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+            connection_manager) override;
 
     void StopServing() override;
 
@@ -241,13 +241,14 @@ class Chttp2ServerListener : public Server::ListenerInterface {
 //
 
 void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
-    RefCountedPtr<grpc_server_config_fetcher::ConnectionManager> manager) {
+    RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
+        connection_manager) {
   RefCountedPtr<grpc_server_config_fetcher::ConnectionManager>
       connection_manager_to_destroy;
   {
     MutexLock lock(&listener_->channel_args_mu_);
     connection_manager_to_destroy = listener_->connection_manager_;
-    listener_->connection_manager_ = std::move(manager);
+    listener_->connection_manager_ = std::move(connection_manager);
   }
   {
     MutexLock lock(&listener_->mu_);
@@ -719,6 +720,8 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
       grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "No ConnectionManager configured. Closing connection.");
       endpoint_cleanup(error);
+      grpc_channel_args_destroy(args);
+      return;
     }
     // TODO(yashykt): Maybe combine the following two arg modifiers into a
     // single one.
