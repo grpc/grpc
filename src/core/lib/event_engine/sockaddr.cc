@@ -27,7 +27,7 @@ namespace grpc_io {
 
 ResolvedAddress::ResolvedAddress(const void* addr, int len) {
   GPR_ASSERT(len <= 128);
-  // TODO: elim magic number
+  // TODO(hork): elim magic number
   memset(&buffer_, 0, 128);
   memcpy(&buffer_, addr, len);
 }

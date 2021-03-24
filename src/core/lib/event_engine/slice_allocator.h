@@ -33,10 +33,8 @@ struct grpc_resource_user;
 namespace grpc_io {
 namespace experimental {
 
-namespace {
 // TODO(nnoble): forward declared here, needs definition.
 class SliceBuffer;
-}  // namespace
 
 class SliceAllocator {
  public:
