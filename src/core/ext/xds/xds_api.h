@@ -283,8 +283,6 @@ class XdsApi {
     // host:port listening_address set when type is kTcpListener
     std::string address;
 
-    enum class ConnectionSourceType { kAny = 0, kSameIpOrLoopback, kExternal };
-
     struct FilterChainData {
       DownstreamTlsContext downstream_tls_context;
       // This is in principle the filter list.
@@ -332,6 +330,11 @@ class XdsApi {
         }
       };
       using SourceIpMap = std::map<std::string, SourceIp>;
+      enum class ConnectionSourceType {
+        kAny = 0,
+        kSameIpOrLoopback,
+        kExternal
+      };
       using ConnectionSourceTypesArray = std::array<SourceIpMap, 3>;
       struct DestinationIp {
         grpc_resolved_address address;

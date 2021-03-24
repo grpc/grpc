@@ -165,27 +165,29 @@ const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForSourceType(
   grpc_string_to_sockaddr(&source_addr, host.c_str(),
                           0 /* port doesn't matter here */);
   // Use kAny only if kSameIporLoopback and kExternal are empty
-  if (source_types_array
-          [static_cast<int>(
-               XdsApi::LdsUpdate::ConnectionSourceType::kSameIpOrLoopback)]
-              .empty() &&
-      source_types_array
-          [static_cast<int>(XdsApi::LdsUpdate::ConnectionSourceType::kExternal)]
-              .empty()) {
+  if (source_types_array[static_cast<int>(
+                             XdsApi::LdsUpdate::FilterChainMap::
+                                 ConnectionSourceType::kSameIpOrLoopback)]
+          .empty() &&
+      source_types_array[static_cast<int>(XdsApi::LdsUpdate::FilterChainMap::
+                                              ConnectionSourceType::kExternal)]
+          .empty()) {
     return FindFilterChainDataForSourceIp(
         source_types_array[static_cast<int>(
-            XdsApi::LdsUpdate::ConnectionSourceType::kAny)],
+            XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType::kAny)],
         &source_addr, port);
   }
   if (IsLoopbackIp(&source_addr) || host == destination_ip) {
     return FindFilterChainDataForSourceIp(
         source_types_array[static_cast<int>(
-            XdsApi::LdsUpdate::ConnectionSourceType::kSameIpOrLoopback)],
+            XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType::
+                kSameIpOrLoopback)],
         &source_addr, port);
   } else {
     return FindFilterChainDataForSourceIp(
         source_types_array[static_cast<int>(
-            XdsApi::LdsUpdate::ConnectionSourceType::kExternal)],
+            XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType::
+                kExternal)],
         &source_addr, port);
   }
 }
