@@ -906,8 +906,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/nameser.h )
   s.files += %w( src/core/lib/iomgr/parse_address.cc )
   s.files += %w( src/core/lib/iomgr/parse_address.h )
-  s.files += %w( src/core/lib/iomgr/poller/eventmanager_libuv.cc )
-  s.files += %w( src/core/lib/iomgr/poller/eventmanager_libuv.h )
   s.files += %w( src/core/lib/iomgr/polling_entity.cc )
   s.files += %w( src/core/lib/iomgr/polling_entity.h )
   s.files += %w( src/core/lib/iomgr/pollset.cc )
