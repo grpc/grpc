@@ -1070,7 +1070,6 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     deps = [
         "dual_ref_counted",
-        "eventmanager_libuv",
         "gpr_base",
         "grpc_codegen",
         "grpc_trace",
@@ -2640,7 +2639,7 @@ grpc_cc_library_xds(
     alwayslink = 1,
 )
 
-grpc_cc_library(
+grpc_cc_library_xds(
     name = "grpcpp_admin",
     srcs = [
         "src/cpp/server/admin/admin_services.cc",
@@ -3614,27 +3613,4 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
-)
-
-# Base classes of EventManagerInterface
-grpc_cc_library(
-    name = "eventmanager_interface",
-    hdrs = [
-        "src/core/lib/iomgr/poller/eventmanager_interface.h",
-    ],
-)
-
-# Libuv-based EventManager implementation
-grpc_cc_library(
-    name = "eventmanager_libuv",
-    srcs = [
-        "src/core/lib/iomgr/poller/eventmanager_libuv.cc",
-    ],
-    hdrs = [
-        "src/core/lib/iomgr/poller/eventmanager_libuv.h",
-    ],
-    deps = [
-        "gpr_base",
-        "grpc_trace",
-    ],
 )
