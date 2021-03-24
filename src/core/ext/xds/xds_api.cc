@@ -563,7 +563,7 @@ std::string XdsApi::LdsUpdate::HttpConnectionManager::HttpFilter::ToString()
 std::string
 XdsApi::LdsUpdate::FilterChain::FilterChainMatch::CidrRange::ToString() const {
   return absl::StrCat("{address_prefix=", address_prefix,
-                      " prefix_len=", prefix_len, "}");
+                      ", prefix_len=", prefix_len, "}");
 }
 
 //
@@ -2273,6 +2273,7 @@ grpc_error* ParseCidrRangeToGrpcResolvedAddress(
 }
 
 grpc_error* AddFilterChainDataForSourcePort(
+    const XdsApi::LdsUpdate::FilterChain::FilterChainMatch& filter_chain_match,
     std::shared_ptr<XdsApi::LdsUpdate::FilterChain::FilterChainData>
         filter_chain_data,
     XdsApi::LdsUpdate::SourcePortsMap* ports_map, uint32_t port) {
@@ -2280,8 +2281,11 @@ grpc_error* AddFilterChainDataForSourcePort(
       ports_map->emplace(port, XdsApi::LdsUpdate::FilterChainDataSharedPtr{
                                    std::move(filter_chain_data)});
   if (!insert_result.second) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Filter chains with duplicate matching rules detected");
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat(
+            "Duplicate matching rules detected when adding filter chain: ",
+            filter_chain_match.ToString())
+            .c_str());
   }
   return GRPC_ERROR_NONE;
 }
@@ -2292,12 +2296,12 @@ grpc_error* AddFilterChainDataForSourcePorts(
         filter_chain_data,
     XdsApi::LdsUpdate::SourcePortsMap* ports_map) {
   if (filter_chain_match.source_ports.empty()) {
-    return AddFilterChainDataForSourcePort(std::move(filter_chain_data),
-                                           ports_map, 0);
+    return AddFilterChainDataForSourcePort(
+        filter_chain_match, std::move(filter_chain_data), ports_map, 0);
   } else {
     for (uint32_t port : filter_chain_match.source_ports) {
-      grpc_error* error =
-          AddFilterChainDataForSourcePort(filter_chain_data, ports_map, port);
+      grpc_error* error = AddFilterChainDataForSourcePort(
+          filter_chain_match, filter_chain_data, ports_map, port);
       if (error != GRPC_ERROR_NONE) return error;
     }
   }

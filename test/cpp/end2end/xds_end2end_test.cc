@@ -8614,9 +8614,10 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "Filter chains with duplicate matching rules detected"));
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "Duplicate matching rules detected when adding filter chain: {}"));
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
@@ -8661,7 +8662,9 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
-                  "Filter chains with duplicate matching rules detected"));
+                  "Duplicate matching rules detected when adding filter chain: "
+                  "{prefix_ranges={{address_prefix=127.0.0.1, prefix_len=16}, "
+                  "{address_prefix=127.0.0.1, prefix_len=32}}}"));
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
@@ -8693,9 +8696,10 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "Filter chains with duplicate matching rules detected"));
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Duplicate matching rules detected when adding "
+                           "filter chain: {transport_protocol=raw_buffer}"));
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
@@ -8726,9 +8730,10 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "Filter chains with duplicate matching rules detected"));
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Duplicate matching rules detected when adding "
+                           "filter chain: {source_type=SAME_IP_OR_LOOPBACK}"));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -8760,9 +8765,10 @@ TEST_P(XdsServerFilterChainMatchTest,
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "Filter chains with duplicate matching rules detected"));
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Duplicate matching rules detected when adding "
+                           "filter chain: {source_type=EXTERNAL}"));
 }
 
 TEST_P(XdsServerFilterChainMatchTest,
@@ -8806,9 +8812,12 @@ TEST_P(XdsServerFilterChainMatchTest,
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "Filter chains with duplicate matching rules detected"));
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "Duplicate matching rules detected when adding filter chain: "
+          "{source_prefix_ranges={{address_prefix=127.0.0.1, prefix_len=16}, "
+          "{address_prefix=127.0.0.1, prefix_len=32}}}"));
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
@@ -8837,9 +8846,10 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "Filter chains with duplicate matching rules detected"));
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Duplicate matching rules detected when adding "
+                           "filter chain: {source_ports={8080}}"));
 }
 
 using EdsTest = BasicTest;
