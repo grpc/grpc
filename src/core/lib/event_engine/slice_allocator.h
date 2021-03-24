@@ -25,29 +25,38 @@
 #include "absl/status/status.h"
 
 #include "src/core/lib/event_engine/channel_args.h"
-// TODO(hork): should we hide this further? Needs to move out of iomgr for
-// certain.
-#include "src/core/lib/iomgr/resource_quota.h"
 
-// TODO(hork): copy detailed design from design doc
-
+namespace {
+// forward-declaring an internal struct, not used publicly.
+struct grpc_resource_quota;
+struct grpc_resource_user;
+}  // namespace
 namespace grpc_io {
+namespace experimental {
 
-// DO NOT SUBMIT - forward declared here, needs work on definitions.
+namespace {
+// TODO(nnoble): forward declared here, needs definition.
 class SliceBuffer;
+}  // namespace
 
 class SliceAllocator {
  public:
-  // TODO(hork): which constructors are required?
-  SliceAllocator();
-  // TODO(hork): destructor unrefs the resource user
-  ~SliceAllocator() = default;
+  // No default instantiation
+  SliceAllocator() = delete;
+  // gRPC-internal constructor
+  explicit SliceAllocator(grpc_resource_user* user);
+  // Not copyable
+  SliceAllocator(SliceAllocator& other) = delete;
+  SliceAllocator& operator=(const SliceAllocator& other) = delete;
+  // Moveable
+  SliceAllocator(SliceAllocator&& other) = default;
+  SliceAllocator& operator=(SliceAllocator&& other) = default;
+  ~SliceAllocator();
+
   using AllocateCallback =
       std::function<void(absl::Status, SliceBuffer* buffer)>;
-  // Requests `size` bytes from the Resource Quota, and populates `dest` with
-  // the allocated slices. Ownership of the `SliceBuffer` is not transferred.
-  //
-  // Note: thin layer above grpc_resource_user_alloc_slices
+  // Requests `size` bytes from gRPC, and populates `dest` with the allocated
+  // slices. Ownership of the `SliceBuffer` is not transferred.
   // TODO(hork): explain what happens under resource exhaustion.
   absl::Status Allocate(size_t size, SliceBuffer* dest,
                         SliceAllocator::AllocateCallback cb);
@@ -58,16 +67,28 @@ class SliceAllocator {
 
 class SliceAllocatorFactory {
  public:
-  // TODO(hork): which constructors are required?
-  SliceAllocatorFactory();
-  // TODO(hork): what does the destructor need to do for the quota?
-  ~SliceAllocatorFactory() = default;
-  SliceAllocator CreateSliceAllocator(absl::string_view name);
-  // TODO: destructor unrefs the resource quota
+  // No default instantiation
+  SliceAllocatorFactory() = delete;
+  // gRPC-internal constructor
+  explicit SliceAllocatorFactory(grpc_resource_quota* quota);
+  // Not copyable
+  SliceAllocatorFactory(SliceAllocatorFactory& other) = delete;
+  SliceAllocatorFactory& operator=(const SliceAllocatorFactory& other) = delete;
+  // Moveable
+  SliceAllocatorFactory(SliceAllocatorFactory&& other) = default;
+  SliceAllocatorFactory& operator=(SliceAllocatorFactory&& other) = default;
+  ~SliceAllocatorFactory();
+
+  // On Endpoint creation, call `CreateSliceAllocator` with the name of the
+  // endpoint peer (a URI string, most likely). Note: `peer_name` must outlive
+  // the Endpoint.
+  SliceAllocator CreateSliceAllocator(absl::string_view peer_name);
+
  private:
   grpc_resource_quota* resource_quota_;
 };
 
+}  // namespace experimental
 }  // namespace grpc_io
 
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_SLICE_ALLOCATOR_H

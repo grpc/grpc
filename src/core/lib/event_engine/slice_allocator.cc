@@ -15,11 +15,46 @@
  * limitations under the License.
  *
  */
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/event_engine/slice_allocator.h"
-namespace grpc_io {
-// TODO(hork): implement
 
+#include <functional>
+
+#include "absl/status/status.h"
+
+#include "src/core/lib/event_engine/channel_args.h"
+#include "src/core/lib/iomgr/resource_quota.h"
+
+namespace grpc_io {
+namespace experimental {
+
+SliceAllocator::SliceAllocator(grpc_resource_user* user)
+    : resource_user_(user) {
+  grpc_resource_user_ref(resource_user_);
+};
+
+SliceAllocator::~SliceAllocator() { grpc_resource_user_unref(resource_user_); };
+
+absl::Status SliceAllocator::Allocate(size_t size, SliceBuffer* dest,
+                                      SliceAllocator::AllocateCallback cb){
+    // TODO(hork): implement
+};
+
+SliceAllocatorFactory::SliceAllocatorFactory(grpc_resource_quota* quota)
+    : resource_quota_(quota) {
+  grpc_resource_quota_ref(resource_quota_);
+};
+
+SliceAllocatorFactory::~SliceAllocatorFactory() {
+  grpc_resource_quota_unref(resource_quota_);
+}
+
+SliceAllocator SliceAllocatorFactory::CreateSliceAllocator(
+    absl::string_view peer_name) {
+  return SliceAllocator(
+      grpc_resource_user_create(resource_quota_, peer_name.data()));
+}
+
+}  // namespace experimental
 }  // namespace grpc_io

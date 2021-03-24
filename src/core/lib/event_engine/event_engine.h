@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_IOMGR_EVENT_ENGINE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_IOMGR_EVENT_ENGINE_H
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -227,4 +227,4 @@ std::shared_ptr<EventEngine> grpc_get_default_event_engine();
 }  // namespace experimental
 }  // namespace grpc_io
 
-#endif /* GRPC_CORE_LIB_EVENT_ENGINE_IOMGR_IOMGR_EVENT_ENGINE_H */
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_H
