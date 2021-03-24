@@ -2073,6 +2073,11 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
   include/grpc/compression.h
+  include/grpc/event_engine/channel_args.h
+  include/grpc/event_engine/event_engine.h
+  include/grpc/event_engine/port.h
+  include/grpc/event_engine/slice_allocator.h
+  include/grpc/event_engine/sockaddr.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -2619,6 +2624,11 @@ foreach(_hdr
   include/grpc/byte_buffer_reader.h
   include/grpc/census.h
   include/grpc/compression.h
+  include/grpc/event_engine/channel_args.h
+  include/grpc/event_engine/event_engine.h
+  include/grpc/event_engine/port.h
+  include/grpc/event_engine/slice_allocator.h
+  include/grpc/event_engine/sockaddr.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h

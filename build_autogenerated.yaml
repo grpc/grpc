@@ -362,6 +362,11 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/event_engine/channel_args.h
+  - include/grpc/event_engine/event_engine.h
+  - include/grpc/event_engine/port.h
+  - include/grpc/event_engine/slice_allocator.h
+  - include/grpc/event_engine/sockaddr.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -681,11 +686,6 @@ libs:
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
-  - src/core/lib/event_engine/channel_args.h
-  - src/core/lib/event_engine/event_engine.h
-  - src/core/lib/event_engine/port.h
-  - src/core/lib/event_engine/slice_allocator.h
-  - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
@@ -1570,6 +1570,11 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/event_engine/channel_args.h
+  - include/grpc/event_engine/event_engine.h
+  - include/grpc/event_engine/port.h
+  - include/grpc/event_engine/slice_allocator.h
+  - include/grpc/event_engine/sockaddr.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -1700,11 +1705,6 @@ libs:
   - src/core/lib/debug/stats.h
   - src/core/lib/debug/stats_data.h
   - src/core/lib/debug/trace.h
-  - src/core/lib/event_engine/channel_args.h
-  - src/core/lib/event_engine/event_engine.h
-  - src/core/lib/event_engine/port.h
-  - src/core/lib/event_engine/slice_allocator.h
-  - src/core/lib/event_engine/sockaddr.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/debug_location.h
   - src/core/lib/gprpp/dual_ref_counted.h
