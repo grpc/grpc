@@ -11,7 +11,7 @@ The send-side keepalive ping in core is controlled by the following channel argu
 * **GRPC_ARG_KEEPALIVE_TIMEOUT_MS**
   * This channel argument controls the amount of time (in milliseconds) the sender of the keepalive ping waits for an acknowledgement. If it does not receive an acknowledgment within this time, it will close the connection.
 * **GRPC_ARG_HTTP2_MAX_PINGS_WITHOUT_DATA**
-  * This channel argument controls the maximum number of pings that can be sent when there is no data/header frame to be sent. GRPC Core will not continue sending pings if we run over the limit. Setting it to 0 allows sending pings without such a restriction. (Note that this is an unfortunate setting that does not agree with [A8-client-side-keepalive.md](https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md). There should ideally be no such restriction on the keepalive ping and we plan to deprecate it in the future.)
+  * This channel argument controls the maximum number of pings that can be sent when there is no data/header frame to be sent. gRPC Core will not continue sending pings if we run over the limit. Setting it to 0 allows sending pings without such a restriction. (Note that this is an unfortunate setting that does not agree with [A8-client-side-keepalive.md](https://github.com/grpc/proposal/blob/master/A8-client-side-keepalive.md). There should ideally be no such restriction on the keepalive ping and we plan to deprecate it in the future.)
 * **GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS**
   * This channel argument if set to 1 (0 : false; 1 : true), allows keepalive pings to be sent even if there are no calls in flight.
 
@@ -23,7 +23,7 @@ On the client side, this does not have any effect.
 * **GRPC_ARG_HTTP2_MAX_PING_STRIKES**
   * This arg controls the maximum number of bad pings that the server will tolerate before sending an HTTP2 GOAWAY frame and closing the transport. Setting it to 0 allows the server to accept any number of bad pings.
 
-**IMPORTANT NOTE** - For keepalive to work properly and as intended, all of the above channel arguments should be configured appropriately. The client-side keepalive settings should also be in `agreement` with the server-side settings. If a client sends pings more often than the server is willing to accept, the connection will be terminated with a GOAWAY frame with "too_many_pings" as the debug data. 
+**IMPORTANT NOTE** - For keepalive to work properly and as intended, all of the above channel arguments should be configured appropriately. The client-side keepalive settings should also be in agreement with the server-side settings. If a client sends pings more often than the server is willing to accept, the connection will be terminated with a GOAWAY frame with "too_many_pings" as the debug data. 
 
 ### Defaults Values
 
