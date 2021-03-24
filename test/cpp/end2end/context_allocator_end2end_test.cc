@@ -92,7 +92,7 @@ class ContextAllocatorEnd2endTestBase
       server_address_ << "localhost:" << picked_port_;
       builder.AddListeningPort(server_address_.str(), server_creds);
     }
-    builder.experimental().SetContextAllocator(std::move(context_allocator));
+    builder.SetContextAllocator(std::move(context_allocator));
     builder.RegisterService(&callback_service_);
 
     server_ = builder.BuildAndStart();

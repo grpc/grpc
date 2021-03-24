@@ -228,7 +228,7 @@ class ClientCallbackEnd2endTest
       std::mutex mu;
       std::condition_variable cv;
       bool done = false;
-      generic_stub_->experimental().UnaryCall(
+      generic_stub_->UnaryCall(
           &cli_ctx, kMethodName, send_buf.get(), &recv_buf,
           [&request, &recv_buf, &done, &mu, &cv, maybe_except](Status s) {
             GPR_ASSERT(s.ok());
@@ -268,8 +268,8 @@ class ClientCallbackEnd2endTest
             if (reuses_remaining_ > 0) {
               cli_ctx_ = absl::make_unique<ClientContext>();
               reuses_remaining_--;
-              test->generic_stub_->experimental().PrepareBidiStreamingCall(
-                  cli_ctx_.get(), method_name, this);
+              test->generic_stub_->PrepareBidiStreamingCall(cli_ctx_.get(),
+                                                            method_name, this);
               request_.set_message(test_str);
               send_buf_ = SerializeToByteBuffer(&request_);
               StartWrite(send_buf_.get());
@@ -830,8 +830,8 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
       request_.set_message("Hello metadata");
       send_buf_ = SerializeToByteBuffer(&request_);
 
-      stub->experimental().PrepareUnaryCall(&cli_ctx_, method_name,
-                                            send_buf_.get(), &recv_buf_, this);
+      stub->PrepareUnaryCall(&cli_ctx_, method_name, send_buf_.get(),
+                             &recv_buf_, this);
       StartCall();
     }
     void OnReadInitialMetadataDone(bool ok) override {
