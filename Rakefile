@@ -137,7 +137,7 @@ task 'gem:native' do
       run_rake_compiler(plat, <<~EOT)
         gem update --system --no-document && \
         bundle && \
-        rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
+        bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
           RUBY_CC_VERSION=#{ruby_cc_versions} \
           V=#{verbose} \
           GRPC_CONFIG=#{grpc_config}
@@ -150,7 +150,7 @@ task 'gem:native' do
       run_rake_compiler(plat, <<~EOT)
         gem update --system --no-document && \
         bundle && \
-        rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
+        bundle exec rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
           RUBY_CC_VERSION=#{ruby_cc_versions} \
           V=#{verbose} \
           GRPC_CONFIG=#{grpc_config}
