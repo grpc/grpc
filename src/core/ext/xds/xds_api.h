@@ -276,78 +276,28 @@ class XdsApi {
       std::string ToString() const;
     };
 
-    struct FilterChain {
-      struct FilterChainMatch {
-        uint32_t destination_port = 0;
+    // Populated for type=kHttpApiListener.
+    HttpConnectionManager http_connection_manager;
 
-        struct CidrRange {
-          std::string address_prefix;
-          uint32_t prefix_len;
+    // Populated for type=kTcpListener.
+    // host:port listening_address set when type is kTcpListener
+    std::string address;
 
-          bool operator==(const CidrRange& other) const {
-            return address_prefix == other.address_prefix &&
-                   prefix_len == other.prefix_len;
-          }
+    enum class ConnectionSourceType { kAny = 0, kSameIpOrLoopback, kExternal };
 
-          std::string ToString() const;
-        };
+    struct FilterChainData {
+      DownstreamTlsContext downstream_tls_context;
+      // This is in principle the filter list.
+      // We currently require exactly one filter, which is the HCM.
+      HttpConnectionManager http_connection_manager;
 
-        std::vector<CidrRange> prefix_ranges;
-
-        enum class ConnectionSourceType {
-          kAny = 0,
-          kSameIpOrLoopback,
-          kExternal
-        } source_type = ConnectionSourceType::kAny;
-
-        std::vector<CidrRange> source_prefix_ranges;
-        std::vector<uint32_t> source_ports;
-        std::vector<std::string> server_names;
-        std::string transport_protocol;
-        std::vector<std::string> application_protocols;
-
-        bool operator==(const FilterChainMatch& other) const {
-          return destination_port == other.destination_port &&
-                 prefix_ranges == other.prefix_ranges &&
-                 source_type == other.source_type &&
-                 source_prefix_ranges == other.source_prefix_ranges &&
-                 source_ports == other.source_ports &&
-                 server_names == other.server_names &&
-                 transport_protocol == other.transport_protocol &&
-                 application_protocols == other.application_protocols;
-        }
-
-        std::string ToString() const;
-      } filter_chain_match;
-
-      struct FilterChainData {
-        DownstreamTlsContext downstream_tls_context;
-        // This is in principle the filter list.
-        // We currently require exactly one filter, which is the HCM.
-        HttpConnectionManager http_connection_manager;
-
-        bool operator==(const FilterChainData& other) const {
-          return downstream_tls_context == other.downstream_tls_context &&
-                 http_connection_manager == other.http_connection_manager;
-        }
-
-        std::string ToString() const;
-      } filter_chain_data;
-
-      bool operator==(const FilterChain& other) const {
-        return filter_chain_match == other.filter_chain_match &&
-               filter_chain_data == other.filter_chain_data;
+      bool operator==(const FilterChainData& other) const {
+        return downstream_tls_context == other.downstream_tls_context &&
+               http_connection_manager == other.http_connection_manager;
       }
 
       std::string ToString() const;
-    };
-
-    struct FilterChainDataSharedPtr {
-      std::shared_ptr<FilterChain::FilterChainData> data;
-      bool operator==(const FilterChainDataSharedPtr& other) const {
-        return *data == *other.data;
-      }
-    };
+    } filter_chain_data;
 
     // A multi-level map used to determine which filter chain to use for a given
     // incoming connection. Determining the right filter chain for a given
@@ -356,62 +306,69 @@ class XdsApi {
     // - destination IP address
     // - server name (never matched, so not present in map)
     // - transport protocol (allows only "raw_buffer" or unset, prefers the
-    // former)
+    //   former)
     // - application protocol (never matched, so not present in map)
     // - connection source type (any, local or external)
     // - source IP address
     // - source port
     // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener_components.proto#config-listener-v3-filterchainmatch
     // for more details
-    using SourcePortsMap = std::map<uint16_t, FilterChainDataSharedPtr>;
-    struct SourceIp {
-      grpc_resolved_address address;
-      int prefix_len;
-      SourcePortsMap ports_map;
+    struct FilterChainMap {
+      struct FilterChainDataSharedPtr {
+        std::shared_ptr<FilterChainData> data;
+        bool operator==(const FilterChainDataSharedPtr& other) const {
+          return *data == *other.data;
+        }
+      };
+      using SourcePortsMap = std::map<uint16_t, FilterChainDataSharedPtr>;
+      struct SourceIp {
+        grpc_resolved_address address;
+        int prefix_len;
+        SourcePortsMap ports_map;
 
-      bool operator==(const SourceIp& other) const {
-        return memcmp(&address, &other.address, sizeof(address)) == 0 &&
-               prefix_len == other.prefix_len && ports_map == other.ports_map;
+        bool operator==(const SourceIp& other) const {
+          return memcmp(&address, &other.address, sizeof(address)) == 0 &&
+                 prefix_len == other.prefix_len && ports_map == other.ports_map;
+        }
+      };
+      using SourceIpMap = std::map<std::string, SourceIp>;
+      using ConnectionSourceTypesArray = std::array<SourceIpMap, 3>;
+      struct DestinationIp {
+        grpc_resolved_address address;
+        int prefix_len;
+        // We always fail match on applicaton protocols so those are not
+        // included here. We only store either filter chains without transport
+        // protocol or with the transport protocol "raw_buffer".
+        bool transport_protocol_raw_buffer_provided = false;
+        // We always fail match on server name, so those filter chains are not
+        // included here.
+        ConnectionSourceTypesArray source_types_array;
+
+        bool operator==(const DestinationIp& other) const {
+          return memcmp(&address, &other.address, sizeof(address)) == 0 &&
+                 prefix_len == other.prefix_len &&
+                 transport_protocol_raw_buffer_provided ==
+                     other.transport_protocol_raw_buffer_provided &&
+                 source_types_array == other.source_types_array;
+        }
+      };
+      // We always fail match on destination ports map
+      using DestinationIpMap = std::map<std::string, DestinationIp>;
+      DestinationIpMap destination_ip_map;
+
+      bool operator==(const FilterChainMap& other) const {
+        return destination_ip_map == other.destination_ip_map;
       }
-    };
-    using SourceIpMap = std::map<std::string, SourceIp>;
-    using ConnectionSourceTypesArray = std::array<SourceIpMap, 3>;
-    struct DestinationIp {
-      grpc_resolved_address address;
-      int prefix_len;
-      // We always fail match on applicaton protocols so those are not included
-      // here.
-      // We only store either filter chains without transport protocol or with
-      // the transport protocol "raw_buffer".
-      bool transport_protocol_raw_buffer_provided = false;
-      // We always fail match on server name, so those filter chains are not
-      // included here.
-      ConnectionSourceTypesArray source_types_array;
 
-      bool operator==(const DestinationIp& other) const {
-        return memcmp(&address, &other.address, sizeof(address)) == 0 &&
-               prefix_len == other.prefix_len &&
-               transport_protocol_raw_buffer_provided ==
-                   other.transport_protocol_raw_buffer_provided &&
-               source_types_array == other.source_types_array;
-      }
-    };
-    using DestinationIpMap = std::map<std::string, DestinationIp>;
-    // We always fail match on destination ports map
+      std::string ToString() const;
+    } filter_chain_map;
 
-    // Populated for type=kHttpApiListener.
-    HttpConnectionManager http_connection_manager;
-
-    // Populated for type=kTcpListener.
-    // host:port listening_address set when type is kTcpListener
-    std::string address;
-    DestinationIpMap destination_ip_map;
-    absl::optional<FilterChain> default_filter_chain;
+    absl::optional<FilterChainData> default_filter_chain;
 
     bool operator==(const LdsUpdate& other) const {
       return http_connection_manager == other.http_connection_manager &&
              address == other.address &&
-             destination_ip_map == other.destination_ip_map &&
+             filter_chain_map == other.filter_chain_map &&
              default_filter_chain == other.default_filter_chain;
     }
 

@@ -44,26 +44,29 @@ class FilterChainMatchManager
  public:
   FilterChainMatchManager(
       RefCountedPtr<XdsClient> xds_client,
-      XdsApi::LdsUpdate::DestinationIpMap destination_ip_map,
-      absl::optional<XdsApi::LdsUpdate::FilterChain> default_filter_chain)
+      XdsApi::LdsUpdate::FilterChainMap filter_chain_map,
+      absl::optional<XdsApi::LdsUpdate::FilterChainData> default_filter_chain)
       : xds_client_(xds_client),
-        destination_ip_map_(std::move(destination_ip_map)),
+        filter_chain_map_(std::move(filter_chain_map)),
         default_filter_chain_(std::move(default_filter_chain)) {}
 
   absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
       grpc_channel_args* args, grpc_endpoint* tcp) override;
 
-  const XdsApi::LdsUpdate::DestinationIpMap& destination_ip_map() const {
-    return destination_ip_map_;
+  const XdsApi::LdsUpdate::FilterChainMap& filter_chain_map() const {
+    return filter_chain_map_;
   }
 
-  const absl::optional<XdsApi::LdsUpdate::FilterChain>& default_filter_chain()
-      const {
+  const absl::optional<XdsApi::LdsUpdate::FilterChainData>&
+  default_filter_chain() const {
     return default_filter_chain_;
   }
 
  private:
   struct CertificateProviders {
+    // We need to save our own refs to the root and instance certificate
+    // providers since the xds certificate provider just stores a ref to their
+    // distributors.
     RefCountedPtr<grpc_tls_certificate_provider> root;
     RefCountedPtr<grpc_tls_certificate_provider> instance;
     RefCountedPtr<XdsCertificateProvider> xds;
@@ -71,14 +74,14 @@ class FilterChainMatchManager
 
   absl::StatusOr<RefCountedPtr<XdsCertificateProvider>>
   CreateOrGetXdsCertificateProviderFromFilterChainData(
-      const XdsApi::LdsUpdate::FilterChain::FilterChainData* filter_chain);
+      const XdsApi::LdsUpdate::FilterChainData* filter_chain);
 
   const RefCountedPtr<XdsClient> xds_client_;
-  const XdsApi::LdsUpdate::DestinationIpMap destination_ip_map_;
-  const absl::optional<XdsApi::LdsUpdate::FilterChain> default_filter_chain_;
+  const XdsApi::LdsUpdate::FilterChainMap filter_chain_map_;
+  const absl::optional<XdsApi::LdsUpdate::FilterChainData>
+      default_filter_chain_;
   Mutex mu_;
-  std::map<const XdsApi::LdsUpdate::FilterChain::FilterChainData*,
-           CertificateProviders>
+  std::map<const XdsApi::LdsUpdate::FilterChainData*, CertificateProviders>
       certificate_providers_map_ ABSL_GUARDED_BY(mu_);
 };
 
@@ -102,9 +105,8 @@ bool IsLoopbackIp(const grpc_resolved_address* address) {
   return false;
 }
 
-const XdsApi::LdsUpdate::FilterChain::FilterChainData*
-FindFilterChainDataForSourcePort(
-    const XdsApi::LdsUpdate::SourcePortsMap& source_ports_map,
+const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForSourcePort(
+    const XdsApi::LdsUpdate::FilterChainMap::SourcePortsMap& source_ports_map,
     absl::string_view port_str) {
   int port = 0;
   if (!absl::SimpleAtoi(port_str, &port)) return nullptr;
@@ -120,11 +122,10 @@ FindFilterChainDataForSourcePort(
   return nullptr;
 }
 
-const XdsApi::LdsUpdate::FilterChain::FilterChainData*
-FindFilterChainDataForSourceIp(
-    const XdsApi::LdsUpdate::SourceIpMap& source_ip_map,
+const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForSourceIp(
+    const XdsApi::LdsUpdate::FilterChainMap::SourceIpMap& source_ip_map,
     const grpc_resolved_address* source_ip, absl::string_view port) {
-  const XdsApi::LdsUpdate::SourceIp* best_match = nullptr;
+  const XdsApi::LdsUpdate::FilterChainMap::SourceIp* best_match = nullptr;
   for (const auto& pair : source_ip_map) {
     // Special case for catch-all
     if (pair.second.prefix_len == -1) {
@@ -146,9 +147,9 @@ FindFilterChainDataForSourceIp(
   return FindFilterChainDataForSourcePort(best_match->ports_map, port);
 }
 
-const XdsApi::LdsUpdate::FilterChain::FilterChainData*
-FindFilterChainDataForSourceType(
-    const XdsApi::LdsUpdate::ConnectionSourceTypesArray& source_types_array,
+const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForSourceType(
+    const XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceTypesArray&
+        source_types_array,
     grpc_endpoint* tcp, absl::string_view destination_ip) {
   auto source_uri = URI::Parse(grpc_endpoint_get_peer(tcp));
   if (!source_uri.ok() ||
@@ -164,38 +165,34 @@ FindFilterChainDataForSourceType(
   grpc_string_to_sockaddr(&source_addr, host.c_str(),
                           0 /* port doesn't matter here */);
   // Use kAny only if kSameIporLoopback and kExternal are empty
-  if (source_types_array[static_cast<int>(
-                             XdsApi::LdsUpdate::FilterChain::FilterChainMatch::
-                                 ConnectionSourceType::kSameIpOrLoopback)]
-          .empty() &&
-      source_types_array[static_cast<int>(
-                             XdsApi::LdsUpdate::FilterChain::FilterChainMatch::
-                                 ConnectionSourceType::kExternal)]
-          .empty()) {
+  if (source_types_array
+          [static_cast<int>(
+               XdsApi::LdsUpdate::ConnectionSourceType::kSameIpOrLoopback)]
+              .empty() &&
+      source_types_array
+          [static_cast<int>(XdsApi::LdsUpdate::ConnectionSourceType::kExternal)]
+              .empty()) {
     return FindFilterChainDataForSourceIp(
         source_types_array[static_cast<int>(
-            XdsApi::LdsUpdate::FilterChain::FilterChainMatch::
-                ConnectionSourceType::kAny)],
+            XdsApi::LdsUpdate::ConnectionSourceType::kAny)],
         &source_addr, port);
   }
   if (IsLoopbackIp(&source_addr) || host == destination_ip) {
     return FindFilterChainDataForSourceIp(
         source_types_array[static_cast<int>(
-            XdsApi::LdsUpdate::FilterChain::FilterChainMatch::
-                ConnectionSourceType::kSameIpOrLoopback)],
+            XdsApi::LdsUpdate::ConnectionSourceType::kSameIpOrLoopback)],
         &source_addr, port);
   } else {
     return FindFilterChainDataForSourceIp(
         source_types_array[static_cast<int>(
-            XdsApi::LdsUpdate::FilterChain::FilterChainMatch::
-                ConnectionSourceType::kExternal)],
+            XdsApi::LdsUpdate::ConnectionSourceType::kExternal)],
         &source_addr, port);
   }
 }
 
-const XdsApi::LdsUpdate::FilterChain::FilterChainData*
-FindFilterChainDataForDestinationIp(
-    const XdsApi::LdsUpdate::DestinationIpMap destination_ip_map,
+const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForDestinationIp(
+    const XdsApi::LdsUpdate::FilterChainMap::DestinationIpMap
+        destination_ip_map,
     grpc_endpoint* tcp) {
   auto destination_uri = URI::Parse(grpc_endpoint_get_local_address(tcp));
   if (!destination_uri.ok() || (destination_uri->scheme() != "ipv4" &&
@@ -210,7 +207,7 @@ FindFilterChainDataForDestinationIp(
   grpc_resolved_address destination_addr;
   grpc_string_to_sockaddr(&destination_addr, host.c_str(),
                           0 /* port doesn't matter here */);
-  const XdsApi::LdsUpdate::DestinationIp* best_match = nullptr;
+  const XdsApi::LdsUpdate::FilterChainMap::DestinationIp* best_match = nullptr;
   for (const auto& pair : destination_ip_map) {
     // Special case for catch-all
     if (pair.second.prefix_len == -1) {
@@ -235,7 +232,7 @@ FindFilterChainDataForDestinationIp(
 
 absl::StatusOr<RefCountedPtr<XdsCertificateProvider>>
 FilterChainMatchManager::CreateOrGetXdsCertificateProviderFromFilterChainData(
-    const XdsApi::LdsUpdate::FilterChain::FilterChainData* filter_chain) {
+    const XdsApi::LdsUpdate::FilterChainData* filter_chain) {
   MutexLock lock(&mu_);
   auto it = certificate_providers_map_.find(filter_chain);
   if (it != certificate_providers_map_.end()) {
@@ -300,10 +297,10 @@ FilterChainMatchManager::CreateOrGetXdsCertificateProviderFromFilterChainData(
 absl::StatusOr<grpc_channel_args*>
 FilterChainMatchManager::UpdateChannelArgsForConnection(grpc_channel_args* args,
                                                         grpc_endpoint* tcp) {
-  const auto* filter_chain =
-      FindFilterChainDataForDestinationIp(destination_ip_map_, tcp);
+  const auto* filter_chain = FindFilterChainDataForDestinationIp(
+      filter_chain_map_.destination_ip_map, tcp);
   if (filter_chain == nullptr && default_filter_chain_.has_value()) {
-    filter_chain = &default_filter_chain_->filter_chain_data;
+    filter_chain = &default_filter_chain_.value();
   }
   if (filter_chain == nullptr) {
     grpc_channel_args_destroy(args);
@@ -424,12 +421,12 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         }
       }
       if (filter_chain_match_manager_ == nullptr ||
-          !(listener.destination_ip_map ==
-                filter_chain_match_manager_->destination_ip_map() &&
+          !(listener.filter_chain_map ==
+                filter_chain_match_manager_->filter_chain_map() &&
             listener.default_filter_chain ==
                 filter_chain_match_manager_->default_filter_chain())) {
         filter_chain_match_manager_ = MakeRefCounted<FilterChainMatchManager>(
-            xds_client_, std::move(listener.destination_ip_map),
+            xds_client_, std::move(listener.filter_chain_map),
             std::move(listener.default_filter_chain));
         server_config_watcher_->UpdateConnectionManager(
             filter_chain_match_manager_);
