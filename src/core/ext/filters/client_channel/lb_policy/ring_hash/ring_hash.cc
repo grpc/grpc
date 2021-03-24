@@ -740,12 +740,12 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-}  // namespace grpc_core
-
-void grpc_lb_policy_ring_hash_init() {
+void GrpcLbPolicyRingHashInit() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
           absl::make_unique<grpc_core::RingHashFactory>());
 }
 
-void grpc_lb_policy_ring_hash_shutdown() {}
+void GrpcLbPolicyRingHashShutdown() {}
+
+}  // namespace grpc_core
