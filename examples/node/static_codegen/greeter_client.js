@@ -16,6 +16,7 @@
  *
  */
 
+var parseArgs = require('minimist');
 var messages = require('./helloworld_pb');
 var services = require('./helloworld_grpc_pb');
 
