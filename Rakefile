@@ -106,14 +106,13 @@ task 'dlls' do
     env_comp += "CXX=#{opt[:cross]}-g++ "
     env_comp += "LD=#{opt[:cross]}-gcc "
     env_comp += "LDXX=#{opt[:cross]}-g++ "
-    run_rake_compiler opt[:platform], <<-EOT
+    run_rake_compiler(opt[:platform], <<~EOT)
       gem update --system --no-document && \
       #{env} #{env_comp} make -j`nproc` #{out} && \
       #{opt[:cross]}-strip -x -S #{out} && \
       cp #{out} #{opt[:out]}
     EOT
   end
-
 end
 
 desc 'Build the native gem file under rake_compiler_dock'
@@ -135,7 +134,7 @@ task 'gem:native' do
   else
     Rake::Task['dlls'].execute
     ['x86-mingw32', 'x64-mingw32'].each do |plat|
-      run_rake_compiler plat, <<-EOT
+      run_rake_compiler(plat, <<~EOT)
         gem update --system --no-document && \
         bundle && \
         rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \
@@ -148,7 +147,7 @@ task 'gem:native' do
     File.truncate('grpc_c.32.ruby', 0)
     File.truncate('grpc_c.64.ruby', 0)
     ['x86_64-linux', 'x86-linux'].each do |plat|
-      run_rake_compiler plat, <<-EOT
+      run_rake_compiler(plat, <<~EOT)
         gem update --system --no-document && \
         bundle && \
         rake native:#{plat} pkg/#{spec.full_name}-#{plat}.gem pkg/#{spec.full_name}.gem \

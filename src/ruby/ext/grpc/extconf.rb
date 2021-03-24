@@ -40,7 +40,7 @@ end
 if RUBY_PLATFORM =~ /darwin/
   ENV['AR'] = 'libtool'
   ENV['ARFLAGS'] = '-o'
- end
+end
 
 ENV['EMBED_OPENSSL'] = 'true'
 ENV['EMBED_ZLIB'] = 'true'
