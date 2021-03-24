@@ -163,6 +163,20 @@ class RingHash : public LoadBalancingPolicy {
       grpc_connectivity_state last_connectivity_state;
     };
 
+    class AttemptToConnectArgs
+        : public InternallyRefCounted<AttemptToConnectArgs> {
+     public:
+      AttemptToConnectArgs(RefCountedPtr<RingHash> parent,
+                           RefCountedPtr<SubchannelInterface> subchannel)
+          : parent_(std::move(parent)), subchannel_(std::move(subchannel)) {}
+
+      using InternallyRefCounted<AttemptToConnectArgs>::Ref;
+      using InternallyRefCounted<AttemptToConnectArgs>::Unref;
+      void Orphan() override { Unref(); }
+      RefCountedPtr<RingHash> parent_;
+      RefCountedPtr<SubchannelInterface> subchannel_;
+    };
+
     Picker(RefCountedPtr<RingHash> parent,
            RingHashSubchannelList* subchannel_list);
 
@@ -385,6 +399,22 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     if (!found_first_non_failed) {
       if (entry.last_connectivity_state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
         // ...trigger connection attempt...
+        auto attempt_to_connect_args =
+            MakeRefCounted<AttemptToConnectArgs>(parent_, entry.subchannel);
+        auto* args = attempt_to_connect_args->Ref().release();
+        ExecCtx::Run(DEBUG_LOCATION,
+                     GRPC_CLOSURE_CREATE(
+                         [](void* arg, grpc_error* /*error*/) {
+                           auto* args = static_cast<AttemptToConnectArgs*>(arg);
+                           args->parent_->work_serializer()->Run(
+                               [args]() {
+                                 args->subchannel_->AttemptToConnect();
+                                 args->Unref();
+                               },
+                               DEBUG_LOCATION);
+                         },
+                         &attempt_to_connect_args, nullptr),
+                     GRPC_ERROR_NONE);
       } else {
         if (entry.last_connectivity_state == GRPC_CHANNEL_IDLE) {
           // ...trigger connection attempt...
