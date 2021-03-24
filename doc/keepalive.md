@@ -4,7 +4,7 @@ The keepalive ping is a way to check if a channel is currently working by sendin
 
 This guide documents the knobs within gRPC core to control the current behavior of the keepalive ping.
 
-The send-side keepalive ping in core is controlled by the following channel arguments -
+The keepalive ping in core is controlled by the following channel arguments -
 
 * **GRPC_ARG_KEEPALIVE_TIME_MS**
   * This channel argument controls the period (in milliseconds) after which a keepalive ping is sent on the transport.
@@ -15,7 +15,7 @@ The send-side keepalive ping in core is controlled by the following channel argu
 * **GRPC_ARG_KEEPALIVE_PERMIT_WITHOUT_CALLS**
   * This channel argument if set to 1 (0 : false; 1 : true), allows keepalive pings to be sent even if there are no calls in flight.
 
-On the server-side, the following channel arguments need to be configured -
+On the server-side, the following additional channel arguments need to be configured -
 
 * **GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS**
   * If there are no data/header frames being sent on the transport, this channel argument on the server side controls the minimum time (in milliseconds) that gRPC Core would expect between receiving successive pings. If the time between successive pings is less that than this time, then the ping will be considered a bad ping from the peer. Such a ping counts as a ‘ping strike’.
