@@ -149,6 +149,7 @@ class RingHash : public LoadBalancingPolicy {
     void UpdateRingHashConnectivityStateLocked();
 
    private:
+    size_t num_idle_ = 0;
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;
     size_t num_transient_failure_ = 0;
@@ -163,6 +164,10 @@ class RingHash : public LoadBalancingPolicy {
       grpc_connectivity_state last_connectivity_state;
     };
 
+    // A ref counted class to store needed arguments to perform
+    // an attempt to connect to a specific subchannel; these arguments include
+    // the ring hash policy which contains the serializer and the subchannel to
+    // be connected.
     class AttemptToConnectArgs
         : public InternallyRefCounted<AttemptToConnectArgs> {
      public:
@@ -180,9 +185,12 @@ class RingHash : public LoadBalancingPolicy {
     Picker(RefCountedPtr<RingHash> parent,
            RingHashSubchannelList* subchannel_list);
 
+    void AttemptToConnectInExecCtx(
+        RefCountedPtr<SubchannelInterface> subchannel);
+
     // Picker helper which returns false if subchannel is in TRANSIENT_FAILURE,
     // true otherwise.
-    static bool MaybePickSubchannel(const RingEntry& entry, PickResult* result);
+    bool MaybePickSubchannel(const RingEntry& entry, PickResult* result);
 
     PickResult Pick(PickArgs args) override;
 
@@ -312,6 +320,26 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
   }
 }
 
+void RingHash::Picker::AttemptToConnectInExecCtx(
+    RefCountedPtr<SubchannelInterface> subchannel) {
+  auto attempt_to_connect_args =
+      MakeRefCounted<AttemptToConnectArgs>(parent_, std::move(subchannel));
+  auto* args = attempt_to_connect_args->Ref().release();
+  ExecCtx::Run(DEBUG_LOCATION,
+               GRPC_CLOSURE_CREATE(
+                   [](void* arg, grpc_error* /*error*/) {
+                     auto* args = static_cast<AttemptToConnectArgs*>(arg);
+                     args->parent_->work_serializer()->Run(
+                         [args]() {
+                           args->subchannel_->AttemptToConnect();
+                           args->Unref();
+                         },
+                         DEBUG_LOCATION);
+                   },
+                   args, nullptr),
+               GRPC_ERROR_NONE);
+}
+
 // Returns false if subchannel is in TRANSIENT_FAILURE, true otherwise.
 bool RingHash::Picker::MaybePickSubchannel(const RingEntry& entry,
                                            PickResult* result) {
@@ -321,7 +349,7 @@ bool RingHash::Picker::MaybePickSubchannel(const RingEntry& entry,
     return true;
   }
   if (entry.last_connectivity_state == GRPC_CHANNEL_IDLE) {
-    // ...trigger connection attempt...
+    AttemptToConnectInExecCtx(entry.subchannel);
     result->type = PickResult::PICK_QUEUE;
     return true;
   }
@@ -330,7 +358,7 @@ bool RingHash::Picker::MaybePickSubchannel(const RingEntry& entry,
     return true;
   }
   // TRANSIENT_FAILURE
-  // ...trigger connection attempt...
+  AttemptToConnectInExecCtx(entry.subchannel);
   return false;
 }
 
@@ -398,7 +426,6 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     }
     if (!found_first_non_failed) {
       if (entry.last_connectivity_state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        // ...trigger connection attempt...
         auto attempt_to_connect_args =
             MakeRefCounted<AttemptToConnectArgs>(parent_, entry.subchannel);
         auto* args = attempt_to_connect_args->Ref().release();
@@ -413,11 +440,11 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
                                },
                                DEBUG_LOCATION);
                          },
-                         &attempt_to_connect_args, nullptr),
+                         args, nullptr),
                      GRPC_ERROR_NONE);
       } else {
         if (entry.last_connectivity_state == GRPC_CHANNEL_IDLE) {
-          // ...trigger connection attempt...
+          AttemptToConnectInExecCtx(entry.subchannel);
         }
         found_first_non_failed = true;
       }
@@ -451,7 +478,10 @@ void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
     grpc_connectivity_state old_state, grpc_connectivity_state new_state) {
   GPR_ASSERT(old_state != GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
-  if (old_state == GRPC_CHANNEL_READY) {
+  if (old_state == GRPC_CHANNEL_IDLE) {
+    GPR_ASSERT(num_idle_ > 0);
+    --num_idle_;
+  } else if (old_state == GRPC_CHANNEL_READY) {
     GPR_ASSERT(num_ready_ > 0);
     --num_ready_;
   } else if (old_state == GRPC_CHANNEL_CONNECTING) {
@@ -461,7 +491,9 @@ void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
     GPR_ASSERT(num_transient_failure_ > 0);
     --num_transient_failure_;
   }
-  if (new_state == GRPC_CHANNEL_READY) {
+  if (new_state == GRPC_CHANNEL_IDLE) {
+    ++num_idle_;
+  } else if (new_state == GRPC_CHANNEL_READY) {
     ++num_ready_;
   } else if (new_state == GRPC_CHANNEL_CONNECTING) {
     ++num_connecting_;
@@ -476,17 +508,20 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
   RingHash* p = static_cast<RingHash*>(policy());
   // Only set connectivity state if this is the current subchannel list.
   if (p->subchannel_list_.get() != this) return;
-  if (num_transient_failure_ < 2) {
+  if (num_ready_ > 0) {
     /* READY */
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_READY, absl::Status(),
         absl::make_unique<Picker>(p->Ref(DEBUG_LOCATION, "RingHashPicker"),
                                   this));
-  } else if (num_ready_ == 0 && num_connecting_ == 0) {
-    /* TRANSIENT_FAILURE >= 2 and everything else is IDLE */
+  } else if (num_connecting_ > 0) {
+    p->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_CONNECTING, absl::Status(),
+        absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
+  } else if (num_transient_failure_ > 2) {
     grpc_error* error =
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "connections to all backends failing"),
+                               "connections to backend failing or idle"),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
@@ -510,6 +545,18 @@ void RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
     subchannel(last_transient_failure_recovery_index_)
         ->subchannel()
         ->AttemptToConnect();
+  } else if (num_idle_ > 0) {
+    p->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_IDLE, absl::Status(),
+        absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
+  } else {
+    grpc_error* error =
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                               "connections to all backends failing"),
+                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+    p->channel_control_helper()->UpdateState(
+        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
+        absl::make_unique<TransientFailurePicker>(error));
   }
 }
 
