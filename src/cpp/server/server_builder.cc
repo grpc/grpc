@@ -115,6 +115,12 @@ ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
   }
   return *this;
 }
+
+ServerBuilder& ServerBuilder::SetContextAllocator(
+    std::unique_ptr<grpc::ContextAllocator> context_allocator) {
+  context_allocator_ = std::move(context_allocator);
+  return *this;
+}
 #else
 ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
     experimental::CallbackGenericService* service) {
@@ -128,13 +134,13 @@ ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
   }
   return *builder_;
 }
-#endif
 
 ServerBuilder& ServerBuilder::experimental_type::SetContextAllocator(
     std::unique_ptr<grpc::ContextAllocator> context_allocator) {
   builder_->context_allocator_ = std::move(context_allocator);
   return *builder_;
 }
+#endif
 
 std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
 ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
