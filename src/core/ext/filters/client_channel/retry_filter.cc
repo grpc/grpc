@@ -48,8 +48,13 @@
 // Retry filter
 //
 
-// FIXME: update this to talk about integration into dynamic filter stack
-
+// This filter is intended to be used in the DynamicFilter stack in the
+// client channel, which is situated between the name resolver and the
+// LB policy.  Normally, the last filter in the DynamicFilter stack is
+// the DynamicTerminationFilter (see client_channel.cc), which creates a
+// LoadBalancedCall and delegates to it.  However, when retries are
+// enabled, this filter is used instead of the DynamicTerminationFilter.
+//
 // In order to support retries, we act as a proxy for stream op batches.
 // When we get a batch from the surface, we add it to our list of pending
 // batches, and we then use those batches to construct separate "child"
