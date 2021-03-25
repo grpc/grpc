@@ -113,6 +113,7 @@ using ::envoy::config::cluster::v3::CustomClusterType;
 using ::envoy::config::cluster::v3::RoutingPriority;
 using ::envoy::config::endpoint::v3::ClusterLoadAssignment;
 using ::envoy::config::endpoint::v3::HealthStatus;
+using ::envoy::config::listener::v3::FilterChainMatch;
 using ::envoy::config::listener::v3::Listener;
 using ::envoy::config::route::v3::RouteConfiguration;
 using ::envoy::extensions::clusters::aggregate::v3::ClusterConfig;
@@ -7919,16 +7920,6 @@ class XdsEnabledServerStatusNotificationTest : public XdsServerSecurityTest {
     auto* socket_address = listener.mutable_address()->mutable_socket_address();
     socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
     socket_address->set_port_value(backends_[0]->port());
-    auto* filter_chain = listener.add_filter_chains();
-    filter_chain->add_filters()->mutable_typed_config()->PackFrom(
-        HttpConnectionManager());
-    auto* transport_socket = filter_chain->mutable_transport_socket();
-    transport_socket->set_name("envoy.transport_sockets.tls");
-    DownstreamTlsContext downstream_tls_context;
-    downstream_tls_context.mutable_common_tls_context()
-        ->mutable_tls_certificate_certificate_provider_instance()
-        ->set_instance_name("unknown");
-    transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
     balancers_[0]->ads_service()->SetLdsResource(listener);
   }
 
@@ -8071,6 +8062,616 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
     EXPECT_FALSE(
         streaming_rpcs[i].stub->Echo(&new_context, request, &response).ok());
   }
+}
+
+using XdsServerFilterChainMatchTest = XdsServerSecurityTest;
+
+TEST_P(XdsServerFilterChainMatchTest,
+       DefaultFilterChainUsedWhenNoFilterChainMentioned) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  listener.mutable_default_filter_chain()
+      ->add_filters()
+      ->mutable_typed_config()
+      ->PackFrom(HttpConnectionManager());
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
+       DefaultFilterChainUsedWhenOtherFilterChainsDontMatch) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add a filter chain that will never get matched
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()
+      ->mutable_destination_port()
+      ->set_value(8080);
+  // Add default filter chain that should get used
+  listener.mutable_default_filter_chain()
+      ->add_filters()
+      ->mutable_typed_config()
+      ->PackFrom(HttpConnectionManager());
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
+       FilterChainsWithDestinationPortDontMatch) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with destination port that should never get matched
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()
+      ->mutable_destination_port()
+      ->set_value(8080);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // RPC should fail since no matching filter chain was found and no default
+  // filter chain is configured.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerFilterChainMatchTest, FilterChainsWithServerNamesDontMatch) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with server name that should never get matched
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // RPC should fail since no matching filter chain was found and no default
+  // filter chain is configured.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
+       FilterChainsWithTransportProtocolsOtherThanRawBufferDontMatch) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with transport protocol "tls" that should never match
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->set_transport_protocol("tls");
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // RPC should fail since no matching filter chain was found and no default
+  // filter chain is configured.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
+       FilterChainsWithApplicationProtocolsDontMatch) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with application protocol that should never get matched
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // RPC should fail since no matching filter chain was found and no default
+  // filter chain is configured.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
+          true /* test_expects_failure */);
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
+       FilterChainsWithTransportProtocolRawBufferIsPreferred) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with "raw_buffer" transport protocol
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->set_transport_protocol(
+      "raw_buffer");
+  // Add another filter chain with no transport protocol set but application
+  // protocol set (fails match)
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // A successful RPC proves that filter chains that mention "raw_buffer" as the
+  // transport protocol are chosen as the best match in the round.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
+       FilterChainsWithMoreSpecificDestinationPrefixRangesArePreferred) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with prefix range (length 4 and 16) but with server name
+  // mentioned. (Prefix range is matched first.)
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(4);
+  prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(16);
+  filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
+  // Add filter chain with two prefix ranges (length 8 and 24). Since 24 is the
+  // highest match, it should be chosen.
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(8);
+  prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(24);
+  // Add another filter chain with a non-matching prefix range (with length 30)
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
+  prefix_range->set_address_prefix("192.168.1.1");
+  prefix_range->mutable_prefix_len()->set_value(30);
+  filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
+  // Add another filter chain with no prefix range mentioned
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // A successful RPC proves that the filter chain with the longest matching
+  // prefix range was the best match.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
+       FilterChainsThatMentionSourceTypeArePreferred) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with the local source type (best match)
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->set_source_type(
+      FilterChainMatch::SAME_IP_OR_LOOPBACK);
+  // Add filter chain with the external source type but bad source port.
+  // Note that backends_[0]->port() will never be a match for the source port
+  // because it is already being used by a backend.
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->set_source_type(
+      FilterChainMatch::EXTERNAL);
+  filter_chain->mutable_filter_chain_match()->add_source_ports(
+      backends_[0]->port());
+  // Add filter chain with the default source type (ANY) but bad source port.
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->add_source_ports(
+      backends_[0]->port());
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // A successful RPC proves that the filter chain with the longest matching
+  // prefix range was the best match.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
+       FilterChainsWithMoreSpecificSourcePrefixRangesArePreferred) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with source prefix range (length 16) but with a bad source
+  // port mentioned. (Prefix range is matched first.)
+  // Note that backends_[0]->port() will never be a match for the source port
+  // because it is already being used by a backend.
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* source_prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
+  source_prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  source_prefix_range->mutable_prefix_len()->set_value(4);
+  source_prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
+  source_prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  source_prefix_range->mutable_prefix_len()->set_value(16);
+  filter_chain->mutable_filter_chain_match()->add_source_ports(
+      backends_[0]->port());
+  // Add filter chain with two source prefix ranges (length 8 and 24). Since 24
+  // is the highest match, it should be chosen.
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  source_prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
+  source_prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  source_prefix_range->mutable_prefix_len()->set_value(8);
+  source_prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
+  source_prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  source_prefix_range->mutable_prefix_len()->set_value(24);
+  // Add another filter chain with a non-matching source prefix range (with
+  // length 30) and bad source port
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  source_prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
+  source_prefix_range->set_address_prefix("192.168.1.1");
+  source_prefix_range->mutable_prefix_len()->set_value(30);
+  filter_chain->mutable_filter_chain_match()->add_source_ports(
+      backends_[0]->port());
+  // Add another filter chain with no source prefix range mentioned and bad
+  // source port
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->add_source_ports(
+      backends_[0]->port());
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // A successful RPC proves that the filter chain with the longest matching
+  // source prefix range was the best match.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
+       FilterChainsWithMoreSpecificSourcePortArePreferred) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  // Since we don't know which port will be used by the channel, just add all
+  // ports except for 0.
+  for (int i = 1; i < 65536; i++) {
+    filter_chain->mutable_filter_chain_match()->add_source_ports(i);
+  }
+  // Add another filter chain with no source prefix range mentioned with a bad
+  // DownstreamTlsContext configuration.
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* transport_socket = filter_chain->mutable_transport_socket();
+  transport_socket->set_name("envoy.transport_sockets.tls");
+  DownstreamTlsContext downstream_tls_context;
+  downstream_tls_context.mutable_common_tls_context()
+      ->mutable_tls_certificate_certificate_provider_instance()
+      ->set_instance_name("unknown");
+  transport_socket->mutable_typed_config()->PackFrom(downstream_tls_context);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  // A successful RPC proves that the filter chain with matching source port
+  // was chosen.
+  SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
+}
+
+TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  // Add a duplicate filter chain
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "Duplicate matching rules detected when adding filter chain: {}"));
+}
+
+TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with prefix range
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(16);
+  prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(24);
+  // Add a filter chain with a duplicate prefix range entry
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(16);
+  prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(32);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "Duplicate matching rules detected when adding filter chain: "
+          "{prefix_ranges={{address_prefix=127.0.0.0:0, prefix_len=16}, "
+          "{address_prefix=127.0.0.1:0, prefix_len=32}}}"));
+}
+
+TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with "raw_buffer" transport protocol
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->set_transport_protocol(
+      "raw_buffer");
+  // Add a duplicate filter chain with the same "raw_buffer" transport protocol
+  // entry
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->set_transport_protocol(
+      "raw_buffer");
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Duplicate matching rules detected when adding "
+                           "filter chain: {transport_protocol=raw_buffer}"));
+}
+
+TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with the local source type
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->set_source_type(
+      FilterChainMatch::SAME_IP_OR_LOOPBACK);
+  // Add a duplicate filter chain with the same local source type entry
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->set_source_type(
+      FilterChainMatch::SAME_IP_OR_LOOPBACK);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Duplicate matching rules detected when adding "
+                           "filter chain: {source_type=SAME_IP_OR_LOOPBACK}"));
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
+       DuplicateMatchOnExternalSourceTypeNacked) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with the external source type
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->set_source_type(
+      FilterChainMatch::EXTERNAL);
+  // Add a duplicate filter chain with the same external source type entry
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->set_source_type(
+      FilterChainMatch::EXTERNAL);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Duplicate matching rules detected when adding "
+                           "filter chain: {source_type=EXTERNAL}"));
+}
+
+TEST_P(XdsServerFilterChainMatchTest,
+       DuplicateMatchOnSourcePrefixRangesNacked) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with source prefix range
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  auto* prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(16);
+  prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(24);
+  // Add a filter chain with a duplicate source prefix range entry
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(16);
+  prefix_range =
+      filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
+  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->mutable_prefix_len()->set_value(32);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "Duplicate matching rules detected when adding filter chain: "
+          "{source_prefix_ranges={{address_prefix=127.0.0.0:0, prefix_len=16}, "
+          "{address_prefix=127.0.0.1:0, prefix_len=32}}}"));
+}
+
+TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
+  Listener listener;
+  listener.set_name(
+      absl::StrCat("grpc/server?xds.resource.listening_address=",
+                   ipv6_only_ ? "[::1]:" : "127.0.0.1:", backends_[0]->port()));
+  auto* socket_address = listener.mutable_address()->mutable_socket_address();
+  socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
+  socket_address->set_port_value(backends_[0]->port());
+  // Add filter chain with the external source type
+  auto* filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
+  // Add a duplicate filter chain with the same source port entry
+  filter_chain = listener.add_filter_chains();
+  filter_chain->add_filters()->mutable_typed_config()->PackFrom(
+      HttpConnectionManager());
+  filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  do {
+    CheckRpcSendFailure();
+  } while (balancers_[0]->ads_service()->lds_response_state().state ==
+           AdsServiceImpl::ResponseState::SENT);
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("Duplicate matching rules detected when adding "
+                           "filter chain: {source_ports={8080}}"));
 }
 
 using EdsTest = BasicTest;
@@ -10600,6 +11201,13 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerSecurityTest,
 
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerStatusNotificationTest,
+                         ::testing::Values(TestType()
+                                               .set_use_fake_resolver()
+                                               .set_use_xds_credentials()),
+                         &TestTypeName);
+
+// We are only testing the server here.
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerFilterChainMatchTest,
                          ::testing::Values(TestType()
                                                .set_use_fake_resolver()
                                                .set_use_xds_credentials()),
