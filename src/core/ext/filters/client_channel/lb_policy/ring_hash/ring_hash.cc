@@ -160,10 +160,16 @@ class RingHash : public LoadBalancingPolicy {
 
   class Picker : public SubchannelPicker {
    public:
+    Picker(RefCountedPtr<RingHash> parent,
+           RingHashSubchannelList* subchannel_list);
+
+    PickResult Pick(PickArgs args) override;
+
+   private:
     struct RingEntry {
       uint64_t hash;
       RefCountedPtr<SubchannelInterface> subchannel;
-      grpc_connectivity_state last_connectivity_state;
+      grpc_connectivity_state connectivity_state;
     };
 
     // A fire-and-forget class that schedules subchannel connection attempts
@@ -206,17 +212,11 @@ class RingHash : public LoadBalancingPolicy {
       absl::InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
     };
 
-    Picker(RefCountedPtr<RingHash> parent,
-           RingHashSubchannelList* subchannel_list);
-
     // Helper which returns true if attempt to connect is needed; false
     // otherwise.  As well, the helper will return a PickResult if one is
     // picked.
     bool ConnectAndPickHelper(const RingEntry& entry, PickResult* result);
 
-    PickResult Pick(PickArgs args) override;
-
-   private:
     RefCountedPtr<RingHash> parent_;
 
     // A ring of subchannels.
@@ -243,40 +243,37 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
     : parent_(std::move(parent)) {
   size_t num_subchannels = subchannel_list->num_subchannels();
   // Store the weights while finding the sum.
-  struct AddressWeights {
+  struct AddressWeight {
     std::string address;
     uint32_t weight;
     double normalized_weight;
-    grpc_connectivity_state last_connectivity_state;
   };
-  std::vector<AddressWeights> address_weights_info;
+  std::vector<AddressWeight> address_weights;
   size_t sum = 0;
-  address_weights_info.reserve(num_subchannels);
+  address_weights.reserve(num_subchannels);
   for (size_t i = 0; i < num_subchannels; ++i) {
     RingHashSubchannelData* sd = subchannel_list->subchannel(i);
     const ServerAddressWeightAttribute* weight_attribute = static_cast<
         const ServerAddressWeightAttribute*>(sd->address().GetAttribute(
         ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-    AddressWeights address_weights;
-    address_weights.address = sd->address().ToString();
-    address_weights.last_connectivity_state =
-        sd->subchannel()->CheckConnectivityState();
+    AddressWeight address_weight;
+    address_weight.address = sd->address().ToString();
     if (weight_attribute != nullptr) {
       GPR_ASSERT(weight_attribute->weight() != 0);
-      address_weights.weight = weight_attribute->weight();
+      address_weight.weight = weight_attribute->weight();
     } else {
       // If a weight is not provided, each occurrence of the address
       // will be counted a weight value of one.
-      address_weights.weight = 1;
+      address_weight.weight = 1;
     }
-    sum += address_weights.weight;
-    address_weights_info.push_back(std::move(address_weights));
+    sum += address_weight.weight;
+    address_weights.push_back(std::move(address_weight));
   }
   // Calculating normalized weights and find min and max.
   double min_normalized_weight = 1.0;
   double max_normalized_weight = 0.0;
-  for (auto& address : address_weights_info) {
-    address.normalized_weight = (double)address.weight / sum;
+  for (auto& address : address_weights) {
+    address.normalized_weight = static_cast<double>(address.weight) / sum;
     min_normalized_weight =
         GPR_MIN(address.normalized_weight, min_normalized_weight);
     max_normalized_weight =
@@ -308,11 +305,11 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
   uint64_t min_hashes_per_host = ring_size;
   uint64_t max_hashes_per_host = 0;
   for (size_t i = 0; i < num_subchannels; ++i) {
-    const std::string& address_string = address_weights_info[i].address;
+    const std::string& address_string = address_weights[i].address;
     hash_key_buffer.assign(address_string.begin(), address_string.end());
     hash_key_buffer.emplace_back('_');
     auto offset_start = hash_key_buffer.end();
-    target_hashes += scale * address_weights_info[i].normalized_weight;
+    target_hashes += scale * address_weights[i].normalized_weight;
     size_t count = 0;
     while (current_hashes < target_hashes) {
       const std::string count_str = absl::StrCat("", count);
@@ -322,7 +319,9 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
       const uint64_t hash = XXH64(hash_key.data(), hash_key.size(), 0);
       ring_.push_back({hash,
                        subchannel_list->subchannel(i)->subchannel()->Ref(),
-                       address_weights_info[i].last_connectivity_state});
+                       subchannel_list->subchannel(i)
+                           ->subchannel()
+                           ->CheckConnectivityState()});
       ++count;
       ++current_hashes;
       hash_key_buffer.erase(offset_start, hash_key_buffer.end());
@@ -344,16 +343,16 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
 
 bool RingHash::Picker::ConnectAndPickHelper(const RingEntry& entry,
                                             PickResult* result) {
-  if (entry.last_connectivity_state == GRPC_CHANNEL_READY) {
+  if (entry.connectivity_state == GRPC_CHANNEL_READY) {
     result->type = PickResult::PICK_COMPLETE;
     result->subchannel = entry.subchannel;
     return false;
   }
-  if (entry.last_connectivity_state == GRPC_CHANNEL_IDLE) {
+  if (entry.connectivity_state == GRPC_CHANNEL_IDLE) {
     result->type = PickResult::PICK_QUEUE;
     return true;
   }
-  if (entry.last_connectivity_state == GRPC_CHANNEL_CONNECTING) {
+  if (entry.connectivity_state == GRPC_CHANNEL_CONNECTING) {
     result->type = PickResult::PICK_QUEUE;
     return false;
   }
@@ -436,16 +435,16 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   bool found_first_non_failed = false;
   for (size_t i = 0; i < ring_.size() - 2; ++i) {
     const RingEntry& entry = ring_[(midp + i) % ring_.size()];
-    if (entry.last_connectivity_state == GRPC_CHANNEL_READY) {
+    if (entry.connectivity_state == GRPC_CHANNEL_READY) {
       result.type = PickResult::PICK_COMPLETE;
       result.subchannel = entry.subchannel;
       return result;
     }
     if (!found_first_non_failed) {
-      if (entry.last_connectivity_state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      if (entry.connectivity_state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
         ScheduleSubchannelConnectionAttempt(entry.subchannel);
       } else {
-        if (entry.last_connectivity_state == GRPC_CHANNEL_IDLE) {
+        if (entry.connectivity_state == GRPC_CHANNEL_IDLE) {
           ScheduleSubchannelConnectionAttempt(entry.subchannel);
         }
         found_first_non_failed = true;
