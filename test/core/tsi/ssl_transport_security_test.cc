@@ -956,11 +956,7 @@ void ssl_tsi_test_extract_cert_chain() {
     X509_INFO* certInfo = sk_X509_INFO_value(certInfos, i);
     if (certInfo->x509 != nullptr) {
       GPR_ASSERT(sk_X509_push(cert_chain, certInfo->x509) != 0);
-#if OPENSSL_VERSION_NUMBER >= 0x10100000
       X509_up_ref(certInfo->x509);
-#else
-      certInfo->x509->references += 1;
-#endif
     }
   }
   tsi_peer_property chain_property;
