@@ -172,6 +172,7 @@ class EventEngine {
 
   // The DNSResolver that provides asynchronous resolution.
   class DNSResolver {
+   public:
     // A task handle for DNS Resolution requests.
     struct LookupTaskHandle {
       intptr_t key;
