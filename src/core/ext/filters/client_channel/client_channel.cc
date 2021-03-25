@@ -99,7 +99,7 @@
 //   send_trailing_metadata
 #define MAX_PENDING_BATCHES 6
 
-// Channel arg containing a pointer to the ChannelData object.
+// Channel arg containing a pointer to the ClientChannel object.
 #define GRPC_ARG_CLIENT_CHANNEL_DATA "grpc.internal.client_channel_data"
 
 // Channel arg containing a pointer to the RetryThrottleData object.
@@ -118,10 +118,10 @@ TraceFlag grpc_client_channel_routing_trace(false, "client_channel_routing");
 namespace {
 
 //
-// ChannelData definition
+// ClientChannel definition
 //
 
-class ChannelData {
+class ClientChannel {
  public:
   class CallData;
   class RetryingCall;
@@ -173,7 +173,8 @@ class ChannelData {
   // via grpc_client_channel_watch_connectivity_state().
   class ExternalConnectivityWatcher : public ConnectivityStateWatcherInterface {
    public:
-    ExternalConnectivityWatcher(ChannelData* chand, grpc_polling_entity pollent,
+    ExternalConnectivityWatcher(ClientChannel* chand,
+                                grpc_polling_entity pollent,
                                 grpc_connectivity_state* state,
                                 grpc_closure* on_complete,
                                 grpc_closure* watcher_timer_init);
@@ -181,7 +182,7 @@ class ChannelData {
     ~ExternalConnectivityWatcher() override;
 
     // Removes the watcher from the external_watchers_ map.
-    static void RemoveWatcherFromExternalWatchersMap(ChannelData* chand,
+    static void RemoveWatcherFromExternalWatchersMap(ClientChannel* chand,
                                                      grpc_closure* on_complete,
                                                      bool cancel);
 
@@ -196,7 +197,7 @@ class ChannelData {
     void AddWatcherLocked();
     void RemoveWatcherLocked();
 
-    ChannelData* chand_;
+    ClientChannel* chand_;
     grpc_polling_entity pollent_;
     grpc_connectivity_state initial_state_;
     grpc_connectivity_state* state_;
@@ -207,7 +208,7 @@ class ChannelData {
 
   class ResolverResultHandler : public Resolver::ResultHandler {
    public:
-    explicit ResolverResultHandler(ChannelData* chand) : chand_(chand) {
+    explicit ResolverResultHandler(ClientChannel* chand) : chand_(chand) {
       GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ResolverResultHandler");
     }
 
@@ -227,7 +228,7 @@ class ChannelData {
     }
 
    private:
-    ChannelData* chand_;
+    ClientChannel* chand_;
   };
 
   struct ResolverQueuedCall {
@@ -239,8 +240,8 @@ class ChannelData {
     LbQueuedCall* next = nullptr;
   };
 
-  ChannelData(grpc_channel_element_args* args, grpc_error** error);
-  ~ChannelData();
+  ClientChannel(grpc_channel_element_args* args, grpc_error** error);
+  ~ClientChannel();
 
   // Note: Does NOT return a new ref.
   grpc_error* disconnect_error() const {
@@ -388,10 +389,10 @@ class ChannelData {
 };
 
 //
-// ChannelData::CallData definition
+// ClientChannel::CallData definition
 //
 
-class ChannelData::CallData {
+class ClientChannel::CallData {
  public:
   static grpc_error* Init(grpc_call_element* elem,
                           const grpc_call_element_args* args);
@@ -405,12 +406,12 @@ class ChannelData::CallData {
   // Invoked by channel for queued calls when name resolution is completed.
   static void CheckResolution(void* arg, grpc_error* error);
   // Helper function for applying the service config to a call while
-  // holding ChannelData::resolution_mu_.
+  // holding ClientChannel::resolution_mu_.
   // Returns true if the service config has been applied to the call, in which
   // case the caller must invoke ResolutionDone() or AsyncResolutionDone()
   // with the returned error.
   bool CheckResolutionLocked(grpc_call_element* elem, grpc_error** error)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ChannelData::resolution_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
   // Schedules a callback to continue processing the call once
   // resolution is complete.  The callback will not run until after this
   // method returns.
@@ -419,7 +420,7 @@ class ChannelData::CallData {
  private:
   class ResolverQueuedCallCanceller;
 
-  CallData(grpc_call_element* elem, const ChannelData& chand,
+  CallData(grpc_call_element* elem, const ClientChannel& chand,
            const grpc_call_element_args& args);
   ~CallData();
 
@@ -457,18 +458,18 @@ class ChannelData::CallData {
   // the call should be failed.
   grpc_error* ApplyServiceConfigToCallLocked(
       grpc_call_element* elem, grpc_metadata_batch* initial_metadata)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ChannelData::resolution_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
   // Invoked when the resolver result is applied to the caller, on both
   // success or failure.
   static void ResolutionDone(void* arg, grpc_error* error);
   // Removes the call (if present) from the channel's list of calls queued
   // for name resolution.
   void MaybeRemoveCallFromResolverQueuedCallsLocked(grpc_call_element* elem)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ChannelData::resolution_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
   // Adds the call (if not already present) to the channel's list of
   // calls queued for name resolution.
   void MaybeAddCallToResolverQueuedCallsLocked(grpc_call_element* elem)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ChannelData::resolution_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
 
   static void RecvInitialMetadataReadyForConfigSelectorCommitCallback(
       void* arg, grpc_error* error);
@@ -497,10 +498,10 @@ class ChannelData::CallData {
 
   grpc_closure pick_closure_;
 
-  // Accessed while holding ChannelData::resolution_mu_.
+  // Accessed while holding ClientChannel::resolution_mu_.
   bool service_config_applied_ = false;
   bool queued_pending_resolver_result_ = false;
-  ChannelData::ResolverQueuedCall resolver_queued_call_;
+  ClientChannel::ResolverQueuedCall resolver_queued_call_;
   ResolverQueuedCallCanceller* resolver_call_canceller_ = nullptr;
 
   std::function<void()> on_call_committed_;
@@ -523,13 +524,13 @@ class ChannelData::CallData {
 };
 
 //
-// ChannelData::RetryingCall definition
+// ClientChannel::RetryingCall definition
 //
 
-class ChannelData::RetryingCall {
+class ClientChannel::RetryingCall {
  public:
   RetryingCall(
-      ChannelData* chand, const grpc_call_element_args& args,
+      ClientChannel* chand, const grpc_call_element_args& args,
       grpc_polling_entity* pollent,
       RefCountedPtr<ServerRetryThrottleData> retry_throttle_data,
       const ClientChannelMethodParsedConfig::RetryPolicy* retry_policy);
@@ -570,7 +571,7 @@ class ChannelData::RetryingCall {
     gpr_refcount refs;
     grpc_call_element* elem;
     RetryingCall* call;
-    RefCountedPtr<ChannelData::LoadBalancedCall> lb_call;
+    RefCountedPtr<ClientChannel::LoadBalancedCall> lb_call;
     // The batch to use in the subchannel call.
     // Its payload field points to SubchannelCallRetryState::batch_payload.
     grpc_transport_stream_op_batch batch;
@@ -813,7 +814,7 @@ class ChannelData::RetryingCall {
 
   static void CreateLbCall(void* arg, grpc_error* error);
 
-  ChannelData* chand_;
+  ClientChannel* chand_;
   grpc_polling_entity* pollent_;
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
   const ClientChannelMethodParsedConfig::RetryPolicy* retry_policy_ = nullptr;
@@ -829,7 +830,7 @@ class ChannelData::RetryingCall {
 
   grpc_closure retry_closure_;
 
-  RefCountedPtr<ChannelData::LoadBalancedCall> lb_call_;
+  RefCountedPtr<ClientChannel::LoadBalancedCall> lb_call_;
 
   // Batches are added to this list when received from above.
   // They are removed when we are done handling the batch (i.e., when
@@ -886,20 +887,20 @@ class ChannelData::RetryingCall {
 };
 
 //
-// ChannelData::LoadBalancedCall definition
+// ClientChannel::LoadBalancedCall definition
 //
 
 // This object is ref-counted, but it cannot inherit from RefCounted<>,
 // because it is allocated on the arena and can't free its memory when
 // its refcount goes to zero.  So instead, it manually implements the
 // same API as RefCounted<>, so that it can be used with RefCountedPtr<>.
-class ChannelData::LoadBalancedCall {
+class ClientChannel::LoadBalancedCall {
  public:
   static RefCountedPtr<LoadBalancedCall> Create(
-      ChannelData* chand, const grpc_call_element_args& args,
+      ClientChannel* chand, const grpc_call_element_args& args,
       grpc_polling_entity* pollent, size_t parent_data_size);
 
-  LoadBalancedCall(ChannelData* chand, const grpc_call_element_args& args,
+  LoadBalancedCall(ClientChannel* chand, const grpc_call_element_args& args,
                    grpc_polling_entity* pollent);
   ~LoadBalancedCall();
 
@@ -922,7 +923,7 @@ class ChannelData::LoadBalancedCall {
   // mutex.  Returns true if the pick is complete, in which case the caller
   // must invoke PickDone() or AsyncPickDone() with the returned error.
   bool PickSubchannelLocked(grpc_error** error)
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ChannelData::data_plane_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
   // Schedules a callback to process the completed pick.  The callback
   // will not run until after this method returns.
   void AsyncPickDone(grpc_error* error);
@@ -981,14 +982,14 @@ class ChannelData::LoadBalancedCall {
   static void PickDone(void* arg, grpc_error* error);
   // Removes the call from the channel's list of queued picks if present.
   void MaybeRemoveCallFromLbQueuedCallsLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ChannelData::data_plane_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
   // Adds the call to the channel's list of queued picks if not already present.
   void MaybeAddCallToLbQueuedCallsLocked()
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ChannelData::data_plane_mu_);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
 
   RefCount refs_;
 
-  ChannelData* chand_;
+  ClientChannel* chand_;
 
   // TODO(roth): Instead of duplicating these fields in every filter
   // that uses any one of them, we should store them in the call
@@ -1008,8 +1009,8 @@ class ChannelData::LoadBalancedCall {
 
   grpc_closure pick_closure_;
 
-  // Accessed while holding ChannelData::data_plane_mu_.
-  ChannelData::LbQueuedCall queued_call_;
+  // Accessed while holding ClientChannel::data_plane_mu_.
+  ClientChannel::LbQueuedCall queued_call_;
   bool queued_pending_lb_pick_ = false;
   const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
@@ -1038,11 +1039,11 @@ class ChannelData::LoadBalancedCall {
 //
 
 // Channel arg pointer vtable for GRPC_ARG_CLIENT_CHANNEL_DATA.
-void* ChannelDataArgCopy(void* p) { return p; }
-void ChannelDataArgDestroy(void* /*p*/) {}
-int ChannelDataArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
-const grpc_arg_pointer_vtable kChannelDataArgPointerVtable = {
-    ChannelDataArgCopy, ChannelDataArgDestroy, ChannelDataArgCmp};
+void* ClientChannelArgCopy(void* p) { return p; }
+void ClientChannelArgDestroy(void* /*p*/) {}
+int ClientChannelArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+const grpc_arg_pointer_vtable kClientChannelArgPointerVtable = {
+    ClientChannelArgCopy, ClientChannelArgDestroy, ClientChannelArgCmp};
 
 // Channel arg pointer vtable for GRPC_ARG_RETRY_THROTTLE_DATA.
 void* RetryThrottleDataArgCopy(void* p) {
@@ -1059,7 +1060,7 @@ const grpc_arg_pointer_vtable kRetryThrottleDataArgPointerVtable = {
     RetryThrottleDataArgCopy, RetryThrottleDataArgDestroy,
     RetryThrottleDataArgCmp};
 
-class ChannelData::DynamicTerminationFilterChannelData {
+class ClientChannel::DynamicTerminationFilterChannelData {
  public:
   class DynamicTerminationFilterCallData;
 
@@ -1097,15 +1098,15 @@ class ChannelData::DynamicTerminationFilterChannelData {
   }
 
   explicit DynamicTerminationFilterChannelData(const grpc_channel_args* args)
-      : chand_(grpc_channel_args_find_pointer<ChannelData>(
+      : chand_(grpc_channel_args_find_pointer<ClientChannel>(
             args, GRPC_ARG_CLIENT_CHANNEL_DATA)),
         retry_throttle_data_(GetRetryThrottleDataFromArgs(args)) {}
 
-  ChannelData* chand_;
+  ClientChannel* chand_;
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
 };
 
-class ChannelData::DynamicTerminationFilterChannelData::
+class ClientChannel::DynamicTerminationFilterChannelData::
     DynamicTerminationFilterCallData {
  public:
   static grpc_error* Init(grpc_call_element* elem,
@@ -1160,7 +1161,7 @@ class ChannelData::DynamicTerminationFilterChannelData::
         static_cast<DynamicTerminationFilterCallData*>(elem->call_data);
     auto* chand =
         static_cast<DynamicTerminationFilterChannelData*>(elem->channel_data);
-    ChannelData* client_channel = chand->chand_;
+    ClientChannel* client_channel = chand->chand_;
     grpc_call_element_args args = {
         calld->owning_call_,     nullptr,
         calld->call_context_,    calld->path_,
@@ -1175,7 +1176,7 @@ class ChannelData::DynamicTerminationFilterChannelData::
           svc_cfg_call_data->GetMethodParsedConfig(
               ClientChannelServiceConfigParser::ParserIndex()));
       // Create retrying call.
-      calld->retrying_call_ = calld->arena_->New<ChannelData::RetryingCall>(
+      calld->retrying_call_ = calld->arena_->New<ClientChannel::RetryingCall>(
           client_channel, args, pollent, chand->retry_throttle_data_,
           method_config == nullptr ? nullptr : method_config->retry_policy());
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
@@ -1185,8 +1186,8 @@ class ChannelData::DynamicTerminationFilterChannelData::
             client_channel, calld, calld->retrying_call_);
       }
     } else {
-      calld->lb_call_ = ChannelData::LoadBalancedCall::Create(client_channel,
-                                                              args, pollent, 0);
+      calld->lb_call_ = ClientChannel::LoadBalancedCall::Create(
+          client_channel, args, pollent, 0);
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p dynamic_termination_calld=%p: create lb_call=%p",
@@ -1215,32 +1216,32 @@ class ChannelData::DynamicTerminationFilterChannelData::
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
 
-  ChannelData::RetryingCall* retrying_call_ = nullptr;
+  ClientChannel::RetryingCall* retrying_call_ = nullptr;
   RefCountedPtr<LoadBalancedCall> lb_call_;
 };
 
-const grpc_channel_filter ChannelData::DynamicTerminationFilterChannelData::
+const grpc_channel_filter ClientChannel::DynamicTerminationFilterChannelData::
     kDynamicTerminationFilterVtable = {
-        ChannelData::DynamicTerminationFilterChannelData::
+        ClientChannel::DynamicTerminationFilterChannelData::
             DynamicTerminationFilterCallData::StartTransportStreamOpBatch,
-        ChannelData::DynamicTerminationFilterChannelData::StartTransportOp,
-        sizeof(ChannelData::DynamicTerminationFilterChannelData::
+        ClientChannel::DynamicTerminationFilterChannelData::StartTransportOp,
+        sizeof(ClientChannel::DynamicTerminationFilterChannelData::
                    DynamicTerminationFilterCallData),
-        ChannelData::DynamicTerminationFilterChannelData::
+        ClientChannel::DynamicTerminationFilterChannelData::
             DynamicTerminationFilterCallData::Init,
-        ChannelData::DynamicTerminationFilterChannelData::
+        ClientChannel::DynamicTerminationFilterChannelData::
             DynamicTerminationFilterCallData::SetPollent,
-        ChannelData::DynamicTerminationFilterChannelData::
+        ClientChannel::DynamicTerminationFilterChannelData::
             DynamicTerminationFilterCallData::Destroy,
-        sizeof(ChannelData::DynamicTerminationFilterChannelData),
-        ChannelData::DynamicTerminationFilterChannelData::Init,
-        ChannelData::DynamicTerminationFilterChannelData::Destroy,
-        ChannelData::DynamicTerminationFilterChannelData::GetChannelInfo,
+        sizeof(ClientChannel::DynamicTerminationFilterChannelData),
+        ClientChannel::DynamicTerminationFilterChannelData::Init,
+        ClientChannel::DynamicTerminationFilterChannelData::Destroy,
+        ClientChannel::DynamicTerminationFilterChannelData::GetChannelInfo,
         "dynamic_filter_termination",
 };
 
 //
-// ChannelData::SubchannelWrapper
+// ClientChannel::SubchannelWrapper
 //
 
 // This class is a wrapper for Subchannel that hides details of the
@@ -1251,9 +1252,9 @@ const grpc_channel_filter ChannelData::DynamicTerminationFilterChannelData::
 // underlying subchannel is shared between channels, this wrapper will only
 // be used within one channel, so it will always be synchronized by the
 // control plane work_serializer.
-class ChannelData::SubchannelWrapper : public SubchannelInterface {
+class ClientChannel::SubchannelWrapper : public SubchannelInterface {
  public:
-  SubchannelWrapper(ChannelData* chand, RefCountedPtr<Subchannel> subchannel,
+  SubchannelWrapper(ClientChannel* chand, RefCountedPtr<Subchannel> subchannel,
                     absl::optional<std::string> health_check_service_name)
       : SubchannelInterface(
             GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
@@ -1533,7 +1534,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     }
   }
 
-  ChannelData* chand_;
+  ClientChannel* chand_;
   RefCountedPtr<Subchannel> subchannel_;
   absl::optional<std::string> health_check_service_name_;
   // Maps from the address of the watcher passed to us by the LB policy
@@ -1549,11 +1550,11 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
 };
 
 //
-// ChannelData::ExternalConnectivityWatcher
+// ClientChannel::ExternalConnectivityWatcher
 //
 
-ChannelData::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
-    ChannelData* chand, grpc_polling_entity pollent,
+ClientChannel::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
+    ClientChannel* chand, grpc_polling_entity pollent,
     grpc_connectivity_state* state, grpc_closure* on_complete,
     grpc_closure* watcher_timer_init)
     : chand_(chand),
@@ -1582,15 +1583,15 @@ ChannelData::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
       DEBUG_LOCATION);
 }
 
-ChannelData::ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
+ClientChannel::ExternalConnectivityWatcher::~ExternalConnectivityWatcher() {
   grpc_polling_entity_del_from_pollset_set(&pollent_,
                                            chand_->interested_parties_);
   GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_,
                            "ExternalConnectivityWatcher");
 }
 
-void ChannelData::ExternalConnectivityWatcher::
-    RemoveWatcherFromExternalWatchersMap(ChannelData* chand,
+void ClientChannel::ExternalConnectivityWatcher::
+    RemoveWatcherFromExternalWatchersMap(ClientChannel* chand,
                                          grpc_closure* on_complete,
                                          bool cancel) {
   RefCountedPtr<ExternalConnectivityWatcher> watcher;
@@ -1607,7 +1608,7 @@ void ChannelData::ExternalConnectivityWatcher::
   if (watcher != nullptr && cancel) watcher->Cancel();
 }
 
-void ChannelData::ExternalConnectivityWatcher::Notify(
+void ClientChannel::ExternalConnectivityWatcher::Notify(
     grpc_connectivity_state state, const absl::Status& /* status */) {
   bool done = false;
   if (!done_.CompareExchangeStrong(&done, true, MemoryOrder::RELAXED,
@@ -1628,7 +1629,7 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
   }
 }
 
-void ChannelData::ExternalConnectivityWatcher::Cancel() {
+void ClientChannel::ExternalConnectivityWatcher::Cancel() {
   bool done = false;
   if (!done_.CompareExchangeStrong(&done, true, MemoryOrder::RELAXED,
                                    MemoryOrder::RELAXED)) {
@@ -1640,25 +1641,25 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
                                 DEBUG_LOCATION);
 }
 
-void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked() {
+void ClientChannel::ExternalConnectivityWatcher::AddWatcherLocked() {
   Closure::Run(DEBUG_LOCATION, watcher_timer_init_, GRPC_ERROR_NONE);
   // Add new watcher. Pass the ref of the object from creation to OrphanablePtr.
   chand_->state_tracker_.AddWatcher(
       initial_state_, OrphanablePtr<ConnectivityStateWatcherInterface>(this));
 }
 
-void ChannelData::ExternalConnectivityWatcher::RemoveWatcherLocked() {
+void ClientChannel::ExternalConnectivityWatcher::RemoveWatcherLocked() {
   chand_->state_tracker_.RemoveWatcher(this);
 }
 
 //
-// ChannelData::ConnectivityWatcherAdder
+// ClientChannel::ConnectivityWatcherAdder
 //
 
-class ChannelData::ConnectivityWatcherAdder {
+class ClientChannel::ConnectivityWatcherAdder {
  public:
   ConnectivityWatcherAdder(
-      ChannelData* chand, grpc_connectivity_state initial_state,
+      ClientChannel* chand, grpc_connectivity_state initial_state,
       OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher)
       : chand_(chand),
         initial_state_(initial_state),
@@ -1675,18 +1676,18 @@ class ChannelData::ConnectivityWatcherAdder {
     delete this;
   }
 
-  ChannelData* chand_;
+  ClientChannel* chand_;
   grpc_connectivity_state initial_state_;
   OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher_;
 };
 
 //
-// ChannelData::ConnectivityWatcherRemover
+// ClientChannel::ConnectivityWatcherRemover
 //
 
-class ChannelData::ConnectivityWatcherRemover {
+class ClientChannel::ConnectivityWatcherRemover {
  public:
-  ConnectivityWatcherRemover(ChannelData* chand,
+  ConnectivityWatcherRemover(ClientChannel* chand,
                              AsyncConnectivityStateWatcherInterface* watcher)
       : chand_(chand), watcher_(watcher) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherRemover");
@@ -1702,18 +1703,18 @@ class ChannelData::ConnectivityWatcherRemover {
     delete this;
   }
 
-  ChannelData* chand_;
+  ClientChannel* chand_;
   AsyncConnectivityStateWatcherInterface* watcher_;
 };
 
 //
-// ChannelData::ClientChannelControlHelper
+// ClientChannel::ClientChannelControlHelper
 //
 
-class ChannelData::ClientChannelControlHelper
+class ClientChannel::ClientChannelControlHelper
     : public LoadBalancingPolicy::ChannelControlHelper {
  public:
-  explicit ClientChannelControlHelper(ChannelData* chand) : chand_(chand) {
+  explicit ClientChannelControlHelper(ClientChannel* chand) : chand_(chand) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ClientChannelControlHelper");
   }
 
@@ -1810,25 +1811,25 @@ class ChannelData::ClientChannelControlHelper
     return channelz::ChannelTrace::Error;
   }
 
-  ChannelData* chand_;
+  ClientChannel* chand_;
 };
 
 //
-// ChannelData implementation
+// ClientChannel implementation
 //
 
-grpc_error* ChannelData::Init(grpc_channel_element* elem,
-                              grpc_channel_element_args* args) {
+grpc_error* ClientChannel::Init(grpc_channel_element* elem,
+                                grpc_channel_element_args* args) {
   GPR_ASSERT(args->is_last);
   GPR_ASSERT(elem->filter == &grpc_client_channel_filter);
   grpc_error* error = GRPC_ERROR_NONE;
-  new (elem->channel_data) ChannelData(args, &error);
+  new (elem->channel_data) ClientChannel(args, &error);
   return error;
 }
 
-void ChannelData::Destroy(grpc_channel_element* elem) {
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
-  chand->~ChannelData();
+void ClientChannel::Destroy(grpc_channel_element* elem) {
+  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
+  chand->~ClientChannel();
 }
 
 bool GetEnableRetries(const grpc_channel_args* args) {
@@ -1861,7 +1862,8 @@ channelz::ChannelNode* GetChannelzNode(const grpc_channel_args* args) {
   return nullptr;
 }
 
-ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
+ClientChannel::ClientChannel(grpc_channel_element_args* args,
+                             grpc_error** error)
     : deadline_checking_enabled_(
           grpc_deadline_checking_enabled(args->channel_args)),
       enable_retries_(GetEnableRetries(args->channel_args)),
@@ -1937,7 +1939,7 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   *error = GRPC_ERROR_NONE;
 }
 
-ChannelData::~ChannelData() {
+ClientChannel::~ClientChannel() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p: destroying channel", this);
   }
@@ -1994,7 +1996,7 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   return lb_policy_config;
 }
 
-void ChannelData::OnResolverResultChangedLocked(Resolver::Result result) {
+void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
   // Handle race conditions.
   if (resolver_ == nullptr) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
@@ -2116,7 +2118,7 @@ void ChannelData::OnResolverResultChangedLocked(Resolver::Result result) {
   GRPC_ERROR_UNREF(service_config_error);
 }
 
-void ChannelData::OnResolverErrorLocked(grpc_error* error) {
+void ClientChannel::OnResolverErrorLocked(grpc_error* error) {
   if (resolver_ == nullptr) {
     GRPC_ERROR_UNREF(error);
     return;
@@ -2157,7 +2159,7 @@ void ChannelData::OnResolverErrorLocked(grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-void ChannelData::CreateOrUpdateLbPolicyLocked(
+void ClientChannel::CreateOrUpdateLbPolicyLocked(
     RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
     Resolver::Result result) {
   // Construct update.
@@ -2183,7 +2185,7 @@ void ChannelData::CreateOrUpdateLbPolicyLocked(
 }
 
 // Creates a new LB policy.
-OrphanablePtr<LoadBalancingPolicy> ChannelData::CreateLbPolicyLocked(
+OrphanablePtr<LoadBalancingPolicy> ClientChannel::CreateLbPolicyLocked(
     const grpc_channel_args& args) {
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.work_serializer = work_serializer_;
@@ -2202,8 +2204,8 @@ OrphanablePtr<LoadBalancingPolicy> ChannelData::CreateLbPolicyLocked(
   return lb_policy;
 }
 
-void ChannelData::AddResolverQueuedCall(ResolverQueuedCall* call,
-                                        grpc_polling_entity* pollent) {
+void ClientChannel::AddResolverQueuedCall(ResolverQueuedCall* call,
+                                          grpc_polling_entity* pollent) {
   // Add call to queued calls list.
   call->next = resolver_queued_calls_;
   resolver_queued_calls_ = call;
@@ -2212,8 +2214,8 @@ void ChannelData::AddResolverQueuedCall(ResolverQueuedCall* call,
   grpc_polling_entity_add_to_pollset_set(pollent, interested_parties_);
 }
 
-void ChannelData::RemoveResolverQueuedCall(ResolverQueuedCall* to_remove,
-                                           grpc_polling_entity* pollent) {
+void ClientChannel::RemoveResolverQueuedCall(ResolverQueuedCall* to_remove,
+                                             grpc_polling_entity* pollent) {
   // Remove call's pollent from channel's interested_parties.
   grpc_polling_entity_del_from_pollset_set(pollent, interested_parties_);
   // Remove from queued calls list.
@@ -2226,7 +2228,7 @@ void ChannelData::RemoveResolverQueuedCall(ResolverQueuedCall* to_remove,
   }
 }
 
-void ChannelData::UpdateServiceConfigInControlPlaneLocked(
+void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
     RefCountedPtr<ServiceConfig> service_config,
     RefCountedPtr<ConfigSelector> config_selector,
     const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
@@ -2266,7 +2268,7 @@ void ChannelData::UpdateServiceConfigInControlPlaneLocked(
   }
 }
 
-void ChannelData::UpdateServiceConfigInDataPlaneLocked() {
+void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   // Grab ref to service config.
   RefCountedPtr<ServiceConfig> service_config = saved_service_config_;
   // Grab ref to config selector.  Use default if resolver didn't supply one.
@@ -2300,7 +2302,7 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked() {
   absl::InlinedVector<grpc_arg, 2> args_to_add;
   args_to_add.push_back(grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_CLIENT_CHANNEL_DATA), this,
-      &kChannelDataArgPointerVtable));
+      &kClientChannelArgPointerVtable));
   if (retry_throttle_data != nullptr) {
     args_to_add.push_back(grpc_channel_arg_pointer_create(
         const_cast<char*>(GRPC_ARG_RETRY_THROTTLE_DATA),
@@ -2343,7 +2345,7 @@ void ChannelData::UpdateServiceConfigInDataPlaneLocked() {
   // of scope.
 }
 
-void ChannelData::CreateResolverLocked() {
+void ClientChannel::CreateResolverLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p: starting name resolution", this);
   }
@@ -2362,7 +2364,7 @@ void ChannelData::CreateResolverLocked() {
   }
 }
 
-void ChannelData::DestroyResolverAndLbPolicyLocked() {
+void ClientChannel::DestroyResolverAndLbPolicyLocked() {
   if (resolver_ != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO, "chand=%p: shutting down resolver=%p", this,
@@ -2381,7 +2383,7 @@ void ChannelData::DestroyResolverAndLbPolicyLocked() {
   }
 }
 
-void ChannelData::UpdateStateAndPickerLocked(
+void ClientChannel::UpdateStateAndPickerLocked(
     grpc_connectivity_state state, const absl::Status& status,
     const char* reason,
     std::unique_ptr<LoadBalancingPolicy::SubchannelPicker> picker) {
@@ -2454,7 +2456,7 @@ void ChannelData::UpdateStateAndPickerLocked(
   pending_subchannel_updates_.clear();
 }
 
-grpc_error* ChannelData::DoPingLocked(grpc_transport_op* op) {
+grpc_error* ClientChannel::DoPingLocked(grpc_transport_op* op) {
   if (state_tracker_.state() != GRPC_CHANNEL_READY) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("channel not connected");
   }
@@ -2480,7 +2482,7 @@ grpc_error* ChannelData::DoPingLocked(grpc_transport_op* op) {
   return result.error;
 }
 
-void ChannelData::StartTransportOpLocked(grpc_transport_op* op) {
+void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
   // Connectivity watch.
   if (op->start_connectivity_watch != nullptr) {
     state_tracker_.AddWatcher(op->start_connectivity_watch_state,
@@ -2539,9 +2541,9 @@ void ChannelData::StartTransportOpLocked(grpc_transport_op* op) {
   ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
 }
 
-void ChannelData::StartTransportOp(grpc_channel_element* elem,
-                                   grpc_transport_op* op) {
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+void ClientChannel::StartTransportOp(grpc_channel_element* elem,
+                                     grpc_transport_op* op) {
+  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   GPR_ASSERT(op->set_accept_stream == false);
   // Handle bind_pollset.
   if (op->bind_pollset != nullptr) {
@@ -2553,9 +2555,9 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
       [chand, op]() { chand->StartTransportOpLocked(op); }, DEBUG_LOCATION);
 }
 
-void ChannelData::GetChannelInfo(grpc_channel_element* elem,
-                                 const grpc_channel_info* info) {
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+void ClientChannel::GetChannelInfo(grpc_channel_element* elem,
+                                   const grpc_channel_info* info) {
+  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   MutexLock lock(&chand->info_mu_);
   if (info->lb_policy_name != nullptr) {
     *info->lb_policy_name = gpr_strdup(chand->info_lb_policy_name_.get());
@@ -2566,8 +2568,8 @@ void ChannelData::GetChannelInfo(grpc_channel_element* elem,
   }
 }
 
-void ChannelData::AddLbQueuedCall(LbQueuedCall* call,
-                                  grpc_polling_entity* pollent) {
+void ClientChannel::AddLbQueuedCall(LbQueuedCall* call,
+                                    grpc_polling_entity* pollent) {
   // Add call to queued picks list.
   call->next = lb_queued_calls_;
   lb_queued_calls_ = call;
@@ -2576,8 +2578,8 @@ void ChannelData::AddLbQueuedCall(LbQueuedCall* call,
   grpc_polling_entity_add_to_pollset_set(pollent, interested_parties_);
 }
 
-void ChannelData::RemoveLbQueuedCall(LbQueuedCall* to_remove,
-                                     grpc_polling_entity* pollent) {
+void ClientChannel::RemoveLbQueuedCall(LbQueuedCall* to_remove,
+                                       grpc_polling_entity* pollent) {
   // Remove call's pollent from channel's interested_parties.
   grpc_polling_entity_del_from_pollset_set(pollent, interested_parties_);
   // Remove from queued picks list.
@@ -2591,7 +2593,7 @@ void ChannelData::RemoveLbQueuedCall(LbQueuedCall* to_remove,
 }
 
 RefCountedPtr<ConnectedSubchannel>
-ChannelData::GetConnectedSubchannelInDataPlane(
+ClientChannel::GetConnectedSubchannelInDataPlane(
     SubchannelInterface* subchannel) const {
   SubchannelWrapper* subchannel_wrapper =
       static_cast<SubchannelWrapper*>(subchannel);
@@ -2601,7 +2603,7 @@ ChannelData::GetConnectedSubchannelInDataPlane(
   return connected_subchannel->Ref();
 }
 
-void ChannelData::TryToConnectLocked() {
+void ClientChannel::TryToConnectLocked() {
   if (lb_policy_ != nullptr) {
     lb_policy_->ExitIdleLocked();
   } else if (resolver_ == nullptr) {
@@ -2610,7 +2612,7 @@ void ChannelData::TryToConnectLocked() {
   GRPC_CHANNEL_STACK_UNREF(owning_stack_, "TryToConnect");
 }
 
-grpc_connectivity_state ChannelData::CheckConnectivityState(
+grpc_connectivity_state ClientChannel::CheckConnectivityState(
     bool try_to_connect) {
   grpc_connectivity_state out = state_tracker_.state();
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
@@ -2620,13 +2622,13 @@ grpc_connectivity_state ChannelData::CheckConnectivityState(
   return out;
 }
 
-void ChannelData::AddConnectivityWatcher(
+void ClientChannel::AddConnectivityWatcher(
     grpc_connectivity_state initial_state,
     OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
   new ConnectivityWatcherAdder(this, initial_state, std::move(watcher));
 }
 
-void ChannelData::RemoveConnectivityWatcher(
+void ClientChannel::RemoveConnectivityWatcher(
     AsyncConnectivityStateWatcherInterface* watcher) {
   new ConnectivityWatcherRemover(this, watcher);
 }
@@ -2635,9 +2637,9 @@ void ChannelData::RemoveConnectivityWatcher(
 // CallData implementation
 //
 
-ChannelData::CallData::CallData(grpc_call_element* elem,
-                                const ChannelData& chand,
-                                const grpc_call_element_args& args)
+ClientChannel::CallData::CallData(grpc_call_element* elem,
+                                  const ClientChannel& chand,
+                                  const grpc_call_element_args& args)
     : deadline_state_(elem, args,
                       GPR_LIKELY(chand.deadline_checking_enabled_)
                           ? args.deadline
@@ -2654,7 +2656,7 @@ ChannelData::CallData::CallData(grpc_call_element* elem,
   }
 }
 
-ChannelData::CallData::~CallData() {
+ClientChannel::CallData::~CallData() {
   grpc_slice_unref_internal(path_);
   GRPC_ERROR_UNREF(cancel_error_);
   // Make sure there are no remaining pending batches.
@@ -2663,16 +2665,16 @@ ChannelData::CallData::~CallData() {
   }
 }
 
-grpc_error* ChannelData::CallData::Init(grpc_call_element* elem,
-                                        const grpc_call_element_args* args) {
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+grpc_error* ClientChannel::CallData::Init(grpc_call_element* elem,
+                                          const grpc_call_element_args* args) {
+  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   new (elem->call_data) CallData(elem, *chand, *args);
   return GRPC_ERROR_NONE;
 }
 
-void ChannelData::CallData::Destroy(grpc_call_element* elem,
-                                    const grpc_call_final_info* /*final_info*/,
-                                    grpc_closure* then_schedule_closure) {
+void ClientChannel::CallData::Destroy(
+    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* then_schedule_closure) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   RefCountedPtr<DynamicFilters::Call> dynamic_call =
       std::move(calld->dynamic_call_);
@@ -2685,11 +2687,11 @@ void ChannelData::CallData::Destroy(grpc_call_element* elem,
   }
 }
 
-void ChannelData::CallData::StartTransportStreamOpBatch(
+void ClientChannel::CallData::StartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   GPR_TIMER_SCOPE("cc_start_transport_stream_op_batch", 0);
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GPR_LIKELY(chand->deadline_checking_enabled_)) {
     grpc_deadline_state_client_start_transport_stream_op_batch(elem, batch);
   }
@@ -2774,8 +2776,8 @@ void ChannelData::CallData::StartTransportStreamOpBatch(
   }
 }
 
-void ChannelData::CallData::SetPollent(grpc_call_element* elem,
-                                       grpc_polling_entity* pollent) {
+void ClientChannel::CallData::SetPollent(grpc_call_element* elem,
+                                         grpc_polling_entity* pollent) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   calld->pollent_ = pollent;
 }
@@ -2784,7 +2786,7 @@ void ChannelData::CallData::SetPollent(grpc_call_element* elem,
 // pending_batches management
 //
 
-size_t ChannelData::CallData::GetBatchIndex(
+size_t ClientChannel::CallData::GetBatchIndex(
     grpc_transport_stream_op_batch* batch) {
   // Note: It is important the send_initial_metadata be the first entry
   // here, since the code in pick_subchannel_locked() assumes it will be.
@@ -2798,9 +2800,9 @@ size_t ChannelData::CallData::GetBatchIndex(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::CallData::PendingBatchesAdd(
+void ClientChannel::CallData::PendingBatchesAdd(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   const size_t idx = GetBatchIndex(batch);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO,
@@ -2813,8 +2815,8 @@ void ChannelData::CallData::PendingBatchesAdd(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::CallData::FailPendingBatchInCallCombiner(void* arg,
-                                                           grpc_error* error) {
+void ClientChannel::CallData::FailPendingBatchInCallCombiner(
+    void* arg, grpc_error* error) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   CallData* calld = static_cast<CallData*>(batch->handler_private.extra_arg);
@@ -2824,7 +2826,7 @@ void ChannelData::CallData::FailPendingBatchInCallCombiner(void* arg,
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::CallData::PendingBatchesFail(
+void ClientChannel::CallData::PendingBatchesFail(
     grpc_call_element* elem, grpc_error* error,
     YieldCallCombinerPredicate yield_call_combiner_predicate) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
@@ -2859,7 +2861,7 @@ void ChannelData::CallData::PendingBatchesFail(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::CallData::ResumePendingBatchInCallCombiner(
+void ClientChannel::CallData::ResumePendingBatchInCallCombiner(
     void* arg, grpc_error* /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
@@ -2871,8 +2873,8 @@ void ChannelData::CallData::ResumePendingBatchInCallCombiner(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::CallData::PendingBatchesResume(grpc_call_element* elem) {
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+void ClientChannel::CallData::PendingBatchesResume(grpc_call_element* elem) {
+  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   // Retries not enabled; send down batches as-is.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     size_t num_batches = 0;
@@ -2906,7 +2908,7 @@ void ChannelData::CallData::PendingBatchesResume(grpc_call_element* elem) {
 
 // A class to handle the call combiner cancellation callback for a
 // queued pick.
-class ChannelData::CallData::ResolverQueuedCallCanceller {
+class ClientChannel::CallData::ResolverQueuedCallCanceller {
  public:
   explicit ResolverQueuedCallCanceller(grpc_call_element* elem) : elem_(elem) {
     auto* calld = static_cast<CallData*>(elem->call_data);
@@ -2919,7 +2921,7 @@ class ChannelData::CallData::ResolverQueuedCallCanceller {
  private:
   static void CancelLocked(void* arg, grpc_error* error) {
     auto* self = static_cast<ResolverQueuedCallCanceller*>(arg);
-    auto* chand = static_cast<ChannelData*>(self->elem_->channel_data);
+    auto* chand = static_cast<ClientChannel*>(self->elem_->channel_data);
     auto* calld = static_cast<CallData*>(self->elem_->call_data);
     {
       MutexLock lock(&chand->resolution_mu_);
@@ -2946,10 +2948,10 @@ class ChannelData::CallData::ResolverQueuedCallCanceller {
   grpc_closure closure_;
 };
 
-void ChannelData::CallData::MaybeRemoveCallFromResolverQueuedCallsLocked(
+void ClientChannel::CallData::MaybeRemoveCallFromResolverQueuedCallsLocked(
     grpc_call_element* elem) {
   if (!queued_pending_resolver_result_) return;
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
+  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: removing from resolver queued picks list",
@@ -2961,10 +2963,10 @@ void ChannelData::CallData::MaybeRemoveCallFromResolverQueuedCallsLocked(
   resolver_call_canceller_ = nullptr;
 }
 
-void ChannelData::CallData::MaybeAddCallToResolverQueuedCallsLocked(
+void ClientChannel::CallData::MaybeAddCallToResolverQueuedCallsLocked(
     grpc_call_element* elem) {
   if (queued_pending_resolver_result_) return;
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
+  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: adding to resolver queued picks list",
             chand, this);
@@ -2976,9 +2978,9 @@ void ChannelData::CallData::MaybeAddCallToResolverQueuedCallsLocked(
   resolver_call_canceller_ = new ResolverQueuedCallCanceller(elem);
 }
 
-grpc_error* ChannelData::CallData::ApplyServiceConfigToCallLocked(
+grpc_error* ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     grpc_call_element* elem, grpc_metadata_batch* initial_metadata) {
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: applying service config to call",
             chand, this);
@@ -3035,7 +3037,7 @@ grpc_error* ChannelData::CallData::ApplyServiceConfigToCallLocked(
   return GRPC_ERROR_NONE;
 }
 
-void ChannelData::CallData::
+void ClientChannel::CallData::
     RecvInitialMetadataReadyForConfigSelectorCommitCallback(void* arg,
                                                             grpc_error* error) {
   auto* self = static_cast<CallData*>(arg);
@@ -3050,7 +3052,7 @@ void ChannelData::CallData::
 
 // TODO(roth): Consider not intercepting this callback unless we
 // actually need to, if this causes a performance problem.
-void ChannelData::CallData::
+void ClientChannel::CallData::
     InjectRecvInitialMetadataReadyForConfigSelectorCommitCallback(
         grpc_transport_stream_op_batch* batch) {
   original_recv_initial_metadata_ready_ =
@@ -3062,15 +3064,15 @@ void ChannelData::CallData::
       &recv_initial_metadata_ready_;
 }
 
-void ChannelData::CallData::AsyncResolutionDone(grpc_call_element* elem,
-                                                grpc_error* error) {
+void ClientChannel::CallData::AsyncResolutionDone(grpc_call_element* elem,
+                                                  grpc_error* error) {
   GRPC_CLOSURE_INIT(&pick_closure_, ResolutionDone, elem, nullptr);
   ExecCtx::Run(DEBUG_LOCATION, &pick_closure_, error);
 }
 
-void ChannelData::CallData::ResolutionDone(void* arg, grpc_error* error) {
+void ClientChannel::CallData::ResolutionDone(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
@@ -3084,10 +3086,10 @@ void ChannelData::CallData::ResolutionDone(void* arg, grpc_error* error) {
   calld->CreateDynamicCall(elem);
 }
 
-void ChannelData::CallData::CheckResolution(void* arg, grpc_error* error) {
+void ClientChannel::CallData::CheckResolution(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   bool resolution_complete;
   {
     MutexLock lock(&chand->resolution_mu_);
@@ -3099,9 +3101,9 @@ void ChannelData::CallData::CheckResolution(void* arg, grpc_error* error) {
   }
 }
 
-bool ChannelData::CallData::CheckResolutionLocked(grpc_call_element* elem,
-                                                  grpc_error** error) {
-  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+bool ClientChannel::CallData::CheckResolutionLocked(grpc_call_element* elem,
+                                                    grpc_error** error) {
+  ClientChannel* chand = static_cast<ClientChannel*>(elem->channel_data);
   // If we're still in IDLE, we need to start resolving.
   if (GPR_UNLIKELY(chand->CheckConnectivityState(false) == GRPC_CHANNEL_IDLE)) {
     // Bounce into the control plane work serializer to start resolving,
@@ -3113,7 +3115,7 @@ bool ChannelData::CallData::CheckResolutionLocked(grpc_call_element* elem,
         DEBUG_LOCATION,
         GRPC_CLOSURE_CREATE(
             [](void* arg, grpc_error* /*error*/) {
-              auto* chand = static_cast<ChannelData*>(arg);
+              auto* chand = static_cast<ClientChannel*>(arg);
               chand->work_serializer_->Run(
                   [chand]() {
                     chand->CheckConnectivityState(/*try_to_connect=*/true);
@@ -3160,8 +3162,8 @@ bool ChannelData::CallData::CheckResolutionLocked(grpc_call_element* elem,
   return true;
 }
 
-void ChannelData::CallData::CreateDynamicCall(grpc_call_element* elem) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
+void ClientChannel::CallData::CreateDynamicCall(grpc_call_element* elem) {
+  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   DynamicFilters::Call::Args args = {std::move(dynamic_filters_),
                                      pollent_,
                                      path_,
@@ -3230,8 +3232,8 @@ void ChannelData::CallData::CreateDynamicCall(grpc_call_element* elem) {
 //   (census filter is on top of this one)
 // - add census stats for retries
 
-ChannelData::RetryingCall::RetryingCall(
-    ChannelData* chand, const grpc_call_element_args& args,
+ClientChannel::RetryingCall::RetryingCall(
+    ClientChannel* chand, const grpc_call_element_args& args,
     grpc_polling_entity* pollent,
     RefCountedPtr<ServerRetryThrottleData> retry_throttle_data,
     const ClientChannelMethodParsedConfig::RetryPolicy* retry_policy)
@@ -3263,7 +3265,7 @@ ChannelData::RetryingCall::RetryingCall(
       retry_committed_(false),
       last_attempt_got_server_pushback_(false) {}
 
-ChannelData::RetryingCall::~RetryingCall() {
+ClientChannel::RetryingCall::~RetryingCall() {
   grpc_slice_unref_internal(path_);
   GRPC_ERROR_UNREF(cancel_error_);
   // Make sure there are no remaining pending batches.
@@ -3272,7 +3274,7 @@ ChannelData::RetryingCall::~RetryingCall() {
   }
 }
 
-void ChannelData::RetryingCall::StartTransportStreamOpBatch(
+void ClientChannel::RetryingCall::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
   // If we've previously been cancelled, immediately fail any new batches.
   if (GPR_UNLIKELY(cancel_error_ != GRPC_ERROR_NONE)) {
@@ -3338,7 +3340,7 @@ void ChannelData::RetryingCall::StartTransportStreamOpBatch(
   PendingBatchesResume();
 }
 
-RefCountedPtr<SubchannelCall> ChannelData::RetryingCall::subchannel_call()
+RefCountedPtr<SubchannelCall> ClientChannel::RetryingCall::subchannel_call()
     const {
   if (lb_call_ == nullptr) return nullptr;
   return lb_call_->subchannel_call();
@@ -3348,7 +3350,7 @@ RefCountedPtr<SubchannelCall> ChannelData::RetryingCall::subchannel_call()
 // send op data caching
 //
 
-void ChannelData::RetryingCall::MaybeCacheSendOpsForBatch(
+void ClientChannel::RetryingCall::MaybeCacheSendOpsForBatch(
     PendingBatch* pending) {
   if (pending->send_ops_cached) return;
   pending->send_ops_cached = true;
@@ -3388,7 +3390,7 @@ void ChannelData::RetryingCall::MaybeCacheSendOpsForBatch(
   }
 }
 
-void ChannelData::RetryingCall::FreeCachedSendInitialMetadata() {
+void ClientChannel::RetryingCall::FreeCachedSendInitialMetadata() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p retrying_call=%p: destroying send_initial_metadata",
@@ -3397,7 +3399,7 @@ void ChannelData::RetryingCall::FreeCachedSendInitialMetadata() {
   grpc_metadata_batch_destroy(&send_initial_metadata_);
 }
 
-void ChannelData::RetryingCall::FreeCachedSendMessage(size_t idx) {
+void ClientChannel::RetryingCall::FreeCachedSendMessage(size_t idx) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p retrying_call=%p: destroying send_messages[%" PRIuPTR "]",
@@ -3406,7 +3408,7 @@ void ChannelData::RetryingCall::FreeCachedSendMessage(size_t idx) {
   send_messages_[idx]->Destroy();
 }
 
-void ChannelData::RetryingCall::FreeCachedSendTrailingMetadata() {
+void ClientChannel::RetryingCall::FreeCachedSendTrailingMetadata() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO,
             "chand_=%p retrying_call=%p: destroying send_trailing_metadata",
@@ -3415,7 +3417,7 @@ void ChannelData::RetryingCall::FreeCachedSendTrailingMetadata() {
   grpc_metadata_batch_destroy(&send_trailing_metadata_);
 }
 
-void ChannelData::RetryingCall::FreeCachedSendOpDataAfterCommit(
+void ClientChannel::RetryingCall::FreeCachedSendOpDataAfterCommit(
     SubchannelCallRetryState* retry_state) {
   if (retry_state->completed_send_initial_metadata) {
     FreeCachedSendInitialMetadata();
@@ -3428,7 +3430,7 @@ void ChannelData::RetryingCall::FreeCachedSendOpDataAfterCommit(
   }
 }
 
-void ChannelData::RetryingCall::FreeCachedSendOpDataForCompletedBatch(
+void ClientChannel::RetryingCall::FreeCachedSendOpDataForCompletedBatch(
     SubchannelCallBatchData* batch_data,
     SubchannelCallRetryState* retry_state) {
   if (batch_data->batch.send_initial_metadata) {
@@ -3446,7 +3448,7 @@ void ChannelData::RetryingCall::FreeCachedSendOpDataForCompletedBatch(
 // pending_batches management
 //
 
-size_t ChannelData::RetryingCall::GetBatchIndex(
+size_t ClientChannel::RetryingCall::GetBatchIndex(
     grpc_transport_stream_op_batch* batch) {
   // Note: It is important the send_initial_metadata be the first entry
   // here, since the code in pick_subchannel_locked() assumes it will be.
@@ -3460,7 +3462,7 @@ size_t ChannelData::RetryingCall::GetBatchIndex(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::RetryingCall::PendingBatchesAdd(
+void ClientChannel::RetryingCall::PendingBatchesAdd(
     grpc_transport_stream_op_batch* batch) {
   const size_t idx = GetBatchIndex(batch);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -3520,7 +3522,7 @@ void ChannelData::RetryingCall::PendingBatchesAdd(
   }
 }
 
-void ChannelData::RetryingCall::PendingBatchClear(PendingBatch* pending) {
+void ClientChannel::RetryingCall::PendingBatchClear(PendingBatch* pending) {
   if (enable_retries_) {
     if (pending->batch->send_initial_metadata) {
       pending_send_initial_metadata_ = false;
@@ -3535,7 +3537,8 @@ void ChannelData::RetryingCall::PendingBatchClear(PendingBatch* pending) {
   pending->batch = nullptr;
 }
 
-void ChannelData::RetryingCall::MaybeClearPendingBatch(PendingBatch* pending) {
+void ClientChannel::RetryingCall::MaybeClearPendingBatch(
+    PendingBatch* pending) {
   grpc_transport_stream_op_batch* batch = pending->batch;
   // We clear the pending batch if all of its callbacks have been
   // scheduled and reset to nullptr.
@@ -3557,7 +3560,7 @@ void ChannelData::RetryingCall::MaybeClearPendingBatch(PendingBatch* pending) {
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::RetryingCall::FailPendingBatchInCallCombiner(
+void ClientChannel::RetryingCall::FailPendingBatchInCallCombiner(
     void* arg, grpc_error* error) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
@@ -3569,7 +3572,7 @@ void ChannelData::RetryingCall::FailPendingBatchInCallCombiner(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::RetryingCall::PendingBatchesFail(
+void ClientChannel::RetryingCall::PendingBatchesFail(
     grpc_error* error,
     YieldCallCombinerPredicate yield_call_combiner_predicate) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
@@ -3606,18 +3609,18 @@ void ChannelData::RetryingCall::PendingBatchesFail(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::RetryingCall::ResumePendingBatchInCallCombiner(
+void ClientChannel::RetryingCall::ResumePendingBatchInCallCombiner(
     void* arg, grpc_error* /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* lb_call = static_cast<ChannelData::LoadBalancedCall*>(
+  auto* lb_call = static_cast<ClientChannel::LoadBalancedCall*>(
       batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
   lb_call->StartTransportStreamOpBatch(batch);
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::RetryingCall::PendingBatchesResume() {
+void ClientChannel::RetryingCall::PendingBatchesResume() {
   if (enable_retries_) {
     StartRetriableSubchannelBatches(this, GRPC_ERROR_NONE);
     return;
@@ -3651,9 +3654,9 @@ void ChannelData::RetryingCall::PendingBatchesResume() {
 }
 
 template <typename Predicate>
-ChannelData::RetryingCall::PendingBatch*
-ChannelData::RetryingCall::PendingBatchFind(const char* log_message,
-                                            Predicate predicate) {
+ClientChannel::RetryingCall::PendingBatch*
+ClientChannel::RetryingCall::PendingBatchFind(const char* log_message,
+                                              Predicate predicate) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     PendingBatch* pending = &pending_batches_[i];
     grpc_transport_stream_op_batch* batch = pending->batch;
@@ -3674,7 +3677,7 @@ ChannelData::RetryingCall::PendingBatchFind(const char* log_message,
 // retry code
 //
 
-void ChannelData::RetryingCall::RetryCommit(
+void ClientChannel::RetryingCall::RetryCommit(
     SubchannelCallRetryState* retry_state) {
   if (retry_committed_) return;
   retry_committed_ = true;
@@ -3687,8 +3690,8 @@ void ChannelData::RetryingCall::RetryCommit(
   }
 }
 
-void ChannelData::RetryingCall::DoRetry(SubchannelCallRetryState* retry_state,
-                                        grpc_millis server_pushback_ms) {
+void ClientChannel::RetryingCall::DoRetry(SubchannelCallRetryState* retry_state,
+                                          grpc_millis server_pushback_ms) {
   GPR_ASSERT(retry_policy_ != nullptr);
   // Reset LB call.
   lb_call_.reset();
@@ -3715,9 +3718,9 @@ void ChannelData::RetryingCall::DoRetry(SubchannelCallRetryState* retry_state,
   if (retry_state != nullptr) retry_state->retry_dispatched = true;
 }
 
-bool ChannelData::RetryingCall::MaybeRetry(SubchannelCallBatchData* batch_data,
-                                           grpc_status_code status,
-                                           grpc_mdelem* server_pushback_md) {
+bool ClientChannel::RetryingCall::MaybeRetry(
+    SubchannelCallBatchData* batch_data, grpc_status_code status,
+    grpc_mdelem* server_pushback_md) {
   // Get retry policy.
   if (retry_policy_ == nullptr) return false;
   // If we've already dispatched a retry from this call, return true.
@@ -3825,17 +3828,17 @@ bool ChannelData::RetryingCall::MaybeRetry(SubchannelCallBatchData* batch_data,
 }
 
 //
-// ChannelData::RetryingCall::SubchannelCallBatchData
+// ClientChannel::RetryingCall::SubchannelCallBatchData
 //
 
-ChannelData::RetryingCall::SubchannelCallBatchData*
-ChannelData::RetryingCall::SubchannelCallBatchData::Create(
+ClientChannel::RetryingCall::SubchannelCallBatchData*
+ClientChannel::RetryingCall::SubchannelCallBatchData::Create(
     RetryingCall* call, int refcount, bool set_on_complete) {
   return call->arena_->New<SubchannelCallBatchData>(call, refcount,
                                                     set_on_complete);
 }
 
-ChannelData::RetryingCall::SubchannelCallBatchData::SubchannelCallBatchData(
+ClientChannel::RetryingCall::SubchannelCallBatchData::SubchannelCallBatchData(
     RetryingCall* call, int refcount, bool set_on_complete)
     : call(call), lb_call(call->lb_call_) {
   SubchannelCallRetryState* retry_state =
@@ -3843,14 +3846,14 @@ ChannelData::RetryingCall::SubchannelCallBatchData::SubchannelCallBatchData(
   batch.payload = &retry_state->batch_payload;
   gpr_ref_init(&refs, refcount);
   if (set_on_complete) {
-    GRPC_CLOSURE_INIT(&on_complete, ChannelData::RetryingCall::OnComplete, this,
-                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&on_complete, ClientChannel::RetryingCall::OnComplete,
+                      this, grpc_schedule_on_exec_ctx);
     batch.on_complete = &on_complete;
   }
   GRPC_CALL_STACK_REF(call->owning_call_, "batch_data");
 }
 
-void ChannelData::RetryingCall::SubchannelCallBatchData::Destroy() {
+void ClientChannel::RetryingCall::SubchannelCallBatchData::Destroy() {
   SubchannelCallRetryState* retry_state =
       static_cast<SubchannelCallRetryState*>(lb_call->GetParentData());
   if (batch.send_initial_metadata) {
@@ -3873,7 +3876,7 @@ void ChannelData::RetryingCall::SubchannelCallBatchData::Destroy() {
 // recv_initial_metadata callback handling
 //
 
-void ChannelData::RetryingCall::InvokeRecvInitialMetadataCallback(
+void ClientChannel::RetryingCall::InvokeRecvInitialMetadataCallback(
     void* arg, grpc_error* error) {
   SubchannelCallBatchData* batch_data =
       static_cast<SubchannelCallBatchData*>(arg);
@@ -3908,8 +3911,8 @@ void ChannelData::RetryingCall::InvokeRecvInitialMetadataCallback(
                GRPC_ERROR_REF(error));
 }
 
-void ChannelData::RetryingCall::RecvInitialMetadataReady(void* arg,
-                                                         grpc_error* error) {
+void ClientChannel::RetryingCall::RecvInitialMetadataReady(void* arg,
+                                                           grpc_error* error) {
   SubchannelCallBatchData* batch_data =
       static_cast<SubchannelCallBatchData*>(arg);
   RetryingCall* call = batch_data->call;
@@ -3969,8 +3972,8 @@ void ChannelData::RetryingCall::RecvInitialMetadataReady(void* arg,
 // recv_message callback handling
 //
 
-void ChannelData::RetryingCall::InvokeRecvMessageCallback(void* arg,
-                                                          grpc_error* error) {
+void ClientChannel::RetryingCall::InvokeRecvMessageCallback(void* arg,
+                                                            grpc_error* error) {
   SubchannelCallBatchData* batch_data =
       static_cast<SubchannelCallBatchData*>(arg);
   RetryingCall* call = batch_data->call;
@@ -4000,7 +4003,8 @@ void ChannelData::RetryingCall::InvokeRecvMessageCallback(void* arg,
   Closure::Run(DEBUG_LOCATION, recv_message_ready, GRPC_ERROR_REF(error));
 }
 
-void ChannelData::RetryingCall::RecvMessageReady(void* arg, grpc_error* error) {
+void ClientChannel::RetryingCall::RecvMessageReady(void* arg,
+                                                   grpc_error* error) {
   SubchannelCallBatchData* batch_data =
       static_cast<SubchannelCallBatchData*>(arg);
   RetryingCall* call = batch_data->call;
@@ -4056,7 +4060,7 @@ void ChannelData::RetryingCall::RecvMessageReady(void* arg, grpc_error* error) {
 // recv_trailing_metadata handling
 //
 
-void ChannelData::RetryingCall::GetCallStatus(
+void ClientChannel::RetryingCall::GetCallStatus(
     grpc_metadata_batch* md_batch, grpc_error* error, grpc_status_code* status,
     grpc_mdelem** server_pushback_md) {
   if (error != GRPC_ERROR_NONE) {
@@ -4073,7 +4077,7 @@ void ChannelData::RetryingCall::GetCallStatus(
   GRPC_ERROR_UNREF(error);
 }
 
-void ChannelData::RetryingCall::AddClosureForRecvTrailingMetadataReady(
+void ClientChannel::RetryingCall::AddClosureForRecvTrailingMetadataReady(
     SubchannelCallBatchData* batch_data, grpc_error* error,
     CallCombinerClosureList* closures) {
   // Find pending batch.
@@ -4107,7 +4111,7 @@ void ChannelData::RetryingCall::AddClosureForRecvTrailingMetadataReady(
   MaybeClearPendingBatch(pending);
 }
 
-void ChannelData::RetryingCall::AddClosuresForDeferredRecvCallbacks(
+void ClientChannel::RetryingCall::AddClosuresForDeferredRecvCallbacks(
     SubchannelCallBatchData* batch_data, SubchannelCallRetryState* retry_state,
     CallCombinerClosureList* closures) {
   if (batch_data->batch.recv_trailing_metadata) {
@@ -4138,7 +4142,7 @@ void ChannelData::RetryingCall::AddClosuresForDeferredRecvCallbacks(
   }
 }
 
-bool ChannelData::RetryingCall::PendingBatchIsUnstarted(
+bool ClientChannel::RetryingCall::PendingBatchIsUnstarted(
     PendingBatch* pending, SubchannelCallRetryState* retry_state) {
   if (pending->batch == nullptr || pending->batch->on_complete == nullptr) {
     return false;
@@ -4158,7 +4162,7 @@ bool ChannelData::RetryingCall::PendingBatchIsUnstarted(
   return false;
 }
 
-void ChannelData::RetryingCall::AddClosuresToFailUnstartedPendingBatches(
+void ClientChannel::RetryingCall::AddClosuresToFailUnstartedPendingBatches(
     SubchannelCallRetryState* retry_state, grpc_error* error,
     CallCombinerClosureList* closures) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -4180,7 +4184,7 @@ void ChannelData::RetryingCall::AddClosuresToFailUnstartedPendingBatches(
   GRPC_ERROR_UNREF(error);
 }
 
-void ChannelData::RetryingCall::RunClosuresForCompletedCall(
+void ClientChannel::RetryingCall::RunClosuresForCompletedCall(
     SubchannelCallBatchData* batch_data, grpc_error* error) {
   SubchannelCallRetryState* retry_state =
       static_cast<SubchannelCallRetryState*>(
@@ -4204,8 +4208,8 @@ void ChannelData::RetryingCall::RunClosuresForCompletedCall(
   GRPC_ERROR_UNREF(error);
 }
 
-void ChannelData::RetryingCall::RecvTrailingMetadataReady(void* arg,
-                                                          grpc_error* error) {
+void ClientChannel::RetryingCall::RecvTrailingMetadataReady(void* arg,
+                                                            grpc_error* error) {
   SubchannelCallBatchData* batch_data =
       static_cast<SubchannelCallBatchData*>(arg);
   RetryingCall* call = batch_data->call;
@@ -4255,7 +4259,7 @@ void ChannelData::RetryingCall::RecvTrailingMetadataReady(void* arg,
 // on_complete callback handling
 //
 
-void ChannelData::RetryingCall::AddClosuresForCompletedPendingBatch(
+void ClientChannel::RetryingCall::AddClosuresForCompletedPendingBatch(
     SubchannelCallBatchData* batch_data, grpc_error* error,
     CallCombinerClosureList* closures) {
   PendingBatch* pending = PendingBatchFind(
@@ -4282,7 +4286,7 @@ void ChannelData::RetryingCall::AddClosuresForCompletedPendingBatch(
   MaybeClearPendingBatch(pending);
 }
 
-void ChannelData::RetryingCall::AddClosuresForReplayOrPendingSendOps(
+void ClientChannel::RetryingCall::AddClosuresForReplayOrPendingSendOps(
     SubchannelCallBatchData* batch_data, SubchannelCallRetryState* retry_state,
     CallCombinerClosureList* closures) {
   bool have_pending_send_message_ops =
@@ -4317,7 +4321,7 @@ void ChannelData::RetryingCall::AddClosuresForReplayOrPendingSendOps(
   }
 }
 
-void ChannelData::RetryingCall::OnComplete(void* arg, grpc_error* error) {
+void ClientChannel::RetryingCall::OnComplete(void* arg, grpc_error* error) {
   SubchannelCallBatchData* batch_data =
       static_cast<SubchannelCallBatchData*>(arg);
   RetryingCall* call = batch_data->call;
@@ -4381,17 +4385,17 @@ void ChannelData::RetryingCall::OnComplete(void* arg, grpc_error* error) {
 // subchannel batch construction
 //
 
-void ChannelData::RetryingCall::StartBatchInCallCombiner(
+void ClientChannel::RetryingCall::StartBatchInCallCombiner(
     void* arg, grpc_error* /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
-  auto* lb_call = static_cast<ChannelData::LoadBalancedCall*>(
+  auto* lb_call = static_cast<ClientChannel::LoadBalancedCall*>(
       batch->handler_private.extra_arg);
   // Note: This will release the call combiner.
   lb_call->StartTransportStreamOpBatch(batch);
 }
 
-void ChannelData::RetryingCall::AddClosureForSubchannelBatch(
+void ClientChannel::RetryingCall::AddClosureForSubchannelBatch(
     grpc_transport_stream_op_batch* batch, CallCombinerClosureList* closures) {
   batch->handler_private.extra_arg = lb_call_.get();
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, StartBatchInCallCombiner,
@@ -4405,7 +4409,7 @@ void ChannelData::RetryingCall::AddClosureForSubchannelBatch(
                 "start_subchannel_batch");
 }
 
-void ChannelData::RetryingCall::AddRetriableSendInitialMetadataOp(
+void ClientChannel::RetryingCall::AddRetriableSendInitialMetadataOp(
     SubchannelCallRetryState* retry_state,
     SubchannelCallBatchData* batch_data) {
   // Maps the number of retries to the corresponding metadata value slice.
@@ -4453,7 +4457,7 @@ void ChannelData::RetryingCall::AddRetriableSendInitialMetadataOp(
   batch_data->batch.payload->send_initial_metadata.peer_string = peer_string_;
 }
 
-void ChannelData::RetryingCall::AddRetriableSendMessageOp(
+void ClientChannel::RetryingCall::AddRetriableSendMessageOp(
     SubchannelCallRetryState* retry_state,
     SubchannelCallBatchData* batch_data) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -4471,7 +4475,7 @@ void ChannelData::RetryingCall::AddRetriableSendMessageOp(
       retry_state->send_message.get());
 }
 
-void ChannelData::RetryingCall::AddRetriableSendTrailingMetadataOp(
+void ClientChannel::RetryingCall::AddRetriableSendTrailingMetadataOp(
     SubchannelCallRetryState* retry_state,
     SubchannelCallBatchData* batch_data) {
   // We need to make a copy of the metadata batch for each attempt, since
@@ -4489,7 +4493,7 @@ void ChannelData::RetryingCall::AddRetriableSendTrailingMetadataOp(
       &retry_state->send_trailing_metadata;
 }
 
-void ChannelData::RetryingCall::AddRetriableRecvInitialMetadataOp(
+void ClientChannel::RetryingCall::AddRetriableRecvInitialMetadataOp(
     SubchannelCallRetryState* retry_state,
     SubchannelCallBatchData* batch_data) {
   retry_state->started_recv_initial_metadata = true;
@@ -4506,7 +4510,7 @@ void ChannelData::RetryingCall::AddRetriableRecvInitialMetadataOp(
       &retry_state->recv_initial_metadata_ready;
 }
 
-void ChannelData::RetryingCall::AddRetriableRecvMessageOp(
+void ClientChannel::RetryingCall::AddRetriableRecvMessageOp(
     SubchannelCallRetryState* retry_state,
     SubchannelCallBatchData* batch_data) {
   ++retry_state->started_recv_message_count;
@@ -4519,7 +4523,7 @@ void ChannelData::RetryingCall::AddRetriableRecvMessageOp(
       &retry_state->recv_message_ready;
 }
 
-void ChannelData::RetryingCall::AddRetriableRecvTrailingMetadataOp(
+void ClientChannel::RetryingCall::AddRetriableRecvTrailingMetadataOp(
     SubchannelCallRetryState* retry_state,
     SubchannelCallBatchData* batch_data) {
   retry_state->started_recv_trailing_metadata = true;
@@ -4537,7 +4541,7 @@ void ChannelData::RetryingCall::AddRetriableRecvTrailingMetadataOp(
       &retry_state->recv_trailing_metadata_ready;
 }
 
-void ChannelData::RetryingCall::StartInternalRecvTrailingMetadata() {
+void ClientChannel::RetryingCall::StartInternalRecvTrailingMetadata() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(
         GPR_INFO,
@@ -4562,8 +4566,8 @@ void ChannelData::RetryingCall::StartInternalRecvTrailingMetadata() {
 // If there are any cached send ops that need to be replayed on the
 // current subchannel call, creates and returns a new subchannel batch
 // to replay those ops.  Otherwise, returns nullptr.
-ChannelData::RetryingCall::SubchannelCallBatchData*
-ChannelData::RetryingCall::MaybeCreateSubchannelBatchForReplay(
+ClientChannel::RetryingCall::SubchannelCallBatchData*
+ClientChannel::RetryingCall::MaybeCreateSubchannelBatchForReplay(
     SubchannelCallRetryState* retry_state) {
   SubchannelCallBatchData* replay_batch_data = nullptr;
   // send_initial_metadata.
@@ -4621,7 +4625,7 @@ ChannelData::RetryingCall::MaybeCreateSubchannelBatchForReplay(
   return replay_batch_data;
 }
 
-void ChannelData::RetryingCall::AddSubchannelBatchesForPendingBatches(
+void ClientChannel::RetryingCall::AddSubchannelBatchesForPendingBatches(
     SubchannelCallRetryState* retry_state, CallCombinerClosureList* closures) {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     PendingBatch* pending = &pending_batches_[i];
@@ -4745,7 +4749,7 @@ void ChannelData::RetryingCall::AddSubchannelBatchesForPendingBatches(
   }
 }
 
-void ChannelData::RetryingCall::StartRetriableSubchannelBatches(
+void ClientChannel::RetryingCall::StartRetriableSubchannelBatches(
     void* arg, grpc_error* /*ignored*/) {
   RetryingCall* call = static_cast<RetryingCall*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -4782,7 +4786,8 @@ void ChannelData::RetryingCall::StartRetriableSubchannelBatches(
   closures.RunClosures(call->call_combiner_);
 }
 
-void ChannelData::RetryingCall::CreateLbCall(void* arg, grpc_error* /*error*/) {
+void ClientChannel::RetryingCall::CreateLbCall(void* arg,
+                                               grpc_error* /*error*/) {
   auto* call = static_cast<RetryingCall*>(arg);
   const size_t parent_data_size =
       call->enable_retries_ ? sizeof(SubchannelCallRetryState) : 0;
@@ -4790,7 +4795,7 @@ void ChannelData::RetryingCall::CreateLbCall(void* arg, grpc_error* /*error*/) {
                                  call->call_context_,    call->path_,
                                  call->call_start_time_, call->deadline_,
                                  call->arena_,           call->call_combiner_};
-  call->lb_call_ = ChannelData::LoadBalancedCall::Create(
+  call->lb_call_ = ClientChannel::LoadBalancedCall::Create(
       call->chand_, args, call->pollent_, parent_data_size);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p retrying_call=%p: create lb_call=%p",
@@ -4804,10 +4809,10 @@ void ChannelData::RetryingCall::CreateLbCall(void* arg, grpc_error* /*error*/) {
 }
 
 //
-// ChannelData::LoadBalancedCall::Metadata
+// ClientChannel::LoadBalancedCall::Metadata
 //
 
-class ChannelData::LoadBalancedCall::Metadata
+class ClientChannel::LoadBalancedCall::Metadata
     : public LoadBalancingPolicy::MetadataInterface {
  public:
   Metadata(LoadBalancedCall* lb_call, grpc_metadata_batch* batch)
@@ -4870,10 +4875,10 @@ class ChannelData::LoadBalancedCall::Metadata
 };
 
 //
-// ChannelData::LoadBalancedCall::LbCallState
+// ClientChannel::LoadBalancedCall::LbCallState
 //
 
-class ChannelData::LoadBalancedCall::LbCallState
+class ClientChannel::LoadBalancedCall::LbCallState
     : public LoadBalancingPolicy::CallState {
  public:
   explicit LbCallState(LoadBalancedCall* lb_call) : lb_call_(lb_call) {}
@@ -4910,11 +4915,11 @@ class ChannelData::LoadBalancedCall::LbCallState
 // LoadBalancedCall
 //
 
-RefCountedPtr<ChannelData::LoadBalancedCall>
-ChannelData::LoadBalancedCall::Create(ChannelData* chand,
-                                      const grpc_call_element_args& args,
-                                      grpc_polling_entity* pollent,
-                                      size_t parent_data_size) {
+RefCountedPtr<ClientChannel::LoadBalancedCall>
+ClientChannel::LoadBalancedCall::Create(ClientChannel* chand,
+                                        const grpc_call_element_args& args,
+                                        grpc_polling_entity* pollent,
+                                        size_t parent_data_size) {
   const size_t alloc_size =
       parent_data_size > 0
           ? (GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(LoadBalancedCall)) +
@@ -4925,8 +4930,8 @@ ChannelData::LoadBalancedCall::Create(ChannelData* chand,
   return lb_call;
 }
 
-ChannelData::LoadBalancedCall::LoadBalancedCall(
-    ChannelData* chand, const grpc_call_element_args& args,
+ClientChannel::LoadBalancedCall::LoadBalancedCall(
+    ClientChannel* chand, const grpc_call_element_args& args,
     grpc_polling_entity* pollent)
     : refs_(1, GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
                    ? "LoadBalancedCall"
@@ -4941,7 +4946,7 @@ ChannelData::LoadBalancedCall::LoadBalancedCall(
       call_context_(args.context),
       pollent_(pollent) {}
 
-ChannelData::LoadBalancedCall::~LoadBalancedCall() {
+ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   grpc_slice_unref_internal(path_);
   GRPC_ERROR_UNREF(cancel_error_);
   if (backend_metric_data_ != nullptr) {
@@ -4954,44 +4959,45 @@ ChannelData::LoadBalancedCall::~LoadBalancedCall() {
   }
 }
 
-RefCountedPtr<ChannelData::LoadBalancedCall>
-ChannelData::LoadBalancedCall::Ref() {
+RefCountedPtr<ClientChannel::LoadBalancedCall>
+ClientChannel::LoadBalancedCall::Ref() {
   IncrementRefCount();
   return RefCountedPtr<LoadBalancedCall>(this);
 }
 
-RefCountedPtr<ChannelData::LoadBalancedCall> ChannelData::LoadBalancedCall::Ref(
-    const DebugLocation& location, const char* reason) {
+RefCountedPtr<ClientChannel::LoadBalancedCall>
+ClientChannel::LoadBalancedCall::Ref(const DebugLocation& location,
+                                     const char* reason) {
   IncrementRefCount(location, reason);
   return RefCountedPtr<LoadBalancedCall>(this);
 }
 
-void ChannelData::LoadBalancedCall::Unref() {
+void ClientChannel::LoadBalancedCall::Unref() {
   if (GPR_UNLIKELY(refs_.Unref())) {
     this->~LoadBalancedCall();
   }
 }
 
-void ChannelData::LoadBalancedCall::Unref(const DebugLocation& location,
-                                          const char* reason) {
+void ClientChannel::LoadBalancedCall::Unref(const DebugLocation& location,
+                                            const char* reason) {
   if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
     this->~LoadBalancedCall();
   }
 }
 
-void ChannelData::LoadBalancedCall::IncrementRefCount() { refs_.Ref(); }
+void ClientChannel::LoadBalancedCall::IncrementRefCount() { refs_.Ref(); }
 
-void ChannelData::LoadBalancedCall::IncrementRefCount(
+void ClientChannel::LoadBalancedCall::IncrementRefCount(
     const DebugLocation& location, const char* reason) {
   refs_.Ref(location, reason);
 }
 
-void* ChannelData::LoadBalancedCall::GetParentData() {
+void* ClientChannel::LoadBalancedCall::GetParentData() {
   return reinterpret_cast<char*>(this) +
          GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(LoadBalancedCall));
 }
 
-size_t ChannelData::LoadBalancedCall::GetBatchIndex(
+size_t ClientChannel::LoadBalancedCall::GetBatchIndex(
     grpc_transport_stream_op_batch* batch) {
   // Note: It is important the send_initial_metadata be the first entry
   // here, since the code in pick_subchannel_locked() assumes it will be.
@@ -5005,7 +5011,7 @@ size_t ChannelData::LoadBalancedCall::GetBatchIndex(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::LoadBalancedCall::PendingBatchesAdd(
+void ClientChannel::LoadBalancedCall::PendingBatchesAdd(
     grpc_transport_stream_op_batch* batch) {
   const size_t idx = GetBatchIndex(batch);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -5018,7 +5024,7 @@ void ChannelData::LoadBalancedCall::PendingBatchesAdd(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::LoadBalancedCall::FailPendingBatchInCallCombiner(
+void ClientChannel::LoadBalancedCall::FailPendingBatchInCallCombiner(
     void* arg, grpc_error* error) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
@@ -5029,7 +5035,7 @@ void ChannelData::LoadBalancedCall::FailPendingBatchInCallCombiner(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::LoadBalancedCall::PendingBatchesFail(
+void ClientChannel::LoadBalancedCall::PendingBatchesFail(
     grpc_error* error,
     YieldCallCombinerPredicate yield_call_combiner_predicate) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
@@ -5064,7 +5070,7 @@ void ChannelData::LoadBalancedCall::PendingBatchesFail(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::LoadBalancedCall::ResumePendingBatchInCallCombiner(
+void ClientChannel::LoadBalancedCall::ResumePendingBatchInCallCombiner(
     void* arg, grpc_error* /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
@@ -5075,7 +5081,7 @@ void ChannelData::LoadBalancedCall::ResumePendingBatchInCallCombiner(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void ChannelData::LoadBalancedCall::PendingBatchesResume() {
+void ClientChannel::LoadBalancedCall::PendingBatchesResume() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -5103,7 +5109,7 @@ void ChannelData::LoadBalancedCall::PendingBatchesResume() {
   closures.RunClosures(call_combiner_);
 }
 
-void ChannelData::LoadBalancedCall::StartTransportStreamOpBatch(
+void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
   // Intercept recv_trailing_metadata_ready for LB callback.
   if (batch->recv_trailing_metadata) {
@@ -5184,7 +5190,7 @@ void ChannelData::LoadBalancedCall::StartTransportStreamOpBatch(
   }
 }
 
-void ChannelData::LoadBalancedCall::
+void ClientChannel::LoadBalancedCall::
     RecvTrailingMetadataReadyForLoadBalancingPolicy(void* arg,
                                                     grpc_error* error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
@@ -5224,7 +5230,7 @@ void ChannelData::LoadBalancedCall::
 
 // TODO(roth): Consider not intercepting this callback unless we
 // actually need to, if this causes a performance problem.
-void ChannelData::LoadBalancedCall::
+void ClientChannel::LoadBalancedCall::
     InjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
         grpc_transport_stream_op_batch* batch) {
   recv_trailing_metadata_ =
@@ -5238,7 +5244,7 @@ void ChannelData::LoadBalancedCall::
       &recv_trailing_metadata_ready_;
 }
 
-void ChannelData::LoadBalancedCall::CreateSubchannelCall() {
+void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
   SubchannelCall::Args call_args = {
       std::move(connected_subchannel_), pollent_, path_, call_start_time_,
       deadline_, arena_,
@@ -5266,7 +5272,7 @@ void ChannelData::LoadBalancedCall::CreateSubchannelCall() {
 // because there may be multiple LB picks happening in parallel.
 // Instead, we will probably need to maintain a list in the CallData
 // object of pending LB picks to be cancelled when the closure runs.
-class ChannelData::LoadBalancedCall::LbQueuedCallCanceller {
+class ClientChannel::LoadBalancedCall::LbQueuedCallCanceller {
  public:
   explicit LbQueuedCallCanceller(RefCountedPtr<LoadBalancedCall> lb_call)
       : lb_call_(std::move(lb_call)) {
@@ -5305,7 +5311,7 @@ class ChannelData::LoadBalancedCall::LbQueuedCallCanceller {
   grpc_closure closure_;
 };
 
-void ChannelData::LoadBalancedCall::MaybeRemoveCallFromLbQueuedCallsLocked() {
+void ClientChannel::LoadBalancedCall::MaybeRemoveCallFromLbQueuedCallsLocked() {
   if (!queued_pending_lb_pick_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: removing from queued picks list",
@@ -5317,7 +5323,7 @@ void ChannelData::LoadBalancedCall::MaybeRemoveCallFromLbQueuedCallsLocked() {
   lb_call_canceller_ = nullptr;
 }
 
-void ChannelData::LoadBalancedCall::MaybeAddCallToLbQueuedCallsLocked() {
+void ClientChannel::LoadBalancedCall::MaybeAddCallToLbQueuedCallsLocked() {
   if (queued_pending_lb_pick_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p lb_call=%p: adding to queued picks list",
@@ -5330,12 +5336,12 @@ void ChannelData::LoadBalancedCall::MaybeAddCallToLbQueuedCallsLocked() {
   lb_call_canceller_ = new LbQueuedCallCanceller(Ref());
 }
 
-void ChannelData::LoadBalancedCall::AsyncPickDone(grpc_error* error) {
+void ClientChannel::LoadBalancedCall::AsyncPickDone(grpc_error* error) {
   GRPC_CLOSURE_INIT(&pick_closure_, PickDone, this, grpc_schedule_on_exec_ctx);
   ExecCtx::Run(DEBUG_LOCATION, &pick_closure_, error);
 }
 
-void ChannelData::LoadBalancedCall::PickDone(void* arg, grpc_error* error) {
+void ClientChannel::LoadBalancedCall::PickDone(void* arg, grpc_error* error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
   if (error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
@@ -5362,8 +5368,8 @@ const char* PickResultTypeName(
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
 
-void ChannelData::LoadBalancedCall::PickSubchannel(void* arg,
-                                                   grpc_error* error) {
+void ClientChannel::LoadBalancedCall::PickSubchannel(void* arg,
+                                                     grpc_error* error) {
   auto* self = static_cast<LoadBalancedCall*>(arg);
   bool pick_complete;
   {
@@ -5376,7 +5382,7 @@ void ChannelData::LoadBalancedCall::PickSubchannel(void* arg,
   }
 }
 
-bool ChannelData::LoadBalancedCall::PickSubchannelLocked(grpc_error** error) {
+bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(grpc_error** error) {
   GPR_ASSERT(connected_subchannel_ == nullptr);
   GPR_ASSERT(subchannel_call_ == nullptr);
   // Grab initial metadata.
@@ -5459,31 +5465,31 @@ bool ChannelData::LoadBalancedCall::PickSubchannelLocked(grpc_error** error) {
  * EXPORTED SYMBOLS
  */
 
-using grpc_core::ChannelData;
+using grpc_core::ClientChannel;
 
 const grpc_channel_filter grpc_client_channel_filter = {
-    ChannelData::CallData::StartTransportStreamOpBatch,
-    ChannelData::StartTransportOp,
-    sizeof(ChannelData::CallData),
-    ChannelData::CallData::Init,
-    ChannelData::CallData::SetPollent,
-    ChannelData::CallData::Destroy,
-    sizeof(ChannelData),
-    ChannelData::Init,
-    ChannelData::Destroy,
-    ChannelData::GetChannelInfo,
+    ClientChannel::CallData::StartTransportStreamOpBatch,
+    ClientChannel::StartTransportOp,
+    sizeof(ClientChannel::CallData),
+    ClientChannel::CallData::Init,
+    ClientChannel::CallData::SetPollent,
+    ClientChannel::CallData::Destroy,
+    sizeof(ClientChannel),
+    ClientChannel::Init,
+    ClientChannel::Destroy,
+    ClientChannel::GetChannelInfo,
     "client-channel",
 };
 
 grpc_connectivity_state grpc_client_channel_check_connectivity_state(
     grpc_channel_element* elem, int try_to_connect) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
+  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   return chand->CheckConnectivityState(try_to_connect);
 }
 
 int grpc_client_channel_num_external_connectivity_watchers(
     grpc_channel_element* elem) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
+  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   return chand->NumExternalConnectivityWatchers();
 }
 
@@ -5491,7 +5497,7 @@ void grpc_client_channel_watch_connectivity_state(
     grpc_channel_element* elem, grpc_polling_entity pollent,
     grpc_connectivity_state* state, grpc_closure* on_complete,
     grpc_closure* watcher_timer_init) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
+  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (state == nullptr) {
     // Handle cancellation.
     GPR_ASSERT(watcher_timer_init == nullptr);
@@ -5507,13 +5513,13 @@ void grpc_client_channel_start_connectivity_watch(
     grpc_channel_element* elem, grpc_connectivity_state initial_state,
     grpc_core::OrphanablePtr<grpc_core::AsyncConnectivityStateWatcherInterface>
         watcher) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
+  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   chand->AddConnectivityWatcher(initial_state, std::move(watcher));
 }
 
 void grpc_client_channel_stop_connectivity_watch(
     grpc_channel_element* elem,
     grpc_core::AsyncConnectivityStateWatcherInterface* watcher) {
-  auto* chand = static_cast<ChannelData*>(elem->channel_data);
+  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   chand->RemoveConnectivityWatcher(watcher);
 }
