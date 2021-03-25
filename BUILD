@@ -1619,11 +1619,11 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h",
     ],
-    language = "c++",
     external_deps = [
         "absl/strings",
         "xxhash",
     ],
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",

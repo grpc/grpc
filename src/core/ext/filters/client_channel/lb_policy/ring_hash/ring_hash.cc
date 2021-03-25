@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -165,33 +166,53 @@ class RingHash : public LoadBalancingPolicy {
       grpc_connectivity_state last_connectivity_state;
     };
 
-    // A ref counted class to store needed arguments to perform
-    // an attempt to connect to a specific subchannel; these arguments include
-    // the ring hash policy which contains the serializer and the subchannel to
-    // be connected.
-    class AttemptToConnectArgs
-        : public InternallyRefCounted<AttemptToConnectArgs> {
+    // A fire-and-forget class that schedules subchannel connection attempts
+    // on the control plane WorkSerializer.
+    class SubchannelConnectionAttempter : public Orphanable {
      public:
-      AttemptToConnectArgs(RefCountedPtr<RingHash> parent,
-                           RefCountedPtr<SubchannelInterface> subchannel)
-          : parent_(std::move(parent)), subchannel_(std::move(subchannel)) {}
+      explicit SubchannelConnectionAttempter(
+          RefCountedPtr<RingHash> ring_hash_lb)
+          : ring_hash_lb_(std::move(ring_hash_lb)) {
+        GRPC_CLOSURE_INIT(&closure_, RunInExecCtx, this, nullptr);
+      }
 
-      using InternallyRefCounted<AttemptToConnectArgs>::Ref;
-      using InternallyRefCounted<AttemptToConnectArgs>::Unref;
-      void Orphan() override { Unref(); }
-      RefCountedPtr<RingHash> parent_;
-      RefCountedPtr<SubchannelInterface> subchannel_;
+      void AddSubchannel(RefCountedPtr<SubchannelInterface> subchannel) {
+        subchannels_.push_back(std::move(subchannel));
+      }
+
+      void Orphan() override {
+        // Hop into ExecCtx, so that we're not holding the data plane mutex
+        // while we run control-plane code.
+        ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+      }
+
+     private:
+      static void RunInExecCtx(void* arg, grpc_error* /*error*/) {
+        auto* self = static_cast<SubchannelConnectionAttempter*>(arg);
+        self->ring_hash_lb_->work_serializer()->Run(
+            [self]() {
+              if (!self->ring_hash_lb_->shutdown_) {
+                for (auto& subchannel : self->subchannels_) {
+                  subchannel->AttemptToConnect();
+                }
+              }
+              delete self;
+            },
+            DEBUG_LOCATION);
+      }
+
+      RefCountedPtr<RingHash> ring_hash_lb_;
+      grpc_closure closure_;
+      absl::InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
     };
 
     Picker(RefCountedPtr<RingHash> parent,
            RingHashSubchannelList* subchannel_list);
 
-    void AttemptToConnectInExecCtx(
-        RefCountedPtr<SubchannelInterface> subchannel);
-
-    // Picker helper which returns false if subchannel is in TRANSIENT_FAILURE,
-    // true otherwise.
-    bool MaybePickSubchannel(const RingEntry& entry, PickResult* result);
+    // Helper which returns true if attempt to connect is needed; false
+    // otherwise.  As well, the helper will return a PickResult if one is
+    // picked.
+    bool ConnectAndPickHelper(const RingEntry& entry, PickResult* result);
 
     PickResult Pick(PickArgs args) override;
 
@@ -255,11 +276,11 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
   double min_normalized_weight = 1.0;
   double max_normalized_weight = 0.0;
   for (auto& address : address_weights_info) {
-    address.normalized_weight = address.weight / sum;
+    address.normalized_weight = (double)address.weight / sum;
     min_normalized_weight =
-        std::min(address.normalized_weight, min_normalized_weight);
+        GPR_MIN(address.normalized_weight, min_normalized_weight);
     max_normalized_weight =
-        std::max(address.normalized_weight, max_normalized_weight);
+        GPR_MAX(address.normalized_weight, max_normalized_weight);
   }
   // Scale up the number of hashes per host such that the least-weighted host
   // gets a whole number of hashes on the ring. Other hosts might not end up
@@ -270,7 +291,7 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
   // to fit.
   const size_t min_ring_size = parent_->config_->min_ring_size();
   const size_t max_ring_size = parent_->config_->max_ring_size();
-  const double scale = std::min(
+  const double scale = GPR_MIN(
       std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
       static_cast<double>(max_ring_size));
   // Reserve memory for the entire ring up front.
@@ -306,8 +327,8 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
       ++current_hashes;
       hash_key_buffer.erase(offset_start, hash_key_buffer.end());
     }
-    min_hashes_per_host = std::min(i, min_hashes_per_host);
-    max_hashes_per_host = std::max(i, max_hashes_per_host);
+    min_hashes_per_host = GPR_MIN(i, min_hashes_per_host);
+    max_hashes_per_host = GPR_MAX(i, max_hashes_per_host);
   }
   std::sort(ring_.begin(), ring_.end(),
             [](const RingEntry& lhs, const RingEntry& rhs) -> bool {
@@ -321,50 +342,28 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
   }
 }
 
-void RingHash::Picker::AttemptToConnectInExecCtx(
-    RefCountedPtr<SubchannelInterface> subchannel) {
-  auto attempt_to_connect_args =
-      MakeRefCounted<AttemptToConnectArgs>(parent_, std::move(subchannel));
-  auto* args = attempt_to_connect_args->Ref().release();
-  ExecCtx::Run(DEBUG_LOCATION,
-               GRPC_CLOSURE_CREATE(
-                   [](void* arg, grpc_error* /*error*/) {
-                     auto* args = static_cast<AttemptToConnectArgs*>(arg);
-                     args->parent_->work_serializer()->Run(
-                         [args]() {
-                           args->subchannel_->AttemptToConnect();
-                           args->Unref();
-                         },
-                         DEBUG_LOCATION);
-                   },
-                   args, nullptr),
-               GRPC_ERROR_NONE);
-}
-
-// Returns false if subchannel is in TRANSIENT_FAILURE, true otherwise.
-bool RingHash::Picker::MaybePickSubchannel(const RingEntry& entry,
-                                           PickResult* result) {
+bool RingHash::Picker::ConnectAndPickHelper(const RingEntry& entry,
+                                            PickResult* result) {
   if (entry.last_connectivity_state == GRPC_CHANNEL_READY) {
     result->type = PickResult::PICK_COMPLETE;
     result->subchannel = entry.subchannel;
-    return true;
+    return false;
   }
   if (entry.last_connectivity_state == GRPC_CHANNEL_IDLE) {
-    AttemptToConnectInExecCtx(entry.subchannel);
     result->type = PickResult::PICK_QUEUE;
     return true;
   }
   if (entry.last_connectivity_state == GRPC_CHANNEL_CONNECTING) {
     result->type = PickResult::PICK_QUEUE;
-    return true;
+    return false;
   }
   // TRANSIENT_FAILURE
-  AttemptToConnectInExecCtx(entry.subchannel);
-  return false;
+  return true;
 }
 
 RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   PickResult result;
+  // Initialize to PICK_FAILED.
   result.type = PickResult::PICK_FAILED;
   absl::string_view hash =
       args.call_state->ExperimentalGetCallAttribute(kRequestRingHashAttribute);
@@ -403,13 +402,30 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
             "[RH %p picker %p] hashed to index %" PRIuPTR ", subchannel=%p",
             parent_.get(), this, midp, ring_[midp].subchannel.get());
   }
-  if (MaybePickSubchannel(ring_[midp], &result)) {
+  OrphanablePtr<SubchannelConnectionAttempter> subchannel_connection_attempter;
+  auto ScheduleSubchannelConnectionAttempt =
+      [&](RefCountedPtr<SubchannelInterface> subchannel) {
+        if (subchannel_connection_attempter == nullptr) {
+          subchannel_connection_attempter =
+              MakeOrphanable<SubchannelConnectionAttempter>(parent_);
+        }
+        subchannel_connection_attempter->AddSubchannel(std::move(subchannel));
+      };
+  bool attempt_to_connect = ConnectAndPickHelper(ring_[midp], &result);
+  if (attempt_to_connect) {
+    ScheduleSubchannelConnectionAttempt(ring_[midp].subchannel);
+  }
+  if (result.type != PickResult::PICK_FAILED) {
     return result;
   }
   // Subchannel is in TRANSIENT_FAILURE.
   // Check the next one.
   midp = (midp + 1) % ring_.size();
-  if (MaybePickSubchannel(ring_[midp], &result)) {
+  attempt_to_connect = ConnectAndPickHelper(ring_[midp], &result);
+  if (attempt_to_connect) {
+    ScheduleSubchannelConnectionAttempt(ring_[midp].subchannel);
+  }
+  if (result.type != PickResult::PICK_FAILED) {
     return result;
   }
   // Second subchannel was in TRANSIENT_FAILURE.
@@ -427,31 +443,15 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     }
     if (!found_first_non_failed) {
       if (entry.last_connectivity_state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        auto attempt_to_connect_args =
-            MakeRefCounted<AttemptToConnectArgs>(parent_, entry.subchannel);
-        auto* args = attempt_to_connect_args->Ref().release();
-        ExecCtx::Run(DEBUG_LOCATION,
-                     GRPC_CLOSURE_CREATE(
-                         [](void* arg, grpc_error* /*error*/) {
-                           auto* args = static_cast<AttemptToConnectArgs*>(arg);
-                           args->parent_->work_serializer()->Run(
-                               [args]() {
-                                 args->subchannel_->AttemptToConnect();
-                                 args->Unref();
-                               },
-                               DEBUG_LOCATION);
-                         },
-                         args, nullptr),
-                     GRPC_ERROR_NONE);
+        ScheduleSubchannelConnectionAttempt(entry.subchannel);
       } else {
         if (entry.last_connectivity_state == GRPC_CHANNEL_IDLE) {
-          AttemptToConnectInExecCtx(entry.subchannel);
+          ScheduleSubchannelConnectionAttempt(entry.subchannel);
         }
         found_first_non_failed = true;
       }
     }
   }
-  result.type = PickResult::PICK_FAILED;
   return result;
 }
 
