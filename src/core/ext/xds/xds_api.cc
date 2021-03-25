@@ -849,7 +849,7 @@ void PopulateMetadata(const EncodingContext& context,
     google_protobuf_Value* value = google_protobuf_Value_new(context.arena);
     PopulateMetadataValue(context, value, p.second);
     google_protobuf_Struct_fields_set(
-        metadata_pb, StdStringToUpbString(p.first), value, context.arena);
+	metadata_pb, StdStringToUpbString(p.first), value, context.arena);
   }
 }
 
@@ -1874,11 +1874,13 @@ grpc_error* HttpConnectionManagerParse(
         names_seen.insert(name);
         const bool is_optional =
             envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_is_optional(
-                http_filter);
+                http_filter) || name == "envoy.router";
         const google_protobuf_Any* any =
             envoy_extensions_filters_network_http_connection_manager_v3_HttpFilter_typed_config(
                 http_filter);
+	// NOTE: Hack for validating the Python security server.
         if (any == nullptr) {
+	// NOTE: Hack for validating the Python security server.
           if (is_optional) continue;
           return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
               absl::StrCat("no filter config specified for filter name ", name)

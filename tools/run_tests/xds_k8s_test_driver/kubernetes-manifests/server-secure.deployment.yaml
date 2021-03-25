@@ -43,7 +43,7 @@ spec:
           - name: GRPC_VERBOSITY
             value: "DEBUG"
           - name: GRPC_TRACE
-            value: "all,-timer"
+            value: "all,-timer,-timer_check"
         volumeMounts:
           - mountPath: /tmp/grpc-xds/
             name: grpc-td-conf

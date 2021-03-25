@@ -103,11 +103,16 @@ class ChannelzServiceClient(framework.rpc.grpc.GrpcClientHelper):
     def find_server_listening_on_port(self, port: int,
                                       **kwargs) -> Optional[Server]:
         for server in self.list_servers(**kwargs):
+            import sys; sys.stderr.write("**************** server: {}\n".format(server)); sys.stderr.flush()
+            import sys; sys.stderr.write("**************** port: {}\n".format(port)); sys.stderr.flush()
             listen_socket_ref: SocketRef
             for listen_socket_ref in server.listen_socket:
+                import sys; sys.stderr.write("**************** listen_socket_ref: {}\n".format(listen_socket_ref)); sys.stderr.flush()
                 listen_socket = self.get_socket(listen_socket_ref.socket_id,
                                                 **kwargs)
+                import sys; sys.stderr.write("**************** listen_socket: {}\n".format(listen_socket)); sys.stderr.flush()
                 listen_address: Address = listen_socket.local
+                import sys; sys.stderr.write("**************** is_sock_tcpip_address: {}\n".format(self.is_sock_tcpip_address(listen_address))); sys.stderr.flush()
                 if (self.is_sock_tcpip_address(listen_address) and
                         listen_address.tcpip_address.port == port):
                     return server

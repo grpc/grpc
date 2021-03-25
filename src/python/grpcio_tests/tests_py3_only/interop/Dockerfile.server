@@ -1,25 +1,8 @@
-fROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64bdb429e2354d58f5462750
+FROM python:3.7.10-buster@sha256:9638b269895cb2c8db1bcbefcb1aa6eb8f2dbf98cbaefe94307448e45ce78108
 
-RUN apt-get update -y && \
-        apt-get install -y \
-            build-essential \
-            clang \
-            python3 \
-            python3-dev
-
-WORKDIR /workdir
-
-RUN ln -s /usr/bin/python3 /usr/bin/python
-RUN mkdir /artifacts
+# RUN apt-get update -y && apt-get install -y python3
+# RUN ln -s /usr/bin/python3 /usr/bin/python
 
 COPY . .
-RUN tools/bazel build -c dbg //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_server
-RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds_interop_server* /artifacts/
-
-fROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64bdb429e2354d58f5462750
-COPY --from=0 /artifacts ./
-
-RUN apt-get update -y && apt-get install -y python3
-RUN ln -s /usr/bin/python3 /usr/bin/python
 
 ENTRYPOINT ["/xds_interop_server"]
