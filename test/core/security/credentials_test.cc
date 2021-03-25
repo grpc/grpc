@@ -2814,8 +2814,8 @@ static void test_aws_external_account_creds_success_path_region_env_keys_url(
   gpr_unsetenv("AWS_REGION");
 }
 
-static void test_aws_external_account_creds_success_path_default_region_env_keys_url(
-    void) {
+static void
+test_aws_external_account_creds_success_path_default_region_env_keys_url(void) {
   expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -2852,7 +2852,8 @@ static void test_aws_external_account_creds_success_path_default_region_env_keys
   gpr_unsetenv("AWS_DEFAULT_REGION");
 }
 
-static void test_aws_external_account_creds_success_path_duplicate_region_env_keys_url(
+static void
+test_aws_external_account_creds_success_path_duplicate_region_env_keys_url(
     void) {
   expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
@@ -2979,8 +2980,8 @@ static void test_aws_external_account_creds_success_path_region_env_keys_env(
   gpr_unsetenv("AWS_SESSION_TOKEN");
 }
 
-static void test_aws_external_account_creds_success_path_default_region_env_keys_env(
-    void) {
+static void
+test_aws_external_account_creds_success_path_default_region_env_keys_env(void) {
   expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
   grpc_auth_metadata_context auth_md_ctx = {test_service_url, test_method,
@@ -3023,8 +3024,8 @@ static void test_aws_external_account_creds_success_path_default_region_env_keys
   gpr_unsetenv("AWS_SESSION_TOKEN");
 }
 
-
-static void test_aws_external_account_creds_success_path_duplicate_region_env_keys_env(
+static void
+test_aws_external_account_creds_success_path_duplicate_region_env_keys_env(
     void) {
   expected_md emd[] = {{"authorization", "Bearer token_exchange_access_token"}};
   grpc_core::ExecCtx exec_ctx;
