@@ -5638,6 +5638,19 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: mock_stream_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/test/mock_stream_test.cc
+  deps:
+  - grpc++_test
+  - grpc++_test_util
 - name: mock_test
   gtest: true
   build: test
