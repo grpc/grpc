@@ -236,18 +236,6 @@ class XdsApi {
     bool Empty() const;
   };
 
-  struct CidrRange {
-    grpc_resolved_address address;
-    uint32_t prefix_len;
-
-    bool operator==(const CidrRange& other) const {
-      return memcmp(&address, &other.address, sizeof(address)) == 0 &&
-             prefix_len == other.prefix_len;
-    }
-
-    std::string ToString() const;
-  };
-
   // TODO(roth): When we can use absl::variant<>, consider using that
   // here, to enforce the fact that only one of the two fields can be set.
   struct LdsUpdate {
@@ -329,6 +317,17 @@ class XdsApi {
         bool operator==(const FilterChainDataSharedPtr& other) const {
           return *data == *other.data;
         }
+      };
+      struct CidrRange {
+        grpc_resolved_address address;
+        uint32_t prefix_len;
+
+        bool operator==(const CidrRange& other) const {
+          return memcmp(&address, &other.address, sizeof(address)) == 0 &&
+                 prefix_len == other.prefix_len;
+        }
+
+        std::string ToString() const;
       };
       using SourcePortsMap = std::map<uint16_t, FilterChainDataSharedPtr>;
       struct SourceIp {

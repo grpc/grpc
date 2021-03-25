@@ -522,16 +522,6 @@ bool XdsApi::DownstreamTlsContext::Empty() const {
 }
 
 //
-// XdsApi::CidrRange
-//
-
-std::string XdsApi::CidrRange::ToString() const {
-  return absl::StrCat(
-      "{address_prefix=", grpc_sockaddr_to_string(&address, false),
-      ", prefix_len=", prefix_len, "}");
-}
-
-//
 // XdsApi::LdsUpdate::HttpConnectionManager
 //
 
@@ -576,13 +566,28 @@ std::string XdsApi::LdsUpdate::FilterChainData::ToString() const {
       " http_connection_manager=", http_connection_manager.ToString(), "}");
 }
 
+//
+// XdsApi::LdsUpdate::FilterChainMap::CidrRange
+//
+
+std::string XdsApi::LdsUpdate::FilterChainMap::CidrRange::ToString() const {
+  return absl::StrCat(
+      "{address_prefix=", grpc_sockaddr_to_string(&address, false),
+      ", prefix_len=", prefix_len, "}");
+}
+
+//
+// FilterChain
+//
+
 struct FilterChain {
   struct FilterChainMatch {
     uint32_t destination_port = 0;
-    std::vector<XdsApi::CidrRange> prefix_ranges;
+    std::vector<XdsApi::LdsUpdate::FilterChainMap::CidrRange> prefix_ranges;
     XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType source_type =
         XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType::kAny;
-    std::vector<XdsApi::CidrRange> source_prefix_ranges;
+    std::vector<XdsApi::LdsUpdate::FilterChainMap::CidrRange>
+        source_prefix_ranges;
     std::vector<uint32_t> source_ports;
     std::vector<std::string> server_names;
     std::string transport_protocol;
@@ -593,10 +598,6 @@ struct FilterChain {
 
   std::shared_ptr<XdsApi::LdsUpdate::FilterChainData> filter_chain_data;
 };
-
-//
-// FilterChain::FilterChainMatch
-//
 
 std::string FilterChain::FilterChainMatch::ToString() const {
   absl::InlinedVector<std::string, 8> contents;
@@ -2088,26 +2089,12 @@ grpc_error* DownstreamTlsContextParse(
 
 grpc_error* CidrRangeParse(
     const envoy_config_core_v3_CidrRange* cidr_range_proto,
-    XdsApi::CidrRange* cidr_range) {
+    XdsApi::LdsUpdate::FilterChainMap::CidrRange* cidr_range) {
   std::string address_prefix = UpbStringToStdString(
       envoy_config_core_v3_CidrRange_address_prefix(cidr_range_proto));
-  memset(&cidr_range->address, 0, sizeof(grpc_resolved_address));
-  grpc_sockaddr_in6* addr6 =
-      reinterpret_cast<grpc_sockaddr_in6*>(cidr_range->address.addr);
-  grpc_sockaddr_in* addr4 =
-      reinterpret_cast<grpc_sockaddr_in*>(cidr_range->address.addr);
-  if (grpc_inet_pton(GRPC_AF_INET6, address_prefix.c_str(),
-                     &addr6->sin6_addr) == 1) {
-    addr6->sin6_family = GRPC_AF_INET6;
-    cidr_range->address.len = sizeof(grpc_sockaddr_in6);
-  } else if (grpc_inet_pton(GRPC_AF_INET, address_prefix.c_str(),
-                            &addr4->sin_addr) == 1) {
-    addr4->sin_family = GRPC_AF_INET;
-    cidr_range->address.len = sizeof(grpc_sockaddr_in);
-  } else {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Failed to parse CidrAddress:", address_prefix).c_str());
-  }
+  grpc_error* error = grpc_string_to_sockaddr_new(&cidr_range->address,
+                                                  address_prefix.c_str(), 0);
+  if (error != GRPC_ERROR_NONE) return error;
   cidr_range->prefix_len = 0;
   auto* prefix_len_proto =
       envoy_config_core_v3_CidrRange_prefix_len(cidr_range_proto);
@@ -2139,7 +2126,7 @@ grpc_error* FilterChainMatchParse(
       filter_chain_match_proto, &size);
   filter_chain_match->prefix_ranges.reserve(size);
   for (size_t i = 0; i < size; i++) {
-    XdsApi::CidrRange cidr_range;
+    XdsApi::LdsUpdate::FilterChainMap::CidrRange cidr_range;
     grpc_error* error = CidrRangeParse(prefix_ranges[i], &cidr_range);
     if (error != GRPC_ERROR_NONE) return error;
     filter_chain_match->prefix_ranges.push_back(cidr_range);
@@ -2153,7 +2140,7 @@ grpc_error* FilterChainMatchParse(
           filter_chain_match_proto, &size);
   filter_chain_match->source_prefix_ranges.reserve(size);
   for (size_t i = 0; i < size; i++) {
-    XdsApi::CidrRange cidr_range;
+    XdsApi::LdsUpdate::FilterChainMap::CidrRange cidr_range;
     grpc_error* error = CidrRangeParse(source_prefix_ranges[i], &cidr_range);
     if (error != GRPC_ERROR_NONE) return error;
     filter_chain_match->source_prefix_ranges.push_back(cidr_range);
@@ -2282,7 +2269,7 @@ struct InternalFilterChainMap {
       std::map<std::string, XdsApi::LdsUpdate::FilterChainMap::SourceIp>;
   using ConnectionSourceTypesArray = std::array<SourceIpMap, 3>;
   struct DestinationIp {
-    absl::optional<XdsApi::CidrRange> prefix_range;
+    absl::optional<XdsApi::LdsUpdate::FilterChainMap::CidrRange> prefix_range;
     bool transport_protocol_raw_buffer_provided = false;
     ConnectionSourceTypesArray source_types_array;
   };
@@ -3023,7 +3010,9 @@ grpc_error* ServerAddressParseAndAppend(
   }
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
-  grpc_string_to_sockaddr(&addr, address_str.c_str(), port);
+  grpc_error* error =
+      grpc_string_to_sockaddr_new(&addr, address_str.c_str(), port);
+  if (error != GRPC_ERROR_NONE) return error;
   // Append the address to the list.
   list->emplace_back(addr, nullptr);
   return GRPC_ERROR_NONE;
