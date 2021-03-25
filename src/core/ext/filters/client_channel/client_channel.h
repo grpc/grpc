@@ -132,6 +132,10 @@ class ClientChannel {
   void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher);
 
+  RefCountedPtr<LoadBalancedCall> CreateLoadBalancedCall(
+      const grpc_call_element_args& args, grpc_polling_entity* pollent,
+      size_t parent_data_size);
+
  private:
   class CallData;
   class ResolverResultHandler;
@@ -354,10 +358,6 @@ class ClientChannel {
 // same API as RefCounted<>, so that it can be used with RefCountedPtr<>.
 class ClientChannel::LoadBalancedCall {
  public:
-  static RefCountedPtr<LoadBalancedCall> Create(
-      ClientChannel* chand, const grpc_call_element_args& args,
-      grpc_polling_entity* pollent, size_t parent_data_size);
-
   LoadBalancedCall(ClientChannel* chand, const grpc_call_element_args& args,
                    grpc_polling_entity* pollent);
   ~LoadBalancedCall();

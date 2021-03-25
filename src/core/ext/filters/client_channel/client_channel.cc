@@ -362,8 +362,7 @@ class ClientChannel::DynamicTerminationFilterChannelData::
         calld->call_context_,    calld->path_,
         calld->call_start_time_, calld->deadline_,
         calld->arena_,           calld->call_combiner_};
-    calld->lb_call_ = ClientChannel::LoadBalancedCall::Create(client_channel,
-                                                              args, pollent, 0);
+    calld->lb_call_ = client_channel->CreateLoadBalancedCall(args, pollent, 0);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p dynamic_termination_calld=%p: create lb_call=%p", chand,
@@ -1165,6 +1164,20 @@ ClientChannel::~ClientChannel() {
   grpc_client_channel_stop_backup_polling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
   GRPC_ERROR_UNREF(disconnect_error_.Load(MemoryOrder::RELAXED));
+}
+
+RefCountedPtr<ClientChannel::LoadBalancedCall>
+ClientChannel::CreateLoadBalancedCall(const grpc_call_element_args& args,
+                                      grpc_polling_entity* pollent,
+                                      size_t parent_data_size) {
+  const size_t alloc_size =
+      parent_data_size > 0
+          ? (GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(LoadBalancedCall)) +
+             parent_data_size)
+          : sizeof(LoadBalancedCall);
+  auto* lb_call = static_cast<LoadBalancedCall*>(args.arena->Alloc(alloc_size));
+  new (lb_call) LoadBalancedCall(this, args, pollent);
+  return lb_call;
 }
 
 namespace {
@@ -2508,21 +2521,6 @@ class ClientChannel::LoadBalancedCall::LbCallState
 //
 // LoadBalancedCall
 //
-
-RefCountedPtr<ClientChannel::LoadBalancedCall>
-ClientChannel::LoadBalancedCall::Create(ClientChannel* chand,
-                                        const grpc_call_element_args& args,
-                                        grpc_polling_entity* pollent,
-                                        size_t parent_data_size) {
-  const size_t alloc_size =
-      parent_data_size > 0
-          ? (GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(LoadBalancedCall)) +
-             parent_data_size)
-          : sizeof(LoadBalancedCall);
-  auto* lb_call = static_cast<LoadBalancedCall*>(args.arena->Alloc(alloc_size));
-  new (lb_call) LoadBalancedCall(chand, args, pollent);
-  return lb_call;
-}
 
 ClientChannel::LoadBalancedCall::LoadBalancedCall(
     ClientChannel* chand, const grpc_call_element_args& args,

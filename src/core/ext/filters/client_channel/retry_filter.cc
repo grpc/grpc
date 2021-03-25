@@ -2127,8 +2127,8 @@ void RetryFilter::CallData::CreateLbCall(void* arg, grpc_error* /*error*/) {
       calld->call_context_,    calld->path_,
       calld->call_start_time_, calld->deadline_,
       calld->arena_,           calld->call_combiner_};
-  calld->lb_call_ = ClientChannel::LoadBalancedCall::Create(
-      calld->chand_->client_channel_, args, calld->pollent_, parent_data_size);
+  calld->lb_call_ = calld->chand_->client_channel_->CreateLoadBalancedCall(
+      args, calld->pollent_, parent_data_size);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: create lb_call=%p", calld->chand_,
             calld, calld->lb_call_.get());
