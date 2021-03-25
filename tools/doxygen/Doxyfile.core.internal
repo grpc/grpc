@@ -959,6 +959,10 @@ src/core/ext/filters/client_channel/resolver_registry.cc \
 src/core/ext/filters/client_channel/resolver_registry.h \
 src/core/ext/filters/client_channel/resolver_result_parsing.cc \
 src/core/ext/filters/client_channel/resolver_result_parsing.h \
+src/core/ext/filters/client_channel/retry_filter.cc \
+src/core/ext/filters/client_channel/retry_filter.h \
+src/core/ext/filters/client_channel/retry_service_config.cc \
+src/core/ext/filters/client_channel/retry_service_config.h \
 src/core/ext/filters/client_channel/retry_throttle.cc \
 src/core/ext/filters/client_channel/retry_throttle.h \
 src/core/ext/filters/client_channel/server_address.cc \

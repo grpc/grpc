@@ -60,6 +60,12 @@
 // Channel arg key for server URI string.
 #define GRPC_ARG_SERVER_URI "grpc.server_uri"
 
+// Channel arg containing a pointer to the ClientChannel object.
+#define GRPC_ARG_CLIENT_CHANNEL "grpc.internal.client_channel"
+
+// Channel arg containing a pointer to the ServiceConfig object.
+#define GRPC_ARG_SERVICE_CONFIG_OBJ "grpc.internal.service_config_obj"
+
 // Max number of batches that can be pending on a call at any given
 // time.  This includes one batch for each of the following ops:
 //   recv_initial_metadata
@@ -75,9 +81,6 @@ namespace grpc_core {
 class ClientChannel {
  public:
   static const grpc_channel_filter kFilterVtable;
-
-// FIXME: move retry code to its own filter
-  class RetryingCall;
 
   class LoadBalancedCall;
 
