@@ -46,7 +46,9 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
   # Fetch keys per https://rvm.io/rvm/install
-  gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
+  # Force use of an IPv4 key server to avoid running into https://github.com/rvm/rvm/issues/4215
+  KEYSERVER_IPV4_ADDRESS="$(host pool.sks-keyservers.net | grep 'has address' | head -n1 | awk '{print $4}')"
+  gpg --keyserver "hkp://${KEYSERVER_IPV4_ADDRESS}" --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB
   rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
   source $HOME/.rvm/scripts/rvm
   for RUBY_VERSION in 2.5.0 2.7.0 3.0.0; do
