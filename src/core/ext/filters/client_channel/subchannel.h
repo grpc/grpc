@@ -180,28 +180,29 @@ class Subchannel : public DualRefCounted<Subchannel> {
     ConnectivityStateChange PopConnectivityStateChange();
 
    private:
+    Mutex mu_;  // protects the queue
     // Keeps track of the updates that the watcher instance must be notified of.
     // TODO(yashkt): This is currently needed to send the state updates in the
     // right order when asynchronously notifying. This will no longer be
     // necessary when we have access to EventManager.
-    std::deque<ConnectivityStateChange> connectivity_state_queue_;
-    Mutex mu_;  // protects the queue
+    std::deque<ConnectivityStateChange> connectivity_state_queue_
+        ABSL_GUARDED_BY(&mu_);
   };
-
-  // The ctor and dtor are not intended to use directly.
-  Subchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
-             const grpc_channel_args* args);
-  ~Subchannel() override;
 
   // Creates a subchannel given \a connector and \a args.
   static RefCountedPtr<Subchannel> Create(
       OrphanablePtr<SubchannelConnector> connector,
       const grpc_channel_args* args);
 
+  // The ctor and dtor are not intended to use directly.
+  Subchannel(SubchannelKey key, OrphanablePtr<SubchannelConnector> connector,
+             const grpc_channel_args* args);
+  ~Subchannel() override;
+
   // Throttles keepalive time to \a new_keepalive_time iff \a new_keepalive_time
   // is larger than the subchannel's current keepalive time. The updated value
   // will have an affect when the subchannel creates a new ConnectedSubchannel.
-  void ThrottleKeepaliveTime(int new_keepalive_time);
+  void ThrottleKeepaliveTime(int new_keepalive_time) ABSL_LOCKS_EXCLUDED(mu_);
 
   // Gets the string representing the subchannel address.
   // Caller doesn't take ownership.
@@ -218,7 +219,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // If the return value is GRPC_CHANNEL_READY, also sets *connected_subchannel.
   grpc_connectivity_state CheckConnectivityState(
       const absl::optional<std::string>& health_check_service_name,
-      RefCountedPtr<ConnectedSubchannel>* connected_subchannel);
+      RefCountedPtr<ConnectedSubchannel>* connected_subchannel)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   // Starts watching the subchannel's connectivity state.
   // The first callback to the watcher will be delivered when the
@@ -231,26 +233,27 @@ class Subchannel : public DualRefCounted<Subchannel> {
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
       const absl::optional<std::string>& health_check_service_name,
-      RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
+      RefCountedPtr<ConnectivityStateWatcherInterface> watcher)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.
   void CancelConnectivityStateWatch(
       const absl::optional<std::string>& health_check_service_name,
-      ConnectivityStateWatcherInterface* watcher);
+      ConnectivityStateWatcherInterface* watcher) ABSL_LOCKS_EXCLUDED(mu_);
 
   // Attempt to connect to the backend.  Has no effect if already connected.
-  void AttemptToConnect();
+  void AttemptToConnect() ABSL_LOCKS_EXCLUDED(mu_);
 
   // Resets the connection backoff of the subchannel.
   // TODO(roth): Move connection backoff out of subchannels and up into LB
   // policy code (probably by adding a SubchannelGroup between
   // SubchannelList and SubchannelData), at which point this method can
   // go away.
-  void ResetBackoff();
+  void ResetBackoff() ABSL_LOCKS_EXCLUDED(mu_);
 
   // Tears down any existing connection, and arranges for destruction
-  void Orphan() override;
+  void Orphan() override ABSL_LOCKS_EXCLUDED(mu_);
 
   // Returns a new channel arg encoding the subchannel address as a URI
   // string. Caller is responsible for freeing the string.
@@ -311,11 +314,12 @@ class Subchannel : public DualRefCounted<Subchannel> {
                              ConnectivityStateWatcherInterface* watcher);
 
     // Notifies the watcher when the subchannel's state changes.
-    void NotifyLocked(grpc_connectivity_state state,
-                      const absl::Status& status);
+    void NotifyLocked(grpc_connectivity_state state, const absl::Status& status)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Subchannel::mu_);
 
     grpc_connectivity_state CheckConnectivityStateLocked(
-        Subchannel* subchannel, const std::string& health_check_service_name);
+        Subchannel* subchannel, const std::string& health_check_service_name)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&Subchannel::mu_);
 
     void ShutdownLocked();
 
@@ -331,14 +335,17 @@ class Subchannel : public DualRefCounted<Subchannel> {
 
   // Sets the subchannel's connectivity state to \a state.
   void SetConnectivityStateLocked(grpc_connectivity_state state,
-                                  const absl::Status& status);
+                                  const absl::Status& status)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Methods for connection.
-  void MaybeStartConnectingLocked();
-  static void OnRetryAlarm(void* arg, grpc_error* error);
-  void ContinueConnectingLocked();
-  static void OnConnectingFinished(void* arg, grpc_error* error);
-  bool PublishTransportLocked();
+  void MaybeStartConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  static void OnRetryAlarm(void* arg, grpc_error* error)
+      ABSL_LOCKS_EXCLUDED(mu_);
+  void ContinueConnectingLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  static void OnConnectingFinished(void* arg, grpc_error* error)
+      ABSL_LOCKS_EXCLUDED(mu_);
+  bool PublishTransportLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // The subchannel pool this subchannel is in.
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
@@ -349,44 +356,44 @@ class Subchannel : public DualRefCounted<Subchannel> {
   grpc_channel_args* args_;
   // pollset_set tracking who's interested in a connection being setup.
   grpc_pollset_set* pollset_set_;
+  // Channelz tracking.
+  RefCountedPtr<channelz::SubchannelNode> channelz_node_;
+
+  // Connection state.
+  OrphanablePtr<SubchannelConnector> connector_;
+  SubchannelConnector::Result connecting_result_;
+  grpc_closure on_connecting_finished_;
+
   // Protects the other members.
   Mutex mu_;
 
-  // Connection states.
-  OrphanablePtr<SubchannelConnector> connector_;
-  // Set during connection.
-  SubchannelConnector::Result connecting_result_;
-  grpc_closure on_connecting_finished_;
   // Active connection, or null.
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  bool connecting_ = false;
-  bool disconnected_ = false;
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_ ABSL_GUARDED_BY(mu_);
+  bool connecting_ ABSL_GUARDED_BY(mu_) = false;
+  bool disconnected_ ABSL_GUARDED_BY(mu_) = false;
 
   // Connectivity state tracking.
-  grpc_connectivity_state state_ = GRPC_CHANNEL_IDLE;
-  absl::Status status_;
+  grpc_connectivity_state state_ ABSL_GUARDED_BY(mu_) = GRPC_CHANNEL_IDLE;
+  absl::Status status_ ABSL_GUARDED_BY(mu_);
   // The list of watchers without a health check service name.
-  ConnectivityStateWatcherList watcher_list_;
+  ConnectivityStateWatcherList watcher_list_ ABSL_GUARDED_BY(mu_);
   // The map of watchers with health check service names.
-  HealthWatcherMap health_watcher_map_;
+  HealthWatcherMap health_watcher_map_ ABSL_GUARDED_BY(mu_);
 
   // Backoff state.
-  BackOff backoff_;
-  grpc_millis next_attempt_deadline_;
-  grpc_millis min_connect_timeout_ms_;
-  bool backoff_begun_ = false;
+  BackOff backoff_ ABSL_GUARDED_BY(mu_);
+  grpc_millis next_attempt_deadline_ ABSL_GUARDED_BY(mu_);
+  grpc_millis min_connect_timeout_ms_ ABSL_GUARDED_BY(mu_);
+  bool backoff_begun_ ABSL_GUARDED_BY(mu_) = false;
 
   // Retry alarm.
-  grpc_timer retry_alarm_;
-  grpc_closure on_retry_alarm_;
-  bool have_retry_alarm_ = false;
+  grpc_timer retry_alarm_ ABSL_GUARDED_BY(mu_);
+  grpc_closure on_retry_alarm_ ABSL_GUARDED_BY(mu_);
+  bool have_retry_alarm_ ABSL_GUARDED_BY(mu_) = false;
   // reset_backoff() was called while alarm was pending.
-  bool retry_immediately_ = false;
+  bool retry_immediately_ ABSL_GUARDED_BY(mu_) = false;
   // Keepalive time period (-1 for unset)
-  int keepalive_time_ = -1;
-
-  // Channelz tracking.
-  RefCountedPtr<channelz::SubchannelNode> channelz_node_;
+  int keepalive_time_ ABSL_GUARDED_BY(mu_) = -1;
 };
 
 }  // namespace grpc_core

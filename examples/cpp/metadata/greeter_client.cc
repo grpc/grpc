@@ -31,9 +31,9 @@
 using grpc::Channel;
 using grpc::ClientContext;
 using grpc::Status;
-using helloworld::HelloRequest;
-using helloworld::HelloReply;
 using helloworld::Greeter;
+using helloworld::HelloReply;
+using helloworld::HelloRequest;
 
 class CustomHeaderClient {
  public:
@@ -57,9 +57,8 @@ class CustomHeaderClient {
     // Setting custom metadata to be sent to the server
     context.AddMetadata("custom-header", "Custom Value");
 
-    // Setting custom binary metadata 
-    char bytes[8] = {'\0', '\1', '\2', '\3',
-                     '\4', '\5', '\6', '\7'};
+    // Setting custom binary metadata
+    char bytes[8] = {'\0', '\1', '\2', '\3', '\4', '\5', '\6', '\7'};
     context.AddMetadata("custom-bin", std::string(bytes, 8));
 
     // The actual RPC.
@@ -67,8 +66,16 @@ class CustomHeaderClient {
 
     // Act upon its status.
     if (status.ok()) {
-      std::cout << "Client received initial metadata from server: " << context.GetServerInitialMetadata().find("custom-server-metadata")->second << std::endl;
-      std::cout << "Client received trailing metadata from server: " << context.GetServerTrailingMetadata().find("custom-trailing-metadata")->second << std::endl;
+      std::cout << "Client received initial metadata from server: "
+                << context.GetServerInitialMetadata()
+                       .find("custom-server-metadata")
+                       ->second
+                << std::endl;
+      std::cout << "Client received trailing metadata from server: "
+                << context.GetServerTrailingMetadata()
+                       .find("custom-trailing-metadata")
+                       ->second
+                << std::endl;
       return reply.message();
     } else {
       std::cout << status.error_code() << ": " << status.error_message()
