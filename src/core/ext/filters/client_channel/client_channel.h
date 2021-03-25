@@ -139,7 +139,6 @@ class ClientChannel {
  private:
   class CallData;
   class ResolverResultHandler;
-  class DynamicTerminationFilterChannelData;
   class SubchannelWrapper;
   class ClientChannelControlHelper;
   class ConnectivityWatcherAdder;

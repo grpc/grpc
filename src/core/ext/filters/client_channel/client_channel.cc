@@ -279,27 +279,23 @@ const grpc_arg_pointer_vtable kServiceConfigObjArgPointerVtable = {
     ServiceConfigObjArgCopy, ServiceConfigObjArgDestroy,
     ServiceConfigObjArgCmp};
 
-}  // namespace
-
-class ClientChannel::DynamicTerminationFilterChannelData {
+class DynamicTerminationFilter {
  public:
-  class DynamicTerminationFilterCallData;
+  class CallData;
 
-  static const grpc_channel_filter kDynamicTerminationFilterVtable;
+  static const grpc_channel_filter kFilterVtable;
 
   static grpc_error* Init(grpc_channel_element* elem,
                           grpc_channel_element_args* args) {
     GPR_ASSERT(args->is_last);
-    GPR_ASSERT(elem->filter == &kDynamicTerminationFilterVtable);
-    new (elem->channel_data)
-        DynamicTerminationFilterChannelData(args->channel_args);
+    GPR_ASSERT(elem->filter == &kFilterVtable);
+    new (elem->channel_data) DynamicTerminationFilter(args->channel_args);
     return GRPC_ERROR_NONE;
   }
 
   static void Destroy(grpc_channel_element* elem) {
-    auto* chand =
-        static_cast<DynamicTerminationFilterChannelData*>(elem->channel_data);
-    chand->~DynamicTerminationFilterChannelData();
+    auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
+    chand->~DynamicTerminationFilter();
   }
 
   // Will never be called.
@@ -309,32 +305,30 @@ class ClientChannel::DynamicTerminationFilterChannelData {
                              const grpc_channel_info* /*info*/) {}
 
  private:
-  explicit DynamicTerminationFilterChannelData(const grpc_channel_args* args)
+  explicit DynamicTerminationFilter(const grpc_channel_args* args)
       : chand_(grpc_channel_args_find_pointer<ClientChannel>(
             args, GRPC_ARG_CLIENT_CHANNEL)) {}
 
   ClientChannel* chand_;
 };
 
-class ClientChannel::DynamicTerminationFilterChannelData::
-    DynamicTerminationFilterCallData {
+class DynamicTerminationFilter::CallData {
  public:
   static grpc_error* Init(grpc_call_element* elem,
                           const grpc_call_element_args* args) {
-    new (elem->call_data) DynamicTerminationFilterCallData(*args);
+    new (elem->call_data) CallData(*args);
     return GRPC_ERROR_NONE;
   }
 
   static void Destroy(grpc_call_element* elem,
                       const grpc_call_final_info* /*final_info*/,
                       grpc_closure* then_schedule_closure) {
-    auto* calld =
-        static_cast<DynamicTerminationFilterCallData*>(elem->call_data);
+    auto* calld = static_cast<CallData*>(elem->call_data);
     RefCountedPtr<SubchannelCall> subchannel_call;
     if (GPR_LIKELY(calld->lb_call_ != nullptr)) {
       subchannel_call = calld->lb_call_->subchannel_call();
     }
-    calld->~DynamicTerminationFilterCallData();
+    calld->~CallData();
     if (GPR_LIKELY(subchannel_call != nullptr)) {
       subchannel_call->SetAfterCallStackDestroy(then_schedule_closure);
     } else {
@@ -345,17 +339,14 @@ class ClientChannel::DynamicTerminationFilterChannelData::
 
   static void StartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
-    auto* calld =
-        static_cast<DynamicTerminationFilterCallData*>(elem->call_data);
+    auto* calld = static_cast<CallData*>(elem->call_data);
     calld->lb_call_->StartTransportStreamOpBatch(batch);
   }
 
   static void SetPollent(grpc_call_element* elem,
                          grpc_polling_entity* pollent) {
-    auto* calld =
-        static_cast<DynamicTerminationFilterCallData*>(elem->call_data);
-    auto* chand =
-        static_cast<DynamicTerminationFilterChannelData*>(elem->channel_data);
+    auto* calld = static_cast<CallData*>(elem->call_data);
+    auto* chand = static_cast<DynamicTerminationFilter*>(elem->channel_data);
     ClientChannel* client_channel = chand->chand_;
     grpc_call_element_args args = {
         calld->owning_call_,     nullptr,
@@ -371,7 +362,7 @@ class ClientChannel::DynamicTerminationFilterChannelData::
   }
 
  private:
-  explicit DynamicTerminationFilterCallData(const grpc_call_element_args& args)
+  explicit CallData(const grpc_call_element_args& args)
       : path_(grpc_slice_ref_internal(args.path)),
         call_start_time_(args.start_time),
         deadline_(args.deadline),
@@ -380,7 +371,7 @@ class ClientChannel::DynamicTerminationFilterChannelData::
         call_combiner_(args.call_combiner),
         call_context_(args.context) {}
 
-  ~DynamicTerminationFilterCallData() { grpc_slice_unref_internal(path_); }
+  ~CallData() { grpc_slice_unref_internal(path_); }
 
   grpc_slice path_;  // Request path.
   gpr_cycle_counter call_start_time_;
@@ -390,28 +381,24 @@ class ClientChannel::DynamicTerminationFilterChannelData::
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
 
-  RefCountedPtr<LoadBalancedCall> lb_call_;
+  RefCountedPtr<ClientChannel::LoadBalancedCall> lb_call_;
 };
 
-const grpc_channel_filter ClientChannel::DynamicTerminationFilterChannelData::
-    kDynamicTerminationFilterVtable = {
-        ClientChannel::DynamicTerminationFilterChannelData::
-            DynamicTerminationFilterCallData::StartTransportStreamOpBatch,
-        ClientChannel::DynamicTerminationFilterChannelData::StartTransportOp,
-        sizeof(ClientChannel::DynamicTerminationFilterChannelData::
-                   DynamicTerminationFilterCallData),
-        ClientChannel::DynamicTerminationFilterChannelData::
-            DynamicTerminationFilterCallData::Init,
-        ClientChannel::DynamicTerminationFilterChannelData::
-            DynamicTerminationFilterCallData::SetPollent,
-        ClientChannel::DynamicTerminationFilterChannelData::
-            DynamicTerminationFilterCallData::Destroy,
-        sizeof(ClientChannel::DynamicTerminationFilterChannelData),
-        ClientChannel::DynamicTerminationFilterChannelData::Init,
-        ClientChannel::DynamicTerminationFilterChannelData::Destroy,
-        ClientChannel::DynamicTerminationFilterChannelData::GetChannelInfo,
-        "dynamic_filter_termination",
+const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
+    DynamicTerminationFilter::CallData::StartTransportStreamOpBatch,
+    DynamicTerminationFilter::StartTransportOp,
+    sizeof(DynamicTerminationFilter::CallData),
+    DynamicTerminationFilter::CallData::Init,
+    DynamicTerminationFilter::CallData::SetPollent,
+    DynamicTerminationFilter::CallData::Destroy,
+    sizeof(DynamicTerminationFilter),
+    DynamicTerminationFilter::Init,
+    DynamicTerminationFilter::Destroy,
+    DynamicTerminationFilter::GetChannelInfo,
+    "dynamic_filter_termination",
 };
+
+}  // namespace
 
 //
 // ClientChannel::ResolverResultHandler
@@ -1519,8 +1506,7 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   if (enable_retries_) {
     filters.push_back(&kRetryFilterVtable);
   } else {
-    filters.push_back(
-        &DynamicTerminationFilterChannelData::kDynamicTerminationFilterVtable);
+    filters.push_back(&DynamicTerminationFilter::kFilterVtable);
   }
   absl::InlinedVector<grpc_arg, 2> args_to_add = {
       grpc_channel_arg_pointer_create(
