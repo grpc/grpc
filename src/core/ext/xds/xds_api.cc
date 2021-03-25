@@ -2283,7 +2283,7 @@ grpc_error* AddFilterChainDataForSourcePort(
     uint32_t port) {
   auto insert_result = ports_map->emplace(
       port, XdsApi::LdsUpdate::FilterChainMap::FilterChainDataSharedPtr{
-                std::move(filter_chain.filter_chain_data)});
+                filter_chain.filter_chain_data});
   if (!insert_result.second) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat(
@@ -2425,8 +2425,7 @@ XdsApi::LdsUpdate::FilterChainMap BuildFromInternalFilterChainMap(
   for (auto& destination_ip_pair :
        internal_filter_chain_map->destination_ip_map) {
     XdsApi::LdsUpdate::FilterChainMap::DestinationIp destination_ip;
-    destination_ip.prefix_range =
-        std::move(destination_ip_pair.second.prefix_range);
+    destination_ip.prefix_range = destination_ip_pair.second.prefix_range;
     for (int i = 0; i < 3; i++) {
       auto& source_ip_map = destination_ip_pair.second.source_types_array[i];
       for (auto& source_ip_pair : source_ip_map) {
