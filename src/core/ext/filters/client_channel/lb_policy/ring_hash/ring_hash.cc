@@ -245,7 +245,9 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
   // Store the weights while finding the sum.
   struct AddressWeight {
     std::string address;
-    uint32_t weight;
+    // Default weight is 1 for the cases where a weight is not provided,
+    // each occurrence of the address will be counted a weight value of 1.
+    uint32_t weight = 1;
     double normalized_weight;
   };
   std::vector<AddressWeight> address_weights;
@@ -257,14 +259,11 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
         const ServerAddressWeightAttribute*>(sd->address().GetAttribute(
         ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
     AddressWeight address_weight;
-    address_weight.address = sd->address().ToString();
+    address_weight.address =
+        grpc_sockaddr_to_string(&sd->address().address(), false);
     if (weight_attribute != nullptr) {
       GPR_ASSERT(weight_attribute->weight() != 0);
       address_weight.weight = weight_attribute->weight();
-    } else {
-      // If a weight is not provided, each occurrence of the address
-      // will be counted a weight value of one.
-      address_weight.weight = 1;
     }
     sum += address_weight.weight;
     address_weights.push_back(std::move(address_weight));
@@ -367,7 +366,13 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   absl::string_view hash =
       args.call_state->ExperimentalGetCallAttribute(kRequestRingHashAttribute);
   uint64_t h;
-  if (!absl::SimpleAtoi(hash, &h)) return result;
+  if (!absl::SimpleAtoi(hash, &h)) {
+    result.error = grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("xds ring hash value is not a number").c_str()),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
+    return result;
+  }
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) I've generally kept the variable names to make the code
   // easier to compare. NOTE: The algorithm depends on using signed integers for
@@ -398,7 +403,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(GPR_INFO,
-            "[RH %p picker %p] hashed to index %" PRIuPTR ", subchannel=%p",
+            "[RH %p picker %p] hashed to index %" PRIdPTR ", subchannel=%p",
             parent_.get(), this, midp, ring_[midp].subchannel.get());
   }
   OrphanablePtr<SubchannelConnectionAttempter> subchannel_connection_attempter;
@@ -441,7 +446,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       return result;
     }
     if (!found_first_non_failed) {
-      if (entry.connectivity_state != GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      if (entry.connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         ScheduleSubchannelConnectionAttempt(entry.subchannel);
       } else {
         if (entry.connectivity_state == GRPC_CHANNEL_IDLE) {
@@ -451,6 +456,10 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       }
     }
   }
+  result.error = grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          absl::StrCat("xds ring hash unable to hash to a subchannel").c_str()),
+      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
   return result;
 }
 
@@ -508,6 +517,14 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
   RingHash* p = static_cast<RingHash*>(policy());
   // Only set connectivity state if this is the current subchannel list.
   if (p->subchannel_list_.get() != this) return false;
+  // The overall aggregation rules here are:
+  // 1. If there is at least one subchannel in READY state, report READY.
+  // 2. If there are 2 or more subchannels in TRANSIENT_FAILURE state, report
+  // TRANSIENT_FAILURE.
+  // 3. If there is at least one subchannel in CONNECTING state, report
+  // CONNECTING.
+  // 4. If there is at least one subchannel in IDLE state, report IDLE.
+  // 5. Otherwise, report TRANSIENT_FAILURE.
   if (num_ready_ > 0) {
     /* READY */
     p->channel_control_helper()->UpdateState(
@@ -516,23 +533,13 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
                                   this));
     return false;
   }
-  if (num_connecting_ > 0) {
+  if (num_connecting_ > 0 && num_transient_failure_ < 2) {
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
     return false;
   }
-  if (num_transient_failure_ > 2) {
-    grpc_error* error =
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "connections to backend failing or idle"),
-                           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-    p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
-        absl::make_unique<TransientFailurePicker>(error));
-    return true;
-  }
-  if (num_idle_ > 0) {
+  if (num_idle_ > 0 && num_transient_failure_ < 2) {
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_IDLE, absl::Status(),
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
@@ -540,7 +547,7 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
   }
   grpc_error* error =
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                             "connections to all backends failing"),
+                             "connections to backend failing or idle"),
                          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   p->channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
@@ -667,8 +674,20 @@ void RingHash::UpdateLocked(UpdateArgs args) {
             this, args.addresses.size());
   }
   config_ = std::move(args.config);
+  ServerAddressList addresses = std::move(args.addresses);
+  // Filter out any address with weight 0.
+  for (auto it = addresses.begin(); it != addresses.end();) {
+    const ServerAddressWeightAttribute* weight_attribute =
+        static_cast<const ServerAddressWeightAttribute*>(it->GetAttribute(
+            ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
+    if (weight_attribute != nullptr && weight_attribute->weight() == 0) {
+      it = addresses.erase(it);
+    } else {
+      ++it;
+    }
+  }
   subchannel_list_ = MakeOrphanable<RingHashSubchannelList>(
-      this, &grpc_lb_ring_hash_trace, std::move(args.addresses), *args.args);
+      this, &grpc_lb_ring_hash_trace, std::move(addresses), *args.args);
   if (subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately transition to TRANSIENT_FAILURE.
     grpc_error* error =
@@ -711,8 +730,7 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
     if (ring_hash_it != ring_hash.end()) {
       if (ring_hash_it->second.type() != Json::Type::NUMBER) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:min_ring_size error: should be of "
-            "number"));
+            "field:min_ring_size error: should be of type number"));
       } else {
         min_ring_size = gpr_parse_nonnegative_int(
             ring_hash_it->second.string_value().c_str());
@@ -722,8 +740,7 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
     if (ring_hash_it != ring_hash.end()) {
       if (ring_hash_it->second.type() != Json::Type::NUMBER) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:max_ring_size error: should be of "
-            "number"));
+            "field:max_ring_size error: should be of type number"));
       } else {
         max_ring_size = gpr_parse_nonnegative_int(
             ring_hash_it->second.string_value().c_str());

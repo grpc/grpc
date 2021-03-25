@@ -2760,10 +2760,11 @@ grpc_error* ServerAddressParseAndAppend(
   grpc_resolved_address addr;
   grpc_string_to_sockaddr(&addr, address_str.c_str(), port);
   // Append the address to the list.
-  ServerAddress server_address(addr, nullptr);
-  list->emplace_back(server_address.WithAttribute(
-      ServerAddressWeightAttribute::kServerAddressWeightAttributeKey,
-      absl::make_unique<ServerAddressWeightAttribute>(weight)));
+  std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
+      attributes;
+  attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
+      absl::make_unique<ServerAddressWeightAttribute>(weight);
+  list->emplace_back(addr, nullptr, std::move(attributes));
   return GRPC_ERROR_NONE;
 }
 
