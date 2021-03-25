@@ -123,24 +123,25 @@ const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForSourcePort(
 }
 
 const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForSourceIp(
-    const XdsApi::LdsUpdate::FilterChainMap::SourceIpMap& source_ip_map,
+    const XdsApi::LdsUpdate::FilterChainMap::SourceIpVector& source_ip_vector,
     const grpc_resolved_address* source_ip, absl::string_view port) {
   const XdsApi::LdsUpdate::FilterChainMap::SourceIp* best_match = nullptr;
-  for (const auto& pair : source_ip_map) {
+  for (const auto& entry : source_ip_vector) {
     // Special case for catch-all
-    if (pair.second.prefix_len == -1) {
+    if (!entry.prefix_range.has_value()) {
       if (best_match == nullptr) {
-        best_match = &pair.second;
+        best_match = &entry;
       }
       continue;
     }
-    if (best_match != nullptr &&
-        best_match->prefix_len >= pair.second.prefix_len) {
+    if (best_match != nullptr && best_match->prefix_range.has_value() &&
+        best_match->prefix_range->prefix_len >=
+            entry.prefix_range->prefix_len) {
       continue;
     }
-    if (grpc_sockaddr_match_subnet(source_ip, &pair.second.address,
-                                   pair.second.prefix_len)) {
-      best_match = &pair.second;
+    if (grpc_sockaddr_match_subnet(source_ip, &entry.prefix_range->address,
+                                   entry.prefix_range->prefix_len)) {
+      best_match = &entry;
     }
   }
   if (best_match == nullptr) return nullptr;
@@ -193,8 +194,8 @@ const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForSourceType(
 }
 
 const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForDestinationIp(
-    const XdsApi::LdsUpdate::FilterChainMap::DestinationIpMap
-        destination_ip_map,
+    const XdsApi::LdsUpdate::FilterChainMap::DestinationIpVector
+        destination_ip_vector,
     grpc_endpoint* tcp) {
   auto destination_uri = URI::Parse(grpc_endpoint_get_local_address(tcp));
   if (!destination_uri.ok() || (destination_uri->scheme() != "ipv4" &&
@@ -210,21 +211,23 @@ const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForDestinationIp(
   grpc_string_to_sockaddr(&destination_addr, host.c_str(),
                           0 /* port doesn't matter here */);
   const XdsApi::LdsUpdate::FilterChainMap::DestinationIp* best_match = nullptr;
-  for (const auto& pair : destination_ip_map) {
+  for (const auto& entry : destination_ip_vector) {
     // Special case for catch-all
-    if (pair.second.prefix_len == -1) {
+    if (!entry.prefix_range.has_value()) {
       if (best_match == nullptr) {
-        best_match = &pair.second;
+        best_match = &entry;
       }
       continue;
     }
-    if (best_match != nullptr &&
-        best_match->prefix_len >= pair.second.prefix_len) {
+    if (best_match != nullptr && best_match->prefix_range.has_value() &&
+        best_match->prefix_range->prefix_len >=
+            entry.prefix_range->prefix_len) {
       continue;
     }
-    if (grpc_sockaddr_match_subnet(&destination_addr, &pair.second.address,
-                                   pair.second.prefix_len)) {
-      best_match = &pair.second;
+    if (grpc_sockaddr_match_subnet(&destination_addr,
+                                   &entry.prefix_range->address,
+                                   entry.prefix_range->prefix_len)) {
+      best_match = &entry;
     }
   }
   if (best_match == nullptr) return nullptr;
@@ -300,7 +303,7 @@ absl::StatusOr<grpc_channel_args*>
 FilterChainMatchManager::UpdateChannelArgsForConnection(grpc_channel_args* args,
                                                         grpc_endpoint* tcp) {
   const auto* filter_chain = FindFilterChainDataForDestinationIp(
-      filter_chain_map_.destination_ip_map, tcp);
+      filter_chain_map_.destination_ip_vector, tcp);
   if (filter_chain == nullptr && default_filter_chain_.has_value()) {
     filter_chain = &default_filter_chain_.value();
   }

@@ -236,6 +236,18 @@ class XdsApi {
     bool Empty() const;
   };
 
+  struct CidrRange {
+    grpc_resolved_address address;
+    uint32_t prefix_len;
+
+    bool operator==(const CidrRange& other) const {
+      return memcmp(&address, &other.address, sizeof(address)) == 0 &&
+             prefix_len == other.prefix_len;
+    }
+
+    std::string ToString() const;
+  };
+
   // TODO(roth): When we can use absl::variant<>, consider using that
   // here, to enforce the fact that only one of the two fields can be set.
   struct LdsUpdate {
@@ -304,7 +316,7 @@ class XdsApi {
     // - destination IP address
     // - server name (never matched, so not present in map)
     // - transport protocol (allows only "raw_buffer" or unset, prefers the
-    //   former)
+    //   former, so only one of those two types is present in map)
     // - application protocol (never matched, so not present in map)
     // - connection source type (any, local or external)
     // - source IP address
@@ -320,47 +332,38 @@ class XdsApi {
       };
       using SourcePortsMap = std::map<uint16_t, FilterChainDataSharedPtr>;
       struct SourceIp {
-        grpc_resolved_address address;
-        int prefix_len;
+        absl::optional<CidrRange> prefix_range;
         SourcePortsMap ports_map;
 
         bool operator==(const SourceIp& other) const {
-          return memcmp(&address, &other.address, sizeof(address)) == 0 &&
-                 prefix_len == other.prefix_len && ports_map == other.ports_map;
+          return prefix_range == other.prefix_range &&
+                 ports_map == other.ports_map;
         }
       };
-      using SourceIpMap = std::map<std::string, SourceIp>;
+      using SourceIpVector = std::vector<SourceIp>;
       enum class ConnectionSourceType {
         kAny = 0,
         kSameIpOrLoopback,
         kExternal
       };
-      using ConnectionSourceTypesArray = std::array<SourceIpMap, 3>;
+      using ConnectionSourceTypesArray = std::array<SourceIpVector, 3>;
       struct DestinationIp {
-        grpc_resolved_address address;
-        int prefix_len;
-        // We always fail match on applicaton protocols so those are not
-        // included here. We only store either filter chains without transport
-        // protocol or with the transport protocol "raw_buffer".
-        bool transport_protocol_raw_buffer_provided = false;
+        absl::optional<CidrRange> prefix_range;
         // We always fail match on server name, so those filter chains are not
         // included here.
         ConnectionSourceTypesArray source_types_array;
 
         bool operator==(const DestinationIp& other) const {
-          return memcmp(&address, &other.address, sizeof(address)) == 0 &&
-                 prefix_len == other.prefix_len &&
-                 transport_protocol_raw_buffer_provided ==
-                     other.transport_protocol_raw_buffer_provided &&
+          return prefix_range == other.prefix_range &&
                  source_types_array == other.source_types_array;
         }
       };
       // We always fail match on destination ports map
-      using DestinationIpMap = std::map<std::string, DestinationIp>;
-      DestinationIpMap destination_ip_map;
+      using DestinationIpVector = std::vector<DestinationIp>;
+      DestinationIpVector destination_ip_vector;
 
       bool operator==(const FilterChainMap& other) const {
-        return destination_ip_map == other.destination_ip_map;
+        return destination_ip_vector == other.destination_ip_vector;
       }
 
       std::string ToString() const;

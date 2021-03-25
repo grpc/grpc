@@ -8660,11 +8660,12 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "Duplicate matching rules detected when adding filter chain: "
-                  "{prefix_ranges={{address_prefix=127.0.0.1, prefix_len=16}, "
-                  "{address_prefix=127.0.0.1, prefix_len=32}}}"));
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr(
+          "Duplicate matching rules detected when adding filter chain: "
+          "{prefix_ranges={{address_prefix=127.0.0.0:0, prefix_len=16}, "
+          "{address_prefix=127.0.0.1:0, prefix_len=32}}}"));
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
@@ -8816,8 +8817,8 @@ TEST_P(XdsServerFilterChainMatchTest,
       response_state.error_message,
       ::testing::HasSubstr(
           "Duplicate matching rules detected when adding filter chain: "
-          "{source_prefix_ranges={{address_prefix=127.0.0.1, prefix_len=16}, "
-          "{address_prefix=127.0.0.1, prefix_len=32}}}"));
+          "{source_prefix_ranges={{address_prefix=127.0.0.0:0, prefix_len=16}, "
+          "{address_prefix=127.0.0.1:0, prefix_len=32}}}"));
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {

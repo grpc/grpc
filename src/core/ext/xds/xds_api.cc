@@ -522,6 +522,16 @@ bool XdsApi::DownstreamTlsContext::Empty() const {
 }
 
 //
+// XdsApi::CidrRange
+//
+
+std::string XdsApi::CidrRange::ToString() const {
+  return absl::StrCat(
+      "{address_prefix=", grpc_sockaddr_to_string(&address, false),
+      ", prefix_len=", prefix_len, "}");
+}
+
+//
 // XdsApi::LdsUpdate::HttpConnectionManager
 //
 
@@ -566,54 +576,111 @@ std::string XdsApi::LdsUpdate::FilterChainData::ToString() const {
       " http_connection_manager=", http_connection_manager.ToString(), "}");
 }
 
+struct FilterChain {
+  struct FilterChainMatch {
+    uint32_t destination_port = 0;
+    std::vector<XdsApi::CidrRange> prefix_ranges;
+    XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType source_type =
+        XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType::kAny;
+    std::vector<XdsApi::CidrRange> source_prefix_ranges;
+    std::vector<uint32_t> source_ports;
+    std::vector<std::string> server_names;
+    std::string transport_protocol;
+    std::vector<std::string> application_protocols;
+
+    std::string ToString() const;
+  } filter_chain_match;
+
+  std::shared_ptr<XdsApi::LdsUpdate::FilterChainData> filter_chain_data;
+};
+
+//
+// FilterChain::FilterChainMatch
+//
+
+std::string FilterChain::FilterChainMatch::ToString() const {
+  absl::InlinedVector<std::string, 8> contents;
+  if (destination_port != 0) {
+    contents.push_back(absl::StrCat("destination_port=", destination_port));
+  }
+  if (!prefix_ranges.empty()) {
+    std::vector<std::string> prefix_ranges_content;
+    for (const auto& range : prefix_ranges) {
+      prefix_ranges_content.push_back(range.ToString());
+    }
+    contents.push_back(absl::StrCat(
+        "prefix_ranges={", absl::StrJoin(prefix_ranges_content, ", "), "}"));
+  }
+  if (source_type == XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType::
+                         kSameIpOrLoopback) {
+    contents.push_back("source_type=SAME_IP_OR_LOOPBACK");
+  } else if (source_type == XdsApi::LdsUpdate::FilterChainMap::
+                                ConnectionSourceType::kExternal) {
+    contents.push_back("source_type=EXTERNAL");
+  }
+  if (!source_prefix_ranges.empty()) {
+    std::vector<std::string> source_prefix_ranges_content;
+    for (const auto& range : source_prefix_ranges) {
+      source_prefix_ranges_content.push_back(range.ToString());
+    }
+    contents.push_back(
+        absl::StrCat("source_prefix_ranges={",
+                     absl::StrJoin(source_prefix_ranges_content, ", "), "}"));
+  }
+  if (!source_ports.empty()) {
+    contents.push_back(
+        absl::StrCat("source_ports={", absl::StrJoin(source_ports, ", "), "}"));
+  }
+  if (!server_names.empty()) {
+    contents.push_back(
+        absl::StrCat("server_names={", absl::StrJoin(server_names, ", "), "}"));
+  }
+  if (!transport_protocol.empty()) {
+    contents.push_back(absl::StrCat("transport_protocol=", transport_protocol));
+  }
+  if (!application_protocols.empty()) {
+    contents.push_back(absl::StrCat("application_protocols={",
+                                    absl::StrJoin(application_protocols, ", "),
+                                    "}"));
+  }
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
+}
+
 //
 // XdsApi::LdsUpdate::FilterChainMap
 //
 
 std::string XdsApi::LdsUpdate::FilterChainMap::ToString() const {
   std::vector<std::string> contents;
-  for (const auto& destination_ip_pair : destination_ip_map) {
+  for (const auto& destination_ip : destination_ip_vector) {
     for (int source_type = 0; source_type < 3; ++source_type) {
-      for (const auto& source_ip_pair :
-           destination_ip_pair.second.source_types_array[source_type]) {
-        for (const auto& source_port_pair : source_ip_pair.second.ports_map) {
-          absl::InlinedVector<std::string, 5> filter_chain_match_content;
-          if (!destination_ip_pair.first.empty()) {
-            filter_chain_match_content.push_back(
-                absl::StrCat("prefix_range=", destination_ip_pair.first));
+      for (const auto& source_ip :
+           destination_ip.source_types_array[source_type]) {
+        for (const auto& source_port_pair : source_ip.ports_map) {
+          FilterChain::FilterChainMatch filter_chain_match;
+          if (destination_ip.prefix_range.has_value()) {
+            filter_chain_match.prefix_ranges.push_back(
+                *destination_ip.prefix_range);
           }
-          if (destination_ip_pair.second
-                  .transport_protocol_raw_buffer_provided) {
-            filter_chain_match_content.push_back(
-                absl::StrCat("transport_protocol=raw_buffer"));
-          }
-          if (source_type ==
-              static_cast<int>(XdsApi::LdsUpdate::FilterChainMap::
-                                   ConnectionSourceType::kSameIpOrLoopback)) {
-            filter_chain_match_content.push_back(
-                "source_type=SAME_IP_OR_LOOPBACK");
-          } else if (source_type ==
-                     static_cast<int>(XdsApi::LdsUpdate::FilterChainMap::
-                                          ConnectionSourceType::kExternal)) {
-            filter_chain_match_content.push_back("source_type=EXTERNAL");
-          }
-          if (!source_ip_pair.first.empty()) {
-            filter_chain_match_content.push_back(
-                absl::StrCat("source_prefix_range=", source_ip_pair.first));
+          filter_chain_match.source_type = static_cast<
+              XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType>(
+              source_type);
+          if (source_ip.prefix_range.has_value()) {
+            filter_chain_match.source_prefix_ranges.push_back(
+                *source_ip.prefix_range);
           }
           if (source_port_pair.first != 0) {
-            filter_chain_match_content.push_back(
-                absl::StrCat("source_port=", source_port_pair.first));
+            filter_chain_match.source_ports.push_back(source_port_pair.first);
           }
           contents.push_back(absl::StrCat(
-              "filter_chain_match={",
-              absl::StrJoin(filter_chain_match_content, ", "),
-              "}, filter_chain=", source_port_pair.second.data->ToString()));
+              "{filter_chain_match=", filter_chain_match.ToString(),
+              ", filter_chain=", source_port_pair.second.data->ToString(),
+              "}"));
         }
       }
     }
   }
-  return absl::StrJoin(contents, ", ");
+  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
 }
 
 //
@@ -2019,159 +2086,101 @@ grpc_error* DownstreamTlsContextParse(
   return GRPC_ERROR_NONE;
 }
 
-struct FilterChain {
-  struct FilterChainMatch {
-    uint32_t destination_port = 0;
-
-    struct CidrRange {
-      std::string address_prefix;
-      uint32_t prefix_len;
-
-      std::string ToString() const;
-    };
-
-    std::vector<CidrRange> prefix_ranges;
-    XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType source_type =
-        XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType::kAny;
-    std::vector<CidrRange> source_prefix_ranges;
-    std::vector<uint32_t> source_ports;
-    std::vector<std::string> server_names;
-    std::string transport_protocol;
-    std::vector<std::string> application_protocols;
-
-    std::string ToString() const;
-  } filter_chain_match;
-
-  std::shared_ptr<XdsApi::LdsUpdate::FilterChainData> filter_chain_data;
-};
-
-//
-// FilterChain::FilterChainMatch::CidrRange
-//
-
-std::string FilterChain::FilterChainMatch::CidrRange::ToString() const {
-  return absl::StrCat("{address_prefix=", address_prefix,
-                      ", prefix_len=", prefix_len, "}");
-}
-
-//
-// FilterChain::FilterChainMatch
-//
-
-std::string FilterChain::FilterChainMatch::ToString() const {
-  absl::InlinedVector<std::string, 8> contents;
-  if (destination_port != 0) {
-    contents.push_back(absl::StrCat("destination_port=", destination_port));
+grpc_error* CidrRangeParse(
+    const envoy_config_core_v3_CidrRange* cidr_range_proto,
+    XdsApi::CidrRange* cidr_range) {
+  std::string address_prefix = UpbStringToStdString(
+      envoy_config_core_v3_CidrRange_address_prefix(cidr_range_proto));
+  memset(&cidr_range->address, 0, sizeof(grpc_resolved_address));
+  grpc_sockaddr_in6* addr6 =
+      reinterpret_cast<grpc_sockaddr_in6*>(cidr_range->address.addr);
+  grpc_sockaddr_in* addr4 =
+      reinterpret_cast<grpc_sockaddr_in*>(cidr_range->address.addr);
+  if (grpc_inet_pton(GRPC_AF_INET6, address_prefix.c_str(),
+                     &addr6->sin6_addr) == 1) {
+    addr6->sin6_family = GRPC_AF_INET6;
+    cidr_range->address.len = sizeof(grpc_sockaddr_in6);
+  } else if (grpc_inet_pton(GRPC_AF_INET, address_prefix.c_str(),
+                            &addr4->sin_addr) == 1) {
+    addr4->sin_family = GRPC_AF_INET;
+    cidr_range->address.len = sizeof(grpc_sockaddr_in);
+  } else {
+    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        absl::StrCat("Failed to parse CidrAddress:", address_prefix).c_str());
   }
-  if (!prefix_ranges.empty()) {
-    std::vector<std::string> prefix_ranges_content;
-    for (const auto& range : prefix_ranges) {
-      prefix_ranges_content.push_back(range.ToString());
-    }
-    contents.push_back(absl::StrCat(
-        "prefix_ranges={", absl::StrJoin(prefix_ranges_content, ", "), "}"));
-  }
-  if (source_type == XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType::
-                         kSameIpOrLoopback) {
-    contents.push_back("source_type=SAME_IP_OR_LOOPBACK");
-  } else if (source_type == XdsApi::LdsUpdate::FilterChainMap::
-                                ConnectionSourceType::kExternal) {
-    contents.push_back("source_type=EXTERNAL");
-  }
-  if (!source_prefix_ranges.empty()) {
-    std::vector<std::string> source_prefix_ranges_content;
-    for (const auto& range : source_prefix_ranges) {
-      source_prefix_ranges_content.push_back(range.ToString());
-    }
-    contents.push_back(
-        absl::StrCat("source_prefix_ranges={",
-                     absl::StrJoin(source_prefix_ranges_content, ", "), "}"));
-  }
-  if (!source_ports.empty()) {
-    contents.push_back(
-        absl::StrCat("source_ports={", absl::StrJoin(source_ports, ", "), "}"));
-  }
-  if (!server_names.empty()) {
-    contents.push_back(
-        absl::StrCat("server_names={", absl::StrJoin(server_names, ", "), "}"));
-  }
-  if (!transport_protocol.empty()) {
-    contents.push_back(absl::StrCat("transport_protocol=", transport_protocol));
-  }
-  if (!application_protocols.empty()) {
-    contents.push_back(absl::StrCat("application_protocols={",
-                                    absl::StrJoin(application_protocols, ", "),
-                                    "}"));
-  }
-  return absl::StrCat("{", absl::StrJoin(contents, ", "), "}");
-}
-
-FilterChain::FilterChainMatch::CidrRange CidrRangeParse(
-    const envoy_config_core_v3_CidrRange* cidr_range_proto) {
-  uint32_t prefix_len = 0;
+  cidr_range->prefix_len = 0;
   auto* prefix_len_proto =
       envoy_config_core_v3_CidrRange_prefix_len(cidr_range_proto);
   if (prefix_len_proto != nullptr) {
-    prefix_len = google_protobuf_UInt32Value_value(prefix_len_proto);
+    cidr_range->prefix_len = std::min(
+        google_protobuf_UInt32Value_value(prefix_len_proto),
+        (reinterpret_cast<const grpc_sockaddr*>(cidr_range->address.addr))
+                    ->sa_family == GRPC_AF_INET
+            ? uint32_t(32)
+            : uint32_t(128));
   }
-  return {UpbStringToStdString(
-              envoy_config_core_v3_CidrRange_address_prefix(cidr_range_proto)),
-          prefix_len};
+  // Normalize the network address by masking it with prefix_len
+  grpc_sockaddr_mask_bits(&cidr_range->address, cidr_range->prefix_len);
+  return GRPC_ERROR_NONE;
 }
 
-FilterChain::FilterChainMatch FilterChainMatchParse(
-    const envoy_config_listener_v3_FilterChainMatch* filter_chain_match_proto) {
-  FilterChain::FilterChainMatch filter_chain_match;
+grpc_error* FilterChainMatchParse(
+    const envoy_config_listener_v3_FilterChainMatch* filter_chain_match_proto,
+    FilterChain::FilterChainMatch* filter_chain_match) {
   auto* destination_port =
       envoy_config_listener_v3_FilterChainMatch_destination_port(
           filter_chain_match_proto);
   if (destination_port != nullptr) {
-    filter_chain_match.destination_port =
+    filter_chain_match->destination_port =
         google_protobuf_UInt32Value_value(destination_port);
   }
   size_t size = 0;
   auto* prefix_ranges = envoy_config_listener_v3_FilterChainMatch_prefix_ranges(
       filter_chain_match_proto, &size);
-  filter_chain_match.prefix_ranges.reserve(size);
+  filter_chain_match->prefix_ranges.reserve(size);
   for (size_t i = 0; i < size; i++) {
-    filter_chain_match.prefix_ranges.push_back(
-        CidrRangeParse(prefix_ranges[i]));
+    XdsApi::CidrRange cidr_range;
+    grpc_error* error = CidrRangeParse(prefix_ranges[i], &cidr_range);
+    if (error != GRPC_ERROR_NONE) return error;
+    filter_chain_match->prefix_ranges.push_back(cidr_range);
   }
-  filter_chain_match.source_type =
+  filter_chain_match->source_type =
       static_cast<XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceType>(
           envoy_config_listener_v3_FilterChainMatch_source_type(
               filter_chain_match_proto));
   auto* source_prefix_ranges =
       envoy_config_listener_v3_FilterChainMatch_source_prefix_ranges(
           filter_chain_match_proto, &size);
-  filter_chain_match.source_prefix_ranges.reserve(size);
+  filter_chain_match->source_prefix_ranges.reserve(size);
   for (size_t i = 0; i < size; i++) {
-    filter_chain_match.source_prefix_ranges.push_back(
-        CidrRangeParse(source_prefix_ranges[i]));
+    XdsApi::CidrRange cidr_range;
+    grpc_error* error = CidrRangeParse(source_prefix_ranges[i], &cidr_range);
+    if (error != GRPC_ERROR_NONE) return error;
+    filter_chain_match->source_prefix_ranges.push_back(cidr_range);
   }
   auto* source_ports = envoy_config_listener_v3_FilterChainMatch_source_ports(
       filter_chain_match_proto, &size);
-  filter_chain_match.source_ports.reserve(size);
+  filter_chain_match->source_ports.reserve(size);
   for (size_t i = 0; i < size; i++) {
-    filter_chain_match.source_ports.push_back(source_ports[i]);
+    filter_chain_match->source_ports.push_back(source_ports[i]);
   }
   auto* server_names = envoy_config_listener_v3_FilterChainMatch_server_names(
       filter_chain_match_proto, &size);
   for (size_t i = 0; i < size; i++) {
-    filter_chain_match.server_names.push_back(
+    filter_chain_match->server_names.push_back(
         UpbStringToStdString(server_names[i]));
   }
-  filter_chain_match.transport_protocol = UpbStringToStdString(
+  filter_chain_match->transport_protocol = UpbStringToStdString(
       envoy_config_listener_v3_FilterChainMatch_transport_protocol(
           filter_chain_match_proto));
   auto* application_protocols =
       envoy_config_listener_v3_FilterChainMatch_application_protocols(
           filter_chain_match_proto, &size);
   for (size_t i = 0; i < size; i++) {
-    filter_chain_match.application_protocols.push_back(
+    filter_chain_match->application_protocols.push_back(
         UpbStringToStdString(application_protocols[i]));
   }
-  return filter_chain_match;
+  return GRPC_ERROR_NONE;
 }
 
 grpc_error* FilterChainParse(
@@ -2183,8 +2192,9 @@ grpc_error* FilterChainParse(
       envoy_config_listener_v3_FilterChain_filter_chain_match(
           filter_chain_proto);
   if (filter_chain_match != nullptr) {
-    filter_chain->filter_chain_match =
-        FilterChainMatchParse(filter_chain_match);
+    error = FilterChainMatchParse(filter_chain_match,
+                                  &filter_chain->filter_chain_match);
+    if (error != GRPC_ERROR_NONE) return error;
   }
   // Parse the filters list. Currently we only support HttpConnectionManager.
   size_t size = 0;
@@ -2264,30 +2274,21 @@ grpc_error* AddressParse(const envoy_config_core_v3_Address* address_proto,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* ParseCidrRangeToGrpcResolvedAddress(
-    const FilterChain::FilterChainMatch::CidrRange& cidr_range,
-    grpc_resolved_address* address) {
-  memset(address, 0, sizeof(grpc_resolved_address));
-  grpc_sockaddr_in6* addr6 =
-      reinterpret_cast<grpc_sockaddr_in6*>(address->addr);
-  grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(address->addr);
-  if (grpc_inet_pton(GRPC_AF_INET6, cidr_range.address_prefix.c_str(),
-                     &addr6->sin6_addr) == 1) {
-    addr6->sin6_family = GRPC_AF_INET6;
-    address->len = sizeof(grpc_sockaddr_in6);
-  } else if (grpc_inet_pton(GRPC_AF_INET, cidr_range.address_prefix.c_str(),
-                            &addr4->sin_addr) == 1) {
-    addr4->sin_family = GRPC_AF_INET;
-    address->len = sizeof(grpc_sockaddr_in);
-  } else {
-    return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-        absl::StrCat("Failed to parse CidrAddress:", cidr_range.address_prefix)
-            .c_str());
-  }
-  // Normalize the network address by masking it with prefix_len
-  grpc_sockaddr_mask_bits(address, cidr_range.prefix_len);
-  return GRPC_ERROR_NONE;
-}
+// An intermediate map for filter chains that we create to validate the list of
+// filter chains received from the control plane and to finally create
+// XdsApi::LdsUpdate::FilterChainMap
+struct InternalFilterChainMap {
+  using SourceIpMap =
+      std::map<std::string, XdsApi::LdsUpdate::FilterChainMap::SourceIp>;
+  using ConnectionSourceTypesArray = std::array<SourceIpMap, 3>;
+  struct DestinationIp {
+    absl::optional<XdsApi::CidrRange> prefix_range;
+    bool transport_protocol_raw_buffer_provided = false;
+    ConnectionSourceTypesArray source_types_array;
+  };
+  using DestinationIpMap = std::map<std::string, DestinationIp>;
+  DestinationIpMap destination_ip_map;
+};
 
 grpc_error* AddFilterChainDataForSourcePort(
     const FilterChain& filter_chain,
@@ -2323,40 +2324,23 @@ grpc_error* AddFilterChainDataForSourcePorts(
 
 grpc_error* AddFilterChainDataForSourceIpRange(
     const FilterChain& filter_chain,
-    XdsApi::LdsUpdate::FilterChainMap::SourceIpMap* source_ip_map) {
+    InternalFilterChainMap::SourceIpMap* source_ip_map) {
   if (filter_chain.filter_chain_match.source_prefix_ranges.empty()) {
     auto insert_result = source_ip_map->emplace(
         "", XdsApi::LdsUpdate::FilterChainMap::SourceIp());
-    if (insert_result.second) {
-      memset(&insert_result.first->second.address, 0,
-             sizeof(grpc_resolved_address));
-      insert_result.first->second.prefix_len = -1;
-    }
-    grpc_error* error = AddFilterChainDataForSourcePorts(
+    return AddFilterChainDataForSourcePorts(
         filter_chain, &insert_result.first->second.ports_map);
-    if (error != GRPC_ERROR_NONE) return error;
   } else {
     for (const auto& prefix_range :
          filter_chain.filter_chain_match.source_prefix_ranges) {
-      grpc_resolved_address address;
-      grpc_error* error =
-          ParseCidrRangeToGrpcResolvedAddress(prefix_range, &address);
-      if (error != GRPC_ERROR_NONE) return error;
-      std::string normalized_address = grpc_sockaddr_to_string(&address, true);
-      uint32_t prefix_len = std::min(
-          prefix_range.prefix_len,
-          (reinterpret_cast<const grpc_sockaddr*>(address.addr))->sa_family ==
-                  GRPC_AF_INET
-              ? uint32_t(32)
-              : uint32_t(128));
       auto insert_result = source_ip_map->emplace(
-          absl::StrCat(normalized_address, "/", prefix_len),
+          absl::StrCat(grpc_sockaddr_to_string(&prefix_range.address, false),
+                       "/", prefix_range.prefix_len),
           XdsApi::LdsUpdate::FilterChainMap::SourceIp());
       if (insert_result.second) {
-        insert_result.first->second.address = address;
-        insert_result.first->second.prefix_len = prefix_len;
+        insert_result.first->second.prefix_range.emplace(prefix_range);
       }
-      error = AddFilterChainDataForSourcePorts(
+      grpc_error* error = AddFilterChainDataForSourcePorts(
           filter_chain, &insert_result.first->second.ports_map);
       if (error != GRPC_ERROR_NONE) return error;
     }
@@ -2366,7 +2350,7 @@ grpc_error* AddFilterChainDataForSourceIpRange(
 
 grpc_error* AddFilterChainDataForSourceType(
     const FilterChain& filter_chain,
-    XdsApi::LdsUpdate::FilterChainMap::DestinationIp* destination_ip) {
+    InternalFilterChainMap::DestinationIp* destination_ip) {
   GPR_ASSERT(static_cast<unsigned int>(
                  filter_chain.filter_chain_match.source_type) < 3);
   return AddFilterChainDataForSourceIpRange(
@@ -2376,7 +2360,7 @@ grpc_error* AddFilterChainDataForSourceType(
 
 grpc_error* AddFilterChainDataForApplicationProtocols(
     const FilterChain& filter_chain,
-    XdsApi::LdsUpdate::FilterChainMap::DestinationIp* destination_ip) {
+    InternalFilterChainMap::DestinationIp* destination_ip) {
   // Only allow filter chains that do not mention application protocols
   if (!filter_chain.filter_chain_match.application_protocols.empty()) {
     return GRPC_ERROR_NONE;
@@ -2386,7 +2370,7 @@ grpc_error* AddFilterChainDataForApplicationProtocols(
 
 grpc_error* AddFilterChainDataForTransportProtocol(
     const FilterChain& filter_chain,
-    XdsApi::LdsUpdate::FilterChainMap::DestinationIp* destination_ip) {
+    InternalFilterChainMap::DestinationIp* destination_ip) {
   const std::string& transport_protocol =
       filter_chain.filter_chain_match.transport_protocol;
   // Only allow filter chains with no transport protocol or "raw_buffer"
@@ -2406,7 +2390,7 @@ grpc_error* AddFilterChainDataForTransportProtocol(
     // Clear out the previous entries if any since those entries did not mention
     // "raw_buffer"
     destination_ip->source_types_array =
-        XdsApi::LdsUpdate::FilterChainMap::ConnectionSourceTypesArray();
+        InternalFilterChainMap::ConnectionSourceTypesArray();
   }
   return AddFilterChainDataForApplicationProtocols(filter_chain,
                                                    destination_ip);
@@ -2414,69 +2398,73 @@ grpc_error* AddFilterChainDataForTransportProtocol(
 
 grpc_error* AddFilterChainDataForServerNames(
     const FilterChain& filter_chain,
-    XdsApi::LdsUpdate::FilterChainMap::DestinationIp* destination_ip) {
+    InternalFilterChainMap::DestinationIp* destination_ip) {
   // Don't continue adding filter chains with server names mentioned
-  if (!filter_chain.filter_chain_match.server_names.empty())
+  if (!filter_chain.filter_chain_match.server_names.empty()) {
     return GRPC_ERROR_NONE;
+  }
   return AddFilterChainDataForTransportProtocol(filter_chain, destination_ip);
 }
 
 grpc_error* AddFilterChainDataForDestinationIpRange(
     const FilterChain& filter_chain,
-    XdsApi::LdsUpdate::FilterChainMap::DestinationIpMap* destination_ip_map) {
+    InternalFilterChainMap::DestinationIpMap* destination_ip_map) {
   if (filter_chain.filter_chain_match.prefix_ranges.empty()) {
-    std::pair<XdsApi::LdsUpdate::FilterChainMap::DestinationIpMap::iterator,
-              bool>
-        insert_result = destination_ip_map->emplace(
-            "", XdsApi::LdsUpdate::FilterChainMap::DestinationIp());
-    if (insert_result.second) {
-      memset(&insert_result.first->second.address, 0,
-             sizeof(grpc_resolved_address));
-      insert_result.first->second.prefix_len = -1;
-    }
+    auto insert_result = destination_ip_map->emplace(
+        "", InternalFilterChainMap::DestinationIp());
     return AddFilterChainDataForServerNames(filter_chain,
                                             &insert_result.first->second);
   } else {
     for (const auto& prefix_range :
          filter_chain.filter_chain_match.prefix_ranges) {
-      grpc_resolved_address address;
-      grpc_error* error =
-          ParseCidrRangeToGrpcResolvedAddress(prefix_range, &address);
-      if (error != GRPC_ERROR_NONE) return error;
-      std::string normalized_address = grpc_sockaddr_to_string(&address, true);
-      uint32_t prefix_len = std::min(
-          prefix_range.prefix_len,
-          (reinterpret_cast<const grpc_sockaddr*>(address.addr))->sa_family ==
-                  GRPC_AF_INET
-              ? uint32_t(32)
-              : uint32_t(128));
-      std::pair<XdsApi::LdsUpdate::FilterChainMap::DestinationIpMap::iterator,
-                bool>
-          insert_result = destination_ip_map->emplace(
-              absl::StrCat(normalized_address, "/", prefix_len),
-              XdsApi::LdsUpdate::FilterChainMap::DestinationIp());
+      auto insert_result = destination_ip_map->emplace(
+          absl::StrCat(grpc_sockaddr_to_string(&prefix_range.address, false),
+                       "/", prefix_range.prefix_len),
+          InternalFilterChainMap::DestinationIp());
       if (insert_result.second) {
-        insert_result.first->second.address = address;
-        insert_result.first->second.prefix_len = prefix_len;
+        insert_result.first->second.prefix_range.emplace(prefix_range);
       }
-      error = AddFilterChainDataForServerNames(filter_chain,
-                                               &insert_result.first->second);
+      grpc_error* error = AddFilterChainDataForServerNames(
+          filter_chain, &insert_result.first->second);
       if (error != GRPC_ERROR_NONE) return error;
     }
   }
   return GRPC_ERROR_NONE;
 }
 
+XdsApi::LdsUpdate::FilterChainMap BuildFromInternalFilterChainMap(
+    InternalFilterChainMap* internal_filter_chain_map) {
+  XdsApi::LdsUpdate::FilterChainMap filter_chain_map;
+  for (auto& destination_ip_pair :
+       internal_filter_chain_map->destination_ip_map) {
+    XdsApi::LdsUpdate::FilterChainMap::DestinationIp destination_ip;
+    destination_ip.prefix_range =
+        std::move(destination_ip_pair.second.prefix_range);
+    for (int i = 0; i < 3; i++) {
+      auto& source_ip_map = destination_ip_pair.second.source_types_array[i];
+      for (auto& source_ip_pair : source_ip_map) {
+        destination_ip.source_types_array[i].push_back(
+            std::move(source_ip_pair.second));
+      }
+    }
+    filter_chain_map.destination_ip_vector.push_back(std::move(destination_ip));
+  }
+  return filter_chain_map;
+}
+
 grpc_error* BuildFilterChainMap(
     const std::vector<FilterChain>& filter_chains,
     XdsApi::LdsUpdate::FilterChainMap* filter_chain_map) {
+  InternalFilterChainMap internal_filter_chain_map;
   for (const auto& filter_chain : filter_chains) {
     // Discard filter chain entries that specify destination port
     if (filter_chain.filter_chain_match.destination_port != 0) continue;
     grpc_error* error = AddFilterChainDataForDestinationIpRange(
-        filter_chain, &filter_chain_map->destination_ip_map);
+        filter_chain, &internal_filter_chain_map.destination_ip_map);
     if (error != GRPC_ERROR_NONE) return error;
   }
+  *filter_chain_map =
+      BuildFromInternalFilterChainMap(&internal_filter_chain_map);
   return GRPC_ERROR_NONE;
 }
 
