@@ -1092,6 +1092,7 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_priority",
+        "grpc_lb_policy_ring_hash",
         "grpc_lb_policy_round_robin",
         "grpc_lb_policy_weighted_target",
         "grpc_client_idle_filter",
