@@ -61,6 +61,10 @@ bool grpc_parse_ipv6_hostport(absl::string_view hostport,
 /* Converts named or numeric port to a uint16 suitable for use in a sockaddr. */
 uint16_t grpc_strhtons(const char* port);
 
+// Parse the string into an URI struct and then convert to resolved address.
+void grpc_string_to_sockaddr(absl::string_view uri_str,
+                             grpc_resolved_address* addr);
+
 namespace grpc_core {
 
 /** Populate \a resolved_addr to be a unix socket at |path| */

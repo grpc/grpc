@@ -42,6 +42,9 @@ int grpc_sockaddr_to_v4mapped(const grpc_resolved_address* addr,
  *port_out (if not NULL) and returns true, otherwise returns false. */
 int grpc_sockaddr_is_wildcard(const grpc_resolved_address* addr, int* port_out);
 
+// If addr is a loopback address in either IPv4 or IPv6, return true
+bool grpc_sockaddr_is_loopback(const grpc_resolved_address* resolved_addr);
+
 /* Writes 0.0.0.0:port and [::]:port to separate sockaddrs. */
 void grpc_sockaddr_make_wildcards(int port, grpc_resolved_address* wild4_out,
                                   grpc_resolved_address* wild6_out);

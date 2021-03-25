@@ -27,9 +27,12 @@
 #include <errno.h>
 #include <string.h>
 
+#include "absl/strings/str_format.h"
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+#include "src/core/lib/iomgr/parse_address.h"
 #include "test/core/util/test_config.h"
 
 static grpc_resolved_address make_addr4(const uint8_t* data, size_t data_len) {
@@ -173,6 +176,34 @@ static void test_sockaddr_is_wildcard(void) {
   GPR_ASSERT(port == -1);
 }
 
+static void test_sockaddr_is_loopback(void) {
+  gpr_log(GPR_INFO, "%s", "test_sockaddr_is_loopback");
+
+  grpc_resolved_address v4_loopback;
+  grpc_string_to_sockaddr("ipv4:127.0.0.1:0", &v4_loopback);
+  GPR_ASSERT(grpc_sockaddr_is_loopback(&v4_loopback));
+
+  grpc_resolved_address v6_loopback;
+  grpc_string_to_sockaddr("ipv6:[::1]:0", &v6_loopback);
+  GPR_ASSERT(grpc_sockaddr_is_loopback(&v6_loopback));
+
+  grpc_resolved_address v4mapped_loopback;
+  grpc_sockaddr_to_v4mapped(&v4_loopback, &v4mapped_loopback);
+  GPR_ASSERT(grpc_sockaddr_is_loopback(&v4mapped_loopback));
+
+  grpc_resolved_address v4_not_loopback;
+  grpc_string_to_sockaddr("ipv4:192.168.0.1:0", &v4_not_loopback);
+  GPR_ASSERT(!grpc_sockaddr_is_loopback(&v4_not_loopback));
+
+  grpc_resolved_address v6_not_loopback;
+  grpc_string_to_sockaddr("ipv6:[::1]:0", &v6_not_loopback);
+  GPR_ASSERT(!grpc_sockaddr_is_loopback(&v6_not_loopback));
+
+  grpc_resolved_address uds_addr;
+  grpc_string_to_sockaddr("unix:/tmp/foo", &uds_addr);
+  GPR_ASSERT(!grpc_sockaddr_is_loopback(&uds_addr));
+}
+
 static void expect_sockaddr_str(const char* expected,
                                 grpc_resolved_address* addr, int normalize) {
   gpr_log(GPR_INFO, "  expect_sockaddr_str(%s)", expected);
@@ -266,6 +297,7 @@ int main(int argc, char** argv) {
   test_sockaddr_is_v4mapped();
   test_sockaddr_to_v4mapped();
   test_sockaddr_is_wildcard();
+  test_sockaddr_is_loopback();
   test_sockaddr_to_string();
   test_sockaddr_set_get_port();
 
