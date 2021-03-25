@@ -31,12 +31,11 @@
 #include "grpc/event_engine/slice_allocator.h"
 #include "grpc/event_engine/sockaddr.h"
 
-// TODO(hork):
-// - Define the Endpoint::Write metrics collection objects and ownership
-// - explicitly define lifetimes and ownership of all objects.
-// - Add minimal tests
-// - Add EventEngine to the public ChannelArgs (not EventEngine-specific).
-// - Research server acceptor
+// TODO(hork): explicitly define lifetimes and ownership of all objects.
+// TODO(hork): Define the Endpoint::Write metrics collection system
+// TODO(hork): Add minimal tests
+// TODO(hork): Add mechanism to set an EventEngine per Channel
+
 namespace grpc_io {
 namespace experimental {
 
@@ -111,6 +110,9 @@ class EventEngine {
     // Called when a new connection is established. This callback takes
     // ownership of the Endpoint and is responsible for its destruction.
     using OnConnectCallback = std::function<void(absl::Status, Endpoint*)>;
+
+    virtual ~Endpoint() = 0;
+
     // Read data from the Endpoint.
     //
     // When data is available on the connection, that data is moved into the
@@ -144,6 +146,9 @@ class EventEngine {
     // callback takes ownership of the Endpoint and is responsible its
     // destruction.
     using AcceptCallback = std::function<void(absl::Status, Endpoint*)>;
+
+    virtual ~Listener() = 0;
+
     // Bind an address/port to this Listener. It is expected that multiple
     // addresses/ports can be bound to this Listener before Listener::Start has
     // been called.
@@ -186,6 +191,9 @@ class EventEngine {
     using LookupSRVCallback =
         std::function<void(absl::Status, std::vector<SRVRecord>)>;
     using LookupTXTCallback = std::function<void(absl::Status, std::string)>;
+
+    virtual ~DNSResolver() = 0;
+
     // Asynchronously resolve an address. `default_port` may be a non-numeric
     // named service port, and will only be used if `address` does not already
     // contain a port component.
@@ -203,12 +211,15 @@ class EventEngine {
     virtual void TryCancelLookup(LookupTaskHandle handle) = 0;
   };
 
+  virtual ~EventEngine() = 0;
+
   // Retrieves an instance of a DNSResolver.
   virtual absl::StatusOr<DNSResolver> GetDNSResolver() = 0;
 
   // Intended for future expansion of Task run functionality.
   struct RunOptions {};
   // Run a callback as soon as possible.
+  // TODO(hork): consider recommendation to make TaskHandle an output arg
   virtual TaskHandle Run(Callback fn, RunOptions opts) = 0;
   // Synonymous with scheduling an alarm to run at time `when`.
   virtual TaskHandle RunAt(absl::Time when, Callback fn, RunOptions opts) = 0;

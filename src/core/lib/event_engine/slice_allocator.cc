@@ -47,11 +47,11 @@ absl::Status SliceAllocator::Allocate(size_t size, SliceBuffer* dest,
 
 SliceAllocatorFactory::SliceAllocatorFactory(grpc_resource_quota* quota)
     : resource_quota_(quota) {
-  grpc_resource_quota_ref(resource_quota_);
+  grpc_resource_quota_ref_internal(resource_quota_);
 };
 
 SliceAllocatorFactory::~SliceAllocatorFactory() {
-  grpc_resource_quota_unref(resource_quota_);
+  grpc_resource_quota_unref_internal(resource_quota_);
 }
 
 SliceAllocator SliceAllocatorFactory::CreateSliceAllocator(
