@@ -353,27 +353,27 @@ class ChannelData {
   // Fields used in the control plane.  Guarded by work_serializer.
   //
   std::shared_ptr<WorkSerializer> work_serializer_;
-  grpc_pollset_set* interested_parties_;
-  ConnectivityStateTracker state_tracker_;
-  OrphanablePtr<Resolver> resolver_;
-  bool previous_resolution_contained_addresses_ = false;
-  RefCountedPtr<ServiceConfig> saved_service_config_;
-  RefCountedPtr<ConfigSelector> saved_config_selector_;
-  absl::optional<std::string> health_check_service_name_;
-  OrphanablePtr<LoadBalancingPolicy> lb_policy_;
-  RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
+  grpc_pollset_set* interested_parties_ /* ABSL_GUARDED_BY(work_serializer_) */;
+  ConnectivityStateTracker state_tracker_ /* ABSL_GUARDED_BY(work_serializer_) */;
+  OrphanablePtr<Resolver> resolver_ /* ABSL_GUARDED_BY(work_serializer_) */;
+  bool previous_resolution_contained_addresses_ ABSL_GUARDED_BY(work_serializer_) = false;
+  RefCountedPtr<ServiceConfig> saved_service_config_ ABSL_GUARDED_BY(work_serializer_);
+  RefCountedPtr<ConfigSelector> saved_config_selector_ ABSL_GUARDED_BY(work_serializer_);
+  absl::optional<std::string> health_check_service_name_ /* ABSL_GUARDED_BY(work_serializer_) */;
+  OrphanablePtr<LoadBalancingPolicy> lb_policy_ ABSL_GUARDED_BY(work_serializer_);
+  RefCountedPtr<SubchannelPoolInterface> subchannel_pool_ /* ABSL_GUARDED_BY(work_serializer_) */;
   // The number of SubchannelWrapper instances referencing a given Subchannel.
-  std::map<Subchannel*, int> subchannel_refcount_map_;
+  std::map<Subchannel*, int> subchannel_refcount_map_ ABSL_GUARDED_BY(work_serializer_);
   // The set of SubchannelWrappers that currently exist.
   // No need to hold a ref, since the map is updated in the control-plane
   // work_serializer when the SubchannelWrappers are created and destroyed.
-  std::set<SubchannelWrapper*> subchannel_wrappers_;
+  std::set<SubchannelWrapper*> subchannel_wrappers_ ABSL_GUARDED_BY(work_serializer_);
   // Pending ConnectedSubchannel updates for each SubchannelWrapper.
   // Updates are queued here in the control plane work_serializer and then
   // applied in the data plane mutex when the picker is updated.
   std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>>
-      pending_subchannel_updates_;
-  int keepalive_time_ = -1;
+      pending_subchannel_updates_ /* ABSL_GUARDED_BY(work_serializer_) */;
+  int keepalive_time_ /* ABSL_GUARDED_BY(work_serializer_) */ = -1;
 
   //
   // Fields accessed from both data plane mutex and control plane
