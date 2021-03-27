@@ -93,7 +93,6 @@ namespace grpc_core {
 using internal::ClientChannelGlobalParsedConfig;
 using internal::ClientChannelMethodParsedConfig;
 using internal::ClientChannelServiceConfigParser;
-using internal::ServerRetryThrottleData;
 
 TraceFlag grpc_client_channel_call_trace(false, "client_channel_call");
 TraceFlag grpc_client_channel_routing_trace(false, "client_channel_routing");
