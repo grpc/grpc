@@ -2077,7 +2077,6 @@ foreach(_hdr
   include/grpc/event_engine/event_engine.h
   include/grpc/event_engine/port.h
   include/grpc/event_engine/slice_allocator.h
-  include/grpc/event_engine/sockaddr.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
@@ -2628,7 +2627,6 @@ foreach(_hdr
   include/grpc/event_engine/event_engine.h
   include/grpc/event_engine/port.h
   include/grpc/event_engine/slice_allocator.h
-  include/grpc/event_engine/sockaddr.h
   include/grpc/fork.h
   include/grpc/grpc.h
   include/grpc/grpc_posix.h
