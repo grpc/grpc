@@ -8236,11 +8236,11 @@ TEST_P(XdsServerFilterChainMatchTest,
       HttpConnectionManager());
   auto* prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(4);
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(16);
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
   // Add filter chain with two prefix ranges (length 8 and 24). Since 24 is the
@@ -8250,11 +8250,11 @@ TEST_P(XdsServerFilterChainMatchTest,
       HttpConnectionManager());
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(8);
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(24);
   // Add another filter chain with a non-matching prefix range (with length 30)
   filter_chain = listener.add_filter_chains();
@@ -8331,11 +8331,11 @@ TEST_P(XdsServerFilterChainMatchTest,
       HttpConnectionManager());
   auto* source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
-  source_prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  source_prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   source_prefix_range->mutable_prefix_len()->set_value(4);
   source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
-  source_prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  source_prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   source_prefix_range->mutable_prefix_len()->set_value(16);
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
@@ -8346,11 +8346,11 @@ TEST_P(XdsServerFilterChainMatchTest,
       HttpConnectionManager());
   source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
-  source_prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  source_prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   source_prefix_range->mutable_prefix_len()->set_value(8);
   source_prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
-  source_prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  source_prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   source_prefix_range->mutable_prefix_len()->set_value(24);
   // Add another filter chain with a non-matching source prefix range (with
   // length 30) and bad source port
@@ -8455,11 +8455,11 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
       HttpConnectionManager());
   auto* prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(16);
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(24);
   // Add a filter chain with a duplicate prefix range entry
   filter_chain = listener.add_filter_chains();
@@ -8467,11 +8467,11 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
       HttpConnectionManager());
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(16);
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(32);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   do {
@@ -8481,12 +8481,21 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      response_state.error_message,
-      ::testing::HasSubstr(
-          "Duplicate matching rules detected when adding filter chain: "
-          "{prefix_ranges={{address_prefix=127.0.0.0:0, prefix_len=16}, "
-          "{address_prefix=127.0.0.1:0, prefix_len=32}}}"));
+  if (ipv6_only_) {
+    EXPECT_THAT(
+        response_state.error_message,
+        ::testing::HasSubstr(
+            "Duplicate matching rules detected when adding filter chain: "
+            "{prefix_ranges={{address_prefix=[::]:0, prefix_len=16}, "
+            "{address_prefix=[::]:0, prefix_len=32}}}"));
+  } else {
+    EXPECT_THAT(
+        response_state.error_message,
+        ::testing::HasSubstr(
+            "Duplicate matching rules detected when adding filter chain: "
+            "{prefix_ranges={{address_prefix=127.0.0.0:0, prefix_len=16}, "
+            "{address_prefix=127.0.0.1:0, prefix_len=32}}}"));
+  }
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
@@ -8608,11 +8617,11 @@ TEST_P(XdsServerFilterChainMatchTest,
       HttpConnectionManager());
   auto* prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(16);
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(24);
   // Add a filter chain with a duplicate source prefix range entry
   filter_chain = listener.add_filter_chains();
@@ -8620,11 +8629,11 @@ TEST_P(XdsServerFilterChainMatchTest,
       HttpConnectionManager());
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(16);
   prefix_range =
       filter_chain->mutable_filter_chain_match()->add_source_prefix_ranges();
-  prefix_range->set_address_prefix(ipv6_only_ ? "[::1]" : "127.0.0.1");
+  prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(32);
   balancers_[0]->ads_service()->SetLdsResource(listener);
   do {
@@ -8634,12 +8643,22 @@ TEST_P(XdsServerFilterChainMatchTest,
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      response_state.error_message,
-      ::testing::HasSubstr(
-          "Duplicate matching rules detected when adding filter chain: "
-          "{source_prefix_ranges={{address_prefix=127.0.0.0:0, prefix_len=16}, "
-          "{address_prefix=127.0.0.1:0, prefix_len=32}}}"));
+  if (ipv6_only_) {
+    EXPECT_THAT(
+        response_state.error_message,
+        ::testing::HasSubstr(
+            "Duplicate matching rules detected when adding filter chain: "
+            "{source_prefix_ranges={{address_prefix=[::]:0, prefix_len=16}, "
+            "{address_prefix=[::]:0, prefix_len=32}}}"));
+  } else {
+    EXPECT_THAT(
+        response_state.error_message,
+        ::testing::HasSubstr(
+            "Duplicate matching rules detected when adding filter chain: "
+            "{source_prefix_ranges={{address_prefix=127.0.0.0:0, "
+            "prefix_len=16}, "
+            "{address_prefix=127.0.0.1:0, prefix_len=32}}}"));
+  }
 }
 
 TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
