@@ -406,23 +406,34 @@ def _verify_rpcs_to_given_backends(backends, timeout_sec, num_rpcs,
                                    allow_failures):
     start_time = time.time()
     error_msg = None
+    infra_error = False
     logger.debug('Waiting for %d sec until backends %s receive load' %
                  (timeout_sec, backends))
     while time.time() - start_time <= timeout_sec:
         error_msg = None
+        infra_error = False
         stats = get_client_stats(num_rpcs, timeout_sec)
         rpcs_by_peer = stats.rpcs_by_peer
-        for backend in backends:
-            if backend not in rpcs_by_peer:
-                error_msg = 'Backend %s did not receive load' % backend
-                break
+        if not any(set(backends) & set(rpcs_by_peer.keys())):
+            # The distribution is completely off, unlikely a gRPC issue.
+            infra_error = True
+            error_msg = 'Completely off backend set: want [%s] got [%s]' % (
+                backends, rpcs_by_peer.keys())
+        else:
+            for backend in backends:
+                if backend not in rpcs_by_peer:
+                    error_msg = 'Backend %s did not receive load' % backend
+                    break
         if not error_msg and len(rpcs_by_peer) > len(backends):
             error_msg = 'Unexpected backend received load: %s' % rpcs_by_peer
         if not allow_failures and stats.num_failures > 0:
             error_msg = '%d RPCs failed' % stats.num_failures
         if not error_msg:
             return
-    raise RpcDistributionError(error_msg)
+    if infra_error:
+        raise PotentialInfrastructureError(error_msg)
+    else:
+        raise RpcDistributionError(error_msg)
 
 
 def wait_until_all_rpcs_go_to_given_backends_or_fail(backends,
@@ -877,7 +888,7 @@ def test_secondary_locality_gets_requests_on_primary_failure(
                 primary_instance_group,
                 swapped_primary_and_secondary=True)
         else:
-            raise PotentialInfrastructureError(e)
+            raise e
     finally:
         patch_backend_service(gcp, backend_service, [primary_instance_group])
 
