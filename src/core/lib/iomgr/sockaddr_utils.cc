@@ -198,25 +198,8 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
   return out;
 }
 
-void grpc_string_to_sockaddr(grpc_resolved_address* out, const char* addr,
-                             int port) {
-  memset(out, 0, sizeof(grpc_resolved_address));
-  grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(out->addr);
-  grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(out->addr);
-  if (grpc_inet_pton(GRPC_AF_INET6, addr, &addr6->sin6_addr) == 1) {
-    addr6->sin6_family = GRPC_AF_INET6;
-    out->len = sizeof(grpc_sockaddr_in6);
-  } else if (grpc_inet_pton(GRPC_AF_INET, addr, &addr4->sin_addr) == 1) {
-    addr4->sin_family = GRPC_AF_INET;
-    out->len = sizeof(grpc_sockaddr_in);
-  } else {
-    GPR_ASSERT(0);
-  }
-  grpc_sockaddr_set_port(out, port);
-}
-
-grpc_error* grpc_string_to_sockaddr_new(grpc_resolved_address* out,
-                                        const char* addr, int port) {
+grpc_error* grpc_string_to_sockaddr(grpc_resolved_address* out,
+                                    const char* addr, int port) {
   memset(out, 0, sizeof(grpc_resolved_address));
   grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(out->addr);
   grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(out->addr);

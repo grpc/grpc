@@ -227,11 +227,13 @@ void VerifySocketAddressMatch(const std::string& ip_address,
                               const std::string& subnet, uint32_t mask_bits,
                               bool success) {
   grpc_resolved_address addr;
-  grpc_string_to_sockaddr(&addr, ip_address.c_str(), false);
+  ASSERT_EQ(grpc_string_to_sockaddr(&addr, ip_address.c_str(), false),
+            GRPC_ERROR_NONE);
   // Setting the port has no effect on the match.
   grpc_sockaddr_set_port(&addr, 12345);
   grpc_resolved_address subnet_addr;
-  grpc_string_to_sockaddr(&subnet_addr, subnet.c_str(), false);
+  ASSERT_EQ(grpc_string_to_sockaddr(&subnet_addr, subnet.c_str(), false),
+            GRPC_ERROR_NONE);
   grpc_sockaddr_mask_bits(&subnet_addr, mask_bits);
   EXPECT_EQ(grpc_sockaddr_match_subnet(&addr, &subnet_addr, mask_bits), success)
       << "IP=" << ip_address << " Subnet=" << subnet << " Mask=" << mask_bits;

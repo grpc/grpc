@@ -163,8 +163,14 @@ const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForSourceType(
     return nullptr;
   }
   grpc_resolved_address source_addr;
-  grpc_string_to_sockaddr(&source_addr, host.c_str(),
-                          0 /* port doesn't matter here */);
+  grpc_error* error = grpc_string_to_sockaddr(&source_addr, host.c_str(),
+                                              0 /* port doesn't matter here */);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_DEBUG, "Could not parse string to socket address: %s",
+            host.c_str());
+    GRPC_ERROR_UNREF(error);
+    return nullptr;
+  }
   // Use kAny only if kSameIporLoopback and kExternal are empty
   if (source_types_array[static_cast<int>(
                              XdsApi::LdsUpdate::FilterChainMap::
@@ -208,8 +214,14 @@ const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForDestinationIp(
     return nullptr;
   }
   grpc_resolved_address destination_addr;
-  grpc_string_to_sockaddr(&destination_addr, host.c_str(),
-                          0 /* port doesn't matter here */);
+  grpc_error* error = grpc_string_to_sockaddr(&destination_addr, host.c_str(),
+                                              0 /* port doesn't matter here */);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_DEBUG, "Could not parse string to socket address: %s",
+            host.c_str());
+    GRPC_ERROR_UNREF(error);
+    return nullptr;
+  }
   const XdsApi::LdsUpdate::FilterChainMap::DestinationIp* best_match = nullptr;
   for (const auto& entry : destination_ip_vector) {
     // Special case for catch-all

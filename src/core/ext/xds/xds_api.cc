@@ -2078,8 +2078,8 @@ grpc_error* CidrRangeParse(
     XdsApi::LdsUpdate::FilterChainMap::CidrRange* cidr_range) {
   std::string address_prefix = UpbStringToStdString(
       envoy_config_core_v3_CidrRange_address_prefix(cidr_range_proto));
-  grpc_error* error = grpc_string_to_sockaddr_new(&cidr_range->address,
-                                                  address_prefix.c_str(), 0);
+  grpc_error* error =
+      grpc_string_to_sockaddr(&cidr_range->address, address_prefix.c_str(), 0);
   if (error != GRPC_ERROR_NONE) return error;
   cidr_range->prefix_len = 0;
   auto* prefix_len_proto =
@@ -3008,8 +3008,7 @@ grpc_error* ServerAddressParseAndAppend(
   }
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
-  grpc_error* error =
-      grpc_string_to_sockaddr_new(&addr, address_str.c_str(), port);
+  grpc_error* error = grpc_string_to_sockaddr(&addr, address_str.c_str(), port);
   if (error != GRPC_ERROR_NONE) return error;
   // Append the address to the list.
   list->emplace_back(addr, nullptr);

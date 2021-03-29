@@ -64,17 +64,12 @@ int grpc_sockaddr_set_port(grpc_resolved_address* addr, int port);
 // If the normalize flag is enabled, ::ffff:0.0.0.0/96 IPv6 addresses are
 // displayed as plain IPv4.
 std::string grpc_sockaddr_to_string(const grpc_resolved_address* addr,
-                                    bool normalize);
-
-// TODO(yashykt): Remove this function and replace usages with
-// `grpc_string_to_sockaddr_new`
-void grpc_string_to_sockaddr(grpc_resolved_address* out, const char* addr,
-                             int port);
+                                    bool normalize) GRPC_MUST_USE_RESULT;
 
 // Newer form of grpc_string_to_sockaddr which returns an error instead of
 // crashing if \a addr is not IPv6/IPv6
-grpc_error* grpc_string_to_sockaddr_new(grpc_resolved_address* out,
-                                        const char* addr, int port);
+grpc_error* grpc_string_to_sockaddr(grpc_resolved_address* out,
+                                    const char* addr, int port);
 
 /* Returns the URI string corresponding to \a addr */
 std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
