@@ -111,7 +111,7 @@ grpc_error* ParseRetryThrottling(const Json& json, intptr_t* max_milli_tokens,
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:retryThrottling field:tokenRatio error:Failed "
             "parsing"));
-        return GRPC_ERROR_CREATE_FROM_VECTOR("retryPolicy", &error_list);
+        return GRPC_ERROR_CREATE_FROM_VECTOR("retryThrottling", &error_list);
       }
       uint32_t decimal_multiplier = 1;
       for (size_t i = 0; i < (3 - decimal_len); ++i) {
@@ -124,7 +124,7 @@ grpc_error* ParseRetryThrottling(const Json& json, intptr_t* max_milli_tokens,
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:retryThrottling field:tokenRatio error:Failed "
           "parsing"));
-      return GRPC_ERROR_CREATE_FROM_VECTOR("retryPolicy", &error_list);
+      return GRPC_ERROR_CREATE_FROM_VECTOR("retryThrottling", &error_list);
     }
     *milli_token_ratio =
         static_cast<int>((whole_value * multiplier) + decimal_value);
