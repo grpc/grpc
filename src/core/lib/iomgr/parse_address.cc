@@ -122,25 +122,25 @@ grpc_error* UnixAbstractSockaddrPopulate(absl::string_view path,
 
 #else  /* GRPC_HAVE_UNIX_SOCKET */
 
-bool grpc_parse_unix(const grpc_core::URI& uri,
-                     grpc_resolved_address* resolved_addr) {
+bool grpc_parse_unix(const grpc_core::URI& /* uri */,
+                     grpc_resolved_address* /* resolved_addr */) {
   abort();
 }
 
-bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
-                              grpc_resolved_address* resolved_addr) {
+bool grpc_parse_unix_abstract(const grpc_core::URI& /* uri */,
+                              grpc_resolved_address* /* resolved_addr */) {
   abort();
 }
 
 namespace grpc_core {
 
-grpc_error* UnixSockaddrPopulate(absl::string_view path,
-                                 grpc_resolved_address* resolved_addr) {
+grpc_error* UnixSockaddrPopulate(absl::string_view /* path */,
+                                 grpc_resolved_address* /* resolved_addr */) {
   abort();
 }
 
-grpc_error* UnixAbstractSockaddrPopulate(absl::string_view path,
-                                         grpc_resolved_address* resolved_addr) {
+grpc_error* UnixAbstractSockaddrPopulate(
+    absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
   abort();
 }
 
