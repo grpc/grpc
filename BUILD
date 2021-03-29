@@ -88,7 +88,7 @@ python_config_settings()
 # This should be updated along with build_handwritten.yaml
 g_stands_for = "guadalupe_river_park_conservancy"  # @unused
 
-core_version = "15.1.0"  # @unused
+core_version = "16.0.0"  # @unused
 
 version = "1.38.0-dev"  # @unused
 
