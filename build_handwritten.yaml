@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: gilded
   protobuf_version: 3.15.2
-  version: 1.37.0-dev
+  version: 1.37.0-pre1
 targets:
 - name: check_epollexclusive
   build: tool
