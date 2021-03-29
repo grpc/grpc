@@ -259,6 +259,7 @@ _WAIT_FOR_VALID_CONFIG_SEC = 60
 _WAIT_FOR_URL_MAP_PATCH_SEC = 300
 _CONNECTION_TIMEOUT_SEC = 60
 _GCP_API_RETRIES = 5
+_GET_CLIENT_STATS_RETRIES = 3
 _BOOTSTRAP_TEMPLATE = """
 {{
   "node": {{
@@ -317,21 +318,32 @@ def get_client_stats(num_rpcs, timeout_sec):
         hosts = CLIENT_HOSTS
     else:
         hosts = ['localhost']
-    for host in hosts:
+    the_host = hosts[0]
+    for i in range(_GET_CLIENT_STATS_RETRIES):
         with grpc.insecure_channel('%s:%d' %
-                                   (host, args.stats_port)) as channel:
+                                   (the_host, args.stats_port)) as channel:
             stub = test_pb2_grpc.LoadBalancerStatsServiceStub(channel)
             request = messages_pb2.LoadBalancerStatsRequest()
             request.num_rpcs = num_rpcs
             request.timeout_sec = timeout_sec
             rpc_timeout = timeout_sec + _CONNECTION_TIMEOUT_SEC
-            logger.debug('Invoking GetClientStats RPC to %s:%d:', host,
+            logger.debug('Invoking GetClientStats RPC to %s:%d:', the_host,
                          args.stats_port)
-            response = stub.GetClientStats(request,
-                                           wait_for_ready=True,
-                                           timeout=rpc_timeout)
-            logger.debug('Invoked GetClientStats RPC to %s: %s', host, response)
-            return response
+            try:
+                response = stub.GetClientStats(request,
+                                               wait_for_ready=True,
+                                               timeout=rpc_timeout)
+                logger.debug('Invoked GetClientStats RPC to %s: %s', the_host,
+                             response)
+                return response
+            except grpc.RpcError as rpc_error:
+                # In case of unavailability, mostly likely caused by network flake. Let's retry.
+                if rpc_error.code() != grpc.StatusCode.UNAVAILABLE:
+                    raise
+    logger.info(
+        'Failed to fetch client stats from host [%s] num_rpcs %s timeout_sec %s',
+        the_host, num_rpcs, timeout_sec)
+    return None
 
 
 def get_client_accumulated_stats():
