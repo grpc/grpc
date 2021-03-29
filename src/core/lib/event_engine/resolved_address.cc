@@ -17,19 +17,20 @@
  */
 #include <grpc/support/port_platform.h>
 
-
 #include <string.h>
 
-#include "grpc/support/log.h"
-#include "grpc/event_engine/event_engine.h"
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/iomgr/port.h"
 
 namespace grpc_io {
 namespace experimental {
 
-ResolvedAddress::ResolvedAddress(const void* addr, int len) {
-  GPR_ASSERT(len <= 128);
+ResolvedAddress::ResolvedAddress(const void* addr, size_t len) {
+  GPR_ASSERT(len <= MAX_SIZE_BYTES);
   // TODO(hork): elim magic number
-  memset(&buffer_, 0, 128);
+  memset(&buffer_, 0, MAX_SIZE_BYTES);
   memcpy(&buffer_, addr, len);
 }
 

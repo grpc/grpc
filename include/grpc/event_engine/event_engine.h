@@ -264,12 +264,14 @@ std::shared_ptr<EventEngine> grpc_get_default_event_engine();
 // * hostent
 class ResolvedAddress {
  public:
-  ResolvedAddress(const void* addr, int len);
+  static constexpr size_t MAX_SIZE_BYTES = 128;
+
+  ResolvedAddress(const void* addr, size_t len);
   const struct sockaddr* Sockaddr() const;
   int Length() const;
 
  private:
-  char buffer_[128];
+  char buffer_[MAX_SIZE_BYTES];
   int len_;
 };
 

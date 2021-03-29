@@ -28,5 +28,6 @@
 #include "src/core/lib/iomgr/sockaddr_custom.h"
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #include "src/core/lib/iomgr/sockaddr_windows.h"
+#include "src/core/lib/event_engine/sockaddr.h"
 
 #endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_H */

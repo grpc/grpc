@@ -18,9 +18,10 @@
 #ifndef GRPC_EVENT_ENGINE_PORT_H
 #define GRPC_EVENT_ENGINE_PORT_H
 
-#include <grpc/support/port_platform.h>
+// Includes the platform-specific headers necessary to define the EventEngine
+// interface on every supported platform.
 
-// TODO(hork): Extract required macros from iomgr's port.h and sockaddr_*.h.
+#include <grpc/support/port_platform.h>
 
 #ifdef GRPC_UV
 #include <uv.h>

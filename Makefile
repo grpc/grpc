@@ -1362,8 +1362,8 @@ LIBGRPC_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice_allocator.cc \
-    src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/httpcli_security_connector.cc \
@@ -1386,6 +1386,12 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
     src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/event_engine/endpoint.cc \
+    src/core/lib/iomgr/event_engine/iomgr.cc \
+    src/core/lib/iomgr/event_engine/pollset.cc \
+    src/core/lib/iomgr/event_engine/resolver.cc \
+    src/core/lib/iomgr/event_engine/tcp.cc \
+    src/core/lib/iomgr/event_engine/util.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
@@ -1843,8 +1849,8 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice_allocator.cc \
-    src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/http/format_request.cc \
     src/core/lib/http/httpcli.cc \
     src/core/lib/http/parser.cc \
@@ -1866,6 +1872,12 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
     src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/event_engine/endpoint.cc \
+    src/core/lib/iomgr/event_engine/iomgr.cc \
+    src/core/lib/iomgr/event_engine/pollset.cc \
+    src/core/lib/iomgr/event_engine/resolver.cc \
+    src/core/lib/iomgr/event_engine/tcp.cc \
+    src/core/lib/iomgr/event_engine/util.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
