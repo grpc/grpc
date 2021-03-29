@@ -773,10 +773,9 @@ class RetryParserTest : public ::testing::Test {
   void SetUp() override {
     ServiceConfigParser::Shutdown();
     ServiceConfigParser::Init();
-    EXPECT_EQ(
-        ServiceConfigParser::RegisterParser(
-            absl::make_unique<internal::RetryServiceConfigParser>()),
-        0);
+    EXPECT_EQ(ServiceConfigParser::RegisterParser(
+                  absl::make_unique<internal::RetryServiceConfigParser>()),
+              0);
   }
 };
 
@@ -887,8 +886,8 @@ TEST_F(RetryParserTest, ValidRetryPolicy) {
   EXPECT_EQ(parsed_config->initial_backoff(), 1000);
   EXPECT_EQ(parsed_config->max_backoff(), 120000);
   EXPECT_EQ(parsed_config->backoff_multiplier(), 1.6f);
-  EXPECT_TRUE(parsed_config->retryable_status_codes().Contains(
-      GRPC_STATUS_ABORTED));
+  EXPECT_TRUE(
+      parsed_config->retryable_status_codes().Contains(GRPC_STATUS_ABORTED));
 }
 
 TEST_F(RetryParserTest, InvalidRetryPolicyMaxAttempts) {

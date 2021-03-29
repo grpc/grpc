@@ -68,8 +68,7 @@ class ClientChannelMethodParsedConfig
  public:
   ClientChannelMethodParsedConfig(grpc_millis timeout,
                                   const absl::optional<bool>& wait_for_ready)
-      : timeout_(timeout),
-        wait_for_ready_(wait_for_ready) {}
+      : timeout_(timeout), wait_for_ready_(wait_for_ready) {}
 
   grpc_millis timeout() const { return timeout_; }
 
