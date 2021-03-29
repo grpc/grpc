@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_H
+#ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
+#define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,7 +29,6 @@
 #include "absl/time/time.h"
 
 #include "grpc/event_engine/slice_allocator.h"
-#include "grpc/event_engine/sockaddr.h"
 
 // TODO(hork): explicitly define lifetimes and ownership of all objects.
 // TODO(hork): Define the Endpoint::Write metrics collection system
@@ -38,6 +37,8 @@
 
 namespace grpc_io {
 namespace experimental {
+
+class ResolvedAddress;
 
 ////////////////////////////////////////////////////////////////////////////////
 // The EventEngine encapsulates all platform-specific behaviors related to low
@@ -253,7 +254,26 @@ absl::StatusOr<std::vector<ResolvedAddress>> BlockingLookupHostname(
 // instantiated.
 std::shared_ptr<EventEngine> grpc_get_default_event_engine();
 
+// A thin wrapper around a platform-specific sockaddr type. A sockaddr struct
+// exists on all platforms that gRPC supports.
+//
+// Platforms are expected to provide definitions for:
+// * sockaddr
+// * sockaddr_in
+// * sockaddr_in6
+// * hostent
+class ResolvedAddress {
+ public:
+  ResolvedAddress(const void* addr, int len);
+  const struct sockaddr* Sockaddr() const;
+  int Length() const;
+
+ private:
+  char buffer_[128];
+  int len_;
+};
+
 }  // namespace experimental
 }  // namespace grpc_io
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_EVENT_ENGINE_H
+#endif  // GRPC_EVENT_ENGINE_EVENT_ENGINE_H

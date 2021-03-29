@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_PORT_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_PORT_H
+#ifndef GRPC_EVENT_ENGINE_PORT_H
+#define GRPC_EVENT_ENGINE_PORT_H
 
 #include <grpc/support/port_platform.h>
 
@@ -28,16 +28,16 @@
     defined(GPR_FREEBSD) || defined(GPR_OPENBSD) || defined(GPR_SOLARIS) || \
     defined(GPR_AIX) || defined(GPR_NACL) || defined(GPR_FUCHSIA) ||        \
     defined(GRPC_POSIX_SOCKET)
+#include <netdb.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #elif defined(GPR_WINDOWS)
 #include <winsock2.h>
+#include <ws2tcpip.h>
+// must be included after the above
+#include <mswsock.h>
 #else
 #error UNKNOWN PLATFORM
 #endif
 
-// TODO(hork): should live elsewhere. They are not part of the public API.
-typedef struct sockaddr grpc_sockaddr;
-typedef struct sockaddr_in grpc_sockaddr_in;
-typedef struct sockaddr_in6 grpc_sockaddr_in6;
-
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_PORT_H
+#endif  // GRPC_EVENT_ENGINE_PORT_H

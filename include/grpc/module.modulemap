@@ -39,7 +39,6 @@ framework module grpc {
   header "event_engine/event_engine.h"
   header "event_engine/port.h"
   header "event_engine/slice_allocator.h"
-  header "event_engine/sockaddr.h"
   header "fork.h"
   header "grpc.h"
   header "grpc_posix.h"

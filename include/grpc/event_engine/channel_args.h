@@ -15,8 +15,8 @@
  * limitations under the License.
  *
  */
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_H
+#ifndef GRPC_EVENT_ENGINE_CHANNEL_ARGS_H
+#define GRPC_EVENT_ENGINE_CHANNEL_ARGS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -29,4 +29,4 @@ class ChannelArgs;
 }  // namespace experimental
 }  // namespace grpc_io
 
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_CHANNEL_ARGS_H
+#endif  // GRPC_EVENT_ENGINE_CHANNEL_ARGS_H

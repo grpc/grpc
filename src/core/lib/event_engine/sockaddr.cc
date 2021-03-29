@@ -17,11 +17,11 @@
  */
 #include <grpc/support/port_platform.h>
 
-#include "grpc/event_engine/sockaddr.h"
 
 #include <string.h>
 
 #include "grpc/support/log.h"
+#include "grpc/event_engine/event_engine.h"
 
 namespace grpc_io {
 namespace experimental {
