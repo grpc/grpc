@@ -312,6 +312,23 @@ _SPONGE_LOG_NAME = 'sponge_log.log'
 _SPONGE_XML_NAME = 'sponge_log.xml'
 
 
+class PotentialInfrastructureError(Exception):
+    """There is a potential infrastructure error.
+
+    This exception means the test case result is meaningless. We should label it
+    as skipped. The infrastructure error is likely to present in forms like
+    backend not up, can't find peer, network breakage, etc.. For issues out of
+    our control and running out of retries, we should raise this exception.
+    """
+
+    def __init__(self, exception_or_string):
+        if isinstance(exception_or_string, str):
+            super().__init__(exception_or_string)
+        else:
+            super().__init__("%s: %s" %
+                             (type(exception_or_string), exception_or_string))
+
+
 def get_client_stats(num_rpcs, timeout_sec):
     if CLIENT_HOSTS:
         hosts = CLIENT_HOSTS
@@ -860,7 +877,7 @@ def test_secondary_locality_gets_requests_on_primary_failure(
                 primary_instance_group,
                 swapped_primary_and_secondary=True)
         else:
-            raise e
+            raise PotentialInfrastructureError(e)
     finally:
         patch_backend_service(gcp, backend_service, [primary_instance_group])
 
@@ -871,7 +888,6 @@ def prepare_services_for_urlmap_tests(gcp, original_backend_service,
     '''
     This function prepares the services to be ready for tests that modifies
     urlmaps.
-
     Returns:
       Returns original and alternate backend names as lists of strings.
     '''
@@ -2602,6 +2618,7 @@ try:
         client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
         test_results = {}
         failed_tests = []
+        skipped_tests = []
         for test_case in args.test_case:
             if test_case in _V3_TEST_CASES and not args.xds_v3_support:
                 logger.info('skipping test %s due to missing v3 support',
@@ -2728,6 +2745,11 @@ try:
                         client_process.returncode)
                 result.state = 'PASSED'
                 result.returncode = 0
+            except PotentialInfrastructureError as infra_error:
+                logger.exception('Test case %s skipped', test_case)
+                skipped_tests.append(test_case)
+                result.state = 'SKIPPED'
+                result.message = str(e)
             except Exception as e:
                 logger.exception('Test case %s failed', test_case)
                 failed_tests.append(test_case)
@@ -2757,6 +2779,8 @@ try:
                                                  _SPONGE_XML_NAME),
                                              suite_name='xds_tests',
                                              multi_target=True)
+        if skipped_tests:
+            logger.info('Test case(s) %s skipped', skipped_tests)
         if failed_tests:
             logger.error('Test case(s) %s failed', failed_tests)
             sys.exit(1)
