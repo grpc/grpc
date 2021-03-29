@@ -3820,14 +3820,6 @@ targets:
   - test/core/client_channel/resolvers/sockaddr_resolver_test.cc
   deps:
   - grpc_test_util
-- name: sockaddr_utils_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/sockaddr_utils_test.cc
-  deps:
-  - grpc_test_util
 - name: socket_utils_test
   build: test
   language: c
@@ -6165,6 +6157,15 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/simple_request.cc
   - test/core/end2end/cq_verifier.cc
+  deps:
+  - grpc_test_util
+- name: sockaddr_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/sockaddr_utils_test.cc
   deps:
   - grpc_test_util
 - name: ssl_server_fuzzer
