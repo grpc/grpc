@@ -7575,7 +7575,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                bool test_expects_failure = false) {
     gpr_log(GPR_INFO, "Sending RPC");
     int num_tries = 0;
-    constexpr int kRetryCount = 10;
+    constexpr int kRetryCount = 100;
     for (; num_tries < kRetryCount; num_tries++) {
       auto channel = channel_creator();
       auto stub = grpc::testing::EchoTestService::NewStub(channel);
