@@ -2579,6 +2579,7 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/debugging/symbolize.cc \
     third_party/abseil-cpp/absl/hash/internal/city.cc \
     third_party/abseil-cpp/absl/hash/internal/hash.cc \
+    third_party/abseil-cpp/absl/hash/internal/wyhash.cc \
     third_party/abseil-cpp/absl/numeric/int128.cc \
     third_party/abseil-cpp/absl/status/status.cc \
     third_party/abseil-cpp/absl/status/status_payload_printer.cc \
@@ -2589,6 +2590,8 @@ LIBGRPC_ABSEIL_SRC = \
     third_party/abseil-cpp/absl/strings/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_bigint.cc \
     third_party/abseil-cpp/absl/strings/internal/charconv_parse.cc \
+    third_party/abseil-cpp/absl/strings/internal/cord_internal.cc \
+    third_party/abseil-cpp/absl/strings/internal/cord_rep_ring.cc \
     third_party/abseil-cpp/absl/strings/internal/escaping.cc \
     third_party/abseil-cpp/absl/strings/internal/memutil.cc \
     third_party/abseil-cpp/absl/strings/internal/ostringstream.cc \
