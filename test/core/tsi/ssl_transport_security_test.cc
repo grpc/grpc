@@ -329,12 +329,20 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
   // and send an alert to the client as the first application data message. In
   // TLS 1.2, the client-side handshake will fail if the client sends a bad
   // certificate.
+  //
+  // For OpenSSL versions < 1.1, TLS 1.3 is not supported, so the client-side
+  // handshake should succeed precisely when the server-side handshake
+  // succeeds.
   bool expect_server_success =
       !(key_cert_lib->use_bad_server_cert ||
         (key_cert_lib->use_bad_client_cert && ssl_fixture->force_client_auth));
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
   bool expect_client_success = test_tls_version == tsi_tls_version::TSI_TLS1_2
                                    ? expect_server_success
                                    : !key_cert_lib->use_bad_server_cert;
+#else
+  bool expect_client_success = expect_server_success;
+#endif
   if (expect_client_success) {
     GPR_ASSERT(tsi_handshaker_result_extract_peer(
                    ssl_fixture->base.client_result, &peer) == TSI_OK);
@@ -956,7 +964,11 @@ void ssl_tsi_test_extract_cert_chain() {
     X509_INFO* certInfo = sk_X509_INFO_value(certInfos, i);
     if (certInfo->x509 != nullptr) {
       GPR_ASSERT(sk_X509_push(cert_chain, certInfo->x509) != 0);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
       X509_up_ref(certInfo->x509);
+#else
+      certInfo->x509->references += 1;
+#endif
     }
   }
   tsi_peer_property chain_property;
