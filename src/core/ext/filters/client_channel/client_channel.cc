@@ -2504,6 +2504,7 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
 ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   grpc_slice_unref_internal(path_);
   GRPC_ERROR_UNREF(cancel_error_);
+  GRPC_ERROR_UNREF(failure_error_);
   if (backend_metric_data_ != nullptr) {
     backend_metric_data_
         ->LoadBalancingPolicy::BackendMetricData::~BackendMetricData();
@@ -2594,6 +2595,7 @@ void ClientChannel::LoadBalancedCall::PendingBatchesFail(
     grpc_error* error,
     YieldCallCombinerPredicate yield_call_combiner_predicate) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(failure_error_);
   failure_error_ = error;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     size_t num_batches = 0;
