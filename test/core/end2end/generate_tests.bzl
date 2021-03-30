@@ -296,6 +296,10 @@ END2END_TESTS = {
         # See b/151617965
         short_name = "retry_exceeds_buffer_size_in_subseq",
     ),
+    "retry_lb_drop": _test_options(
+        needs_client_channel = True,
+        proxyable = False,
+    ),
     "retry_non_retriable_status": _test_options(
         needs_client_channel = True,
         proxyable = False,
@@ -422,12 +426,14 @@ def grpc_end2end_tests():
             "end2end_tests.h",
         ],
         language = "C++",
+        testonly = 1,
         deps = [
             ":cq_verifier",
             ":ssl_test_data",
             ":http_proxy",
             ":proxy",
             ":local_util",
+            "//test/core/util:test_lb_policies",
         ],
     )
 
@@ -436,6 +442,7 @@ def grpc_end2end_tests():
             name = "%s_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
+            testonly = 1,
             data = [
                 "//src/core/tsi/test_creds:ca.pem",
                 "//src/core/tsi/test_creds:server1.key",
@@ -497,12 +504,14 @@ def grpc_end2end_nosec_tests():
             "end2end_tests.h",
         ],
         language = "C++",
+        testonly = 1,
         deps = [
             ":cq_verifier",
             ":ssl_test_data",
             ":http_proxy",
             ":proxy",
             ":local_util",
+            "//test/core/util:test_lb_policies",
         ],
     )
 
@@ -513,6 +522,7 @@ def grpc_end2end_nosec_tests():
             name = "%s_nosec_test" % f,
             srcs = ["fixtures/%s.cc" % f],
             language = "C++",
+            testonly = 1,
             data = [
                 "//src/core/tsi/test_creds:ca.pem",
                 "//src/core/tsi/test_creds:server1.key",

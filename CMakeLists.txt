@@ -1110,6 +1110,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/retry_disabled.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  test/core/end2end/tests/retry_lb_drop.cc
   test/core/end2end/tests/retry_non_retriable_status.cc
   test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   test/core/end2end/tests/retry_recv_initial_metadata.cc
@@ -1137,6 +1138,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/workaround_cronet_compression.cc
   test/core/end2end/tests/write_buffering.cc
   test/core/end2end/tests/write_buffering_at_end.cc
+  test/core/util/test_lb_policies.cc
 )
 
 set_target_properties(end2end_nosec_tests PROPERTIES
@@ -1241,6 +1243,7 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_disabled.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  test/core/end2end/tests/retry_lb_drop.cc
   test/core/end2end/tests/retry_non_retriable_status.cc
   test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   test/core/end2end/tests/retry_recv_initial_metadata.cc
@@ -1268,6 +1271,7 @@ add_library(end2end_tests
   test/core/end2end/tests/workaround_cronet_compression.cc
   test/core/end2end/tests/write_buffering.cc
   test/core/end2end/tests/write_buffering_at_end.cc
+  test/core/util/test_lb_policies.cc
 )
 
 set_target_properties(end2end_tests PROPERTIES
