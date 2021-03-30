@@ -19,8 +19,6 @@
 #include <functional>
 #include <vector>
 
-#include <grpc/event_engine/port.h>
-
 #include "absl/status/status.h"
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"

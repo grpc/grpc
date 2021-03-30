@@ -37,7 +37,6 @@ framework module grpc {
   header "compression.h"
   header "event_engine/channel_args.h"
   header "event_engine/event_engine.h"
-  header "event_engine/port.h"
   header "event_engine/slice_allocator.h"
   header "fork.h"
   header "grpc.h"
