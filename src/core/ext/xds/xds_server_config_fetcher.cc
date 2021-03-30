@@ -512,7 +512,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
   grpc_server_xds_status_notifier serving_status_notifier_;
   Mutex mu_;
   std::map<grpc_server_config_fetcher::WatcherInterface*, WatcherState>
-      watchers_;
+      watchers_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace
