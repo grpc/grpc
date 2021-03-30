@@ -3027,10 +3027,10 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(grpc_error** error) {
       // Handle drops.
       if (GPR_UNLIKELY(result.subchannel == nullptr)) {
         result.error = grpc_error_set_int(
-            grpc_error_set_int(
-                GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                    "Call dropped by load balancing policy"),
-                GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
+            grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                   "Call dropped by load balancing policy"),
+                               GRPC_ERROR_INT_GRPC_STATUS,
+                               GRPC_STATUS_UNAVAILABLE),
             GRPC_ERROR_INT_LB_POLICY_DROP, 1);
       } else {
         // Grab a ref to the connected subchannel while we're still

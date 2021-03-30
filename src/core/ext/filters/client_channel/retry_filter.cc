@@ -393,8 +393,8 @@ class RetryFilter::CallData {
   // Sets *status, *server_pushback_md, and *is_lb_drop based on md_batch
   // and error.
   void GetCallStatus(grpc_metadata_batch* md_batch, grpc_error* error,
-                     grpc_status_code* status,
-                     grpc_mdelem** server_pushback_md, bool* is_lb_drop);
+                     grpc_status_code* status, grpc_mdelem** server_pushback_md,
+                     bool* is_lb_drop);
   // Adds recv_trailing_metadata_ready closure to closures.
   void AddClosureForRecvTrailingMetadataReady(
       SubchannelCallBatchData* batch_data, grpc_error* error,

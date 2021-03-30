@@ -101,8 +101,7 @@ class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
                  const char* delegate_policy_name)
       : ForwardingLoadBalancingPolicy(
             absl::make_unique<Helper>(RefCountedPtr<TestPickArgsLb>(this), cb),
-            std::move(args),
-            delegate_policy_name,
+            std::move(args), delegate_policy_name,
             /*initial_refcount=*/2) {}
 
   ~TestPickArgsLb() override = default;
@@ -170,8 +169,8 @@ class TestPickArgsLbConfig : public LoadBalancingPolicy::Config {
 
 class TestPickArgsLbFactory : public LoadBalancingPolicyFactory {
  public:
-  explicit TestPickArgsLbFactory(
-      TestPickArgsCallback cb, const char* delegate_policy_name)
+  explicit TestPickArgsLbFactory(TestPickArgsCallback cb,
+                                 const char* delegate_policy_name)
       : cb_(std::move(cb)), delegate_policy_name_(delegate_policy_name) {}
 
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
@@ -418,8 +417,8 @@ class AddressTestFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-void RegisterTestPickArgsLoadBalancingPolicy(
-    TestPickArgsCallback cb, const char* delegate_policy_name) {
+void RegisterTestPickArgsLoadBalancingPolicy(TestPickArgsCallback cb,
+                                             const char* delegate_policy_name) {
   LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
       absl::make_unique<TestPickArgsLbFactory>(std::move(cb),
                                                delegate_policy_name));
