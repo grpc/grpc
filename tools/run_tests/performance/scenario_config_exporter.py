@@ -192,11 +192,9 @@ def main() -> None:
 
     if args.count_scenarios:
         print('Scenario count for all languages (category: {}):'.format(
-            args.category),
-              file=sys.stderr)
+            args.category))
         print('{:>5}  {:16} {:8} {:8} {}'.format('Count', 'Language', 'Client',
-                                                 'Server', 'Categories'),
-              file=sys.stdout)
+                                                 'Server', 'Categories'))
         c = collections.Counter(gen_scenario_languages(args.category))
         total = 0
         for ((l, cl, sl, cat), count) in c.most_common():
@@ -204,8 +202,7 @@ def main() -> None:
                                                                  cl=str(cl),
                                                                  sl=str(sl),
                                                                  count=count,
-                                                                 cat=cat),
-                  file=sys.stdout)
+                                                                 cat=cat))
             total += count
 
         print('\n{:>5}  total scenarios (category: {})'.format(
