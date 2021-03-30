@@ -1233,10 +1233,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
   if (peer_cert != nullptr) {
     result = peer_from_x509(peer_cert, 1, peer);
     X509_free(peer_cert);
-    if (result != TSI_OK) {
-      gpr_log(GPR_INFO, "peer_from_x509 failed: %d", static_cast<int>(result));
-      return result;
-    }
+    if (result != TSI_OK) return result;
   }
 #if TSI_OPENSSL_ALPN_SUPPORT
   SSL_get0_alpn_selected(impl->ssl, &alpn_selected, &alpn_selected_len);
@@ -1272,10 +1269,7 @@ static tsi_result ssl_handshaker_result_extract_peer(
         TSI_SSL_ALPN_SELECTED_PROTOCOL,
         reinterpret_cast<const char*>(alpn_selected), alpn_selected_len,
         &peer->properties[peer->property_count]);
-    if (result != TSI_OK) {
-      gpr_log(GPR_INFO, "constructing ssl alpn selected protocol failed: %d", static_cast<int>(result));
-      return result;
-    }
+    if (result != TSI_OK) return result;
     peer->property_count++;
   }
   // Add security_level peer property.
@@ -1283,20 +1277,14 @@ static tsi_result ssl_handshaker_result_extract_peer(
       TSI_SECURITY_LEVEL_PEER_PROPERTY,
       tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY),
       &peer->properties[peer->property_count]);
-  if (result != TSI_OK) {
-    gpr_log(GPR_INFO, "constructing security level failed: %d", static_cast<int>(result));
-    return result;
-  }
+  if (result != TSI_OK) return result;
   peer->property_count++;
 
   const char* session_reused = SSL_session_reused(impl->ssl) ? "true" : "false";
   result = tsi_construct_string_peer_property_from_cstring(
       TSI_SSL_SESSION_REUSED_PEER_PROPERTY, session_reused,
       &peer->properties[peer->property_count]);
-  if (result != TSI_OK) {
-    gpr_log(GPR_INFO, "constructing session reused failed: %d", static_cast<int>(result));
-    return result;
-  }
+  if (result != TSI_OK) return result;
   peer->property_count++;
   return result;
 }
