@@ -102,7 +102,7 @@ class EventEngine {
    public:
     static constexpr socklen_t MAX_SIZE_BYTES = 128;
 
-    ResolvedAddress(const void* addr, socklen_t len);
+    ResolvedAddress(const sockaddr* addr, socklen_t len);
     const struct sockaddr* Sockaddr() const;
     socklen_t Length() const;
 

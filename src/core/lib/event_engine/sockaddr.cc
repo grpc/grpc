@@ -22,7 +22,8 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::ResolvedAddress::ResolvedAddress(const void* addr, socklen_t len) {
+EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* addr,
+                                              socklen_t len) {
   GPR_ASSERT(len <= sizeof(buffer_));
   memset(&buffer_, 0, MAX_SIZE_BYTES);
   memcpy(&buffer_, addr, len);
