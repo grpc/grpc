@@ -1913,6 +1913,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #endif
 
   if (ssl_context == nullptr) {
+    log_ssl_error_stack();
     gpr_log(GPR_ERROR, "Could not create ssl context.");
     return TSI_INVALID_ARGUMENT;
   }
@@ -2082,6 +2083,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #endif
 
       if (impl->ssl_contexts[i] == nullptr) {
+        log_ssl_error_stack();
         gpr_log(GPR_ERROR, "Could not create ssl context.");
         result = TSI_OUT_OF_RESOURCES;
         break;
