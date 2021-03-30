@@ -263,7 +263,6 @@ class ClientChannel {
   //
   const bool deadline_checking_enabled_;
   const bool enable_retries_;
-  const size_t per_rpc_retry_buffer_size_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
   const grpc_channel_args* channel_args_;

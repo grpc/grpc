@@ -80,14 +80,6 @@
 // Client channel filter
 //
 
-// By default, we buffer 256 KiB per RPC for retries.
-// TODO(roth): Do we have any data to suggest a better value?
-#define DEFAULT_PER_RPC_RETRY_BUFFER_SIZE (256 << 10)
-
-// This value was picked arbitrarily.  It can be changed if there is
-// any even moderately compelling reason to do so.
-#define RETRY_BACKOFF_JITTER 0.2
-
 namespace grpc_core {
 
 using internal::ClientChannelGlobalParsedConfig;
@@ -916,8 +908,8 @@ class ClientChannel::ClientChannelControlHelper
       ServerAddress address, const grpc_channel_args& args) override {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
     // Determine health check service name.
-    bool inhibit_health_checking = grpc_channel_arg_get_bool(
-        grpc_channel_args_find(&args, GRPC_ARG_INHIBIT_HEALTH_CHECKING), false);
+    bool inhibit_health_checking = grpc_channel_args_find_bool(
+        &args, GRPC_ARG_INHIBIT_HEALTH_CHECKING, false);
     absl::optional<std::string> health_check_service_name;
     if (!inhibit_health_checking) {
       health_check_service_name = chand_->health_check_service_name_;
@@ -1031,20 +1023,13 @@ void ClientChannel::Destroy(grpc_channel_element* elem) {
 namespace {
 
 bool GetEnableRetries(const grpc_channel_args* args) {
-  return grpc_channel_arg_get_bool(
-      grpc_channel_args_find(args, GRPC_ARG_ENABLE_RETRIES), true);
-}
-
-size_t GetMaxPerRpcRetryBufferSize(const grpc_channel_args* args) {
-  return static_cast<size_t>(grpc_channel_arg_get_integer(
-      grpc_channel_args_find(args, GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE),
-      {DEFAULT_PER_RPC_RETRY_BUFFER_SIZE, 0, INT_MAX}));
+  return grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, false);
 }
 
 RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
     const grpc_channel_args* args) {
-  const bool use_local_subchannel_pool = grpc_channel_arg_get_bool(
-      grpc_channel_args_find(args, GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), false);
+  const bool use_local_subchannel_pool = grpc_channel_args_find_bool(
+      args, GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, false);
   if (use_local_subchannel_pool) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
@@ -1052,12 +1037,8 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
 }
 
 channelz::ChannelNode* GetChannelzNode(const grpc_channel_args* args) {
-  const grpc_arg* arg =
-      grpc_channel_args_find(args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
-  if (arg != nullptr && arg->type == GRPC_ARG_POINTER) {
-    return static_cast<channelz::ChannelNode*>(arg->value.pointer.p);
-  }
-  return nullptr;
+  return grpc_channel_args_find_pointer<channelz::ChannelNode>(
+      args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
 }
 
 }  // namespace
@@ -1067,8 +1048,6 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
     : deadline_checking_enabled_(
           grpc_deadline_checking_enabled(args->channel_args)),
       enable_retries_(GetEnableRetries(args->channel_args)),
-      per_rpc_retry_buffer_size_(
-          GetMaxPerRpcRetryBufferSize(args->channel_args)),
       owning_stack_(args->channel_stack),
       client_channel_factory_(
           ClientChannelFactory::GetFromChannelArgs(args->channel_args)),
@@ -1181,9 +1160,8 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   if (!parsed_service_config->parsed_deprecated_lb_policy().empty()) {
     policy_name = parsed_service_config->parsed_deprecated_lb_policy().c_str();
   } else {
-    const grpc_arg* channel_arg =
-        grpc_channel_args_find(resolver_result.args, GRPC_ARG_LB_POLICY_NAME);
-    policy_name = grpc_channel_arg_get_string(channel_arg);
+    policy_name = grpc_channel_args_find_string(resolver_result.args,
+                                                GRPC_ARG_LB_POLICY_NAME);
   }
   // Use pick_first if nothing was specified and we didn't select grpclb
   // above.
