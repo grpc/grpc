@@ -344,7 +344,7 @@ class DynamicTerminationFilter::CallData {
         calld->call_context_,    calld->path_,
         calld->call_start_time_, calld->deadline_,
         calld->arena_,           calld->call_combiner_};
-    calld->lb_call_ = client_channel->CreateLoadBalancedCall(args, pollent, 0);
+    calld->lb_call_ = client_channel->CreateLoadBalancedCall(args, pollent);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p dynamic_termination_calld=%p: create lb_call=%p", chand,
@@ -1133,16 +1133,8 @@ ClientChannel::~ClientChannel() {
 
 RefCountedPtr<ClientChannel::LoadBalancedCall>
 ClientChannel::CreateLoadBalancedCall(const grpc_call_element_args& args,
-                                      grpc_polling_entity* pollent,
-                                      size_t parent_data_size) {
-  const size_t alloc_size =
-      parent_data_size > 0
-          ? (GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(LoadBalancedCall)) +
-             parent_data_size)
-          : sizeof(LoadBalancedCall);
-  auto* lb_call = static_cast<LoadBalancedCall*>(args.arena->Alloc(alloc_size));
-  new (lb_call) LoadBalancedCall(this, args, pollent);
-  return lb_call;
+                                      grpc_polling_entity* pollent) {
+  return args.arena->New<LoadBalancedCall>(this, args, pollent);
 }
 
 namespace {
@@ -2513,11 +2505,6 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i] == nullptr);
   }
-}
-
-void* ClientChannel::LoadBalancedCall::GetParentData() {
-  return reinterpret_cast<char*>(this) +
-         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(LoadBalancedCall));
 }
 
 size_t ClientChannel::LoadBalancedCall::GetBatchIndex(

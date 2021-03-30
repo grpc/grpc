@@ -568,7 +568,7 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld)
       calld->call_start_time_, calld->deadline_,
       calld->arena_,           calld->call_combiner_};
   lb_call = calld->chand_->client_channel_->CreateLoadBalancedCall(
-      args, calld->pollent_, 0);
+      args, calld->pollent_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: attempt=%p: create lb_call=%p",
             calld->chand_, calld, this, lb_call.get());
