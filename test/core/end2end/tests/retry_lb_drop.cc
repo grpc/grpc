@@ -87,12 +87,15 @@ class DropPolicyFactory : public LoadBalancingPolicyFactory {
   }
 };
 
-void RegisterDropPolicy(std::vector<PickArgsSeen>* pick_args_vector) {
+std::vector<PickArgsSeen>* g_pick_args_vector = nullptr;
+
+void RegisterDropPolicy() {
   LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
       absl::make_unique<DropPolicyFactory>());
   RegisterTestPickArgsLoadBalancingPolicy(
-      [pick_args_vector](const PickArgsSeen& pick_args) {
-        pick_args_vector->push_back(pick_args);
+      [](const PickArgsSeen& pick_args) {
+        GPR_ASSERT(g_pick_args_vector != nullptr);
+        g_pick_args_vector->push_back(pick_args);
       },
       kDropPolicyName);
 }
@@ -162,9 +165,6 @@ static void end_test(grpc_end2end_test_fixture* f) {
 // - 1 retry allowed for ABORTED status
 // - first attempt returns ABORTED but does not retry
 static void test_retry_lb_drop(grpc_end2end_test_config config) {
-  std::vector<grpc_core::PickArgsSeen> pick_args_seen;
-  grpc_core::RegisterDropPolicy(&pick_args_seen);
-
   grpc_call* c;
   grpc_op ops[6];
   grpc_op* op;
@@ -177,6 +177,9 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
   grpc_status_code status;
   grpc_call_error error;
   grpc_slice details;
+
+  std::vector<grpc_core::PickArgsSeen> pick_args_seen;
+  grpc_core::g_pick_args_vector = &pick_args_seen;
 
   grpc_arg arg = grpc_channel_arg_string_create(
       const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
@@ -259,6 +262,8 @@ static void test_retry_lb_drop(grpc_end2end_test_config config) {
   gpr_log(GPR_INFO, "NUMBER OF LB PICKS: %" PRIuPTR, pick_args_seen.size());
   GPR_ASSERT(pick_args_seen.size() == 1);
 
+  grpc_core::g_pick_args_vector = nullptr;
+
   end_test(&f);
   config.tear_down_data(&f);
 }
@@ -268,4 +273,4 @@ void retry_lb_drop(grpc_end2end_test_config config) {
   test_retry_lb_drop(config);
 }
 
-void retry_lb_drop_pre_init(void) {}
+void retry_lb_drop_pre_init(void) { grpc_core::RegisterDropPolicy(); }
