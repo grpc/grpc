@@ -529,20 +529,18 @@ void XdsClient::ChannelState::MaybeStartLrsCall() {
 void XdsClient::ChannelState::StopLrsCall() { lrs_calld_.reset(); }
 
 void XdsClient::ChannelState::StartConnectivityWatchLocked() {
-  grpc_channel_element* client_channel_elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
-  GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
+  ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+  GPR_ASSERT(client_channel != nullptr);
   watcher_ = new StateWatcher(Ref(DEBUG_LOCATION, "ChannelState+watch"));
-  grpc_client_channel_start_connectivity_watch(
-      client_channel_elem, GRPC_CHANNEL_IDLE,
+  client_channel->AddConnectivityWatcher(
+      GRPC_CHANNEL_IDLE,
       OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
 }
 
 void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
-  grpc_channel_element* client_channel_elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
-  GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-  grpc_client_channel_stop_connectivity_watch(client_channel_elem, watcher_);
+  ClientChannel* client_channel = ClientChannel::GetFromChannel(channel_);
+  GPR_ASSERT(client_channel != nullptr);
+  client_channel->RemoveConnectivityWatcher(watcher_);
 }
 
 void XdsClient::ChannelState::SubscribeLocked(const std::string& type_url,
