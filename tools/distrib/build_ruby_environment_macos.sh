@@ -68,16 +68,16 @@ rvm use 3.0.0
 set -x
 ruby --version | grep 'ruby 3.0.0'
 rake -f "$CROSS_RUBY" cross-ruby VERSION=3.0.0 HOST=x86_64-darwin11 MAKE="$MAKE" SOURCE="${HOME}/.rake-compiler/sources/ruby-3.0.0.tar.gz"
+echo "installed ruby 3.0.0 build targets"
 popd
 # Install ruby 2.7.0 for rake-compiler
 set +x
 rvm use 2.7.0
 set -x
 ruby --version | grep 'ruby 2.7.0'
-for v in 2.7.0 ; do
-  ccache -c
-  rake -f "$CROSS_RUBY" cross-ruby VERSION="$v" HOST=x86_64-darwin11 MAKE="$MAKE"
-done
+ccache -c
+rake -f "$CROSS_RUBY" cross-ruby VERSION=2.7.0 HOST=x86_64-darwin11 MAKE="$MAKE"
+echo "installed ruby 2.7.0 build targets"
 # Install ruby 2.4-2.6 for rake-compiler
 set +x
 rvm use 2.5.0
@@ -86,6 +86,7 @@ ruby --version | grep 'ruby 2.5.0'
 for v in 2.6.0 2.5.0 2.4.0 ; do
   ccache -c
   rake -f "$CROSS_RUBY" cross-ruby VERSION="$v" HOST=x86_64-darwin11 MAKE="$MAKE"
+  echo "installed ruby $v build targets"
 done
 
 sed 's/x86_64-darwin-11/universal-darwin/' ~/.rake-compiler/config.yml > "$CROSS_RUBY"
