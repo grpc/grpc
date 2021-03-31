@@ -32,7 +32,7 @@ function build {
     LDFLAGS="-arch $ARCH -isysroot $(xcrun --sdk $SDK --show-sdk-path) -Wl,ios_version_min=9.0"
 
     # TODO(jtattermusch): revisit the build arguments
-    make -j4 static_csharp \
+    make -j4 VERBOSE=1 static_csharp \
         VALID_CONFIG_ios_$ARCH="1" \
         CC_ios_$ARCH="$PATH_CC" \
         CXX_ios_$ARCH="$PATH_CXX" \
