@@ -74,6 +74,8 @@ typedef enum {
   GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
   /// channel connectivity state associated with the error
   GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE,
+  /// LB policy drop
+  GRPC_ERROR_INT_LB_POLICY_DROP,
 
   /// Must always be last
   GRPC_ERROR_INT_MAX,
