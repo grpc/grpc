@@ -355,20 +355,12 @@ class ClientChannel {
 // because it is allocated on the arena and can't free its memory when
 // its refcount goes to zero.  So instead, it manually implements the
 // same API as RefCounted<>, so that it can be used with RefCountedPtr<>.
-class ClientChannel::LoadBalancedCall {
+class ClientChannel::LoadBalancedCall
+    : public RefCounted<LoadBalancedCall, PolymorphicRefCount, kUnrefCallDtor> {
  public:
   LoadBalancedCall(ClientChannel* chand, const grpc_call_element_args& args,
                    grpc_polling_entity* pollent);
-  ~LoadBalancedCall();
-
-  // Interface of RefCounted<>.
-  RefCountedPtr<LoadBalancedCall> Ref() GRPC_MUST_USE_RESULT;
-  RefCountedPtr<LoadBalancedCall> Ref(const DebugLocation& location,
-                                      const char* reason) GRPC_MUST_USE_RESULT;
-  // When refcount drops to 0, destroys itself and the associated call stack,
-  // but does NOT free the memory because it's in the call arena.
-  void Unref();
-  void Unref(const DebugLocation& location, const char* reason);
+  ~LoadBalancedCall() override;
 
   void* GetParentData();
 
@@ -390,17 +382,9 @@ class ClientChannel::LoadBalancedCall {
   }
 
  private:
-  // Allow RefCountedPtr<> to access IncrementRefCount().
-  template <typename T>
-  friend class ::grpc_core::RefCountedPtr;
-
   class LbQueuedCallCanceller;
   class Metadata;
   class LbCallState;
-
-  // Interface of RefCounted<>.
-  void IncrementRefCount();
-  void IncrementRefCount(const DebugLocation& location, const char* reason);
 
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
@@ -443,8 +427,6 @@ class ClientChannel::LoadBalancedCall {
   // Adds the call to the channel's list of queued picks if not already present.
   void MaybeAddCallToLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
-
-  RefCount refs_;
 
   ClientChannel* chand_;
 

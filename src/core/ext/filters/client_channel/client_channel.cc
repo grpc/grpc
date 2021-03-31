@@ -2510,9 +2510,9 @@ class ClientChannel::LoadBalancedCall::LbCallState
 ClientChannel::LoadBalancedCall::LoadBalancedCall(
     ClientChannel* chand, const grpc_call_element_args& args,
     grpc_polling_entity* pollent)
-    : refs_(1, GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
-                   ? "LoadBalancedCall"
-                   : nullptr),
+    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
+                     ? "LoadBalancedCall"
+                     : nullptr),
       chand_(chand),
       path_(grpc_slice_ref_internal(args.path)),
       call_start_time_(args.start_time),
@@ -2534,39 +2534,6 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i] == nullptr);
   }
-}
-
-RefCountedPtr<ClientChannel::LoadBalancedCall>
-ClientChannel::LoadBalancedCall::Ref() {
-  IncrementRefCount();
-  return RefCountedPtr<LoadBalancedCall>(this);
-}
-
-RefCountedPtr<ClientChannel::LoadBalancedCall>
-ClientChannel::LoadBalancedCall::Ref(const DebugLocation& location,
-                                     const char* reason) {
-  IncrementRefCount(location, reason);
-  return RefCountedPtr<LoadBalancedCall>(this);
-}
-
-void ClientChannel::LoadBalancedCall::Unref() {
-  if (GPR_UNLIKELY(refs_.Unref())) {
-    this->~LoadBalancedCall();
-  }
-}
-
-void ClientChannel::LoadBalancedCall::Unref(const DebugLocation& location,
-                                            const char* reason) {
-  if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-    this->~LoadBalancedCall();
-  }
-}
-
-void ClientChannel::LoadBalancedCall::IncrementRefCount() { refs_.Ref(); }
-
-void ClientChannel::LoadBalancedCall::IncrementRefCount(
-    const DebugLocation& location, const char* reason) {
-  refs_.Ref(location, reason);
 }
 
 void* ClientChannel::LoadBalancedCall::GetParentData() {
