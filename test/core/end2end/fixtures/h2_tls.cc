@@ -80,10 +80,9 @@ struct fullstack_secure_fixture_data {
 //
 
 static int SyncExternalVerifierVerify(
-    grpc_tls_certificate_verifier_external* external_verifier,
-    grpc_tls_custom_verification_check_request* request,
-    grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg,
-    void* user_data) {
+    void* user_data, grpc_tls_custom_verification_check_request* request,
+    grpc_tls_on_custom_verification_check_done_cb callback,
+    void* callback_arg) {
   request->status = GRPC_STATUS_OK;
   return false;
 }
@@ -108,10 +107,9 @@ static void AsyncExternalVerifierVerifyCb(void* args) {
 }
 
 static int AsyncExternalVerifierVerify(
-    grpc_tls_certificate_verifier_external* external_verifier,
-    grpc_tls_custom_verification_check_request* request,
-    grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg,
-    void* user_data) {
+    void* user_data, grpc_tls_custom_verification_check_request* request,
+    grpc_tls_on_custom_verification_check_done_cb callback,
+    void* callback_arg) {
   // Creates the thread args we use when creating the thread.
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(user_data);

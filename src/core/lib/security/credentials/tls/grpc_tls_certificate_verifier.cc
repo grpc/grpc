@@ -27,11 +27,26 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 
+void grpc_tls_certificate_verifier::CertificateVerificationRequestInit(
+    grpc_tls_custom_verification_check_request* request) {
+  GPR_ASSERT(request != nullptr);
+  request->target_name = nullptr;
+  request->peer_info.common_name = nullptr;
+  request->peer_info.san_names.uri_names = nullptr;
+  request->peer_info.san_names.uri_names_size = 0;
+  request->peer_info.san_names.ip_names = nullptr;
+  request->peer_info.san_names.ip_names_size = 0;
+  request->peer_info.san_names.dns_names = nullptr;
+  request->peer_info.san_names.dns_names_size = 0;
+  request->peer_info.peer_cert = nullptr;
+  request->peer_info.peer_cert_full_chain = nullptr;
+  request->status = GRPC_STATUS_CANCELLED;
+  request->error_details = nullptr;
+}
+
 void grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(
     grpc_tls_custom_verification_check_request* request) {
-  if (request == nullptr) {
-    return;
-  }
+  GPR_ASSERT(request != nullptr);
   if (request->target_name != nullptr) {
     gpr_free(const_cast<char*>(request->target_name));
   }
@@ -79,9 +94,8 @@ bool ExternalCertificateVerifier::Verify(
   }
   // Invoke the caller-specified verification logic embedded in
   // external_verifier_.
-  bool is_async =
-      external_verifier_->verify(external_verifier_, request, &OnVerifyDone,
-                                 this, external_verifier_->user_data);
+  bool is_async = external_verifier_->verify(external_verifier_->user_data,
+                                             request, &OnVerifyDone, this);
   if (!is_async) {
     grpc_core::MutexLock lock(&mu_);
     request_map_.erase(request);

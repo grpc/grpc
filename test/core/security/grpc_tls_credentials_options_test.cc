@@ -46,6 +46,8 @@ namespace testing {
 class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    grpc_tls_certificate_verifier::CertificateVerificationRequestInit(
+        &request_);
     root_cert_ = GetFileContents(CA_CERT_PATH);
     cert_chain_ = GetFileContents(SERVER_CERT_PATH);
     private_key_ = GetFileContents(SERVER_KEY_PATH);
@@ -63,16 +65,13 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
   }
 
   void CreateExternalCertificateVerifier(
-      int (*verify)(grpc_tls_certificate_verifier_external* external_verifier,
+      int (*verify)(void* user_data,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg, void* user_data),
-      void (*cancel)(grpc_tls_certificate_verifier_external* external_verifier,
-                     grpc_tls_custom_verification_check_request* request,
-                     void* user_data),
-      void (*destruct)(
-          grpc_tls_certificate_verifier_external* external_verifier,
-          void* user_data)) {
+                    void* callback_arg),
+      void (*cancel)(void* user_data,
+                     grpc_tls_custom_verification_check_request* request),
+      void (*destruct)(void* user_data)) {
     grpc_tls_certificate_verifier_external* external_verifier =
         new grpc_tls_certificate_verifier_external();
     external_verifier->verify = verify;
@@ -84,10 +83,9 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
   }
 
   static int SyncExternalVerifierGoodVerify(
-      grpc_tls_certificate_verifier_external* external_verifier,
-      grpc_tls_custom_verification_check_request* request,
+      void* user_data, grpc_tls_custom_verification_check_request* request,
       grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg, void* user_data) {
+      void* callback_arg) {
     request->status = GRPC_STATUS_OK;
     return false;
   }
@@ -99,10 +97,9 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
   };
 
   static int AsyncExternalVerifierBadVerify(
-      grpc_tls_certificate_verifier_external* external_verifier,
-      grpc_tls_custom_verification_check_request* request,
+      void* user_data, grpc_tls_custom_verification_check_request* request,
       grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg, void* user_data) {
+      void* callback_arg) {
     ThreadArgs* thread_args = new ThreadArgs();
     thread_args->request = request;
     thread_args->callback = callback;

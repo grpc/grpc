@@ -50,6 +50,11 @@ struct grpc_tls_certificate_verifier
   // This is only needed when in async mode.
   // TODO(ZhenLian): find out the place to invoke this...
   virtual void Cancel(grpc_tls_custom_verification_check_request* request) = 0;
+  // A utility function to help build up the request.
+  // This is needed because C-core API doesn't allow default data member
+  // initialization. It should be called every time when a request is created.
+  static void CertificateVerificationRequestInit(
+      grpc_tls_custom_verification_check_request* request);
   // A utility function to help clean up the request.
   // Note the request pointer itself won't be deleted.
   static void CertificateVerificationRequestDestroy(
@@ -69,7 +74,7 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
 
   ~ExternalCertificateVerifier() {
     if (external_verifier_->destruct != nullptr) {
-      external_verifier_->destruct(external_verifier_, external_verifier_->user_data);
+      external_verifier_->destruct(external_verifier_->user_data);
     }
     delete external_verifier_;
   }
@@ -78,7 +83,7 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
               std::function<void()> callback) override;
 
   void Cancel(grpc_tls_custom_verification_check_request* request) override {
-    external_verifier_->cancel(external_verifier_, request, external_verifier_->user_data);
+    external_verifier_->cancel(external_verifier_->user_data, request);
   }
 
  private:

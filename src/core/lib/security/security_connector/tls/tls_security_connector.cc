@@ -211,6 +211,7 @@ void TlsChannelSecurityConnector::check_peer(
   // GPR_ASSERT(options_->certificate_verifier() != nullptr);
   // Parse tsi_peer and feed in the values in the check request.
   auto* request = new grpc_tls_custom_verification_check_request();
+  grpc_tls_certificate_verifier::CertificateVerificationRequestInit(request);
   request->target_name = gpr_strdup(target_name);
   std::vector<char*> uri_names;
   std::vector<char*> dns_names;
@@ -517,6 +518,7 @@ void TlsServerSecurityConnector::check_peer(
   GPR_ASSERT(options_->certificate_verifier() != nullptr);
   // Parse tsi_peer and feed in the values in the check request.
   auto* request = new grpc_tls_custom_verification_check_request();
+  grpc_tls_certificate_verifier::CertificateVerificationRequestInit(request);
   std::vector<char*> uri_names;
   std::vector<char*> dns_names;
   for (size_t i = 0; i < peer.property_count; ++i) {
