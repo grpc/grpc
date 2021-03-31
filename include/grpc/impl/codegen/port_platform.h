@@ -662,11 +662,10 @@ typedef unsigned __int64 uint64_t;
 // Platform-specific sockaddr includes
 #ifdef GRPC_UV
 #include <uv.h>
-#elif defined(GPR_ANDROID) || defined(GPR_LINUX) ||                            \
-    (defined(GPR_APPLE) && !defined(GRPC_CFSTREAM)) || defined(GPR_FREEBSD) || \
-    defined(GPR_OPENBSD) || defined(GPR_SOLARIS) || defined(GPR_AIX) ||        \
-    defined(GPR_NACL) || defined(GPR_FUCHSIA) || defined(GRPC_POSIX_SOCKET)
-#define GRPC_POSIX_SOCKET 1
+#elif defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) ||   \
+    defined(GPR_FREEBSD) || defined(GPR_OPENBSD) || defined(GPR_SOLARIS) || \
+    defined(GPR_AIX) || defined(GPR_NACL) || defined(GPR_FUCHSIA) ||        \
+    defined(GRPC_POSIX_SOCKET)
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
