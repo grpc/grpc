@@ -15518,8 +15518,8 @@ generate_pkgconfig(
   "gpr"
   "gRPC platform support library"
   "${gRPC_CORE_VERSION}"
-  ""
-  "-lgpr -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_status -labsl_cord -labsl_str_format_internal -labsl_bad_optional_access -labsl_cord -labsl_symbolize -labsl_strings -labsl_strings_internal -labsl_int128 -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
+  "absl_base absl_memory absl_optional absl_status absl_str_format absl_strings absl_synchronization absl_time"
+  "-lgpr"
   ""
   "gpr.pc")
 
@@ -15528,8 +15528,8 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "gpr openssl"
-  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz -labsl_statusor -labsl_status -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_exponential_biased -labsl_cord -labsl_str_format_internal -labsl_cord -labsl_hash -labsl_bad_variant_access -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_wyhash -labsl_int128 -labsl_city -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
+  "gpr openssl absl_base absl_bind_front absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "-lgrpc -laddress_sorting -lre2 -lupb -lcares -lz"
   ""
   "grpc.pc")
 
@@ -15538,8 +15538,8 @@ generate_pkgconfig(
   "gRPC unsecure"
   "high performance general RPC framework without SSL"
   "${gRPC_CORE_VERSION}"
-  "gpr"
-  "-lgrpc_unsecure -labsl_statusor -labsl_status -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_exponential_biased -labsl_cord -labsl_str_format_internal -labsl_cord -labsl_hash -labsl_bad_variant_access -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_wyhash -labsl_int128 -labsl_city -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
+  "gpr absl_base absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "-lgrpc_unsecure"
   ""
   "grpc_unsecure.pc")
 
@@ -15548,8 +15548,8 @@ generate_pkgconfig(
   "gRPC++"
   "C++ wrapper for gRPC"
   "${gRPC_CPP_VERSION}"
-  "grpc"
-  "-lgrpc++ -labsl_statusor -labsl_status -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_exponential_biased -labsl_cord -labsl_str_format_internal -labsl_cord -labsl_hash -labsl_bad_variant_access -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_wyhash -labsl_int128 -labsl_city -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
+  "grpc absl_base absl_bind_front absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "-lgrpc++"
   ""
   "grpc++.pc")
 
@@ -15558,7 +15558,7 @@ generate_pkgconfig(
   "gRPC++ unsecure"
   "C++ wrapper for gRPC without SSL"
   "${gRPC_CPP_VERSION}"
-  "grpc_unsecure"
-  "-lgrpc++_unsecure -labsl_statusor -labsl_status -labsl_raw_hash_set -labsl_hashtablez_sampler -labsl_synchronization -labsl_time -labsl_time_zone -labsl_civil_time -labsl_graphcycles_internal -labsl_symbolize -labsl_demangle_internal -labsl_malloc_internal -labsl_stacktrace -labsl_debugging_internal -labsl_exponential_biased -labsl_cord -labsl_str_format_internal -labsl_cord -labsl_hash -labsl_bad_variant_access -labsl_bad_optional_access -labsl_strings -labsl_strings_internal -labsl_wyhash -labsl_int128 -labsl_city -labsl_throw_delegate -labsl_base -labsl_spinlock_wait -labsl_raw_logging_internal -labsl_log_severity"
+  "grpc_unsecure absl_base absl_flat_hash_map absl_inlined_vector absl_memory absl_optional absl_status absl_statusor absl_str_format absl_strings absl_synchronization absl_time"
+  "-lgrpc++_unsecure"
   ""
   "grpc++_unsecure.pc")

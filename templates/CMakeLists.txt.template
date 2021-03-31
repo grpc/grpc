@@ -39,20 +39,26 @@
   def get_absl_dep(lib_name):
       return lib_map[lib_name].cmake_target
 
-  def list_absl_lib_files_for(lib_name):
-    ret = []
-    lib = lib_map[lib_name]
-    for dep in lib.transitive_deps:
-      if is_absl_lib(dep) and len(lib_map[dep].src) > 0:
-        ret.append(get_absl_dep(dep).replace("::", "_"))
-    return ret
+  def lib_and_transitive_deps(lib):
+    return list(sorted(set({lib} | set(lib_map[lib].transitive_deps))))
+
+  def list_abseil_pkg_targets(lib):
+    # This returns a list of abseil pkg targets which the given lib and
+    # its non-abseil transitive dependencies depend on.
+    # As a result, internal abseil libraries are excluded from the result.
+    absl_specs = set()
+    for lib_name in lib_and_transitive_deps(lib):
+      if is_absl_lib(lib_name): continue
+      for dep in lib_map[lib_name].deps:
+        if is_absl_lib(dep):
+          absl_specs.add(get_absl_dep(dep).replace("::", "_"))
+    return list(sorted(absl_specs))
 
   def is_shared_only_lib(lib_name):
     """Returns True if only shared library should be generated."""
     # grpc_csharp_ext is loaded by C# runtime and it
     # only makes sense as a shared lib.
     return lib_name in ['grpc_csharp_ext']
-
 
   def get_deps(target_dict):
     deps = []
@@ -739,8 +745,8 @@
     "gpr"
     "gRPC platform support library"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    ""
-    "${" ".join(("-l" + l) for l in ["gpr",] + list_absl_lib_files_for("gpr"))}"
+    "${" ".join(list_abseil_pkg_targets("gpr"))}"
+    "${" ".join(("-l" + l) for l in ["gpr"])}"
     ""
     "gpr.pc")
 
@@ -749,8 +755,8 @@
     "gRPC"
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "gpr openssl"
-    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"] + list_absl_lib_files_for("grpc"))}"
+    "${" ".join(["gpr", "openssl"] + list_abseil_pkg_targets("grpc"))}"
+    "${" ".join(("-l" + l) for l in ["grpc", "address_sorting", "re2", "upb", "cares", "z"])}"
     ""
     "grpc.pc")
 
@@ -759,8 +765,8 @@
     "gRPC unsecure"
     "high performance general RPC framework without SSL"
     "<%text>${gRPC_CORE_VERSION}</%text>"
-    "gpr"
-    "${" ".join(("-l" + l) for l in ["grpc_unsecure",] + list_absl_lib_files_for("grpc_unsecure"))}"
+    "${" ".join(["gpr"] + list_abseil_pkg_targets("grpc_unsecure"))}"
+    "${" ".join(("-l" + l) for l in ["grpc_unsecure"])}"
     ""
     "grpc_unsecure.pc")
 
@@ -769,8 +775,8 @@
     "gRPC++"
     "C++ wrapper for gRPC"
     "<%text>${gRPC_CPP_VERSION}</%text>"
-    "grpc"
-    "${" ".join(("-l" + l) for l in ["grpc++",] + list_absl_lib_files_for("grpc++"))}"
+    "${" ".join(["grpc"] + list_abseil_pkg_targets("grpc++"))}"
+    "${" ".join(("-l" + l) for l in ["grpc++"])}"
     ""
     "grpc++.pc")
 
@@ -779,7 +785,7 @@
     "gRPC++ unsecure"
     "C++ wrapper for gRPC without SSL"
     "<%text>${gRPC_CPP_VERSION}</%text>"
-    "grpc_unsecure"
-    "${" ".join(("-l" + l) for l in ["grpc++_unsecure",] + list_absl_lib_files_for("grpc++_unsecure"))}"
+    "${" ".join(["grpc_unsecure"] + list_abseil_pkg_targets("grpc++_unsecure"))}"
+    "${" ".join(("-l" + l) for l in ["grpc++_unsecure"])}"
     ""
     "grpc++_unsecure.pc")
