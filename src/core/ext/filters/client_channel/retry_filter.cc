@@ -228,15 +228,12 @@ class RetryFilter::CallData {
     // structures needed to populate the ops in the batch.
     // We allocate one struct on the arena for each attempt at starting a
     // batch on a given subchannel call.
-    class BatchData {
+    class BatchData
+        : public RefCounted<CallAttempt, PolymorphicRefCount, kUnrefCallDtor> {
      public:
       BatchData(RefCountedPtr<CallAttempt> call_attempt, int refcount,
-                    bool set_on_complete);
+                bool set_on_complete);
       ~BatchData();
-
-      void Unref() {
-        if (gpr_unref(&refs_)) this->~BatchData();
-      }
 
       grpc_transport_stream_op_batch* batch() { return &batch_; }
 
@@ -307,12 +304,9 @@ class RetryFilter::CallData {
       // Called only when retries are enabled.
       static void OnComplete(void* arg, grpc_error* error);
 
-      gpr_refcount refs_;
-
       RefCountedPtr<CallAttempt> call_attempt_;
-
       // The batch to use in the subchannel call.
-      // Its payload field points to CallAttempt::batch_payload.
+      // Its payload field points to CallAttempt::batch_payload_.
       grpc_transport_stream_op_batch batch_;
       // For intercepting on_complete.
       grpc_closure on_complete_;
@@ -844,9 +838,9 @@ void RetryFilter::CallData::CallAttempt::StartRetriableBatches() {
 
 RetryFilter::CallData::CallAttempt::BatchData::BatchData(
     RefCountedPtr<CallAttempt> attempt, int refcount, bool set_on_complete)
-    : call_attempt_(std::move(attempt)) {
+    : RefCounted(nullptr, refcount),
+      call_attempt_(std::move(attempt)) {
   batch_.payload = &call_attempt_->batch_payload_;
-  gpr_ref_init(&refs_, refcount);
   if (set_on_complete) {
     GRPC_CLOSURE_INIT(&on_complete_, OnComplete, this,
                       grpc_schedule_on_exec_ctx);
