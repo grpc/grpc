@@ -58,20 +58,23 @@ MAKE="make -j8"
 # TODO(apolcyn): remove this hack when tar.bz2 sources are available for ruby
 # 3.0.0 in https://ftp.ruby-lang.org/pub/ruby/3.0/. Also see
 # https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0.
-mkdir -p ~/.rake-compiler/sources
-pushd ~/.rake-compiler/sources
-curl -L https://ftp.ruby-lang.org/pub/ruby/3.0/ruby-3.0.0.tar.gz -o ruby-3.0.0.tar.gz
-ccache -c
 set +x # rvm commands are very verbose
 source ~/.rvm/scripts/rvm
+echo "rvm use 3.0.0"
 rvm use 3.0.0
 set -x
+RUBY_3_0_0_SOURCES="${HOME}/.rake-compiler/sources"
+mkdir -p "$RUBY_3_0_0_SOURCES"
+pushd "$RUBY_3_0_0_SOURCES"
+curl -L https://ftp.ruby-lang.org/pub/ruby/3.0/ruby-3.0.0.tar.gz -o ruby-3.0.0.tar.gz
+ccache -c
 ruby --version | grep 'ruby 3.0.0'
-rake -f "$CROSS_RUBY" cross-ruby VERSION=3.0.0 HOST=x86_64-darwin11 MAKE="$MAKE" SOURCE="${HOME}/.rake-compiler/sources/ruby-3.0.0.tar.gz"
+rake -f "$CROSS_RUBY" cross-ruby VERSION=3.0.0 HOST=x86_64-darwin11 MAKE="$MAKE" SOURCE="${RUBY_3_0_0_SOURCES}/ruby-3.0.0.tar.gz"
 echo "installed ruby 3.0.0 build targets"
 popd
 # Install ruby 2.7.0 for rake-compiler
 set +x
+echo "rvm use 2.7.0"
 rvm use 2.7.0
 set -x
 ruby --version | grep 'ruby 2.7.0'
@@ -80,6 +83,7 @@ rake -f "$CROSS_RUBY" cross-ruby VERSION=2.7.0 HOST=x86_64-darwin11 MAKE="$MAKE"
 echo "installed ruby 2.7.0 build targets"
 # Install ruby 2.4-2.6 for rake-compiler
 set +x
+echo "rvm use 2.5.0"
 rvm use 2.5.0
 set -x
 ruby --version | grep 'ruby 2.5.0'
