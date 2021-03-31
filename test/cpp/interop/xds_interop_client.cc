@@ -519,9 +519,9 @@ void RunServer(const int port, StatsWatchers* stats_watchers,
   ServerBuilder builder;
   builder.RegisterService(&stats_service);
   builder.RegisterService(&client_config_service);
+  grpc::AddAdminServices(&builder);
   builder.AddListeningPort(server_address.str(),
                            grpc::InsecureServerCredentials());
-  grpc::AddAdminServices(&builder);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_DEBUG, "Server listening on %s", server_address.str().c_str());
 
