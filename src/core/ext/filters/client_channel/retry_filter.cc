@@ -1740,6 +1740,9 @@ void RetryFilter::CallData::CreateCallAttempt(void* arg,
                                               grpc_error* /*error*/) {
   auto* calld = static_cast<CallData*>(arg);
   calld->call_attempt_.reset(calld->arena_->New<CallAttempt>(calld));
+// FIXME: CallAttempt should automatically start its batches from inside
+// its ctor, rather than having a PendingBatchesResume() method.  This
+// will pave the way for hedging.
   calld->PendingBatchesResume();
 }
 
