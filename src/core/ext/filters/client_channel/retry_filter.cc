@@ -220,7 +220,7 @@ class RetryFilter::CallData {
     // Constructs and starts whatever subchannel batches are needed on the
     // subchannel call.
 // FIXME: should be private
-    static void StartRetriableBatches(void* arg, grpc_error* ignored);
+    void StartRetriableBatches();
 
    private:
     // State used for starting a retryable batch on a subchannel call.
@@ -232,17 +232,10 @@ class RetryFilter::CallData {
      public:
       BatchData(RefCountedPtr<CallAttempt> call_attempt, int refcount,
                     bool set_on_complete);
-
-      // All dtor code must be added in `Destroy()`. This is because we may
-      // call closures in `BatchData` after they are unrefed by
-      // `Unref()`, and msan would complain about accessing this class
-      // after calling dtor. As a result we cannot call the `dtor` in `Unref()`.
-      // TODO(soheil): We should try to call the dtor in `Unref()`.
-      ~BatchData() { Destroy(); }
-      void Destroy();
+      ~BatchData();
 
       void Unref() {
-        if (gpr_unref(&refs_)) Destroy();
+        if (gpr_unref(&refs_)) this->~BatchData();
       }
 
       grpc_transport_stream_op_batch* batch() { return &batch_; }
@@ -306,8 +299,7 @@ class RetryFilter::CallData {
           grpc_error* error, CallCombinerClosureList* closures);
 
       // If there are any cached ops to replay or pending ops to start on the
-      // subchannel call, adds a closure to closures to invoke
-      // StartRetriableBatches().
+      // subchannel call, adds them to closures.
       void AddClosuresForReplayOrPendingSendOps(
           CallCombinerClosureList* closures);
 
@@ -341,6 +333,9 @@ class RetryFilter::CallData {
 
     // Adds subchannel batches for pending batches to closures.
     void AddBatchesForPendingBatches(CallCombinerClosureList* closures);
+
+    // Adds whatever subchannel batches are needed on this attempt to closures.
+    void AddRetriableBatches(CallCombinerClosureList* closures);
 
     // Returns true if any op in the batch was not yet started on this attempt.
     // Only looks at send ops, since recv ops are always started immediately.
@@ -807,40 +802,40 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
   }
 }
 
-void RetryFilter::CallData::CallAttempt::StartRetriableBatches(
-    void* arg, grpc_error* /*ignored*/) {
-  auto* call_attempt = static_cast<CallAttempt*>(arg);
-  auto* calld = call_attempt->calld_;
+void RetryFilter::CallData::CallAttempt::AddRetriableBatches(
+    CallCombinerClosureList* closures) {
+  // Replay previously-returned send_* ops if needed.
+  BatchData* replay_batch_data = MaybeCreateBatchForReplay();
+  if (replay_batch_data != nullptr) {
+    calld_->AddClosureForBatch(replay_batch_data->batch(), closures);
+    // Track number of pending subchannel send batches.
+    // If this is the first one, take a ref to the call stack.
+    if (calld_->num_pending_retriable_subchannel_send_batches_ == 0) {
+      GRPC_CALL_STACK_REF(calld_->owning_call_, "subchannel_send_batches");
+    }
+    ++calld_->num_pending_retriable_subchannel_send_batches_;
+  }
+  // Now add pending batches.
+  AddBatchesForPendingBatches(closures);
+}
+
+void RetryFilter::CallData::CallAttempt::StartRetriableBatches() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: constructing retriable batches",
-            calld->chand_, calld);
+            calld_->chand_, calld_);
   }
   // Construct list of closures to execute, one for each pending batch.
   CallCombinerClosureList closures;
-  // Replay previously-returned send_* ops if needed.
-  BatchData* replay_batch_data =
-      call_attempt->MaybeCreateBatchForReplay();
-  if (replay_batch_data != nullptr) {
-    calld->AddClosureForBatch(replay_batch_data->batch(), &closures);
-    // Track number of pending subchannel send batches.
-    // If this is the first one, take a ref to the call stack.
-    if (calld->num_pending_retriable_subchannel_send_batches_ == 0) {
-      GRPC_CALL_STACK_REF(calld->owning_call_, "subchannel_send_batches");
-    }
-    ++calld->num_pending_retriable_subchannel_send_batches_;
-  }
-  // Now add pending batches.
-  call_attempt->AddBatchesForPendingBatches(&closures);
-  // Start batches on subchannel call.
+  AddRetriableBatches(&closures);
+  // Note: This will yield the call combiner.
+  // Start batches on LB call.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: starting %" PRIuPTR
             " retriable batches on lb_call=%p",
-            calld->chand_, calld, closures.size(),
-            calld->call_attempt_->lb_call());
+            calld_->chand_, calld_, closures.size(), lb_call());
   }
-  // Note: This will yield the call combiner.
-  closures.RunClosures(calld->call_combiner_);
+  closures.RunClosures(calld_->call_combiner_);
 }
 
 //
@@ -859,7 +854,7 @@ RetryFilter::CallData::CallAttempt::BatchData::BatchData(
   }
 }
 
-void RetryFilter::CallData::CallAttempt::BatchData::Destroy() {
+RetryFilter::CallData::CallAttempt::BatchData::~BatchData() {
   if (batch_.send_initial_metadata) {
     grpc_metadata_batch_destroy(&call_attempt_->send_initial_metadata_);
   }
@@ -872,7 +867,6 @@ void RetryFilter::CallData::CallAttempt::BatchData::Destroy() {
   if (batch_.recv_trailing_metadata) {
     grpc_metadata_batch_destroy(&call_attempt_->recv_trailing_metadata_);
   }
-  call_attempt_.reset();
 }
 
 void RetryFilter::CallData::CallAttempt::BatchData::FreeCachedSendOpDataForCompletedBatch() {
@@ -1327,12 +1321,12 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(vo
     // Unref batch_data for deferred recv_initial_metadata_ready or
     // recv_message_ready callbacks, if any.
     if (call_attempt->recv_initial_metadata_ready_deferred_batch_ != nullptr) {
-      batch_data->Unref();
       GRPC_ERROR_UNREF(call_attempt->recv_initial_metadata_error_);
+      batch_data->Unref();
     }
     if (call_attempt->recv_message_ready_deferred_batch_ != nullptr) {
-      batch_data->Unref();
       GRPC_ERROR_UNREF(call_attempt->recv_message_error_);
+      batch_data->Unref();
     }
     batch_data->Unref();
     return;
@@ -1399,12 +1393,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::AddClosuresForReplayOrPendin
               "chand=%p calld=%p: starting next batch for pending send op(s)",
               calld->chand_, calld);
     }
-    GRPC_CLOSURE_INIT(&batch_.handler_private.closure,
-                      CallAttempt::StartRetriableBatches,
-                      call_attempt_.get(),
-                      grpc_schedule_on_exec_ctx);
-    closures->Add(&batch_.handler_private.closure, GRPC_ERROR_NONE,
-                  "starting next batch for send_* op(s)");
+    call_attempt_->AddRetriableBatches(closures);
   }
 }
 
@@ -1453,8 +1442,6 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnComplete(void* arg, grpc_e
   --calld->num_pending_retriable_subchannel_send_batches_;
   const bool last_send_batch_complete =
       calld->num_pending_retriable_subchannel_send_batches_ == 0;
-  // Don't need batch_data anymore.
-  batch_data->Unref();
   // Schedule all of the closures identified above.
   // Note: This yeilds the call combiner.
   closures.RunClosures(calld->call_combiner_);
@@ -1462,6 +1449,8 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnComplete(void* arg, grpc_e
   if (last_send_batch_complete) {
     GRPC_CALL_STACK_UNREF(calld->owning_call_, "subchannel_send_batches");
   }
+  // Don't need batch_data anymore.
+  batch_data->Unref();
 }
 
 //
@@ -2023,7 +2012,7 @@ void RetryFilter::CallData::ResumePendingBatchInCallCombiner(
 // This is called via the call combiner, so access to calld is synchronized.
 void RetryFilter::CallData::PendingBatchesResume() {
   if (enable_retries_) {
-    CallAttempt::StartRetriableBatches(call_attempt_.get(), GRPC_ERROR_NONE);
+    call_attempt_->CallAttempt::StartRetriableBatches();
     return;
   }
   // Retries not enabled; send down batches as-is.
