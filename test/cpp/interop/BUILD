@@ -228,7 +228,9 @@ grpc_cc_binary(
         "absl/flags:flag",
     ],
     deps = [
+        "//:grpcpp_admin",
         "//:grpc++",
+        "//:grpc++_reflection",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",

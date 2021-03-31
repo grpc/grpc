@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpcpp/ext/admin_services.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -513,11 +515,13 @@ void RunServer(const int port, StatsWatchers* stats_watchers,
   LoadBalancerStatsServiceImpl stats_service(stats_watchers);
   XdsUpdateClientConfigureServiceImpl client_config_service(rpc_configs_queue);
 
+  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   builder.RegisterService(&stats_service);
   builder.RegisterService(&client_config_service);
   builder.AddListeningPort(server_address.str(),
                            grpc::InsecureServerCredentials());
+  grpc::AddAdminServices(&builder);
   std::unique_ptr<Server> server(builder.BuildAndStart());
   gpr_log(GPR_DEBUG, "Server listening on %s", server_address.str().c_str());
 
