@@ -193,7 +193,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    async def set_trailing_metadata(self, trailing_metadata: Metadata) -> None:
+    def set_trailing_metadata(self, trailing_metadata: Metadata) -> None:
         """Sends the trailing metadata for the RPC.
 
         This method need not be called by implementations if they have no

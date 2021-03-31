@@ -82,12 +82,11 @@ class FakeResolverResponseGenerator
 
   // Mutex protecting the members below.
   Mutex mu_;
-  RefCountedPtr<FakeResolver> resolver_;
-  Resolver::Result result_;
-  bool has_result_ = false;
+  RefCountedPtr<FakeResolver> resolver_ ABSL_GUARDED_BY(mu_);
+  Resolver::Result result_ ABSL_GUARDED_BY(mu_);
+  bool has_result_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H \
-        */
+#endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_RESOLVER_FAKE_FAKE_RESOLVER_H
