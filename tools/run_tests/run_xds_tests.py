@@ -1549,9 +1549,9 @@ def test_timeout(gcp, original_backend_service, instance_group):
             # but this improves confidence that the test is valid if the
             # previous client_config would lead to the same results.
             time.sleep(1)
-            # Each attempt takes 10 seconds; 20 attempts is equivalent to 200
+            # Each attempt takes 10 seconds; 60 attempts is equivalent to 600
             # second timeout.
-            attempt_count = 20
+            attempt_count = 60
             before_stats = get_client_accumulated_stats()
             if not before_stats.stats_per_method:
                 raise ValueError(
