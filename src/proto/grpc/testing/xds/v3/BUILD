@@ -26,6 +26,7 @@ grpc_proto_library(
     srcs = [
         "address.proto",
     ],
+    well_known_protos = True,
 )
 
 grpc_proto_library(
