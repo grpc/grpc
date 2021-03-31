@@ -666,6 +666,7 @@ typedef unsigned __int64 uint64_t;
     defined(GPR_FREEBSD) || defined(GPR_OPENBSD) || defined(GPR_SOLARIS) || \
     defined(GPR_AIX) || defined(GPR_NACL) || defined(GPR_FUCHSIA) ||        \
     defined(GRPC_POSIX_SOCKET)
+#define GRPC_EVENT_ENGINE_POSIX
 #include <netdb.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
