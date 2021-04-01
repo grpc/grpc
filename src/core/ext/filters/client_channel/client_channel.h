@@ -358,7 +358,7 @@ class ClientChannel::LoadBalancedCall
  public:
   LoadBalancedCall(ClientChannel* chand, const grpc_call_element_args& args,
                    grpc_polling_entity* pollent);
-  ~LoadBalancedCall();
+  ~LoadBalancedCall() override;
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 

@@ -108,7 +108,7 @@ class ValueInExternalAllocation
     : public RefCounted<ValueInExternalAllocation, PolymorphicRefCount,
                         kUnrefCallDtor> {
  public:
-  ValueInExternalAllocation(int value) : value_(value) {}
+  explicit ValueInExternalAllocation(int value) : value_(value) {}
 
   int value() const { return value_; }
 
