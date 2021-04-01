@@ -211,7 +211,7 @@ void TlsChannelSecurityConnector::check_peer(
   // GPR_ASSERT(options_->certificate_verifier() != nullptr);
   // Parse tsi_peer and feed in the values in the check request.
   auto* request = new grpc_tls_custom_verification_check_request();
-  grpc_tls_certificate_verifier::CertificateVerificationRequestInit(request);
+  CertificateVerificationRequestInit(request);
   request->target_name = gpr_strdup(target_name);
   std::vector<char*> uri_names;
   std::vector<char*> dns_names;
@@ -292,8 +292,7 @@ void TlsChannelSecurityConnector::check_peer(
                        request->error_details)
               .c_str());
     }
-    grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(
-        request);
+    CertificateVerificationRequestDestroy(request);
     delete request;
     grpc_core::ExecCtx exec_ctx;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
@@ -308,7 +307,7 @@ void TlsChannelSecurityConnector::check_peer(
                      request->error_details)
             .c_str());
   }
-  grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(request);
+  CertificateVerificationRequestDestroy(request);
   delete request;
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
@@ -340,6 +339,73 @@ void TlsChannelSecurityConnector::cancel_check_call_host(
   // Question: any special treatment we should do here if we are also doing
   // verifier check in check_call_host?
   GRPC_ERROR_UNREF(error);
+}
+
+namespace {
+
+void initRequest(grpc_tls_custom_verification_check_request* request) {
+  GPR_ASSERT(request != nullptr);
+  request->target_name = nullptr;
+  request->peer_info.common_name = nullptr;
+  request->peer_info.san_names.uri_names = nullptr;
+  request->peer_info.san_names.uri_names_size = 0;
+  request->peer_info.san_names.ip_names = nullptr;
+  request->peer_info.san_names.ip_names_size = 0;
+  request->peer_info.san_names.dns_names = nullptr;
+  request->peer_info.san_names.dns_names_size = 0;
+  request->peer_info.peer_cert = nullptr;
+  request->peer_info.peer_cert_full_chain = nullptr;
+  request->status = GRPC_STATUS_CANCELLED;
+  request->error_details = nullptr;
+}
+
+void destroyRequest(grpc_tls_custom_verification_check_request* request) {
+  GPR_ASSERT(request != nullptr);
+  if (request->target_name != nullptr) {
+    gpr_free(const_cast<char*>(request->target_name));
+  }
+  if (request->peer_info.common_name != nullptr) {
+    gpr_free(const_cast<char*>(request->peer_info.common_name));
+  }
+  if (request->peer_info.san_names.uri_names_size > 0) {
+    for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
+      delete[] request->peer_info.san_names.uri_names[i];
+    }
+    delete[] request->peer_info.san_names.uri_names;
+  }
+  if (request->peer_info.san_names.ip_names_size > 0) {
+    for (size_t i = 0; i < request->peer_info.san_names.ip_names_size; ++i) {
+      delete[] request->peer_info.san_names.ip_names[i];
+    }
+    delete[] request->peer_info.san_names.ip_names;
+  }
+  if (request->peer_info.san_names.dns_names_size > 0) {
+    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
+      delete[] request->peer_info.san_names.dns_names[i];
+    }
+    delete[] request->peer_info.san_names.dns_names;
+  }
+  if (request->peer_info.peer_cert != nullptr) {
+    gpr_free(const_cast<char*>(request->peer_info.peer_cert));
+  }
+  if (request->peer_info.peer_cert_full_chain != nullptr) {
+    gpr_free(const_cast<char*>(request->peer_info.peer_cert_full_chain));
+  }
+  if (request->error_details != nullptr) {
+    gpr_free(const_cast<char*>(request->error_details));
+  }
+}
+
+}  // namespace
+
+void TlsChannelSecurityConnector::CertificateVerificationRequestInit(
+    grpc_tls_custom_verification_check_request* request) {
+  initRequest(request);
+}
+
+void TlsChannelSecurityConnector::CertificateVerificationRequestDestroy(
+    grpc_tls_custom_verification_check_request* request) {
+  destroyRequest(request);
 }
 
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
@@ -518,7 +584,7 @@ void TlsServerSecurityConnector::check_peer(
   GPR_ASSERT(options_->certificate_verifier() != nullptr);
   // Parse tsi_peer and feed in the values in the check request.
   auto* request = new grpc_tls_custom_verification_check_request();
-  grpc_tls_certificate_verifier::CertificateVerificationRequestInit(request);
+  CertificateVerificationRequestInit(request);
   std::vector<char*> uri_names;
   std::vector<char*> dns_names;
   for (size_t i = 0; i < peer.property_count; ++i) {
@@ -598,8 +664,7 @@ void TlsServerSecurityConnector::check_peer(
                        request->error_details)
               .c_str());
     }
-    grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(
-        request);
+    CertificateVerificationRequestDestroy(request);
     delete request;
     grpc_core::ExecCtx exec_ctx;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
@@ -614,7 +679,7 @@ void TlsServerSecurityConnector::check_peer(
                      request->error_details)
             .c_str());
   }
-  grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(request);
+  CertificateVerificationRequestDestroy(request);
   delete request;
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
@@ -623,6 +688,16 @@ int TlsServerSecurityConnector::cmp(
     const grpc_security_connector* other) const {
   return server_security_connector_cmp(
       static_cast<const grpc_server_security_connector*>(other));
+}
+
+void TlsServerSecurityConnector::CertificateVerificationRequestInit(
+    grpc_tls_custom_verification_check_request* request) {
+  initRequest(request);
+}
+
+void TlsServerSecurityConnector::CertificateVerificationRequestDestroy(
+    grpc_tls_custom_verification_check_request* request) {
+  destroyRequest(request);
 }
 
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::

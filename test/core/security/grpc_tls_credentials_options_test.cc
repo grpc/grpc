@@ -46,8 +46,6 @@ namespace testing {
 class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    grpc_tls_certificate_verifier::CertificateVerificationRequestInit(
-        &request_);
     root_cert_ = GetFileContents(CA_CERT_PATH);
     cert_chain_ = GetFileContents(SERVER_CERT_PATH);
     private_key_ = GetFileContents(SERVER_KEY_PATH);
@@ -57,8 +55,6 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
   }
 
   void TearDown() override {
-    grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(
-        &request_);
     if (external_certificate_verifier_ != nullptr) {
       delete external_certificate_verifier_;
     }
@@ -130,7 +126,6 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
   std::string root_cert_2_;
   std::string private_key_2_;
   std::string cert_chain_2_;
-  grpc_tls_custom_verification_check_request request_;
   ExternalCertificateVerifier* external_certificate_verifier_ = nullptr;
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };

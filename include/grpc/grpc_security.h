@@ -960,7 +960,15 @@ struct grpc_tls_custom_verification_check_request {
     } san_names;
     /* The raw peer leaf certificate. */
     const char* peer_cert = nullptr;
-    /* The raw peer certificate chain. */
+    /* The raw peer certificate chain. Note that currently we just faithfully
+     * pass whatever value we get from SSL_get_peer_certificate(
+     * https://www.openssl.org/docs/man1.1.1/man3/SSL_get_peer_certificate.html
+     * ), which means it is not always guaranteed to get the peer full chain:
+     * 1. On the server side, it will be the chain excluding the leaf cert.
+     * Callers will need to combine this with |peer_cert| to get the full chain.
+     * 2. If session resumption happens, this will be nullptr(on both sides),
+     * since no peer certs are sent.
+     * TODO(ZhenLian): Consider fixing this in the future. */
     const char* peer_cert_full_chain = nullptr;
   } peer_info;
   /* -- The following fields can be modified. -- */

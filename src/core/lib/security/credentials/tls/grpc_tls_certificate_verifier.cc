@@ -27,61 +27,6 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/api_trace.h"
 
-void grpc_tls_certificate_verifier::CertificateVerificationRequestInit(
-    grpc_tls_custom_verification_check_request* request) {
-  GPR_ASSERT(request != nullptr);
-  request->target_name = nullptr;
-  request->peer_info.common_name = nullptr;
-  request->peer_info.san_names.uri_names = nullptr;
-  request->peer_info.san_names.uri_names_size = 0;
-  request->peer_info.san_names.ip_names = nullptr;
-  request->peer_info.san_names.ip_names_size = 0;
-  request->peer_info.san_names.dns_names = nullptr;
-  request->peer_info.san_names.dns_names_size = 0;
-  request->peer_info.peer_cert = nullptr;
-  request->peer_info.peer_cert_full_chain = nullptr;
-  request->status = GRPC_STATUS_CANCELLED;
-  request->error_details = nullptr;
-}
-
-void grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(
-    grpc_tls_custom_verification_check_request* request) {
-  GPR_ASSERT(request != nullptr);
-  if (request->target_name != nullptr) {
-    gpr_free(const_cast<char*>(request->target_name));
-  }
-  if (request->peer_info.common_name != nullptr) {
-    gpr_free(const_cast<char*>(request->peer_info.common_name));
-  }
-  if (request->peer_info.san_names.uri_names_size > 0) {
-    for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
-      delete[] request->peer_info.san_names.uri_names[i];
-    }
-    delete[] request->peer_info.san_names.uri_names;
-  }
-  if (request->peer_info.san_names.ip_names_size > 0) {
-    for (size_t i = 0; i < request->peer_info.san_names.ip_names_size; ++i) {
-      delete[] request->peer_info.san_names.ip_names[i];
-    }
-    delete[] request->peer_info.san_names.ip_names;
-  }
-  if (request->peer_info.san_names.dns_names_size > 0) {
-    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
-      delete[] request->peer_info.san_names.dns_names[i];
-    }
-    delete[] request->peer_info.san_names.dns_names;
-  }
-  if (request->peer_info.peer_cert != nullptr) {
-    gpr_free(const_cast<char*>(request->peer_info.peer_cert));
-  }
-  if (request->peer_info.peer_cert_full_chain != nullptr) {
-    gpr_free(const_cast<char*>(request->peer_info.peer_cert_full_chain));
-  }
-  if (request->error_details != nullptr) {
-    gpr_free(const_cast<char*>(request->error_details));
-  }
-}
-
 namespace grpc_core {
 
 bool ExternalCertificateVerifier::Verify(

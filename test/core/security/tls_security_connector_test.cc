@@ -52,8 +52,6 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   TlsSecurityConnectorTest() {}
 
   void SetUp() override {
-    grpc_tls_certificate_verifier::CertificateVerificationRequestInit(
-        &request_);
     grpc_slice ca_slice_1, ca_slice_0, cert_slice_1, key_slice_1, cert_slice_0,
         key_slice_0;
     GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file",
@@ -89,8 +87,6 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   }
 
   void TearDown() override {
-    grpc_tls_certificate_verifier::CertificateVerificationRequestDestroy(
-        &request_);
     if (external_certificate_verifier_ != nullptr) {
       delete external_certificate_verifier_;
     }
@@ -239,7 +235,6 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   std::string root_cert_0_;
   grpc_core::PemKeyCertPairList identity_pairs_1_;
   grpc_core::PemKeyCertPairList identity_pairs_0_;
-  grpc_tls_custom_verification_check_request request_;
   grpc_core::ExternalCertificateVerifier* external_certificate_verifier_ =
       nullptr;
   grpc_core::HostNameCertificateVerifier hostname_certificate_verifier_;
