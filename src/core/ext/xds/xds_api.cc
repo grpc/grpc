@@ -3520,7 +3520,7 @@ google_protobuf_Timestamp* GrpcMillisToTimestamp(const EncodingContext& context,
                                                  grpc_millis value) {
   google_protobuf_Timestamp* timestamp =
       google_protobuf_Timestamp_new(context.arena);
-  gpr_timespec timespec = grpc_millis_to_timespec(value, GPR_CLOCK_MONOTONIC);
+  gpr_timespec timespec = grpc_millis_to_timespec(value, GPR_CLOCK_REALTIME);
   google_protobuf_Timestamp_set_seconds(timestamp, timespec.tv_sec);
   google_protobuf_Timestamp_set_nanos(timestamp, timespec.tv_nsec);
   return timestamp;
