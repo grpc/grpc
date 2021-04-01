@@ -1966,7 +1966,8 @@ void ClientChannel::CallData::SetPollent(grpc_call_element* elem,
 size_t ClientChannel::CallData::GetBatchIndex(
     grpc_transport_stream_op_batch* batch) {
   // Note: It is important the send_initial_metadata be the first entry
-  // here, since the code in pick_subchannel_locked() assumes it will be.
+  // here, since the code in ApplyServiceConfigToCallLocked() and
+  // CheckResolutionLocked() assumes it will be.
   if (batch->send_initial_metadata) return 0;
   if (batch->send_message) return 1;
   if (batch->send_trailing_metadata) return 2;
@@ -2510,7 +2511,7 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
 size_t ClientChannel::LoadBalancedCall::GetBatchIndex(
     grpc_transport_stream_op_batch* batch) {
   // Note: It is important the send_initial_metadata be the first entry
-  // here, since the code in pick_subchannel_locked() assumes it will be.
+  // here, since the code in PickSubchannelLocked() assumes it will be.
   if (batch->send_initial_metadata) return 0;
   if (batch->send_message) return 1;
   if (batch->send_trailing_metadata) return 2;

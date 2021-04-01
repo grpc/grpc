@@ -332,7 +332,6 @@ class RetryFilter::CallData {
     void AddRetriableBatches(CallCombinerClosureList* closures);
 
     // Returns true if any op in the batch was not yet started on this attempt.
-    // Only looks at send ops, since recv ops are always started immediately.
     bool PendingBatchIsUnstarted(PendingBatch* pending);
 
     // Helper function used to start a recv_trailing_metadata batch.  This
@@ -581,9 +580,9 @@ void RetryFilter::CallData::CallAttempt::FreeCachedSendOpDataAfterCommit() {
 
 bool RetryFilter::CallData::CallAttempt::PendingBatchIsUnstarted(
     PendingBatch* pending) {
-  if (pending->batch == nullptr ||
-// FIXME: is this right?  what if the batch has only recv ops?
-      pending->batch->on_complete == nullptr) {
+  // Only look at batches containing send ops, since batches containing
+  // only recv ops are always started immediately.
+  if (pending->batch == nullptr || pending->batch->on_complete == nullptr) {
     return false;
   }
   if (pending->batch->send_initial_metadata &&
@@ -1846,8 +1845,6 @@ void RetryFilter::CallData::FreeCachedSendTrailingMetadata() {
 
 size_t RetryFilter::CallData::GetBatchIndex(
     grpc_transport_stream_op_batch* batch) {
-  // Note: It is important the send_initial_metadata be the first entry
-  // here, since the code in pick_subchannel_locked() assumes it will be.
   if (batch->send_initial_metadata) return 0;
   if (batch->send_message) return 1;
   if (batch->send_trailing_metadata) return 2;
