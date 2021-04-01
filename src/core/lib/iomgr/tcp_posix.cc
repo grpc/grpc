@@ -1639,7 +1639,6 @@ static void tcp_add_to_pollset_set(grpc_endpoint* ep,
 static void tcp_delete_from_pollset_set(grpc_endpoint* ep,
                                         grpc_pollset_set* pollset_set) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  ZerocopyDisableAndWaitForRemaining(tcp);
   grpc_pollset_set_del_fd(pollset_set, tcp->em_fd);
 }
 
