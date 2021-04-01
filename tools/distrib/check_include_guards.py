@@ -149,8 +149,8 @@ class GuardValidator(object):
                     flines[-1], '', '', False)
         elif match.group(1) != running_guard:
             # Is the #endif guard the same as the #ifndef and #define guards?
-            fcontents = self.fail(fpath, endif_re, fcontents, match.group(1),
-                                  valid_guard, fix)
+            fcontents = self.fail(fpath, self.endif_re, fcontents,
+                                  match.group(1), valid_guard, fix)
             if fix:
                 save(fpath, fcontents)
 
