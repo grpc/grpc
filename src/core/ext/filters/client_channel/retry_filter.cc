@@ -509,6 +509,8 @@ class RetryFilter::CallData {
   // until all of these batches have completed.
   // Note that we actually only need to track replay batches, but it's
   // easier to track all batches with send ops.
+// FIXME: is this actually needed?  might not be now that CallAttempt is
+// holding a ref to the call stack
   int num_pending_retriable_subchannel_send_batches_ = 0;
 
   // Cached data for retrying send ops.
