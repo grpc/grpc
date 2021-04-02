@@ -35,6 +35,7 @@
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/ssl/ssl_security_connector.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -181,22 +182,17 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
                           grpc_millis deadline,
                           void (*on_done)(void* arg, grpc_endpoint* endpoint)) {
   auto* c = new on_done_closure();
-  const char* pem_root_certs =
-      grpc_core::DefaultSslRootStore::GetPemRootCerts();
-  const tsi_ssl_root_certs_store* root_store =
-      grpc_core::DefaultSslRootStore::GetRootStore();
-  if (root_store == nullptr) {
-    gpr_log(GPR_ERROR, "Could not get default pem root certs.");
-    on_done(arg, nullptr);
-    gpr_free(c);
-    return;
-  }
   c->func = on_done;
   c->arg = arg;
+
+  grpc_ssl_config config;
+  config.pem_root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
-      httpcli_ssl_channel_security_connector_create(
-          pem_root_certs, root_store, host,
-          static_cast<grpc_core::HandshakerArgs*>(arg)->args);
+      grpc_ssl_channel_security_connector_create(
+          /*channel_creds=*/nullptr,
+          /*request_metadata_creds=*/nullptr, &config, host,
+          /*overridden_target_name=*/nullptr,
+          /*ssl_session_cache=*/nullptr);
 
   GPR_ASSERT(sc != nullptr);
   grpc_arg channel_arg = grpc_security_connector_to_arg(sc.get());
