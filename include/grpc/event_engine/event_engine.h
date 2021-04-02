@@ -90,7 +90,7 @@ class EventEngine {
    public:
     static constexpr socklen_t MAX_SIZE_BYTES = 128;
 
-    ResolvedAddress(const sockaddr* addr, socklen_t len);
+    ResolvedAddress(const sockaddr* address, socklen_t size);
     const struct sockaddr* address() const;
     socklen_t size() const;
 
@@ -125,8 +125,9 @@ class EventEngine {
     /// Write data out on the connection.
     ///
     /// \a on_writable is called when the connection is ready for more data. The
-    /// SliceBuffer will remain valid after calling \a Write, but its state is
-    /// otherwise undefined.
+    /// Slices within the \a data buffer may be mutated at will by the Endpoint
+    /// until \a on_writable is called. The SliceBuffer will remain valid after
+    /// calling \a Write, but its state is otherwise undefined.
     virtual void Write(Callback on_writable, SliceBuffer* data,
                        absl::Time deadline) = 0;
     // TODO(hork): define status codes for the callback
@@ -154,6 +155,7 @@ class EventEngine {
 
     virtual ~Listener() = 0;
 
+    // TODO(hork): define return status codes
     // TODO(hork): requires output port argument, return value, or callback
     /// Bind an address/port to this Listener. It is expected that multiple
     /// addresses/ports can be bound to this Listener before Listener::Start has
@@ -164,6 +166,7 @@ class EventEngine {
   };
 
   // TODO(hork): define status codes for the callback
+  // TODO(hork): define return status codes
   // TODO(hork): document status arg meanings for on_accept and on_shutdown
   /// Factory method to create a network listener.
   virtual absl::StatusOr<Listener> CreateListener(
@@ -171,6 +174,7 @@ class EventEngine {
       const ChannelArgs& args,
       SliceAllocatorFactory slice_allocator_factory) = 0;
   // TODO(hork): define status codes for the callback
+  // TODO(hork): define return status codes
   // TODO(hork): document status arg meanings for on_connect
   /// Creates a network connection to a remote network listener.
   virtual absl::Status Connect(OnConnectCallback on_connect,
@@ -226,6 +230,7 @@ class EventEngine {
 
   virtual ~EventEngine() = 0;
 
+  // TODO(hork): define return status codes
   /// Retrieves an instance of a DNSResolver.
   virtual absl::StatusOr<DNSResolver> GetDNSResolver() = 0;
 
@@ -251,9 +256,21 @@ class EventEngine {
   /// callback will be run exactly once from either cancellation or from its
   /// activation.
   virtual void TryCancel(TaskHandle handle) = 0;
-  /// Immediately run all callbacks with status indicating the shutdown
+  // TODO(hork): Carefully evaluate shutdown requirements, determine if we need
+  // TODO(hork): define return status codes
+  // a callback parameter to be added to this method.
+  /// Immediately run all callbacks with status indicating the shutdown. Every
+  /// EventEngine is expected to shut down exactly once. No new callbacks/tasks
+  /// should be scheduled after shutdown has begun. Any registered callbacks
+  /// must be executed.
   virtual absl::Status Shutdown() = 0;
 };
+
+// Lazily instantiate and return a default global EventEngine instance if no
+// custom instance is provided. If a custom EventEngine is provided for every
+// channel/server via ChannelArgs, this method should never be called, and the
+// default instance will never be instantiated.
+std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

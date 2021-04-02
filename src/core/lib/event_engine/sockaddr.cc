@@ -21,17 +21,17 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* addr,
-                                              socklen_t len) {
-  GPR_ASSERT(len <= sizeof(buffer_));
-  memcpy(&buffer_, addr, len);
+EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
+                                              socklen_t size) {
+  GPR_ASSERT(size <= sizeof(address_));
+  memcpy(&address_, address, size);
 }
 
-const struct sockaddr* EventEngine::ResolvedAddress::Sockaddr() const {
-  return reinterpret_cast<const struct sockaddr*>(buffer_);
+const struct sockaddr* EventEngine::ResolvedAddress::address() const {
+  return reinterpret_cast<const struct sockaddr*>(address_);
 }
 
-socklen_t EventEngine::ResolvedAddress::Length() const { return len_; }
+socklen_t EventEngine::ResolvedAddress::size() const { return size_; }
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
