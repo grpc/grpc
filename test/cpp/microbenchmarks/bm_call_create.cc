@@ -568,7 +568,8 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, NoFilter, NoOp);
 typedef Fixture<&phony_filter::phony_filter, 0> PhonyFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, PhonyFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, PhonyFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
+typedef Fixture<&grpc_core::ClientChannel::kFilterVtable, 0>
+    ClientChannelFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientChannelFilter, NoOp);
 typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, NoOp);
