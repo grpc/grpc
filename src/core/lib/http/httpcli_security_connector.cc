@@ -73,6 +73,7 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
   c->arg = arg;
 
   grpc_ssl_config config;
+  config.pem_key_cert_pair = nullptr;
   config.pem_root_certs =
       const_cast<char*>(grpc_core::DefaultSslRootStore::GetPemRootCerts());
   config.skip_alpn_check = true;
