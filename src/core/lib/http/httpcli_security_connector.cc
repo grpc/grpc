@@ -76,6 +76,7 @@ static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
   config.pem_root_certs =
       const_cast<char*>(grpc_core::DefaultSslRootStore::GetPemRootCerts());
   config.skip_alpn_check = true;
+  memset(&config.verify_options, 0, sizeof(verify_peer_options));
   grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
       grpc_ssl_channel_security_connector_create(
           /*channel_creds=*/nullptr,
