@@ -33,4 +33,8 @@
 bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
                      const char* alpn_expected);
 
+/** Cleans up the SSL library. To be called after the last call to
+ *  server_ssl_test returns. */
+void CleanupSslLibrary();
+
 #endif  // GRPC_SERVER_SSL_COMMON_H
