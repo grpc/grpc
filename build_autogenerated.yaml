@@ -415,6 +415,8 @@ libs:
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
+  - src/core/ext/filters/client_channel/retry_filter.h
+  - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/service_config.h
@@ -727,6 +729,7 @@ libs:
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/nameser.h
   - src/core/lib/iomgr/parse_address.h
+  - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_custom.h
@@ -930,6 +933,8 @@ libs:
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/resolver_result_parsing.cc
+  - src/core/ext/filters/client_channel/retry_filter.cc
+  - src/core/ext/filters/client_channel/retry_service_config.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config.cc
@@ -1254,6 +1259,7 @@ libs:
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/parse_address.cc
+  - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
   - src/core/lib/iomgr/pollset_custom.cc
@@ -1616,6 +1622,8 @@ libs:
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
+  - src/core/ext/filters/client_channel/retry_filter.h
+  - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/service_config.h
@@ -1744,6 +1752,7 @@ libs:
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/nameser.h
   - src/core/lib/iomgr/parse_address.h
+  - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_custom.h
@@ -1868,6 +1877,8 @@ libs:
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/resolver_result_parsing.cc
+  - src/core/ext/filters/client_channel/retry_filter.cc
+  - src/core/ext/filters/client_channel/retry_service_config.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config.cc
@@ -2006,6 +2017,7 @@ libs:
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/parse_address.cc
+  - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
   - src/core/lib/iomgr/pollset_custom.cc
@@ -3826,14 +3838,6 @@ targets:
   - test/core/client_channel/resolvers/sockaddr_resolver_test.cc
   deps:
   - grpc_test_util
-- name: sockaddr_utils_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/sockaddr_utils_test.cc
-  deps:
-  - grpc_test_util
 - name: socket_utils_test
   build: test
   language: c
@@ -5043,6 +5047,16 @@ targets:
   - test/core/security/evaluate_args_test.cc
   deps:
   - grpc_test_util
+- name: eventmanager_libuv_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/poller/eventmanager_libuv_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
 - name: examine_stack_test
   gtest: true
   build: test
@@ -5634,6 +5648,19 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: mock_stream_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/test/mock_stream_test.cc
+  deps:
+  - grpc++_test
+  - grpc++_test_util
 - name: mock_test
   gtest: true
   build: test
@@ -6161,6 +6188,15 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/simple_request.cc
   - test/core/end2end/cq_verifier.cc
+  deps:
+  - grpc_test_util
+- name: sockaddr_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/sockaddr_utils_test.cc
   deps:
   - grpc_test_util
 - name: ssl_server_fuzzer
