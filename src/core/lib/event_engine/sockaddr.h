@@ -23,14 +23,14 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/event_engine/port.h>
-
 // TODO(hork): much of this can be removed when we migrate fully to EventEngine
 #include "src/core/lib/iomgr/port.h"
 
 typedef struct sockaddr grpc_sockaddr;
 typedef struct sockaddr_in grpc_sockaddr_in;
 typedef struct sockaddr_in6 grpc_sockaddr_in6;
+typedef struct in_addr grpc_in_addr;
+typedef struct in6_addr grpc_in6_addr;
 
 #define GRPC_INET_ADDRSTRLEN INET_ADDRSTRLEN
 #define GRPC_INET6_ADDRSTRLEN INET6_ADDRSTRLEN

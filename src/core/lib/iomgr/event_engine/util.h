@@ -29,33 +29,32 @@
 
 #include "src/core/lib/iomgr/closure.h"
 
-namespace grpc_io {
+namespace grpc_event_engine {
 namespace experimental {
 
 // Lazily instantiates and returns a shared_ptr to the default EventEngine.
 std::shared_ptr<EventEngine> grpc_get_default_event_engine();
 
 // grpc_closure to std::function conversions for an EventEngine-based iomgr
-grpc_io::experimental::EventEngine::Callback event_engine_closure_to_callback(
+EventEngine::Callback event_engine_closure_to_callback(grpc_closure* closure);
+
+EventEngine::OnConnectCallback event_engine_closure_to_on_connect_callback(
     grpc_closure* closure);
 
-grpc_io::experimental::EventEngine::Endpoint::OnConnectCallback
-event_engine_closure_to_on_connect_callback(grpc_closure* closure);
+EventEngine::Listener::AcceptCallback event_engine_closure_to_accept_callback(
+    grpc_closure* closure);
 
-grpc_io::experimental::EventEngine::Listener::AcceptCallback
-event_engine_closure_to_accept_callback(grpc_closure* closure);
-
-grpc_io::experimental::EventEngine::DNSResolver::LookupHostnameCallback
+EventEngine::DNSResolver::LookupHostnameCallback
 event_engine_closure_to_lookup_hostname_callback(grpc_closure* closure);
 
-grpc_io::experimental::EventEngine::DNSResolver::LookupSRVCallback
+EventEngine::DNSResolver::LookupSRVCallback
 event_engine_closure_to_lookup_srv_callback(grpc_closure* closure);
 
-grpc_io::experimental::EventEngine::DNSResolver::LookupTXTCallback
+EventEngine::DNSResolver::LookupTXTCallback
 event_engine_closure_to_lookup_txt_callback(grpc_closure* closure);
 
 }  // namespace experimental
-}  // namespace grpc_io
+}  // namespace grpc_event_engine
 
 #endif  // GRPC_EVENT_ENGINE_TEST
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_UTIL_H

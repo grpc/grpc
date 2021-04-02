@@ -27,7 +27,7 @@
 #include "src/core/lib/iomgr/tcp_server.h"
 
 namespace {
-using ::grpc_io::experimental::EventEngine;
+using ::grpc_event_engine::experimental::EventEngine;
 }  // namespace
 
 static void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
@@ -35,9 +35,8 @@ static void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                         const grpc_channel_args* channel_args,
                         const grpc_resolved_address* addr,
                         grpc_millis deadline) {
-  EventEngine::Endpoint::OnConnectCallback ee_on_connect =
-      grpc_io::experimental::event_engine_closure_to_on_connect_callback(
-          on_connect);
+  EventEngine::OnConnectCallback ee_on_connect = grpc_event_engine::
+      experimental::event_engine_closure_to_on_connect_callback(on_connect);
   // Needs:
   //  * grpc_endpoint -> EventEngine::Endpoint
   //  * Ignore interested_parties? Hope so.
@@ -45,6 +44,7 @@ static void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   //  * grpc_resolved_address -> ResolvedAddress
   //  * retrieve EventEngine from Endpoint or from channel_args
 
+  (void)endpoint;
   (void)interested_parties;
   (void)channel_args;
   (void)addr;

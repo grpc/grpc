@@ -27,11 +27,10 @@
 
 #include "src/core/lib/iomgr/closure.h"
 
-namespace grpc_io {
+namespace grpc_event_engine {
 namespace experimental {
 
-std::shared_ptr<grpc_io::experimental::EventEngine>
-grpc_get_default_event_engine() {
+std::shared_ptr<EventEngine> grpc_get_default_event_engine() {
   // TODO(nnoble): instantiate a singleton LibuvEventEngine
   return nullptr;
 }
@@ -42,8 +41,8 @@ EventEngine::Callback event_engine_closure_to_callback(grpc_closure* closure) {
   return [](absl::Status) {};
 }
 
-EventEngine::Endpoint::OnConnectCallback
-event_engine_closure_to_on_connect_callback(grpc_closure* closure) {
+EventEngine::OnConnectCallback event_engine_closure_to_on_connect_callback(
+    grpc_closure* closure) {
   (void)closure;
   return [](absl::Status, EventEngine::Endpoint*) {};
 }
@@ -57,7 +56,7 @@ EventEngine::Listener::AcceptCallback event_engine_closure_to_accept_callback(
 EventEngine::DNSResolver::LookupHostnameCallback
 event_engine_closure_to_lookup_hostname_callback(grpc_closure* closure) {
   (void)closure;
-  return [](absl::Status, std::vector<ResolvedAddress>) {};
+  return [](absl::Status, std::vector<EventEngine::ResolvedAddress>) {};
 }
 
 EventEngine::DNSResolver::LookupSRVCallback
@@ -73,6 +72,6 @@ event_engine_closure_to_lookup_txt_callback(grpc_closure* closure) {
 }
 
 }  // namespace experimental
-}  // namespace grpc_io
+}  // namespace grpc_event_engine
 
 #endif  // GRPC_EVENT_ENGINE_TEST
