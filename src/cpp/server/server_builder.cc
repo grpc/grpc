@@ -304,6 +304,10 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     }
   }
 
+  if (callback_generic_service_ != nullptr) {
+    has_frequently_polled_cqs = true;
+  }
+
   const bool is_hybrid_server = has_sync_methods && has_frequently_polled_cqs;
 
   if (has_sync_methods) {

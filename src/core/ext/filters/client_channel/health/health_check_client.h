@@ -64,7 +64,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
 
     void Orphan() override;
 
-    void StartCall();
+    void StartCall() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&HealthCheckClient::mu_);
 
    private:
     void Cancel();
@@ -72,8 +72,8 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     void StartBatch(grpc_transport_stream_op_batch* batch);
     static void StartBatchInCallCombiner(void* arg, grpc_error* error);
 
-    // Requires holding health_check_client_->mu_.
-    void CallEndedLocked(bool retry);
+    void CallEndedLocked(bool retry)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(health_check_client_->mu_);
 
     static void OnComplete(void* arg, grpc_error* error);
     static void RecvInitialMetadataReady(void* arg, grpc_error* error);
@@ -141,14 +141,14 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   };
 
   void StartCall();
-  void StartCallLocked();  // Requires holding mu_.
+  void StartCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  void StartRetryTimerLocked();  // Requires holding mu_.
+  void StartRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void OnRetryTimer(void* arg, grpc_error* error);
 
   void SetHealthStatus(grpc_connectivity_state state, const char* reason);
-  void SetHealthStatusLocked(grpc_connectivity_state state,
-                             const char* reason);  // Requires holding mu_.
+  void SetHealthStatusLocked(grpc_connectivity_state state, const char* reason)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   std::string service_name_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
@@ -156,18 +156,19 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
 
   Mutex mu_;
-  RefCountedPtr<ConnectivityStateWatcherInterface> watcher_;
-  bool shutting_down_ = false;
+  RefCountedPtr<ConnectivityStateWatcherInterface> watcher_
+      ABSL_GUARDED_BY(mu_);
+  bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
 
   // The data associated with the current health check call.  It holds a ref
   // to this HealthCheckClient object.
-  OrphanablePtr<CallState> call_state_;
+  OrphanablePtr<CallState> call_state_ ABSL_GUARDED_BY(mu_);
 
   // Call retry state.
-  BackOff retry_backoff_;
-  grpc_timer retry_timer_;
-  grpc_closure retry_timer_callback_;
-  bool retry_timer_callback_pending_ = false;
+  BackOff retry_backoff_ ABSL_GUARDED_BY(mu_);
+  grpc_timer retry_timer_ ABSL_GUARDED_BY(mu_);
+  grpc_closure retry_timer_callback_ ABSL_GUARDED_BY(mu_);
+  bool retry_timer_callback_pending_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 }  // namespace grpc_core

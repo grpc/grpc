@@ -85,10 +85,14 @@ class XdsClient : public DualRefCounted<XdsClient> {
   static RefCountedPtr<XdsClient> GetOrCreate(grpc_error** error);
 
   // Callers should not instantiate directly.  Use GetOrCreate() instead.
-  explicit XdsClient(grpc_error** error);
+  XdsClient(grpc_channel_args* args, grpc_error** error);
   ~XdsClient() override;
 
-  const XdsBootstrap* bootstrap() const { return bootstrap_.get(); }
+  const XdsBootstrap& bootstrap() const {
+    // bootstrap_ is guaranteed to be non-null since XdsClient::GetOrCreate()
+    // would return a null object if bootstrap_ was null.
+    return *bootstrap_;
+  }
 
   CertificateProviderStore& certificate_provider_store() {
     return *certificate_provider_store_;
@@ -187,6 +191,15 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Resets connection backoff state.
   void ResetBackoff();
 
+  // Dumps the active xDS config in JSON format.
+  // Individual xDS resource is encoded as envoy.admin.v3.*ConfigDump. Returns
+  // envoy.service.status.v3.ClientConfig which also includes the config
+  // status (e.g., CLIENT_REQUESTED, CLIENT_ACKED, CLIENT_NACKED).
+  //
+  // Expected to be invoked by wrapper languages in their CSDS service
+  // implementation.
+  std::string DumpClientConfigBinary();
+
  private:
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
@@ -217,14 +230,17 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void MaybeStartLrsCall();
     void StopLrsCall();
 
+    bool HasAdsCall() const;
     bool HasActiveAdsCall() const;
 
     void StartConnectivityWatchLocked();
     void CancelConnectivityWatchLocked();
 
-    void Subscribe(const std::string& type_url, const std::string& name);
-    void Unsubscribe(const std::string& type_url, const std::string& name,
-                     bool delay_unsubscription);
+    void SubscribeLocked(const std::string& type_url, const std::string& name)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+    void UnsubscribeLocked(const std::string& type_url, const std::string& name,
+                           bool delay_unsubscription)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
    private:
     class StateWatcher;
@@ -250,6 +266,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from LDS.
     absl::optional<XdsApi::LdsUpdate> update;
+    XdsApi::ResourceMetadata meta;
   };
 
   struct RouteConfigState {
@@ -258,6 +275,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from RDS.
     absl::optional<XdsApi::RdsUpdate> update;
+    XdsApi::ResourceMetadata meta;
   };
 
   struct ClusterState {
@@ -265,6 +283,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from CDS.
     absl::optional<XdsApi::CdsUpdate> update;
+    XdsApi::ResourceMetadata meta;
   };
 
   struct EndpointState {
@@ -273,6 +292,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
         watchers;
     // The latest data seen from EDS.
     absl::optional<XdsApi::EdsUpdate> update;
+    XdsApi::ResourceMetadata meta;
   };
 
   struct LoadReportState {
@@ -290,11 +310,18 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   // Sends an error notification to all watchers.
-  void NotifyOnErrorLocked(grpc_error* error);
+  void NotifyOnErrorLocked(grpc_error* error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
-      bool send_all_clusters, const std::set<std::string>& clusters);
+      bool send_all_clusters, const std::set<std::string>& clusters)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  void UpdateResourceMetadataWithFailedParseResultLocked(
+      grpc_millis update_time, const XdsApi::AdsParseResult& result)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+
+  grpc_channel_args* args_;
   const grpc_millis request_timeout_;
   grpc_pollset_set* interested_parties_;
   std::unique_ptr<XdsBootstrap> bootstrap_;
@@ -304,28 +331,32 @@ class XdsClient : public DualRefCounted<XdsClient> {
   Mutex mu_;
 
   // The channel for communicating with the xds server.
-  OrphanablePtr<ChannelState> chand_;
+  OrphanablePtr<ChannelState> chand_ ABSL_GUARDED_BY(mu_);
 
   // One entry for each watched LDS resource.
-  std::map<std::string /*listener_name*/, ListenerState> listener_map_;
+  std::map<std::string /*listener_name*/, ListenerState> listener_map_
+      ABSL_GUARDED_BY(mu_);
   // One entry for each watched RDS resource.
   std::map<std::string /*route_config_name*/, RouteConfigState>
-      route_config_map_;
+      route_config_map_ ABSL_GUARDED_BY(mu_);
   // One entry for each watched CDS resource.
-  std::map<std::string /*cluster_name*/, ClusterState> cluster_map_;
+  std::map<std::string /*cluster_name*/, ClusterState> cluster_map_
+      ABSL_GUARDED_BY(mu_);
   // One entry for each watched EDS resource.
-  std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_;
+  std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_
+      ABSL_GUARDED_BY(mu_);
 
   // Load report data.
   std::map<
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       LoadReportState>
-      load_report_map_;
+      load_report_map_ ABSL_GUARDED_BY(mu_);
 
   // Stores the most recent accepted resource version for each resource type.
-  std::map<std::string /*type*/, std::string /*version*/> resource_version_map_;
+  std::map<std::string /*type*/, std::string /*version*/> resource_version_map_
+      ABSL_GUARDED_BY(mu_);
 
-  bool shutting_down_ = false;
+  bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 namespace internal {
@@ -338,4 +369,4 @@ void SetXdsFallbackBootstrapConfig(const char* config);
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_CLIENT_H */
+#endif  // GRPC_CORE_EXT_XDS_XDS_CLIENT_H

@@ -32,27 +32,21 @@
 
 grpc_connectivity_state grpc_channel_check_connectivity_state(
     grpc_channel* channel, int try_to_connect) {
-  /* forward through to the underlying client channel */
-  grpc_channel_element* client_channel_elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_connectivity_state state;
   GRPC_API_TRACE(
       "grpc_channel_check_connectivity_state(channel=%p, try_to_connect=%d)", 2,
       (channel, try_to_connect));
-  if (GPR_LIKELY(client_channel_elem->filter == &grpc_client_channel_filter)) {
-    state = grpc_client_channel_check_connectivity_state(client_channel_elem,
-                                                         try_to_connect);
-
-    return state;
+  // Forward through to the underlying client channel.
+  grpc_core::ClientChannel* client_channel =
+      grpc_core::ClientChannel::GetFromChannel(channel);
+  if (GPR_UNLIKELY(client_channel == nullptr)) {
+    gpr_log(GPR_ERROR,
+            "grpc_channel_check_connectivity_state called on something that is "
+            "not a client channel");
+    return GRPC_CHANNEL_SHUTDOWN;
   }
-  gpr_log(GPR_ERROR,
-          "grpc_channel_check_connectivity_state called on something that is "
-          "not a client channel, but '%s'",
-          client_channel_elem->filter->name);
-
-  return GRPC_CHANNEL_SHUTDOWN;
+  return client_channel->CheckConnectivityState(try_to_connect);
 }
 
 typedef enum {
@@ -79,13 +73,7 @@ struct state_watcher {
 }  // namespace
 
 static void delete_state_watcher(state_watcher* w) {
-  grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
-      grpc_channel_get_channel_stack(w->channel));
-  if (client_channel_elem->filter == &grpc_client_channel_filter) {
-    GRPC_CHANNEL_INTERNAL_UNREF(w->channel, "watch_channel_connectivity");
-  } else {
-    abort();
-  }
+  GRPC_CHANNEL_INTERNAL_UNREF(w->channel, "watch_channel_connectivity");
   gpr_mu_destroy(&w->mu);
   gpr_free(w);
 }
@@ -120,12 +108,10 @@ static void partly_done(state_watcher* w, bool due_to_completion,
   if (due_to_completion) {
     grpc_timer_cancel(&w->alarm);
   } else {
-    grpc_channel_element* client_channel_elem = grpc_channel_stack_last_element(
-        grpc_channel_get_channel_stack(w->channel));
-    grpc_client_channel_watch_connectivity_state(
-        client_channel_elem,
-        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(w->cq)),
-        nullptr, &w->on_complete, nullptr);
+    grpc_core::ClientChannel* client_channel =
+        grpc_core::ClientChannel::GetFromChannel(w->channel);
+    GPR_ASSERT(client_channel != nullptr);
+    client_channel->CancelExternalConnectivityWatcher(&w->on_complete);
   }
 
   gpr_mu_lock(&w->mu);
@@ -187,10 +173,15 @@ static void timeout_complete(void* pw, grpc_error* error) {
 }
 
 int grpc_channel_num_external_connectivity_watchers(grpc_channel* channel) {
-  grpc_channel_element* client_channel_elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  return grpc_client_channel_num_external_connectivity_watchers(
-      client_channel_elem);
+  grpc_core::ClientChannel* client_channel =
+      grpc_core::ClientChannel::GetFromChannel(channel);
+  if (client_channel == nullptr) {
+    gpr_log(GPR_ERROR,
+            "grpc_channel_num_external_connectivity_watchers called on "
+            "something that is not a client channel");
+    return 0;
+  }
+  return client_channel->NumExternalConnectivityWatchers();
 }
 
 typedef struct watcher_timer_init_arg {
@@ -207,20 +198,14 @@ static void watcher_timer_init(void* arg, grpc_error* /*error_ignored*/) {
 }
 
 int grpc_channel_support_connectivity_watcher(grpc_channel* channel) {
-  grpc_channel_element* client_channel_elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
-  return client_channel_elem->filter != &grpc_client_channel_filter ? 0 : 1;
+  return grpc_core::ClientChannel::GetFromChannel(channel) != nullptr;
 }
 
 void grpc_channel_watch_connectivity_state(
     grpc_channel* channel, grpc_connectivity_state last_observed_state,
     gpr_timespec deadline, grpc_completion_queue* cq, void* tag) {
-  grpc_channel_element* client_channel_elem =
-      grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel));
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  state_watcher* w = static_cast<state_watcher*>(gpr_malloc(sizeof(*w)));
-
   GRPC_API_TRACE(
       "grpc_channel_watch_connectivity_state("
       "channel=%p, last_observed_state=%d, "
@@ -233,6 +218,7 @@ void grpc_channel_watch_connectivity_state(
 
   GPR_ASSERT(grpc_cq_begin_op(cq, tag));
 
+  state_watcher* w = static_cast<state_watcher*>(gpr_malloc(sizeof(*w)));
   gpr_mu_init(&w->mu);
   GRPC_CLOSURE_INIT(&w->on_complete, watch_complete, w,
                     grpc_schedule_on_exec_ctx);
@@ -252,13 +238,11 @@ void grpc_channel_watch_connectivity_state(
   GRPC_CLOSURE_INIT(&w->watcher_timer_init, watcher_timer_init, wa,
                     grpc_schedule_on_exec_ctx);
 
-  if (client_channel_elem->filter == &grpc_client_channel_filter) {
-    GRPC_CHANNEL_INTERNAL_REF(channel, "watch_channel_connectivity");
-    grpc_client_channel_watch_connectivity_state(
-        client_channel_elem,
-        grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)), &w->state,
-        &w->on_complete, &w->watcher_timer_init);
-  } else {
-    abort();
-  }
+  GRPC_CHANNEL_INTERNAL_REF(channel, "watch_channel_connectivity");
+  grpc_core::ClientChannel* client_channel =
+      grpc_core::ClientChannel::GetFromChannel(channel);
+  GPR_ASSERT(client_channel != nullptr);
+  client_channel->AddExternalConnectivityWatcher(
+      grpc_polling_entity_create_from_pollset(grpc_cq_pollset(cq)), &w->state,
+      &w->on_complete, &w->watcher_timer_init);
 }

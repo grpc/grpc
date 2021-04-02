@@ -411,10 +411,20 @@ GRPCAPI void grpc_server_register_completion_queue(grpc_server* server,
                                                    grpc_completion_queue* cq,
                                                    void* reserved);
 
+// There might be more methods added later, so users should take care to memset
+// this to 0 before using it.
+typedef struct {
+  void (*on_serving_status_change)(void* user_data, const char* uri,
+                                   grpc_status_code code,
+                                   const char* error_message);
+  void* user_data;
+} grpc_server_xds_status_notifier;
+
 typedef struct grpc_server_config_fetcher grpc_server_config_fetcher;
 
 /** EXPERIMENTAL.  Creates an xDS config fetcher. */
-GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create();
+GRPCAPI grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
+    grpc_server_xds_status_notifier notifier);
 
 /** EXPERIMENTAL.  Destroys a config fetcher. */
 GRPCAPI void grpc_server_config_fetcher_destroy(
@@ -494,6 +504,10 @@ GRPCAPI void grpc_resource_quota_resize(grpc_resource_quota* resource_quota,
 /** Update the size of the maximum number of threads allowed */
 GRPCAPI void grpc_resource_quota_set_max_threads(
     grpc_resource_quota* resource_quota, int new_max_threads);
+
+/** EXPERIMENTAL.  Dumps xDS configs as a serialized ClientConfig proto.
+    The full name of the proto is envoy.service.status.v3.ClientConfig. */
+GRPCAPI grpc_slice grpc_dump_xds_configs();
 
 /** Fetch a vtable for a grpc_channel_arg that points to a grpc_resource_quota
  */

@@ -136,7 +136,7 @@ namespace Grpc.Core.Internal
             // but DllImport("grpc_csharp_ext.x64.dll") does, so we need a special case for that.
             // See https://github.com/dotnet/coreclr/pull/17505 (fixed in .NET Core 3.1+)
             bool useDllSuffix = PlatformApis.IsWindows;
-            if (PlatformApis.Is64Bit)
+            if (PlatformApis.ProcessArchitecture == CommonPlatformDetection.CpuArchitecture.X64)
             {
                 if (useDllSuffix)
                 {
@@ -144,13 +144,21 @@ namespace Grpc.Core.Internal
                 }
                 return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x64());
             }
-            else
+            else if (PlatformApis.ProcessArchitecture == CommonPlatformDetection.CpuArchitecture.X86)
             {
                 if (useDllSuffix)
                 {
                     return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86_dll());
                 }
                 return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_x86());
+            }
+            else if (PlatformApis.ProcessArchitecture == CommonPlatformDetection.CpuArchitecture.Arm64)
+            {
+                return new NativeMethods(new NativeMethods.DllImportsFromSharedLib_arm64());
+            }
+            else
+            {
+                throw new InvalidOperationException($"Unsupported architecture \"{PlatformApis.ProcessArchitecture}\".");
             }
         }
 
@@ -285,16 +293,18 @@ namespace Grpc.Core.Internal
             throw new InvalidOperationException("Unsupported platform.");
         }
 
-        // Currently, only Intel platform is supported.
         private static string GetArchitectureString()
         {
-            if (PlatformApis.Is64Bit)
+            switch (PlatformApis.ProcessArchitecture)
             {
-                return "x64";
-            }
-            else
-            {
-                return "x86";
+                case CommonPlatformDetection.CpuArchitecture.X86:
+                  return "x86";
+                case CommonPlatformDetection.CpuArchitecture.X64:
+                  return "x64";
+                case CommonPlatformDetection.CpuArchitecture.Arm64:
+                  return "arm64";
+                default:
+                  throw new InvalidOperationException($"Unsupported architecture \"{PlatformApis.ProcessArchitecture}\".");
             }
         }
 

@@ -68,6 +68,16 @@ namespace Grpc.Tools.Tests
         }
 
         [Test]
+        public void CpuIsArm64()
+        {
+            if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+            {
+                _cpuMatched++;
+                Assert.AreEqual("arm64", _task.Cpu);
+            }
+        }
+
+        [Test]
         public void OsIsWindows()
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))

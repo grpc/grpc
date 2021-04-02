@@ -245,6 +245,12 @@ $ make
 
 [Cross-compile example](test/distrib/cpp/run_distrib_test_cmake_aarch64_cross.sh)
 
+### A note on SONAME and its ABI compatibility implications in the cmake build
+
+Best efforts are made to bump the SONAME revision during ABI breaches. While a
+change in the SONAME clearly indicates an ABI incompatibility, no hard guarantees
+can be made about any sort of ABI stability across the same SONAME version.
+
 ## Building with make on UNIX systems (deprecated)
 
 NOTE: `make` used to be gRPC's default build system, but we're no longer recommending it. You should use `bazel` or `cmake` instead. The `Makefile` is only intended for internal usage and is not meant for public consumption.

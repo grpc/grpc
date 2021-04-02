@@ -21,6 +21,7 @@ using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security;
+using Grpc.Core.Internal;
 
 namespace Grpc.Tools
 {
@@ -39,80 +40,14 @@ namespace Grpc.Tools
     // A few flags used to control the behavior under various platforms.
     internal static class Platform
     {
-        public enum OsKind { Unknown, Windows, Linux, MacOsX };
-        public static readonly OsKind Os;
+        public static readonly CommonPlatformDetection.OSKind Os = CommonPlatformDetection.GetOSKind();
 
-        public enum CpuKind { Unknown, X86, X64 };
-        public static readonly CpuKind Cpu;
+        public static readonly CommonPlatformDetection.CpuArchitecture Cpu = CommonPlatformDetection.GetProcessArchitecture();
 
         // This is not necessarily true, but good enough. BCL lacks a per-FS
         // API to determine file case sensitivity.
-        public static bool IsFsCaseInsensitive => Os == OsKind.Windows;
-        public static bool IsWindows => Os == OsKind.Windows;
-
-        static Platform()
-        {
-#if NETCORE
-            Os = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? OsKind.Windows
-               : RuntimeInformation.IsOSPlatform(OSPlatform.Linux) ? OsKind.Linux
-               : RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? OsKind.MacOsX
-               : OsKind.Unknown;
-
-            switch (RuntimeInformation.ProcessArchitecture)
-            {
-                case Architecture.X86: Cpu = CpuKind.X86; break;
-                case Architecture.X64: Cpu = CpuKind.X64; break;
-                // We do not have build tools for other architectures.
-                default: Cpu = CpuKind.Unknown; break;
-            }
-#else
-            // Using the same best-effort detection logic as Grpc.Core/PlatformApis.cs
-            var platform = Environment.OSVersion.Platform;
-            if (platform == PlatformID.Win32NT || platform == PlatformID.Win32S || platform == PlatformID.Win32Windows)
-            {
-                Os = OsKind.Windows;
-            }
-            else if (platform == PlatformID.Unix && GetUname() == "Darwin")
-            {
-                Os = OsKind.MacOsX;
-            }
-            else
-            {
-                Os = OsKind.Linux;
-            }
-
-            // Hope we are not building on ARM under Xamarin!
-            Cpu = Environment.Is64BitProcess ? CpuKind.X64 : CpuKind.X86;
-#endif
-        }
-
-        [DllImport("libc")]
-        static extern int uname(IntPtr buf);
-
-        // This code is copied from Grpc.Core/PlatformApis.cs
-        static string GetUname()
-        {
-            var buffer = Marshal.AllocHGlobal(8192);
-            try
-            {
-                if (uname(buffer) == 0)
-                {
-                    return Marshal.PtrToStringAnsi(buffer);
-                }
-                return string.Empty;
-            }
-            catch
-            {
-                return string.Empty;
-            }
-            finally
-            {
-                if (buffer != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(buffer);
-                }
-            }
-        }
+        public static bool IsFsCaseInsensitive => Os == CommonPlatformDetection.OSKind.Windows;
+        public static bool IsWindows => Os == CommonPlatformDetection.OSKind.Windows;
     };
 
     // Exception handling helpers.

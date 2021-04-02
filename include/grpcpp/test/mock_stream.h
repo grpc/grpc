@@ -90,6 +90,8 @@ class MockClientAsyncResponseReader
  public:
   MockClientAsyncResponseReader() = default;
 
+  /// ClientAsyncResponseReaderInterface
+  MOCK_METHOD0_T(StartCall, void());
   MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
   MOCK_METHOD3_T(Finish, void(R*, Status*, void*));
 };
@@ -100,6 +102,7 @@ class MockClientAsyncReader : public ClientAsyncReaderInterface<R> {
   MockClientAsyncReader() = default;
 
   /// ClientAsyncStreamingInterface
+  MOCK_METHOD1_T(StartCall, void(void*));
   MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
   MOCK_METHOD2_T(Finish, void(Status*, void*));
 
@@ -113,11 +116,13 @@ class MockClientAsyncWriter : public ::grpc::ClientAsyncWriterInterface<W> {
   MockClientAsyncWriter() = default;
 
   /// ClientAsyncStreamingInterface
+  MOCK_METHOD1_T(StartCall, void(void*));
   MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
   MOCK_METHOD2_T(Finish, void(Status*, void*));
 
   /// AsyncWriterInterface
   MOCK_METHOD2_T(Write, void(const W&, void*));
+  MOCK_METHOD3_T(Write, void(const W&, ::grpc::WriteOptions, void*));
 
   /// ClientAsyncWriterInterface
   MOCK_METHOD1_T(WritesDone, void(void*));
@@ -130,11 +135,13 @@ class MockClientAsyncReaderWriter
   MockClientAsyncReaderWriter() = default;
 
   /// ClientAsyncStreamingInterface
+  MOCK_METHOD1_T(StartCall, void(void*));
   MOCK_METHOD1_T(ReadInitialMetadata, void(void*));
   MOCK_METHOD2_T(Finish, void(Status*, void*));
 
   /// AsyncWriterInterface
   MOCK_METHOD2_T(Write, void(const W&, void*));
+  MOCK_METHOD3_T(Write, void(const W&, ::grpc::WriteOptions, void*));
 
   /// AsyncReaderInterface
   MOCK_METHOD2_T(Read, void(R*, void*));
