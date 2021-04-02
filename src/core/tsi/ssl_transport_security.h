@@ -44,6 +44,8 @@ extern "C" {
 
 #define TSI_SSL_ALPN_SELECTED_PROTOCOL "ssl_alpn_selected_protocol"
 
+#define TSI_X509_DNS_PEER_PROPERTY "x509_dns"
+
 #define TSI_X509_URI_PEER_PROPERTY "x509_uri"
 
 /* --- tsi_ssl_root_certs_store object ---
