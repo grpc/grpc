@@ -48,6 +48,9 @@ logger.handlers = []
 logger.addHandler(console_handler)
 logger.setLevel(logging.WARNING)
 
+original_grpc_trace = os.environ.pop('GRPC_TRACE')
+original_grpc_verbosity = os.environ.pop('GRPC_VERBOSITY')
+
 _TEST_CASES = [
     'backends_restart',
     'change_backend_service',
@@ -2580,6 +2583,10 @@ try:
 
     if args.test_case:
         client_env = dict(os.environ)
+        if original_grpc_trace:
+            client_env['GRPC_TRACE'] = original_grpc_trace
+        if original_grpc_verbosity:
+            client_env['GRPC_VERBOSITY'] = original_grpc_verbosity
         bootstrap_server_features = []
         if gcp.service_port == _DEFAULT_SERVICE_PORT:
             server_uri = service_host_name
