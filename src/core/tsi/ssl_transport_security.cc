@@ -357,13 +357,17 @@ static tsi_result add_subject_alt_names_properties_to_peer(
         subject_alt_name->type == GEN_URI) {
       unsigned char* name = nullptr;
       int name_size;
+      std::string property_name;
       if (subject_alt_name->type == GEN_DNS) {
         name_size = ASN1_STRING_to_UTF8(&name, subject_alt_name->d.dNSName);
+        property_name = TSI_X509_DNS_PEER_PROPERTY;
       } else if (subject_alt_name->type == GEN_EMAIL) {
         name_size = ASN1_STRING_to_UTF8(&name, subject_alt_name->d.rfc822Name);
+        property_name = TSI_X509_EMAIL_PEER_PROPERTY;
       } else {
         name_size = ASN1_STRING_to_UTF8(
             &name, subject_alt_name->d.uniformResourceIdentifier);
+        property_name = TSI_X509_URI_PEER_PROPERTY;
       }
       if (name_size < 0) {
         gpr_log(GPR_ERROR, "Could not get utf8 from asn1 string.");
@@ -378,12 +382,10 @@ static tsi_result add_subject_alt_names_properties_to_peer(
         OPENSSL_free(name);
         break;
       }
-      if (subject_alt_name->type == GEN_URI) {
-        result = tsi_construct_string_peer_property(
-            TSI_X509_URI_PEER_PROPERTY, reinterpret_cast<const char*>(name),
-            static_cast<size_t>(name_size),
-            &peer->properties[(*current_insert_index)++]);
-      }
+      result = tsi_construct_string_peer_property(
+          property_name.c_str(), reinterpret_cast<const char*>(name),
+          static_cast<size_t>(name_size),
+          &peer->properties[(*current_insert_index)++]);
       OPENSSL_free(name);
     } else if (subject_alt_name->type == GEN_IPADD) {
       char ntop_buf[INET6_ADDRSTRLEN];
@@ -408,6 +410,10 @@ static tsi_result add_subject_alt_names_properties_to_peer(
 
       result = tsi_construct_string_peer_property_from_cstring(
           TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, name,
+          &peer->properties[(*current_insert_index)++]);
+      if (result != TSI_OK) break;
+      result = tsi_construct_string_peer_property_from_cstring(
+          TSI_X509_IP_PEER_PROPERTY, name,
           &peer->properties[(*current_insert_index)++]);
     } else {
       result = tsi_construct_string_peer_property_from_cstring(
@@ -438,7 +444,14 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   for (int i = 0; i < subject_alt_name_count; i++) {
     GENERAL_NAME* subject_alt_name =
         sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
-    if (subject_alt_name->type == GEN_URI) {
+    // TODO(zhenlian): Clean up tsi_peer to avoid duplicate entries.
+    // URI, DNS, email and ip address SAN fields are plumbed to tsi_peer, in
+    // addition to all SAN fields (results in duplicate values). This code
+    // snippet updates property_count accordingly.
+    if (subject_alt_name->type == GEN_URI ||
+        subject_alt_name->type == GEN_DNS ||
+        subject_alt_name->type == GEN_EMAIL ||
+        subject_alt_name->type == GEN_IPADD) {
       property_count += 1;
     }
   }

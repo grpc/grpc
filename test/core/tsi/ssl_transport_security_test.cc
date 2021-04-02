@@ -253,13 +253,13 @@ void check_server0_peer(tsi_peer* peer) {
   tsi_peer_destruct(peer);
 }
 
-static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
+static bool check_property(tsi_peer* peer, const char* property_name,
+                           const char* property_value) {
   for (size_t i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
-    if (strcmp(prop->name, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) ==
-        0) {
-      if (strlen(name) == prop->value.length &&
-          memcmp(prop->value.data, name, prop->value.length) == 0) {
+    if (strcmp(prop->name, property_name) == 0) {
+      if (strlen(property_value) == prop->value.length &&
+          memcmp(prop->value.data, property_value, prop->value.length) == 0) {
         return true;
       }
     }
@@ -267,17 +267,25 @@ static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
   return false;
 }
 
+static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                        name);
+}
+
+static bool check_dns(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_DNS_PEER_PROPERTY, name);
+}
+
 static bool check_uri(tsi_peer* peer, const char* name) {
-  for (size_t i = 0; i < peer->property_count; i++) {
-    const tsi_peer_property* prop = &peer->properties[i];
-    if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
-      if (strlen(name) == prop->value.length &&
-          memcmp(prop->value.data, name, prop->value.length) == 0) {
-        return true;
-      }
-    }
-  }
-  return false;
+  return check_property(peer, TSI_X509_URI_PEER_PROPERTY, name);
+}
+
+static bool check_email(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_EMAIL_PEER_PROPERTY, name);
+}
+
+static bool check_ip(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_IP_PEER_PROPERTY, name);
 }
 
 void check_server1_peer(tsi_peer* peer) {
@@ -910,8 +918,9 @@ void ssl_tsi_test_extract_x509_subject_names() {
   GPR_ASSERT(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer) ==
              TSI_OK);
   // tsi_peer should include one common name, one certificate, one security
-  // level, ten SAN fields, three URI fields.
-  size_t expected_property_count = 15;
+  // level, ten SAN fields, two DNS SAN fields, three URI fields, two email
+  // addresses and two IP addresses.
+  size_t expected_property_count = 21;
   GPR_ASSERT(peer.property_count == expected_property_count);
   // Check common name
   const char* expected_cn = "xpigors";
@@ -927,6 +936,8 @@ void ssl_tsi_test_extract_x509_subject_names() {
   // Check DNS
   GPR_ASSERT(check_subject_alt_name(&peer, "foo.test.domain.com") == 1);
   GPR_ASSERT(check_subject_alt_name(&peer, "bar.test.domain.com") == 1);
+  GPR_ASSERT(check_dns(&peer, "foo.test.domain.com") == 1);
+  GPR_ASSERT(check_dns(&peer, "bar.test.domain.com") == 1);
   // Check URI
   // Note that a valid SPIFFE certificate should only have one URI.
   GPR_ASSERT(check_subject_alt_name(&peer, "spiffe://foo.com/bar/baz") == 1);
@@ -940,6 +951,15 @@ void ssl_tsi_test_extract_x509_subject_names() {
   // Check email address
   GPR_ASSERT(check_subject_alt_name(&peer, "foo@test.domain.com") == 1);
   GPR_ASSERT(check_subject_alt_name(&peer, "bar@test.domain.com") == 1);
+  GPR_ASSERT(check_email(&peer, "foo@test.domain.com") == 1);
+  GPR_ASSERT(check_email(&peer, "bar@test.domain.com") == 1);
+  // Check ip address
+  GPR_ASSERT(check_subject_alt_name(&peer, "192.168.7.1") == 1);
+  GPR_ASSERT(check_subject_alt_name(&peer, "13::17") == 1);
+  GPR_ASSERT(check_ip(&peer, "192.168.7.1") == 1);
+  GPR_ASSERT(check_ip(&peer, "13::17") == 1);
+  // Check other fields
+  GPR_ASSERT(check_subject_alt_name(&peer, "other types of SAN") == 1);
   // Free memory
   gpr_free(cert);
   tsi_peer_destruct(&peer);
