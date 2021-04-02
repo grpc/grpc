@@ -38,6 +38,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/port.h"
@@ -47,10 +48,32 @@
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
 
+class SslLibraryInfo {
+ public:
+  SslLibraryInfo() {}
+
+  void Notify() {
+    grpc_core::MutexLock lock(&mu_);
+    ready_ = true;
+    cv_.Signal();
+  }
+
+  void Await() {
+    grpc_core::MutexLock lock(&mu_);
+    grpc_core::WaitUntil(&cv_, &mu_, [this] { return ready_; });
+  }
+
+ private:
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar cv_;
+  bool ready_ = false;
+};
+
 // Arguments for TLS server thread.
 typedef struct {
   int socket;
   char* alpn_preferred;
+  SslLibraryInfo* ssl_library_info;
 } server_args;
 
 // Based on https://wiki.openssl.org/index.php/Simple_TLS_Server.
@@ -143,6 +166,7 @@ static void server_thread(void* arg) {
 
   SSL_load_error_strings();
   OpenSSL_add_ssl_algorithms();
+  args->ssl_library_info->Notify();
 
   const SSL_METHOD* method = TLSv1_2_server_method();
   SSL_CTX* ctx = SSL_CTX_new(method);
@@ -238,11 +262,13 @@ static bool client_ssl_test(char* server_alpn_preferred) {
   GPR_ASSERT(server_socket > 0 && port > 0);
 
   // Launch the TLS server thread.
-  server_args args = {server_socket, server_alpn_preferred};
+  SslLibraryInfo ssl_library_info;
+  server_args args = {server_socket, server_alpn_preferred, &ssl_library_info};
   bool ok;
   grpc_core::Thread thd("grpc_client_ssl_test", server_thread, &args, &ok);
   GPR_ASSERT(ok);
   thd.Start();
+  ssl_library_info.Await();
 
   // Load key pair and establish client SSL credentials.
   grpc_ssl_pem_key_cert_pair pem_key_cert_pair;

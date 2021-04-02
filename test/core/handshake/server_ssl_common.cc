@@ -278,6 +278,4 @@ bool server_ssl_test(const char* alpn_list[], unsigned int alpn_list_len,
   return success;
 }
 
-void CleanupSslLibrary() {
-  EVP_cleanup();
-}
+void CleanupSslLibrary() { EVP_cleanup(); }
