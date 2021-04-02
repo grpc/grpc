@@ -9,20 +9,27 @@ servers, and other custom integrations that were previously unsupported.
 
 *WARNING*: This is experimental code and is subject to change.
 
-## Expectations of an EventEngine implementation
+## High level expectations of an EventEngine implementation
 
-### Resource acquisition
-EventEngines are expected to bring all resources required to perform I/O and
-execute callbacks. This also enables a means to support the public Callback API
-in C++.
+### Managing their own concurrency
+EventEngines are expected to internally create whatever threads are required to
+perform I/O and execute callbacks. For example, an EventEngine implementation
+may want to spawn separate thread pools for polling and callback execution.
 
-### Blocking callback execution
+### Provisioning data buffers via Slice allocation
+At a high level, gRPC provides a `ResourceQuota` system that allows gRPC to
+reclaim memory and degrade gracefully when memory reaches application-defined
+thresholds. To enable this feature, the memory allocation of read/write buffers
+within an EventEngine must be acquired in the form of Slices from
+SliceAllocators. This is covered more fully in the gRFC and code.
+
+### Documentating expectations around callback execution
 Some callbacks may be expensive to run. EventEngines should decide on and
-document whether callback execution could block polling operations. This way,
+document whether callback execution might block polling operations. This way,
 application developers can plan accordingly (e.g., run their expensive callbacks
-on a separate thread).
+on a separate thread if necessary).
 
-### Concurrent usage
+### Handling concurrent usage
 Assume that gRPC may use an EventEngine concurrently across multiple threads.
 
 ## TODO: documentation

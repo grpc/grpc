@@ -195,7 +195,7 @@
         defined(GRPC_EVENT_ENGINE_TEST) !=                      \
     1
 #error \
-    "Must define exactly one of GRPC_POSIX_SOCKET, GRPC_WINSOCK_SOCKET, GRPC_CUSTOM_SOCKET, GRPC_EVENT_ENGINE_TEST"
+    "Must define exactly one of GRPC_POSIX_SOCKET, GRPC_WINSOCK_SOCKET, GRPC_CUSTOM_SOCKET, GRPC_CFSTREAM, GRPC_EVENT_ENGINE_TEST"
 #endif
 
 #ifdef GRPC_POSIX_SOCKET

@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.37.0-dev'
+  version = '1.38.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20200923.3'
+  abseil_version = '1.20210324.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -117,10 +117,6 @@ Pod::Spec.new do |s|
                       'include/grpc/byte_buffer_reader.h',
                       'include/grpc/census.h',
                       'include/grpc/compression.h',
-                      'include/grpc/event_engine/channel_args.h',
-                      'include/grpc/event_engine/event_engine.h',
-                      'include/grpc/event_engine/port.h',
-                      'include/grpc/event_engine/slice_allocator.h',
                       'include/grpc/fork.h',
                       'include/grpc/grpc.h',
                       'include/grpc/grpc_posix.h',
@@ -283,6 +279,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver_registry.h',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.cc',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.h',
+                      'src/core/ext/filters/client_channel/retry_filter.cc',
+                      'src/core/ext/filters/client_channel/retry_filter.h',
+                      'src/core/ext/filters/client_channel/retry_service_config.cc',
+                      'src/core/ext/filters/client_channel/retry_service_config.h',
                       'src/core/ext/filters/client_channel/retry_throttle.cc',
                       'src/core/ext/filters/client_channel/retry_throttle.h',
                       'src/core/ext/filters/client_channel/server_address.cc',
@@ -832,9 +832,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/debug/stats_data.h',
                       'src/core/lib/debug/trace.cc',
                       'src/core/lib/debug/trace.h',
-                      'src/core/lib/event_engine/resolved_address.cc',
-                      'src/core/lib/event_engine/slice_allocator.cc',
-                      'src/core/lib/event_engine/sockaddr.h',
                       'src/core/lib/gpr/alloc.cc',
                       'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/arena.h',
@@ -1004,6 +1001,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/nameser.h',
                       'src/core/lib/iomgr/parse_address.cc',
                       'src/core/lib/iomgr/parse_address.h',
+                      'src/core/lib/iomgr/poller/eventmanager_libuv.cc',
+                      'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                       'src/core/lib/iomgr/polling_entity.cc',
                       'src/core/lib/iomgr/polling_entity.h',
                       'src/core/lib/iomgr/pollset.cc',
@@ -1448,6 +1447,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/resolver_factory.h',
                               'src/core/ext/filters/client_channel/resolver_registry.h',
                               'src/core/ext/filters/client_channel/resolver_result_parsing.h',
+                              'src/core/ext/filters/client_channel/retry_filter.h',
+                              'src/core/ext/filters/client_channel/retry_service_config.h',
                               'src/core/ext/filters/client_channel/retry_throttle.h',
                               'src/core/ext/filters/client_channel/server_address.h',
                               'src/core/ext/filters/client_channel/service_config.h',
@@ -1794,6 +1795,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/lockfree_event.h',
                               'src/core/lib/iomgr/nameser.h',
                               'src/core/lib/iomgr/parse_address.h',
+                              'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                               'src/core/lib/iomgr/polling_entity.h',
                               'src/core/lib/iomgr/pollset.h',
                               'src/core/lib/iomgr/pollset_custom.h',

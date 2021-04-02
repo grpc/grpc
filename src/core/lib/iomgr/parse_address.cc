@@ -139,8 +139,8 @@ grpc_error* UnixSockaddrPopulate(absl::string_view /* path */,
   abort();
 }
 
-grpc_error* UnixAbstractSockaddrPopulate(absl::string_view /* path */,
-                                         grpc_resolved_address* /* resolved_addr */) {
+grpc_error* UnixAbstractSockaddrPopulate(
+    absl::string_view /* path */, grpc_resolved_address* /* resolved_addr */) {
   abort();
 }
 
