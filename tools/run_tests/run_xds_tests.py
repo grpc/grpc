@@ -1489,6 +1489,27 @@ def test_timeout(gcp, original_backend_service, instance_group):
     # A list of tuples (testcase_name, {client_config}, {expected_results})
     test_cases = [
         (
+            'timeout_exceeded (UNARY_CALL), timeout_different_route (EMPTY_CALL)',
+            # UnaryCall and EmptyCall both sleep-4.
+            # UnaryCall timeouts, EmptyCall succeeds.
+            {
+                'rpc_types': [
+                    messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                    messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL,
+                ],
+                'metadata': [
+                    (messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
+                     'rpc-behavior', 'sleep-4'),
+                    (messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL,
+                     'rpc-behavior', 'sleep-4'),
+                ],
+            },
+            {
+                'UNARY_CALL': 4,  # DEADLINE_EXCEEDED
+                'EMPTY_CALL': 0,
+            },
+        ),
+        (
             'app_timeout_exceeded',
             # UnaryCall only with sleep-2; timeout=1s; calls timeout.
             {
@@ -1516,31 +1537,11 @@ def test_timeout(gcp, original_backend_service, instance_group):
             {
                 'UNARY_CALL': 0,
             },
-        ),
-        (
-            'timeout_exceeded (UNARY_CALL), timeout_different_route (EMPTY_CALL)',
-            # UnaryCall and EmptyCall both sleep-4.
-            # UnaryCall timeouts, EmptyCall succeeds.
-            {
-                'rpc_types': [
-                    messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
-                    messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL,
-                ],
-                'metadata': [
-                    (messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL,
-                     'rpc-behavior', 'sleep-4'),
-                    (messages_pb2.ClientConfigureRequest.RpcType.EMPTY_CALL,
-                     'rpc-behavior', 'sleep-4'),
-                ],
-            },
-            {
-                'UNARY_CALL': 4,  # DEADLINE_EXCEEDED
-                'EMPTY_CALL': 0,
-            },
-        ),
+        )
     ]
 
     try:
+        first_case = True
         for (testcase_name, client_config, expected_results) in test_cases:
             logger.info('starting case %s', testcase_name)
             configure_client(**client_config)
@@ -1552,6 +1553,9 @@ def test_timeout(gcp, original_backend_service, instance_group):
             # Each attempt takes 10 seconds; 20 attempts is equivalent to 200
             # second timeout.
             attempt_count = 20
+            if first_case:
+                attempt_count = 120
+                first_case = False
             before_stats = get_client_accumulated_stats()
             if not before_stats.stats_per_method:
                 raise ValueError(
