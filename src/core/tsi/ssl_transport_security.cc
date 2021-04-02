@@ -378,6 +378,12 @@ static tsi_result add_subject_alt_names_properties_to_peer(
         OPENSSL_free(name);
         break;
       }
+      if (subject_alt_name->type == GEN_DNS) {
+        result = tsi_construct_string_peer_property(
+            TSI_X509_DNS_PEER_PROPERTY, reinterpret_cast<const char*>(name),
+            static_cast<size_t>(name_size),
+            &peer->properties[(*current_insert_index)++]);
+      }
       if (subject_alt_name->type == GEN_URI) {
         result = tsi_construct_string_peer_property(
             TSI_X509_URI_PEER_PROPERTY, reinterpret_cast<const char*>(name),
@@ -438,7 +444,8 @@ static tsi_result peer_from_x509(X509* cert, int include_certificate_type,
   for (int i = 0; i < subject_alt_name_count; i++) {
     GENERAL_NAME* subject_alt_name =
         sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
-    if (subject_alt_name->type == GEN_URI) {
+    if (subject_alt_name->type == GEN_URI ||
+        subject_alt_name->type == GEN_DNS) {
       property_count += 1;
     }
   }

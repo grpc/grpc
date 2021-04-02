@@ -222,6 +222,29 @@ static int check_x509_pem_cert_chain(const grpc_auth_context* ctx,
   return 1;
 }
 
+static int check_dns(const grpc_auth_context* ctx, const char** expected_dns,
+                     size_t num_dns) {
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      ctx, GRPC_PEER_DNS_PROPERTY_NAME);
+  for (size_t i = 0; i < num_dns; i++) {
+    const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+    if (prop == nullptr) {
+      gpr_log(GPR_ERROR, "Expected dns value %s not found.", expected_dns[i]);
+      return 0;
+    }
+    if (strncmp(prop->value, expected_dns[i], prop->value_length) != 0) {
+      gpr_log(GPR_ERROR, "Expected peer dns %s and got %s.", expected_dns[i],
+              prop->value);
+      return 0;
+    }
+  }
+  if (grpc_auth_property_iterator_next(&it) != nullptr) {
+    gpr_log(GPR_ERROR, "Expected only %zu dns property values.", num_dns);
+    return 0;
+  }
+  return 1;
+}
+
 static int check_spiffe_id(const grpc_auth_context* ctx,
                            const char* expected_spiffe_id,
                            bool expect_spiffe_id) {
@@ -440,6 +463,23 @@ static void test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context(
   GPR_ASSERT(check_ssl_peer_equivalence(&peer, &rpeer));
 
   grpc_shallow_peer_destruct(&rpeer);
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
+static void test_dns_peer_to_auth_context(void) {
+  tsi_peer peer;
+  const char* expected_dns[] = {"dns1", "dns2", "dns3"};
+  GPR_ASSERT(tsi_construct_peer(GPR_ARRAY_SIZE(expected_dns), &peer) == TSI_OK);
+  for (size_t i = 0; i < GPR_ARRAY_SIZE(expected_dns); i++) {
+    GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                   TSI_X509_DNS_PEER_PROPERTY, expected_dns[i],
+                   &peer.properties[i]) == TSI_OK);
+  }
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  GPR_ASSERT(ctx != nullptr);
+  GPR_ASSERT(check_dns(ctx.get(), expected_dns, GPR_ARRAY_SIZE(expected_dns)));
   tsi_peer_destruct(&peer);
   ctx.reset(DEBUG_LOCATION, "test");
 }
@@ -672,6 +712,7 @@ int main(int argc, char** argv) {
   test_cn_and_one_san_ssl_peer_to_auth_context();
   test_cn_and_multiple_sans_ssl_peer_to_auth_context();
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
+  test_dns_peer_to_auth_context();
   test_spiffe_id_peer_to_auth_context();
   test_ipv6_address_san();
   test_default_ssl_roots();

@@ -32,6 +32,7 @@ extern "C" {
 #define GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME "x509_pem_cert_chain"
 #define GRPC_SSL_SESSION_REUSED_PROPERTY "ssl_session_reused"
 #define GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME "security_level"
+#define GRPC_PEER_DNS_PROPERTY_NAME "peer_dns"
 #define GRPC_PEER_SPIFFE_ID_PROPERTY_NAME "peer_spiffe_id"
 
 /** Environment variable that points to the default SSL roots file. This file
