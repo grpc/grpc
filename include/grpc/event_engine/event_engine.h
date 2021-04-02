@@ -256,8 +256,8 @@ class EventEngine {
   /// callback will be run exactly once from either cancellation or from its
   /// activation.
   virtual void TryCancel(TaskHandle handle) = 0;
-  // TODO(hork): Carefully evaluate shutdown requirements, determine if we need
   // TODO(hork): define return status codes
+  // TODO(hork): Carefully evaluate shutdown requirements, determine if we need
   // a callback parameter to be added to this method.
   /// Immediately run all callbacks with status indicating the shutdown. Every
   /// EventEngine is expected to shut down exactly once. No new callbacks/tasks
