@@ -43,7 +43,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 logger = logging.getLogger()
 console_handler = logging.StreamHandler()
 formatter = logging.Formatter(
-    fmt='%(module)s:%(asctime)s: %(levelname)-8s %(message)s')
+    fmt='%(name)s:%(asctime)s: %(levelname)-8s %(message)s')
 console_handler.setFormatter(formatter)
 logger.handlers = []
 logger.addHandler(console_handler)
