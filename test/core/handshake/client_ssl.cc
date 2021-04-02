@@ -236,7 +236,7 @@ static void server_thread(void* arg) {
   close(client);
   close(sock);
   SSL_CTX_free(ctx);
-  EVP_cleanup();
+  // EVP_cleanup();
 }
 
 // This test launches a minimal TLS server on a separate thread and then
