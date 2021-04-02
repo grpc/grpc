@@ -105,6 +105,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     external_verifier->verify = verify;
     external_verifier->cancel = cancel;
     external_verifier->destruct = destruct;
+    external_verifier->user_data = (void*)external_verifier;
     // Takes the ownership of external_verifier.
     external_certificate_verifier_ =
         new grpc_core::ExternalCertificateVerifier(external_verifier);
@@ -136,6 +137,12 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     return false;
   }
 
+  static void SyncExternalVerifierDestruct(void* user_data) {
+    auto* external_verifier =
+        static_cast<grpc_tls_certificate_verifier_external*>(user_data);
+    delete external_verifier;
+  }
+
   // For Async external verifier, we will take two extra parameters, compared to
   // the sync verifier:
   // 1. thread_ptr_ptr: main test thread will create a dummy thread object, and
@@ -164,6 +171,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     // the user_data_args.
     ExternalVerifierUserDataArgs* user_data_args =
         new ExternalVerifierUserDataArgs();
+    user_data_args->external_verifier = external_verifier;
     user_data_args->thread_ptr_ptr = thread_ptr_ptr;
     user_data_args->event_ptr = event_ptr;
     external_verifier->user_data = (void*)user_data_args;
@@ -183,6 +191,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   // This is the arg we will pass in when creating the external verifier, and
   // retrieve it later in the its verifier functions.
   struct ExternalVerifierUserDataArgs {
+    grpc_tls_certificate_verifier_external* external_verifier = nullptr;
     grpc_core::Thread** thread_ptr_ptr = nullptr;
     gpr_event* event_ptr = nullptr;
   };
@@ -228,6 +237,7 @@ class TlsSecurityConnectorTest : public ::testing::Test {
   static void AsyncExternalVerifierDestruct(void* user_data) {
     ExternalVerifierUserDataArgs* user_data_args =
         static_cast<ExternalVerifierUserDataArgs*>(user_data);
+    delete user_data_args->external_verifier;
     delete user_data_args;
   }
 
@@ -502,7 +512,7 @@ TEST_F(TlsSecurityConnectorTest, CreateChannelSecurityConnectorFailNoOptions) {
 TEST_F(TlsSecurityConnectorTest,
        ChannelSCWithSyncGoodExternalVerifierAndGoodRequestParam) {
   CreateExternalCertificateVerifier(SyncExternalVerifierGoodVerify, nullptr,
-                                    nullptr);
+                                    SyncExternalVerifierDestruct);
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
@@ -870,7 +880,7 @@ TEST_F(TlsSecurityConnectorTest, CreateServerSecurityConnectorFailNoOptions) {
 TEST_F(TlsSecurityConnectorTest,
        ServerSCWithSyncGoodExternalVerifierAndGoodRequestParam) {
   CreateExternalCertificateVerifier(SyncExternalVerifierGoodVerify, nullptr,
-                                    nullptr);
+                                    SyncExternalVerifierDestruct);
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);

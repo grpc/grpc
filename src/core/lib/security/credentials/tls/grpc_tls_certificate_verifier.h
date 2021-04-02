@@ -57,7 +57,6 @@ namespace grpc_core {
 // verifier that extends grpc_tls_certificate_verifier.
 class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
  public:
-  // Takes the ownership of external_verifier.
   explicit ExternalCertificateVerifier(
       grpc_tls_certificate_verifier_external* external_verifier)
       : external_verifier_(external_verifier) {}
@@ -66,7 +65,6 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
     if (external_verifier_->destruct != nullptr) {
       external_verifier_->destruct(external_verifier_->user_data);
     }
-    delete external_verifier_;
   }
 
   bool Verify(grpc_tls_custom_verification_check_request* request,

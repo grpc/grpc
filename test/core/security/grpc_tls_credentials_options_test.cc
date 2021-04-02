@@ -73,6 +73,7 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
     external_verifier->verify = verify;
     external_verifier->cancel = cancel;
     external_verifier->destruct = destruct;
+    external_verifier->user_data = (void*)external_verifier;
     // Takes the ownership of external_verifier.
     external_certificate_verifier_ =
         new ExternalCertificateVerifier(external_verifier);
@@ -84,6 +85,12 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
       void* callback_arg) {
     request->status = GRPC_STATUS_OK;
     return false;
+  }
+
+  static void ExternalVerifierDestruct(void* user_data) {
+    auto* external_verifier =
+        static_cast<grpc_tls_certificate_verifier_external*>(user_data);
+    delete external_verifier;
   }
 
   struct ThreadArgs {
@@ -560,7 +567,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 
 TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsWithGoodExternalVerifier) {
   CreateExternalCertificateVerifier(SyncExternalVerifierGoodVerify, nullptr,
-                                    nullptr);
+                                    ExternalVerifierDestruct);
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
   options->set_certificate_verifier(external_certificate_verifier_->Ref());
@@ -578,7 +585,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsWithGoodExternalVerifier) {
 
 TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithBadExternalVerifier) {
   CreateExternalCertificateVerifier(AsyncExternalVerifierBadVerify, nullptr,
-                                    nullptr);
+                                    ExternalVerifierDestruct);
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
   options->set_certificate_verifier(external_certificate_verifier_->Ref());

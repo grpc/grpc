@@ -1059,6 +1059,10 @@ struct grpc_tls_certificate_verifier_external {
    * user-specified callback functions should not be destroyed before
    * external_verifier, since external_verifier will invoke them while being
    * used.
+   * Note that the caller MUST delete the grpc_tls_certificate_verifier_external
+   * object itself in this function, otherwise it will cause memory leaks. That
+   * also means the user_data has to carries at least a self pointer, for the
+   * callers to later delete it in destruct().
    *
    * user_data: any argument that is passed in the user_data of
    * grpc_tls_certificate_verifier_external during construction time can be
@@ -1070,8 +1074,9 @@ struct grpc_tls_certificate_verifier_external {
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * Converts an external verifier to an internal verifier. The internal verifier
- * will take the ownership of the external verifier.
+ * Converts an external verifier to an internal verifier.
+ * Note that we will not take the ownership of the external_verifier. Callers
+ * will need to delete external_verifier in its own destruct function.
  */
 grpc_tls_certificate_verifier* grpc_tls_certificate_verifier_external_create(
     grpc_tls_certificate_verifier_external* external_verifier);

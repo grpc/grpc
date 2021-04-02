@@ -64,12 +64,11 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
       void (*cancel)(void* user_data,
                      grpc_tls_custom_verification_check_request* request),
       void (*destruct)(void* user_data)) {
-    grpc_tls_certificate_verifier_external* external_verifier =
-        new grpc_tls_certificate_verifier_external();
+    auto* external_verifier = new grpc_tls_certificate_verifier_external();
     external_verifier->verify = verify;
     external_verifier->cancel = cancel;
     external_verifier->destruct = destruct;
-    // Takes the ownership of external_verifier.
+    external_verifier->user_data = (void*)external_verifier;
     external_certificate_verifier_ =
         new ExternalCertificateVerifier(external_verifier);
   }
@@ -89,6 +88,12 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
     request->status = GRPC_STATUS_UNAUTHENTICATED;
     request->error_details = gpr_strdup("SyncExternalVerifierBadVerify failed");
     return false;
+  }
+
+  static void SyncExternalVerifierDestruct(void* user_data) {
+    auto* external_verifier =
+        static_cast<grpc_tls_certificate_verifier_external*>(user_data);
+    delete external_verifier;
   }
 
   // For Async external verifier, we will take two extra parameters, compared to
@@ -119,6 +124,7 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
     // the user_data_args.
     ExternalVerifierUserDataArgs* user_data_args =
         new ExternalVerifierUserDataArgs();
+    user_data_args->external_verifier = external_verifier;
     user_data_args->thread_ptr_ptr = thread_ptr_ptr;
     user_data_args->event_ptr = event_ptr;
     external_verifier->user_data = (void*)user_data_args;
@@ -138,6 +144,7 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
   // This is the arg we will pass in when creating the external verifier, and
   // retrieve it later in the its verifier functions.
   struct ExternalVerifierUserDataArgs {
+    grpc_tls_certificate_verifier_external* external_verifier = nullptr;
     grpc_core::Thread** thread_ptr_ptr = nullptr;
     gpr_event* event_ptr = nullptr;
   };
@@ -219,6 +226,7 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
   static void AsyncExternalVerifierDestruct(void* user_data) {
     ExternalVerifierUserDataArgs* user_data_args =
         static_cast<ExternalVerifierUserDataArgs*>(user_data);
+    delete user_data_args->external_verifier;
     delete user_data_args;
   }
 
@@ -230,14 +238,14 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
 
 TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierGood) {
   CreateExternalCertificateVerifier(SyncExternalVerifierGoodVerify, nullptr,
-                                    nullptr);
+                                    SyncExternalVerifierDestruct);
   external_certificate_verifier_->Verify(&server_request_, [] {});
   EXPECT_EQ(server_request_.status, GRPC_STATUS_OK);
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierBad) {
   CreateExternalCertificateVerifier(SyncExternalVerifierBadVerify, nullptr,
-                                    nullptr);
+                                    SyncExternalVerifierDestruct);
   external_certificate_verifier_->Verify(&server_request_, [] {});
   EXPECT_EQ(server_request_.status, GRPC_STATUS_UNAUTHENTICATED);
   EXPECT_STREQ(server_request_.error_details,
