@@ -420,7 +420,7 @@ class RetryFilter::CallData {
 
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
-  void PendingBatchesAdd(grpc_transport_stream_op_batch* batch);
+  PendingBatch* PendingBatchesAdd(grpc_transport_stream_op_batch* batch);
   void PendingBatchClear(PendingBatch* pending);
   void MaybeClearPendingBatch(PendingBatch* pending);
   static void FailPendingBatchInCallCombiner(void* arg, grpc_error* error);
@@ -1583,7 +1583,12 @@ void RetryFilter::CallData::Destroy(grpc_call_element* elem,
                                     grpc_closure* then_schedule_closure) {
   auto* calld = static_cast<CallData*>(elem->call_data);
   RefCountedPtr<SubchannelCall> subchannel_call;
-  if (GPR_LIKELY(calld->call_attempt_ != nullptr)) {
+// FIXME: can we make it such that we always have committed_call_ set by
+// the time we get here?  that would simplify the logic.  if not, may
+// need to get more complex about when we invoke then_schedule_closure.
+  if (GPR_LIKELY(calld->committed_call_ != nullptr)) {
+    subchannel_call = calld->committed_call_->subchannel_call();
+  } else if (GPR_LIKELY(calld->call_attempt_ != nullptr)) {
     subchannel_call = calld->call_attempt_->lb_call()->subchannel_call();
   }
   calld->~CallData();
@@ -1692,7 +1697,7 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
     return;
   }
   // Add the batch to the pending list.
-  PendingBatchesAdd(batch);
+  PendingBatch* pending = PendingBatchesAdd(batch);
   if (call_attempt_ == nullptr) {
     // If this is the first batch and retries are already committed
     // (e.g., if this batch put the call above the buffer size limit), then
@@ -1702,9 +1707,11 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
     if (num_attempts_completed_ == 0 && retry_committed_) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
         gpr_log(GPR_INFO,
-                "chand=%p calld=%p: disabling retries before first attempt",
+                "chand=%p calld=%p: retry committed before first attempt; "
+                "creating LB call",
                 chand_, this);
       }
+      PendingBatchClear(pending);
       committed_call_ = CreateLoadBalancedCall();
       committed_call_->StartTransportStreamOpBatch(batch);
       return;
@@ -1856,7 +1863,7 @@ size_t RetryFilter::CallData::GetBatchIndex(
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
-void RetryFilter::CallData::PendingBatchesAdd(
+RetryFilter::CallData::PendingBatch* RetryFilter::CallData::PendingBatchesAdd(
     grpc_transport_stream_op_batch* batch) {
   const size_t idx = GetBatchIndex(batch);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
@@ -1894,6 +1901,7 @@ void RetryFilter::CallData::PendingBatchesAdd(
     }
     RetryCommit(call_attempt_.get());
   }
+  return pending;
 }
 
 void RetryFilter::CallData::PendingBatchClear(PendingBatch* pending) {
