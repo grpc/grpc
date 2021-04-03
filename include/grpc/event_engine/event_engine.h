@@ -23,6 +23,7 @@
 #include "absl/status/statusor.h"
 #include "absl/time/time.h"
 
+#include "grpc/event_engine/channel_args.h"
 #include "grpc/event_engine/slice_allocator.h"
 
 // TODO(hork): explicitly define lifetimes and ownership of all objects.

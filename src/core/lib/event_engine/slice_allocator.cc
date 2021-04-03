@@ -19,7 +19,6 @@
 
 #include "absl/status/status.h"
 
-#include "grpc/event_engine/channel_args.h"
 #include "src/core/lib/iomgr/resource_quota.h"
 
 namespace grpc_event_engine {
