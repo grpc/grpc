@@ -50,7 +50,7 @@ namespace experimental {
 /// that the engines remain available until they are no longer needed. Depending
 /// on the use case, engines may live until gRPC is shut down.
 ///
-/// EXAMPLE USAGE
+/// EXAMPLE USAGE (Not yet implemented)
 ///
 /// Custom EventEngines can be specified per channel, and allow configuration
 /// for both clients and servers. To set a custom EventEngine for a client
@@ -62,7 +62,8 @@ namespace experimental {
 ///    MyAppClient client(grpc::CreateCustomChannel(
 ///        "localhost:50051", grpc::InsecureChannelCredentials(), args));
 ///
-/// A gRPC server can be set using the ServerBuild::SetEventEngine method:
+/// A gRPC server can use a custom EventEngine by calling the
+/// ServerBuilder::SetEventEngine method:
 ///
 ///    ServerBuilder builder;
 ///    std::shared_ptr<EventEngine> engine = std::make_shared<MyEngine>(...);
@@ -75,7 +76,8 @@ class EventEngine {
  public:
   /// A basic callable function. The first argument to all callbacks is an
   /// absl::Status indicating the status of the operation associated with this
-  /// callback.
+  /// callback. Each EventEngine method that takes a callback parameter, defines
+  /// the expected sets and meanings of statuses for that use case.
   using Callback = std::function<void(absl::Status)>;
   struct TaskHandle {
     intptr_t key;
@@ -127,8 +129,8 @@ class EventEngine {
     ///
     /// \a on_writable is called when the connection is ready for more data. The
     /// Slices within the \a data buffer may be mutated at will by the Endpoint
-    /// until \a on_writable is called. The SliceBuffer will remain valid after
-    /// calling \a Write, but its state is otherwise undefined.
+    /// until \a on_writable is called. The \a data SliceBuffer will remain
+    /// valid after calling \a Write, but its state is otherwise undefined.
     virtual void Write(Callback on_writable, SliceBuffer* data,
                        absl::Time deadline) = 0;
     // TODO(hork): define status codes for the callback
@@ -176,7 +178,6 @@ class EventEngine {
       SliceAllocatorFactory slice_allocator_factory) = 0;
   // TODO(hork): define status codes for the callback
   // TODO(hork): define return status codes
-  // TODO(hork): document status arg meanings for on_connect
   /// Creates a network connection to a remote network listener.
   virtual absl::Status Connect(OnConnectCallback on_connect,
                                const ResolvedAddress& addr,
@@ -202,9 +203,10 @@ class EventEngine {
     /// target address.
     using LookupHostnameCallback =
         std::function<void(absl::Status, std::vector<ResolvedAddress>)>;
-    // Called with a collection of SRV records.
+    /// Called with a collection of SRV records.
     using LookupSRVCallback =
         std::function<void(absl::Status, std::vector<SRVRecord>)>;
+    /// Called with the result of a TXT record lookup
     using LookupTXTCallback = std::function<void(absl::Status, std::string)>;
 
     virtual ~DNSResolver() = 0;
