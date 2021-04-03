@@ -183,32 +183,5 @@ namespace Grpc.Core.Internal
                 return null;
             }
         }
-
-        [DllImport("libc")]
-        static extern int uname(IntPtr buf);
-
-        static string GetUname()
-        {
-            var buffer = Marshal.AllocHGlobal(8192);
-            try
-            {
-                if (uname(buffer) == 0)
-                {
-                    return Marshal.PtrToStringAnsi(buffer);
-                }
-                return string.Empty;
-            }
-            catch
-            {
-                return string.Empty;
-            }
-            finally
-            {
-                if (buffer != IntPtr.Zero)
-                {
-                    Marshal.FreeHGlobal(buffer);
-                }
-            }
-        }
     }
 }
