@@ -128,6 +128,12 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/support/workaround_list.h",
 ]
 
+GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
+    "include/grpc/event_engine/channel_args.h",
+    "include/grpc/event_engine/event_engine.h",
+    "include/grpc/event_engine/slice_allocator.h",
+]
+
 GRPC_SECURE_PUBLIC_HDRS = [
     "include/grpc/grpc_security.h",
 ]
@@ -767,6 +773,8 @@ grpc_cc_library(
         "src/core/lib/compression/stream_compression_identity.cc",
         "src/core/lib/debug/stats.cc",
         "src/core/lib/debug/stats_data.cc",
+        "src/core/lib/event_engine/slice_allocator.cc",
+        "src/core/lib/event_engine/sockaddr.cc",
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
         "src/core/lib/http/parser.cc",
@@ -1057,7 +1065,7 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
     ],
     language = "c++",
-    public_hdrs = GRPC_PUBLIC_HDRS,
+    public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     deps = [
         "dual_ref_counted",
         "eventmanager_libuv",

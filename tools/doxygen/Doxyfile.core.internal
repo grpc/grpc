@@ -811,6 +811,9 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/event_engine/channel_args.h \
+include/grpc/event_engine/event_engine.h \
+include/grpc/event_engine/slice_allocator.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
@@ -1517,6 +1520,8 @@ src/core/lib/debug/stats_data.cc \
 src/core/lib/debug/stats_data.h \
 src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
+src/core/lib/event_engine/slice_allocator.cc \
+src/core/lib/event_engine/sockaddr.cc \
 src/core/lib/gpr/README.md \
 src/core/lib/gpr/alloc.cc \
 src/core/lib/gpr/alloc.h \
