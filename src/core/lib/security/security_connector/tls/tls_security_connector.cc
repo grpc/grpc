@@ -208,11 +208,10 @@ void TlsChannelSecurityConnector::check_peer(
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  // GPR_ASSERT(options_->certificate_verifier() != nullptr);
+  GPR_ASSERT(options_->certificate_verifier() != nullptr);
   // Parse tsi_peer and feed in the values in the check request.
-  auto* request = new grpc_tls_custom_verification_check_request();
-  CertificateVerificationRequestInit(request);
-  request->target_name = gpr_strdup(target_name);
+  auto* internal_request = new CertificateVerificationRequest(this->Ref());
+  internal_request->request.target_name = gpr_strdup(target_name);
   std::vector<char*> uri_names;
   std::vector<char*> dns_names;
   for (size_t i = 0; i < peer.property_count; ++i) {
@@ -224,20 +223,21 @@ void TlsChannelSecurityConnector::check_peer(
       memcpy(common_name, prop->value.data, prop->value.length);
       common_name[prop->value.length] = '\0';
       // common_name will be destroyed when request is destroyed.
-      request->peer_info.common_name = common_name;
+      internal_request->request.peer_info.common_name = common_name;
     } else if (strcmp(prop->name, TSI_X509_PEM_CERT_PROPERTY) == 0) {
       char* peer_cert = static_cast<char*>(gpr_malloc(prop->value.length + 1));
       memcpy(peer_cert, prop->value.data, prop->value.length);
       peer_cert[prop->value.length] = '\0';
       // peer_cert will be destroyed when request is destroyed.
-      request->peer_info.peer_cert = peer_cert;
+      internal_request->request.peer_info.peer_cert = peer_cert;
     } else if (strcmp(prop->name, TSI_X509_PEM_CERT_CHAIN_PROPERTY) == 0) {
       char* peer_cert_full_chain =
           static_cast<char*>(gpr_malloc(prop->value.length + 1));
       memcpy(peer_cert_full_chain, prop->value.data, prop->value.length);
       peer_cert_full_chain[prop->value.length] = '\0';
       // peer_cert will be destroyed when request is destroyed.
-      request->peer_info.peer_cert_full_chain = peer_cert_full_chain;
+      internal_request->request.peer_info.peer_cert_full_chain =
+          peer_cert_full_chain;
     } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
       char* uri = new char[prop->value.length + 1];
       memcpy(uri, prop->value.data, prop->value.length);
@@ -259,56 +259,62 @@ void TlsChannelSecurityConnector::check_peer(
       continue;
     }
   }
-  GPR_ASSERT(request->peer_info.san_names.uri_names == nullptr);
-  request->peer_info.san_names.uri_names_size = uri_names.size();
+  GPR_ASSERT(internal_request->request.peer_info.san_names.uri_names ==
+             nullptr);
+  internal_request->request.peer_info.san_names.uri_names_size =
+      uri_names.size();
   if (!uri_names.empty()) {
-    request->peer_info.san_names.uri_names =
-        new char*[request->peer_info.san_names.uri_names_size];
-    for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
+    internal_request->request.peer_info.san_names.uri_names =
+        new char*[internal_request->request.peer_info.san_names.uri_names_size];
+    for (size_t i = 0;
+         i < internal_request->request.peer_info.san_names.uri_names_size;
+         ++i) {
       // We directly point the char* string stored in vector to the |request|.
       // That string will be released when the |request| is destroyed.
-      request->peer_info.san_names.uri_names[i] = uri_names[i];
+      internal_request->request.peer_info.san_names.uri_names[i] = uri_names[i];
     }
   }
-  GPR_ASSERT(request->peer_info.san_names.dns_names == nullptr);
-  request->peer_info.san_names.dns_names_size = dns_names.size();
+  GPR_ASSERT(internal_request->request.peer_info.san_names.dns_names ==
+             nullptr);
+  internal_request->request.peer_info.san_names.dns_names_size =
+      dns_names.size();
   if (!dns_names.empty()) {
-    request->peer_info.san_names.dns_names =
-        new char*[request->peer_info.san_names.dns_names_size];
-    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
+    internal_request->request.peer_info.san_names.dns_names =
+        new char*[internal_request->request.peer_info.san_names.dns_names_size];
+    for (size_t i = 0;
+         i < internal_request->request.peer_info.san_names.dns_names_size;
+         ++i) {
       // We directly point the char* string stored in vector to the |request|.
       // That string will be released when the |request| is destroyed.
-      request->peer_info.san_names.dns_names[i] = dns_names[i];
+      internal_request->request.peer_info.san_names.dns_names[i] = dns_names[i];
     }
   }
   tsi_peer_destruct(&peer);
   // Perform the check specified in the options.
   grpc_tls_certificate_verifier* verifier = options_->certificate_verifier();
-  bool is_async = verifier->Verify(request, [request, on_peer_checked] {
-    grpc_error* error = GRPC_ERROR_NONE;
-    if (request->status != GRPC_STATUS_OK) {
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("Custom verification check failed with error: ",
-                       request->error_details)
-              .c_str());
-    }
-    CertificateVerificationRequestDestroy(request);
-    delete request;
-    grpc_core::ExecCtx exec_ctx;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
-  });
+  bool is_async =
+      verifier->Verify(internal_request, [internal_request, on_peer_checked] {
+        grpc_error* error = GRPC_ERROR_NONE;
+        if (internal_request->request.status != GRPC_STATUS_OK) {
+          error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("Custom verification check failed with error: ",
+                           internal_request->request.error_details)
+                  .c_str());
+        }
+        delete internal_request;
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+      });
   if (is_async) {
     return;
   }
   // Process the check result synchronously.
-  if (request->status != GRPC_STATUS_OK) {
+  if (internal_request->request.status != GRPC_STATUS_OK) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Custom verification check failed with error: ",
-                     request->error_details)
+                     internal_request->request.error_details)
             .c_str());
   }
-  CertificateVerificationRequestDestroy(request);
-  delete request;
+  delete internal_request;
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
@@ -581,10 +587,8 @@ void TlsServerSecurityConnector::check_peer(
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  GPR_ASSERT(options_->certificate_verifier() != nullptr);
   // Parse tsi_peer and feed in the values in the check request.
-  auto* request = new grpc_tls_custom_verification_check_request();
-  CertificateVerificationRequestInit(request);
+  auto* internal_request = new CertificateVerificationRequest(this->Ref());
   std::vector<char*> uri_names;
   std::vector<char*> dns_names;
   for (size_t i = 0; i < peer.property_count; ++i) {
@@ -596,20 +600,21 @@ void TlsServerSecurityConnector::check_peer(
       memcpy(common_name, prop->value.data, prop->value.length);
       common_name[prop->value.length] = '\0';
       // common_name will be destroyed when request is destroyed.
-      request->peer_info.common_name = common_name;
+      internal_request->request.peer_info.common_name = common_name;
     } else if (strcmp(prop->name, TSI_X509_PEM_CERT_PROPERTY) == 0) {
       char* peer_cert = static_cast<char*>(gpr_malloc(prop->value.length + 1));
       memcpy(peer_cert, prop->value.data, prop->value.length);
       peer_cert[prop->value.length] = '\0';
       // peer_cert will be destroyed when request is destroyed.
-      request->peer_info.peer_cert = peer_cert;
+      internal_request->request.peer_info.peer_cert = peer_cert;
     } else if (strcmp(prop->name, TSI_X509_PEM_CERT_CHAIN_PROPERTY) == 0) {
       char* peer_cert_full_chain =
           static_cast<char*>(gpr_malloc(prop->value.length + 1));
       memcpy(peer_cert_full_chain, prop->value.data, prop->value.length);
       peer_cert_full_chain[prop->value.length] = '\0';
       // peer_cert will be destroyed when request is destroyed.
-      request->peer_info.peer_cert_full_chain = peer_cert_full_chain;
+      internal_request->request.peer_info.peer_cert_full_chain =
+          peer_cert_full_chain;
     } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
       char* uri = new char[prop->value.length + 1];
       memcpy(uri, prop->value.data, prop->value.length);
@@ -631,56 +636,62 @@ void TlsServerSecurityConnector::check_peer(
       continue;
     }
   }
-  GPR_ASSERT(request->peer_info.san_names.uri_names == nullptr);
-  request->peer_info.san_names.uri_names_size = uri_names.size();
+  GPR_ASSERT(internal_request->request.peer_info.san_names.uri_names ==
+             nullptr);
+  internal_request->request.peer_info.san_names.uri_names_size =
+      uri_names.size();
   if (!uri_names.empty()) {
-    request->peer_info.san_names.uri_names =
-        new char*[request->peer_info.san_names.uri_names_size];
-    for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
+    internal_request->request.peer_info.san_names.uri_names =
+        new char*[internal_request->request.peer_info.san_names.uri_names_size];
+    for (size_t i = 0;
+         i < internal_request->request.peer_info.san_names.uri_names_size;
+         ++i) {
       // We directly point the char* string stored in vector to the |request|.
       // That string will be released when the |request| is destroyed.
-      request->peer_info.san_names.uri_names[i] = uri_names[i];
+      internal_request->request.peer_info.san_names.uri_names[i] = uri_names[i];
     }
   }
-  GPR_ASSERT(request->peer_info.san_names.dns_names == nullptr);
-  request->peer_info.san_names.dns_names_size = dns_names.size();
+  GPR_ASSERT(internal_request->request.peer_info.san_names.dns_names ==
+             nullptr);
+  internal_request->request.peer_info.san_names.dns_names_size =
+      dns_names.size();
   if (!dns_names.empty()) {
-    request->peer_info.san_names.dns_names =
-        new char*[request->peer_info.san_names.dns_names_size];
-    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
+    internal_request->request.peer_info.san_names.dns_names =
+        new char*[internal_request->request.peer_info.san_names.dns_names_size];
+    for (size_t i = 0;
+         i < internal_request->request.peer_info.san_names.dns_names_size;
+         ++i) {
       // We directly point the char* string stored in vector to the |request|.
       // That string will be released when the |request| is destroyed.
-      request->peer_info.san_names.dns_names[i] = dns_names[i];
+      internal_request->request.peer_info.san_names.dns_names[i] = dns_names[i];
     }
   }
   tsi_peer_destruct(&peer);
   // Perform the check specified in the options.
   grpc_tls_certificate_verifier* verifier = options_->certificate_verifier();
-  bool is_async = verifier->Verify(request, [request, on_peer_checked] {
-    grpc_error* error = GRPC_ERROR_NONE;
-    if (request->status != GRPC_STATUS_OK) {
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("Custom verification check failed with error: ",
-                       request->error_details)
-              .c_str());
-    }
-    CertificateVerificationRequestDestroy(request);
-    delete request;
-    grpc_core::ExecCtx exec_ctx;
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
-  });
+  bool is_async =
+      verifier->Verify(internal_request, [internal_request, on_peer_checked] {
+        grpc_error* error = GRPC_ERROR_NONE;
+        if (internal_request->request.status != GRPC_STATUS_OK) {
+          error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+              absl::StrCat("Custom verification check failed with error: ",
+                           internal_request->request.error_details)
+                  .c_str());
+        }
+        delete internal_request;
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+      });
   if (is_async) {
     return;
   }
   // Process the check result synchronously.
-  if (request->status != GRPC_STATUS_OK) {
+  if (internal_request->request.status != GRPC_STATUS_OK) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Custom verification check failed with error: ",
-                     request->error_details)
+                     internal_request->request.error_details)
             .c_str());
   }
-  CertificateVerificationRequestDestroy(request);
-  delete request;
+  delete internal_request;
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 

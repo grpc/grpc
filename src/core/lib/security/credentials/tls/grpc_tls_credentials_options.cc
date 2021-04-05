@@ -45,11 +45,7 @@ void grpc_tls_credentials_options_set_cert_request_type(
 void grpc_tls_credentials_options_set_verify_server_cert(
     grpc_tls_credentials_options* options, int verify_server_cert) {
   GPR_ASSERT(options != nullptr);
-  if (verify_server_cert == 0) {
-    options->set_verify_server_cert(false);
-    return;
-  }
-  options->set_verify_server_cert(true);
+  options->set_verify_server_cert(verify_server_cert);
 }
 
 void grpc_tls_credentials_options_set_certificate_provider(

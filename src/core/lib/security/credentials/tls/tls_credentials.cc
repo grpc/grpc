@@ -57,21 +57,14 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     // If no verifier is specified on the client side, use the hostname verifier
     // as default. Users who want to bypass all the verifier check should
     // implement a dummy external verifier instead.
+    gpr_log(GPR_INFO,
+            "No verifier specified on the client side. Using default hostname "
+            "verifier");
     grpc_tls_certificate_verifier* hostname_verifier =
         new grpc_core::HostNameCertificateVerifier();
     options->set_certificate_verifier(hostname_verifier->Ref());
     hostname_verifier->Unref();
   }
-  /*if (!is_client && options->certificate_verifier() == nullptr) {
-    // If no verifier is specified on the server side, we will just fail the
-    // credential creation. Users who want to bypass all the verifier check
-    // should implement a dummy external verifier instead.
-    gpr_log(GPR_ERROR,
-            "Should provide custom verifications if bypassing default ones.");
-    return false;
-  }
-  // At this point, the verifier should be always set.
-  GPR_ASSERT(options->certificate_verifier() != nullptr);*/
   return true;
 }
 
