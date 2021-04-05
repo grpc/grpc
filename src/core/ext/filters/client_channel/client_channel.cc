@@ -2526,6 +2526,7 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
 ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   grpc_slice_unref_internal(path_);
   GRPC_ERROR_UNREF(cancel_error_);
+  GRPC_ERROR_UNREF(failure_error_);
   if (backend_metric_data_ != nullptr) {
     backend_metric_data_
         ->LoadBalancingPolicy::BackendMetricData::~BackendMetricData();
@@ -2583,6 +2584,8 @@ void ClientChannel::LoadBalancedCall::PendingBatchesFail(
     grpc_error* error,
     YieldCallCombinerPredicate yield_call_combiner_predicate) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(failure_error_);
+  failure_error_ = error;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2610,7 +2613,6 @@ void ClientChannel::LoadBalancedCall::PendingBatchesFail(
   } else {
     closures.RunClosuresWithoutYielding(call_combiner_);
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
@@ -2768,12 +2770,16 @@ void ClientChannel::LoadBalancedCall::
     if (error == GRPC_ERROR_NONE) GRPC_ERROR_UNREF(error_for_lb);
   }
   // Chain to original callback.
+  if (self->failure_error_ != GRPC_ERROR_NONE) {
+    error = self->failure_error_;
+    self->failure_error_ = GRPC_ERROR_NONE;
+  } else {
+    error = GRPC_ERROR_REF(error);
+  }
   Closure::Run(DEBUG_LOCATION, self->original_recv_trailing_metadata_ready_,
-               GRPC_ERROR_REF(error));
+               error);
 }
 
-// TODO(roth): Consider not intercepting this callback unless we
-// actually need to, if this causes a performance problem.
 void ClientChannel::LoadBalancedCall::
     InjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
         grpc_transport_stream_op_batch* batch) {
@@ -2990,9 +2996,11 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(grpc_error** error) {
       // Handle drops.
       if (GPR_UNLIKELY(result.subchannel == nullptr)) {
         result.error = grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Call dropped by load balancing policy"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+            grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                   "Call dropped by load balancing policy"),
+                               GRPC_ERROR_INT_GRPC_STATUS,
+                               GRPC_STATUS_UNAVAILABLE),
+            GRPC_ERROR_INT_LB_POLICY_DROP, 1);
       } else {
         // Grab a ref to the connected subchannel while we're still
         // holding the data plane mutex.

@@ -444,6 +444,9 @@ class ClientChannel::LoadBalancedCall
   // Set when we get a cancel_stream op.
   grpc_error* cancel_error_ = GRPC_ERROR_NONE;
 
+  // Set when we fail inside the LB call.
+  grpc_error* failure_error_ = GRPC_ERROR_NONE;
+
   grpc_polling_entity* pollent_ = nullptr;
 
   grpc_closure pick_closure_;
