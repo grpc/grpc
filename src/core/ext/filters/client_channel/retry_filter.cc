@@ -241,6 +241,8 @@ class RetryFilter::CallData {
   // TODO(roth): As part of implementing hedging, we'll need to store a
   // ref to the LB call in this struct instead of doing the parent_data
   // hack, since there will be multiple LB calls in flight at once.
+  // We will also need to maintain a list of all pending attempts, so that
+  // we can cancel them all if the call gets cancelled.
   struct SubchannelCallRetryState {
     explicit SubchannelCallRetryState(grpc_call_context_element* context)
         : batch_payload(context),
@@ -374,7 +376,7 @@ class RetryFilter::CallData {
                grpc_millis server_pushback_ms);
   // Returns true if the call is being retried.
   bool MaybeRetry(SubchannelCallBatchData* batch_data, grpc_status_code status,
-                  grpc_mdelem* server_pushback_md);
+                  grpc_mdelem* server_pushback_md, bool is_lb_drop);
 
   // Invokes recv_initial_metadata_ready for a subchannel batch.
   static void InvokeRecvInitialMetadataCallback(void* arg, grpc_error* error);
@@ -388,11 +390,11 @@ class RetryFilter::CallData {
   // Commits the call and returns the message up the stack.
   static void RecvMessageReady(void* arg, grpc_error* error);
 
-  // Sets *status and *server_pushback_md based on md_batch and error.
-  // Only sets *server_pushback_md if server_pushback_md != nullptr.
+  // Sets *status, *server_pushback_md, and *is_lb_drop based on md_batch
+  // and error.
   void GetCallStatus(grpc_metadata_batch* md_batch, grpc_error* error,
-                     grpc_status_code* status,
-                     grpc_mdelem** server_pushback_md);
+                     grpc_status_code* status, grpc_mdelem** server_pushback_md,
+                     bool* is_lb_drop);
   // Adds recv_trailing_metadata_ready closure to closures.
   void AddClosureForRecvTrailingMetadataReady(
       SubchannelCallBatchData* batch_data, grpc_error* error,
@@ -1073,7 +1075,10 @@ void RetryFilter::CallData::DoRetry(SubchannelCallRetryState* retry_state,
 
 bool RetryFilter::CallData::MaybeRetry(SubchannelCallBatchData* batch_data,
                                        grpc_status_code status,
-                                       grpc_mdelem* server_pushback_md) {
+                                       grpc_mdelem* server_pushback_md,
+                                       bool is_lb_drop) {
+  // LB drops always inhibit retries.
+  if (is_lb_drop) return false;
   // Get retry policy.
   if (retry_policy_ == nullptr) return false;
   // If we've already dispatched a retry from this call, return true.
@@ -1407,15 +1412,20 @@ void RetryFilter::CallData::RecvMessageReady(void* arg, grpc_error* error) {
 void RetryFilter::CallData::GetCallStatus(grpc_metadata_batch* md_batch,
                                           grpc_error* error,
                                           grpc_status_code* status,
-                                          grpc_mdelem** server_pushback_md) {
+                                          grpc_mdelem** server_pushback_md,
+                                          bool* is_lb_drop) {
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, deadline_, status, nullptr, nullptr, nullptr);
+    intptr_t value = 0;
+    if (grpc_error_get_int(error, GRPC_ERROR_INT_LB_POLICY_DROP, &value) &&
+        value != 0) {
+      *is_lb_drop = true;
+    }
   } else {
     GPR_ASSERT(md_batch->idx.named.grpc_status != nullptr);
     *status =
         grpc_get_status_code_from_metadata(md_batch->idx.named.grpc_status->md);
-    if (server_pushback_md != nullptr &&
-        md_batch->idx.named.grpc_retry_pushback_ms != nullptr) {
+    if (md_batch->idx.named.grpc_retry_pushback_ms != nullptr) {
       *server_pushback_md = &md_batch->idx.named.grpc_retry_pushback_ms->md;
     }
   }
@@ -1571,14 +1581,16 @@ void RetryFilter::CallData::RecvTrailingMetadataReady(void* arg,
   grpc_mdelem* server_pushback_md = nullptr;
   grpc_metadata_batch* md_batch =
       batch_data->batch.payload->recv_trailing_metadata.recv_trailing_metadata;
+  bool is_lb_drop = false;
   call->GetCallStatus(md_batch, GRPC_ERROR_REF(error), &status,
-                      &server_pushback_md);
+                      &server_pushback_md, &is_lb_drop);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: call finished, status=%s",
-            call->chand_, call, grpc_status_code_to_string(status));
+    gpr_log(GPR_INFO,
+            "chand=%p calld=%p: call finished, status=%s is_lb_drop=%d",
+            call->chand_, call, grpc_status_code_to_string(status), is_lb_drop);
   }
   // Check if we should retry.
-  if (call->MaybeRetry(batch_data, status, server_pushback_md)) {
+  if (call->MaybeRetry(batch_data, status, server_pushback_md, is_lb_drop)) {
     // Unref batch_data for deferred recv_initial_metadata_ready or
     // recv_message_ready callbacks, if any.
     if (retry_state->recv_initial_metadata_ready_deferred_batch != nullptr) {

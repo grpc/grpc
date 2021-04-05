@@ -775,6 +775,7 @@ grpc_cc_library(
         "src/core/lib/debug/stats_data.cc",
         "src/core/lib/event_engine/resolved_address.cc",
         "src/core/lib/event_engine/slice_allocator.cc",
+        "src/core/lib/event_engine/sockaddr.cc",
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
         "src/core/lib/http/parser.cc",

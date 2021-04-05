@@ -854,6 +854,7 @@ config("grpc_config") {
         "src/core/lib/debug/trace.h",
         "src/core/lib/event_engine/resolved_address.cc",
         "src/core/lib/event_engine/slice_allocator.cc",
+        "src/core/lib/event_engine/sockaddr.cc",
         "src/core/lib/event_engine/sockaddr.h",
         "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/debug_location.h",

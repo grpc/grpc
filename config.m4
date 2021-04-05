@@ -374,6 +374,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/debug/trace.cc \
     src/core/lib/event_engine/resolved_address.cc \
     src/core/lib/event_engine/slice_allocator.cc \
+    src/core/lib/event_engine/sockaddr.cc \
     src/core/lib/gpr/alloc.cc \
     src/core/lib/gpr/atm.cc \
     src/core/lib/gpr/cpu_iphone.cc \

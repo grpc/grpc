@@ -11,7 +11,7 @@ servers, and other custom integrations that were previously unsupported.
 
 ## High level expectations of an EventEngine implementation
 
-### Managing their own concurrency
+### Provide their own I/O threads
 EventEngines are expected to internally create whatever threads are required to
 perform I/O and execute callbacks. For example, an EventEngine implementation
 may want to spawn separate thread pools for polling and callback execution.

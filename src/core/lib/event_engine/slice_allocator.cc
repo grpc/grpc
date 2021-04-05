@@ -17,7 +17,6 @@
 
 #include <functional>
 
-#include <grpc/event_engine/channel_args.h>
 #include "absl/status/status.h"
 
 #include "src/core/lib/iomgr/resource_quota.h"

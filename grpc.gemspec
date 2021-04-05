@@ -753,6 +753,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/debug/trace.h )
   s.files += %w( src/core/lib/event_engine/resolved_address.cc )
   s.files += %w( src/core/lib/event_engine/slice_allocator.cc )
+  s.files += %w( src/core/lib/event_engine/sockaddr.cc )
   s.files += %w( src/core/lib/event_engine/sockaddr.h )
   s.files += %w( src/core/lib/gpr/alloc.cc )
   s.files += %w( src/core/lib/gpr/alloc.h )
