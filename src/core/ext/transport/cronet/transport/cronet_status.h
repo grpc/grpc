@@ -21,6 +21,8 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
+#include <grpc/status.h>
+
 enum cronet_net_error_code {
   //
   // Ranges:
@@ -1037,5 +1039,7 @@ enum cronet_net_error_code {
 };
 
 const char* cronet_net_error_as_string(cronet_net_error_code net_error);
+grpc_status_code cronet_net_error_to_grpc_error(
+    cronet_net_error_code net_error);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CRONET_TRANSPORT_CRONET_STATUS_H */
