@@ -6643,15 +6643,23 @@ targets:
   build: test
   run: false
   language: c++
-  headers: []
+  headers:
+  - src/cpp/server/csds/csds.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/config_dump.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/server/admin/admin_services.cc
+  - src/cpp/server/csds/csds.cc
   - test/cpp/interop/xds_interop_client.cc
   deps:
   - absl/flags:flag
-  - grpc++
+  - grpc++_reflection
+  - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
 - name: xds_interop_server
