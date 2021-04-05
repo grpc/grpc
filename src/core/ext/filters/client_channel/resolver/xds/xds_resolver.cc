@@ -73,6 +73,10 @@ class XdsResolver : public Resolver {
 
   void ShutdownLocked() override;
 
+  void ResetBackoffLocked() override {
+    if (xds_client_ != nullptr) xds_client_->ResetBackoff();
+  }
+
  private:
   class Notifier {
    public:
