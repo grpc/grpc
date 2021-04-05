@@ -1726,7 +1726,7 @@ void RetryFilter::CallData::OnComplete(void* arg, grpc_error* error) {
   // Don't need batch_data anymore.
   batch_data->Unref();
   // Schedule all of the closures identified above.
-  // Note: This yeilds the call combiner.
+  // Note: This yields the call combiner.
   closures.RunClosures(call->call_combiner_);
   // If this was the last subchannel send batch, unref the call stack.
   if (last_send_batch_complete) {
