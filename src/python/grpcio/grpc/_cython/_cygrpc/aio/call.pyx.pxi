@@ -140,7 +140,7 @@ cdef class _AioCall(GrpcCallWrapper):
         if self._initial_metadata is None:
             self._set_initial_metadata(_IMMUTABLE_EMPTY_METADATA)
 
-        for waiter in _waiters_status:
+        for waiter in self._waiters_status:
             if not waiter.done():
                 waiter.set_result(None)
         self._waiters_status = []
@@ -162,7 +162,7 @@ cdef class _AioCall(GrpcCallWrapper):
         # set.
         self._initial_metadata = initial_metadata
 
-        for waiter in _waiters_initial_metadata:
+        for waiter in self._waiters_initial_metadata:
             if not waiter.done():
                 waiter.set_result(None)
         self._waiters_initial_metadata = []
