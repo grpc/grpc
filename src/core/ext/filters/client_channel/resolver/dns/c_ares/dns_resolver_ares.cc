@@ -81,8 +81,9 @@ class AresDnsResolver : public Resolver {
   void StartResolvingLocked();
 
   static void OnNextResolution(void* arg, grpc_error* error);
-  void OnResolvedLocked(grpc_error* error);
+  static void OnResolved(void* arg, grpc_error* error);
   void OnNextResolutionLocked(grpc_error* error);
+  void OnResolvedLocked(grpc_error* error);
 
   /// DNS server to use (if not system default)
   std::string dns_server_;
@@ -106,10 +107,11 @@ class AresDnsResolver : public Resolver {
 
   /// closures used by the work_serializer
   grpc_closure on_next_resolution_;
+  grpc_closure on_resolved_;
   /// are we currently resolving?
   bool resolving_ = false;
   /// the pending resolving request
-  OrphanablePtr<AresRequest> pending_request_;
+  grpc_ares_request* pending_request_ = nullptr;
   /// next resolution timer
   bool have_next_resolution_timer_ = false;
   grpc_timer next_resolution_timer_;
@@ -122,7 +124,7 @@ class AresDnsResolver : public Resolver {
   /// currently resolving balancer addresses
   std::unique_ptr<ServerAddressList> balancer_addresses_;
   /// currently resolving service config
-  absl::optional<std::string> service_config_json_;
+  char* service_config_json_ = nullptr;
   // has shutdown been initiated
   bool shutdown_initiated_ = false;
 };
@@ -154,6 +156,7 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
   // Closure initialization.
   GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
                     grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_resolved_, OnResolved, this, grpc_schedule_on_exec_ctx);
 }
 
 AresDnsResolver::~AresDnsResolver() {
@@ -185,7 +188,9 @@ void AresDnsResolver::ShutdownLocked() {
   if (have_next_resolution_timer_) {
     grpc_timer_cancel(&next_resolution_timer_);
   }
-  pending_request_.reset();
+  if (pending_request_ != nullptr) {
+    grpc_cancel_ares_request_locked(pending_request_);
+  }
 }
 
 void AresDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
@@ -221,7 +226,7 @@ bool ValueInJsonArray(const Json::Array& array, const char* value) {
   return false;
 }
 
-std::string ChooseServiceConfig(absl::string_view service_config_choice_json,
+std::string ChooseServiceConfig(char* service_config_choice_json,
                                 grpc_error** error) {
   Json json = Json::Parse(service_config_choice_json, error);
   if (*error != GRPC_ERROR_NONE) return "";
@@ -300,10 +305,18 @@ std::string ChooseServiceConfig(absl::string_view service_config_choice_json,
   return service_config->Dump();
 }
 
+void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
+  AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
+  GRPC_ERROR_REF(error);  // ref owned by lambda
+  r->work_serializer_->Run([r, error]() { r->OnResolvedLocked(error); },
+                           DEBUG_LOCATION);
+}
+
 void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
-  pending_request_.reset();
+  gpr_free(pending_request_);
+  pending_request_ = nullptr;
   if (shutdown_initiated_) {
     Unref(DEBUG_LOCATION, "OnResolvedLocked() shutdown");
     GRPC_ERROR_UNREF(error);
@@ -314,9 +327,10 @@ void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
     if (addresses_ != nullptr) {
       result.addresses = std::move(*addresses_);
     }
-    if (service_config_json_.has_value()) {
+    if (service_config_json_ != nullptr) {
       std::string service_config_string = ChooseServiceConfig(
-          service_config_json_.value(), &result.service_config_error);
+          service_config_json_, &result.service_config_error);
+      gpr_free(service_config_json_);
       if (result.service_config_error == GRPC_ERROR_NONE &&
           !service_config_string.empty()) {
         GRPC_CARES_TRACE_LOG("resolver:%p selected service config choice: %s",
@@ -407,17 +421,16 @@ void AresDnsResolver::StartResolvingLocked() {
   Ref(DEBUG_LOCATION, "dns-resolving").release();
   GPR_ASSERT(!resolving_);
   resolving_ = true;
-  service_config_json_.reset();
-  auto on_done = [this](grpc_error* error) { OnResolvedLocked(error); };
-  pending_request_ = LookupAresLocked(
-      dns_server_, name_to_resolve_, kDefaultPort, interested_parties_,
-      std::move(on_done), &addresses_,
+  service_config_json_ = nullptr;
+  pending_request_ = grpc_dns_lookup_ares_locked(
+      dns_server_.c_str(), name_to_resolve_.c_str(), kDefaultPort,
+      interested_parties_, &on_resolved_, &addresses_,
       enable_srv_queries_ ? &balancer_addresses_ : nullptr,
       request_service_config_ ? &service_config_json_ : nullptr,
       query_timeout_ms_, work_serializer_);
   last_resolution_timestamp_ = grpc_core::ExecCtx::Get()->Now();
   GRPC_CARES_TRACE_LOG("resolver:%p Started resolving. pending_request_:%p",
-                       this, pending_request_.get());
+                       this, pending_request_);
 }
 
 //
@@ -450,7 +463,7 @@ static grpc_error* blocking_resolve_address_ares(
 }
 
 static grpc_address_resolver_vtable ares_resolver = {
-    grpc_core::ResolveAddressAres, blocking_resolve_address_ares};
+    grpc_resolve_address_ares, blocking_resolve_address_ares};
 
 #ifdef GRPC_UV
 /* TODO(murgatroid99): Remove this when we want the cares resolver to be the
@@ -477,7 +490,7 @@ void grpc_resolver_dns_ares_init() {
     g_use_ares_dns_resolver = true;
     gpr_log(GPR_DEBUG, "Using ares dns resolver");
     address_sorting_init();
-    grpc_error* error = grpc_core::AresRequest::Init();
+    grpc_error* error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;
@@ -496,7 +509,7 @@ void grpc_resolver_dns_ares_init() {
 void grpc_resolver_dns_ares_shutdown() {
   if (g_use_ares_dns_resolver) {
     address_sorting_shutdown();
-    grpc_core::AresRequest::Shutdown();
+    grpc_ares_cleanup();
   }
 }
 

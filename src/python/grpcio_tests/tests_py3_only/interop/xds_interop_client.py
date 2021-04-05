@@ -180,7 +180,7 @@ def _start_rpc(method: str, metadata: Sequence[Tuple[str, str]],
                request_id: int, stub: test_pb2_grpc.TestServiceStub,
                timeout: float, futures: Mapping[int, Tuple[grpc.Future,
                                                            str]]) -> None:
-    logger.info(f"Sending {method} request to backend: {request_id}")
+    logger.debug(f"Sending {method} request to backend: {request_id}")
     if method == "UnaryCall":
         future = stub.UnaryCall.future(messages_pb2.SimpleRequest(),
                                        metadata=metadata,
@@ -223,9 +223,9 @@ def _on_rpc_done(rpc_id: int, future: grpc.Future, method: str,
                 _global_rpcs_failed[method] += 1
         if print_response:
             if future.code() == grpc.StatusCode.OK:
-                logger.info("Successful response.")
+                logger.debug("Successful response.")
             else:
-                logger.info(f"RPC failed: {call}")
+                logger.debug(f"RPC failed: {call}")
     with _global_lock:
         for watcher in _watchers:
             watcher.on_rpc_complete(rpc_id, hostname, method)

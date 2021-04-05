@@ -633,12 +633,12 @@ void PrintHeaderClientMethodCallbackInterfaces(
     printer->Print(*vars,
                    "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
                    "virtual void $Method$(::grpc::ClientContext* context, "
-                   "$Request$* request, "
+                   "const $Request$* request, "
                    "::grpc::ClientReadReactor< $Response$>* "
                    "reactor) = 0;\n"
                    "#else\n"
                    "virtual void $Method$(::grpc::ClientContext* context, "
-                   "$Request$* request, "
+                   "const $Request$* request, "
                    "::grpc::experimental::ClientReadReactor< $Response$>* "
                    "reactor) = 0;\n"
                    "#endif\n");
@@ -730,12 +730,12 @@ void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
     printer->Print(*vars,
                    "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
                    "void $Method$(::grpc::ClientContext* context, "
-                   "$Request$* request, "
+                   "const $Request$* request, "
                    "::grpc::ClientReadReactor< $Response$>* "
                    "reactor) override;\n"
                    "#else\n"
                    "void $Method$(::grpc::ClientContext* context, "
-                   "$Request$* request, "
+                   "const $Request$* request, "
                    "::grpc::experimental::ClientReadReactor< $Response$>* "
                    "reactor) override;\n"
                    "#endif\n");
@@ -2005,7 +2005,7 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
         *vars,
         "void $ns$$Service$::Stub::experimental_async::$Method$(::grpc::"
         "ClientContext* context, "
-        "$Request$* request, "
+        "const $Request$* request, "
         "::grpc::experimental::ClientReadReactor< $Response$>* reactor) {\n");
     printer->Print(*vars,
                    "  ::grpc::internal::ClientCallbackReaderFactory< "

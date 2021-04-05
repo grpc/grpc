@@ -55,8 +55,9 @@ class HttpConnectHandshaker : public Handshaker {
 
  private:
   ~HttpConnectHandshaker() override;
-  void CleanupArgsForFailureLocked();
-  void HandshakeFailedLocked(grpc_error* error);
+  void CleanupArgsForFailureLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  void HandshakeFailedLocked(grpc_error* error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   static void OnWriteDone(void* arg, grpc_error* error);
   static void OnReadDone(void* arg, grpc_error* error);
   static void OnWriteDoneScheduler(void* arg, grpc_error* error);
@@ -64,21 +65,21 @@ class HttpConnectHandshaker : public Handshaker {
 
   Mutex mu_;
 
-  bool is_shutdown_ = false;
+  bool is_shutdown_ ABSL_GUARDED_BY(mu_) = false;
   // Endpoint and read buffer to destroy after a shutdown.
-  grpc_endpoint* endpoint_to_destroy_ = nullptr;
-  grpc_slice_buffer* read_buffer_to_destroy_ = nullptr;
+  grpc_endpoint* endpoint_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
+  grpc_slice_buffer* read_buffer_to_destroy_ ABSL_GUARDED_BY(mu_) = nullptr;
 
   // State saved while performing the handshake.
   HandshakerArgs* args_ = nullptr;
   grpc_closure* on_handshake_done_ = nullptr;
 
   // Objects for processing the HTTP CONNECT request and response.
-  grpc_slice_buffer write_buffer_;
-  grpc_closure request_done_closure_;
-  grpc_closure response_read_closure_;
-  grpc_http_parser http_parser_;
-  grpc_http_response http_response_;
+  grpc_slice_buffer write_buffer_ ABSL_GUARDED_BY(mu_);
+  grpc_closure request_done_closure_ ABSL_GUARDED_BY(mu_);
+  grpc_closure response_read_closure_ ABSL_GUARDED_BY(mu_);
+  grpc_http_parser http_parser_ ABSL_GUARDED_BY(mu_);
+  grpc_http_response http_response_ ABSL_GUARDED_BY(mu_);
 };
 
 HttpConnectHandshaker::~HttpConnectHandshaker() {

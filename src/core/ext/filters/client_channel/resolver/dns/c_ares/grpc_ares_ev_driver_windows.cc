@@ -246,7 +246,7 @@ class GrpcPolledFdWindows {
           break;
         case WRITE_PENDING:
         case WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY:
-          GPR_ASSERT(0);
+          abort();
       }
     }
   }
@@ -346,7 +346,7 @@ class GrpcPolledFdWindows {
       case SOCK_STREAM:
         return SendVTCP(wsa_error_ctx, iov, iov_count);
       default:
-        GPR_ASSERT(0);
+        abort();
     }
   }
 
@@ -417,7 +417,7 @@ class GrpcPolledFdWindows {
         tcp_write_state_ = WRITE_IDLE;
         return total_sent;
     }
-    GPR_ASSERT(0);
+    abort();
   }
 
   static void OnTcpConnect(void* arg, grpc_error* error) {
@@ -483,7 +483,7 @@ class GrpcPolledFdWindows {
       case SOCK_STREAM:
         return ConnectTCP(wsa_error_ctx, target, target_len);
       default:
-        GPR_ASSERT(0);
+        abort();
     }
   }
 
@@ -722,9 +722,7 @@ class SockToPolledFdMap {
         return node->polled_fd;
       }
     }
-    gpr_log(GPR_ERROR, "LookupPolledFd for socket: %d failed. head_: %p", s,
-            head_);
-    GPR_ASSERT(0);
+    abort();
   }
 
   void RemoveEntry(SOCKET s) {
@@ -739,7 +737,7 @@ class SockToPolledFdMap {
       }
       prev = &node->next;
     }
-    GPR_ASSERT(0);
+    abort();
   }
 
   /* These virtual socket functions are called from within the c-ares

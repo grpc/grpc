@@ -62,6 +62,7 @@ ClientContext::ClientContext()
       propagate_from_call_(nullptr),
       compression_algorithm_(GRPC_COMPRESS_NONE),
       initial_metadata_corked_(false) {
+  g_gli_initializer.summon();
   g_client_callbacks->DefaultConstructor(this);
 }
 

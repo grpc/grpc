@@ -72,4 +72,4 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,c
     --gcp_suffix=$(date '+%s') \
     --verbose \
     ${XDS_V3_OPT-} \
-    --client_cmd='bazel run --test_env="PYTHONUNBUFFERED=true" //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client -- --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} --verbose {rpcs_to_send} {metadata_to_send}'
+    --client_cmd='bazel run --test_env="PYTHONUNBUFFERED=true" //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client -- --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {rpcs_to_send} {metadata_to_send}'

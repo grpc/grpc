@@ -18,6 +18,8 @@ syntax = "proto3";
 
 package envoy.config.core.v3;
 
+import "google/protobuf/wrappers.proto";
+
 // [#protodoc-title: Network addresses]
 
 // [#next-free-field: 7]
@@ -47,4 +49,14 @@ message Address {
   oneof address {
     SocketAddress socket_address = 1;
   }
+}
+
+// CidrRange specifies an IP Address and a prefix length to construct
+// the subnet mask for a `CIDR <https://tools.ietf.org/html/rfc4632>`_ range.
+message CidrRange {
+  // IPv4 or IPv6 address, e.g. ``192.0.0.0`` or ``2001:db8::``.
+  string address_prefix = 1;
+
+  // Length of prefix, e.g. 0, 32.
+  google.protobuf.UInt32Value prefix_len = 2;
 }
