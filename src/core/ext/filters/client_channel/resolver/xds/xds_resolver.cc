@@ -122,7 +122,7 @@ class XdsResolver : public Resolver {
   };
 
   class ClusterState
-      : public RefCounted<ClusterState, PolymorphicRefCount, false> {
+      : public RefCounted<ClusterState, PolymorphicRefCount, kUnrefNoDelete> {
    public:
     using ClusterStateMap =
         std::map<std::string, std::unique_ptr<ClusterState>>;
