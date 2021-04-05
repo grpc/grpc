@@ -258,7 +258,7 @@ class BuildExt(build_ext.build_ext):
             old_compile = self.compiler._compile
 
             def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
-                if src[-2:] == '.c':
+                if src.endswith == '.c':
                     extra_postargs = [
                         arg for arg in extra_postargs if not '-std=c++' in arg
                     ]
