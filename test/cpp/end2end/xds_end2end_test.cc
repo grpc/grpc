@@ -11078,7 +11078,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
 class CsdsShortAdsTimeoutTest : public ClientStatusDiscoveryServiceTest {
   void SetUp() override {
     // Shorten the ADS subscription timeout to speed up the test run.
-    xds_resource_does_not_exist_timeout_ms_ = 500;
+    xds_resource_does_not_exist_timeout_ms_ = 2000;
     ClientStatusDiscoveryServiceTest::SetUp();
   }
 };

@@ -2482,8 +2482,8 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
     ClientChannel* chand, const grpc_call_element_args& args,
     grpc_polling_entity* pollent)
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
-                      ? "LoadBalancedCall"
-                      : nullptr),
+                     ? "LoadBalancedCall"
+                     : nullptr),
       chand_(chand),
       path_(grpc_slice_ref_internal(args.path)),
       call_start_time_(args.start_time),
