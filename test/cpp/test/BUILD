@@ -22,6 +22,23 @@ grpc_package(
 )
 
 grpc_cc_test(
+    name = "mock_stream_test",
+    srcs = ["mock_stream_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc++_test",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "server_context_test_spouse_test",
     srcs = ["server_context_test_spouse_test.cc"],
     external_deps = [

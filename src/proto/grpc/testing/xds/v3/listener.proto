@@ -57,6 +57,67 @@ message Filter {
 }
 
 message FilterChainMatch {
+  enum ConnectionSourceType {
+    // Any connection source matches.
+    ANY = 0;
+
+    // Match a connection originating from the same host.
+    SAME_IP_OR_LOOPBACK = 1;
+
+    // Match a connection originating from a different host.
+    EXTERNAL = 2;
+  }
+
+  reserved 1;
+
+  // Optional destination port to consider when use_original_dst is set on the
+  // listener in determining a filter chain match.
+  google.protobuf.UInt32Value destination_port = 8;
+
+  // If non-empty, an IP address and prefix length to match addresses when the
+  // listener is bound to 0.0.0.0/:: or when use_original_dst is specified.
+  repeated core.v3.CidrRange prefix_ranges = 3;
+
+  // Specifies the connection source IP match type. Can be any, local or external network.
+  ConnectionSourceType source_type = 12;
+
+  // The criteria is satisfied if the source IP address of the downstream
+  // connection is contained in at least one of the specified subnets. If the
+  // parameter is not specified or the list is empty, the source IP address is
+  // ignored.
+  repeated core.v3.CidrRange source_prefix_ranges = 6;
+
+  // The criteria is satisfied if the source port of the downstream connection
+  // is contained in at least one of the specified ports. If the parameter is
+  // not specified, the source port is ignored.
+  repeated uint32 source_ports = 7;
+
+  // If non-empty, a list of server names (e.g. SNI for TLS protocol) to consider when determining
+  // a filter chain match. Those values will be compared against the server names of a new
+  // connection, when detected by one of the listener filters.
+  //
+  // The server name will be matched against all wildcard domains, i.e. ``www.example.com``
+  // will be first matched against ``www.example.com``, then ``*.example.com``, then ``*.com``.
+  //
+  // Note that partial wildcards are not supported, and values like ``*w.example.com`` are invalid.
+  //
+  // .. attention::
+  //
+  //   See the :ref:`FAQ entry <faq_how_to_setup_sni>` on how to configure SNI for more
+  //   information.
+  repeated string server_names = 11;
+
+  // If non-empty, a transport protocol to consider when determining a filter chain match.
+  // This value will be compared against the transport protocol of a new connection, when
+  // it's detected by one of the listener filters.
+  //
+  // Suggested values include:
+  //
+  // * ``raw_buffer`` - default, used when no transport protocol is detected,
+  // * ``tls`` - set by :ref:`envoy.filters.listener.tls_inspector <config_listener_filters_tls_inspector>`
+  //   when TLS protocol is detected.
+  string transport_protocol = 9;
+
   // If non-empty, a list of application protocols (e.g. ALPN for TLS protocol) to consider when
   // determining a filter chain match. Those values will be compared against the application
   // protocols of a new connection, when detected by one of the listener filters.
@@ -126,7 +187,11 @@ message Listener {
   // true, the listener hands off redirected connections to the listener associated with the
   // original destination address. If there is no listener associated with the original destination
   // address, the connection is handled by the listener that receives it. Defaults to false.
-  google.protobuf.BoolValue use_original_dst = 4;  
+  google.protobuf.BoolValue use_original_dst = 4; 
+
+  // The default filter chain if none of the filter chain matches. If no default filter chain is supplied,
+  // the connection will be closed. The filter chain match is ignored in this field.
+  FilterChain default_filter_chain = 25;
 
   // Used to represent an API listener, which is used in non-proxy clients. The type of API
   // exposed to the non-proxy application depends on the type of API listener.

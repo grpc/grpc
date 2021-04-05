@@ -7,6 +7,8 @@ metadata:
   labels:
     app: ${deployment_name}
     owner: xds-k8s-interop-test
+  annotations:
+    security.cloud.google.com/use-workload-certificates: ""
 spec:
   replicas: ${replica_count}
   selector:
@@ -44,9 +46,6 @@ spec:
           - mountPath: /tmp/grpc-xds/
             name: grpc-td-conf
             readOnly: true
-          - mountPath: /var/run/gke-spiffe/certs
-            name: gke-spiffe-certs-volume
-            readOnly: true
         resources:
           limits:
             cpu: 800m
@@ -81,7 +80,4 @@ spec:
         - name: grpc-td-conf
           emptyDir:
             medium: Memory
-        - name: gke-spiffe-certs-volume
-          csi:
-            driver: certs.spiffe.gke.io
 ...
