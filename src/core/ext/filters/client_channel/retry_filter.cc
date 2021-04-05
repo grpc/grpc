@@ -188,20 +188,6 @@ class RetryFilter {
 // RetryFilter::CallData
 //
 
-// FIXME: clean up this comment
-// A call be thought of as a state machine with the following states:
-// - INIT:
-//   - to ATTEMPTING when get first batch
-//   - to PASSTHROUGH when first batch exceeds buffer size limit
-// - ATTEMPTING
-//   - when recv op completes (if not retrying):
-//     - to COMMITTED if there are more send ops whose replays need to be
-//       started
-//     - to PASSTHROUGH otherwise
-// - COMMITTED
-//   - to PASSTHROUGH when last send op replay is started
-// - PASSTHROUGH
-//   - (no exit)
 class RetryFilter::CallData {
  public:
   static grpc_error* Init(grpc_call_element* elem,
@@ -231,8 +217,8 @@ class RetryFilter::CallData {
 
     ClientChannel::LoadBalancedCall* lb_call() const { return lb_call_.get(); }
 
-    // Constructs and starts whatever subchannel batches are needed on the
-    // subchannel call.
+    // Constructs and starts whatever batches are needed on this call
+    // attempt.
     void StartRetriableBatches();
 
     // Frees cached send ops that have already been completed after
@@ -240,11 +226,11 @@ class RetryFilter::CallData {
     void FreeCachedSendOpDataAfterCommit();
 
    private:
-    // State used for starting a retryable batch on a subchannel call.
+    // State used for starting a retryable batch on the call attempt's LB call.
     // This provides its own grpc_transport_stream_op_batch and other data
     // structures needed to populate the ops in the batch.
     // We allocate one struct on the arena for each attempt at starting a
-    // batch on a given subchannel call.
+    // batch on a given LB call.
     class BatchData
         : public RefCounted<CallAttempt, PolymorphicRefCount, kUnrefCallDtor> {
      public:
@@ -277,14 +263,14 @@ class RetryFilter::CallData {
       // committed.
       void FreeCachedSendOpDataForCompletedBatch();
 
-      // Invokes recv_initial_metadata_ready for a subchannel batch.
+      // Invokes recv_initial_metadata_ready for a batch.
       static void InvokeRecvInitialMetadataCallback(void* arg,
                                                     grpc_error* error);
       // Intercepts recv_initial_metadata_ready callback for retries.
       // Commits the call and returns the initial metadata up the stack.
       static void RecvInitialMetadataReady(void* arg, grpc_error* error);
 
-      // Invokes recv_message_ready for a subchannel batch.
+      // Invokes recv_message_ready for a batch.
       static void InvokeRecvMessageCallback(void* arg, grpc_error* error);
       // Intercepts recv_message_ready callback for retries.
       // Commits the call and returns the message up the stack.
@@ -313,16 +299,15 @@ class RetryFilter::CallData {
           grpc_error* error, CallCombinerClosureList* closures);
 
       // If there are any cached ops to replay or pending ops to start on the
-      // subchannel call, adds them to closures.
+      // LB call, adds them to closures.
       void AddClosuresForReplayOrPendingSendOps(
           CallCombinerClosureList* closures);
 
-      // Callback used to intercept on_complete from subchannel calls.
-      // Called only when retries are enabled.
+      // Callback used to intercept on_complete from LB calls.
       static void OnComplete(void* arg, grpc_error* error);
 
       RefCountedPtr<CallAttempt> call_attempt_;
-      // The batch to use in the subchannel call.
+      // The batch to use in the LB call.
       // Its payload field points to CallAttempt::batch_payload_.
       grpc_transport_stream_op_batch batch_;
       // For intercepting on_complete.
@@ -337,15 +322,15 @@ class RetryFilter::CallData {
       return calld_->arena_->New<BatchData>(Ref(), refcount, set_on_complete);
     }
 
-    // If there are any cached send ops that need to be replayed on the
-    // current subchannel call, creates and returns a new subchannel batch
-    // to replay those ops.  Otherwise, returns nullptr.
+    // If there are any cached send ops that need to be replayed on this
+    // call attempt, creates and returns a new batch to replay those ops.
+    // Otherwise, returns nullptr.
     BatchData* MaybeCreateBatchForReplay();
 
-    // Adds subchannel batches for pending batches to closures.
+    // Adds batches for pending batches to closures.
     void AddBatchesForPendingBatches(CallCombinerClosureList* closures);
 
-    // Adds whatever subchannel batches are needed on this attempt to closures.
+    // Adds whatever batches are needed on this attempt to closures.
     void AddRetriableBatches(CallCombinerClosureList* closures);
 
     // Returns true if any op in the batch was not yet started on this attempt.
@@ -364,8 +349,8 @@ class RetryFilter::CallData {
     grpc_transport_stream_op_batch_payload batch_payload_;
     // For send_initial_metadata.
     // Note that we need to make a copy of the initial metadata for each
-    // subchannel call instead of just referring to the copy in call_data,
-    // because filters in the subchannel stack will probably add entries,
+    // call attempt instead of just referring to the copy in call_data,
+    // because filters in the subchannel stack may modify the metadata,
     // so we need to start in a pristine state for each attempt of the call.
     grpc_linked_mdelem* send_initial_metadata_storage_;
     grpc_metadata_batch send_initial_metadata_;
@@ -387,7 +372,7 @@ class RetryFilter::CallData {
     grpc_transport_stream_stats collect_stats_;
     grpc_closure recv_trailing_metadata_ready_;
     // These fields indicate which ops have been started and completed on
-    // this subchannel call.
+    // this call attempt.
     size_t started_send_message_count_ = 0;
     size_t completed_send_message_count_ = 0;
     size_t started_recv_message_count_ = 0;
@@ -472,8 +457,12 @@ class RetryFilter::CallData {
   // gets cancelled.
   RefCountedPtr<CallAttempt> call_attempt_;
 
-  // LB call used once the call is commited and all cached send ops have
-  // been started.
+  // LB call used when the call is commited before any CallAttempt is
+  // created.
+  // TODO(roth): Change CallAttempt logic such that once we've committed
+  // and all cached send ops have been replayed, we move the LB call
+  // from the CallAttempt here, thus creating a fast path for the
+  // remainder of the streaming call.
   RefCountedPtr<ClientChannel::LoadBalancedCall> committed_call_;
 
   // When are are not yet fully committed to a particular call (i.e.,
@@ -494,16 +483,15 @@ class RetryFilter::CallData {
   grpc_timer retry_timer_;
   grpc_closure retry_closure_;
 
-  // The number of pending retriable subchannel batches containing send ops.
+  // The number of batches containing send ops that are currently in-flight
+  // on any call attempt.
   // We hold a ref to the call stack while this is non-zero, since replay
   // batches may not complete until after all callbacks have been returned
   // to the surface, and we need to make sure that the call is not destroyed
   // until all of these batches have completed.
   // Note that we actually only need to track replay batches, but it's
   // easier to track all batches with send ops.
-// FIXME: is this actually needed?  might not be if CallAttempt is
-// holding a ref to the call stack instead of BatchData
-  int num_pending_retriable_subchannel_send_batches_ = 0;
+  int num_in_flight_call_attempt_send_batches_ = 0;
 
   // Cached data for retrying send ops.
   // send_initial_metadata
@@ -600,8 +588,8 @@ void RetryFilter::CallData::CallAttempt::StartInternalRecvTrailingMetadata() {
             calld_->chand_, calld_);
   }
   // Create batch_data with 2 refs, since this batch will be unreffed twice:
-  // once for the recv_trailing_metadata_ready callback when the subchannel
-  // batch returns, and again when we actually get a recv_trailing_metadata
+  // once for the recv_trailing_metadata_ready callback when the batch
+  // completes, and again when we actually get a recv_trailing_metadata
   // op from the surface.
   BatchData* batch_data = CreateBatch(2, false /* set_on_complete */);
   batch_data->AddRetriableRecvTrailingMetadataOp();
@@ -611,8 +599,8 @@ void RetryFilter::CallData::CallAttempt::StartInternalRecvTrailingMetadata() {
 }
 
 // If there are any cached send ops that need to be replayed on the
-// current subchannel call, creates and returns a new subchannel batch
-// to replay those ops.  Otherwise, returns nullptr.
+// current call attempt, creates and returns a new batch to replay those ops.
+// Otherwise, returns nullptr.
 RetryFilter::CallData::CallAttempt::BatchData*
 RetryFilter::CallData::CallAttempt::MaybeCreateBatchForReplay() {
   BatchData* replay_batch_data = nullptr;
@@ -674,7 +662,7 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
     grpc_transport_stream_op_batch* batch = pending->batch;
     if (batch == nullptr) continue;
     // Skip any batch that either (a) has already been started on this
-    // subchannel call or (b) we can't start yet because we're still
+    // call attempt or (b) we can't start yet because we're still
     // replaying send ops that need to be completed first.
     // TODO(roth): Note that if any one op in the batch can't be sent
     // yet due to ops that we're replaying, we don't start any of the ops
@@ -713,9 +701,8 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
       if (GPR_UNLIKELY(recv_trailing_metadata_internal_batch_ != nullptr)) {
         // If the batch completed, then trigger the completion callback
         // directly, so that we return the previously returned results to
-        // the application.  Otherwise, just unref the internally
-        // started subchannel batch, since we'll propagate the
-        // completion when it completes.
+        // the application.  Otherwise, just unref the internally started
+        // batch, since we'll propagate the completion when it completes.
         if (completed_recv_trailing_metadata_) {
           // Batches containing recv_trailing_metadata always succeed.
           closures->Add(
@@ -729,11 +716,8 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
       }
       continue;
     }
-    // If we're not retrying, just send the batch as-is.
-// FIXME: address this
-    // TODO(roth): This condition doesn't seem exactly right -- maybe need a
-    // notion of "draining" once we've committed and are done replaying?
-    if (calld_->retry_policy_ == nullptr || calld_->retry_committed_) {
+    // If we're already committed, just send the batch as-is.
+    if (calld_->retry_committed_) {
       calld_->AddClosureForBatch(batch, closures);
       calld_->PendingBatchClear(pending);
       continue;
@@ -776,14 +760,14 @@ void RetryFilter::CallData::CallAttempt::AddBatchesForPendingBatches(
       batch_data->AddRetriableRecvTrailingMetadataOp();
     }
     calld_->AddClosureForBatch(batch_data->batch(), closures);
-    // Track number of pending subchannel send batches.
+    // Track number of in-flight send batches.
     // If this is the first one, take a ref to the call stack.
     if (batch->send_initial_metadata || batch->send_message ||
         batch->send_trailing_metadata) {
-      if (calld_->num_pending_retriable_subchannel_send_batches_ == 0) {
-        GRPC_CALL_STACK_REF(calld_->owning_call_, "subchannel_send_batches");
+      if (calld_->num_in_flight_call_attempt_send_batches_ == 0) {
+        GRPC_CALL_STACK_REF(calld_->owning_call_, "retriable_send_batches");
       }
-      ++calld_->num_pending_retriable_subchannel_send_batches_;
+      ++calld_->num_in_flight_call_attempt_send_batches_;
     }
   }
 }
@@ -794,12 +778,12 @@ void RetryFilter::CallData::CallAttempt::AddRetriableBatches(
   BatchData* replay_batch_data = MaybeCreateBatchForReplay();
   if (replay_batch_data != nullptr) {
     calld_->AddClosureForBatch(replay_batch_data->batch(), closures);
-    // Track number of pending subchannel send batches.
+    // Track number of pending send batches.
     // If this is the first one, take a ref to the call stack.
-    if (calld_->num_pending_retriable_subchannel_send_batches_ == 0) {
-      GRPC_CALL_STACK_REF(calld_->owning_call_, "subchannel_send_batches");
+    if (calld_->num_in_flight_call_attempt_send_batches_ == 0) {
+      GRPC_CALL_STACK_REF(calld_->owning_call_, "retriable_send_batches");
     }
-    ++calld_->num_pending_retriable_subchannel_send_batches_;
+    ++calld_->num_in_flight_call_attempt_send_batches_;
   }
   // Now add pending batches.
   AddBatchesForPendingBatches(closures);
@@ -832,10 +816,13 @@ RetryFilter::CallData::CallAttempt::BatchData::BatchData(
     RefCountedPtr<CallAttempt> attempt, int refcount, bool set_on_complete)
     : RefCounted(nullptr, refcount),
       call_attempt_(std::move(attempt)) {
-// FIXME: Can this ref on the call stack be held in CallAttempt instead
-// of in each batch?  This would eliminate the need for
-// num_pending_retriable_subchannel_send_batches_.  It would require
-// having a way to unref CallAttempt when it was no longer needed.
+  // TODO(roth): Consider holding this ref on the call stack in
+  // CallAttempt instead of here in BatchData.  This would eliminate the
+  // need for CallData::num_in_flight_call_attempt_send_batches_.
+  // But it would require having a way to unref CallAttempt when it is
+  // no longer needed (i.e., when the call is committed and all cached
+  // send ops have been replayed and the LB call is moved into
+  // CallData::committed_call_).
   GRPC_CALL_STACK_REF(call_attempt_->calld_->owning_call_, "CallAttempt");
   batch_.payload = &call_attempt_->batch_payload_;
   if (set_on_complete) {
@@ -1010,191 +997,6 @@ void RetryFilter::CallData::CallAttempt::BatchData::InvokeRecvInitialMetadataCal
                GRPC_ERROR_REF(error));
 }
 
-// FIXME:
-//
-// A call attempt gets the ops to send down to the LB call from
-// CallData, either from pending_batches_ or from the cached data for
-// send ops that have already been returned to the surface.  The state
-// of each op on a call attempt is described using several axes:
-//
-// PENDING vs. PENDING_CACHED vs. CACHED
-//   When a batch is received from the surface, it will be stored in
-//   calld_->pending_batches_ until all of its completion callbacks are
-//   invoked.  Any op in a batch in pending_batches_ whose completion callback
-//   has not yet been invoked is considered pending.
-//
-//   For send ops, the first time that we start an op on a call attempt,
-//   we cache the op's data in calld_, so that if the initial call attempt
-//   fails, we can replay the op later on a subsequent call attempt, even if
-//   we've already invoked the op's completion callback.
-//
-//   When an op is first received in a batch from the surface, it is
-//   considered PENDING.  When it is started on the first call attempt,
-//   it is considered PENDING_CACHED.  When we invoke the op's
-//   completion callback but still retain its cached data, it is
-//   considered CACHED.
-//
-// QUEUED vs. STARTABLE vs. RUNNING vs. COMPLETED
-//   When one call attempt fails and we start another, we must replay
-//   the batches that we already started on the previous attempt.  However,
-//   the new call attempt can have only one send_message op in flight at
-//   a time, and it cannot start the send_trailing_metadata op until it
-//   has completed all send_message ops.  Therefore, it is possible that
-//   a send_message or send_trailing_metadata op must be queued on this
-//   call attempt before it can be sent.
-//
-//   An op is considered QUEUED when it cannot be started yet due to a
-//   prerequisite op not yet having been completed.  When all
-//   prerequisite ops have completed, the op is considered STARTABLE.
-//   When the op is actually started on the call attempt, it is
-//   considered RUNNING.  And when the op completes on the call attempt,
-//   it is considered COMPLETED.
-//
-//   Note that no op ever stays in STARTABLE state for more than a
-//   moment; as soon as an op becomes STARTABLE, it will immediately
-//   be started and will transition to state RUNNING.
-//
-// Valid states for each type of op:
-
-// PENDING vs. PENDING_CACHED vs. CACHED
-// QUEUED vs. STARTABLE vs. RUNNING vs. COMPLETED
-
-// - send_initial_metadata:
-//   This op is always started on a call attempt as soon as the call
-//   attempt is created (unless it has not yet been received from the
-//   surface, in which case it will be started as soon as it arrives).
-//   Therefore, it is not possible for this op to be in PENDING or QUEUED
-//   states; it always immediate starts in PENDING_CACHED/STARTABLE state.
-//
-//   Note that the call on the wire does not actually start until this
-//   op is sent to the LB call, so even if it is not the first to
-//   arrive, it is guaranteed that no other op will complete until this
-//   op is started.
-//   
-
-
-// op states for a given call attempt:
-// 1. pending
-//    a. not yet cached (e.g., a send_message op that was started
-//       from above while we are replaying previous send_message ops on this
-//       attempt)
-//       i. can start immediately:
-//              ==> PASSTHROUGH
-//                  (should happen only in OnComplete(), not for recv ops)
-//       ii. cannot start immediately:
-//              ==> stay in COMMITTED
-//    b. cached but not yet started (e.g., a send_message op that was
-//       started on a previous attempt before that attempt was abandoned
-//       and can't be started on this attempt yet because we're still
-//       replaying previous send_message ops)
-//              send_initial_metadata:
-//                      (can't happen, because if this op is pending, it
-//                      will be immediately cached and started on each
-//                      call attempt as soon as the call attempt is created)
-//                      ==> stay in COMMITTED (need to add
-//                          grpc-previous-retry-attempts header)
-//              send_trailing_metadata:
-//                      i. can start immediately:
-//                         (should happen only in OnComplete(), not for recv
-//                         ops)
-//                              ==> PASSTHROUGH
-//                      ii. cannot start immediately:
-//                              ==> stay in COMMITTED
-//              send_message:
-//                      i. can start immediately:
-//                         (should happen only in OnComplete(), not for recv
-//                         ops)
-//                              ==> stay in COMMITTED
-//                                  (byte stream cache has taken ownership of
-//                                  the original byte stream, and we need to
-//                                  intercept on_complete to free the
-//                                  cached data)
-//                      ii. cannot start immediately:
-//                              ==> stay in COMMITTED
-//    c. started on this attempt
-//              ==> PASSTHROUGH
-//    d. completed on this attempt (e.g., a send_initial_metadata op that was
-//       completed in the same batch with a recv_initial_metadata op
-//       that has not yet completed)
-//              ==> PASSTHROUGH
-// 2. no longer pending but cached
-//    (a. not yet cached -- not possible: must be cached if no longer pending)
-//    b. cached but not yet started (e.g., a send_message op that was
-//       started on a previous attempt before that attempt was abandoned
-//       and can't be started on this attempt yet because we're still
-//       replaying previous send_message ops)
-//              ==> stay in COMMITTED
-//    c. started on this attempt
-//              ==> PASSTHROUGH
-//    d. completed on this attempt
-//              ==> PASSTHROUGH
-//
-// when an op completes from LB call:
-//  if COMMITTED and no more send ops whose replays need to be started:
-//    move LB call to CallData (go to state PASSTHROUGH)
-//    start remaining pending batches on it
-
-// Returns true if all ops in the batch can be started on the call attempt.
-// FIXME: finish this
-#if 0
-bool RetryFilter::CallData::CallAttempt::PendingBatchCanBeStarted(
-    PendingBatch* batch) {
-  grpc_transport_stream_op_batch* batch = pending->batch;
-  // We cannot start any batch that either (a) has already been started on
-  // this subchannel call or (b) we can't start yet because we're still
-  // replaying send ops that need to be completed first.
-  if (batch->send_initial_metadata && started_send_initial_metadata_) {
-    return false;
-  }
-  if (batch->send_message &&
-      completed_send_message_count_ < started_send_message_count_) {
-    continue;
-  }
-  // Note that we only start send_trailing_metadata if we have no more
-  // send_message ops to start, since we can't send down any more
-  // send_message ops after send_trailing_metadata.
-  if (batch->send_trailing_metadata &&
-      (started_send_message_count_ + batch->send_message <
-           calld_->send_messages_.size() ||
-       started_send_trailing_metadata_)) {
-    continue;
-  }
-  if (batch->recv_initial_metadata && started_recv_initial_metadata_) {
-    continue;
-  }
-  if (batch->recv_message &&
-      completed_recv_message_count_ < started_recv_message_count_) {
-    continue;
-  }
-  if (batch->recv_trailing_metadata && started_recv_trailing_metadata_) {
-}
-
-void RetryFilter::CallData::CallAttempt::MaybeGoToPassThrough() {
-  PendingBatch* pending_send_initial_metadata = nullptr;
-  PendingBatch* pending_send_message = nullptr;
-  PendingBatch* pending_send_trailing_metadata = nullptr;
-  for (size_t i = 0; i < GPR_ARRAY_SIZE(calld_->pending_batches_); ++i) {
-    PendingBatch* pending = &calld_->pending_batches_[i];
-    grpc_transport_stream_op_batch* batch = pending->batch;
-    if (batch == nullptr) continue;
-    if (batch->send_initial_metadata && 
-
-
-
-  if (calld->seen_send_initial_metadata_ &&
-      !call_attempt_->started_send_initial_metadata_) {
-    return;
-  }
-  bool have_cached_send_message_ops =
-      call_attempt_->started_send_message_count_ < calld->send_messages_.size();
-  bool have_cached_send_trailing_metadata_op =
-      calld->seen_send_trailing_metadata_ &&
-      !call_attempt_->started_send_trailing_metadata_;
-
-}
-#endif
-
-
 void RetryFilter::CallData::CallAttempt::BatchData::RecvInitialMetadataReady(void* arg,
                                                      grpc_error* error) {
   CallAttempt::BatchData* batch_data =
@@ -1215,9 +1017,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvInitialMetadataReady(voi
         "recv_initial_metadata_ready after retry dispatched");
     return;
   }
-  if (calld->retry_committed_) {
-// FIXME
-  } else {
+  if (!calld->retry_committed_) {
     // If we got an error or a Trailers-Only response and have not yet gotten
     // the recv_trailing_metadata_ready callback, then defer propagating this
     // callback back to the surface.  We can evaluate whether to retry when
@@ -1302,33 +1102,34 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvMessageReady(void* arg, 
                             "recv_message_ready after retry dispatched");
     return;
   }
-// FIXME: don't need to do this if we're already committed
-  // If we got an error or the payload was nullptr and we have not yet gotten
-  // the recv_trailing_metadata_ready callback, then defer propagating this
-  // callback back to the surface.  We can evaluate whether to retry when
-  // recv_trailing_metadata comes back.
-  if (GPR_UNLIKELY(
-          (call_attempt->recv_message_ == nullptr || error != GRPC_ERROR_NONE) &&
-          !call_attempt->completed_recv_trailing_metadata_)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p calld=%p: deferring recv_message_ready (nullptr "
-              "message and recv_trailing_metadata pending)",
-              calld->chand_, calld);
+  if (!calld->retry_committed_) {
+    // If we got an error or the payload was nullptr and we have not yet gotten
+    // the recv_trailing_metadata_ready callback, then defer propagating this
+    // callback back to the surface.  We can evaluate whether to retry when
+    // recv_trailing_metadata comes back.
+    if (GPR_UNLIKELY(
+            (call_attempt->recv_message_ == nullptr || error != GRPC_ERROR_NONE) &&
+            !call_attempt->completed_recv_trailing_metadata_)) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p calld=%p: deferring recv_message_ready (nullptr "
+                "message and recv_trailing_metadata pending)",
+                calld->chand_, calld);
+      }
+      call_attempt->recv_message_ready_deferred_batch_ = batch_data;
+      call_attempt->recv_message_error_ = GRPC_ERROR_REF(error);
+      if (!call_attempt->started_recv_trailing_metadata_) {
+        // recv_trailing_metadata not yet started by application; start it
+        // ourselves to get status.
+        call_attempt->StartInternalRecvTrailingMetadata();
+      } else {
+        GRPC_CALL_COMBINER_STOP(calld->call_combiner_, "recv_message_ready null");
+      }
+      return;
     }
-    call_attempt->recv_message_ready_deferred_batch_ = batch_data;
-    call_attempt->recv_message_error_ = GRPC_ERROR_REF(error);
-    if (!call_attempt->started_recv_trailing_metadata_) {
-      // recv_trailing_metadata not yet started by application; start it
-      // ourselves to get status.
-      call_attempt->StartInternalRecvTrailingMetadata();
-    } else {
-      GRPC_CALL_COMBINER_STOP(calld->call_combiner_, "recv_message_ready null");
-    }
-    return;
+    // Received a valid message, so commit the call.
+    calld->RetryCommit(call_attempt);
   }
-  // Received a valid message, so commit the call.
-  calld->RetryCommit(call_attempt);
   // Invoke the callback to return the result to the surface.
   // Manually invoking a callback function; it does not take ownership of error.
   InvokeRecvMessageCallback(batch_data, error);
@@ -1525,7 +1326,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::AddClosuresForCompletedPendi
   PendingBatch* pending = calld->PendingBatchFind(
       "completed", [this](grpc_transport_stream_op_batch* batch) {
         // Match the pending batch with the same set of send ops as the
-        // subchannel batch we've just completed.
+        // batch we've just completed.
         return batch->on_complete != nullptr &&
                batch_.send_initial_metadata == batch->send_initial_metadata &&
                batch_.send_message == batch->send_message &&
@@ -1547,9 +1348,9 @@ void RetryFilter::CallData::CallAttempt::BatchData::AddClosuresForCompletedPendi
 void RetryFilter::CallData::CallAttempt::BatchData::AddClosuresForReplayOrPendingSendOps(
     CallCombinerClosureList* closures) {
   auto* calld = call_attempt_->calld_;
-  // We don't check send_initial_metadata here, because this is invoked
-  // in OnComplete(), which means at least one send op has finished, and
-  // send_initial_metadata will always be the first send op to complete.
+  // We don't check send_initial_metadata here, because that op will always
+  // be started as soon as it is received from the surface, so it will
+  // never need to be started at this point.
   bool have_pending_send_message_ops =
       call_attempt_->started_send_message_count_ < calld->send_messages_.size();
   bool have_pending_send_trailing_metadata_op =
@@ -1612,29 +1413,29 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnComplete(void* arg, grpc_e
     batch_data->AddClosuresForCompletedPendingBatch(GRPC_ERROR_REF(error),
                                               &closures);
     // If needed, add a callback to start any replay or pending send ops on
-    // the subchannel call.
+    // the LB call.
     if (!call_attempt->completed_recv_trailing_metadata_) {
       batch_data->AddClosuresForReplayOrPendingSendOps(&closures);
     }
   }
-  // Track number of pending subchannel send batches and determine if this
-  // was the last one.
-  --calld->num_pending_retriable_subchannel_send_batches_;
+  // Track number of in-flight send batches and determine if this was the
+  // last one.
+  --calld->num_in_flight_call_attempt_send_batches_;
   const bool last_send_batch_complete =
-      calld->num_pending_retriable_subchannel_send_batches_ == 0;
+      calld->num_in_flight_call_attempt_send_batches_ == 0;
   // Don't need batch_data anymore.
   batch_data->Unref();
   // Schedule all of the closures identified above.
   // Note: This yeilds the call combiner.
   closures.RunClosures(calld->call_combiner_);
-  // If this was the last subchannel send batch, unref the call stack.
+  // If this was the last in-flight send batch, unref the call stack.
   if (last_send_batch_complete) {
-    GRPC_CALL_STACK_UNREF(calld->owning_call_, "subchannel_send_batches");
+    GRPC_CALL_STACK_UNREF(calld->owning_call_, "retriable_send_batches");
   }
 }
 
 //
-// subchannel batch construction
+// retriable batch construction
 //
 
 void RetryFilter::CallData::CallAttempt::BatchData::AddRetriableSendInitialMetadataOp() {
@@ -1776,9 +1577,11 @@ void RetryFilter::CallData::Destroy(grpc_call_element* elem,
                                     grpc_closure* then_schedule_closure) {
   auto* calld = static_cast<CallData*>(elem->call_data);
   RefCountedPtr<SubchannelCall> subchannel_call;
-// FIXME: can we make it such that we always have committed_call_ set by
-// the time we get here?  that would simplify the logic.  if not, may
-// need to get more complex about when we invoke then_schedule_closure.
+  // TODO(roth): As part of implementing hedging, the logic around
+  // then_schedule_closure may need to get more complex.  We may
+  // need to have a separate then_schedule_closure for each LB call, and
+  // wait until all of those have been invoked before we invoke the
+  // then_schedule_closure passed in here.
   if (GPR_LIKELY(calld->committed_call_ != nullptr)) {
     subchannel_call = calld->committed_call_->subchannel_call();
   } else if (GPR_LIKELY(calld->call_attempt_ != nullptr)) {
@@ -1881,7 +1684,8 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
       call_attempt_->lb_call()->StartTransportStreamOpBatch(batch);
       return;
     }
-// FIXME: if retry timer is pending, cancel it (timer callback should be a no-op)
+    // TODO(roth): If retry timer is pending, cancel it.  The timer callback
+    // should be a no-op in this case.
     // Fail pending batches.
     PendingBatchesFail(GRPC_ERROR_REF(cancel_error));
     // Note: This will release the call combiner.
@@ -1909,7 +1713,7 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
       committed_call_->StartTransportStreamOpBatch(batch);
       return;
     }
-// FIXME: if retry timer is pending, return without doing anything
+    // TODO(roth): If retry timer is pending, return without doing anything.
     // We do not yet have a call attempt, so create one.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
       gpr_log(GPR_INFO, "chand=%p calld=%p: creating call attempt", chand_,
@@ -1965,11 +1769,11 @@ void RetryFilter::CallData::AddClosureForBatch(
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, StartBatchInCallCombiner,
                     batch, grpc_schedule_on_exec_ctx);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: starting subchannel batch: %s",
+    gpr_log(GPR_INFO, "chand=%p calld=%p: starting batch on LB call: %s",
             chand_, this, grpc_transport_stream_op_batch_string(batch).c_str());
   }
   closures->Add(&batch->handler_private.closure, GRPC_ERROR_NONE,
-                "start_subchannel_batch");
+                "start_batch_on_lb_call");
 }
 
 //
@@ -2206,7 +2010,6 @@ void RetryFilter::CallData::RetryCommit(CallAttempt* call_attempt) {
 }
 
 void RetryFilter::CallData::DoRetry(grpc_millis server_pushback_ms) {
-  GPR_ASSERT(retry_policy_ != nullptr);
   // Reset call attempt.
   call_attempt_.reset();
   // Compute backoff delay.
@@ -2227,7 +2030,7 @@ void RetryFilter::CallData::DoRetry(grpc_millis server_pushback_ms) {
   }
   // Schedule retry after computed delay.
   GRPC_CLOSURE_INIT(&retry_closure_, CreateCallAttempt, this, nullptr);
-// FIXME: need to register a call combiner canceller for the timer
+  // TODO(roth): Register a call combiner canceller for the timer.
   grpc_timer_init(&retry_timer_, next_attempt_time, &retry_closure_);
 }
 
