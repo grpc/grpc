@@ -121,6 +121,34 @@ TEST(ErrorUtilsTest, GrpcErrorOOMToAbslStatus) {
   ASSERT_EQ(status.message(), "Out of memory");
 }
 
+// ---- Other Non-special statuses ----
+TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
+  grpc_error* error =
+      absl_status_to_grpc_error(absl::UnavailableError("Making tea"));
+  // Status code checks
+  intptr_t code;
+  ASSERT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &code));
+  ASSERT_EQ(static_cast<grpc_status_code>(code), GRPC_STATUS_UNAVAILABLE);
+  // Status message checks
+  grpc_slice message;
+  ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &message));
+  absl::string_view str = grpc_core::StringViewFromSlice(message);
+  ASSERT_EQ(str, "Making tea");
+  grpc_slice_unref(message);
+  GRPC_ERROR_UNREF(error);
+}
+
+TEST(ErrorUtilsTest, GrpcErrorUnavailableToAbslStatus) {
+  grpc_error* error = grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "weighted_target: all children report state TRANSIENT_FAILURE"),
+      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+  absl::Status status = grpc_error_to_absl_status(error);
+  ASSERT_TRUE(absl::IsUnavailable(status));
+  ASSERT_EQ(status.message(),
+            "weighted_target: all children report state TRANSIENT_FAILURE");
+}
+
 }  // namespace
 
 int main(int argc, char** argv) {
