@@ -16,8 +16,8 @@
 
 #include "src/core/lib/transport/error_utils.h"
 
-#include "absl/status/status.h"
 #include <gtest/gtest.h>
+#include "absl/status/status.h"
 
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
