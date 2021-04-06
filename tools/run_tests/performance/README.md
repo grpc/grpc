@@ -219,7 +219,7 @@ run by applying the test to a cluster running the LoadTest controller with
 `kubectl apply`:
 
 ```shell
-kubectl apply -f ./loadtest_config.yaml
+$ kubectl apply -f loadtest_config.yaml
 ```
 
 <!-- TODO(pcastello): add more details on scripts and running tests. -->
@@ -233,5 +233,5 @@ several YAML files into one, so they can be run with a single command. It can be
 invoked as follows:
 
 ```shell
-./loadtest_concat_yaml.py -i infile1.yaml infile2.yaml -o outfile.yaml
+$ loadtest_concat_yaml.py -i infile1.yaml infile2.yaml -o outfile.yaml
 ```
