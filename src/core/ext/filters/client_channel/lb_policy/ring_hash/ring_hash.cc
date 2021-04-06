@@ -277,6 +277,8 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
         GPR_MIN(address.normalized_weight, min_normalized_weight);
     max_normalized_weight =
         GPR_MAX(address.normalized_weight, max_normalized_weight);
+    gpr_log(GPR_INFO, "donna weight %u sum %zu norm %f", address.weight, sum,
+            address.normalized_weight);
   }
   // Scale up the number of hashes per host such that the least-weighted host
   // gets a whole number of hashes on the ring. Other hosts might not end up
@@ -287,11 +289,16 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
   // to fit.
   const size_t min_ring_size = parent_->config_->min_ring_size();
   const size_t max_ring_size = parent_->config_->max_ring_size();
+  gpr_log(GPR_INFO, "donna verify min %zu and max %zu", min_ring_size,
+          max_ring_size);
   const double scale = GPR_MIN(
       std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
       static_cast<double>(max_ring_size));
   // Reserve memory for the entire ring up front.
   const uint64_t ring_size = std::ceil(scale);
+  gpr_log(GPR_INFO, "donna sum %zu max weight %f and min weight 2 %f", sum,
+          max_normalized_weight, min_normalized_weight);
+  gpr_log(GPR_INFO, "donna scale %f and ring size %zu", scale, ring_size);
   ring_.reserve(ring_size);
   // Populate the hash ring by walking through the (host, weight) pairs in
   // normalized_host_weights, and generating (scale * weight) hashes for each
@@ -316,6 +323,7 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
       absl::string_view hash_key(hash_key_buffer.data(),
                                  hash_key_buffer.size());
       const uint64_t hash = XXH64(hash_key.data(), hash_key.size(), 0);
+      gpr_log(GPR_INFO, "donna push onto ring");
       ring_.push_back({hash,
                        subchannel_list->subchannel(i)->subchannel()->Ref(),
                        subchannel_list->subchannel(i)
@@ -327,6 +335,14 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
     }
     min_hashes_per_host = GPR_MIN(i, min_hashes_per_host);
     max_hashes_per_host = GPR_MAX(i, max_hashes_per_host);
+    gpr_log(GPR_INFO, "donna after building: scale %f and ring size %zu", scale,
+            ring_size);
+    gpr_log(GPR_INFO, "donna count %zu current %f", count, current_hashes);
+    gpr_log(GPR_INFO, "donna max weight %f and min weight %f",
+            max_normalized_weight, min_normalized_weight);
+    gpr_log(GPR_INFO,
+            "donna max_hashes_per_host %zu and min_hashes_per_host %zu",
+            max_hashes_per_host, min_hashes_per_host);
   }
   std::sort(ring_.begin(), ring_.end(),
             [](const RingEntry& lhs, const RingEntry& rhs) -> bool {
@@ -335,8 +351,12 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(GPR_INFO,
             "[RH %p picker %p] created picker from subchannel_list=%p "
-            "with %" PRIuPTR " subchannels" PRIuPTR,
+            "with %" PRIuPTR " subchannels",
             parent_.get(), this, subchannel_list, ring_.size());
+    for (auto r : ring_) {
+      gpr_log(GPR_INFO, "donna ring hash %zu channel %p state %d", r.hash,
+              r.subchannel.get(), r.connectivity_state);
+    }
   }
 }
 
@@ -363,8 +383,12 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   PickResult result;
   // Initialize to PICK_FAILED.
   result.type = PickResult::PICK_FAILED;
-  absl::string_view hash =
+  auto cluster_name =
+      args.call_state->ExperimentalGetCallAttribute("xds_cluster_name");
+  auto hash =
       args.call_state->ExperimentalGetCallAttribute(kRequestRingHashAttribute);
+  gpr_log(GPR_INFO, "donna pick name %s and hash %s", cluster_name.data(),
+          hash.data());
   uint64_t h;
   if (!absl::SimpleAtoi(hash, &h)) {
     result.error = grpc_error_set_int(
@@ -373,6 +397,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
     return result;
   }
+  gpr_log(GPR_INFO, "donna got hash val %zu", h);
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) I've generally kept the variable names to make the code
   // easier to compare. NOTE: The algorithm depends on using signed integers for
@@ -381,6 +406,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   int64_t highp = ring_.size();
   int64_t midp = 0;
   while (true) {
+    gpr_log(GPR_INFO, "donna pick midp %ld", midp);
     midp = (lowp + highp) / 2;
     if (midp == static_cast<int64_t>(ring_.size())) {
       midp = 0;
@@ -401,6 +427,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       break;
     }
   }
+  gpr_log(GPR_INFO, "donna after while pick midp %ld", midp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(GPR_INFO,
             "[RH %p picker %p] hashed to index %" PRIdPTR ", subchannel=%p",
@@ -485,11 +512,15 @@ void RingHash::RingHashSubchannelList::StartWatchingLocked() {
 
 void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
     grpc_connectivity_state old_state, grpc_connectivity_state new_state) {
+  gpr_log(GPR_INFO, "donna old %d and cur %d", old_state, new_state);
   GPR_ASSERT(old_state != GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (old_state == GRPC_CHANNEL_IDLE) {
-    GPR_ASSERT(num_idle_ > 0);
-    --num_idle_;
+    if (num_idle_ > 0) {
+      --num_idle_;
+    } else {
+      gpr_log(GPR_INFO, "donna very first time");
+    }
   } else if (old_state == GRPC_CHANNEL_READY) {
     GPR_ASSERT(num_ready_ > 0);
     --num_ready_;
@@ -755,6 +786,8 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
           "min_ring_size"));
     }
     if (error_list.empty()) {
+      gpr_log(GPR_INFO, "donna min %zu and max %zu", min_ring_size,
+              max_ring_size);
       return MakeRefCounted<RingHashLbConfig>(min_ring_size, max_ring_size);
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(

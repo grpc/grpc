@@ -41,6 +41,7 @@ namespace grpc_core {
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
 const char* kXdsClusterAttribute = "xds_cluster_name";
+char* kHash = "18446744073709551615";
 
 namespace {
 
@@ -673,8 +674,12 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       call_config.service_config = std::move(method_config);
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
-    call_config.call_attributes[kRequestRingHashAttribute] =
-        absl::StrFormat("%" PRIu64, hash.value());
+    // kHash = absl::StrFormat("%" PRIu64, hash.value());
+    call_config.call_attributes[kRequestRingHashAttribute] = kHash;
+    gpr_log(GPR_INFO, "donna name stroed as %s",
+            call_config.call_attributes[kXdsClusterAttribute]);
+    gpr_log(GPR_INFO, "donna hash stroed as %s",
+            call_config.call_attributes[kRequestRingHashAttribute]);
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
       ExecCtx::Run(

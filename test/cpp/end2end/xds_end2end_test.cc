@@ -484,18 +484,21 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
       Locality(std::string sub_zone, std::vector<int> ports,
                int lb_weight = kDefaultLocalityWeight,
                int priority = kDefaultLocalityPriority,
-               std::vector<HealthStatus> health_statuses = {})
+               std::vector<HealthStatus> health_statuses = {},
+               std::vector<int> endpoint_lb_weights = {})
           : sub_zone(std::move(sub_zone)),
             ports(std::move(ports)),
             lb_weight(lb_weight),
             priority(priority),
-            health_statuses(std::move(health_statuses)) {}
+            health_statuses(std::move(health_statuses)),
+            endpoint_lb_weights(std::move(endpoint_lb_weights)) {}
 
       const std::string sub_zone;
       std::vector<int> ports;
       int lb_weight;
       int priority;
       std::vector<HealthStatus> health_statuses;
+      std::vector<int> endpoint_lb_weights;
     };
 
     EdsResourceArgs() = default;
@@ -2151,6 +2154,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         if (locality.health_statuses.size() > i &&
             locality.health_statuses[i] != HealthStatus::UNKNOWN) {
           lb_endpoints->set_health_status(locality.health_statuses[i]);
+        }
+        if (locality.endpoint_lb_weights.size() > i &&
+            locality.endpoint_lb_weights[i] >= 1) {
+          lb_endpoints->mutable_load_balancing_weight()->set_value(
+              locality.endpoint_lb_weights[i]);
         }
         auto* endpoint = lb_endpoints->mutable_endpoint();
         auto* address = endpoint->mutable_address();
@@ -8729,6 +8737,67 @@ TEST_P(EdsTest, EdsServiceNameDefaultsToClusterName) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendOk();
+}
+
+TEST_P(EdsTest, RingHashSize1) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  cluster.mutable_ring_hash_lb_config()->set_hash_function(
+      Cluster::RingHashLbConfig::XX_HASH);
+  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
+      1);
+  cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
+      100);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1, {}, {1}},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2, {}, {2}},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3, {}, {3}},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0, {}, {4}},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  WaitForBackend(3, false);
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
+  }
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+TEST_P(EdsTest, RingHashSize4) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  cluster.mutable_ring_hash_lb_config()->set_hash_function(
+      Cluster::RingHashLbConfig::XX_HASH);
+  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
+      1);
+  cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
+      100);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0",
+       GetBackendPorts(0, 4),
+       kDefaultLocalityWeight,
+       0,
+       {},
+       {1, 2, 3, 4}},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  for (size_t i = 0; i < 20; ++i) {
+    (void)SendRpc();
+  }
+  for (size_t i = 0; i <= 3; ++i) {
+    gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
+            backends_[i]->backend_service()->request_count());
+  }
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
 class TimeoutTest : public BasicTest {
