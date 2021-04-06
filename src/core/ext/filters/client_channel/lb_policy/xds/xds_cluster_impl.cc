@@ -31,6 +31,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -56,6 +57,7 @@ class CircuitBreakerCallCounterMap {
     explicit CallCounter(Key key) : key_(std::move(key)) {}
     ~CallCounter() override;
 
+    uint32_t Load() { return concurrent_requests_.Load(MemoryOrder::SEQ_CST); }
     uint32_t Increment() { return concurrent_requests_.FetchAdd(1); }
     void Decrement() { concurrent_requests_.FetchSub(1); }
 
@@ -287,15 +289,15 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
     return result;
   }
   // Handle circuit breaking.
-  uint32_t current = call_counter_->Increment();
+  uint32_t current = call_counter_->Load();
   // Check and see if we exceeded the max concurrent requests count.
   if (current >= max_concurrent_requests_) {
-    call_counter_->Decrement();
     if (drop_stats_ != nullptr) drop_stats_->AddUncategorizedDrops();
     PickResult result;
     result.type = PickResult::PICK_COMPLETE;
     return result;
   }
+  call_counter_->Increment();
   // If we're not dropping the call, we should always have a child picker.
   if (picker_ == nullptr) {  // Should never happen.
     PickResult result;
