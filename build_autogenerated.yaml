@@ -5042,6 +5042,15 @@ targets:
   deps:
   - grpc++_error_details
   - grpc_test_util
+- name: error_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/error_utils_test.cc
+  deps:
+  - grpc_test_util
 - name: evaluate_args_test
   gtest: true
   build: test
