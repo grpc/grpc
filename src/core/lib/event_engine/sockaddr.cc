@@ -15,6 +15,7 @@
 
 #include <string.h>
 
+#include "grpc/event_engine/port.h"
 #include "grpc/event_engine/event_engine.h"
 #include "grpc/support/log.h"
 
