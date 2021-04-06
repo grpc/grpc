@@ -50,8 +50,8 @@ logger.addHandler(console_handler)
 logger.setLevel(logging.WARNING)
 
 # Suppress excessive logs for gRPC Python
-original_grpc_trace = os.environ.pop('GRPC_TRACE')
-original_grpc_verbosity = os.environ.pop('GRPC_VERBOSITY')
+original_grpc_trace = os.environ.pop('GRPC_TRACE', None)
+original_grpc_verbosity = os.environ.pop('GRPC_VERBOSITY', None)
 # Suppress not-essential logs for GCP clients
 logging.getLogger('google_auth_httplib2').setLevel(logging.WARNING)
 logging.getLogger('googleapiclient.discovery').setLevel(logging.WARNING)
