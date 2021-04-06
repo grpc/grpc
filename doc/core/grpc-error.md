@@ -83,12 +83,12 @@ c->cb(c->cb_arg, err);
 The caller is still responsible for unref-ing the error.
 
 Note that you'll likely never need to run `c->cb(...)` yourself; the idiomatic
-way to execute callbacks is via the `ExecCtx::Run` method, which takes ownership
+way to execute callbacks is via the `Closure::Run` method, which takes ownership
 of the error variable.
 
 ```C
 grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occurred");
-grpc_core::ExecCtx::Run(DEBUG_LOCATION, c->cb, error);
+grpc_core::Closure::Run(DEBUG_LOCATION, c->cb, error);
 // current function no longer has ownership of the error
 ```
 
@@ -97,7 +97,7 @@ you must explicitly take a reference.
 
 ```C
 grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Some error occurred");
-grpc_core::ExecCtx::Run(DEBUG_LOCATION, c->cb, GRPC_ERROR_REF(error));
+grpc_core::Closure::Run(DEBUG_LOCATION, c->cb, GRPC_ERROR_REF(error));
 // do some other things with the error
 GRPC_ERROR_UNREF(error);
 ```
