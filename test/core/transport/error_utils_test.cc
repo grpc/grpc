@@ -34,12 +34,10 @@ TEST(ErrorUtilsTest, AbslOkToGrpcError) {
   // Status message checks
   grpc_slice message;
   ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, &message));
-  char* cstr = grpc_slice_to_c_string(message);
-  ASSERT_EQ(std::string(cstr), "");
+  absl::string_view str = grpc_core::StringViewFromSlice(message);
+  ASSERT_EQ(str, "");
   // Special error equivalent check
   ASSERT_EQ(error, GRPC_ERROR_NONE);
-
-  gpr_free(cstr);
   grpc_slice_unref(message);
   GRPC_ERROR_UNREF(error);
 }
@@ -60,12 +58,10 @@ TEST(ErrorUtilsTest, AbslCancelledToGrpcError) {
   // Status message checks
   grpc_slice message;
   ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, &message));
-  char* cstr = grpc_slice_to_c_string(message);
-  ASSERT_EQ(std::string(cstr), "Cancelled");
+  absl::string_view str = grpc_core::StringViewFromSlice(message);
+  ASSERT_EQ(str, "Cancelled");
   // Special error equivalent check
   ASSERT_EQ(error, GRPC_ERROR_CANCELLED);
-
-  gpr_free(cstr);
   grpc_slice_unref(message);
   GRPC_ERROR_UNREF(error);
 }
@@ -88,12 +84,10 @@ TEST(ErrorUtilsTest, AbslOOMToGrpcError) {
   // Status message checks
   grpc_slice message;
   ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, &message));
-  char* cstr = grpc_slice_to_c_string(message);
-  ASSERT_EQ(std::string(cstr), "Out of memory");
+  absl::string_view str = grpc_core::StringViewFromSlice(message);
+  ASSERT_EQ(str, "Out of memory");
   // Special error equivalent check
   ASSERT_EQ(error, GRPC_ERROR_OOM);
-
-  gpr_free(cstr);
   grpc_slice_unref(message);
   GRPC_ERROR_UNREF(error);
 }
@@ -113,12 +107,10 @@ TEST(ErrorUtilsTest, AbslNonOOMResourceExhaustedToGrpcErrorIsNotSpecial) {
       grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, &message));
   // ... However, the DESCREPTION is
   ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &message));
-  char* cstr = grpc_slice_to_c_string(message);
-  ASSERT_EQ(std::string(cstr), "Lemonade");
+  absl::string_view str = grpc_core::StringViewFromSlice(message);
+  ASSERT_EQ(str, "Lemonade");
   // Special error equivalent check.
   ASSERT_NE(error, GRPC_ERROR_OOM);
-
-  gpr_free(cstr);
   grpc_slice_unref(message);
   GRPC_ERROR_UNREF(error);
 }
