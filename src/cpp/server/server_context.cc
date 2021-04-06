@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/completion_queue.h>
+#include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/time.h>
 
@@ -36,6 +37,8 @@
 #include "src/core/lib/surface/call.h"
 
 namespace grpc {
+
+static internal::GrpcLibraryInitializer g_gli_initializer;
 
 // CompletionOp
 
@@ -233,7 +236,9 @@ bool ServerContextBase::CompletionOp::FinalizeResult(void** tag, bool* status) {
 // ServerContextBase body
 
 ServerContextBase::ServerContextBase()
-    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {}
+    : deadline_(gpr_inf_future(GPR_CLOCK_REALTIME)) {
+  g_gli_initializer.summon();
+}
 
 ServerContextBase::ServerContextBase(gpr_timespec deadline,
                                      grpc_metadata_array* arr)

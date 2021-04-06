@@ -35,7 +35,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/global_config_generic.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -55,8 +54,6 @@
 #include "src/core/lib/iomgr/sockaddr_posix.h"
 #define BAD_SOCKET_RETURN_VAL (-1)
 #endif
-
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_abort_on_leaks);
 
 namespace {
 
@@ -408,10 +405,6 @@ TEST_F(
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
-  // see notes in
-  // https://github.com/grpc/grpc/pull/25108#pullrequestreview-577881514 for
-  // motivation.
-  GPR_GLOBAL_CONFIG_SET(grpc_abort_on_leaks, true);
   ::testing::InitGoogleTest(&argc, argv);
   auto result = RUN_ALL_TESTS();
   return result;

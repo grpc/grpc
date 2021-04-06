@@ -37,14 +37,12 @@ static grpc_address_resolver_vtable* default_resolve_address;
 
 static std::shared_ptr<grpc_core::WorkSerializer>* g_work_serializer;
 
-static grpc_core::OrphanablePtr<grpc_core::AresRequest> (
-    *g_default_dns_lookup_ares_locked)(
-    absl::string_view dns_server, absl::string_view name,
-    absl::string_view default_port, grpc_pollset_set* interested_parties,
-    std::function<void(grpc_error*)> on_done,
+static grpc_ares_request* (*g_default_dns_lookup_ares_locked)(
+    const char* dns_server, const char* name, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    absl::optional<std::string>* service_config_json, int query_timeout_ms,
+    char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer);
 
 // Counter incremented by test_resolve_address_impl indicating the number of
@@ -98,20 +96,17 @@ static grpc_error* test_blocking_resolve_address_impl(
 static grpc_address_resolver_vtable test_resolver = {
     test_resolve_address_impl, test_blocking_resolve_address_impl};
 
-static grpc_core::OrphanablePtr<grpc_core::AresRequest>
-test_dns_lookup_ares_locked(
-    absl::string_view dns_server, absl::string_view name,
-    absl::string_view default_port, grpc_pollset_set* /*interested_parties*/,
-    std::function<void(grpc_error*)> on_done,
+static grpc_ares_request* test_dns_lookup_ares_locked(
+    const char* dns_server, const char* name, const char* default_port,
+    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     std::unique_ptr<grpc_core::ServerAddressList>* balancer_addresses,
-    absl::optional<std::string>* service_config_json, int query_timeout_ms,
+    char** service_config_json, int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
-  grpc_core::OrphanablePtr<grpc_core::AresRequest> result =
-      g_default_dns_lookup_ares_locked(
-          dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
-          addresses, balancer_addresses, service_config_json, query_timeout_ms,
-          std::move(work_serializer));
+  grpc_ares_request* result = g_default_dns_lookup_ares_locked(
+      dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
+      addresses, balancer_addresses, service_config_json, query_timeout_ms,
+      std::move(work_serializer));
   ++g_resolution_count;
   static grpc_millis last_resolution_time = 0;
   grpc_millis now =
@@ -345,8 +340,8 @@ int main(int argc, char** argv) {
   auto work_serializer = std::make_shared<grpc_core::WorkSerializer>();
   g_work_serializer = &work_serializer;
 
-  g_default_dns_lookup_ares_locked = grpc_core::LookupAresLocked;
-  grpc_core::LookupAresLocked = test_dns_lookup_ares_locked;
+  g_default_dns_lookup_ares_locked = grpc_dns_lookup_ares_locked;
+  grpc_dns_lookup_ares_locked = test_dns_lookup_ares_locked;
   default_resolve_address = grpc_resolve_address_impl;
   grpc_set_resolver_impl(&test_resolver);
 

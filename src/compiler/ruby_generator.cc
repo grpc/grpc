@@ -80,7 +80,7 @@ void PrintService(const ServiceDescriptor* service, Printer* out) {
   // Write the indented class body.
   out->Indent();
   out->Print("\n");
-  out->Print("include GRPC::GenericService\n");
+  out->Print("include ::GRPC::GenericService\n");
   out->Print("\n");
   out->Print("self.marshal_class_method = :encode\n");
   out->Print("self.unmarshal_class_method = :decode\n");

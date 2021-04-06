@@ -50,6 +50,7 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
   }
 
   ~GrpcPolledFdPosix() override {
+    grpc_pollset_set_del_fd(driver_pollset_set_, fd_);
     /* c-ares library will close the fd inside grpc_fd. This fd may be picked up
        immediately by another thread, and should not be closed by the following
        grpc_fd_orphan. */
@@ -72,11 +73,6 @@ class GrpcPolledFdPosix : public GrpcPolledFd {
   }
 
   void ShutdownLocked(grpc_error* error) override {
-    // After we return, driver_pollset_set_ is no longer
-    // safe to access because the overall \a LookupAresLocked call may
-    // complete, after which its owner may destroy it. So delete the fd now.
-    grpc_pollset_set_del_fd(driver_pollset_set_, fd_);
-    driver_pollset_set_ = nullptr;
     grpc_fd_shutdown(fd_, error);
   }
 
