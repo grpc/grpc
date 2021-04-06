@@ -222,7 +222,7 @@ run by applying the test to a cluster running the LoadTest controller with
 $ kubectl apply -f loadtest_config.yaml
 ```
 
-<!-- TODO(pcastello): add more details on scripts and running tests. -->
+<!-- TODO(paulosjca): add more details on scripts and running tests. -->
 
 ### Concatenating load test configurations for
 
