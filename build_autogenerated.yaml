@@ -760,6 +760,7 @@ libs:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/status_util.h
   - src/core/lib/iomgr/sys_epoll_wrapper.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
@@ -1289,6 +1290,7 @@ libs:
   - src/core/lib/iomgr/socket_utils_uv.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/status_util.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   - src/core/lib/iomgr/tcp_client_custom.cc
@@ -1784,6 +1786,7 @@ libs:
   - src/core/lib/iomgr/socket_utils.h
   - src/core/lib/iomgr/socket_utils_posix.h
   - src/core/lib/iomgr/socket_windows.h
+  - src/core/lib/iomgr/status_util.h
   - src/core/lib/iomgr/sys_epoll_wrapper.h
   - src/core/lib/iomgr/tcp_client.h
   - src/core/lib/iomgr/tcp_client_posix.h
@@ -2048,6 +2051,7 @@ libs:
   - src/core/lib/iomgr/socket_utils_uv.cc
   - src/core/lib/iomgr/socket_utils_windows.cc
   - src/core/lib/iomgr/socket_windows.cc
+  - src/core/lib/iomgr/status_util.cc
   - src/core/lib/iomgr/tcp_client.cc
   - src/core/lib/iomgr/tcp_client_cfstream.cc
   - src/core/lib/iomgr/tcp_client_custom.cc
@@ -6274,16 +6278,6 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
-- name: status_util_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/channel/status_util_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: stranded_event_test
   gtest: true
   build: test
@@ -6327,6 +6321,25 @@ targets:
   - grpc++
   - grpc_test_util
   uses_polling: false
+- name: test_core_channel_status_util_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/channel/status_util_test.cc
+  deps:
+  - grpc_test_util
+  uses_polling: false
+- name: test_core_iomgr_status_util_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/status_util_test.cc
+  deps:
+  - grpc_test_util
 - name: test_cpp_client_credentials_test
   gtest: true
   build: test

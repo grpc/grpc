@@ -260,6 +260,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "status_util_test",
+    srcs = ["status_util_test.cc"],
+    language = "C++",
+    external_deps = [
+        "gtest",
+    ],    
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "tcp_client_posix_test",
     srcs = ["tcp_client_posix_test.cc"],
     language = "C++",

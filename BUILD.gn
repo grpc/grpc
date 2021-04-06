@@ -991,6 +991,8 @@ config("grpc_config") {
         "src/core/lib/iomgr/socket_utils_windows.cc",
         "src/core/lib/iomgr/socket_windows.cc",
         "src/core/lib/iomgr/socket_windows.h",
+        "src/core/lib/iomgr/status_util.cc",
+        "src/core/lib/iomgr/status_util.h",
         "src/core/lib/iomgr/sys_epoll_wrapper.h",
         "src/core/lib/iomgr/tcp_client.cc",
         "src/core/lib/iomgr/tcp_client.h",

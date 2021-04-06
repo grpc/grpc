@@ -41,7 +41,7 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
                                                         "error_refcount");
 grpc_core::DebugOnlyTraceFlag grpc_trace_closure(false, "closure");
 
-static const char* error_int_name(grpc_error_ints key) {
+const char* error_int_name(grpc_error_ints key) {
   switch (key) {
     case GRPC_ERROR_INT_ERRNO:
       return "errno";
@@ -83,7 +83,7 @@ static const char* error_int_name(grpc_error_ints key) {
   GPR_UNREACHABLE_CODE(return "unknown");
 }
 
-static const char* error_str_name(grpc_error_strs key) {
+const char* error_str_name(grpc_error_strs key) {
   switch (key) {
     case GRPC_ERROR_STR_KEY:
       return "key";
