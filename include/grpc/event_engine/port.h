@@ -14,6 +14,8 @@
 #ifndef GRPC_EVENT_ENGINE_PORT_H
 #define GRPC_EVENT_ENGINE_PORT_H
 
+#include <grpc/support/port_platform.h>
+
 // Platform-specific sockaddr includes
 #ifdef GRPC_UV
 #include <uv.h>
