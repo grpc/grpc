@@ -30,6 +30,7 @@ import time
 import uuid
 
 from oauth2client.client import GoogleCredentials
+from google.protobuf import json_format
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
@@ -47,6 +48,13 @@ console_handler.setFormatter(formatter)
 logger.handlers = []
 logger.addHandler(console_handler)
 logger.setLevel(logging.WARNING)
+
+# Suppress excessive logs for gRPC Python
+original_grpc_trace = os.environ.pop('GRPC_TRACE')
+original_grpc_verbosity = os.environ.pop('GRPC_VERBOSITY')
+# Suppress not-essential logs for GCP clients
+logging.getLogger('google_auth_httplib2').setLevel(logging.WARNING)
+logging.getLogger('googleapiclient.discovery').setLevel(logging.WARNING)
 
 _TEST_CASES = [
     'backends_restart',
@@ -330,7 +338,8 @@ def get_client_stats(num_rpcs, timeout_sec):
             response = stub.GetClientStats(request,
                                            wait_for_ready=True,
                                            timeout=rpc_timeout)
-            logger.debug('Invoked GetClientStats RPC to %s: %s', host, response)
+            logger.debug('Invoked GetClientStats RPC to %s: %s', host,
+                         json_format.MessageToJson(response))
             return response
 
 
@@ -2580,6 +2589,10 @@ try:
 
     if args.test_case:
         client_env = dict(os.environ)
+        if original_grpc_trace:
+            client_env['GRPC_TRACE'] = original_grpc_trace
+        if original_grpc_verbosity:
+            client_env['GRPC_VERBOSITY'] = original_grpc_verbosity
         bootstrap_server_features = []
         if gcp.service_port == _DEFAULT_SERVICE_PORT:
             server_uri = service_host_name

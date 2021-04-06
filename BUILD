@@ -131,6 +131,7 @@ GRPC_PUBLIC_HDRS = [
 GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/channel_args.h",
     "include/grpc/event_engine/event_engine.h",
+    "include/grpc/event_engine/port.h",
     "include/grpc/event_engine/slice_allocator.h",
 ]
 
