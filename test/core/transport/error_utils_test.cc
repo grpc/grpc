@@ -77,7 +77,6 @@ TEST(ErrorUtilsTest, GrpcErrorCancelledToAbslStatus) {
 }
 
 // ---- OOM Status ----
-
 TEST(ErrorUtilsTest, AbslOOMToGrpcError) {
   grpc_error* error =
       absl_status_to_grpc_error(absl::ResourceExhaustedError("Out of memory"));
