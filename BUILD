@@ -90,7 +90,7 @@ g_stands_for = "gilded"  # @unused
 
 core_version = "15.0.0"  # @unused
 
-version = "1.37.0-pre1"  # @unused
+version = "1.37.0"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
