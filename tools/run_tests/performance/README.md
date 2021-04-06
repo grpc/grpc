@@ -2,6 +2,9 @@
 
 For design of the tests, see https://grpc.io/docs/guides/benchmarking.
 
+For scripts related ot the GKE-based performance test suite (in development).
+see [gRPC OSS benchmarks](#grpc-oss-benchmarks).
+
 ## Pre-reqs for running these manually:
 
 In general the benchmark workers and driver build scripts expect
@@ -151,3 +154,84 @@ $ go tool pprof --text --alloc_space http://localhost:<pprof_port>/debug/heap
   `num_servers`, and the driver will start "benchmark servers"'s on the first
   `num_server` `host:port` pairs in the comma separated list. The rest will be
   told to run as clients against the benchmark server.
+
+## gRPC OSS benchmarks
+
+The scripts in this section generate LoadTest configurations for the GKE-based
+gRPC OSS benchmarks framework. This framework is stored in a separate
+repository, [grpc/test-infra](https://github.com/grpc/test-infra).
+
+### Generating scenarios
+
+The benchmarks framework uses the same test scenarios as the legacy one. These
+script [scenario_config_exporter.py](./scenario_config_exporter.py) can be used
+to export these scenarios to files, and also to count and analyze existing
+scenarios.
+
+The language(s) and category of the scenarios are of particular importance to
+the tests. Continuous runs will typically run tests in the `scalable` category.
+
+The following example counts scenarios in the `scalable` category:
+
+```shell
+$ ./tools/run_tests/performance/scenario_config_exporter.py --count_scenarios --category=scalable
+Scenario count for all languages (category: scalable):
+Count  Language         Client   Server   Categories
+   77  c++              None     None     scalable
+   19  python_asyncio   None     None     scalable
+   16  java             None     None     scalable
+   12  go               None     None     scalable
+   12  node             None     node     scalable
+   12  node_purejs      None     node     scalable
+    9  csharp           None     None     scalable
+    7  python           None     None     scalable
+    5  ruby             None     None     scalable
+    4  csharp           None     c++      scalable
+    4  php7             None     c++      scalable
+    4  php7_protobuf_c  None     c++      scalable
+    3  python_asyncio   None     c++      scalable
+    2  ruby             None     c++      scalable
+    2  python           None     c++      scalable
+    1  csharp           c++      None     scalable
+
+  189  total scenarios (category: scalable)
+```
+
+### Generating load test configurations
+
+The benchmarks framework uses LoadTest resources configured by YAML files. Each
+LoadTest resource specifies a driver, a server, and one or more clients to run
+the test. Each test runs one scenario. The scenario configuration is embedded in
+the LoadTest configuration. Example configurations for various languages can be
+found here:
+
+https://github.com/grpc/test-infra/tree/master/config/samples
+
+The script [loadtest_config.py](./loadtest_config.py) generates LoadTest
+configurations for tests running a set of scenarios. The configurations are
+written in multipart YAML format, either to a file or to stdout.
+
+The LoadTest configurations are generated from a template. The example
+configurations above can be used as templates.
+
+The LoadTests specified in the script output all have unique names and can be
+run by applying the test to a cluster running the LoadTest controller with
+`kubectl apply`:
+
+```shell
+kubectl apply -f ./loadtest_config.yaml
+```
+
+<!-- TODO(pcastello): add more details on scripts and running tests. -->
+
+### Concatenating load test configurations for
+
+The LoadTest configuration generator processes one language at a time, with a
+given set of options. The convenience script
+[loadtest_concat_yaml.py](./loadtest_concat_yaml.py) is provided to concatenate
+several YAML files into one, so they can be run with a single command. It can be
+invoked as follows:
+
+```shell
+./loadtest_concat_yaml.py -i infile1.yaml infile2.yaml -o outfile.yaml
+```
