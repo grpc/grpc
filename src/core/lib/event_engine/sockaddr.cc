@@ -15,8 +15,8 @@
 
 #include <string.h>
 
-#include "grpc/event_engine/port.h"
 #include "grpc/event_engine/event_engine.h"
+#include "grpc/event_engine/port.h"
 #include "grpc/support/log.h"
 
 namespace grpc_event_engine {
