@@ -73,6 +73,16 @@ def loadtest_name(prefix: str, scenario_name: str,
     return name
 
 
+def validate_annotations(annotations: Dict[str, str]) -> None:
+    """Validates that annotations do not contain reserved names.
+
+    These names are automatically added by the config generator.
+    """
+    names = set(('scenario', 'uniquifiers')).intersection(annotations)
+    if names:
+        raise ValueError('Annotations contain reserved names: %s' % names)
+
+
 def gen_run_indices(runs_per_test: int) -> Iterable[str]:
     """Generates run indices for multiple runs, as formatted strings."""
     if runs_per_test < 2:
@@ -88,9 +98,10 @@ def gen_loadtest_configs(base_config: yaml.YAMLObject,
                          scenarios: Iterable[Mapping[str, Any]],
                          loadtest_name_prefix: str,
                          uniquifiers: Iterable[str],
-                         queue_name: str = '',
+                         annotations: Mapping[str, str],
                          runs_per_test: int = 1) -> Iterable[yaml.YAMLObject]:
     """Generates LoadTest configurations as YAML objects."""
+    validate_annotations(annotations),
     prefix = loadtest_name_prefix or default_prefix()
     for scenario in scenarios:
         for run_index in gen_run_indices(runs_per_test):
@@ -106,8 +117,8 @@ def gen_loadtest_configs(base_config: yaml.YAMLObject,
             metadata['labels']['prefix'] = prefix
             if 'annotations' not in metadata:
                 metadata['annotations'] = dict()
+            metadata['annotations'].update(annotations)
             metadata['annotations'].update({
-                'runner_queue': queue_name,
                 'scenario': scenario['name'],
                 'uniquifiers': uniq,
             })
@@ -116,7 +127,7 @@ def gen_loadtest_configs(base_config: yaml.YAMLObject,
             yield config
 
 
-def parse_substitution_args(args: Optional[Iterable[str]]) -> Dict[str, str]:
+def parse_key_value_args(args: Optional[Iterable[str]]) -> Dict[str, str]:
     """Parses arguments in the form key=value into a dictionary."""
     d = dict()
     if args is None:
@@ -161,11 +172,11 @@ def main() -> None:
                       nargs='+',
                       default=[],
                       type=str,
-                      help='Template substitutions in the form key=value.')
+                      help='Template substitutions, in the form key=value.')
     argp.add_argument('-p',
                       '--prefix',
-                      type=str,
                       default='',
+                      type=str,
                       help='Test name prefix.')
     argp.add_argument('-u',
                       '--uniquifiers',
@@ -181,11 +192,13 @@ def main() -> None:
         default=False,
         type=bool,
         help='Use creation date and time as an addditional uniquifier.')
-    argp.add_argument('-q',
-                      '--concurrency_queue',
+    argp.add_argument('-a',
+                      '--annotations',
+                      action='extend',
+                      nargs='+',
+                      default=[],
                       type=str,
-                      default='',
-                      help='Test runner concurrency queue.')
+                      help='Test annotations, in the form key=value.')
     argp.add_argument('-r',
                       '--regex',
                       default='.*',
@@ -214,14 +227,11 @@ def main() -> None:
                       help='Output file name. Output to stdout if not set.')
     args = argp.parse_args()
 
-    if args.substitutions is None:
-        raise ValueError('Substitutions should not be None.')
-
-    substitution_args_dict = parse_substitution_args(args.substitutions)
+    substitutions = parse_key_value_args(args.substitutions)
 
     with open(args.template) as f:
         base_config = yaml.safe_load(
-            string.Template(f.read()).substitute(substitution_args_dict))
+            string.Template(f.read()).substitute(substitutions))
 
     scenario_filter = scenario_config_exporter.scenario_filter(
         scenario_name_regex=args.regex,
@@ -236,11 +246,13 @@ def main() -> None:
     if args.d:
         uniquifiers.append(now_string())
 
+    annotations = parse_key_value_args(args.annotations)
+
     configs = gen_loadtest_configs(base_config,
                                    scenarios,
                                    loadtest_name_prefix=args.prefix,
                                    uniquifiers=uniquifiers,
-                                   queue_name=args.concurrency_queue,
+                                   annotations=annotations,
                                    runs_per_test=args.runs_per_test)
 
     configure_yaml()
