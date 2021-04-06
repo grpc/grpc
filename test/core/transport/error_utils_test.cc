@@ -42,34 +42,54 @@ TEST(ErrorUtilsTest, AbslOkToGrpcError) {
   GRPC_ERROR_UNREF(error);
 }
 
-TEST(ErrorUtilsTest, GrpcErrorNoneToAbslStatus) {
+TEST(ErrorUtilsTest, GrpcSpecialErrorNoneToAbslStatus) {
   absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_NONE);
+  ASSERT_TRUE(status.ok());
+  ASSERT_EQ(status.message(), "");
+}
+
+// Loosely equivalent to GRPC_ERROR_NONE
+TEST(ErrorUtilsTest, GrpcOrdinaryErrorOkToAbslStatus) {
+  grpc_error* error =
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(""),
+                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_OK);
+  absl::Status status = grpc_error_to_absl_status(error);
   ASSERT_TRUE(status.ok());
   ASSERT_EQ(status.message(), "");
 }
 
 // ---- Cancelled Status ----
 TEST(ErrorUtilsTest, AbslCancelledToGrpcError) {
-  grpc_error* error = absl_status_to_grpc_error(absl::CancelledError());
+  grpc_error* error =
+      absl_status_to_grpc_error(absl::CancelledError("Cancelled"));
   // Status code checks
   intptr_t code;
   ASSERT_TRUE(grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &code));
   ASSERT_EQ(static_cast<grpc_status_code>(code), GRPC_STATUS_CANCELLED);
   // Status message checks
   grpc_slice message;
-  ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, &message));
+  ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &message));
   absl::string_view str = grpc_core::StringViewFromSlice(message);
   ASSERT_EQ(str, "Cancelled");
-  // Special error equivalent check
-  ASSERT_EQ(error, GRPC_ERROR_CANCELLED);
+  // Note that this conversion will never return the special case variables.
+  ASSERT_NE(error, GRPC_ERROR_CANCELLED);
   grpc_slice_unref(message);
   GRPC_ERROR_UNREF(error);
 }
 
-TEST(ErrorUtilsTest, GrpcErrorCancelledToAbslStatus) {
+TEST(ErrorUtilsTest, GrpcSpecialErrorCancelledToAbslStatus) {
   absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_CANCELLED);
   ASSERT_TRUE(absl::IsCancelled(status));
   ASSERT_EQ(status.message(), "Cancelled");
+}
+
+TEST(ErrorUtilsTest, GrpcOrdinaryErrorCancelledToAbslStatus) {
+  grpc_error* error = grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("User changed their mind"),
+      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_CANCELLED);
+  absl::Status status = grpc_error_to_absl_status(error);
+  ASSERT_TRUE(absl::IsCancelled(status));
+  ASSERT_EQ(status.message(), "User changed their mind");
 }
 
 // ---- OOM Status ----
@@ -83,16 +103,16 @@ TEST(ErrorUtilsTest, AbslOOMToGrpcError) {
             GRPC_STATUS_RESOURCE_EXHAUSTED);
   // Status message checks
   grpc_slice message;
-  ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, &message));
+  ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &message));
   absl::string_view str = grpc_core::StringViewFromSlice(message);
   ASSERT_EQ(str, "Out of memory");
-  // Special error equivalent check
-  ASSERT_EQ(error, GRPC_ERROR_OOM);
+  // Note that this conversion will never return the special case variables.
+  ASSERT_NE(error, GRPC_ERROR_OOM);
   grpc_slice_unref(message);
   GRPC_ERROR_UNREF(error);
 }
 
-TEST(ErrorUtilsTest, AbslNonOOMResourceExhaustedToGrpcErrorIsNotSpecial) {
+TEST(ErrorUtilsTest, AbslNonOOMResourceExhaustedToGrpcError) {
   grpc_error* error =
       absl_status_to_grpc_error(absl::ResourceExhaustedError("Lemonade"));
   // Status code checks
@@ -102,10 +122,6 @@ TEST(ErrorUtilsTest, AbslNonOOMResourceExhaustedToGrpcErrorIsNotSpecial) {
             GRPC_STATUS_RESOURCE_EXHAUSTED);
   // Status message checks
   grpc_slice message;
-  // Oddly, the GRPC_MESSAGE is not set by GRPC_ERROR_CREATE_FROM_COPIED_STRING
-  ASSERT_FALSE(
-      grpc_error_get_str(error, GRPC_ERROR_STR_GRPC_MESSAGE, &message));
-  // ... However, the DESCREPTION is
   ASSERT_TRUE(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &message));
   absl::string_view str = grpc_core::StringViewFromSlice(message);
   ASSERT_EQ(str, "Lemonade");
@@ -115,8 +131,17 @@ TEST(ErrorUtilsTest, AbslNonOOMResourceExhaustedToGrpcErrorIsNotSpecial) {
   GRPC_ERROR_UNREF(error);
 }
 
-TEST(ErrorUtilsTest, GrpcErrorOOMToAbslStatus) {
+TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
   absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_OOM);
+  ASSERT_TRUE(absl::IsResourceExhausted(status));
+  ASSERT_EQ(status.message(), "Out of memory");
+}
+
+TEST(ErrorUtilsTest, GrpcOrdinaryErrorOOMToAbslStatus) {
+  grpc_error* error = grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("Out of memory"),
+      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED);
+  absl::Status status = grpc_error_to_absl_status(error);
   ASSERT_TRUE(absl::IsResourceExhausted(status));
   ASSERT_EQ(status.message(), "Out of memory");
 }
