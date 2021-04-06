@@ -114,8 +114,8 @@ void ExternalCertificateVerifier::OnVerifyDone(
   auto it = self->request_map_.find(internal_request);
   if (it != self->request_map_.end()) {
     std::function<void()> callback = std::move(it->second);
-    self->request_map_.erase(it->first);
     callback();
+    self->request_map_.erase(it->first);
   }
 }
 

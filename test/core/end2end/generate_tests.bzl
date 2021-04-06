@@ -53,11 +53,119 @@ def _fixture_options(
 
 # maps fixture name to whether it requires the security library
 END2END_FIXTURES = {
+    "h2_compress": _fixture_options(),
+    "h2_census": _fixture_options(),
+    # TODO(juanlishen): This is disabled for now, but should be considered to re-enable once we have
+    # decided how the load reporting service should be enabled.
+    #'h2_load_reporting': _fixture_options(),
+    "h2_fakesec": _fixture_options(),
+    "h2_fd": _fixture_options(
+        dns_resolver = False,
+        fullstack = False,
+        client_channel = False,
+        _platforms = ["linux", "mac", "posix"],
+    ),
+    "h2_full": _fixture_options(),
+    "h2_full+pipe": _fixture_options(_platforms = ["linux"]),
+    "h2_full+trace": _fixture_options(tracing = True),
+    "h2_full+workarounds": _fixture_options(),
+    "h2_http_proxy": _fixture_options(supports_proxy_auth = True),
+    "h2_insecure": _fixture_options(secure = True),
+    "h2_oauth2": _fixture_options(),
+    "h2_proxy": _fixture_options(includes_proxy = True),
+    "h2_sockpair_1byte": _fixture_options(
+        fullstack = False,
+        dns_resolver = False,
+        client_channel = False,
+    ),
+    "h2_sockpair": _fixture_options(
+        fullstack = False,
+        dns_resolver = False,
+        client_channel = False,
+    ),
+    "h2_sockpair+trace": _fixture_options(
+        fullstack = False,
+        dns_resolver = False,
+        tracing = True,
+        client_channel = False,
+    ),
+    "h2_ssl": _fixture_options(secure = True),
+    "h2_ssl_cred_reload": _fixture_options(secure = True),
     "h2_tls": _fixture_options(secure = True),
+    "h2_local_uds": _fixture_options(
+        secure = True,
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+    ),
+    "h2_local_ipv4": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_local_ipv6": _fixture_options(secure = True, dns_resolver = False, _platforms = ["linux", "mac", "posix"]),
+    "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = True),
+    "h2_uds": _fixture_options(
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+    ),
+    "inproc": _fixture_options(
+        secure = True,
+        fullstack = False,
+        dns_resolver = False,
+        name_resolution = False,
+        is_inproc = True,
+        is_http2 = False,
+        supports_write_buffering = False,
+        client_channel = False,
+    ),
 }
 
 # maps fixture name to whether it requires the security library
 END2END_NOSEC_FIXTURES = {
+    "h2_compress": _fixture_options(secure = False),
+    "h2_census": _fixture_options(secure = False),
+    # TODO(juanlishen): This is disabled for now, but should be considered to re-enable once we have
+    # decided how the load reporting service should be enabled.
+    #'h2_load_reporting': _fixture_options(),
+    "h2_fakesec": _fixture_options(),
+    "h2_fd": _fixture_options(
+        dns_resolver = False,
+        fullstack = False,
+        client_channel = False,
+        secure = False,
+        _platforms = ["linux", "mac", "posix"],
+        supports_msvc = False,
+    ),
+    "h2_full": _fixture_options(secure = False),
+    "h2_full+pipe": _fixture_options(secure = False, _platforms = ["linux"], supports_msvc = False),
+    "h2_full+trace": _fixture_options(secure = False, tracing = True, supports_msvc = False),
+    "h2_full+workarounds": _fixture_options(secure = False),
+    "h2_http_proxy": _fixture_options(secure = False, supports_proxy_auth = True),
+    "h2_proxy": _fixture_options(secure = False, includes_proxy = True),
+    "h2_sockpair_1byte": _fixture_options(
+        fullstack = False,
+        dns_resolver = False,
+        client_channel = False,
+        secure = False,
+    ),
+    "h2_sockpair": _fixture_options(
+        fullstack = False,
+        dns_resolver = False,
+        client_channel = False,
+        secure = False,
+    ),
+    "h2_sockpair+trace": _fixture_options(
+        fullstack = False,
+        dns_resolver = False,
+        tracing = True,
+        secure = False,
+        client_channel = False,
+    ),
+    "h2_ssl": _fixture_options(secure = False),
+    "h2_ssl_cred_reload": _fixture_options(secure = False),
+    "h2_ssl_proxy": _fixture_options(includes_proxy = True, secure = False),
+    "h2_uds": _fixture_options(
+        dns_resolver = False,
+        _platforms = ["linux", "mac", "posix"],
+        secure = False,
+        supports_msvc = False,
+    ),
 }
 
 def _test_options(

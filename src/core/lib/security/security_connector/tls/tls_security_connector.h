@@ -154,16 +154,6 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 
   int cmp(const grpc_security_connector* other) const override;
 
-  // A utility function to help build up the request.
-  // This is needed because C-core API doesn't allow default data member
-  // initialization. It should be called every time when a request is created.
-  static void CertificateVerificationRequestInit(
-      grpc_tls_custom_verification_check_request* request);
-  // A utility function to help clean up the request.
-  // Note the request pointer itself won't be deleted.
-  static void CertificateVerificationRequestDestroy(
-      grpc_tls_custom_verification_check_request* request);
-
   tsi_ssl_server_handshaker_factory* ServerHandshakerFactoryForTesting() {
     grpc_core::MutexLock lock(&mu_);
     return server_handshaker_factory_;

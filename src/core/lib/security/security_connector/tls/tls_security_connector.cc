@@ -202,7 +202,7 @@ void TlsChannelSecurityConnector::check_peer(
                                 : overridden_target_name_.c_str();
   grpc_error* error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+    Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
     return;
   }
@@ -302,7 +302,7 @@ void TlsChannelSecurityConnector::check_peer(
                   .c_str());
         }
         delete internal_request;
-        grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+        Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
       });
   if (is_async) {
     return;
@@ -315,20 +315,26 @@ void TlsChannelSecurityConnector::check_peer(
             .c_str());
   }
   delete internal_request;
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+  Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
 int TlsChannelSecurityConnector::cmp(
     const grpc_security_connector* other_sc) const {
   auto* other = reinterpret_cast<const TlsChannelSecurityConnector*>(other_sc);
   int c = channel_security_connector_cmp(other);
-  if (c != 0) {
-    return c;
-  }
-  // Question: I think we shall also compare other fields, right?
-  return grpc_ssl_cmp_target_name(
+  if (c != 0) return c;
+  c = grpc_ssl_cmp_target_name(
       target_name_.c_str(), other->target_name_.c_str(),
       overridden_target_name_.c_str(), other->overridden_target_name_.c_str());
+  if (c != 0) return c;
+  if (pem_root_certs_ != other->pem_root_certs_ ||
+      pem_key_cert_pair_list_ != other->pem_key_cert_pair_list_)
+    return 1;
+  if (certificate_watcher_ != other->certificate_watcher_ ||
+      client_handshaker_factory_ != other->client_handshaker_factory_ ||
+      ssl_session_cache_ != other->ssl_session_cache_)
+    return 1;
+  return 0;
 }
 
 bool TlsChannelSecurityConnector::check_call_host(
@@ -342,76 +348,7 @@ bool TlsChannelSecurityConnector::check_call_host(
 
 void TlsChannelSecurityConnector::cancel_check_call_host(
     grpc_closure* /*on_call_host_checked*/, grpc_error* error) {
-  // Question: any special treatment we should do here if we are also doing
-  // verifier check in check_call_host?
   GRPC_ERROR_UNREF(error);
-}
-
-namespace {
-
-void initRequest(grpc_tls_custom_verification_check_request* request) {
-  GPR_ASSERT(request != nullptr);
-  request->target_name = nullptr;
-  request->peer_info.common_name = nullptr;
-  request->peer_info.san_names.uri_names = nullptr;
-  request->peer_info.san_names.uri_names_size = 0;
-  request->peer_info.san_names.ip_names = nullptr;
-  request->peer_info.san_names.ip_names_size = 0;
-  request->peer_info.san_names.dns_names = nullptr;
-  request->peer_info.san_names.dns_names_size = 0;
-  request->peer_info.peer_cert = nullptr;
-  request->peer_info.peer_cert_full_chain = nullptr;
-  request->status = GRPC_STATUS_CANCELLED;
-  request->error_details = nullptr;
-}
-
-void destroyRequest(grpc_tls_custom_verification_check_request* request) {
-  GPR_ASSERT(request != nullptr);
-  if (request->target_name != nullptr) {
-    gpr_free(const_cast<char*>(request->target_name));
-  }
-  if (request->peer_info.common_name != nullptr) {
-    gpr_free(const_cast<char*>(request->peer_info.common_name));
-  }
-  if (request->peer_info.san_names.uri_names_size > 0) {
-    for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
-      delete[] request->peer_info.san_names.uri_names[i];
-    }
-    delete[] request->peer_info.san_names.uri_names;
-  }
-  if (request->peer_info.san_names.ip_names_size > 0) {
-    for (size_t i = 0; i < request->peer_info.san_names.ip_names_size; ++i) {
-      delete[] request->peer_info.san_names.ip_names[i];
-    }
-    delete[] request->peer_info.san_names.ip_names;
-  }
-  if (request->peer_info.san_names.dns_names_size > 0) {
-    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
-      delete[] request->peer_info.san_names.dns_names[i];
-    }
-    delete[] request->peer_info.san_names.dns_names;
-  }
-  if (request->peer_info.peer_cert != nullptr) {
-    gpr_free(const_cast<char*>(request->peer_info.peer_cert));
-  }
-  if (request->peer_info.peer_cert_full_chain != nullptr) {
-    gpr_free(const_cast<char*>(request->peer_info.peer_cert_full_chain));
-  }
-  if (request->error_details != nullptr) {
-    gpr_free(const_cast<char*>(request->error_details));
-  }
-}
-
-}  // namespace
-
-void TlsChannelSecurityConnector::CertificateVerificationRequestInit(
-    grpc_tls_custom_verification_check_request* request) {
-  initRequest(request);
-}
-
-void TlsChannelSecurityConnector::CertificateVerificationRequestDestroy(
-    grpc_tls_custom_verification_check_request* request) {
-  destroyRequest(request);
 }
 
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
@@ -581,7 +518,7 @@ void TlsServerSecurityConnector::check_peer(
     grpc_closure* on_peer_checked) {
   grpc_error* error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+    Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
     return;
   }
@@ -679,7 +616,7 @@ void TlsServerSecurityConnector::check_peer(
                   .c_str());
         }
         delete internal_request;
-        grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+        Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
       });
   if (is_async) {
     return;
@@ -692,23 +629,21 @@ void TlsServerSecurityConnector::check_peer(
             .c_str());
   }
   delete internal_request;
-  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+  Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
 int TlsServerSecurityConnector::cmp(
-    const grpc_security_connector* other) const {
-  return server_security_connector_cmp(
-      static_cast<const grpc_server_security_connector*>(other));
-}
-
-void TlsServerSecurityConnector::CertificateVerificationRequestInit(
-    grpc_tls_custom_verification_check_request* request) {
-  initRequest(request);
-}
-
-void TlsServerSecurityConnector::CertificateVerificationRequestDestroy(
-    grpc_tls_custom_verification_check_request* request) {
-  destroyRequest(request);
+    const grpc_security_connector* other_sc) const {
+  auto* other = reinterpret_cast<const TlsServerSecurityConnector*>(other_sc);
+  int c = server_security_connector_cmp(other);
+  if (c != 0) return c;
+  if (pem_root_certs_ != other->pem_root_certs_ ||
+      pem_key_cert_pair_list_ != other->pem_key_cert_pair_list_)
+    return 1;
+  if (certificate_watcher_ != other->certificate_watcher_ ||
+      server_handshaker_factory_ != other->server_handshaker_factory_)
+    return 1;
+  return 0;
 }
 
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::
