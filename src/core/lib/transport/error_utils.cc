@@ -137,8 +137,19 @@ absl::Status grpc_error_to_absl_status(grpc_error* error) {
 }
 
 grpc_error* absl_status_to_grpc_error(absl::Status status) {
+  // Special error checks
+  if (status.ok()) {
+    return GRPC_ERROR_NONE;
+  }
+  if (absl::IsCancelled(status)) {
+    return GRPC_ERROR_CANCELLED;
+  }
+  if (absl::IsResourceExhausted(status) &&
+      status.message() == "Out of memory") {
+    return GRPC_ERROR_OOM;
+  }
   return grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_COPIED_STRING(status.ToString().c_str()),
+      GRPC_ERROR_CREATE_FROM_COPIED_STRING(status.message().data()),
       GRPC_ERROR_INT_GRPC_STATUS, static_cast<grpc_status_code>(status.code()));
 }
 
