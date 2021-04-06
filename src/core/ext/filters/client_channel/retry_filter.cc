@@ -1430,7 +1430,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnComplete(
   // Don't need batch_data anymore.
   batch_data->Unref();
   // Schedule all of the closures identified above.
-  // Note: This yeilds the call combiner.
+  // Note: This yields the call combiner.
   closures.RunClosures(calld->call_combiner_);
   // If this was the last in-flight send batch, unref the call stack.
   if (last_send_batch_complete) {
