@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -87,15 +87,10 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a4ca874560c2937b6cd2012aca342f10a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0e1e436264df6f216b27508c10e0554b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#a0e1e436264df6f216b27508c10e0554b">Signal</a> ()</td></tr>
 <tr class="separator:a0e1e436264df6f216b27508c10e0554b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a13aeb88276bf1b834e5d85d2785fd5c7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#a13aeb88276bf1b834e5d85d2785fd5c7">Broadcast</a> ()</td></tr>
-<tr class="separator:a13aeb88276bf1b834e5d85d2785fd5c7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5799b41212b05122c2797e2d0487da46"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#a5799b41212b05122c2797e2d0487da46">Wait</a> (<a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> *mu)</td></tr>
-<tr class="separator:a5799b41212b05122c2797e2d0487da46"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5a877c28bdfc56f26e7d4e525e057807"><td class="memItemLeft" align="right" valign="top">int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#a5a877c28bdfc56f26e7d4e525e057807">Wait</a> (<a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> *mu, const <a class="el" href="structgpr__timespec.html">gpr_timespec</a> &amp;deadline)</td></tr>
-<tr class="separator:a5a877c28bdfc56f26e7d4e525e057807"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad7f1985510b62bda2f58ce0f872e265d"><td class="memTemplParams" colspan="2">template&lt;typename Predicate &gt; </td></tr>
-<tr class="memitem:ad7f1985510b62bda2f58ce0f872e265d"><td class="memTemplItemLeft" align="right" valign="top">void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#ad7f1985510b62bda2f58ce0f872e265d">WaitUntil</a> (<a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> *mu, Predicate pred)</td></tr>
-<tr class="separator:ad7f1985510b62bda2f58ce0f872e265d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad4d387ea1b943c90973a1ada1495b464"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#ad4d387ea1b943c90973a1ada1495b464">SignalAll</a> ()</td></tr>
+<tr class="separator:ad4d387ea1b943c90973a1ada1495b464"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae3d65fe1d5458edc674cbd6e064e7341"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#ae3d65fe1d5458edc674cbd6e064e7341">Wait</a> (<a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> *mu)</td></tr>
+<tr class="separator:ae3d65fe1d5458edc674cbd6e064e7341"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a33ce590ba2b22d31e37a92f57509b2ef"></a>
@@ -175,31 +170,6 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a13aeb88276bf1b834e5d85d2785fd5c7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a13aeb88276bf1b834e5d85d2785fd5c7">&#9670;&nbsp;</a></span>Broadcast()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void grpc::internal::CondVar::Broadcast </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="a4ca874560c2937b6cd2012aca342f10a"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4ca874560c2937b6cd2012aca342f10a">&#9670;&nbsp;</a></span>operator=()</h2>
 
@@ -251,8 +221,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a5799b41212b05122c2797e2d0487da46"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5799b41212b05122c2797e2d0487da46">&#9670;&nbsp;</a></span>Wait() <span class="overload">[1/2]</span></h2>
+<a id="ad4d387ea1b943c90973a1ada1495b464"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad4d387ea1b943c90973a1ada1495b464">&#9670;&nbsp;</a></span>SignalAll()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -261,85 +231,36 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">int grpc::internal::CondVar::Wait </td>
+          <td class="memname">void grpc::internal::CondVar::SignalAll </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ae3d65fe1d5458edc674cbd6e064e7341"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ae3d65fe1d5458edc674cbd6e064e7341">&#9670;&nbsp;</a></span>Wait()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::internal::CondVar::Wait </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> *&#160;</td>
           <td class="paramname"><em>mu</em></td><td>)</td>
           <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a5a877c28bdfc56f26e7d4e525e057807"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5a877c28bdfc56f26e7d4e525e057807">&#9670;&nbsp;</a></span>Wait() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">int grpc::internal::CondVar::Wait </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> *&#160;</td>
-          <td class="paramname"><em>mu</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">const <a class="el" href="structgpr__timespec.html">gpr_timespec</a> &amp;&#160;</td>
-          <td class="paramname"><em>deadline</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="ad7f1985510b62bda2f58ce0f872e265d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad7f1985510b62bda2f58ce0f872e265d">&#9670;&nbsp;</a></span>WaitUntil()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<div class="memtemplate">
-template&lt;typename Predicate &gt; </div>
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void grpc::internal::CondVar::WaitUntil </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> *&#160;</td>
-          <td class="paramname"><em>mu</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">Predicate&#160;</td>
-          <td class="paramname"><em>pred</em>&#160;</td>
-        </tr>
-        <tr>
-          <td></td>
-          <td>)</td>
-          <td></td><td></td>
         </tr>
       </table>
   </td>
@@ -357,7 +278,7 @@ template&lt;typename Predicate &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:26 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

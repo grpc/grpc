@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -70,7 +70,11 @@ $(function() {
 , <a class="el" href="class_grpc_1_1_base_stub.html#a87b837ef58d4806ac090010b235bf6dd">Grpc\BaseStub</a>
 , <a class="el" href="class_grpc_1_1_call.html#a1e427a3545ad6116b06788ac453a8503">Grpc\Call</a>
 , <a class="el" href="class_grpc_1_1_channel.html#aa9cf4f79b071b277c297cbd2da31aff2">Grpc\Channel</a>
+, <a class="el" href="class_grpc_1_1_method_descriptor.html#a1f71e17f95826d4049bc25198661075e">Grpc\MethodDescriptor</a>
 , <a class="el" href="class_grpc_1_1_server.html#a109c078b8e6718a1ed777f60cb4bc958">Grpc\Server</a>
+, <a class="el" href="class_grpc_1_1_server_call_reader.html#a9833e9f1c18214cb46e9bcbdc590d75e">Grpc\ServerCallReader</a>
+, <a class="el" href="class_grpc_1_1_server_call_writer.html#a2c8b0d8ff1ecfcdf279a41ee1ef155a8">Grpc\ServerCallWriter</a>
+, <a class="el" href="class_grpc_1_1_server_context.html#a5547318a209d3d6e3883318235ed6464">Grpc\ServerContext</a>
 , <a class="el" href="class_grpc_1_1_timeval.html#a0923f66b9d8b0250737922c2114cf1df">Grpc\Timeval</a>
 </li>
 <li>_bidiRequest()
@@ -120,6 +124,9 @@ $(function() {
 : <a class="el" href="class_grpc_1_1_abstract_call.html#a088115c12c3af171fe7e99078595d6c0">Grpc\AbstractCall</a>
 , <a class="el" href="class_grpc_1_1_call.html#afc7c962d3288c3483ea4ce6ed1cfe9f7">Grpc\Call</a>
 </li>
+<li>clientMetadata()
+: <a class="el" href="class_grpc_1_1_server_context.html#a1504ab1d5956772056a7e96d30e0788f">Grpc\ServerContext</a>
+</li>
 <li>ClientStreamingCall()
 : <a class="el" href="interface_grpc_1_1_call_invoker.html#aa661021486adc62df778e8bca4e55eae">Grpc\CallInvoker</a>
 , <a class="el" href="class_grpc_1_1_default_call_invoker.html#acf29c012585ed124e6341cc787080ab4">Grpc\DefaultCallInvoker</a>
@@ -154,6 +161,20 @@ $(function() {
 </li>
 <li>createXds()
 : <a class="el" href="class_grpc_1_1_channel_credentials.html#aafd024703e87b413ba6862c20cb5565e">Grpc\ChannelCredentials</a>
+</li>
+</ul>
+
+
+<h3><a id="index_d"></a>- d -</h3><ul>
+<li>deadline()
+: <a class="el" href="class_grpc_1_1_server_context.html#aecce38993cd2c0b1fb2535b9d61bd3e6">Grpc\ServerContext</a>
+</li>
+</ul>
+
+
+<h3><a id="index_f"></a>- f -</h3><ul>
+<li>finish()
+: <a class="el" href="class_grpc_1_1_server_call_writer.html#a4cc3cd42c5cbe37d6b41508f188e0795">Grpc\ServerCallWriter</a>
 </li>
 </ul>
 
@@ -193,6 +214,9 @@ $(function() {
 <li>handle()
 : <a class="el" href="class_grpc_1_1_rpc_server.html#afaf6bebe4ae34481869eedfff7e9c573">Grpc\RpcServer</a>
 </li>
+<li>host()
+: <a class="el" href="class_grpc_1_1_server_context.html#adad18109756e7a7d3595653afe1ee5e6">Grpc\ServerContext</a>
+</li>
 </ul>
 
 
@@ -227,6 +251,13 @@ $(function() {
 </ul>
 
 
+<h3><a id="index_m"></a>- m -</h3><ul>
+<li>method()
+: <a class="el" href="class_grpc_1_1_server_context.html#ac3fc17d19c25c19e171df1904634b67f">Grpc\ServerContext</a>
+</li>
+</ul>
+
+
 <h3><a id="index_n"></a>- n -</h3><ul>
 <li>now()
 : <a class="el" href="class_grpc_1_1_timeval.html#a8df14900363bce541340f81eff797d05">Grpc\Timeval</a>
@@ -244,6 +275,7 @@ $(function() {
 <h3><a id="index_r"></a>- r -</h3><ul>
 <li>read()
 : <a class="el" href="class_grpc_1_1_bidi_streaming_call.html#aeb056a807c6ef6f7a75bac639d325e44">Grpc\BidiStreamingCall</a>
+, <a class="el" href="class_grpc_1_1_server_call_reader.html#a295aa14ce8d0087e2229d70cc56c7462">Grpc\ServerCallReader</a>
 </li>
 <li>requestCall()
 : <a class="el" href="class_grpc_1_1_server.html#a90ada396f37c675d70b43d4f96afe334">Grpc\Server</a>
@@ -284,6 +316,7 @@ $(function() {
 : <a class="el" href="class_grpc_1_1_bidi_streaming_call.html#a0cf626864322067138fcf627a17cc699">Grpc\BidiStreamingCall</a>
 , <a class="el" href="class_grpc_1_1_client_streaming_call.html#a3e7920444f1893309f88896d6448fb67">Grpc\ClientStreamingCall</a>
 , <a class="el" href="class_grpc_1_1_server.html#a3c2935d3be77ea9902eaf2e20e3422b5">Grpc\Server</a>
+, <a class="el" href="class_grpc_1_1_server_call_writer.html#aacde64139bd966d7e998cd928e30af02">Grpc\ServerCallWriter</a>
 , <a class="el" href="class_grpc_1_1_server_streaming_call.html#a7043af7311899487e5eef51b24913d81">Grpc\ServerStreamingCall</a>
 , <a class="el" href="class_grpc_1_1_unary_call.html#a08ec57a768664dc428637bdf55742ca0">Grpc\UnaryCall</a>
 </li>
@@ -324,6 +357,7 @@ $(function() {
 <li>write()
 : <a class="el" href="class_grpc_1_1_bidi_streaming_call.html#ad68d6aa748fa9980aa5e985da853bd74">Grpc\BidiStreamingCall</a>
 , <a class="el" href="class_grpc_1_1_client_streaming_call.html#ae052b490ba4651978238a3dd15e9e73d">Grpc\ClientStreamingCall</a>
+, <a class="el" href="class_grpc_1_1_server_call_writer.html#a51402659959ff87d18df2176ae290d17">Grpc\ServerCallWriter</a>
 </li>
 <li>writesDone()
 : <a class="el" href="class_grpc_1_1_bidi_streaming_call.html#afac63b79bbf4ed6664599c2433bd159e">Grpc\BidiStreamingCall</a>
@@ -339,7 +373,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:20:18 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:43 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

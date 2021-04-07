@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -77,20 +77,18 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:acf7d5595949fbb28817d0c47754878a4"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex_lock.html#acf7d5595949fbb28817d0c47754878a4">MutexLock</a> (<a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> *mu)</td></tr>
-<tr class="separator:acf7d5595949fbb28817d0c47754878a4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0b6f2629ee734afdfececbdccf0a349a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex_lock.html#a0b6f2629ee734afdfececbdccf0a349a">MutexLock</a> (<a class="el" href="impl_2codegen_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a> *mu)</td></tr>
-<tr class="separator:a0b6f2629ee734afdfececbdccf0a349a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aee6035abe89cfbccf66bf4d165e025b8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex_lock.html#aee6035abe89cfbccf66bf4d165e025b8">~MutexLock</a> ()</td></tr>
-<tr class="separator:aee6035abe89cfbccf66bf4d165e025b8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a5304528237ae5cfda09ed42d89b3654a"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex_lock.html#a5304528237ae5cfda09ed42d89b3654a">MutexLock</a> (<a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> *mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)</td></tr>
+<tr class="separator:a5304528237ae5cfda09ed42d89b3654a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa137f3d68d08f321e2fa1299a64e89fc"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex_lock.html#aa137f3d68d08f321e2fa1299a64e89fc">~MutexLock</a> () ABSL_UNLOCK_FUNCTION()</td></tr>
+<tr class="separator:aa137f3d68d08f321e2fa1299a64e89fc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a01025ee094abacd9666d730b5db8fb73"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex_lock.html#a01025ee094abacd9666d730b5db8fb73">MutexLock</a> (const <a class="el" href="classgrpc_1_1internal_1_1_mutex_lock.html">MutexLock</a> &amp;)=delete</td></tr>
 <tr class="separator:a01025ee094abacd9666d730b5db8fb73"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:abe86535a21eaeb77c67e4611140db1d2"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1internal_1_1_mutex_lock.html">MutexLock</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex_lock.html#abe86535a21eaeb77c67e4611140db1d2">operator=</a> (const <a class="el" href="classgrpc_1_1internal_1_1_mutex_lock.html">MutexLock</a> &amp;)=delete</td></tr>
 <tr class="separator:abe86535a21eaeb77c67e4611140db1d2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="acf7d5595949fbb28817d0c47754878a4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#acf7d5595949fbb28817d0c47754878a4">&#9670;&nbsp;</a></span>MutexLock() <span class="overload">[1/3]</span></h2>
+<a id="a5304528237ae5cfda09ed42d89b3654a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a5304528237ae5cfda09ed42d89b3654a">&#9670;&nbsp;</a></span>MutexLock() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -115,34 +113,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a0b6f2629ee734afdfececbdccf0a349a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0b6f2629ee734afdfececbdccf0a349a">&#9670;&nbsp;</a></span>MutexLock() <span class="overload">[2/3]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">grpc::internal::MutexLock::MutexLock </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="impl_2codegen_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a> *&#160;</td>
-          <td class="paramname"><em>mu</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">explicit</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="aee6035abe89cfbccf66bf4d165e025b8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aee6035abe89cfbccf66bf4d165e025b8">&#9670;&nbsp;</a></span>~MutexLock()</h2>
+<a id="aa137f3d68d08f321e2fa1299a64e89fc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa137f3d68d08f321e2fa1299a64e89fc">&#9670;&nbsp;</a></span>~MutexLock()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -167,7 +139,7 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <a id="a01025ee094abacd9666d730b5db8fb73"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a01025ee094abacd9666d730b5db8fb73">&#9670;&nbsp;</a></span>MutexLock() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a01025ee094abacd9666d730b5db8fb73">&#9670;&nbsp;</a></span>MutexLock() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -225,7 +197,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:26 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

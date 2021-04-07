@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -86,27 +86,27 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a9f459e7f53d66b5c8e61d8930053811b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aa9ee4a518fb5f5f7b7a8993bd5cb9df5"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#aa9ee4a518fb5f5f7b7a8993bd5cb9df5">~ServerBidiReactor</a> () override=default</td></tr>
 <tr class="separator:aa9ee4a518fb5f5f7b7a8993bd5cb9df5"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa8f942d4375367946595110f6b0b37ca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#aa8f942d4375367946595110f6b0b37ca">StartSendInitialMetadata</a> ()</td></tr>
-<tr class="memdesc:aa8f942d4375367946595110f6b0b37ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send any initial metadata stored in the RPC context.  <a href="classgrpc_1_1_server_bidi_reactor.html#aa8f942d4375367946595110f6b0b37ca">More...</a><br /></td></tr>
-<tr class="separator:aa8f942d4375367946595110f6b0b37ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a65817119c11c9ee862a1514e87bb3585"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a65817119c11c9ee862a1514e87bb3585">StartRead</a> (Request *req)</td></tr>
-<tr class="memdesc:a65817119c11c9ee862a1514e87bb3585"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a read operation.  <a href="classgrpc_1_1_server_bidi_reactor.html#a65817119c11c9ee862a1514e87bb3585">More...</a><br /></td></tr>
-<tr class="separator:a65817119c11c9ee862a1514e87bb3585"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adf47e1c41d3ca857d347b89f3768c3ca"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#adf47e1c41d3ca857d347b89f3768c3ca">StartSendInitialMetadata</a> () ABSL_LOCKS_EXCLUDED(stream_mu_)</td></tr>
+<tr class="memdesc:adf47e1c41d3ca857d347b89f3768c3ca"><td class="mdescLeft">&#160;</td><td class="mdescRight">Send any initial metadata stored in the RPC context.  <a href="classgrpc_1_1_server_bidi_reactor.html#adf47e1c41d3ca857d347b89f3768c3ca">More...</a><br /></td></tr>
+<tr class="separator:adf47e1c41d3ca857d347b89f3768c3ca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1c5a4d146273cdbb45bfab115eb13739"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a1c5a4d146273cdbb45bfab115eb13739">StartRead</a> (Request *req) ABSL_LOCKS_EXCLUDED(stream_mu_)</td></tr>
+<tr class="memdesc:a1c5a4d146273cdbb45bfab115eb13739"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a read operation.  <a href="classgrpc_1_1_server_bidi_reactor.html#a1c5a4d146273cdbb45bfab115eb13739">More...</a><br /></td></tr>
+<tr class="separator:a1c5a4d146273cdbb45bfab115eb13739"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7b457aceeb312472835007c289c711e8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a7b457aceeb312472835007c289c711e8">StartWrite</a> (const Response *resp)</td></tr>
 <tr class="memdesc:a7b457aceeb312472835007c289c711e8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a write operation.  <a href="classgrpc_1_1_server_bidi_reactor.html#a7b457aceeb312472835007c289c711e8">More...</a><br /></td></tr>
 <tr class="separator:a7b457aceeb312472835007c289c711e8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad5c34a7b67278156a514456df0754c9e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#ad5c34a7b67278156a514456df0754c9e">StartWrite</a> (const Response *resp, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)</td></tr>
-<tr class="memdesc:ad5c34a7b67278156a514456df0754c9e"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a write operation with specified options.  <a href="classgrpc_1_1_server_bidi_reactor.html#ad5c34a7b67278156a514456df0754c9e">More...</a><br /></td></tr>
-<tr class="separator:ad5c34a7b67278156a514456df0754c9e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a737391a379201de65a7708ae465121ef"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a737391a379201de65a7708ae465121ef">StartWriteAndFinish</a> (const Response *resp, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options, ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s)</td></tr>
-<tr class="memdesc:a737391a379201de65a7708ae465121ef"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a write operation with specified options and final RPC <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why?">Status</a>, which also causes any trailing metadata for this RPC to be sent out.  <a href="classgrpc_1_1_server_bidi_reactor.html#a737391a379201de65a7708ae465121ef">More...</a><br /></td></tr>
-<tr class="separator:a737391a379201de65a7708ae465121ef"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:adc27ac03a985881735647776200f6c71"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#adc27ac03a985881735647776200f6c71">StartWrite</a> (const Response *resp, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options) ABSL_LOCKS_EXCLUDED(stream_mu_)</td></tr>
+<tr class="memdesc:adc27ac03a985881735647776200f6c71"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a write operation with specified options.  <a href="classgrpc_1_1_server_bidi_reactor.html#adc27ac03a985881735647776200f6c71">More...</a><br /></td></tr>
+<tr class="separator:adc27ac03a985881735647776200f6c71"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af2692cd556cb672b1e84594b4c9be18a"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#af2692cd556cb672b1e84594b4c9be18a">StartWriteAndFinish</a> (const Response *resp, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options, ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s) ABSL_LOCKS_EXCLUDED(stream_mu_)</td></tr>
+<tr class="memdesc:af2692cd556cb672b1e84594b4c9be18a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Initiate a write operation with specified options and final RPC <a class="el" href="classgrpc_1_1_status.html" title="Did it work? If it didn&#39;t, why?">Status</a>, which also causes any trailing metadata for this RPC to be sent out.  <a href="classgrpc_1_1_server_bidi_reactor.html#af2692cd556cb672b1e84594b4c9be18a">More...</a><br /></td></tr>
+<tr class="separator:af2692cd556cb672b1e84594b4c9be18a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5667f4a7f70cda0351f50ebae665dded"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a5667f4a7f70cda0351f50ebae665dded">StartWriteLast</a> (const Response *resp, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)</td></tr>
 <tr class="memdesc:a5667f4a7f70cda0351f50ebae665dded"><td class="mdescLeft">&#160;</td><td class="mdescRight">Inform system of a planned write operation with specified options, but allow the library to schedule the actual write coalesced with the writing of trailing metadata (which takes place on a Finish call).  <a href="classgrpc_1_1_server_bidi_reactor.html#a5667f4a7f70cda0351f50ebae665dded">More...</a><br /></td></tr>
 <tr class="separator:a5667f4a7f70cda0351f50ebae665dded"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a60edb96ee2d9796739c0c4590dff0d29"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a60edb96ee2d9796739c0c4590dff0d29">Finish</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s)</td></tr>
-<tr class="memdesc:a60edb96ee2d9796739c0c4590dff0d29"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the stream is to be finished and the trailing metadata and RPC status are to be sent.  <a href="classgrpc_1_1_server_bidi_reactor.html#a60edb96ee2d9796739c0c4590dff0d29">More...</a><br /></td></tr>
-<tr class="separator:a60edb96ee2d9796739c0c4590dff0d29"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a27788bd5cd19a760a05ea3aa1ecfe4e5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a27788bd5cd19a760a05ea3aa1ecfe4e5">Finish</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s) ABSL_LOCKS_EXCLUDED(stream_mu_)</td></tr>
+<tr class="memdesc:a27788bd5cd19a760a05ea3aa1ecfe4e5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the stream is to be finished and the trailing metadata and RPC status are to be sent.  <a href="classgrpc_1_1_server_bidi_reactor.html#a27788bd5cd19a760a05ea3aa1ecfe4e5">More...</a><br /></td></tr>
+<tr class="separator:a27788bd5cd19a760a05ea3aa1ecfe4e5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0715604ca94115aa164c8955bfe04649"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_bidi_reactor.html#a0715604ca94115aa164c8955bfe04649">OnSendInitialMetadataDone</a> (bool)</td></tr>
 <tr class="memdesc:a0715604ca94115aa164c8955bfe04649"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that an explicit StartSendInitialMetadata operation completed.  <a href="classgrpc_1_1_server_bidi_reactor.html#a0715604ca94115aa164c8955bfe04649">More...</a><br /></td></tr>
 <tr class="separator:a0715604ca94115aa164c8955bfe04649"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -189,8 +189,8 @@ template&lt;class Request , class Response &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a60edb96ee2d9796739c0c4590dff0d29"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a60edb96ee2d9796739c0c4590dff0d29">&#9670;&nbsp;</a></span>Finish()</h2>
+<a id="a27788bd5cd19a760a05ea3aa1ecfe4e5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a27788bd5cd19a760a05ea3aa1ecfe4e5">&#9670;&nbsp;</a></span>Finish()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -395,8 +395,8 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
-<a id="a65817119c11c9ee862a1514e87bb3585"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a65817119c11c9ee862a1514e87bb3585">&#9670;&nbsp;</a></span>StartRead()</h2>
+<a id="a1c5a4d146273cdbb45bfab115eb13739"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1c5a4d146273cdbb45bfab115eb13739">&#9670;&nbsp;</a></span>StartRead()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -431,8 +431,8 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
-<a id="aa8f942d4375367946595110f6b0b37ca"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa8f942d4375367946595110f6b0b37ca">&#9670;&nbsp;</a></span>StartSendInitialMetadata()</h2>
+<a id="adf47e1c41d3ca857d347b89f3768c3ca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adf47e1c41d3ca857d347b89f3768c3ca">&#9670;&nbsp;</a></span>StartSendInitialMetadata()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -497,8 +497,8 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
-<a id="ad5c34a7b67278156a514456df0754c9e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad5c34a7b67278156a514456df0754c9e">&#9670;&nbsp;</a></span>StartWrite() <span class="overload">[2/2]</span></h2>
+<a id="adc27ac03a985881735647776200f6c71"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#adc27ac03a985881735647776200f6c71">&#9670;&nbsp;</a></span>StartWrite() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -544,8 +544,8 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
-<a id="a737391a379201de65a7708ae465121ef"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a737391a379201de65a7708ae465121ef">&#9670;&nbsp;</a></span>StartWriteAndFinish()</h2>
+<a id="af2692cd556cb672b1e84594b4c9be18a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af2692cd556cb672b1e84594b4c9be18a">&#9670;&nbsp;</a></span>StartWriteAndFinish()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -677,7 +677,7 @@ template&lt;class Request , class Response &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

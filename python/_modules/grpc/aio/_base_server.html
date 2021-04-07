@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>grpc.aio._base_server &#8212; gRPC Python 1.36.1 documentation</title>
+    <title>grpc.aio._base_server &#8212; gRPC Python 1.37.0 documentation</title>
     <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="../../../_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
@@ -29,7 +29,7 @@
 
 
 
-<p class="blurb">1.36.1</p>
+<p class="blurb">1.37.0</p>
 
 
 
@@ -37,7 +37,7 @@
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p><span class="caption-text">Contents:</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../../grpc.html">gRPC</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../grpc_asyncio.html">gRPC AsyncIO API</a></li>
@@ -383,6 +383,15 @@
 
 <span class="sd">        Returns:</span>
 <span class="sd">          A map of strings to an iterable of bytes for each auth property.</span>
+<span class="sd">        &quot;&quot;&quot;</span></div>
+
+<div class="viewcode-block" id="ServicerContext.time_remaining"><a class="viewcode-back" href="../../../grpc_asyncio.html#grpc.aio.ServicerContext.time_remaining">[docs]</a>    <span class="k">def</span> <span class="nf">time_remaining</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+        <span class="sd">&quot;&quot;&quot;Describes the length of allowed time remaining for the RPC.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A nonnegative float indicating the length of allowed time in seconds</span>
+<span class="sd">          remaining for the RPC to complete before it is considered to have</span>
+<span class="sd">          timed out, or None if no deadline was specified for the RPC.</span>
 <span class="sd">        &quot;&quot;&quot;</span></div></div>
 </pre></div>
 

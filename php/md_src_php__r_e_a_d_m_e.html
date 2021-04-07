@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -165,13 +165,16 @@ Protocol Buffers</h1>
 </div><!-- fragment --><h2><a class="anchor" id="autotoc_md270"></a>
 &lt;tt&gt;grpc_php_plugin&lt;/tt&gt; protoc plugin</h2>
 <p>You need the <code>grpc_php_plugin</code> to generate the PHP client stub classes. This plugin works with the main <code>protoc</code> binary to generate classes that you can import into your project.</p>
-<p>It should already been compiled when you run <code>make</code> from the root directory of this repo. The plugin can be found in the <code>bins/opt</code> directory. We are planning to provide a better way to download and install the plugin in the future.</p>
-<p>You can also just build the <code>grpc_php_plugin</code> by running:</p>
+<p>You can build <code>grpc_php_plugin</code> with <code>cmake</code>:</p>
 <div class="fragment"><div class="line">$ git clone -b RELEASE_TAG_HERE https://github.com/grpc/grpc</div>
 <div class="line">$ cd grpc</div>
 <div class="line">$ git submodule update --init</div>
-<div class="line">$ make grpc_php_plugin</div>
-</div><!-- fragment --><p>Alternatively, you can also build the <code>grpc_php_plugin</code> with <code>bazel</code> now:</p>
+<div class="line">$ mkdir -p cmake/build</div>
+<div class="line">$ cd cmake/build</div>
+<div class="line">$ cmake ../..</div>
+<div class="line">$ make protoc grpc_php_plugin</div>
+</div><!-- fragment --><p>The commands above will make <code>protoc</code> and <code>grpc_php_plugin</code> available in <code>cmake/build/third_party/protobuf/protoc</code> and <code>cmake/build/grpc_php_plugin</code>.</p>
+<p>Alternatively, you can also build the <code>grpc_php_plugin</code> with <code>bazel</code>:</p>
 <div class="fragment"><div class="line">$ bazel build @com_google_protobuf//:protoc</div>
 <div class="line">$ bazel build src/compiler:grpc_php_plugin</div>
 </div><!-- fragment --><p>The <code>protoc</code> binary will be found in <code>bazel-bin/external/com_google_protobuf/protoc</code>. The <code>grpc_php_plugin</code> binary will be found in <code>bazel-bin/src/compiler/grpc_php_plugin</code>.</p>
@@ -294,7 +297,7 @@ Compression</h2>
 <div class="ttc" id="anamespace_grpc_html"><div class="ttname"><a href="namespace_grpc.html">Grpc</a></div><div class="ttdoc">Class AbstractCall.</div><div class="ttdef"><b>Definition:</b> AbstractCall.php:20</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:20:18 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:43 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

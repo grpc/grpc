@@ -10,7 +10,7 @@ var searchData=
   ['local_5ftcp_1399',['LOCAL_TCP',['../grpc__security__constants_8h.html#a31d00ce5c064e1fff4261a6d6298dc11acb07333a9323d16e7e2258fe5bb4aed8',1,'grpc_security_constants.h']]],
   ['localcredentials_1400',['LocalCredentials',['../namespacegrpc_1_1experimental.html#a9354c3cab0a74d9d405c00781f789507',1,'grpc::experimental']]],
   ['localservercredentials_1401',['LocalServerCredentials',['../namespacegrpc_1_1experimental.html#a6076d466bcfdcb7d7678c2dcafe01f5f',1,'grpc::experimental']]],
-  ['lock_1402',['Lock',['../classgrpc_1_1internal_1_1_releasable_mutex_lock.html#a9ab7befbf85d1d28f1a2126b094244d7',1,'grpc::internal::ReleasableMutexLock']]],
+  ['lock_1402',['Lock',['../classgrpc_1_1internal_1_1_mutex.html#aa12ad25130b100d078bb248d30defcea',1,'grpc::internal::Mutex']]],
   ['log_2eh_1403',['log.h',['../impl_2codegen_2log_8h.html',1,'(Global Namespace)'],['../support_2log_8h.html',1,'(Global Namespace)']]],
   ['log_5fwindows_2eh_1404',['log_windows.h',['../log__windows_8h.html',1,'']]],
   ['load_20balancing_20in_20grpc_1405',['Load Balancing in gRPC',['../md_doc_load-balancing.html',1,'']]]

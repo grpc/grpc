@@ -4,8 +4,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gRPC AsyncIO API &#8212; gRPC Python 1.36.1 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>gRPC AsyncIO API &#8212; gRPC Python 1.37.0 documentation</title>
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -31,7 +32,7 @@
 
 
 
-<p class="blurb">1.36.1</p>
+<p class="blurb">1.37.0</p>
 
 
 
@@ -39,7 +40,7 @@
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="grpc.html">gRPC</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">gRPC AsyncIO API</a><ul>
@@ -105,9 +106,9 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="module-grpc.aio">
+  <section id="module-grpc.aio">
 <span id="grpc-asyncio-api"></span><h1>gRPC AsyncIO API<a class="headerlink" href="#module-grpc.aio" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="overview">
+<section id="overview">
 <h2>Overview<a class="headerlink" href="#overview" title="Permalink to this headline">¶</a></h2>
 <p>gRPC AsyncIO API is the <strong>new version</strong> of gRPC Python whose architecture is
 tailored to AsyncIO. Underlying, it utilizes the same C-extension, gRPC C-Core,
@@ -116,21 +117,21 @@ by the AsyncIO library.</p>
 <p>This API is stable. Feel free to open issues on our GitHub repo
 <a class="reference external" href="https://github.com/grpc/grpc">grpc/grpc</a> for bugs or suggestions.</p>
 <p>The design doc can be found here as <a class="reference external" href="https://github.com/grpc/proposal/pull/155">gRFC</a>.</p>
-</div>
-<div class="section" id="caveats">
+</section>
+<section id="caveats">
 <h2>Caveats<a class="headerlink" href="#caveats" title="Permalink to this headline">¶</a></h2>
 <p>gRPC Async API objects may only be used on the thread on which they were
 created. AsyncIO doesn’t provide thread safety for most of its APIs.</p>
-</div>
-<div class="section" id="blocking-code-in-asyncio">
+</section>
+<section id="blocking-code-in-asyncio">
 <h2>Blocking Code in AsyncIO<a class="headerlink" href="#blocking-code-in-asyncio" title="Permalink to this headline">¶</a></h2>
 <p>Making blocking function calls in coroutines or in the thread running event
 loop will block the event loop, potentially starving all RPCs in the process.
 Refer to the Python language documentation on AsyncIO for more details (<a class="reference external" href="https://docs.python.org/3/library/asyncio-dev.html#running-blocking-code">running-blocking-code</a>).</p>
-</div>
-<div class="section" id="module-contents">
+</section>
+<section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="create-channel">
+<section id="create-channel">
 <h3>Create Channel<a class="headerlink" href="#create-channel" title="Permalink to this headline">¶</a></h3>
 <p>Channels are the abstraction of clients, where most of networking logic
 happens, for example, managing one or more underlying connections, name
@@ -182,8 +183,8 @@ any call executed with this channel.</p></li>
 </dl>
 </dd></dl>
 
-</div>
-<div class="section" id="channel-object">
+</section>
+<section id="channel-object">
 <h3>Channel Object<a class="headerlink" href="#channel-object" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.aio.Channel">
@@ -382,8 +383,8 @@ the last known state.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="create-server">
+</section>
+<section id="create-server">
 <h3>Create Server<a class="headerlink" href="#create-server" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="grpc.aio.server">
@@ -418,8 +419,8 @@ EXPERIMENTAL option.</p></li>
 </dl>
 </dd></dl>
 
-</div>
-<div class="section" id="server-object">
+</section>
+<section id="server-object">
 <h3>Server Object<a class="headerlink" href="#server-object" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.aio.Server">
@@ -557,8 +558,8 @@ operation in seconds.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="grpc-exceptions">
+</section>
+<section id="grpc-exceptions">
 <h3>gRPC Exceptions<a class="headerlink" href="#grpc-exceptions" title="Permalink to this headline">¶</a></h3>
 <dl class="py exception">
 <dt id="grpc.aio.BaseError">
@@ -681,8 +682,8 @@ determined. Hence, its methods no longer needs to be coroutines.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="shared-context">
+</section>
+<section id="shared-context">
 <h3>Shared Context<a class="headerlink" href="#shared-context" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.aio.RpcContext">
@@ -768,8 +769,8 @@ timed out, or None if no deadline was specified for the RPC.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="client-side-context">
+</section>
+<section id="client-side-context">
 <h3>Client-Side Context<a class="headerlink" href="#client-side-context" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.aio.Call">
@@ -1022,8 +1023,8 @@ stream.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="server-side-context">
+</section>
+<section id="server-side-context">
 <h3>Server-Side Context<a class="headerlink" href="#server-side-context" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.aio.ServicerContext">
@@ -1247,6 +1248,22 @@ metadata to add to what the gRPC runtime will transmit.</p>
 </dd></dl>
 
 <dl class="py method">
+<dt id="grpc.aio.ServicerContext.time_remaining">
+<code class="sig-name descname"><span class="pre">time_remaining</span></code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.time_remaining"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext.time_remaining" title="Permalink to this definition">¶</a></dt>
+<dd><p>Describes the length of allowed time remaining for the RPC.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns</dt>
+<dd class="field-odd"><p>A nonnegative float indicating the length of allowed time in seconds
+remaining for the RPC to complete before it is considered to have
+timed out, or None if no deadline was specified for the RPC.</p>
+</dd>
+<dt class="field-even">Return type</dt>
+<dd class="field-even"><p>float</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
 <dt id="grpc.aio.ServicerContext.write">
 <em class="property"><span class="pre">abstract</span> <span class="pre">async</span> </em><code class="sig-name descname"><span class="pre">write</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">message</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc/aio/_base_server.html#ServicerContext.write"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.aio.ServicerContext.write" title="Permalink to this definition">¶</a></dt>
 <dd><p>Writes one message to the RPC.</p>
@@ -1266,8 +1283,8 @@ metadata to add to what the gRPC runtime will transmit.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="client-side-interceptor">
+</section>
+<section id="client-side-interceptor">
 <h3>Client-Side Interceptor<a class="headerlink" href="#client-side-interceptor" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.aio.ClientCallDetails">
@@ -1499,8 +1516,8 @@ for the RPC.</p></li>
 
 </dd></dl>
 
-</div>
-<div class="section" id="server-side-interceptor">
+</section>
+<section id="server-side-interceptor">
 <h3>Server-Side Interceptor<a class="headerlink" href="#server-side-interceptor" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.aio.ServerInterceptor">
@@ -1534,8 +1551,8 @@ interceptor chooses to service this RPC, or None otherwise.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="multi-callable-interfaces">
+</section>
+<section id="multi-callable-interfaces">
 <h3>Multi-Callable Interfaces<a class="headerlink" href="#multi-callable-interfaces" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.aio.UnaryUnaryMultiCallable">
@@ -1699,9 +1716,9 @@ grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 
 </dd></dl>
 
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
           </div>

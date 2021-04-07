@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -77,24 +77,20 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a0974fcf03be935cfefcb910e20cd019e"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#a0974fcf03be935cfefcb910e20cd019e">ReleasableMutexLock</a> (<a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> *mu)</td></tr>
-<tr class="separator:a0974fcf03be935cfefcb910e20cd019e"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad048db9129cf87996a5dace738506522"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#ad048db9129cf87996a5dace738506522">ReleasableMutexLock</a> (<a class="el" href="impl_2codegen_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a> *mu)</td></tr>
-<tr class="separator:ad048db9129cf87996a5dace738506522"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a046af6508968edc5078794ebf338493f"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#a046af6508968edc5078794ebf338493f">~ReleasableMutexLock</a> ()</td></tr>
-<tr class="separator:a046af6508968edc5078794ebf338493f"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad873f9f04ae123cdef8b5802fd7196b9"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#ad873f9f04ae123cdef8b5802fd7196b9">ReleasableMutexLock</a> (<a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> *mu) ABSL_EXCLUSIVE_LOCK_FUNCTION(mu)</td></tr>
+<tr class="separator:ad873f9f04ae123cdef8b5802fd7196b9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a9747c89dd1f00dfd81694f20b1b35690"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#a9747c89dd1f00dfd81694f20b1b35690">~ReleasableMutexLock</a> () ABSL_UNLOCK_FUNCTION()</td></tr>
+<tr class="separator:a9747c89dd1f00dfd81694f20b1b35690"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a205d95f25e3cc9c76877e1c460026eb3"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#a205d95f25e3cc9c76877e1c460026eb3">ReleasableMutexLock</a> (const <a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html">ReleasableMutexLock</a> &amp;)=delete</td></tr>
 <tr class="separator:a205d95f25e3cc9c76877e1c460026eb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af11f872f079eb55d1d0c4c9c560d2bd4"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html">ReleasableMutexLock</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#af11f872f079eb55d1d0c4c9c560d2bd4">operator=</a> (const <a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html">ReleasableMutexLock</a> &amp;)=delete</td></tr>
 <tr class="separator:af11f872f079eb55d1d0c4c9c560d2bd4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9ab7befbf85d1d28f1a2126b094244d7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#a9ab7befbf85d1d28f1a2126b094244d7">Lock</a> ()</td></tr>
-<tr class="separator:a9ab7befbf85d1d28f1a2126b094244d7"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7637a47e9865529f8dd0572df336fd27"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#a7637a47e9865529f8dd0572df336fd27">Unlock</a> ()</td></tr>
-<tr class="separator:a7637a47e9865529f8dd0572df336fd27"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab83f8ce3b17744474963dd4031c53128"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#ab83f8ce3b17744474963dd4031c53128">Release</a> () ABSL_UNLOCK_FUNCTION()</td></tr>
+<tr class="separator:ab83f8ce3b17744474963dd4031c53128"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a0974fcf03be935cfefcb910e20cd019e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a0974fcf03be935cfefcb910e20cd019e">&#9670;&nbsp;</a></span>ReleasableMutexLock() <span class="overload">[1/3]</span></h2>
+<a id="ad873f9f04ae123cdef8b5802fd7196b9"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad873f9f04ae123cdef8b5802fd7196b9">&#9670;&nbsp;</a></span>ReleasableMutexLock() <span class="overload">[1/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -119,34 +115,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="ad048db9129cf87996a5dace738506522"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad048db9129cf87996a5dace738506522">&#9670;&nbsp;</a></span>ReleasableMutexLock() <span class="overload">[2/3]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">grpc::internal::ReleasableMutexLock::ReleasableMutexLock </td>
-          <td>(</td>
-          <td class="paramtype"><a class="el" href="impl_2codegen_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a> *&#160;</td>
-          <td class="paramname"><em>mu</em></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">explicit</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a046af6508968edc5078794ebf338493f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a046af6508968edc5078794ebf338493f">&#9670;&nbsp;</a></span>~ReleasableMutexLock()</h2>
+<a id="a9747c89dd1f00dfd81694f20b1b35690"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a9747c89dd1f00dfd81694f20b1b35690">&#9670;&nbsp;</a></span>~ReleasableMutexLock()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -171,7 +141,7 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <a id="a205d95f25e3cc9c76877e1c460026eb3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a205d95f25e3cc9c76877e1c460026eb3">&#9670;&nbsp;</a></span>ReleasableMutexLock() <span class="overload">[3/3]</span></h2>
+<h2 class="memtitle"><span class="permalink"><a href="#a205d95f25e3cc9c76877e1c460026eb3">&#9670;&nbsp;</a></span>ReleasableMutexLock() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -197,31 +167,6 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a9ab7befbf85d1d28f1a2126b094244d7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9ab7befbf85d1d28f1a2126b094244d7">&#9670;&nbsp;</a></span>Lock()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">void grpc::internal::ReleasableMutexLock::Lock </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
 <a id="af11f872f079eb55d1d0c4c9c560d2bd4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#af11f872f079eb55d1d0c4c9c560d2bd4">&#9670;&nbsp;</a></span>operator=()</h2>
 
@@ -248,8 +193,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a7637a47e9865529f8dd0572df336fd27"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a7637a47e9865529f8dd0572df336fd27">&#9670;&nbsp;</a></span>Unlock()</h2>
+<a id="ab83f8ce3b17744474963dd4031c53128"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab83f8ce3b17744474963dd4031c53128">&#9670;&nbsp;</a></span>Release()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -258,7 +203,7 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname">void grpc::internal::ReleasableMutexLock::Unlock </td>
+          <td class="memname">void grpc::internal::ReleasableMutexLock::Release </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -279,7 +224,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:26 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
