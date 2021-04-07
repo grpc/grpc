@@ -77,6 +77,7 @@ TEST(ErrorUtilsTest, GrpcErrorUnavailableToAbslStatus) {
   ASSERT_TRUE(absl::IsUnavailable(status));
   ASSERT_EQ(status.message(),
             "weighted_target: all children report state TRANSIENT_FAILURE");
+  GRPC_ERROR_UNREF(error);
 }
 
 }  // namespace
