@@ -24,7 +24,7 @@ namespace grpc_core {
 class MockEvalArgsEndpoint : public grpc_endpoint {
  public:
   MockEvalArgsEndpoint(absl::string_view local_uri, absl::string_view peer_uri)
-      : local_address_(local_uri), peer_(peer_uri) {
+      : local_address_(local_uri), peer_address_(peer_uri) {
     static constexpr grpc_endpoint_vtable vtable = {
         nullptr, nullptr, nullptr, nullptr,         nullptr, nullptr,
         nullptr, nullptr, GetPeer, GetLocalAddress, nullptr, nullptr};
@@ -33,7 +33,7 @@ class MockEvalArgsEndpoint : public grpc_endpoint {
 
   static absl::string_view GetPeer(grpc_endpoint* ep) {
     MockEvalArgsEndpoint* m = reinterpret_cast<MockEvalArgsEndpoint*>(ep);
-    return m->peer_;
+    return m->peer_address_;
   }
 
   static absl::string_view GetLocalAddress(grpc_endpoint* ep) {
@@ -41,9 +41,17 @@ class MockEvalArgsEndpoint : public grpc_endpoint {
     return m->local_address_;
   }
 
+  void SetPeer(absl::string_view peer_address) {
+    peer_address_ = std::string(peer_address);
+  }
+
+  void SetLocalAddress(absl::string_view local_address) {
+    local_address_ = std::string(local_address);
+  }
+
  private:
   std::string local_address_;
-  std::string peer_;
+  std::string peer_address_;
 };
 
 }  // namespace grpc_core
