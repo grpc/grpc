@@ -133,8 +133,7 @@ class ClientChannel {
       AsyncConnectivityStateWatcherInterface* watcher);
 
   RefCountedPtr<LoadBalancedCall> CreateLoadBalancedCall(
-      const grpc_call_element_args& args, grpc_polling_entity* pollent,
-      size_t parent_data_size);
+      const grpc_call_element_args& args, grpc_polling_entity* pollent);
 
  private:
   class CallData;
@@ -360,8 +359,6 @@ class ClientChannel::LoadBalancedCall
   LoadBalancedCall(ClientChannel* chand, const grpc_call_element_args& args,
                    grpc_polling_entity* pollent);
   ~LoadBalancedCall() override;
-
-  void* GetParentData();
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
