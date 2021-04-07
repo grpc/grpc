@@ -2385,6 +2385,46 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 
 }  // namespace internal
 
+//
+// embedding XdsClient in channel args
+//
+
+#define GRPC_ARG_XDS_CLIENT "grpc.internal.xds_client"
+
+namespace {
+
+void* XdsClientArgCopy(void* p) {
+  XdsClient* xds_client = static_cast<XdsClient*>(p);
+  xds_client->Ref(DEBUG_LOCATION, "channel arg").release();
+  return p;
+}
+
+void XdsClientArgDestroy(void* p) {
+  XdsClient* xds_client = static_cast<XdsClient*>(p);
+  xds_client->Unref(DEBUG_LOCATION, "channel arg");
+}
+
+int XdsClientArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+
+const grpc_arg_pointer_vtable kXdsClientArgVtable = {
+    XdsClientArgCopy, XdsClientArgDestroy, XdsClientArgCmp};
+
+}  // namespace
+
+grpc_arg XdsClient::MakeChannelArg() const {
+  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_XDS_CLIENT),
+                                         const_cast<XdsClient*>(this),
+                                         &kXdsClientArgVtable);
+}
+
+RefCountedPtr<XdsClient> XdsClient::GetFromChannelArgs(
+    const grpc_channel_args& args) {
+  XdsClient* xds_client =
+      grpc_channel_args_find_pointer<XdsClient>(&args, GRPC_ARG_XDS_CLIENT);
+  if (xds_client == nullptr) return nullptr;
+  return xds_client->Ref(DEBUG_LOCATION, "GetFromChannelArgs");
+}
+
 }  // namespace grpc_core
 
 // The returned bytes may contain NULL(0), so we can't use c-string.

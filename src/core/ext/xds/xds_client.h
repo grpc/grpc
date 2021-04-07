@@ -200,6 +200,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // implementation.
   std::string DumpClientConfigBinary();
 
+  // Helpers for encoding the XdsClient object in channel args.
+  grpc_arg MakeChannelArg() const;
+  static RefCountedPtr<XdsClient> GetFromChannelArgs(
+      const grpc_channel_args& args);
+
  private:
   // Contains a channel to the xds server and all the data related to the
   // channel.  Holds a ref to the xds client object.
