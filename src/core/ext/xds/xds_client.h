@@ -84,8 +84,9 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // an error initializing the client.
   static RefCountedPtr<XdsClient> GetOrCreate(grpc_error** error);
 
-  // Callers should not instantiate directly.  Use GetOrCreate() instead.
-  XdsClient(grpc_channel_args* args, grpc_error** error);
+  // Most callers should not instantiate directly.  Use GetOrCreate() instead.
+  XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
+            const grpc_channel_args* args);
   ~XdsClient() override;
 
   const XdsBootstrap& bootstrap() const {
@@ -326,10 +327,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
       grpc_millis update_time, const XdsApi::AdsParseResult& result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
   const grpc_millis request_timeout_;
   grpc_pollset_set* interested_parties_;
-  std::unique_ptr<XdsBootstrap> bootstrap_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;
 

@@ -710,8 +710,18 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 //
 
 void XdsResolver::StartLocked() {
+  const char* bootstrap_config = grpc_channel_args_find_string(
+      args_, GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG);
   grpc_error* error = GRPC_ERROR_NONE;
-  xds_client_ = XdsClient::GetOrCreate(&error);
+  if (bootstrap_config != nullptr) {
+    std::unique_ptr<XdsBootstrap> bootstrap = XdsBootstrap::Create(
+        bootstrap_config, &error);
+    if (error == GRPC_ERROR_NONE) {
+      xds_client_ = MakeRefCounted<XdsClient>(std::move(bootstrap), args_);
+    }
+  } else {
+    xds_client_ = XdsClient::GetOrCreate(&error);
+  }
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
