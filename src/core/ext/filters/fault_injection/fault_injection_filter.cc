@@ -208,21 +208,24 @@ class CallData::ResumeBatchCanceller {
     auto* self = static_cast<ResumeBatchCanceller*>(arg);
     auto* chand = static_cast<ChannelData*>(self->elem_->channel_data);
     auto* calld = static_cast<CallData*>(self->elem_->call_data);
-    MutexLock lock(&calld->delay_mu_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p calld=%p: cancelling schdueled pick: "
-              "error=%s self=%p calld->resume_batch_canceller_=%p",
-              chand, calld, grpc_error_string(error), self,
-              calld->resume_batch_canceller_);
-    }
-    if (error != GRPC_ERROR_NONE && calld->resume_batch_canceller_ == self) {
-      // Cancel the delayed pick.
-      calld->CancelDelayTimer();
-      calld->FaultInjectionFinished();
-      // Fail pending batches on the call.
-      grpc_transport_stream_op_batch_finish_with_failure(
-          calld->delayed_batch_, GRPC_ERROR_REF(error), calld->call_combiner_);
+    {
+      MutexLock lock(&calld->delay_mu_);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p calld=%p: cancelling schdueled pick: "
+                "error=%s self=%p calld->resume_batch_canceller_=%p",
+                chand, calld, grpc_error_string(error), self,
+                calld->resume_batch_canceller_);
+      }
+      if (error != GRPC_ERROR_NONE && calld->resume_batch_canceller_ == self) {
+        // Cancel the delayed pick.
+        calld->CancelDelayTimer();
+        calld->FaultInjectionFinished();
+        // Fail pending batches on the call.
+        grpc_transport_stream_op_batch_finish_with_failure(
+            calld->delayed_batch_, GRPC_ERROR_REF(error),
+            calld->call_combiner_);
+      }
     }
     GRPC_CALL_STACK_UNREF(calld->owning_call_, "ResumeBatchCanceller");
     delete self;
