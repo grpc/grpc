@@ -50,8 +50,8 @@ logger.addHandler(console_handler)
 logger.setLevel(logging.WARNING)
 
 # Suppress excessive logs for gRPC Python
-original_grpc_trace = os.environ.pop('GRPC_TRACE')
-original_grpc_verbosity = os.environ.pop('GRPC_VERBOSITY')
+original_grpc_trace = os.environ.pop('GRPC_TRACE', None)
+original_grpc_verbosity = os.environ.pop('GRPC_VERBOSITY', None)
 # Suppress not-essential logs for GCP clients
 logging.getLogger('google_auth_httplib2').setLevel(logging.WARNING)
 logging.getLogger('googleapiclient.discovery').setLevel(logging.WARNING)
@@ -67,14 +67,15 @@ _TEST_CASES = [
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure',
     'traffic_splitting',
+    'path_matching',
+    'header_matching',
 ]
+
 # Valid test cases, but not in all. So the tests can only run manually, and
 # aren't enabled automatically for all languages.
 #
 # TODO: Move them into _TEST_CASES when support is ready in all languages.
 _ADDITIONAL_TEST_CASES = [
-    'path_matching',
-    'header_matching',
     'circuit_breaking',
     'timeout',
     'fault_injection',
@@ -198,7 +199,7 @@ argp.add_argument('--network',
                   default='global/networks/default',
                   help='GCP network to use')
 argp.add_argument('--service_port_range',
-                  default='8080:8110',
+                  default='8080:8280',
                   type=parse_port_range,
                   help='Listening port for created gRPC backends. Specified as '
                   'either a single int or as a range in the format min:max, in '

@@ -1321,9 +1321,11 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       error = GRPC_ERROR_REF(stream_state->cancel_error);
     } else if (stream_state->state_callback_received[OP_FAILED]) {
+      grpc_status_code grpc_error_code =
+          cronet_net_error_to_grpc_error(stream_state->net_error);
       const char* desc = cronet_net_error_as_string(stream_state->net_error);
-      error = make_error_with_desc(GRPC_STATUS_UNAVAILABLE,
-                                   stream_state->net_error, desc);
+      error =
+          make_error_with_desc(grpc_error_code, stream_state->net_error, desc);
     } else if (oas->s->state.rs.trailing_metadata_valid) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           &oas->s->state.rs.trailing_metadata,
@@ -1362,10 +1364,12 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       if (stream_op->on_complete) {
         const char* error_message =
             cronet_net_error_as_string(stream_state->net_error);
+        grpc_status_code grpc_error_code =
+            cronet_net_error_to_grpc_error(stream_state->net_error);
         grpc_core::ExecCtx::Run(
             DEBUG_LOCATION, stream_op->on_complete,
-            make_error_with_desc(GRPC_STATUS_UNAVAILABLE,
-                                 stream_state->net_error, error_message));
+            make_error_with_desc(grpc_error_code, stream_state->net_error,
+                                 error_message));
       }
     } else {
       /* All actions in this stream_op are complete. Call the on_complete
