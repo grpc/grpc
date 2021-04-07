@@ -7452,11 +7452,12 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                     absl::string_view identity_certificate_name,
                     bool require_client_certificates) {
     Listener listener;
-    listener.set_name(
-        absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
-                     backends_[0]->port()));
+    listener.set_name(absl::StrCat(
+        ipv6_only_ ? "grpc/server?xds.resource.listening_address=[::1]:"
+                   : "grpc/server?xds.resource.listening_address=127.0.0.1:",
+        backends_[0]->port()));
     listener.mutable_address()->mutable_socket_address()->set_address(
-        "127.0.0.1");
+        ipv6_only_ ? "[::1]" : "127.0.0.1");
     listener.mutable_address()->mutable_socket_address()->set_port_value(
         backends_[0]->port());
     auto* filter_chain = listener.add_filter_chains();
@@ -7487,11 +7488,6 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       transport_socket->mutable_typed_config()->PackFrom(
           downstream_tls_context);
     }
-    balancers_[0]->ads_service()->SetLdsResource(listener);
-    listener.set_name(
-        absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                     backends_[0]->port()));
-    listener.mutable_address()->mutable_socket_address()->set_address("[::1]");
     balancers_[0]->ads_service()->SetLdsResource(listener);
   }
 
