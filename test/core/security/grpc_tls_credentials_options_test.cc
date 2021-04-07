@@ -54,86 +54,12 @@ class GrpcTlsCredentialsOptionsTest : public ::testing::Test {
     private_key_2_ = GetFileContents(SERVER_KEY_PATH_2);
   }
 
-  void TearDown() override {
-    if (external_certificate_verifier_ != nullptr) {
-      delete external_certificate_verifier_;
-    }
-  }
-
-  void CreateExternalCertificateVerifier(
-      int (*verify)(void* user_data,
-                    grpc_tls_custom_verification_check_request* request,
-                    grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg),
-      void (*cancel)(void* user_data,
-                     grpc_tls_custom_verification_check_request* request),
-      void (*destruct)(void* user_data)) {
-    grpc_tls_certificate_verifier_external* external_verifier =
-        new grpc_tls_certificate_verifier_external();
-    external_verifier->verify = verify;
-    external_verifier->cancel = cancel;
-    external_verifier->destruct = destruct;
-    external_verifier->user_data = (void*)external_verifier;
-    // Takes the ownership of external_verifier.
-    external_certificate_verifier_ =
-        new ExternalCertificateVerifier(external_verifier);
-  }
-
-  static int SyncExternalVerifierGoodVerify(
-      void* user_data, grpc_tls_custom_verification_check_request* request,
-      grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
-    request->status = GRPC_STATUS_OK;
-    return false;
-  }
-
-  static void ExternalVerifierDestruct(void* user_data) {
-    auto* external_verifier =
-        static_cast<grpc_tls_certificate_verifier_external*>(user_data);
-    delete external_verifier;
-  }
-
-  struct ThreadArgs {
-    grpc_tls_custom_verification_check_request* request;
-    grpc_tls_on_custom_verification_check_done_cb callback;
-    void* callback_arg;
-  };
-
-  static int AsyncExternalVerifierBadVerify(
-      void* user_data, grpc_tls_custom_verification_check_request* request,
-      grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
-    ThreadArgs* thread_args = new ThreadArgs();
-    thread_args->request = request;
-    thread_args->callback = callback;
-    thread_args->callback_arg = callback_arg;
-    grpc_core::Thread thread = grpc_core::Thread(
-        "AsyncExternalVerifierGoodVerify", &AsyncExternalVerifierGoodVerifyCb,
-        static_cast<void*>(thread_args));
-    thread.Start();
-    thread.Join();
-    return true;
-  }
-
-  static void AsyncExternalVerifierGoodVerifyCb(void* args) {
-    ThreadArgs* thread_args = static_cast<ThreadArgs*>(args);
-    grpc_tls_custom_verification_check_request* request = thread_args->request;
-    grpc_tls_on_custom_verification_check_done_cb callback =
-        thread_args->callback;
-    void* callback_arg = thread_args->callback_arg;
-    request->status = GRPC_STATUS_UNAUTHENTICATED;
-    request->error_details = gpr_strdup("SyncExternalVerifierBadVerify failed");
-    callback(request, callback_arg);
-    delete thread_args;
-  }
-
   std::string root_cert_;
   std::string private_key_;
   std::string cert_chain_;
   std::string root_cert_2_;
   std::string private_key_2_;
   std::string cert_chain_2_;
-  ExternalCertificateVerifier* external_certificate_verifier_ = nullptr;
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
@@ -566,11 +492,11 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 //
 
 TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsWithGoodExternalVerifier) {
-  CreateExternalCertificateVerifier(SyncExternalVerifierGoodVerify, nullptr,
-                                    ExternalVerifierDestruct);
+  auto* sync_verifier_ = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier_->base());
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
-  options->set_certificate_verifier(external_certificate_verifier_->Ref());
+  options->set_certificate_verifier(core_external_verifier.Ref());
   auto credentials = MakeRefCounted<TlsCredentials>(options);
   ASSERT_NE(credentials, nullptr);
   grpc_channel_args* new_args = nullptr;
@@ -580,15 +506,36 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsWithGoodExternalVerifier) {
   ASSERT_NE(connector, nullptr);
   TlsChannelSecurityConnector* tls_connector =
       static_cast<TlsChannelSecurityConnector*>(connector.get());
-  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  EXPECT_NE(tls_connector, nullptr);
+}
+
+TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithGoodExternalVerifier) {
+  auto* sync_verifier_ = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier_->base());
+  auto options = MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  options->set_certificate_verifier(core_external_verifier.Ref());
+  // On server side we have to set the provider providing identity certs.
+  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
+      root_cert_, PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_identity_pair(true);
+  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
+  ASSERT_NE(credentials, nullptr);
+  auto connector = credentials->create_security_connector(nullptr);
+  ASSERT_NE(connector, nullptr);
+  TlsServerSecurityConnector* tls_connector =
+      static_cast<TlsServerSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector, nullptr);
 }
 
 TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithBadExternalVerifier) {
-  CreateExternalCertificateVerifier(AsyncExternalVerifierBadVerify, nullptr,
-                                    ExternalVerifierDestruct);
+  auto* async_verifier = new AsyncExternalVerifier(false, nullptr);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
-  options->set_certificate_verifier(external_certificate_verifier_->Ref());
+  options->set_certificate_verifier(core_external_verifier->Ref());
   // On server side we have to set the provider providing identity certs.
   auto provider = MakeRefCounted<StaticDataCertificateProvider>(
       root_cert_, PemKeyCertPairList());
@@ -601,7 +548,8 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithBadExternalVerifier) {
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   // Having a bad verifier shouldn't affect the creation of tls_connector.
-  EXPECT_EQ(tls_connector->ServerHandshakerFactoryForTesting(), nullptr);
+  EXPECT_NE(tls_connector, nullptr);
+  core_external_verifier->Unref();
 }
 
 //

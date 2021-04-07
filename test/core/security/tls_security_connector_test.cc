@@ -31,6 +31,7 @@
 #include "src/core/lib/security/credentials/tls/tls_credentials.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
 #define CLIENT_CERT_PATH "src/core/tsi/test_creds/multi-domain.pem"
@@ -39,7 +40,7 @@
 #define SERVER_CERT_PATH_1 "src/core/tsi/test_creds/server1.pem"
 #define SERVER_KEY_PATH_1 "src/core/tsi/test_creds/server1.key"
 
-namespace grpc {
+namespace grpc_core {
 namespace testing {
 
 constexpr const char* kRootCertName = "root_cert_name";
@@ -86,167 +87,26 @@ class TlsSecurityConnectorTest : public ::testing::Test {
     grpc_slice_unref(key_slice_0);
   }
 
-  void TearDown() override {
-    if (external_certificate_verifier_ != nullptr) {
-      delete external_certificate_verifier_;
-    }
-  }
-
-  void CreateExternalCertificateVerifier(
-      int (*verify)(void* user_data,
-                    grpc_tls_custom_verification_check_request* request,
-                    grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg),
-      void (*cancel)(void* user_data,
-                     grpc_tls_custom_verification_check_request* request),
-      void (*destruct)(void* user_data)) {
-    grpc_tls_certificate_verifier_external* external_verifier =
-        new grpc_tls_certificate_verifier_external();
-    external_verifier->verify = verify;
-    external_verifier->cancel = cancel;
-    external_verifier->destruct = destruct;
-    external_verifier->user_data = (void*)external_verifier;
-    // Takes the ownership of external_verifier.
-    external_certificate_verifier_ =
-        new grpc_core::ExternalCertificateVerifier(external_verifier);
-  }
-
-  static void grpcClosureCb(void* arg, grpc_error* error) {
-    grpc_error* expected_error = static_cast<grpc_error*>(arg);
-    if (error == GRPC_ERROR_NONE) {
-      EXPECT_EQ(expected_error, GRPC_ERROR_NONE);
+  static void VerifyExpectedErrorCallback(void* arg, grpc_error* error) {
+    const char* expected_error_msg = static_cast<const char*>(arg);
+    if (expected_error_msg == nullptr) {
+      EXPECT_EQ(error, GRPC_ERROR_NONE);
     } else {
-      EXPECT_STREQ(GetErrorMsg(expected_error).c_str(),
-                   GetErrorMsg(error).c_str());
+      EXPECT_EQ(std::string(expected_error_msg), GetErrorMsg(error));
     }
-    GRPC_ERROR_UNREF(expected_error);
   }
 
-  static std::string GetErrorMsg(grpc_error* error) {
+  static absl::string_view GetErrorMsg(grpc_error* error) {
     grpc_slice error_slice;
     GPR_ASSERT(
         grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION, &error_slice));
-    return std::string(grpc_core::StringViewFromSlice(error_slice));
-  }
-
-  static int SyncExternalVerifierGoodVerify(
-      void* user_data, grpc_tls_custom_verification_check_request* request,
-      grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
-    request->status = GRPC_STATUS_OK;
-    return false;
-  }
-
-  static void SyncExternalVerifierDestruct(void* user_data) {
-    auto* external_verifier =
-        static_cast<grpc_tls_certificate_verifier_external*>(user_data);
-    delete external_verifier;
-  }
-
-  // For Async external verifier, we will take two extra parameters, compared to
-  // the sync verifier:
-  // 1. thread_ptr_ptr: main test thread will create a dummy thread object, and
-  // later in the aysnc function, we will replace it with the real thread we
-  // want to run checks. this is the pointer of the thread object pointer. After
-  // the actual thread is run, we will need to join the thread in main test
-  // thread.
-  // 2. event_ptr: when the thread object is replaced, we will signal a event to
-  // let the main test thread know the thread object is replaced with the actual
-  // thread, and is hence join-able.
-  void CreateASyncExternalCertificateVerifier(
-      int (*verify)(void* user_data,
-                    grpc_tls_custom_verification_check_request* request,
-                    grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg),
-      void (*cancel)(void* user_data,
-                     grpc_tls_custom_verification_check_request* request),
-      void (*destruct)(void* user_data), gpr_event* event_ptr,
-      grpc_core::Thread** thread_ptr_ptr) {
-    grpc_tls_certificate_verifier_external* external_verifier =
-        new grpc_tls_certificate_verifier_external();
-    external_verifier->verify = verify;
-    external_verifier->cancel = cancel;
-    external_verifier->destruct = destruct;
-    // We store the information we want to pass to external_verifier->verify in
-    // the user_data_args.
-    ExternalVerifierUserDataArgs* user_data_args =
-        new ExternalVerifierUserDataArgs();
-    user_data_args->external_verifier = external_verifier;
-    user_data_args->thread_ptr_ptr = thread_ptr_ptr;
-    user_data_args->event_ptr = event_ptr;
-    external_verifier->user_data = (void*)user_data_args;
-    // Takes the ownership of external_verifier.
-    external_certificate_verifier_ =
-        new grpc_core::ExternalCertificateVerifier(external_verifier);
-  }
-
-  // This is the arg we will pass in when creating the thread, and retrieve it
-  // later in the thread callback.
-  struct ThreadArgs {
-    grpc_tls_custom_verification_check_request* request = nullptr;
-    grpc_tls_on_custom_verification_check_done_cb callback;
-    void* callback_arg = nullptr;
-  };
-
-  // This is the arg we will pass in when creating the external verifier, and
-  // retrieve it later in the its verifier functions.
-  struct ExternalVerifierUserDataArgs {
-    grpc_tls_certificate_verifier_external* external_verifier = nullptr;
-    grpc_core::Thread** thread_ptr_ptr = nullptr;
-    gpr_event* event_ptr = nullptr;
-  };
-
-  static int AsyncExternalVerifierBadVerify(
-      void* user_data, grpc_tls_custom_verification_check_request* request,
-      grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
-    ExternalVerifierUserDataArgs* user_data_args =
-        static_cast<ExternalVerifierUserDataArgs*>(user_data);
-    grpc_core::Thread** thread_ptr_ptr = user_data_args->thread_ptr_ptr;
-    gpr_event* event_ptr = user_data_args->event_ptr;
-    // Creates the thread args we use when creating the thread.
-    ThreadArgs* thread_args = new ThreadArgs();
-    thread_args->request = request;
-    thread_args->callback = callback;
-    thread_args->callback_arg = callback_arg;
-    // Replaces the thread object with the actual thread object we want to run.
-    // First we delete the dummy thread object we set before.
-    delete *thread_ptr_ptr;
-    *thread_ptr_ptr = new grpc_core::Thread("AsyncExternalVerifierBadVerify",
-                                            &AsyncExternalVerifierBadVerifyCb,
-                                            static_cast<void*>(thread_args));
-    (**thread_ptr_ptr).Start();
-    // Now we can notify the main thread that the thread object is set.
-    gpr_event_set(event_ptr, reinterpret_cast<void*>(1));
-    return true;
-  }
-
-  static void AsyncExternalVerifierBadVerifyCb(void* args) {
-    ThreadArgs* thread_args = static_cast<ThreadArgs*>(args);
-    grpc_tls_custom_verification_check_request* request = thread_args->request;
-    grpc_tls_on_custom_verification_check_done_cb callback =
-        thread_args->callback;
-    void* callback_arg = thread_args->callback_arg;
-    request->status = GRPC_STATUS_UNAUTHENTICATED;
-    request->error_details =
-        gpr_strdup("AsyncExternalVerifierBadVerify failed");
-    callback(request, callback_arg);
-    delete thread_args;
-  }
-
-  static void AsyncExternalVerifierDestruct(void* user_data) {
-    ExternalVerifierUserDataArgs* user_data_args =
-        static_cast<ExternalVerifierUserDataArgs*>(user_data);
-    delete user_data_args->external_verifier;
-    delete user_data_args;
+    return grpc_core::StringViewFromSlice(error_slice);
   }
 
   std::string root_cert_1_;
   std::string root_cert_0_;
   grpc_core::PemKeyCertPairList identity_pairs_1_;
   grpc_core::PemKeyCertPairList identity_pairs_0_;
-  grpc_core::ExternalCertificateVerifier* external_certificate_verifier_ =
-      nullptr;
   grpc_core::HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
@@ -510,13 +370,13 @@ TEST_F(TlsSecurityConnectorTest, CreateChannelSecurityConnectorFailNoOptions) {
 //
 
 TEST_F(TlsSecurityConnectorTest,
-       ChannelSCWithSyncGoodExternalVerifierAndGoodRequestParam) {
-  CreateExternalCertificateVerifier(SyncExternalVerifierGoodVerify, nullptr,
-                                    SyncExternalVerifierDestruct);
+       ChannelSecurityConnectorWithSyncGoodExternalVerifier) {
+  auto* sync_verifier_ = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier_->base());
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
-  options->set_certificate_verifier(external_certificate_verifier_->Ref());
+  options->set_certificate_verifier(core_external_verifier.Ref());
   grpc_core::RefCountedPtr<TlsCredentials> credential =
       grpc_core::MakeRefCounted<TlsCredentials>(options);
   grpc_channel_args* new_args = nullptr;
@@ -537,31 +397,62 @@ TEST_F(TlsSecurityConnectorTest,
                  TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
                  &peer.properties[1]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
-  grpc_error* expected_error = GRPC_ERROR_NONE;
   grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
-      grpcClosureCb, (void*)expected_error, grpc_schedule_on_exec_ctx);
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
   tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
   grpc_channel_args_destroy(new_args);
 }
 
 TEST_F(TlsSecurityConnectorTest,
-       ChannelSCWithAsyncBadExternalVerifierAndGoodRequestParam) {
-  // Indicates if the thread pointer returned from
-  // CreateASyncExternalCertificateVerifier is filled with the real object
-  // asynchronously.
+       ChannelSecurityConnectorWithSyncBadExternalVerifier) {
+  auto* sync_verifier_ = new SyncExternalVerifier(false);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier_->base());
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_verify_server_cert(true);
+  options->set_certificate_verifier(core_external_verifier.Ref());
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
+  grpc_channel_args* new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, nullptr,
+                                            &new_args);
+  EXPECT_NE(connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  // Construct a basic TSI Peer.
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  const char* expected_error_msg =
+      "Custom verification check failed with error: "
+      "SyncExternalVerifierBadVerify failed";
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked =
+      GRPC_CLOSURE_CREATE(VerifyExpectedErrorCallback,
+                          (void*)expected_error_msg, grpc_schedule_on_exec_ctx);
+  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  grpc_channel_args_destroy(new_args);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       ChannelSecurityConnectorWithAsyncGoodExternalVerifier) {
   gpr_event event;
   gpr_event_init(&event);
-  // Creates a dummy thread object that will be replaced with the actual thread
-  // object later in the async verifier.
-  grpc_core::Thread* thread_ptr = new grpc_core::Thread();
-  CreateASyncExternalCertificateVerifier(AsyncExternalVerifierBadVerify,
-                                         nullptr, AsyncExternalVerifierDestruct,
-                                         &event, &thread_ptr);
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
-      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  auto* async_verifier = new AsyncExternalVerifier(true, &event);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  auto options = grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
-  options->set_certificate_verifier(external_certificate_verifier_->Ref());
+  options->set_certificate_verifier(core_external_verifier->Ref());
   grpc_core::RefCountedPtr<TlsCredentials> credential =
       grpc_core::MakeRefCounted<TlsCredentials>(options);
   grpc_channel_args* new_args = nullptr;
@@ -582,28 +473,64 @@ TEST_F(TlsSecurityConnectorTest,
                  TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
                  &peer.properties[1]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
-  grpc_error* expected_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-      "Custom verification check failed with error: "
-      "AsyncExternalVerifierBadVerify failed");
   grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
-      grpcClosureCb, (void*)expected_error, grpc_schedule_on_exec_ctx);
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
   tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
   grpc_channel_args_destroy(new_args);
-  /*GRPC_ERROR_UNREF(expected_error);*/
-  // Wait for the thread object to be set.
-  void* value = gpr_event_wait(
-      &event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                           gpr_time_from_seconds(5, GPR_TIMESPAN)));
-  EXPECT_NE(value, nullptr);
-  // Join the thread otherwise there will be memory leaks.
-  (*thread_ptr).Join();
-  // release the thread object we run.
-  delete thread_ptr;
+  core_external_verifier->Unref();
+  // Wait for the async callback to be completed.
+  gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
 }
 
 TEST_F(TlsSecurityConnectorTest,
-       ChannelSCWithHostnameVerifierAndGoodRequestParamOnGoodMatch) {
+       ChannelSecurityConnectorWithAsyncBadExternalVerifier) {
+  gpr_event event;
+  gpr_event_init(&event);
+  auto* async_verifier = new AsyncExternalVerifier(false, &event);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  auto options = grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_verify_server_cert(true);
+  options->set_certificate_verifier(core_external_verifier->Ref());
+  grpc_core::RefCountedPtr<TlsCredentials> credential =
+      grpc_core::MakeRefCounted<TlsCredentials>(options);
+  grpc_channel_args* new_args = nullptr;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> connector =
+      credential->create_security_connector(nullptr, kTargetName, nullptr,
+                                            &new_args);
+  EXPECT_NE(connector, nullptr);
+  grpc_core::TlsChannelSecurityConnector* tls_connector =
+      static_cast<grpc_core::TlsChannelSecurityConnector*>(connector.get());
+  EXPECT_NE(tls_connector->ClientHandshakerFactoryForTesting(), nullptr);
+  // Construct a basic TSI Peer.
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  const char* expected_error_msg =
+      "Custom verification check failed with error: "
+      "AsyncExternalVerifierBadVerify failed";
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked =
+      GRPC_CLOSURE_CREATE(VerifyExpectedErrorCallback,
+                          (void*)expected_error_msg, grpc_schedule_on_exec_ctx);
+  tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  grpc_channel_args_destroy(new_args);
+  core_external_verifier->Unref();
+  // Wait for the async callback to be completed.
+  gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       ChannelSecurityConnectorHostnameVerifierSucceeds) {
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
@@ -644,16 +571,15 @@ TEST_F(TlsSecurityConnectorTest,
                  TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "foo.baz.com",
                  &peer.properties[6]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
-  grpc_error* expected_error = GRPC_ERROR_NONE;
   grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
-      grpcClosureCb, (void*)expected_error, grpc_schedule_on_exec_ctx);
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
   tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
   grpc_channel_args_destroy(new_args);
 }
 
 TEST_F(TlsSecurityConnectorTest,
-       ChannelSCWithHostnameVerifierAndGoodRequestParamOnBadMatch) {
+       ChannelSecurityConnectorHostnameVerifierFails) {
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_verify_server_cert(true);
@@ -694,12 +620,13 @@ TEST_F(TlsSecurityConnectorTest,
                  TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY, "foo.baz.com",
                  &peer.properties[6]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
-  grpc_error* expected_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+  const char* expected_error_msg =
       "Custom verification check failed with error: Hostname Verification "
-      "Check failed.");
+      "Check failed.";
   grpc_core::ExecCtx exec_ctx;
-  grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
-      grpcClosureCb, (void*)expected_error, grpc_schedule_on_exec_ctx);
+  grpc_closure* on_peer_checked =
+      GRPC_CLOSURE_CREATE(VerifyExpectedErrorCallback,
+                          (void*)expected_error_msg, grpc_schedule_on_exec_ctx);
   tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
   grpc_channel_args_destroy(new_args);
 }
@@ -876,15 +803,16 @@ TEST_F(TlsSecurityConnectorTest, CreateServerSecurityConnectorFailNoOptions) {
 
 //
 // Tests for Certificate Verifier in ServerSecurityConnector.
+//
 
 TEST_F(TlsSecurityConnectorTest,
-       ServerSCWithSyncGoodExternalVerifierAndGoodRequestParam) {
-  CreateExternalCertificateVerifier(SyncExternalVerifierGoodVerify, nullptr,
-                                    SyncExternalVerifierDestruct);
+       ServerSecurityConnectorWithSyncGoodExternalVerifier) {
+  auto* sync_verifier = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
-  options->set_certificate_verifier(external_certificate_verifier_->Ref());
+  options->set_certificate_verifier(core_external_verifier.Ref());
   auto provider =
       grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
           "", grpc_core::PemKeyCertPairList());
@@ -902,30 +830,20 @@ TEST_F(TlsSecurityConnectorTest,
                  TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
                  &peer.properties[1]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
-  grpc_error* expected_error = GRPC_ERROR_NONE;
   grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
-      grpcClosureCb, (void*)expected_error, grpc_schedule_on_exec_ctx);
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
   connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
 }
 
 TEST_F(TlsSecurityConnectorTest,
-       ServerSCWithAsyncBadExternalVerifierAndGoodRequestParam) {
-  // Indicates if the thread pointer returned from
-  // CreateASyncExternalCertificateVerifier is filled with the real object
-  // asynchronously.
-  gpr_event event;
-  gpr_event_init(&event);
-  // Creates a dummy thread object that will be replaced with the actual thread
-  // object later in the async verifier.
-  grpc_core::Thread* thread_ptr = new grpc_core::Thread();
-  CreateASyncExternalCertificateVerifier(AsyncExternalVerifierBadVerify,
-                                         nullptr, AsyncExternalVerifierDestruct,
-                                         &event, &thread_ptr);
+       ServerSecurityConnectorWithSyncBadExternalVerifier) {
+  auto* sync_verifier = new SyncExternalVerifier(false);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
       grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
   options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
-  options->set_certificate_verifier(external_certificate_verifier_->Ref());
+  options->set_certificate_verifier(core_external_verifier.Ref());
   auto provider =
       grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
           "", grpc_core::PemKeyCertPairList());
@@ -943,26 +861,97 @@ TEST_F(TlsSecurityConnectorTest,
                  TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
                  &peer.properties[1]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
-  grpc_error* expected_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+  const char* expected_error_msg =
       "Custom verification check failed with error: "
-      "AsyncExternalVerifierBadVerify failed");
+      "SyncExternalVerifierBadVerify failed";
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked =
+      GRPC_CLOSURE_CREATE(VerifyExpectedErrorCallback,
+                          (void*)expected_error_msg, grpc_schedule_on_exec_ctx);
+  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       ServerSecurityConnectorWithAsyncGoodExternalVerifier) {
+  gpr_event event;
+  gpr_event_init(&event);
+  auto* async_verifier = new AsyncExternalVerifier(true, &event);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  auto options = grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  options->set_certificate_verifier(core_external_verifier->Ref());
+  auto provider =
+      grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
+          "", grpc_core::PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_identity_pair(true);
+  auto credentials = grpc_core::MakeRefCounted<TlsServerCredentials>(options);
+  auto connector = credentials->create_security_connector(nullptr);
+  // Construct a basic TSI Peer.
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
-      grpcClosureCb, (void*)expected_error, grpc_schedule_on_exec_ctx);
+      VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
   connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
-  // Wait for the thread object to be set.
-  void* value = gpr_event_wait(
-      &event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                           gpr_time_from_seconds(5, GPR_TIMESPAN)));
-  EXPECT_NE(value, nullptr);
-  // Join the thread otherwise there will be memory leaks.
-  (*thread_ptr).Join();
-  // release the thread object we run.
-  delete thread_ptr;
+  core_external_verifier->Unref();
+  // Wait for the async callback to be completed.
+  gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
+}
+
+TEST_F(TlsSecurityConnectorTest,
+       ServerSecurityConnectorWithAsyncBadExternalVerifier) {
+  gpr_event event;
+  gpr_event_init(&event);
+  auto* async_verifier = new AsyncExternalVerifier(false, &event);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
+      grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
+  options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
+  options->set_certificate_verifier(core_external_verifier->Ref());
+  auto provider =
+      grpc_core::MakeRefCounted<grpc_core::StaticDataCertificateProvider>(
+          "", grpc_core::PemKeyCertPairList());
+  options->set_certificate_provider(std::move(provider));
+  options->set_watch_identity_pair(true);
+  auto credentials = grpc_core::MakeRefCounted<TlsServerCredentials>(options);
+  auto connector = credentials->create_security_connector(nullptr);
+  // Construct a basic TSI Peer.
+  tsi_peer peer;
+  GPR_ASSERT(tsi_construct_peer(2, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                "grpc", strlen("grpc"),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                 TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY, "foo.bar.com",
+                 &peer.properties[1]) == TSI_OK);
+  grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
+  const char* expected_error_msg =
+      "Custom verification check failed with error: "
+      "AsyncExternalVerifierBadVerify failed";
+  grpc_core::ExecCtx exec_ctx;
+  grpc_closure* on_peer_checked =
+      GRPC_CLOSURE_CREATE(VerifyExpectedErrorCallback,
+                          (void*)expected_error_msg, grpc_schedule_on_exec_ctx);
+  connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
+  core_external_verifier->Unref();
+  // Wait for the async callback to be completed.
+  gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
 }
 
 }  // namespace testing
-}  // namespace grpc
+}  // namespace grpc_core
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);

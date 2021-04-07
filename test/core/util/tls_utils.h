@@ -71,12 +71,22 @@ class SyncExternalVerifier {
 
 class AsyncExternalVerifier {
  public:
-  AsyncExternalVerifier(bool is_good);
+  // The constructor of an async verifier that can be shared by multiple tests.
+  //
+  // is_good: if we want the check of the async verifier to return good result
+  // event_ptr: an event used to notify the main thread that the async callback
+  // is completed. Not setting this field will cause many threading problems,
+  // e.g. calling the verifier's Destruct() function while the async callback
+  // started by verifier's Verify() function is still running. For tests that
+  // don't need to be notified(e.g. in case when the check_peer() of the
+  // security connector is not invoked), pass nullptr here.
+  AsyncExternalVerifier(bool is_good, gpr_event* event_ptr);
 
   struct UserData {
     AsyncExternalVerifier* self = nullptr;
     grpc_core::Thread* thread = nullptr;
     bool is_good = false;
+    gpr_event* event_ptr = nullptr;
   };
 
   // This is the arg we will pass in when creating the thread, and retrieve it
@@ -85,6 +95,7 @@ class AsyncExternalVerifier {
     grpc_tls_custom_verification_check_request* request = nullptr;
     grpc_tls_on_custom_verification_check_done_cb callback;
     void* callback_arg = nullptr;
+    gpr_event* event_ptr = nullptr;
   };
 
   grpc_tls_certificate_verifier_external* base() { return &base_; }

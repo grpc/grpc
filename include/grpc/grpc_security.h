@@ -1011,8 +1011,8 @@ struct grpc_tls_certificate_verifier_external {
   /**
    * A function pointer containing the verification logic that will be
    * performed after the TLS handshake is done.  The implementation of this
-   * method MUST NOT invoke the async |callback| in the thread in which it's
-   * invoked before |verify| returns, otherwise it can lead to deadlocks.
+   * method MUST NOT invoke the async |callback| before |verify| returns,
+   * otherwise it can lead to deadlocks.
    *
    * user_data: any argument that is passed in the user_data of
    * grpc_tls_certificate_verifier_external during construction time can be

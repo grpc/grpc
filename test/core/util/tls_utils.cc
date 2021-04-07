@@ -101,10 +101,12 @@ void SyncExternalVerifier::Destruct(void* user_data) {
   delete data;
 }
 
-AsyncExternalVerifier::AsyncExternalVerifier(bool is_good) {
+AsyncExternalVerifier::AsyncExternalVerifier(bool is_good,
+                                             gpr_event* event_ptr) {
   auto* user_data = new UserData();
   user_data->self = this;
   user_data->is_good = is_good;
+  user_data->event_ptr = event_ptr;
   base_.user_data = (void*)user_data;
   base_.verify = Verify;
   base_.cancel = Cancel;
@@ -121,6 +123,7 @@ int AsyncExternalVerifier::Verify(
   thread_args->request = request;
   thread_args->callback = callback;
   thread_args->callback_arg = callback_arg;
+  thread_args->event_ptr = data->event_ptr;
   if (data->is_good) {
     data->thread = new grpc_core::Thread("AsyncExternalVerifierGoodVerify",
                                          &AsyncExternalVerifierGoodVerifyCb,
@@ -130,15 +133,19 @@ int AsyncExternalVerifier::Verify(
                                          &AsyncExternalVerifierBadVerifyCb,
                                          static_cast<void*>(thread_args));
   }
-  (*data->thread).Start();
+  data->thread->Start();
   return true;  // Asynchronous call
 }
 
 void AsyncExternalVerifier::Destruct(void* user_data) {
   auto* data = static_cast<UserData*>(user_data);
-  (*data->thread).Join();
-  delete data->thread;
-  delete data->self;
+  if (data->thread != nullptr) {
+    data->thread->Join();
+    delete data->thread;
+  }
+  if (data->self != nullptr) {
+    delete data->self;
+  }
   delete data;
 }
 
@@ -150,6 +157,10 @@ void AsyncExternalVerifier::AsyncExternalVerifierGoodVerifyCb(void* args) {
   void* callback_arg = thread_args->callback_arg;
   request->status = GRPC_STATUS_OK;
   callback(request, callback_arg);
+  // Now we can notify the main testing thread that the thread object is set.
+  if (thread_args->event_ptr != nullptr) {
+    gpr_event_set(thread_args->event_ptr, reinterpret_cast<void*>(1));
+  }
   delete thread_args;
 }
 
@@ -162,6 +173,10 @@ void AsyncExternalVerifier::AsyncExternalVerifierBadVerifyCb(void* args) {
   request->status = GRPC_STATUS_UNAUTHENTICATED;
   request->error_details = gpr_strdup("AsyncExternalVerifierBadVerify failed");
   callback(request, callback_arg);
+  // Now we can notify the main testing thread that the thread object is set.
+  if (thread_args->event_ptr != nullptr) {
+    gpr_event_set(thread_args->event_ptr, reinterpret_cast<void*>(1));
+  }
   delete thread_args;
 }
 

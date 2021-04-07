@@ -60,7 +60,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierBad) {
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierGood) {
-  auto* async_verifier = new AsyncExternalVerifier(true);
+  auto* async_verifier = new AsyncExternalVerifier(true, nullptr);
   auto* core_external_verifier =
       new ExternalCertificateVerifier(async_verifier->base());
   core_external_verifier->Verify(
@@ -72,7 +72,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierGood) {
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierBad) {
-  auto* async_verifier = new AsyncExternalVerifier(false);
+  auto* async_verifier = new AsyncExternalVerifier(false, nullptr);
   auto* core_external_verifier =
       new ExternalCertificateVerifier(async_verifier->base());
   core_external_verifier->Verify(
