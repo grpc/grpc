@@ -19,6 +19,8 @@
 #include <gtest/gtest.h>
 
 #include "absl/status/status.h"
+#include "google/rpc/status.upb.h"
+#include "upb/upb.hpp"
 
 namespace grpc_core {
 namespace {
@@ -32,7 +34,8 @@ TEST(StatusUtilTest, CreateStatus) {
   EXPECT_EQ("status_util_test.cc", StatusGetStr(s, GRPC_ERROR_STR_FILE));
   EXPECT_EQ(10, StatusGetInt(s, GRPC_ERROR_INT_FILE_LINE));
   EXPECT_EQ(true, s.GetPayload("created").has_value());
-  EXPECT_EQ("CANCELLED", std::string(*s.GetPayload("children")));
+  EXPECT_EQ(std::vector<absl::Status>({absl::CancelledError()}),
+            StatusGetChildren(s));
 }
 
 TEST(StatusUtilTest, SetAndGetInt) {
@@ -58,12 +61,23 @@ TEST(StatusUtilTest, GetStrNotExistent) {
             StatusGetStr(s, GRPC_ERROR_STR_DESCRIPTION));
 }
 
-TEST(StatusUtilTest, AddChild) {
+TEST(StatusUtilTest, AddAndGetChildren) {
   absl::Status s = absl::CancelledError();
-  StatusAddChild(&s, absl::AbortedError("Message1"));
-  StatusAddChild(&s, absl::DeadlineExceededError("Message2"));
-  EXPECT_EQ("ABORTED:Message1, DEADLINE_EXCEEDED:Message2",
-            std::string(*s.GetPayload("children")));
+  absl::Status child1 = absl::AbortedError("Message1");
+  absl::Status child2 = absl::DeadlineExceededError("Message2");
+  StatusAddChild(&s, child1);
+  StatusAddChild(&s, child2);
+  EXPECT_EQ(std::vector<absl::Status>({child1, child2}), StatusGetChildren(s));
+}
+
+TEST(StatusUtilTest, ToAndFromProto) {
+  absl::Status s = absl::CancelledError("Message");
+  StatusSetInt(&s, GRPC_ERROR_INT_ERRNO, 2021);
+  StatusSetStr(&s, GRPC_ERROR_STR_DESCRIPTION, "str");
+  upb::Arena arena;
+  google_rpc_Status* msg = StatusToProto(s, arena.ptr());
+  absl::Status s2 = StatusFromProto(msg);
+  EXPECT_EQ(s, s2);
 }
 
 TEST(StatusUtilTest, OkToString) {

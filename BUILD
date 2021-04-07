@@ -1072,12 +1072,13 @@ grpc_cc_library(
     deps = [
         "dual_ref_counted",
         "eventmanager_libuv",
+        "google_api_upb",
         "gpr_base",
         "grpc_codegen",
         "grpc_trace",
         "orphanable",
-        "ref_counted",
         "ref_counted_ptr",
+        "ref_counted",
     ],
 )
 

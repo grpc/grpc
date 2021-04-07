@@ -25,30 +25,42 @@
 
 #include "src/core/lib/iomgr/error.h"
 
+extern "C" struct google_rpc_Status;
+extern "C" struct upb_arena;
+
 namespace grpc_core {
 
-/// Create a status with given additional information
+/// Creates a status with given additional information
 absl::Status StatusCreate(
     absl::StatusCode code, absl::string_view msg, const char* file, int line,
     std::initializer_list<absl::Status> children) GRPC_MUST_USE_RESULT;
 
-/// Set the grpc_error_ints property to the status
+/// Sets the grpc_error_ints property to the status
 void StatusSetInt(absl::Status* status, grpc_error_ints which, intptr_t value);
 
-/// Get the grpc_error_ints property from the status
+/// Gets the grpc_error_ints property from the status
 absl::optional<intptr_t> StatusGetInt(
     const absl::Status& status, grpc_error_ints which) GRPC_MUST_USE_RESULT;
 
-/// Set the grpc_error_strs property to the status
+/// Sets the grpc_error_strs property to the status
 void StatusSetStr(absl::Status* status, grpc_error_strs which,
                   std::string value);
 
-/// Get the grpc_error_strs property from the status
+/// Gets the grpc_error_strs property from the status
 absl::optional<std::string> StatusGetStr(
     const absl::Status& status, grpc_error_strs which) GRPC_MUST_USE_RESULT;
 
-/// Added a child status to status
+/// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);
+
+/// Returns all children status from a status
+std::vector<absl::Status> StatusGetChildren(absl::Status status);
+
+/// Builds a upb message, google_rpc_Status from a status
+google_rpc_Status* StatusToProto(absl::Status status, upb_arena* arena);
+
+/// Build a status from a upb message, google_rpc_Status
+absl::Status StatusFromProto(google_rpc_Status* msg);
 
 /// Returns a string representation from status
 /// Error status will be like
