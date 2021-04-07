@@ -313,8 +313,11 @@ class TestMetadata(AioTestBase):
     async def test_inspect_context(self):
         multicallable = self._client.unary_unary(_TEST_INSPECT_CONTEXT)
         call = multicallable(_REQUEST)
-        with self.assertRaises(grpc.RpcError):
+        with self.assertRaises(grpc.RpcError) as exc_data:
             await call
+
+        err = exc_data.exception
+        self.assertEqual(_NON_OK_CODE, err.code())
 
 
 if __name__ == '__main__':

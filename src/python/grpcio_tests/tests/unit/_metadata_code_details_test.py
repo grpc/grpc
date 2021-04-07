@@ -703,8 +703,11 @@ class InspectContextTest(unittest.TestCase):
         self._servicer.set_code(_NON_OK_CODE)
         self._servicer.set_details(_DETAILS)
 
-        with self.assertRaises(grpc.RpcError):
+        with self.assertRaises(grpc.RpcError) as exc_info:
             self._unary_unary.with_call(object(), metadata=_CLIENT_METADATA)
+
+        err = exc_info.exception
+        self.assertEqual(_NON_OK_CODE, err.code())
 
         self.assertEqual(self._servicer.actual_code, _NON_OK_CODE)
         self.assertEqual(self._servicer.actual_details.decode('utf-8'),
