@@ -28,52 +28,46 @@
 namespace grpc_core {
 
 /// Create a status with given additional information
-absl::Status grpc_status_create(
+absl::Status StatusCreate(
     absl::StatusCode code, absl::string_view msg, const char* file, int line,
     std::initializer_list<absl::Status> children) GRPC_MUST_USE_RESULT;
 
 /// Set the grpc_error_ints property to the status
-void grpc_status_set_int(absl::Status* status, grpc_error_ints which,
-                         intptr_t value);
+void StatusSetInt(absl::Status* status, grpc_error_ints which, intptr_t value);
 
 /// Get the grpc_error_ints property from the status
-absl::optional<intptr_t> grpc_status_get_int(
+absl::optional<intptr_t> StatusGetInt(
     const absl::Status& status, grpc_error_ints which) GRPC_MUST_USE_RESULT;
 
 /// Set the grpc_error_strs property to the status
-void grpc_status_set_str(absl::Status* status, grpc_error_strs which,
-                         std::string value);
+void StatusSetStr(absl::Status* status, grpc_error_strs which,
+                  std::string value);
 
 /// Get the grpc_error_strs property from the status
-absl::optional<std::string> grpc_status_get_str(
+absl::optional<std::string> StatusGetStr(
     const absl::Status& status, grpc_error_strs which) GRPC_MUST_USE_RESULT;
 
 /// Added a child status to status
-void grpc_status_add_child(absl::Status* status, absl::Status child);
+void StatusAddChild(absl::Status* status, absl::Status child);
 
 /// Returns a string representation from status
 /// Error status will be like
 ///   STATUS[:MESSAGE] [{PAYLOADS[, children:[CHILDREN-STATUS-LISTS]]}]
 /// e.g.
 ///   CANCELLATION:SampleMessage {errno:'2021', line:'54', children:[ABORTED]}
-std::string grpc_status_to_string(const absl::Status& status)
-    GRPC_MUST_USE_RESULT;
-
-/// Log status
-void grpc_log_status(const char* what, absl::Status status, const char* file,
-                     int line);
+std::string StatusToString(const absl::Status& status) GRPC_MUST_USE_RESULT;
 
 // -------------
 // Create helper
 
 /// Create an OS error status with given additional information
-absl::Status grpc_status_os_create(const char* file, int line, int err,
-                                   const char* call_name) GRPC_MUST_USE_RESULT;
+absl::Status StatusCreateOS(const char* file, int line, int err,
+                            const char* call_name) GRPC_MUST_USE_RESULT;
 
 #ifdef GPR_WINDOWS
 /// Create a WSA error status with given additional information
-absl::Status grpc_status_wsa_create(const char* file, int line, int err,
-                                    const char* call_name) GRPC_MUST_USE_RESULT;
+absl::Status StatusCreateWSA(const char* file, int line, int err,
+                             const char* call_name) GRPC_MUST_USE_RESULT;
 #endif  // #ifdef GPR_WINDOWS
 
 }  // namespace grpc_core
