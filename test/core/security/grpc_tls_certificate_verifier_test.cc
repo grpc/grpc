@@ -37,92 +37,69 @@ namespace grpc_core {
 
 namespace testing {
 
-class GrpcTlsCertificateVerifierTest : public ::testing::Test {
- protected:
-  void SetUp() override {}
-
-  void TearDown() override {
-    if (external_certificate_verifier_ != nullptr) {
-      delete external_certificate_verifier_;
-    }
+class SyncExternalVerifier {
+ public:
+  SyncExternalVerifier(bool is_good) {
+    auto* user_data = new UserData();
+    user_data->self = this;
+    user_data->is_good = is_good;
+    base_.user_data = (void*)user_data;
+    base_.verify = Verify;
+    base_.cancel = Cancel;
+    base_.destruct = Destruct;
   }
 
-  void CreateExternalCertificateVerifier(
-      int (*verify)(void* user_data,
+  struct UserData {
+    SyncExternalVerifier* self = nullptr;
+    bool is_good = false;
+  };
+
+  grpc_tls_certificate_verifier_external* base() { return &base_; }
+
+ private:
+  static int Verify(void* user_data,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg),
-      void (*cancel)(void* user_data,
-                     grpc_tls_custom_verification_check_request* request),
-      void (*destruct)(void* user_data)) {
-    auto* external_verifier = new grpc_tls_certificate_verifier_external();
-    external_verifier->verify = verify;
-    external_verifier->cancel = cancel;
-    external_verifier->destruct = destruct;
-    external_verifier->user_data = (void*)external_verifier;
-    external_certificate_verifier_ =
-        new ExternalCertificateVerifier(external_verifier);
-  }
-
-  static int SyncExternalVerifierGoodVerify(
-      void* user_data, grpc_tls_custom_verification_check_request* request,
-      grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
-    request->status = GRPC_STATUS_OK;
-    return false;
-  }
-
-  static int SyncExternalVerifierBadVerify(
-      void* user_data, grpc_tls_custom_verification_check_request* request,
-      grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
+                    void* callback_arg) {
+    auto* data = static_cast<UserData*>(user_data);
+    if (data->is_good) {
+      request->status = GRPC_STATUS_OK;
+      return false;  // Synchronous call
+    }
     request->status = GRPC_STATUS_UNAUTHENTICATED;
     request->error_details = gpr_strdup("SyncExternalVerifierBadVerify failed");
-    return false;
+    return false;  // Synchronous call
   }
 
-  static void SyncExternalVerifierDestruct(void* user_data) {
-    auto* external_verifier =
-        static_cast<grpc_tls_certificate_verifier_external*>(user_data);
-    delete external_verifier;
+  static void Cancel(void* user_data,
+                     grpc_tls_custom_verification_check_request* request) {}
+
+  static void Destruct(void* user_data) {
+    auto* data = static_cast<UserData*>(user_data);
+    delete data->self;
+    delete data;
   }
 
-  // For Async external verifier, we will take two extra parameters, compared to
-  // the sync verifier:
-  // 1. thread_ptr_ptr: main test thread will create a dummy thread object, and
-  // later in the aysnc function, we will replace it with the real thread we
-  // want to run checks. this is the pointer of the thread object pointer. After
-  // the actual thread is run, we will need to join the thread in main test
-  // thread.
-  // 2. event_ptr: when the thread object is replaced, we will signal a event to
-  // let the main test thread know the thread object is replaced with the actual
-  // thread, and is hence join-able.
-  void CreateASyncExternalCertificateVerifier(
-      int (*verify)(void* user_data,
-                    grpc_tls_custom_verification_check_request* request,
-                    grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg),
-      void (*cancel)(void* user_data,
-                     grpc_tls_custom_verification_check_request* request),
-      void (*destruct)(void* user_data), gpr_event* event_ptr,
-      grpc_core::Thread** thread_ptr_ptr) {
-    grpc_tls_certificate_verifier_external* external_verifier =
-        new grpc_tls_certificate_verifier_external();
-    external_verifier->verify = verify;
-    external_verifier->cancel = cancel;
-    external_verifier->destruct = destruct;
-    // We store the information we want to pass to external_verifier->verify in
-    // the user_data_args.
-    ExternalVerifierUserDataArgs* user_data_args =
-        new ExternalVerifierUserDataArgs();
-    user_data_args->external_verifier = external_verifier;
-    user_data_args->thread_ptr_ptr = thread_ptr_ptr;
-    user_data_args->event_ptr = event_ptr;
-    external_verifier->user_data = (void*)user_data_args;
-    // Takes the ownership of external_verifier.
-    external_certificate_verifier_ =
-        new ExternalCertificateVerifier(external_verifier);
+  grpc_tls_certificate_verifier_external base_;
+};
+
+class AsyncExternalVerifier {
+ public:
+  AsyncExternalVerifier(bool is_good) {
+    auto* user_data = new UserData();
+    user_data->self = this;
+    user_data->is_good = is_good;
+    base_.user_data = (void*)user_data;
+    base_.verify = Verify;
+    base_.cancel = Cancel;
+    base_.destruct = Destruct;
   }
+
+  struct UserData {
+    AsyncExternalVerifier* self = nullptr;
+    grpc_core::Thread* thread = nullptr;
+    bool is_good = false;
+  };
 
   // This is the arg we will pass in when creating the thread, and retrieve it
   // later in the thread callback.
@@ -132,37 +109,41 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
     void* callback_arg = nullptr;
   };
 
-  // This is the arg we will pass in when creating the external verifier, and
-  // retrieve it later in the its verifier functions.
-  struct ExternalVerifierUserDataArgs {
-    grpc_tls_certificate_verifier_external* external_verifier = nullptr;
-    grpc_core::Thread** thread_ptr_ptr = nullptr;
-    gpr_event* event_ptr = nullptr;
-  };
+  grpc_tls_certificate_verifier_external* base() { return &base_; }
 
-  static int AsyncExternalVerifierGoodVerify(
-      void* user_data, grpc_tls_custom_verification_check_request* request,
-      grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
-    ExternalVerifierUserDataArgs* user_data_args =
-        static_cast<ExternalVerifierUserDataArgs*>(user_data);
-    grpc_core::Thread** thread_ptr_ptr = user_data_args->thread_ptr_ptr;
-    gpr_event* event_ptr = user_data_args->event_ptr;
+ private:
+  static int Verify(void* user_data,
+                    grpc_tls_custom_verification_check_request* request,
+                    grpc_tls_on_custom_verification_check_done_cb callback,
+                    void* callback_arg) {
+    auto* data = static_cast<UserData*>(user_data);
     // Creates the thread args we use when creating the thread.
     ThreadArgs* thread_args = new ThreadArgs();
     thread_args->request = request;
     thread_args->callback = callback;
     thread_args->callback_arg = callback_arg;
-    // Replaces the thread object with the actual thread object we want to run.
-    // First we delete the dummy thread object we set before.
-    delete *thread_ptr_ptr;
-    *thread_ptr_ptr = new grpc_core::Thread("AsyncExternalVerifierGoodVerify",
-                                            &AsyncExternalVerifierGoodVerifyCb,
-                                            static_cast<void*>(thread_args));
-    (**thread_ptr_ptr).Start();
-    // Now we can notify the main thread that the thread object is set.
-    gpr_event_set(event_ptr, reinterpret_cast<void*>(1));
-    return true;
+    if (data->is_good) {
+      data->thread = new grpc_core::Thread("AsyncExternalVerifierGoodVerify",
+                                           &AsyncExternalVerifierGoodVerifyCb,
+                                           static_cast<void*>(thread_args));
+    } else {
+      data->thread = new grpc_core::Thread("AsyncExternalVerifierBadVerify",
+                                           &AsyncExternalVerifierBadVerifyCb,
+                                           static_cast<void*>(thread_args));
+    }
+    (*data->thread).Start();
+    return true;  // Asynchronous call
+  }
+
+  static void Cancel(void* user_data,
+                     grpc_tls_custom_verification_check_request* request) {}
+
+  static void Destruct(void* user_data) {
+    auto* data = static_cast<UserData*>(user_data);
+    (*data->thread).Join();
+    delete data->thread;
+    delete data->self;
+    delete data;
   }
 
   static void AsyncExternalVerifierGoodVerifyCb(void* args) {
@@ -174,31 +155,6 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
     request->status = GRPC_STATUS_OK;
     callback(request, callback_arg);
     delete thread_args;
-  }
-
-  static int AsyncExternalVerifierBadVerify(
-      void* user_data, grpc_tls_custom_verification_check_request* request,
-      grpc_tls_on_custom_verification_check_done_cb callback,
-      void* callback_arg) {
-    ExternalVerifierUserDataArgs* user_data_args =
-        static_cast<ExternalVerifierUserDataArgs*>(user_data);
-    grpc_core::Thread** thread_ptr_ptr = user_data_args->thread_ptr_ptr;
-    gpr_event* event_ptr = user_data_args->event_ptr;
-    // Creates the thread args we use when creating the thread.
-    ThreadArgs* thread_args = new ThreadArgs();
-    thread_args->request = request;
-    thread_args->callback = callback;
-    thread_args->callback_arg = callback_arg;
-    // Replaces the thread object with the actual thread object we want to run.
-    // First we delete the dummy thread object we set before.
-    delete *thread_ptr_ptr;
-    *thread_ptr_ptr = new grpc_core::Thread("AsyncExternalVerifierBadVerify",
-                                            &AsyncExternalVerifierBadVerifyCb,
-                                            static_cast<void*>(thread_args));
-    (**thread_ptr_ptr).Start();
-    // Now we can notify the main thread that the thread object is set.
-    gpr_event_set(event_ptr, reinterpret_cast<void*>(1));
-    return true;
   }
 
   static void AsyncExternalVerifierBadVerifyCb(void* args) {
@@ -214,85 +170,56 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
     delete thread_args;
   }
 
-  static void AsyncExternalVerifierDestruct(void* user_data) {
-    ExternalVerifierUserDataArgs* user_data_args =
-        static_cast<ExternalVerifierUserDataArgs*>(user_data);
-    delete user_data_args->external_verifier;
-    delete user_data_args;
-  }
+  grpc_tls_certificate_verifier_external base_;
+};
+
+class GrpcTlsCertificateVerifierTest : public ::testing::Test {
+ protected:
+  void SetUp() override {}
+
+  void TearDown() override {}
 
   CertificateVerificationRequest internal_request_;
-  ExternalCertificateVerifier* external_certificate_verifier_ = nullptr;
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
 TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierGood) {
-  CreateExternalCertificateVerifier(SyncExternalVerifierGoodVerify, nullptr,
-                                    SyncExternalVerifierDestruct);
-  external_certificate_verifier_->Verify(&internal_request_, [] {});
+  auto* sync_verifier_ = new SyncExternalVerifier(true);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier_->base());
+  core_external_verifier.Verify(&internal_request_, [] {});
   EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_OK);
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierBad) {
-  CreateExternalCertificateVerifier(SyncExternalVerifierBadVerify, nullptr,
-                                    SyncExternalVerifierDestruct);
-  external_certificate_verifier_->Verify(&internal_request_, [] {});
+  auto* sync_verifier_ = new SyncExternalVerifier(false);
+  ExternalCertificateVerifier core_external_verifier(sync_verifier_->base());
+  core_external_verifier.Verify(&internal_request_, [] {});
   EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_UNAUTHENTICATED);
   EXPECT_STREQ(internal_request_.request.error_details,
                "SyncExternalVerifierBadVerify failed");
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierGood) {
-  // Indicates if the thread pointer returned from
-  // CreateASyncExternalCertificateVerifier is filled with the real object
-  // asynchronously.
-  gpr_event event;
-  gpr_event_init(&event);
-  // Creates a dummy thread object that will be replaced with the actual thread
-  // object later in the async verifier.
-  grpc_core::Thread* thread_ptr = new grpc_core::Thread();
-  gpr_log(GPR_ERROR, "thread pointer address: %p", thread_ptr);
-  CreateASyncExternalCertificateVerifier(AsyncExternalVerifierGoodVerify,
-                                         nullptr, AsyncExternalVerifierDestruct,
-                                         &event, &thread_ptr);
-  external_certificate_verifier_->Verify(
+  auto* async_verifier = new AsyncExternalVerifier(true);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  core_external_verifier->Verify(
       &internal_request_, [] { gpr_log(GPR_INFO, "Callback is invoked."); });
-  // Wait for the thread object to be set.
-  void* value = gpr_event_wait(
-      &event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                           gpr_time_from_seconds(5, GPR_TIMESPAN)));
-  EXPECT_NE(value, nullptr);
-  // Join the thread otherwise there will be memory leaks.
-  (*thread_ptr).Join();
-  // release the thread object we run.
-  delete thread_ptr;
+  // Deleting the verifier will wait for the async thread to be completed.
+  // We need to make sure it is completed before checking request's information.
+  delete core_external_verifier;
   EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_OK);
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierBad) {
-  // Indicates if the thread pointer returned from
-  // CreateASyncExternalCertificateVerifier is filled with the real object
-  // asynchronously.
-  gpr_event event;
-  gpr_event_init(&event);
-  // Creates a dummy thread object that will be replaced with the actual thread
-  // object later in the async verifier.
-  grpc_core::Thread* thread_ptr = new grpc_core::Thread();
-  gpr_log(GPR_ERROR, "thread pointer address: %p", thread_ptr);
-  CreateASyncExternalCertificateVerifier(AsyncExternalVerifierBadVerify,
-                                         nullptr, AsyncExternalVerifierDestruct,
-                                         &event, &thread_ptr);
-  external_certificate_verifier_->Verify(
+  auto* async_verifier = new AsyncExternalVerifier(false);
+  auto* core_external_verifier =
+      new ExternalCertificateVerifier(async_verifier->base());
+  core_external_verifier->Verify(
       &internal_request_, [] { gpr_log(GPR_INFO, "Callback is invoked."); });
-  // Wait for the thread object to be set.
-  void* value = gpr_event_wait(
-      &event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                           gpr_time_from_seconds(5, GPR_TIMESPAN)));
-  EXPECT_NE(value, nullptr);
-  // Join the thread otherwise there will be memory leaks.
-  (*thread_ptr).Join();
-  // release the thread object we run.
-  delete thread_ptr;
+  // Deleting the verifier will wait for the async thread to be completed.
+  // We need to make sure it is completed before checking request's information.
+  delete core_external_verifier;
   EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_UNAUTHENTICATED);
   EXPECT_STREQ(internal_request_.request.error_details,
                "AsyncExternalVerifierBadVerify failed");
