@@ -94,10 +94,6 @@ class CallCombiner {
   /// cancellation; this effectively unregisters the previously set closure.
   /// However, most filters will not need to explicitly unregister their
   /// callbacks, as this is done automatically when the call is destroyed.
-  /// Filters that schedule the cancellation closure on ExecCtx do not need
-  /// to take a ref on the call stack to guarantee closure liveness. This is
-  /// done by explicitly flushing ExecCtx after the unregistration during
-  /// call destruction.
   void SetNotifyOnCancel(grpc_closure* closure);
 
   /// Indicates that the call has been cancelled.
