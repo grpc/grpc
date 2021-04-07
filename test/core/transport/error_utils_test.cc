@@ -51,6 +51,12 @@ TEST(ErrorUtilsTest, GrpcSpecialErrorCancelledToAbslStatus) {
   ASSERT_EQ(status.message(), "Cancelled");
 }
 
+TEST(ErrorUtilsTest, GrpcSpecialErrorOOMToAbslStatus) {
+  absl::Status status = grpc_error_to_absl_status(GRPC_ERROR_OOM);
+  ASSERT_TRUE(absl::IsResourceExhausted(status));
+  ASSERT_EQ(status.message(), "Out of memory");
+}
+
 // ---- Ordinary statuses ----
 TEST(ErrorUtilsTest, AbslUnavailableToGrpcError) {
   grpc_error* error =
