@@ -1759,6 +1759,8 @@ src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/stat.h \
 src/core/lib/gprpp/stat_posix.cc \
 src/core/lib/gprpp/stat_windows.cc \
+src/core/lib/gprpp/status_helper.cc \
+src/core/lib/gprpp/status_helper.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
@@ -1895,8 +1897,6 @@ src/core/lib/iomgr/socket_utils_uv.cc \
 src/core/lib/iomgr/socket_utils_windows.cc \
 src/core/lib/iomgr/socket_windows.cc \
 src/core/lib/iomgr/socket_windows.h \
-src/core/lib/iomgr/status_util.cc \
-src/core/lib/iomgr/status_util.h \
 src/core/lib/iomgr/sys_epoll_wrapper.h \
 src/core/lib/iomgr/tcp_client.cc \
 src/core/lib/iomgr/tcp_client.h \

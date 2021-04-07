@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#include "src/core/lib/iomgr/status_util.h"
+#include "src/core/lib/gprpp/status_helper.h"
 
 #include <gtest/gtest.h>
 
@@ -25,40 +25,51 @@
 namespace grpc_core {
 namespace {
 
+static absl::string_view kCreatedUrl =
+    "type.googleapis.com/grpc.status.created";
+static absl::string_view kIntField = "int";
+static absl::string_view kStrField = "str";
+
+#ifndef NDEBUG
+static absl::string_view kFileField = "file";
+static absl::string_view kFileLineField = "file_line";
+#endif
+
 TEST(StatusUtilTest, CreateStatus) {
   absl::Status s =
-      StatusCreate(absl::StatusCode::kUnknown, "Test", "status_util_test.cc",
-                   10, {absl::OkStatus(), absl::CancelledError()});
+      StatusCreate(absl::StatusCode::kUnknown, "Test", DEBUG_LOCATION,
+                   {absl::OkStatus(), absl::CancelledError()});
   EXPECT_EQ(absl::StatusCode::kUnknown, s.code());
   EXPECT_EQ("Test", s.message());
-  EXPECT_EQ("status_util_test.cc", StatusGetStr(s, GRPC_ERROR_STR_FILE));
-  EXPECT_EQ(10, StatusGetInt(s, GRPC_ERROR_INT_FILE_LINE));
-  EXPECT_EQ(true, s.GetPayload("created").has_value());
+#ifndef NDEBUG
+  EXPECT_EQ(true, StatusGetStr(s, kFileField).has_value());
+  EXPECT_EQ(true, StatusGetInt(s, kFileLineField).has_value());
+#endif
+  EXPECT_EQ(true, s.GetPayload(kCreatedUrl).has_value());
   EXPECT_EQ(std::vector<absl::Status>({absl::CancelledError()}),
             StatusGetChildren(s));
 }
 
 TEST(StatusUtilTest, SetAndGetInt) {
   absl::Status s = absl::CancelledError();
-  StatusSetInt(&s, GRPC_ERROR_INT_ERRNO, 2021);
-  EXPECT_EQ(2021, StatusGetInt(s, GRPC_ERROR_INT_ERRNO));
+  StatusSetInt(&s, kIntField, 2021);
+  EXPECT_EQ(2021, StatusGetInt(s, kIntField));
 }
 
 TEST(StatusUtilTest, GetIntNotExistent) {
   absl::Status s = absl::CancelledError();
-  EXPECT_EQ(absl::optional<intptr_t>(), StatusGetInt(s, GRPC_ERROR_INT_ERRNO));
+  EXPECT_EQ(absl::optional<intptr_t>(), StatusGetInt(s, kIntField));
 }
 
 TEST(StatusUtilTest, SetAndGetStr) {
   absl::Status s = absl::CancelledError();
-  StatusSetStr(&s, GRPC_ERROR_STR_DESCRIPTION, "str");
-  EXPECT_EQ("str", StatusGetStr(s, GRPC_ERROR_STR_DESCRIPTION));
+  StatusSetStr(&s, kStrField, "value");
+  EXPECT_EQ("value", StatusGetStr(s, kStrField));
 }
 
 TEST(StatusUtilTest, GetStrNotExistent) {
   absl::Status s = absl::CancelledError();
-  EXPECT_EQ(absl::optional<std::string>(),
-            StatusGetStr(s, GRPC_ERROR_STR_DESCRIPTION));
+  EXPECT_EQ(absl::optional<std::string>(), StatusGetStr(s, kStrField));
 }
 
 TEST(StatusUtilTest, AddAndGetChildren) {
@@ -72,8 +83,8 @@ TEST(StatusUtilTest, AddAndGetChildren) {
 
 TEST(StatusUtilTest, ToAndFromProto) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetInt(&s, GRPC_ERROR_INT_ERRNO, 2021);
-  StatusSetStr(&s, GRPC_ERROR_STR_DESCRIPTION, "str");
+  StatusSetInt(&s, kIntField, 2021);
+  StatusSetStr(&s, kStrField, "value");
   upb::Arena arena;
   google_rpc_Status* msg = StatusToProto(s, arena.ptr());
   absl::Status s2 = StatusFromProto(msg);
@@ -94,23 +105,23 @@ TEST(StatusUtilTest, CancelledErrorToString) {
 
 TEST(StatusUtilTest, ComplexErrorToString) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetInt(&s, GRPC_ERROR_INT_ERRNO, 2021);
+  StatusSetInt(&s, kIntField, 2021);
   std::string t = StatusToString(s);
-  EXPECT_EQ("CANCELLED:Message {errno:'2021'}", t);
+  EXPECT_EQ("CANCELLED:Message {int:'2021'}", t);
 }
 
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetInt(&s, GRPC_ERROR_INT_ERRNO, 2021);
+  StatusSetInt(&s, kIntField, 2021);
   absl::Status s1 = absl::AbortedError("Message1");
   StatusAddChild(&s, s1);
   absl::Status s2 = absl::AlreadyExistsError("Message2");
-  StatusSetStr(&s2, GRPC_ERROR_STR_SYSCALL, "call");
+  StatusSetStr(&s2, kStrField, "value");
   StatusAddChild(&s, s2);
   std::string t = StatusToString(s);
   EXPECT_EQ(
-      "CANCELLED:Message {errno:'2021', children:["
-      "ABORTED:Message1, ALREADY_EXISTS:Message2 {syscall:'call'}]}",
+      "CANCELLED:Message {int:'2021', children:["
+      "ABORTED:Message1, ALREADY_EXISTS:Message2 {str:'value'}]}",
       t);
 }
 
