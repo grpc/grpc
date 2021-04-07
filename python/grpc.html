@@ -4,8 +4,9 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>gRPC &#8212; gRPC Python 1.36.1 documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="generator" content="Docutils 0.17: http://docutils.sourceforge.net/" />
+
+    <title>gRPC &#8212; gRPC Python 1.37.0 documentation</title>
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <script id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -31,7 +32,7 @@
 
 
 
-<p class="blurb">1.36.1</p>
+<p class="blurb">1.37.0</p>
 
 
 
@@ -39,7 +40,7 @@
 
 
 <h3>Navigation</h3>
-<p class="caption"><span class="caption-text">Contents:</span></p>
+<p><span class="caption-text">Contents:</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">gRPC</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#module-contents">Module Contents</a><ul>
@@ -115,16 +116,16 @@
 
           <div class="body" role="main">
             
-  <div class="section" id="module-grpc">
+  <section id="module-grpc">
 <span id="grpc"></span><h1>gRPC<a class="headerlink" href="#module-grpc" title="Permalink to this headline">¶</a></h1>
 <p>For documentation, examples, and more, see the <a class="reference external" href="https://grpc.io/docs/languages/python/">Python gRPC</a> page on <a class="reference external" href="https://grpc.io/">grpc.io</a>.</p>
-<div class="section" id="module-contents">
+<section id="module-contents">
 <h2>Module Contents<a class="headerlink" href="#module-contents" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="version">
+<section id="version">
 <h3>Version<a class="headerlink" href="#version" title="Permalink to this headline">¶</a></h3>
 <p>The version string is available as <code class="code docutils literal notranslate"><span class="pre">grpc.__version__</span></code>.</p>
-</div>
-<div class="section" id="create-client">
+</section>
+<section id="create-client">
 <h3>Create Client<a class="headerlink" href="#create-client" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="grpc.insecure_channel">
@@ -173,7 +174,6 @@ used over the lifetime of the channel. This is an EXPERIMENTAL option.</p></li>
 <dt id="grpc.intercept_channel">
 <code class="sig-prename descclassname"><span class="pre">grpc.</span></code><code class="sig-name descname"><span class="pre">intercept_channel</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">channel</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">*</span></span><span class="n"><span class="pre">interceptors</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#intercept_channel"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.intercept_channel" title="Permalink to this definition">¶</a></dt>
 <dd><p>Intercepts a channel through a set of interceptors.</p>
-<p>This is an EXPERIMENTAL API.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -199,8 +199,8 @@ Interceptors are given control in the order they are listed.</p></li>
 </dl>
 </dd></dl>
 
-</div>
-<div class="section" id="create-client-credentials">
+</section>
+<section id="create-client-credentials">
 <h3>Create Client Credentials<a class="headerlink" href="#create-client-credentials" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="grpc.ssl_channel_credentials">
@@ -331,8 +331,8 @@ VM’s default service account. If used with any other sort of call
 credential, the connection may suddenly and unexpectedly begin failing RPCs.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="create-server">
+</section>
+<section id="create-server">
 <h3>Create Server<a class="headerlink" href="#create-server" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="grpc.server">
@@ -368,8 +368,8 @@ EXPERIMENTAL option.</p></li>
 </dl>
 </dd></dl>
 
-</div>
-<div class="section" id="create-server-credentials">
+</section>
+<section id="create-server-credentials">
 <h3>Create Server Credentials<a class="headerlink" href="#create-server-credentials" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="grpc.ssl_server_credentials">
@@ -473,8 +473,8 @@ grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)</p>
 </dl>
 </dd></dl>
 
-</div>
-<div class="section" id="local-connection-type">
+</section>
+<section id="local-connection-type">
 <h3>Local Connection Type<a class="headerlink" href="#local-connection-type" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.LocalConnectionType">
@@ -494,8 +494,8 @@ grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="rpc-method-handlers">
+</section>
+<section id="rpc-method-handlers">
 <h3>RPC Method Handlers<a class="headerlink" href="#rpc-method-handlers" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="grpc.unary_unary_rpc_method_handler">
@@ -593,8 +593,8 @@ with add_generic_rpc_handlers() before starting the server.</p>
 </dl>
 </dd></dl>
 
-</div>
-<div class="section" id="channel-ready-future">
+</section>
+<section id="channel-ready-future">
 <h3>Channel Ready Future<a class="headerlink" href="#channel-ready-future" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="grpc.channel_ready_future">
@@ -613,8 +613,8 @@ ChannelConnectivity.READY.</p>
 </dl>
 </dd></dl>
 
-</div>
-<div class="section" id="channel-connectivity">
+</section>
+<section id="channel-connectivity">
 <h3>Channel Connectivity<a class="headerlink" href="#channel-connectivity" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.ChannelConnectivity">
@@ -653,8 +653,8 @@ to recover.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="grpc-status-code">
+</section>
+<section id="grpc-status-code">
 <h3>gRPC Status Code<a class="headerlink" href="#grpc-status-code" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.StatusCode">
@@ -765,8 +765,8 @@ system has been broken.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="channel-object">
+</section>
+<section id="channel-object">
 <h3>Channel Object<a class="headerlink" href="#channel-object" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.Channel">
@@ -919,8 +919,8 @@ is passed.</p></li>
 
 </dd></dl>
 
-</div>
-<div class="section" id="server-object">
+</section>
+<section id="server-object">
 <h3>Server Object<a class="headerlink" href="#server-object" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.Server">
@@ -1039,8 +1039,8 @@ operation in seconds.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="authentication-authorization-objects">
+</section>
+<section id="authentication-authorization-objects">
 <h3>Authentication &amp; Authorization Objects<a class="headerlink" href="#authentication-authorization-objects" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.ChannelCredentials">
@@ -1144,8 +1144,8 @@ type of its instances and its instances exist to be passed to
 other functions.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="grpc-exceptions">
+</section>
+<section id="grpc-exceptions">
 <h3>gRPC Exceptions<a class="headerlink" href="#grpc-exceptions" title="Permalink to this headline">¶</a></h3>
 <dl class="py exception">
 <dt id="grpc.RpcError">
@@ -1153,8 +1153,8 @@ other functions.</p>
 <dd><p>Raised by the gRPC library to indicate non-OK-status RPC termination.</p>
 </dd></dl>
 
-</div>
-<div class="section" id="shared-context">
+</section>
+<section id="shared-context">
 <h3>Shared Context<a class="headerlink" href="#shared-context" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.RpcContext">
@@ -1215,8 +1215,8 @@ timed out, or None if no deadline was specified for the RPC.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="client-side-context">
+</section>
+<section id="client-side-context">
 <h3>Client-Side Context<a class="headerlink" href="#client-side-context" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.Call">
@@ -1272,14 +1272,13 @@ timed out, or None if no deadline was specified for the RPC.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="client-side-interceptor">
+</section>
+<section id="client-side-interceptor">
 <h3>Client-Side Interceptor<a class="headerlink" href="#client-side-interceptor" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.ClientCallDetails">
 <em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">grpc.</span></code><code class="sig-name descname"><span class="pre">ClientCallDetails</span></code><a class="reference internal" href="_modules/grpc.html#ClientCallDetails"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.ClientCallDetails" title="Permalink to this definition">¶</a></dt>
 <dd><p>Describes an RPC to be invoked.</p>
-<p>This is an EXPERIMENTAL API.</p>
 <dl class="py attribute">
 <dt id="grpc.ClientCallDetails.method">
 <code class="sig-name descname"><span class="pre">method</span></code><a class="headerlink" href="#grpc.ClientCallDetails.method" title="Permalink to this definition">¶</a></dt>
@@ -1325,7 +1324,6 @@ grpc.compression.Gzip. This is an EXPERIMENTAL option.</p>
 <dt id="grpc.UnaryUnaryClientInterceptor">
 <em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">grpc.</span></code><code class="sig-name descname"><span class="pre">UnaryUnaryClientInterceptor</span></code><a class="reference internal" href="_modules/grpc.html#UnaryUnaryClientInterceptor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.UnaryUnaryClientInterceptor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords intercepting unary-unary invocations.</p>
-<p>This is an EXPERIMENTAL API.</p>
 <dl class="py method">
 <dt id="grpc.UnaryUnaryClientInterceptor.intercept_unary_unary">
 <em class="property"><span class="pre">abstract</span> </em><code class="sig-name descname"><span class="pre">intercept_unary_unary</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">continuation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_call_details</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryUnaryClientInterceptor.intercept_unary_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.UnaryUnaryClientInterceptor.intercept_unary_unary" title="Permalink to this definition">¶</a></dt>
@@ -1366,7 +1364,6 @@ Call-Future’s exception value will be an RpcError.</p>
 <dt id="grpc.UnaryStreamClientInterceptor">
 <em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">grpc.</span></code><code class="sig-name descname"><span class="pre">UnaryStreamClientInterceptor</span></code><a class="reference internal" href="_modules/grpc.html#UnaryStreamClientInterceptor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.UnaryStreamClientInterceptor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords intercepting unary-stream invocations.</p>
-<p>This is an EXPERIMENTAL API.</p>
 <dl class="py method">
 <dt id="grpc.UnaryStreamClientInterceptor.intercept_unary_stream">
 <em class="property"><span class="pre">abstract</span> </em><code class="sig-name descname"><span class="pre">intercept_unary_stream</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">continuation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_call_details</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#UnaryStreamClientInterceptor.intercept_unary_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.UnaryStreamClientInterceptor.intercept_unary_stream" title="Permalink to this definition">¶</a></dt>
@@ -1394,7 +1391,8 @@ outgoing RPC.</p></li>
 <dd class="field-even"><p>An object that is both a Call for the RPC and an iterator of
 response values. Drawing response values from the returned
 Call-iterator may raise RpcError indicating termination of
-the RPC with non-OK status.</p>
+the RPC with non-OK status. This object <em>should</em> also fulfill the
+Future interface, though it may not.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -1405,7 +1403,6 @@ the RPC with non-OK status.</p>
 <dt id="grpc.StreamUnaryClientInterceptor">
 <em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">grpc.</span></code><code class="sig-name descname"><span class="pre">StreamUnaryClientInterceptor</span></code><a class="reference internal" href="_modules/grpc.html#StreamUnaryClientInterceptor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.StreamUnaryClientInterceptor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords intercepting stream-unary invocations.</p>
-<p>This is an EXPERIMENTAL API.</p>
 <dl class="py method">
 <dt id="grpc.StreamUnaryClientInterceptor.intercept_stream_unary">
 <em class="property"><span class="pre">abstract</span> </em><code class="sig-name descname"><span class="pre">intercept_stream_unary</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">continuation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_call_details</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_iterator</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamUnaryClientInterceptor.intercept_stream_unary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.StreamUnaryClientInterceptor.intercept_stream_unary" title="Permalink to this definition">¶</a></dt>
@@ -1445,7 +1442,6 @@ Call-Future’s exception value will be an RpcError.</p>
 <dt id="grpc.StreamStreamClientInterceptor">
 <em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">grpc.</span></code><code class="sig-name descname"><span class="pre">StreamStreamClientInterceptor</span></code><a class="reference internal" href="_modules/grpc.html#StreamStreamClientInterceptor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.StreamStreamClientInterceptor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords intercepting stream-stream invocations.</p>
-<p>This is an EXPERIMENTAL API.</p>
 <dl class="py method">
 <dt id="grpc.StreamStreamClientInterceptor.intercept_stream_stream">
 <em class="property"><span class="pre">abstract</span> </em><code class="sig-name descname"><span class="pre">intercept_stream_stream</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">continuation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">client_call_details</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">request_iterator</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#StreamStreamClientInterceptor.intercept_stream_stream"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.StreamStreamClientInterceptor.intercept_stream_stream" title="Permalink to this definition">¶</a></dt>
@@ -1473,15 +1469,16 @@ outgoing RPC.</p></li>
 <dd class="field-even"><p>An object that is both a Call for the RPC and an iterator of
 response values. Drawing response values from the returned
 Call-iterator may raise RpcError indicating termination of
-the RPC with non-OK status.</p>
+the RPC with non-OK status. This object <em>should</em> also fulfill the
+Future interface, though it may not.</p>
 </dd>
 </dl>
 </dd></dl>
 
 </dd></dl>
 
-</div>
-<div class="section" id="service-side-context">
+</section>
+<section id="service-side-context">
 <h3>Service-Side Context<a class="headerlink" href="#service-side-context" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.ServicerContext">
@@ -1671,8 +1668,8 @@ metadata to add to what the gRPC runtime will transmit.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="service-side-handler">
+</section>
+<section id="service-side-handler">
 <h3>Service-Side Handler<a class="headerlink" href="#service-side-handler" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.RpcMethodHandler">
@@ -1810,14 +1807,13 @@ service name.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="service-side-interceptor">
+</section>
+<section id="service-side-interceptor">
 <h3>Service-Side Interceptor<a class="headerlink" href="#service-side-interceptor" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.ServerInterceptor">
 <em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">grpc.</span></code><code class="sig-name descname"><span class="pre">ServerInterceptor</span></code><a class="reference internal" href="_modules/grpc.html#ServerInterceptor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.ServerInterceptor" title="Permalink to this definition">¶</a></dt>
 <dd><p>Affords intercepting incoming RPCs on the service-side.</p>
-<p>This is an EXPERIMENTAL API.</p>
 <dl class="py method">
 <dt id="grpc.ServerInterceptor.intercept_service">
 <em class="property"><span class="pre">abstract</span> </em><code class="sig-name descname"><span class="pre">intercept_service</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">continuation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">handler_call_details</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#ServerInterceptor.intercept_service"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#grpc.ServerInterceptor.intercept_service" title="Permalink to this definition">¶</a></dt>
@@ -1842,8 +1838,8 @@ interceptor chooses to service this RPC, or None otherwise.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="multi-callable-interfaces">
+</section>
+<section id="multi-callable-interfaces">
 <h3>Multi-Callable Interfaces<a class="headerlink" href="#multi-callable-interfaces" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.UnaryUnaryMultiCallable">
@@ -1968,10 +1964,10 @@ grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>An object that is both a Call for the RPC and an iterator of
-response values. Drawing response values from the returned
-Call-iterator may raise RpcError indicating termination of the
-RPC with non-OK status.</p>
+<dd class="field-even"><p>An object that is a Call for the RPC, an iterator of response
+values, and a Future for the RPC. Drawing response values from the
+returned Call-iterator may raise RpcError indicating termination of
+the RPC with non-OK status.</p>
 </dd>
 </dl>
 </dd></dl>
@@ -2103,18 +2099,18 @@ grpc.compression.Gzip. This is an EXPERIMENTAL option.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>An object that is both a Call for the RPC and an iterator of
-response values. Drawing response values from the returned
-Call-iterator may raise RpcError indicating termination of the
-RPC with non-OK status.</p>
+<dd class="field-even"><p>An object that is a Call for the RPC, an iterator of response
+values, and a Future for the RPC. Drawing response values from the
+returned Call-iterator may raise RpcError indicating termination of
+the RPC with non-OK status.</p>
 </dd>
 </dl>
 </dd></dl>
 
 </dd></dl>
 
-</div>
-<div class="section" id="future-interfaces">
+</section>
+<section id="future-interfaces">
 <h3>Future Interfaces<a class="headerlink" href="#future-interfaces" title="Permalink to this headline">¶</a></h3>
 <dl class="py exception">
 <dt id="grpc.FutureTimeoutError">
@@ -2311,8 +2307,8 @@ if the computation did not raise an exception.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="compression">
+</section>
+<section id="compression">
 <h3>Compression<a class="headerlink" href="#compression" title="Permalink to this headline">¶</a></h3>
 <dl class="py class">
 <dt id="grpc.Compression">
@@ -2339,8 +2335,8 @@ if the computation did not raise an exception.</p>
 
 </dd></dl>
 
-</div>
-<div class="section" id="runtime-protobuf-parsing">
+</section>
+<section id="runtime-protobuf-parsing">
 <h3>Runtime Protobuf Parsing<a class="headerlink" href="#runtime-protobuf-parsing" title="Permalink to this headline">¶</a></h3>
 <dl class="py function">
 <dt id="grpc.protos">
@@ -2428,9 +2424,9 @@ transitive dependencies.</p>
 </dl>
 </dd></dl>
 
-</div>
-</div>
-</div>
+</section>
+</section>
+</section>
 
 
           </div>

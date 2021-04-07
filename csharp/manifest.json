@@ -1170,7 +1170,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.VersionInfo.html",
-          "hash": "4RWXf0h0bio+esGKDDqLtg=="
+          "hash": "JRMucA5rqlU6dfVIM7Y+xA=="
         }
       },
       "is_incremental": false,
@@ -1377,13 +1377,13 @@
         "incrementalPhase": "build"
       },
       "processors": {
-        "ManagedReferenceDocumentProcessor": {
-          "can_incremental": false,
-          "incrementalPhase": "build"
-        },
         "TocDocumentProcessor": {
           "can_incremental": false,
           "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build"
+        },
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": false,
           "incrementalPhase": "build"
         }
       }

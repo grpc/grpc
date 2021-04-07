@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -128,9 +128,10 @@ Public Member Functions</h2></td></tr>
 <tr class="memdesc:a95551b0d103d8e2527669aa0744fddcc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set an integer argument <em>value</em> under <em>key</em>.  <a href="classgrpc_1_1_channel_arguments.html#a95551b0d103d8e2527669aa0744fddcc">More...</a><br /></td></tr>
 <tr class="separator:a95551b0d103d8e2527669aa0744fddcc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4d0542a29349a1d6345d2278f117adfa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#a4d0542a29349a1d6345d2278f117adfa">SetPointer</a> (const std::string &amp;key, void *value)</td></tr>
-<tr class="memdesc:a4d0542a29349a1d6345d2278f117adfa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a pointer argument <em>value</em> under <em>key</em>. Owership is not transferred.  <a href="classgrpc_1_1_channel_arguments.html#a4d0542a29349a1d6345d2278f117adfa">More...</a><br /></td></tr>
+<tr class="memdesc:a4d0542a29349a1d6345d2278f117adfa"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a pointer argument <em>value</em> under <em>key</em>.  <a href="classgrpc_1_1_channel_arguments.html#a4d0542a29349a1d6345d2278f117adfa">More...</a><br /></td></tr>
 <tr class="separator:a4d0542a29349a1d6345d2278f117adfa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af8f0632b49b4e281f9f11fcfdda9c446"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#af8f0632b49b4e281f9f11fcfdda9c446">SetPointerWithVtable</a> (const std::string &amp;key, void *value, const <a class="el" href="structgrpc__arg__pointer__vtable.html">grpc_arg_pointer_vtable</a> *vtable)</td></tr>
+<tr class="memdesc:af8f0632b49b4e281f9f11fcfdda9c446"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a pointer argument <em>value</em> under <em>key</em>, transferring ownership of <em>value</em> to the <em><a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation.">ChannelArguments</a></em> object.  <a href="classgrpc_1_1_channel_arguments.html#af8f0632b49b4e281f9f11fcfdda9c446">More...</a><br /></td></tr>
 <tr class="separator:af8f0632b49b4e281f9f11fcfdda9c446"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af353198d69aa6e9c04f3451f848d5ae7"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_channel_arguments.html#af353198d69aa6e9c04f3451f848d5ae7">SetString</a> (const std::string &amp;key, const std::string &amp;value)</td></tr>
 <tr class="memdesc:af353198d69aa6e9c04f3451f848d5ae7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set a textual argument <em>value</em> under <em>key</em>.  <a href="classgrpc_1_1_channel_arguments.html#af353198d69aa6e9c04f3451f848d5ae7">More...</a><br /></td></tr>
@@ -434,7 +435,8 @@ Friends</h2></td></tr>
       </table>
 </div><div class="memdoc">
 
-<p>Set a pointer argument <em>value</em> under <em>key</em>. Owership is not transferred. </p>
+<p>Set a pointer argument <em>value</em> under <em>key</em>. </p>
+<p>Ownership is not transferred. </p>
 
 </div>
 </div>
@@ -469,6 +471,9 @@ Friends</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
+
+<p>Set a pointer argument <em>value</em> under <em>key</em>, transferring ownership of <em>value</em> to the <em><a class="el" href="classgrpc_1_1_channel_arguments.html" title="Options for channel creation.">ChannelArguments</a></em> object. </p>
+<p>The <em>vtable::Delete</em> function is responsible for <em>value</em> cleanup/destruction when called. </p>
 
 </div>
 </div>
@@ -674,7 +679,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

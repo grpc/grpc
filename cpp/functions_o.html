@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -77,6 +77,9 @@ $(function() {
 <li>ok()
 : <a class="el" href="classgrpc_1_1_status.html#ab80672b5665c32dc0937a0d58a3ce192">grpc::Status</a>
 </li>
+<li>on_serving_status_change
+: <a class="el" href="structgrpc__server__xds__status__notifier.html#a49e4bec539c128c1326cc696b2b71cbe">grpc_server_xds_status_notifier</a>
+</li>
 <li>OnCancel()
 : <a class="el" href="classgrpc_1_1internal_1_1_server_reactor.html#ad474a8d237cf749d216a5e1d7626d44f">grpc::internal::ServerReactor</a>
 , <a class="el" href="classgrpc_1_1_server_bidi_reactor.html#abb21a6abd4c50d76b1037b329a8aa721">grpc::ServerBidiReactor&lt; Request, Response &gt;</a>
@@ -118,6 +121,9 @@ $(function() {
 <li>OnServerAuthorizationCheckDoneCallback()
 : <a class="el" href="classgrpc_1_1experimental_1_1_tls_server_authorization_check_arg.html#ae98af5d277a121a65ea01ad6209c7d71">grpc::experimental::TlsServerAuthorizationCheckArg</a>
 </li>
+<li>OnServingStatusChange()
+: <a class="el" href="classgrpc_1_1experimental_1_1_xds_server_serving_status_notifier_interface.html#aa4af93725931f89fb16c0e3762c550ba">grpc::experimental::XdsServerServingStatusNotifierInterface</a>
+</li>
 <li>OnWriteDone()
 : <a class="el" href="classgrpc_1_1_client_bidi_reactor.html#ad7673b2c6cfb2dbb77655ef6fee6ebc7">grpc::ClientBidiReactor&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_write_reactor.html#a57bfa9041417cdb37c23816b18e4cfe8">grpc::ClientWriteReactor&lt; Request &gt;</a>
@@ -138,9 +144,9 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_client_async_reader.html#a0329060b6c6cb6f010de2191fad1eea3">grpc::ClientAsyncReader&lt; R &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#afd8442aa5ae6c46af74da8fac5d9ff61">grpc::ClientAsyncReaderWriter&lt; W, R &gt;</a>
 , <a class="el" href="classgrpc_1_1_client_async_response_reader.html#a4f3139ae1e3d25d10af4419473412c97">grpc::ClientAsyncResponseReader&lt; R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_async_writer.html#a32b7fa49be4fec698a9672d4a69b011f">grpc::ClientAsyncWriter&lt; W &gt;</a>
+, <a class="el" href="classgrpc_1_1_client_async_writer.html#a84a5a3dcfe4727183cd023aa1f7abe43">grpc::ClientAsyncWriter&lt; W &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_callback_with_status_tag.html#a1f9bdf075175df0ca310e9ac4a2580f9">grpc::internal::CallbackWithStatusTag</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_callback_with_success_tag.html#a4d697b405747dd5f9458949180f78c46">grpc::internal::CallbackWithSuccessTag</a>
+, <a class="el" href="classgrpc_1_1internal_1_1_callback_with_success_tag.html#a6f0a022dfc8dcffc31c5e64bef207633">grpc::internal::CallbackWithSuccessTag</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_impl.html#a626d8cbffd300bea7244c502e192d261">grpc::internal::ClientCallbackReaderImpl&lt; Response &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#ae391911f8a215a0ad483804db745659d">grpc::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
 , <a class="el" href="classgrpc_1_1internal_1_1_client_callback_unary_impl.html#ae6ea0b66f78f0ebd494f3fe32d7dbbcf">grpc::internal::ClientCallbackUnaryImpl</a>
@@ -154,13 +160,13 @@ $(function() {
 , <a class="el" href="classstd_1_1default__delete_3_1_1grpc_1_1_client_async_response_reader_interface_3_01_r_01_4_01_4.html#a36f0e5b8b29e4341b66b74d5596398c7">std::default_delete&lt;::grpc::ClientAsyncResponseReaderInterface&lt; R &gt; &gt;</a>
 </li>
 <li>operator*()
-: <a class="el" href="classgrpc_1_1_auth_property_iterator.html#a564f39b91f4168c6f660bbd3144f1f0e">grpc::AuthPropertyIterator</a>
+: <a class="el" href="classgrpc_1_1_auth_property_iterator.html#aa73939627db5aa1f2117ef9d0b550c73">grpc::AuthPropertyIterator</a>
 </li>
 <li>operator++()
-: <a class="el" href="classgrpc_1_1_auth_property_iterator.html#a76dd5ef5047b10f889d85ce2bb33b84b">grpc::AuthPropertyIterator</a>
+: <a class="el" href="classgrpc_1_1_auth_property_iterator.html#ac4a895110475c25b9bdce9b72eb19cd6">grpc::AuthPropertyIterator</a>
 </li>
 <li>operator=()
-: <a class="el" href="classgrpc_1_1_alarm.html#a4c46dacfd26561470f0901cec2686f49">grpc::Alarm</a>
+: <a class="el" href="classgrpc_1_1_alarm.html#ac17293fbf6f3a256e743c55ce66eac00">grpc::Alarm</a>
 , <a class="el" href="classgrpc_1_1_byte_buffer.html#af17d560be1e61f773138ac8763206b8e">grpc::ByteBuffer</a>
 , <a class="el" href="classgrpc_1_1_channel_arguments.html#ac75ba90de32a5c7f3cb6c62f7ce649be">grpc::ChannelArguments</a>
 , <a class="el" href="classgrpc_1_1experimental_1_1_server_rpc_info.html#a38c928dcd7e5ad0843aa3477e25cdea8">grpc::experimental::ServerRpcInfo</a>
@@ -189,7 +195,7 @@ $(function() {
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

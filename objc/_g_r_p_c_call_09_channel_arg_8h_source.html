@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -95,28 +95,29 @@ $(function() {
 <div class="line"><a name="l00026"></a><span class="lineno"><a class="line" href="category_g_r_p_c_call_07_channel_arg_08.html">   26</a></span>&#160;<span class="keyword">@interface </span><a class="code" href="category_g_r_p_c_call_07_channel_arg_08.html">GRPCCall (ChannelArg)</a></div>
 <div class="line"><a name="l00027"></a><span class="lineno">   27</span>&#160; </div>
 <div class="line"><a name="l00028"></a><span class="lineno">   28</span>&#160;+ (void)setUserAgentPrefix:(nonnull NSString *)userAgentPrefix forHost:(nonnull NSString *)host;</div>
-<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;+ (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host;</div>
-<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;+ (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE(&quot;The API for this feature is experimental, &quot;</div>
-<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;                                                      &quot;and might be removed or modified at any &quot;</div>
-<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                                                      &quot;time.&quot;);</div>
-<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;+ (void)setDefaultCompressMethod:(<a class="code" href="_g_r_p_c_types_8h.html#a6d1c0685676b450f85433dc8b8920153">GRPCCompressAlgorithm</a>)algorithm forhost:(nonnull NSString *)host;</div>
-<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;+ (void)setKeepaliveWithInterval:(<span class="keywordtype">int</span>)interval</div>
-<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;                         timeout:(<span class="keywordtype">int</span>)timeout</div>
-<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                         forHost:(nonnull NSString *)host;</div>
-<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;+ (void)enableRetry:(BOOL)enabled forHost:(nonnull NSString *)host;</div>
-<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;+ (void)setMinConnectTimeout:(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)timeout</div>
-<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;              initialBackoff:(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)initialBackoff</div>
-<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;                  maxBackoff:(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)maxBackoff</div>
-<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                     forHost:(nonnull NSString *)host;</div>
-<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160; </div>
-<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;<span class="keyword">@end</span></div>
+<div class="line"><a name="l00029"></a><span class="lineno">   29</span>&#160;+ (void)setUserAgentSuffix:(nonnull NSString *)userAgentSuffix forHost:(nonnull NSString *)host;</div>
+<div class="line"><a name="l00030"></a><span class="lineno">   30</span>&#160;+ (void)setResponseSizeLimit:(NSUInteger)limit forHost:(nonnull NSString *)host;</div>
+<div class="line"><a name="l00031"></a><span class="lineno">   31</span>&#160;+ (void)closeOpenConnections DEPRECATED_MSG_ATTRIBUTE(&quot;The API for this feature is experimental, &quot;</div>
+<div class="line"><a name="l00032"></a><span class="lineno">   32</span>&#160;                                                      &quot;and might be removed or modified at any &quot;</div>
+<div class="line"><a name="l00033"></a><span class="lineno">   33</span>&#160;                                                      &quot;time.&quot;);</div>
+<div class="line"><a name="l00034"></a><span class="lineno">   34</span>&#160;+ (void)setDefaultCompressMethod:(<a class="code" href="_g_r_p_c_types_8h.html#a6d1c0685676b450f85433dc8b8920153">GRPCCompressAlgorithm</a>)algorithm forhost:(nonnull NSString *)host;</div>
+<div class="line"><a name="l00035"></a><span class="lineno">   35</span>&#160;+ (void)setKeepaliveWithInterval:(<span class="keywordtype">int</span>)interval</div>
+<div class="line"><a name="l00036"></a><span class="lineno">   36</span>&#160;                         timeout:(<span class="keywordtype">int</span>)timeout</div>
+<div class="line"><a name="l00037"></a><span class="lineno">   37</span>&#160;                         forHost:(nonnull NSString *)host;</div>
+<div class="line"><a name="l00038"></a><span class="lineno">   38</span>&#160;+ (void)enableRetry:(BOOL)enabled forHost:(nonnull NSString *)host;</div>
+<div class="line"><a name="l00039"></a><span class="lineno">   39</span>&#160;+ (void)setMinConnectTimeout:(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)timeout</div>
+<div class="line"><a name="l00040"></a><span class="lineno">   40</span>&#160;              initialBackoff:(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)initialBackoff</div>
+<div class="line"><a name="l00041"></a><span class="lineno">   41</span>&#160;                  maxBackoff:(<span class="keywordtype">unsigned</span> <span class="keywordtype">int</span>)maxBackoff</div>
+<div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;                     forHost:(nonnull NSString *)host;</div>
+<div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160; </div>
+<div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;<span class="keyword">@end</span></div>
 </div><!-- fragment --></div><!-- contents -->
 <div class="ttc" id="a_g_r_p_c_call_legacy_8h_html"><div class="ttname"><a href="_g_r_p_c_call_legacy_8h.html">GRPCCallLegacy.h</a></div></div>
 <div class="ttc" id="acategory_g_r_p_c_call_07_channel_arg_08_html"><div class="ttname"><a href="category_g_r_p_c_call_07_channel_arg_08.html">GRPCCall(ChannelArg)</a></div><div class="ttdoc">The interface is deprecated.</div><div class="ttdef"><b>Definition:</b> GRPCCall+ChannelArg.h:26</div></div>
 <div class="ttc" id="a_g_r_p_c_types_8h_html_a6d1c0685676b450f85433dc8b8920153"><div class="ttname"><a href="_g_r_p_c_types_8h.html#a6d1c0685676b450f85433dc8b8920153">GRPCCompressAlgorithm</a></div><div class="ttdeci">GRPCCompressionAlgorithm GRPCCompressAlgorithm</div><div class="ttdoc">GRPCCompressAlgorithm is deprecated.</div><div class="ttdef"><b>Definition:</b> GRPCTypes.h:154</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:20:08 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:42 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -80,14 +80,14 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a280b84393872fc41fad3bdd44dade1c8"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a280b84393872fc41fad3bdd44dade1c8">StartCall</a> () override</td></tr>
-<tr class="separator:a280b84393872fc41fad3bdd44dade1c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a83a799961fd846596651478615459a01"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a83a799961fd846596651478615459a01">StartCall</a> () ABSL_LOCKS_EXCLUDED(start_mu_) override</td></tr>
+<tr class="separator:a83a799961fd846596651478615459a01"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab5596220b111029b8f215237634921f3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#ab5596220b111029b8f215237634921f3">Read</a> (Response *msg) override</td></tr>
 <tr class="separator:ab5596220b111029b8f215237634921f3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ab3303ada2c53e159e6f1f1969a4f0b24"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#ab3303ada2c53e159e6f1f1969a4f0b24">Write</a> (const Request *msg, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options) override</td></tr>
-<tr class="separator:ab3303ada2c53e159e6f1f1969a4f0b24"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a618bf8ffa888846a489431fd4bded2db"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a618bf8ffa888846a489431fd4bded2db">WritesDone</a> () override</td></tr>
-<tr class="separator:a618bf8ffa888846a489431fd4bded2db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6ce39900f61b0b7456bfdd1066657135"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a6ce39900f61b0b7456bfdd1066657135">Write</a> (const Request *msg, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options) ABSL_LOCKS_EXCLUDED(start_mu_) override</td></tr>
+<tr class="separator:a6ce39900f61b0b7456bfdd1066657135"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2876b0616665a9c9e3c239b234ebbba5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a2876b0616665a9c9e3c239b234ebbba5">WritesDone</a> () ABSL_LOCKS_EXCLUDED(start_mu_) override</td></tr>
+<tr class="separator:a2876b0616665a9c9e3c239b234ebbba5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad27f95865c673a8302e3bac88a0466b1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#ad27f95865c673a8302e3bac88a0466b1">AddHold</a> (int holds) override</td></tr>
 <tr class="separator:ad27f95865c673a8302e3bac88a0466b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afce5cca8736fda5ec142d610e451e00e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#afce5cca8736fda5ec142d610e451e00e">RemoveHold</a> () override</td></tr>
@@ -280,8 +280,8 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
-<a id="a280b84393872fc41fad3bdd44dade1c8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a280b84393872fc41fad3bdd44dade1c8">&#9670;&nbsp;</a></span>StartCall()</h2>
+<a id="a83a799961fd846596651478615459a01"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a83a799961fd846596651478615459a01">&#9670;&nbsp;</a></span>StartCall()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -309,8 +309,8 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
-<a id="ab3303ada2c53e159e6f1f1969a4f0b24"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ab3303ada2c53e159e6f1f1969a4f0b24">&#9670;&nbsp;</a></span>Write()</h2>
+<a id="a6ce39900f61b0b7456bfdd1066657135"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6ce39900f61b0b7456bfdd1066657135">&#9670;&nbsp;</a></span>Write()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -349,8 +349,8 @@ template&lt;class Request , class Response &gt; </div>
 
 </div>
 </div>
-<a id="a618bf8ffa888846a489431fd4bded2db"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a618bf8ffa888846a489431fd4bded2db">&#9670;&nbsp;</a></span>WritesDone()</h2>
+<a id="a2876b0616665a9c9e3c239b234ebbba5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a2876b0616665a9c9e3c239b234ebbba5">&#9670;&nbsp;</a></span>WritesDone()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -409,7 +409,7 @@ template&lt;class Request , class Response &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:26 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

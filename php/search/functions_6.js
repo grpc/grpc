@@ -1,12 +1,10 @@
 var searchData=
 [
-  ['inffuture_329',['infFuture',['../class_grpc_1_1_timeval.html#a1cabcbffb6869a6cf083b102baabf62b',1,'Grpc::Timeval']]],
-  ['infpast_330',['infPast',['../class_grpc_1_1_timeval.html#a14fa120d255f29fbeb37958b53385466',1,'Grpc::Timeval']]],
-  ['intercept_331',['intercept',['../class_grpc_1_1_interceptor.html#afcc5cdc7a13e5f36a8aed380a132f701',1,'Grpc::Interceptor']]],
-  ['interceptstreamstream_332',['interceptStreamStream',['../class_grpc_1_1_interceptor.html#a5ecd46cde9453e5654184a0b1a94de5e',1,'Grpc::Interceptor']]],
-  ['interceptstreamunary_333',['interceptStreamUnary',['../class_grpc_1_1_interceptor.html#ab8a381279249e91313395a5ee174951f',1,'Grpc::Interceptor']]],
-  ['interceptunarystream_334',['interceptUnaryStream',['../class_grpc_1_1_interceptor.html#afe75564510d738e1f0c01a0c103c9236',1,'Grpc::Interceptor']]],
-  ['interceptunaryunary_335',['interceptUnaryUnary',['../class_grpc_1_1_interceptor.html#ad5be9dff122fb7deda65621de274267e',1,'Grpc::Interceptor']]],
-  ['invalidatedefaultrootspem_336',['invalidateDefaultRootsPem',['../class_grpc_1_1_channel_credentials.html#aeb985b18bdb11939991e988f717c801a',1,'Grpc::ChannelCredentials']]],
-  ['isdefaultrootspemset_337',['isDefaultRootsPemSet',['../class_grpc_1_1_channel_credentials.html#af9f1e5522ce2767c297e46847ef5fff4',1,'Grpc::ChannelCredentials']]]
+  ['getconnectivitystate_353',['getConnectivityState',['../class_grpc_1_1_base_stub.html#a808c89a725b15d850fa2096cd6bd104d',1,'Grpc\BaseStub\getConnectivityState()'],['../class_grpc_1_1_channel.html#a64f6c766e8d06e6d78c01c37de28f8d7',1,'Grpc\Channel\getConnectivityState()']]],
+  ['getdefaultchannel_354',['getDefaultChannel',['../class_grpc_1_1_base_stub.html#a35a01a2eeff8d1f90939c361729f2396',1,'Grpc::BaseStub']]],
+  ['getmetadata_355',['getMetadata',['../class_grpc_1_1_abstract_call.html#ac5d4f130fc35450d4a5b0bfd0a918ff4',1,'Grpc\AbstractCall\getMetadata()'],['../class_grpc_1_1_server_streaming_call.html#a449205dcd3a5fed75f736ff2d2cc6e89',1,'Grpc\ServerStreamingCall\getMetadata()'],['../class_grpc_1_1_unary_call.html#ae65d18a70f9cee4505283b19d235360c',1,'Grpc\UnaryCall\getMetadata()']]],
+  ['getpeer_356',['getPeer',['../class_grpc_1_1_abstract_call.html#a188fc7298f9b52fb0eee7d3901281cdc',1,'Grpc\AbstractCall\getPeer()'],['../class_grpc_1_1_call.html#ab6aa5fa913c3175b4c029e372112a777',1,'Grpc\Call\getPeer()']]],
+  ['getstatus_357',['getStatus',['../class_grpc_1_1_bidi_streaming_call.html#af6f30cbdc8242894670b2e065667fd26',1,'Grpc\BidiStreamingCall\getStatus()'],['../class_grpc_1_1_server_streaming_call.html#ab8a6f6298c96b20c5e5c825df17017cf',1,'Grpc\ServerStreamingCall\getStatus()']]],
+  ['gettarget_358',['getTarget',['../class_grpc_1_1_base_stub.html#ae2b85e451fac182cfc57b63c39d7e59a',1,'Grpc\BaseStub\getTarget()'],['../class_grpc_1_1_channel.html#afce31d39c37f42d29cae7c5fbd5279d9',1,'Grpc\Channel\getTarget()']]],
+  ['gettrailingmetadata_359',['getTrailingMetadata',['../class_grpc_1_1_abstract_call.html#a8de5e451ba9a414d7a58a7d7c5fcc764',1,'Grpc::AbstractCall']]]
 ];

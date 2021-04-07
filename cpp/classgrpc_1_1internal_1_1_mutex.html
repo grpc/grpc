@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -67,7 +67,8 @@ $(function() {
 </div><!-- top -->
 <div class="header">
   <div class="summary">
-<a href="#pub-methods">Public Member Functions</a>  </div>
+<a href="#pub-methods">Public Member Functions</a> &#124;
+<a href="#friends">Friends</a>  </div>
   <div class="headertitle">
 <div class="title">grpc::internal::Mutex Class Reference</div>  </div>
 </div><!--header-->
@@ -85,10 +86,15 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:adb852958c75cc16f491dae673592cdc9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab213afff47286afa31b4c9883fc9b5ee"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex.html#ab213afff47286afa31b4c9883fc9b5ee">operator=</a> (const <a class="el" href="classgrpc_1_1internal_1_1_mutex.html">Mutex</a> &amp;)=delete</td></tr>
 <tr class="separator:ab213afff47286afa31b4c9883fc9b5ee"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad20433f4aebd7b761a70638e985ad7bc"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex.html#ad20433f4aebd7b761a70638e985ad7bc">get</a> ()</td></tr>
-<tr class="separator:ad20433f4aebd7b761a70638e985ad7bc"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4c8e13bdd59a7080413d0696c2c6efa5"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="impl_2codegen_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex.html#a4c8e13bdd59a7080413d0696c2c6efa5">get</a> () const</td></tr>
-<tr class="separator:a4c8e13bdd59a7080413d0696c2c6efa5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa12ad25130b100d078bb248d30defcea"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex.html#aa12ad25130b100d078bb248d30defcea">Lock</a> () ABSL_EXCLUSIVE_LOCK_FUNCTION()</td></tr>
+<tr class="separator:aa12ad25130b100d078bb248d30defcea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aeb8f1f4704d40156d6efce4158d9b4ac"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex.html#aeb8f1f4704d40156d6efce4158d9b4ac">Unlock</a> () ABSL_UNLOCK_FUNCTION()</td></tr>
+<tr class="separator:aeb8f1f4704d40156d6efce4158d9b4ac"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="friends"></a>
+Friends</h2></td></tr>
+<tr class="memitem:a7f15caac4fd04184afa33f61e738fb41"><td class="memItemLeft" align="right" valign="top">class&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_mutex.html#a7f15caac4fd04184afa33f61e738fb41">CondVar</a></td></tr>
+<tr class="separator:a7f15caac4fd04184afa33f61e738fb41"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
 <a id="a861eb25e748a6683e35618782e242f0f"></a>
@@ -168,8 +174,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="ad20433f4aebd7b761a70638e985ad7bc"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad20433f4aebd7b761a70638e985ad7bc">&#9670;&nbsp;</a></span>get() <span class="overload">[1/2]</span></h2>
+<a id="aa12ad25130b100d078bb248d30defcea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa12ad25130b100d078bb248d30defcea">&#9670;&nbsp;</a></span>Lock()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -178,35 +184,10 @@ Public Member Functions</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="impl_2codegen_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a>* grpc::internal::Mutex::get </td>
+          <td class="memname">void grpc::internal::Mutex::Lock </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<a id="a4c8e13bdd59a7080413d0696c2c6efa5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4c8e13bdd59a7080413d0696c2c6efa5">&#9670;&nbsp;</a></span>get() <span class="overload">[2/2]</span></h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">const <a class="el" href="impl_2codegen_2sync__posix_8h.html#aa66fb6a11304ef6759d76f84a34ee28f">gpr_mu</a>* grpc::internal::Mutex::get </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td> const</td>
         </tr>
       </table>
   </td>
@@ -238,6 +219,54 @@ Public Member Functions</h2></td></tr>
   </td>
   <td class="mlabels-right">
 <span class="mlabels"><span class="mlabel">delete</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="aeb8f1f4704d40156d6efce4158d9b4ac"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aeb8f1f4704d40156d6efce4158d9b4ac">&#9670;&nbsp;</a></span>Unlock()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">void grpc::internal::Mutex::Unlock </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Friends And Related Function Documentation</h2>
+<a id="a7f15caac4fd04184afa33f61e738fb41"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7f15caac4fd04184afa33f61e738fb41">&#9670;&nbsp;</a></span>CondVar</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">friend class <a class="el" href="classgrpc_1_1internal_1_1_cond_var.html">CondVar</a></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">friend</span></span>  </td>
   </tr>
 </table>
 </div><div class="memdoc">
@@ -279,7 +308,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:26 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

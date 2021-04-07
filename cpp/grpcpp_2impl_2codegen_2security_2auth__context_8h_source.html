@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -114,7 +114,7 @@ $(function() {
 <div class="line"><a name="l00042"></a><span class="lineno">   42</span>&#160;  <a class="code" href="classgrpc_1_1_auth_property_iterator.html">AuthPropertyIterator</a> <a class="code" href="classgrpc_1_1_auth_property_iterator.html#ac4a895110475c25b9bdce9b72eb19cd6">operator++</a>(<span class="keywordtype">int</span>);</div>
 <div class="line"><a name="l00043"></a><span class="lineno">   43</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classgrpc_1_1_auth_property_iterator.html#a15e66ce56801c275502cd60805f68499">operator==</a>(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_auth_property_iterator.html">AuthPropertyIterator</a>&amp; rhs) <span class="keyword">const</span>;</div>
 <div class="line"><a name="l00044"></a><span class="lineno">   44</span>&#160;  <span class="keywordtype">bool</span> <a class="code" href="classgrpc_1_1_auth_property_iterator.html#ad6de4a1f1b7685e8f26d110233679f8a">operator!=</a>(<span class="keyword">const</span> <a class="code" href="classgrpc_1_1_auth_property_iterator.html">AuthPropertyIterator</a>&amp; rhs) <span class="keyword">const</span>;</div>
-<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <span class="keyword">const</span> <a class="code" href="namespacegrpc.html#ab23a7f74e4fef64035c11941ba6c57c6">AuthProperty</a> <a class="code" href="classgrpc_1_1_auth_property_iterator.html#a564f39b91f4168c6f660bbd3144f1f0e">operator*</a>();</div>
+<div class="line"><a name="l00045"></a><span class="lineno">   45</span>&#160;  <a class="code" href="namespacegrpc.html#ab23a7f74e4fef64035c11941ba6c57c6">AuthProperty</a> <a class="code" href="classgrpc_1_1_auth_property_iterator.html#aa73939627db5aa1f2117ef9d0b550c73">operator*</a>();</div>
 <div class="line"><a name="l00046"></a><span class="lineno">   46</span>&#160; </div>
 <div class="line"><a name="l00047"></a><span class="lineno">   47</span>&#160; <span class="keyword">protected</span>:</div>
 <div class="line"><a name="l00048"></a><span class="lineno">   48</span>&#160;  <a class="code" href="classgrpc_1_1_auth_property_iterator.html#a2885e02ba1b9caad818a1bcdf648d949">AuthPropertyIterator</a>();</div>
@@ -161,7 +161,6 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_auth_property_iterator_html_a91a3a2ce5085a948aac11d7371c13b49"><div class="ttname"><a href="classgrpc_1_1_auth_property_iterator.html#a91a3a2ce5085a948aac11d7371c13b49">grpc::AuthPropertyIterator::~AuthPropertyIterator</a></div><div class="ttdeci">~AuthPropertyIterator()</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2config_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2config_8h.html">config.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_auth_property_iterator_html_a15e66ce56801c275502cd60805f68499"><div class="ttname"><a href="classgrpc_1_1_auth_property_iterator.html#a15e66ce56801c275502cd60805f68499">grpc::AuthPropertyIterator::operator==</a></div><div class="ttdeci">bool operator==(const AuthPropertyIterator &amp;rhs) const</div></div>
-<div class="ttc" id="aclassgrpc_1_1_auth_property_iterator_html_a564f39b91f4168c6f660bbd3144f1f0e"><div class="ttname"><a href="classgrpc_1_1_auth_property_iterator.html#a564f39b91f4168c6f660bbd3144f1f0e">grpc::AuthPropertyIterator::operator*</a></div><div class="ttdeci">const AuthProperty operator*()</div></div>
 <div class="ttc" id="astructgrpc__auth__property__iterator_html"><div class="ttname"><a href="structgrpc__auth__property__iterator.html">grpc_auth_property_iterator</a></div><div class="ttdef"><b>Definition:</b> grpc_security.h:36</div></div>
 <div class="ttc" id="aclassgrpc_1_1_auth_property_iterator_html_ad6de4a1f1b7685e8f26d110233679f8a"><div class="ttname"><a href="classgrpc_1_1_auth_property_iterator.html#ad6de4a1f1b7685e8f26d110233679f8a">grpc::AuthPropertyIterator::operator!=</a></div><div class="ttdeci">bool operator!=(const AuthPropertyIterator &amp;rhs) const</div></div>
 <div class="ttc" id="aclassgrpc_1_1_auth_context_html_af1d6a5c7cd67694d1a485c4127eb63dc"><div class="ttname"><a href="classgrpc_1_1_auth_context.html#af1d6a5c7cd67694d1a485c4127eb63dc">grpc::AuthContext::IsPeerAuthenticated</a></div><div class="ttdeci">virtual bool IsPeerAuthenticated() const =0</div><div class="ttdoc">Returns true if the peer is authenticated.</div></div>
@@ -170,6 +169,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_auth_context_html_a4ee28397df73f141fa87da889becf20d"><div class="ttname"><a href="classgrpc_1_1_auth_context.html#a4ee28397df73f141fa87da889becf20d">grpc::AuthContext::AddProperty</a></div><div class="ttdeci">virtual void AddProperty(const std::string &amp;key, const string_ref &amp;value)=0</div><div class="ttdoc">Mutation functions: should only be used by an AuthMetadataProcessor.</div></div>
 <div class="ttc" id="astructgrpc__auth__property_html"><div class="ttname"><a href="structgrpc__auth__property.html">grpc_auth_property</a></div><div class="ttdoc">value, if not NULL, is guaranteed to be NULL terminated.</div><div class="ttdef"><b>Definition:</b> grpc_security.h:43</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2string__ref_8h_html"><div class="ttname"><a href="grpcpp_2impl_2codegen_2string__ref_8h.html">string_ref.h</a></div></div>
+<div class="ttc" id="aclassgrpc_1_1_auth_property_iterator_html_aa73939627db5aa1f2117ef9d0b550c73"><div class="ttname"><a href="classgrpc_1_1_auth_property_iterator.html#aa73939627db5aa1f2117ef9d0b550c73">grpc::AuthPropertyIterator::operator*</a></div><div class="ttdeci">AuthProperty operator*()</div></div>
 <div class="ttc" id="aclassgrpc_1_1_auth_context_html_a27f8b58added3188f3b0e55fce443656"><div class="ttname"><a href="classgrpc_1_1_auth_context.html#a27f8b58added3188f3b0e55fce443656">grpc::AuthContext::FindPropertyValues</a></div><div class="ttdeci">virtual std::vector&lt; grpc::string_ref &gt; FindPropertyValues(const std::string &amp;name) const =0</div><div class="ttdoc">Returns all the property values with the given name.</div></div>
 <div class="ttc" id="aclassgrpc_1_1_auth_context_html_a56a84468c1c3814a185cb6a2a3badf99"><div class="ttname"><a href="classgrpc_1_1_auth_context.html#a56a84468c1c3814a185cb6a2a3badf99">grpc::AuthContext::GetPeerIdentity</a></div><div class="ttdeci">virtual std::vector&lt; grpc::string_ref &gt; GetPeerIdentity() const =0</div><div class="ttdoc">A peer identity.</div></div>
 <div class="ttc" id="aclassgrpc_1_1_auth_property_iterator_html_ac4a895110475c25b9bdce9b72eb19cd6"><div class="ttname"><a href="classgrpc_1_1_auth_property_iterator.html#ac4a895110475c25b9bdce9b72eb19cd6">grpc::AuthPropertyIterator::operator++</a></div><div class="ttdeci">AuthPropertyIterator &amp; operator++()</div></div>
@@ -181,7 +181,7 @@ $(function() {
 <div class="ttc" id="aclassgrpc_1_1_auth_property_iterator_html"><div class="ttname"><a href="classgrpc_1_1_auth_property_iterator.html">grpc::AuthPropertyIterator</a></div><div class="ttdef"><b>Definition:</b> auth_context.h:37</div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:18 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

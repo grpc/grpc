@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -227,7 +227,7 @@ $(function() {
 <div class="ttc" id="agrpc__types_8h_html"><div class="ttname"><a href="grpc__types_8h.html">grpc_types.h</a></div></div>
 <div class="ttc" id="aclassgrpc_1_1_proto_buffer_writer_html_a2197d65d98500d488c8edbca3d4e77e2"><div class="ttname"><a href="classgrpc_1_1_proto_buffer_writer.html#a2197d65d98500d488c8edbca3d4e77e2">grpc::ProtoBufferWriter::ProtoBufferWriter</a></div><div class="ttdeci">ProtoBufferWriter(ByteBuffer *byte_buffer, int block_size, int total_size)</div><div class="ttdoc">Constructor for this derived class.</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:60</div></div>
 <div class="ttc" id="astructgrpc__byte__buffer_html"><div class="ttname"><a href="structgrpc__byte__buffer.html">grpc_byte_buffer</a></div><div class="ttdef"><b>Definition:</b> grpc_types.h:40</div></div>
-<div class="ttc" id="aclassgrpc_1_1_byte_buffer_html"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a></div><div class="ttdoc">A sequence of bytes.</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:61</div></div>
+<div class="ttc" id="aclassgrpc_1_1_byte_buffer_html"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html">grpc::ByteBuffer</a></div><div class="ttdoc">A sequence of bytes.</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:60</div></div>
 <div class="ttc" id="astructgrpc__slice_html"><div class="ttname"><a href="structgrpc__slice.html">grpc_slice</a></div><div class="ttdoc">A grpc_slice s, if initialized, represents the byte range s.bytes[0..s.length-1].</div><div class="ttdef"><b>Definition:</b> slice.h:60</div></div>
 <div class="ttc" id="aclassgrpc_1_1_core_codegen_interface_html_a877281fd72eed1674efec7cd71b361e2"><div class="ttname"><a href="classgrpc_1_1_core_codegen_interface.html#a877281fd72eed1674efec7cd71b361e2">grpc::CoreCodegenInterface::grpc_raw_byte_buffer_create</a></div><div class="ttdeci">virtual grpc_byte_buffer * grpc_raw_byte_buffer_create(grpc_slice *slice, size_t nslices)=0</div></div>
 <div class="ttc" id="anamespacegrpc_html_a9e62f19b6ee525513cb6259988c319a6"><div class="ttname"><a href="namespacegrpc.html#a9e62f19b6ee525513cb6259988c319a6">grpc::kProtoBufferWriterMaxBufferLength</a></div><div class="ttdeci">const int kProtoBufferWriterMaxBufferLength</div><div class="ttdef"><b>Definition:</b> proto_buffer_writer.h:44</div></div>
@@ -242,7 +242,7 @@ $(function() {
 <div class="ttc" id="agrpc_2impl_2codegen_2slice_8h_html_a8a15783c251cdeb18c3f8b0ad41d0352"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html#a8a15783c251cdeb18c3f8b0ad41d0352">GRPC_SLICE_START_PTR</a></div><div class="ttdeci">#define GRPC_SLICE_START_PTR(slice)</div><div class="ttdef"><b>Definition:</b> slice.h:96</div></div>
 <div class="ttc" id="astructgrpc__byte__buffer_1_1grpc__byte__buffer__data_1_1grpc__compressed__buffer_html_a89f407381d073054e2227572dd920f37"><div class="ttname"><a href="structgrpc__byte__buffer_1_1grpc__byte__buffer__data_1_1grpc__compressed__buffer.html#a89f407381d073054e2227572dd920f37">grpc_byte_buffer::grpc_byte_buffer_data::grpc_compressed_buffer::slice_buffer</a></div><div class="ttdeci">grpc_slice_buffer slice_buffer</div><div class="ttdef"><b>Definition:</b> grpc_types.h:49</div></div>
 <div class="ttc" id="agrpc_2impl_2codegen_2slice_8h_html_a6791fa7be0a1a9144e005cfea7baea84"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html#a6791fa7be0a1a9144e005cfea7baea84">GRPC_SLICE_SET_LENGTH</a></div><div class="ttdeci">#define GRPC_SLICE_SET_LENGTH(slice, newlen)</div><div class="ttdef"><b>Definition:</b> slice.h:102</div></div>
-<div class="ttc" id="aclassgrpc_1_1_byte_buffer_html_aea6bcd0d3c70fc14158df68c59dc82d4"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html#aea6bcd0d3c70fc14158df68c59dc82d4">grpc::ByteBuffer::Valid</a></div><div class="ttdeci">bool Valid() const</div><div class="ttdoc">Is this ByteBuffer valid?</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:157</div></div>
+<div class="ttc" id="aclassgrpc_1_1_byte_buffer_html_aea6bcd0d3c70fc14158df68c59dc82d4"><div class="ttname"><a href="classgrpc_1_1_byte_buffer.html#aea6bcd0d3c70fc14158df68c59dc82d4">grpc::ByteBuffer::Valid</a></div><div class="ttdeci">bool Valid() const</div><div class="ttdoc">Is this ByteBuffer valid?</div><div class="ttdef"><b>Definition:</b> byte_buffer.h:156</div></div>
 <div class="ttc" id="anamespacegrpc_html_abbcecc18dae64c65df0b6d9aa8bf67a8"><div class="ttname"><a href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">grpc::g_core_codegen_interface</a></div><div class="ttdeci">CoreCodegenInterface * g_core_codegen_interface</div><div class="ttdef"><b>Definition:</b> completion_queue.h:96</div></div>
 <div class="ttc" id="agrpcpp_2impl_2codegen_2core__codegen__interface_8h_html_a39c1421e7081b57c503487659e2653a5"><div class="ttname"><a href="grpcpp_2impl_2codegen_2core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5">GPR_CODEGEN_ASSERT</a></div><div class="ttdeci">#define GPR_CODEGEN_ASSERT(x)</div><div class="ttdoc">Codegen specific version of GPR_ASSERT.</div><div class="ttdef"><b>Definition:</b> core_codegen_interface.h:146</div></div>
 <div class="ttc" id="agrpc_2impl_2codegen_2slice_8h_html_ae65fc74cb3afbcd3299a1c93f90bae20"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html#ae65fc74cb3afbcd3299a1c93f90bae20">GRPC_SLICE_INLINED_SIZE</a></div><div class="ttdeci">#define GRPC_SLICE_INLINED_SIZE</div><div class="ttdef"><b>Definition:</b> slice.h:47</div></div>
@@ -253,7 +253,7 @@ $(function() {
 <div class="ttc" id="agrpc_2impl_2codegen_2slice_8h_html"><div class="ttname"><a href="grpc_2impl_2codegen_2slice_8h.html">slice.h</a></div></div>
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:20 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

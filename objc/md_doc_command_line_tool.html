@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -161,7 +161,7 @@ Call a remote method</h2>
 <li><p class="startli">Use local proto files</p>
 <p class="startli">If the server does not have the server reflection service, you will need to provide local proto files containing the service definition. The tool will try to find request/response types from them.</p>
 <p class="startli">``&lsquo;sh $ grpc_cli call localhost:50051 SayHello "name: 'world&amp;rsquo;" \ &ndash;protofiles=examples/protos/helloworld.proto ```</p>
-<p class="startli">If the proto file is not under the current directory, you can use <code>--proto_path</code> to specify a new search root.</p>
+<p class="startli">If the proto file is not under the current directory, you can use <code>--proto_path</code> to specify new search roots (separated by colon on Mac/Linux/Cygwin or semicolon on Windows).</p>
 <p class="startli">Note that the tool will always attempt to use the reflection service first, falling back to local proto files if the service is not found. Use <code>--noremotedb</code> to avoid attempting to use the reflection service.</p>
 </li>
 <li><p class="startli">Send non-proto rpc</p>
@@ -174,7 +174,7 @@ Call a remote method</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:20:09 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:42 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -81,8 +81,6 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a6fd4895bca596cd6f631f4fa66acefb7"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_unary_reactor.html#a6fd4895bca596cd6f631f4fa66acefb7">~ClientUnaryReactor</a> ()</td></tr>
-<tr class="separator:a6fd4895bca596cd6f631f4fa66acefb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a13d27ebc1a0949588cca00da6a394f62"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_unary_reactor.html#a13d27ebc1a0949588cca00da6a394f62">StartCall</a> ()</td></tr>
 <tr class="separator:a13d27ebc1a0949588cca00da6a394f62"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ae60b5e629dacfec84a481deda1fc5665"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_unary_reactor.html#ae60b5e629dacfec84a481deda1fc5665">OnDone</a> (const ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> &amp;) override</td></tr>
@@ -91,6 +89,8 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a99cdcbd44c07bc416d58e62e776e8206"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_client_unary_reactor.html#a99cdcbd44c07bc416d58e62e776e8206">OnReadInitialMetadataDone</a> (bool)</td></tr>
 <tr class="separator:a99cdcbd44c07bc416d58e62e776e8206"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1internal_1_1_client_reactor"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1internal_1_1_client_reactor')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1internal_1_1_client_reactor.html">grpc::internal::ClientReactor</a></td></tr>
+<tr class="memitem:aa7a81a485dfa85bbb51c230732956b47 inherit pub_methods_classgrpc_1_1internal_1_1_client_reactor"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_reactor.html#aa7a81a485dfa85bbb51c230732956b47">~ClientReactor</a> ()=default</td></tr>
+<tr class="separator:aa7a81a485dfa85bbb51c230732956b47 inherit pub_methods_classgrpc_1_1internal_1_1_client_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5792110850aea7d7a6694a9e81dc0894 inherit pub_methods_classgrpc_1_1internal_1_1_client_reactor"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_client_reactor.html#a5792110850aea7d7a6694a9e81dc0894">InternalScheduleOnDone</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s)</td></tr>
 <tr class="memdesc:a5792110850aea7d7a6694a9e81dc0894 inherit pub_methods_classgrpc_1_1internal_1_1_client_reactor"><td class="mdescLeft">&#160;</td><td class="mdescRight">InternalScheduleOnDone is not part of the API and is not meant to be overridden.  <a href="classgrpc_1_1internal_1_1_client_reactor.html#a5792110850aea7d7a6694a9e81dc0894">More...</a><br /></td></tr>
 <tr class="separator:a5792110850aea7d7a6694a9e81dc0894 inherit pub_methods_classgrpc_1_1internal_1_1_client_reactor"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -103,33 +103,7 @@ Friends</h2></td></tr>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p><em><a class="el" href="classgrpc_1_1_client_unary_reactor.html" title="ClientUnaryReactor is a reactor-style interface for a unary RPC.">ClientUnaryReactor</a></em> is a reactor-style interface for a unary RPC. </p>
 <p>This is <em>not</em> a common way of invoking a unary RPC. In practice, this option should be used only if the unary RPC wants to receive initial metadata without waiting for the response to complete. Most deployments of RPC systems do not use this option, but it is needed for generality. All public methods behave as in <a class="el" href="classgrpc_1_1_client_bidi_reactor.html" title="ClientBidiReactor is the interface for a bidirectional streaming RPC.">ClientBidiReactor</a>. StartCall is included for consistency with the other reactor flavors: even though there are no StartRead or StartWrite operations to queue before the call (that is part of the unary call itself) and there is no reactor object being created as a result of this call, we keep a consistent 2-phase initiation API among all the reactor flavors. </p>
-</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a6fd4895bca596cd6f631f4fa66acefb7"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a6fd4895bca596cd6f631f4fa66acefb7">&#9670;&nbsp;</a></span>~ClientUnaryReactor()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">virtual grpc::ClientUnaryReactor::~ClientUnaryReactor </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-</div>
-</div>
-<h2 class="groupheader">Member Function Documentation</h2>
+</div><h2 class="groupheader">Member Function Documentation</h2>
 <a id="ae60b5e629dacfec84a481deda1fc5665"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ae60b5e629dacfec84a481deda1fc5665">&#9670;&nbsp;</a></span>OnDone()</h2>
 
@@ -247,7 +221,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

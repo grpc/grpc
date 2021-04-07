@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -93,11 +93,11 @@ Data Structures</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a8bbb008bcbed87e680746e36d75e21c0"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#a8bbb008bcbed87e680746e36d75e21c0">~Server</a> () override</td></tr>
-<tr class="separator:a8bbb008bcbed87e680746e36d75e21c0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a79f3e43452fd885df4002ed541d8ca7c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#a79f3e43452fd885df4002ed541d8ca7c">Wait</a> () override</td></tr>
-<tr class="memdesc:a79f3e43452fd885df4002ed541d8ca7c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block until the server shuts down.  <a href="classgrpc_1_1_server.html#a79f3e43452fd885df4002ed541d8ca7c">More...</a><br /></td></tr>
-<tr class="separator:a79f3e43452fd885df4002ed541d8ca7c"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a4745b387f1834b1eb08b1132199af615"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#a4745b387f1834b1eb08b1132199af615">~Server</a> () ABSL_LOCKS_EXCLUDED(mu_) override</td></tr>
+<tr class="separator:a4745b387f1834b1eb08b1132199af615"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a009682cfb2c453839b9eab318bbb8222"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#a009682cfb2c453839b9eab318bbb8222">Wait</a> () ABSL_LOCKS_EXCLUDED(mu_) override</td></tr>
+<tr class="memdesc:a009682cfb2c453839b9eab318bbb8222"><td class="mdescLeft">&#160;</td><td class="mdescRight">Block until the server shuts down.  <a href="classgrpc_1_1_server.html#a009682cfb2c453839b9eab318bbb8222">More...</a><br /></td></tr>
+<tr class="separator:a009682cfb2c453839b9eab318bbb8222"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7ff9f4e7ef7d51747dc362dcae9483fd"><td class="memItemLeft" align="right" valign="top"><a class="el" href="grpc__types_8h.html#a2bbbaad8f7a806f6c834b68c5dd916d8">grpc_server</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server.html#a7ff9f4e7ef7d51747dc362dcae9483fd">c_server</a> ()</td></tr>
 <tr class="memdesc:a7ff9f4e7ef7d51747dc362dcae9483fd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a <em>raw</em> pointer to the underlying <em>grpc_server</em> instance.  <a href="classgrpc_1_1_server.html#a7ff9f4e7ef7d51747dc362dcae9483fd">More...</a><br /></td></tr>
 <tr class="separator:a7ff9f4e7ef7d51747dc362dcae9483fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -179,8 +179,8 @@ Friends</h2></td></tr>
 <div class="textblock"><p>Represents a gRPC server. </p>
 <p>Use a <em><a class="el" href="classgrpc_1_1_server_builder.html" title="A builder class for the creation and startup of grpc::Server instances.">grpc::ServerBuilder</a></em> to create, configure, and start <em><a class="el" href="classgrpc_1_1_server.html" title="Represents a gRPC server.">Server</a></em> instances. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a8bbb008bcbed87e680746e36d75e21c0"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8bbb008bcbed87e680746e36d75e21c0">&#9670;&nbsp;</a></span>~Server()</h2>
+<a id="a4745b387f1834b1eb08b1132199af615"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4745b387f1834b1eb08b1132199af615">&#9670;&nbsp;</a></span>~Server()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -664,8 +664,8 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="a79f3e43452fd885df4002ed541d8ca7c"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a79f3e43452fd885df4002ed541d8ca7c">&#9670;&nbsp;</a></span>Wait()</h2>
+<a id="a009682cfb2c453839b9eab318bbb8222"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a009682cfb2c453839b9eab318bbb8222">&#9670;&nbsp;</a></span>Wait()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -767,7 +767,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:24 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

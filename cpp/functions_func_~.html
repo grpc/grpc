@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -125,9 +125,6 @@ $(function() {
 <li>~ClientAsyncStreamingInterface()
 : <a class="el" href="classgrpc_1_1internal_1_1_client_async_streaming_interface.html#a5691ad84f8160a3eb10131f1f5de4708">grpc::internal::ClientAsyncStreamingInterface</a>
 </li>
-<li>~ClientBidiReactor()
-: <a class="el" href="classgrpc_1_1_client_bidi_reactor.html#afe6c450aa06e7b2f5484fc771126bed3">grpc::ClientBidiReactor&lt; Request, Response &gt;</a>
-</li>
 <li>~ClientCallbackReader()
 : <a class="el" href="classgrpc_1_1_client_callback_reader.html#a0cb99525b6d5367afebaf9bb4c7b8d53">grpc::ClientCallbackReader&lt; Response &gt;</a>
 </li>
@@ -146,20 +143,14 @@ $(function() {
 <li>~ClientInterceptorFactoryInterface()
 : <a class="el" href="classgrpc_1_1experimental_1_1_client_interceptor_factory_interface.html#a92ae3f8645616648bd9a78e1de12709a">grpc::experimental::ClientInterceptorFactoryInterface</a>
 </li>
-<li>~ClientReadReactor()
-: <a class="el" href="classgrpc_1_1_client_read_reactor.html#a733dd6173b1dee96fb7a28bdb7f3478c">grpc::ClientReadReactor&lt; Response &gt;</a>
+<li>~ClientReactor()
+: <a class="el" href="classgrpc_1_1internal_1_1_client_reactor.html#aa7a81a485dfa85bbb51c230732956b47">grpc::internal::ClientReactor</a>
 </li>
 <li>~ClientRpcInfo()
 : <a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#aaa5738d4ea450532ecfc52216cf27fcb">grpc::experimental::ClientRpcInfo</a>
 </li>
 <li>~ClientStreamingInterface()
 : <a class="el" href="classgrpc_1_1internal_1_1_client_streaming_interface.html#ab1a7a2664187d88d0354b69138db7eb1">grpc::internal::ClientStreamingInterface</a>
-</li>
-<li>~ClientUnaryReactor()
-: <a class="el" href="classgrpc_1_1_client_unary_reactor.html#a6fd4895bca596cd6f631f4fa66acefb7">grpc::ClientUnaryReactor</a>
-</li>
-<li>~ClientWriteReactor()
-: <a class="el" href="classgrpc_1_1_client_write_reactor.html#a99948ada4459de5d19665cc77c035444">grpc::ClientWriteReactor&lt; Request &gt;</a>
 </li>
 <li>~CompletionQueue()
 : <a class="el" href="classgrpc_1_1_completion_queue.html#a776f9e04c58eaf26611d1d4360a055ed">grpc::CompletionQueue</a>
@@ -241,7 +232,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_mutex.html#af7c00455aeda417ee85de33950a89102">grpc::internal::Mutex</a>
 </li>
 <li>~MutexLock()
-: <a class="el" href="classgrpc_1_1internal_1_1_mutex_lock.html#aee6035abe89cfbccf66bf4d165e025b8">grpc::internal::MutexLock</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_mutex_lock.html#aa137f3d68d08f321e2fa1299a64e89fc">grpc::internal::MutexLock</a>
 </li>
 <li>~PayloadAsyncRequest()
 : <a class="el" href="classgrpc_1_1_server_interface_1_1_payload_async_request.html#add2a43f1fe9b48f79c9d94408aee868b">grpc::ServerInterface::PayloadAsyncRequest&lt; Message &gt;</a>
@@ -256,7 +247,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_reader_interface.html#ad1d28c0720937a61b0f7952d3add7bba">grpc::internal::ReaderInterface&lt; R &gt;</a>
 </li>
 <li>~ReleasableMutexLock()
-: <a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#a046af6508968edc5078794ebf338493f">grpc::internal::ReleasableMutexLock</a>
+: <a class="el" href="classgrpc_1_1internal_1_1_releasable_mutex_lock.html#a9747c89dd1f00dfd81694f20b1b35690">grpc::internal::ReleasableMutexLock</a>
 </li>
 <li>~ResourceQuota()
 : <a class="el" href="classgrpc_1_1_resource_quota.html#a96d81328bf6fe9009ac1fa4ba19c7eaa">grpc::ResourceQuota</a>
@@ -265,7 +256,7 @@ $(function() {
 : <a class="el" href="classgrpc_1_1experimental_1_1_rpc_allocator_state.html#aa2f076faaed3c8f2b7a113bf38e9c9dd">grpc::experimental::RpcAllocatorState</a>
 </li>
 <li>~Server()
-: <a class="el" href="classgrpc_1_1_server.html#a8bbb008bcbed87e680746e36d75e21c0">grpc::Server</a>
+: <a class="el" href="classgrpc_1_1_server.html#a4745b387f1834b1eb08b1132199af615">grpc::Server</a>
 </li>
 <li>~ServerAsyncStreamingInterface()
 : <a class="el" href="classgrpc_1_1internal_1_1_server_async_streaming_interface.html#aeace2295f3792ce24975361c300d641a">grpc::internal::ServerAsyncStreamingInterface</a>
@@ -348,11 +339,14 @@ $(function() {
 <li>~WriterInterface()
 : <a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#a0f3bb9c5625b43d600d33d2bf8c17b60">grpc::internal::WriterInterface&lt; W &gt;</a>
 </li>
+<li>~XdsServerServingStatusNotifierInterface()
+: <a class="el" href="classgrpc_1_1experimental_1_1_xds_server_serving_status_notifier_interface.html#a69ef49a3a92e88463459eda10ecf9770">grpc::experimental::XdsServerServingStatusNotifierInterface</a>
+</li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

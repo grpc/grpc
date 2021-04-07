@@ -1,8 +1,7 @@
 var searchData=
 [
-  ['wait_357',['wait',['../class_grpc_1_1_client_streaming_call.html#addc05660c5b52390483babae9630b0fb',1,'Grpc\ClientStreamingCall\wait()'],['../class_grpc_1_1_unary_call.html#a7947c58bacabc0267c79de33277440c5',1,'Grpc\UnaryCall\wait()']]],
-  ['waitforready_358',['waitForReady',['../class_grpc_1_1_base_stub.html#a78f84743a824f0eb3087dcb0fb8d0d41',1,'Grpc::BaseStub']]],
-  ['watchconnectivitystate_359',['watchConnectivityState',['../class_grpc_1_1_channel.html#a2ef0546000edb6aba1f8e0233a75b10d',1,'Grpc::Channel']]],
-  ['write_360',['write',['../class_grpc_1_1_bidi_streaming_call.html#ad68d6aa748fa9980aa5e985da853bd74',1,'Grpc\BidiStreamingCall\write()'],['../class_grpc_1_1_client_streaming_call.html#ae052b490ba4651978238a3dd15e9e73d',1,'Grpc\ClientStreamingCall\write()']]],
-  ['writesdone_361',['writesDone',['../class_grpc_1_1_bidi_streaming_call.html#afac63b79bbf4ed6664599c2433bd159e',1,'Grpc::BidiStreamingCall']]]
+  ['read_374',['read',['../class_grpc_1_1_bidi_streaming_call.html#aeb056a807c6ef6f7a75bac639d325e44',1,'Grpc\BidiStreamingCall\read()'],['../class_grpc_1_1_server_call_reader.html#a295aa14ce8d0087e2229d70cc56c7462',1,'Grpc\ServerCallReader\read()']]],
+  ['requestcall_375',['requestCall',['../class_grpc_1_1_server.html#a90ada396f37c675d70b43d4f96afe334',1,'Grpc::Server']]],
+  ['responses_376',['responses',['../class_grpc_1_1_server_streaming_call.html#a85965dccc4da15b5549508881244c4d5',1,'Grpc::ServerStreamingCall']]],
+  ['run_377',['run',['../class_grpc_1_1_rpc_server.html#a6376eda9f614e1c61715ebc0ae3ca746',1,'Grpc::RpcServer']]]
 ];

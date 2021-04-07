@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -83,12 +83,12 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a01f99775e347fa750056814a8aa8b810"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6eb0f1f6f8affa87e6d7b59c612aaf85"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_unary_reactor.html#a6eb0f1f6f8affa87e6d7b59c612aaf85">~ServerUnaryReactor</a> () override=default</td></tr>
 <tr class="separator:a6eb0f1f6f8affa87e6d7b59c612aaf85"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2791ae2c24cb39e25d757e05806a9032"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_unary_reactor.html#a2791ae2c24cb39e25d757e05806a9032">StartSendInitialMetadata</a> ()</td></tr>
-<tr class="memdesc:a2791ae2c24cb39e25d757e05806a9032"><td class="mdescLeft">&#160;</td><td class="mdescRight">StartSendInitialMetadata is exactly like <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc_1_1_server_unary_reactor.html#a2791ae2c24cb39e25d757e05806a9032">More...</a><br /></td></tr>
-<tr class="separator:a2791ae2c24cb39e25d757e05806a9032"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aceabceb62593bd8de8bbfaba41d57d86"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_unary_reactor.html#aceabceb62593bd8de8bbfaba41d57d86">Finish</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s)</td></tr>
-<tr class="memdesc:aceabceb62593bd8de8bbfaba41d57d86"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finish is similar to <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a> except for one detail.  <a href="classgrpc_1_1_server_unary_reactor.html#aceabceb62593bd8de8bbfaba41d57d86">More...</a><br /></td></tr>
-<tr class="separator:aceabceb62593bd8de8bbfaba41d57d86"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a85bd17f22f5761bc12f6d0e177573785"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_unary_reactor.html#a85bd17f22f5761bc12f6d0e177573785">StartSendInitialMetadata</a> () ABSL_LOCKS_EXCLUDED(call_mu_)</td></tr>
+<tr class="memdesc:a85bd17f22f5761bc12f6d0e177573785"><td class="mdescLeft">&#160;</td><td class="mdescRight">StartSendInitialMetadata is exactly like <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc_1_1_server_unary_reactor.html#a85bd17f22f5761bc12f6d0e177573785">More...</a><br /></td></tr>
+<tr class="separator:a85bd17f22f5761bc12f6d0e177573785"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aecad1fe27376db90a2548ef4272757ff"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_unary_reactor.html#aecad1fe27376db90a2548ef4272757ff">Finish</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s) ABSL_LOCKS_EXCLUDED(call_mu_)</td></tr>
+<tr class="memdesc:aecad1fe27376db90a2548ef4272757ff"><td class="mdescLeft">&#160;</td><td class="mdescRight">Finish is similar to <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a> except for one detail.  <a href="classgrpc_1_1_server_unary_reactor.html#aecad1fe27376db90a2548ef4272757ff">More...</a><br /></td></tr>
+<tr class="separator:aecad1fe27376db90a2548ef4272757ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2664153e7ee31b30f99b2753c42d591b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_unary_reactor.html#a2664153e7ee31b30f99b2753c42d591b">OnSendInitialMetadataDone</a> (bool)</td></tr>
 <tr class="memdesc:a2664153e7ee31b30f99b2753c42d591b"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following notifications are exactly like <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc_1_1_server_unary_reactor.html#a2664153e7ee31b30f99b2753c42d591b">More...</a><br /></td></tr>
 <tr class="separator:a2664153e7ee31b30f99b2753c42d591b"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -159,8 +159,8 @@ Friends</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="aceabceb62593bd8de8bbfaba41d57d86"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aceabceb62593bd8de8bbfaba41d57d86">&#9670;&nbsp;</a></span>Finish()</h2>
+<a id="aecad1fe27376db90a2548ef4272757ff"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aecad1fe27376db90a2548ef4272757ff">&#9670;&nbsp;</a></span>Finish()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -270,8 +270,8 @@ Friends</h2></td></tr>
 
 </div>
 </div>
-<a id="a2791ae2c24cb39e25d757e05806a9032"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2791ae2c24cb39e25d757e05806a9032">&#9670;&nbsp;</a></span>StartSendInitialMetadata()</h2>
+<a id="a85bd17f22f5761bc12f6d0e177573785"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a85bd17f22f5761bc12f6d0e177573785">&#9670;&nbsp;</a></span>StartSendInitialMetadata()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -326,7 +326,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

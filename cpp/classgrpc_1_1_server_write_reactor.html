@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.36.1</span>
+   &#160;<span id="projectnumber">1.37.0</span>
    </div>
   </td>
  </tr>
@@ -86,19 +86,19 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:af01af9955f73da8ce966d3789a189e53"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7ba2afe0c53ecab5d1152cc576a81263"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_write_reactor.html#a7ba2afe0c53ecab5d1152cc576a81263">~ServerWriteReactor</a> () override=default</td></tr>
 <tr class="separator:a7ba2afe0c53ecab5d1152cc576a81263"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a381a89d53a618bb8b65540369a226f17"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_write_reactor.html#a381a89d53a618bb8b65540369a226f17">StartSendInitialMetadata</a> ()</td></tr>
-<tr class="memdesc:a381a89d53a618bb8b65540369a226f17"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following operation initiations are exactly like <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc_1_1_server_write_reactor.html#a381a89d53a618bb8b65540369a226f17">More...</a><br /></td></tr>
-<tr class="separator:a381a89d53a618bb8b65540369a226f17"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0140acfa74b29204685c0b1419def12c"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_write_reactor.html#a0140acfa74b29204685c0b1419def12c">StartSendInitialMetadata</a> () ABSL_LOCKS_EXCLUDED(writer_mu_)</td></tr>
+<tr class="memdesc:a0140acfa74b29204685c0b1419def12c"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following operation initiations are exactly like <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc_1_1_server_write_reactor.html#a0140acfa74b29204685c0b1419def12c">More...</a><br /></td></tr>
+<tr class="separator:a0140acfa74b29204685c0b1419def12c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a5b6e9e57ea86029528a96bc34a87b4ec"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_write_reactor.html#a5b6e9e57ea86029528a96bc34a87b4ec">StartWrite</a> (const Response *resp)</td></tr>
 <tr class="separator:a5b6e9e57ea86029528a96bc34a87b4ec"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a74b701739e2525c3c0aa4eeda61b73c4"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_write_reactor.html#a74b701739e2525c3c0aa4eeda61b73c4">StartWrite</a> (const Response *resp, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)</td></tr>
-<tr class="separator:a74b701739e2525c3c0aa4eeda61b73c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a034ec67d17fe26efe27525740b5cde0e"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_write_reactor.html#a034ec67d17fe26efe27525740b5cde0e">StartWriteAndFinish</a> (const Response *resp, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options, ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s)</td></tr>
-<tr class="separator:a034ec67d17fe26efe27525740b5cde0e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a525d185a1924e021d1dba626ce756433"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_write_reactor.html#a525d185a1924e021d1dba626ce756433">StartWrite</a> (const Response *resp, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options) ABSL_LOCKS_EXCLUDED(writer_mu_)</td></tr>
+<tr class="separator:a525d185a1924e021d1dba626ce756433"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abc281431c8f9e87efdff22c820319781"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_write_reactor.html#abc281431c8f9e87efdff22c820319781">StartWriteAndFinish</a> (const Response *resp, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options, ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s) ABSL_LOCKS_EXCLUDED(writer_mu_)</td></tr>
+<tr class="separator:abc281431c8f9e87efdff22c820319781"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a13b384e8fdd862ce48e992a5d403bd51"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_write_reactor.html#a13b384e8fdd862ce48e992a5d403bd51">StartWriteLast</a> (const Response *resp, ::<a class="el" href="classgrpc_1_1_write_options.html">grpc::WriteOptions</a> options)</td></tr>
 <tr class="separator:a13b384e8fdd862ce48e992a5d403bd51"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a5e5c7ad6698005f41e1e2b3a03224291"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_write_reactor.html#a5e5c7ad6698005f41e1e2b3a03224291">Finish</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s)</td></tr>
-<tr class="separator:a5e5c7ad6698005f41e1e2b3a03224291"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a975cc4bdf9847550a50128f6d334966d"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_write_reactor.html#a975cc4bdf9847550a50128f6d334966d">Finish</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s) ABSL_LOCKS_EXCLUDED(writer_mu_)</td></tr>
+<tr class="separator:a975cc4bdf9847550a50128f6d334966d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2c3accc6080358ab0edb487176f83f16"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_write_reactor.html#a2c3accc6080358ab0edb487176f83f16">OnSendInitialMetadataDone</a> (bool)</td></tr>
 <tr class="memdesc:a2c3accc6080358ab0edb487176f83f16"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following notifications are exactly like <a class="el" href="classgrpc_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC.">ServerBidiReactor</a>.  <a href="classgrpc_1_1_server_write_reactor.html#a2c3accc6080358ab0edb487176f83f16">More...</a><br /></td></tr>
 <tr class="separator:a2c3accc6080358ab0edb487176f83f16"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -175,8 +175,8 @@ template&lt;class Response &gt; </div>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a5e5c7ad6698005f41e1e2b3a03224291"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a5e5c7ad6698005f41e1e2b3a03224291">&#9670;&nbsp;</a></span>Finish()</h2>
+<a id="a975cc4bdf9847550a50128f6d334966d"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a975cc4bdf9847550a50128f6d334966d">&#9670;&nbsp;</a></span>Finish()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -315,8 +315,8 @@ template&lt;class Response &gt; </div>
 
 </div>
 </div>
-<a id="a381a89d53a618bb8b65540369a226f17"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a381a89d53a618bb8b65540369a226f17">&#9670;&nbsp;</a></span>StartSendInitialMetadata()</h2>
+<a id="a0140acfa74b29204685c0b1419def12c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0140acfa74b29204685c0b1419def12c">&#9670;&nbsp;</a></span>StartSendInitialMetadata()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -372,8 +372,8 @@ template&lt;class Response &gt; </div>
 
 </div>
 </div>
-<a id="a74b701739e2525c3c0aa4eeda61b73c4"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a74b701739e2525c3c0aa4eeda61b73c4">&#9670;&nbsp;</a></span>StartWrite() <span class="overload">[2/2]</span></h2>
+<a id="a525d185a1924e021d1dba626ce756433"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a525d185a1924e021d1dba626ce756433">&#9670;&nbsp;</a></span>StartWrite() <span class="overload">[2/2]</span></h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -410,8 +410,8 @@ template&lt;class Response &gt; </div>
 
 </div>
 </div>
-<a id="a034ec67d17fe26efe27525740b5cde0e"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a034ec67d17fe26efe27525740b5cde0e">&#9670;&nbsp;</a></span>StartWriteAndFinish()</h2>
+<a id="abc281431c8f9e87efdff22c820319781"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abc281431c8f9e87efdff22c820319781">&#9670;&nbsp;</a></span>StartWriteAndFinish()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -523,7 +523,7 @@ template&lt;class Response &gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Mar 3 2021 19:17:25 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

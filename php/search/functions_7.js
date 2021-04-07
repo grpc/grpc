@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['now_338',['now',['../class_grpc_1_1_timeval.html#a8df14900363bce541340f81eff797d05',1,'Grpc::Timeval']]]
+  ['handle_360',['handle',['../class_grpc_1_1_rpc_server.html#afaf6bebe4ae34481869eedfff7e9c573',1,'Grpc::RpcServer']]],
+  ['host_361',['host',['../class_grpc_1_1_server_context.html#adad18109756e7a7d3595653afe1ee5e6',1,'Grpc::ServerContext']]]
 ];
