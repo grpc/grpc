@@ -683,6 +683,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     std::string hash_view = absl::StrFormat("%" PRIu64 "\0", hash.value());
     char* hash_value = static_cast<char*>(args.arena->Alloc(hash_view.size()));
     memcpy(hash_value, hash_view.data(), hash_view.size());
+    //TODO@donnadionne: this trips MemorySanitizer: use-of-uninitialized-value?
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
     gpr_log(GPR_INFO, "donna hash stroed as %s size %zu",
             call_config.call_attributes[kRequestRingHashAttribute],

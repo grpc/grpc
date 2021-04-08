@@ -274,9 +274,9 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
   for (auto& address : address_weights) {
     address.normalized_weight = static_cast<double>(address.weight) / sum;
     min_normalized_weight =
-        GPR_MIN(address.normalized_weight, min_normalized_weight);
+        std::min(address.normalized_weight, min_normalized_weight);
     max_normalized_weight =
-        GPR_MAX(address.normalized_weight, max_normalized_weight);
+        std::max(address.normalized_weight, max_normalized_weight);
     gpr_log(GPR_INFO, "donna weight %u sum %zu norm %f", address.weight, sum,
             address.normalized_weight);
   }
@@ -291,7 +291,7 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
   const size_t max_ring_size = parent_->config_->max_ring_size();
   gpr_log(GPR_INFO, "donna verify min %zu and max %zu", min_ring_size,
           max_ring_size);
-  const double scale = GPR_MIN(
+  const double scale = std::min(
       std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
       static_cast<double>(max_ring_size));
   // Reserve memory for the entire ring up front.
@@ -317,6 +317,8 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
     auto offset_start = hash_key_buffer.end();
     target_hashes += scale * address_weights[i].normalized_weight;
     size_t count = 0;
+    auto current_state =
+        subchannel_list->subchannel(i)->subchannel()->CheckConnectivityState();
     while (current_hashes < target_hashes) {
       const std::string count_str = absl::StrCat("", count);
       hash_key_buffer.insert(offset_start, count_str.begin(), count_str.end());
@@ -326,15 +328,13 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
       gpr_log(GPR_INFO, "donna push onto ring");
       ring_.push_back({hash,
                        subchannel_list->subchannel(i)->subchannel()->Ref(),
-                       subchannel_list->subchannel(i)
-                           ->subchannel()
-                           ->CheckConnectivityState()});
+                       current_state});
       ++count;
       ++current_hashes;
       hash_key_buffer.erase(offset_start, hash_key_buffer.end());
     }
-    min_hashes_per_host = GPR_MIN(i, min_hashes_per_host);
-    max_hashes_per_host = GPR_MAX(i, max_hashes_per_host);
+    min_hashes_per_host = std::min(i, min_hashes_per_host);
+    max_hashes_per_host = std::max(i, max_hashes_per_host);
     gpr_log(GPR_INFO, "donna after building: scale %f and ring size %zu", scale,
             ring_size);
     gpr_log(GPR_INFO, "donna count %zu current %f", count, current_hashes);
@@ -483,10 +483,12 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       }
     }
   }
-  result.error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-          absl::StrCat("xds ring hash unable to hash to a subchannel").c_str()),
-      GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
+  result.error =
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                             absl::StrCat("xds ring hash found a subchannel "
+                                          "that is in TRANSIENT_FAILURE state")
+                                 .c_str()),
+                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
   return result;
 }
 
@@ -705,16 +707,15 @@ void RingHash::UpdateLocked(UpdateArgs args) {
             this, args.addresses.size());
   }
   config_ = std::move(args.config);
-  ServerAddressList addresses = std::move(args.addresses);
   // Filter out any address with weight 0.
-  for (auto it = addresses.begin(); it != addresses.end();) {
+  ServerAddressList addresses;
+  addresses.reserve(args.addresses.size());
+  for (ServerAddress& address : args.addresses) {
     const ServerAddressWeightAttribute* weight_attribute =
-        static_cast<const ServerAddressWeightAttribute*>(it->GetAttribute(
+        static_cast<const ServerAddressWeightAttribute*>(address.GetAttribute(
             ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
-    if (weight_attribute != nullptr && weight_attribute->weight() == 0) {
-      it = addresses.erase(it);
-    } else {
-      ++it;
+    if (weight_attribute == nullptr || weight_attribute->weight() > 0) {
+      addresses.push_back(std::move(address));
     }
   }
   subchannel_list_ = MakeOrphanable<RingHashSubchannelList>(
