@@ -281,6 +281,10 @@ END2END_TESTS = {
         needs_client_channel = True,
         proxyable = False,
     ),
+    "retry_cancel_during_delay": _test_options(
+        needs_client_channel = True,
+        proxyable = False,
+    ),
     "retry_disabled": _test_options(needs_client_channel = True, proxyable = False),
     "retry_exceeds_buffer_size_in_initial_batch": _test_options(
         needs_client_channel = True,
