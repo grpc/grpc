@@ -13,6 +13,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Explicitly ban select functions from being used in src/core/**.
+
+Most of these functions have internal versions that should be used instead."""
 
 import os
 import sys

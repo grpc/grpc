@@ -1911,13 +1911,15 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 #else
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
-  result = tsi_set_min_and_max_tls_versions(
-      ssl_context, options->min_tls_version, options->max_tls_version);
-  if (result != TSI_OK) return result;
   if (ssl_context == nullptr) {
+    log_ssl_error_stack();
     gpr_log(GPR_ERROR, "Could not create ssl context.");
     return TSI_INVALID_ARGUMENT;
   }
+
+  result = tsi_set_min_and_max_tls_versions(
+      ssl_context, options->min_tls_version, options->max_tls_version);
+  if (result != TSI_OK) return result;
 
   impl = static_cast<tsi_ssl_client_handshaker_factory*>(
       gpr_zalloc(sizeof(*impl)));
@@ -2078,15 +2080,18 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 #else
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif
-      result = tsi_set_min_and_max_tls_versions(impl->ssl_contexts[i],
-                                                options->min_tls_version,
-                                                options->max_tls_version);
-      if (result != TSI_OK) return result;
       if (impl->ssl_contexts[i] == nullptr) {
+        log_ssl_error_stack();
         gpr_log(GPR_ERROR, "Could not create ssl context.");
         result = TSI_OUT_OF_RESOURCES;
         break;
       }
+
+      result = tsi_set_min_and_max_tls_versions(impl->ssl_contexts[i],
+                                                options->min_tls_version,
+                                                options->max_tls_version);
+      if (result != TSI_OK) return result;
+
       result = populate_ssl_context(impl->ssl_contexts[i],
                                     &options->pem_key_cert_pairs[i],
                                     options->cipher_suites);

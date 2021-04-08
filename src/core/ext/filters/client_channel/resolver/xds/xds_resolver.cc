@@ -73,6 +73,10 @@ class XdsResolver : public Resolver {
 
   void ShutdownLocked() override;
 
+  void ResetBackoffLocked() override {
+    if (xds_client_ != nullptr) xds_client_->ResetBackoff();
+  }
+
  private:
   class Notifier {
    public:
@@ -122,7 +126,7 @@ class XdsResolver : public Resolver {
   };
 
   class ClusterState
-      : public RefCounted<ClusterState, PolymorphicRefCount, false> {
+      : public RefCounted<ClusterState, PolymorphicRefCount, kUnrefNoDelete> {
    public:
     using ClusterStateMap =
         std::map<std::string, std::unique_ptr<ClusterState>>;

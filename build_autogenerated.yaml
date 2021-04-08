@@ -24,6 +24,7 @@ libs:
   - test/core/end2end/fixtures/local_util.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/util/test_lb_policies.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
@@ -87,6 +88,7 @@ libs:
   - test/core/end2end/tests/retry_disabled.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  - test/core/end2end/tests/retry_lb_drop.cc
   - test/core/end2end/tests/retry_non_retriable_status.cc
   - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   - test/core/end2end/tests/retry_recv_initial_metadata.cc
@@ -114,6 +116,7 @@ libs:
   - test/core/end2end/tests/workaround_cronet_compression.cc
   - test/core/end2end/tests/write_buffering.cc
   - test/core/end2end/tests/write_buffering_at_end.cc
+  - test/core/util/test_lb_policies.cc
   deps:
   - grpc_test_util
 - name: end2end_tests
@@ -128,6 +131,7 @@ libs:
   - test/core/end2end/fixtures/local_util.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/util/test_lb_policies.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
@@ -192,6 +196,7 @@ libs:
   - test/core/end2end/tests/retry_disabled.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  - test/core/end2end/tests/retry_lb_drop.cc
   - test/core/end2end/tests/retry_non_retriable_status.cc
   - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   - test/core/end2end/tests/retry_recv_initial_metadata.cc
@@ -219,6 +224,7 @@ libs:
   - test/core/end2end/tests/workaround_cronet_compression.cc
   - test/core/end2end/tests/write_buffering.cc
   - test/core/end2end/tests/write_buffering_at_end.cc
+  - test/core/util/test_lb_policies.cc
   deps:
   - grpc_test_util
 - name: gpr
@@ -362,6 +368,10 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/event_engine/channel_args.h
+  - include/grpc/event_engine/event_engine.h
+  - include/grpc/event_engine/port.h
+  - include/grpc/event_engine/slice_allocator.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -412,6 +422,8 @@ libs:
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
+  - src/core/ext/filters/client_channel/retry_filter.h
+  - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/service_config.h
@@ -927,6 +939,8 @@ libs:
   - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/resolver_result_parsing.cc
+  - src/core/ext/filters/client_channel/retry_filter.cc
+  - src/core/ext/filters/client_channel/retry_service_config.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config.cc
@@ -1203,6 +1217,8 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/slice_allocator.cc
+  - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/httpcli_security_connector.cc
@@ -1563,6 +1579,10 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/event_engine/channel_args.h
+  - include/grpc/event_engine/event_engine.h
+  - include/grpc/event_engine/port.h
+  - include/grpc/event_engine/slice_allocator.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -1608,6 +1628,8 @@ libs:
   - src/core/ext/filters/client_channel/resolver_factory.h
   - src/core/ext/filters/client_channel/resolver_registry.h
   - src/core/ext/filters/client_channel/resolver_result_parsing.h
+  - src/core/ext/filters/client_channel/retry_filter.h
+  - src/core/ext/filters/client_channel/retry_service_config.h
   - src/core/ext/filters/client_channel/retry_throttle.h
   - src/core/ext/filters/client_channel/server_address.h
   - src/core/ext/filters/client_channel/service_config.h
@@ -1860,6 +1882,8 @@ libs:
   - src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   - src/core/ext/filters/client_channel/resolver_registry.cc
   - src/core/ext/filters/client_channel/resolver_result_parsing.cc
+  - src/core/ext/filters/client_channel/retry_filter.cc
+  - src/core/ext/filters/client_channel/retry_service_config.cc
   - src/core/ext/filters/client_channel/retry_throttle.cc
   - src/core/ext/filters/client_channel/server_address.cc
   - src/core/ext/filters/client_channel/service_config.cc
@@ -1951,6 +1975,8 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/slice_allocator.cc
+  - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
@@ -3816,14 +3842,6 @@ targets:
   - test/core/client_channel/resolvers/sockaddr_resolver_test.cc
   deps:
   - grpc_test_util
-- name: sockaddr_utils_test
-  build: test
-  language: c
-  headers: []
-  src:
-  - test/core/iomgr/sockaddr_utils_test.cc
-  deps:
-  - grpc_test_util
 - name: socket_utils_test
   build: test
   language: c
@@ -5020,6 +5038,15 @@ targets:
   deps:
   - grpc++_error_details
   - grpc_test_util
+- name: error_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/error_utils_test.cc
+  deps:
+  - grpc_test_util
 - name: evaluate_args_test
   gtest: true
   build: test
@@ -5624,6 +5651,19 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: mock_stream_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - src/proto/grpc/testing/echo.proto
+  - src/proto/grpc/testing/echo_messages.proto
+  - src/proto/grpc/testing/simple_messages.proto
+  - test/cpp/test/mock_stream_test.cc
+  deps:
+  - grpc++_test
+  - grpc++_test_util
 - name: mock_test
   gtest: true
   build: test
@@ -6151,6 +6191,15 @@ targets:
   - test/core/bad_client/bad_client.cc
   - test/core/bad_client/tests/simple_request.cc
   - test/core/end2end/cq_verifier.cc
+  deps:
+  - grpc_test_util
+- name: sockaddr_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/sockaddr_utils_test.cc
   deps:
   - grpc_test_util
 - name: ssl_server_fuzzer

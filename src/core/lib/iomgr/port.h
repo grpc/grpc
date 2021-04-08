@@ -192,7 +192,7 @@
         defined(GRPC_CUSTOM_SOCKET) + defined(GRPC_CFSTREAM) != \
     1
 #error \
-    "Must define exactly one of GRPC_POSIX_SOCKET, GRPC_WINSOCK_SOCKET, GRPC_CUSTOM_SOCKET"
+    "Must define exactly one of GRPC_POSIX_SOCKET, GRPC_WINSOCK_SOCKET, GRPC_CUSTOM_SOCKET, GRPC_CFSTREAM"
 #endif
 
 #ifdef GRPC_POSIX_SOCKET

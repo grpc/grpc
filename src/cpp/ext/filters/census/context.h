@@ -75,8 +75,8 @@ class CensusContext {
   ::opencensus::tags::TagMap tags_;
 };
 
-// Serializes the outgoing trace context. Field IDs are 1 byte followed by
-// field data. A 1 byte version ID is always encoded first.
+// Serializes the outgoing trace context. tracing_buf must be
+// opencensus::trace::propagation::kGrpcTraceBinHeaderLen bytes long.
 size_t TraceContextSerialize(const ::opencensus::trace::SpanContext& context,
                              char* tracing_buf, size_t tracing_buf_size);
 

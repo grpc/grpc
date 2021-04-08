@@ -21,7 +21,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.37.0-dev'
+  version = '1.38.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -46,7 +46,7 @@ Pod::Spec.new do |s|
   s.requires_arc = false
 
   name = 'grpc'
-  abseil_version = '1.20200923.3'
+  abseil_version = '1.20210324.0'
 
   # When creating a dynamic framework, name it grpc.framework instead of gRPC-Core.framework.
   # This lets users write their includes like `#include <grpc/grpc.h>` as opposed to `#include
@@ -279,6 +279,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver_registry.h',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.cc',
                       'src/core/ext/filters/client_channel/resolver_result_parsing.h',
+                      'src/core/ext/filters/client_channel/retry_filter.cc',
+                      'src/core/ext/filters/client_channel/retry_filter.h',
+                      'src/core/ext/filters/client_channel/retry_service_config.cc',
+                      'src/core/ext/filters/client_channel/retry_service_config.h',
                       'src/core/ext/filters/client_channel/retry_throttle.cc',
                       'src/core/ext/filters/client_channel/retry_throttle.h',
                       'src/core/ext/filters/client_channel/server_address.cc',
@@ -1434,6 +1438,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/resolver_factory.h',
                               'src/core/ext/filters/client_channel/resolver_registry.h',
                               'src/core/ext/filters/client_channel/resolver_result_parsing.h',
+                              'src/core/ext/filters/client_channel/retry_filter.h',
+                              'src/core/ext/filters/client_channel/retry_service_config.h',
                               'src/core/ext/filters/client_channel/retry_throttle.h',
                               'src/core/ext/filters/client_channel/server_address.h',
                               'src/core/ext/filters/client_channel/service_config.h',
@@ -2078,6 +2084,7 @@ Pod::Spec.new do |s|
                       'test/core/end2end/tests/retry_disabled.cc',
                       'test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc',
                       'test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc',
+                      'test/core/end2end/tests/retry_lb_drop.cc',
                       'test/core/end2end/tests/retry_non_retriable_status.cc',
                       'test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc',
                       'test/core/end2end/tests/retry_recv_initial_metadata.cc',
@@ -2140,6 +2147,8 @@ Pod::Spec.new do |s|
                       'test/core/util/subprocess_windows.cc',
                       'test/core/util/test_config.cc',
                       'test/core/util/test_config.h',
+                      'test/core/util/test_lb_policies.cc',
+                      'test/core/util/test_lb_policies.h',
                       'test/core/util/test_tcp_server.cc',
                       'test/core/util/test_tcp_server.h',
                       'test/core/util/tls_utils.cc',
