@@ -550,9 +550,9 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
 // XdsClusterResolverLb public methods
 //
 
-XdsClusterResolverLb::XdsClusterResolverLb(
-    RefCountedPtr<XdsClient> xds_client, Args args, std::string server_name,
-    bool is_xds_uri)
+XdsClusterResolverLb::XdsClusterResolverLb(RefCountedPtr<XdsClient> xds_client,
+                                           Args args, std::string server_name,
+                                           bool is_xds_uri)
     : LoadBalancingPolicy(std::move(args)),
       xds_client_(std::move(xds_client)),
       server_name_(std::move(server_name)),

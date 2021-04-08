@@ -336,8 +336,8 @@ const grpc_arg_pointer_vtable
 grpc_arg FakeResolverResponseGenerator::MakeChannelArg(
     FakeResolverResponseGenerator* generator) {
   return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR),
-      generator, &kChannelArgPointerVtable);
+      const_cast<char*>(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR), generator,
+      &kChannelArgPointerVtable);
 }
 
 RefCountedPtr<FakeResolverResponseGenerator>

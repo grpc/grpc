@@ -890,8 +890,8 @@ void XdsResolver::GenerateResult() {
             result.service_config->json_string().c_str());
   }
   grpc_arg new_args[] = {
-    xds_client_->MakeChannelArg(),
-    config_selector->MakeChannelArg(),
+      xds_client_->MakeChannelArg(),
+      config_selector->MakeChannelArg(),
   };
   result.args =
       grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));

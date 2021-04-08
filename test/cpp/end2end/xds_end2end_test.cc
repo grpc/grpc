@@ -1681,11 +1681,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     // Start the load balancers.
     for (size_t i = 0; i < num_balancers_; ++i) {
-      balancers_.emplace_back(
-          new BalancerServerThread(this,
-                                   GetParam().enable_load_reporting()
-                                       ? client_load_reporting_interval_seconds_
-                                       : 0));
+      balancers_.emplace_back(new BalancerServerThread(
+          this, GetParam().enable_load_reporting()
+                    ? client_load_reporting_interval_seconds_
+                    : 0));
       balancers_.back()->Start();
       // Initialize resources.
       SetListenerAndRouteConfiguration(i, default_listener_,
@@ -11326,7 +11325,9 @@ INSTANTIATE_TEST_SUITE_P(
     XdsTest, GlobalXdsClientTest,
     ::testing::Values(
         TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_enable_load_reporting()),
+        TestType()
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+            .set_enable_load_reporting()),
     &TestTypeName);
 
 // XdsResolverLoadReprtingOnlyTest depends on XdsResolver and load reporting.
@@ -11407,17 +11408,31 @@ INSTANTIATE_TEST_SUITE_P(
     XdsTest, ClientStatusDiscoveryServiceTest,
     ::testing::Values(
         TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_enable_rds_testing(),
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_use_csds_streaming(),
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_enable_rds_testing().set_use_csds_streaming()),
+        TestType()
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+            .set_enable_rds_testing(),
+        TestType()
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+            .set_use_csds_streaming(),
+        TestType()
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+            .set_enable_rds_testing()
+            .set_use_csds_streaming()),
     &TestTypeName);
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, CsdsShortAdsTimeoutTest,
     ::testing::Values(
         TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_enable_rds_testing(),
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_use_csds_streaming(),
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_enable_rds_testing().set_use_csds_streaming()),
+        TestType()
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+            .set_enable_rds_testing(),
+        TestType()
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+            .set_use_csds_streaming(),
+        TestType()
+            .set_bootstrap_source(TestType::kBootstrapFromEnvVar)
+            .set_enable_rds_testing()
+            .set_use_csds_streaming()),
     &TestTypeName);
 #endif  // DISABLED_XDS_PROTO_IN_CC
 

@@ -452,21 +452,20 @@ std::string XdsBootstrap::ToString() const {
         node_->id, node_->cluster, node_->locality_region, node_->locality_zone,
         node_->locality_sub_zone, node_->metadata.Dump()));
   }
-  parts.push_back(absl::StrFormat(
-      "servers=[\n"
-      "  {\n"
-      "    uri=\"%s\",\n"
-      "    creds_type=%s,\n",
-      server().server_uri, server().channel_creds_type));
+  parts.push_back(
+      absl::StrFormat("servers=[\n"
+                      "  {\n"
+                      "    uri=\"%s\",\n"
+                      "    creds_type=%s,\n",
+                      server().server_uri, server().channel_creds_type));
   if (server().channel_creds_config.type() != Json::Type::JSON_NULL) {
-    parts.push_back(
-        absl::StrFormat("    creds_config=%s,",
-                        server().channel_creds_config.Dump()));
+    parts.push_back(absl::StrFormat("    creds_config=%s,",
+                                    server().channel_creds_config.Dump()));
   }
   if (!server().server_features.empty()) {
-    parts.push_back(absl::StrCat(
-        "    server_features=[",
-        absl::StrJoin(server().server_features, ", "), "],\n"));
+    parts.push_back(absl::StrCat("    server_features=[",
+                                 absl::StrJoin(server().server_features, ", "),
+                                 "],\n"));
   }
   parts.push_back("  }\n],\n");
   if (!server_listener_resource_name_template_.empty()) {
