@@ -2748,6 +2748,7 @@ grpc_cc_library(
         "absl-time",
         "opencensus-trace",
         "opencensus-trace-context_util",
+        "opencensus-trace-propagation",
         "opencensus-stats",
         "opencensus-context",
     ],
