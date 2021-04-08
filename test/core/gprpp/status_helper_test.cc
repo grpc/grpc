@@ -86,8 +86,8 @@ TEST(StatusUtilTest, ToAndFromProto) {
   StatusSetInt(&s, kIntField, 2021);
   StatusSetStr(&s, kStrField, "value");
   upb::Arena arena;
-  google_rpc_Status* msg = StatusToProto(s, arena.ptr());
-  absl::Status s2 = StatusFromProto(msg);
+  google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
+  absl::Status s2 = internal::StatusFromProto(msg);
   EXPECT_EQ(s, s2);
 }
 

@@ -56,6 +56,15 @@ void StatusAddChild(absl::Status* status, absl::Status child);
 std::vector<absl::Status> StatusGetChildren(absl::Status status)
     GRPC_MUST_USE_RESULT;
 
+/// Returns a string representation from status
+/// Error status will be like
+///   STATUS[:MESSAGE] [{PAYLOADS[, children:[CHILDREN-STATUS-LISTS]]}]
+/// e.g.
+///   CANCELLATION:SampleMessage {errno:'2021', line:'54', children:[ABORTED]}
+std::string StatusToString(const absl::Status& status) GRPC_MUST_USE_RESULT;
+
+namespace internal {
+
 /// Builds a upb message, google_rpc_Status from a status
 google_rpc_Status* StatusToProto(absl::Status status,
                                  upb_arena* arena) GRPC_MUST_USE_RESULT;
@@ -63,12 +72,7 @@ google_rpc_Status* StatusToProto(absl::Status status,
 /// Build a status from a upb message, google_rpc_Status
 absl::Status StatusFromProto(google_rpc_Status* msg) GRPC_MUST_USE_RESULT;
 
-/// Returns a string representation from status
-/// Error status will be like
-///   STATUS[:MESSAGE] [{PAYLOADS[, children:[CHILDREN-STATUS-LISTS]]}]
-/// e.g.
-///   CANCELLATION:SampleMessage {errno:'2021', line:'54', children:[ABORTED]}
-std::string StatusToString(const absl::Status& status) GRPC_MUST_USE_RESULT;
+}  // namespace internal
 
 }  // namespace grpc_core
 

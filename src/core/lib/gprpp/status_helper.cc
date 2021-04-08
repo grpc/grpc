@@ -35,11 +35,25 @@
 namespace grpc_core {
 
 namespace {
+
 const absl::string_view kTypeUrlPrefix = "type.googleapis.com/grpc.status.";
 const absl::string_view kFileField = "file";
 const absl::string_view kFileLineField = "file_line";
 const absl::string_view kCreatedField = "created";
 const absl::string_view kChildrenField = "children";
+
+void EncodeUInt32ToBytes(uint32_t v, char* buf) {
+  buf[0] = v & 0xFF;
+  buf[1] = (v >> 8) & 0xFF;
+  buf[2] = (v >> 16) & 0xFF;
+  buf[3] = (v >> 24) & 0xFF;
+}
+
+uint32_t DecodeUInt32FromBytes(const char* buf) {
+  return buf[0] | (uint32_t(buf[1]) << 8) | (uint32_t(buf[2]) << 16) |
+         (uint32_t(buf[3]) << 24);
+}
+
 }  // namespace
 
 absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
@@ -103,22 +117,10 @@ absl::optional<std::string> StatusGetStr(const absl::Status& status,
   return {};
 }
 
-static void EncodeUInt32ToBytes(uint32_t v, char* buf) {
-  buf[0] = v & 0xFF;
-  buf[1] = (v >> 8) & 0xFF;
-  buf[2] = (v >> 16) & 0xFF;
-  buf[3] = (v >> 24) & 0xFF;
-}
-
-static uint32_t DecodeUInt32FromBytes(const char* buf) {
-  return buf[0] | (uint32_t(buf[1]) << 8) | (uint32_t(buf[2]) << 16) |
-         (uint32_t(buf[3]) << 24);
-}
-
 void StatusAddChild(absl::Status* status, absl::Status child) {
   upb::Arena arena;
   // Serialize msg to buf
-  google_rpc_Status* msg = StatusToProto(child, arena.ptr());
+  google_rpc_Status* msg = internal::StatusToProto(child, arena.ptr());
   size_t buf_len = 0;
   char* buf = google_rpc_Status_serialize(msg, arena.ptr(), &buf_len);
   // Append (msg-length and msg) to children payload
@@ -148,7 +150,7 @@ static std::vector<absl::Status> ParseChildren(absl::Cord children) {
     google_rpc_Status* msg =
         google_rpc_Status_parse(buf.data() + cur, msg_size, arena.ptr());
     cur += msg_size;
-    result.push_back(StatusFromProto(msg));
+    result.push_back(internal::StatusFromProto(msg));
   }
   return result;
 }
@@ -158,6 +160,47 @@ std::vector<absl::Status> StatusGetChildren(absl::Status status) {
   return children.has_value() ? ParseChildren(*children)
                               : std::vector<absl::Status>();
 }
+
+std::string StatusToString(const absl::Status& status) {
+  if (status.ok()) {
+    return "OK";
+  }
+  std::string head;
+  absl::StrAppend(&head, absl::StatusCodeToString(status.code()));
+  if (!status.message().empty()) {
+    absl::StrAppend(&head, ":", status.message());
+  }
+  std::vector<std::string> kvs;
+  absl::optional<absl::Cord> children;
+  status.ForEachPayload(
+      [&](absl::string_view type_url, const absl::Cord& payload) {
+        if (type_url.substr(0, kTypeUrlPrefix.size()) == kTypeUrlPrefix) {
+          type_url.remove_prefix(kTypeUrlPrefix.size());
+        }
+        if (type_url == kChildrenField) {
+          children = payload;
+        } else {
+          absl::optional<absl::string_view> payload_view = payload.TryFlat();
+          std::string payload_str = absl::CHexEscape(
+              payload_view.has_value() ? *payload_view : std::string(payload));
+          kvs.push_back(absl::StrCat(type_url, ":\"", payload_str, "\""));
+        }
+      });
+  if (children.has_value()) {
+    std::vector<absl::Status> children_status = ParseChildren(*children);
+    std::vector<std::string> children_text;
+    children_text.reserve(children_status.size());
+    for (const absl::Status& child_status : children_status) {
+      children_text.push_back(StatusToString(child_status));
+    }
+    kvs.push_back(
+        absl::StrCat("children:[", absl::StrJoin(children_text, ", "), "]"));
+  }
+  return kvs.empty() ? head
+                     : absl::StrCat(head, " {", absl::StrJoin(kvs, ", "), "}");
+}
+
+namespace internal {
 
 google_rpc_Status* StatusToProto(absl::Status status, upb_arena* arena) {
   google_rpc_Status* msg = google_rpc_Status_new(arena);
@@ -207,43 +250,6 @@ absl::Status StatusFromProto(google_rpc_Status* msg) {
   return status;
 }
 
-std::string StatusToString(const absl::Status& status) {
-  if (status.ok()) {
-    return "OK";
-  }
-  std::string head;
-  absl::StrAppend(&head, absl::StatusCodeToString(status.code()));
-  if (!status.message().empty()) {
-    absl::StrAppend(&head, ":", status.message());
-  }
-  std::vector<std::string> kvs;
-  absl::optional<absl::Cord> children;
-  status.ForEachPayload(
-      [&](absl::string_view type_url, const absl::Cord& payload) {
-        if (type_url.substr(0, kTypeUrlPrefix.size()) == kTypeUrlPrefix) {
-          type_url.remove_prefix(kTypeUrlPrefix.size());
-        }
-        if (type_url == kChildrenField) {
-          children = payload;
-        } else {
-          absl::optional<absl::string_view> payload_view = payload.TryFlat();
-          std::string payload_str = absl::CHexEscape(
-              payload_view.has_value() ? *payload_view : std::string(payload));
-          kvs.push_back(absl::StrCat(type_url, ":\"", payload_str, "\""));
-        }
-      });
-  if (children.has_value()) {
-    std::vector<absl::Status> children_status = ParseChildren(*children);
-    std::vector<std::string> children_text;
-    children_text.reserve(children_status.size());
-    for (const absl::Status& child_status : children_status) {
-      children_text.push_back(StatusToString(child_status));
-    }
-    kvs.push_back(
-        absl::StrCat("children:[", absl::StrJoin(children_text, ", "), "]"));
-  }
-  return kvs.empty() ? head
-                     : absl::StrCat(head, " {", absl::StrJoin(kvs, ", "), "}");
-}
+}  // namespace internal
 
 }  // namespace grpc_core
