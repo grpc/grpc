@@ -41,7 +41,6 @@ namespace grpc_core {
 TraceFlag grpc_xds_resolver_trace(false, "xds_resolver");
 
 const char* kXdsClusterAttribute = "xds_cluster_name";
-char* kHash = "18446744073709551615";
 
 namespace {
 
@@ -644,7 +643,14 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
         case XdsApi::Route::HashPolicy::CHANNEL_ID:
+          gpr_log(GPR_INFO, "donna CHANNEL ID case");
           new_hash =
+              (static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver))
+               << 48) |
+              (static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver))
+               << 32) |
+              (static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver))
+               << 16) |
               static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
           break;
         default:
@@ -674,12 +680,13 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       call_config.service_config = std::move(method_config);
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
-    // kHash = absl::StrFormat("%" PRIu64, hash.value());
-    call_config.call_attributes[kRequestRingHashAttribute] = kHash;
-    gpr_log(GPR_INFO, "donna name stroed as %s",
-            call_config.call_attributes[kXdsClusterAttribute]);
-    gpr_log(GPR_INFO, "donna hash stroed as %s",
-            call_config.call_attributes[kRequestRingHashAttribute]);
+    std::string hash_view = absl::StrFormat("%" PRIu64 "\0", hash.value());
+    char* hash_value = static_cast<char*>(args.arena->Alloc(hash_view.size()));
+    memcpy(hash_value, hash_view.data(), hash_view.size());
+    call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
+    gpr_log(GPR_INFO, "donna hash stroed as %s size %zu",
+            call_config.call_attributes[kRequestRingHashAttribute],
+            hash_view.size());
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
       ExecCtx::Run(

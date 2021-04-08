@@ -8778,6 +8778,12 @@ TEST_P(EdsTest, RingHashSize4) {
   cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
       100);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  hash_policy->set_terminal(true);
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
