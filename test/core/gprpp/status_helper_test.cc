@@ -16,6 +16,7 @@
 
 #include "src/core/lib/gprpp/status_helper.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "absl/status/status.h"
@@ -25,14 +26,13 @@
 namespace grpc_core {
 namespace {
 
-static absl::string_view kCreatedUrl =
-    "type.googleapis.com/grpc.status.created";
-static absl::string_view kIntField = "int";
-static absl::string_view kStrField = "str";
+const absl::string_view kCreatedUrl = "type.googleapis.com/grpc.status.created";
+const absl::string_view kIntField = "int";
+const absl::string_view kStrField = "str";
 
 #ifndef NDEBUG
-static absl::string_view kFileField = "file";
-static absl::string_view kFileLineField = "file_line";
+const absl::string_view kFileField = "file";
+const absl::string_view kFileLineField = "file_line";
 #endif
 
 TEST(StatusUtilTest, CreateStatus) {
@@ -46,8 +46,8 @@ TEST(StatusUtilTest, CreateStatus) {
   EXPECT_EQ(true, StatusGetInt(s, kFileLineField).has_value());
 #endif
   EXPECT_EQ(true, s.GetPayload(kCreatedUrl).has_value());
-  EXPECT_EQ(std::vector<absl::Status>({absl::CancelledError()}),
-            StatusGetChildren(s));
+  EXPECT_THAT(StatusGetChildren(s),
+              ::testing::ElementsAre(absl::CancelledError()));
 }
 
 TEST(StatusUtilTest, SetAndGetInt) {
@@ -78,7 +78,7 @@ TEST(StatusUtilTest, AddAndGetChildren) {
   absl::Status child2 = absl::DeadlineExceededError("Message2");
   StatusAddChild(&s, child1);
   StatusAddChild(&s, child2);
-  EXPECT_EQ(std::vector<absl::Status>({child1, child2}), StatusGetChildren(s));
+  EXPECT_THAT(StatusGetChildren(s), ::testing::ElementsAre(child1, child2));
 }
 
 TEST(StatusUtilTest, ToAndFromProto) {
@@ -107,7 +107,7 @@ TEST(StatusUtilTest, ComplexErrorToString) {
   absl::Status s = absl::CancelledError("Message");
   StatusSetInt(&s, kIntField, 2021);
   std::string t = StatusToString(s);
-  EXPECT_EQ("CANCELLED:Message {int:'2021'}", t);
+  EXPECT_EQ("CANCELLED:Message {int:\"2021\"}", t);
 }
 
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
@@ -120,8 +120,8 @@ TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   StatusAddChild(&s, s2);
   std::string t = StatusToString(s);
   EXPECT_EQ(
-      "CANCELLED:Message {int:'2021', children:["
-      "ABORTED:Message1, ALREADY_EXISTS:Message2 {str:'value'}]}",
+      "CANCELLED:Message {int:\"2021\", children:["
+      "ABORTED:Message1, ALREADY_EXISTS:Message2 {str:\"value\"}]}",
       t);
 }
 

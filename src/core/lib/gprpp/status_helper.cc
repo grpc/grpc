@@ -34,11 +34,13 @@
 
 namespace grpc_core {
 
-static absl::string_view kTypeUrlPrefix = "type.googleapis.com/grpc.status.";
-static absl::string_view kFileField = "file";
-static absl::string_view kFileLineField = "file_line";
-static absl::string_view kCreatedField = "created";
-static absl::string_view kChildrenField = "children";
+namespace {
+const absl::string_view kTypeUrlPrefix = "type.googleapis.com/grpc.status.";
+const absl::string_view kFileField = "file";
+const absl::string_view kFileLineField = "file_line";
+const absl::string_view kCreatedField = "created";
+const absl::string_view kChildrenField = "children";
+}  // namespace
 
 absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
                           const DebugLocation& location,
@@ -227,7 +229,7 @@ std::string StatusToString(const absl::Status& status) {
           absl::optional<absl::string_view> payload_view = payload.TryFlat();
           std::string payload_str = absl::CHexEscape(
               payload_view.has_value() ? *payload_view : std::string(payload));
-          kvs.push_back(absl::StrCat(type_url, ":'", payload_str, "'"));
+          kvs.push_back(absl::StrCat(type_url, ":\"", payload_str, "\""));
         }
       });
   if (children.has_value()) {
