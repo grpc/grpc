@@ -736,7 +736,6 @@ libs:
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/nameser.h
   - src/core/lib/iomgr/parse_address.h
-  - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_custom.h
@@ -1266,7 +1265,6 @@ libs:
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/parse_address.cc
-  - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
   - src/core/lib/iomgr/pollset_custom.cc
@@ -1760,7 +1758,6 @@ libs:
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/nameser.h
   - src/core/lib/iomgr/parse_address.h
-  - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_custom.h
@@ -2025,7 +2022,6 @@ libs:
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/parse_address.cc
-  - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
   - src/core/lib/iomgr/pollset_custom.cc
@@ -5064,16 +5060,6 @@ targets:
   - test/core/security/evaluate_args_test.cc
   deps:
   - grpc_test_util
-- name: eventmanager_libuv_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/poller/eventmanager_libuv_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: examine_stack_test
   gtest: true
   build: test

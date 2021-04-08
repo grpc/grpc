@@ -1688,8 +1688,6 @@ src/core/lib/iomgr/lockfree_event.h \
 src/core/lib/iomgr/nameser.h \
 src/core/lib/iomgr/parse_address.cc \
 src/core/lib/iomgr/parse_address.h \
-src/core/lib/iomgr/poller/eventmanager_libuv.cc \
-src/core/lib/iomgr/poller/eventmanager_libuv.h \
 src/core/lib/iomgr/polling_entity.cc \
 src/core/lib/iomgr/polling_entity.h \
 src/core/lib/iomgr/pollset.cc \
