@@ -82,7 +82,8 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Factory function to get or create the global XdsClient instance.
   // If *error is not GRPC_ERROR_NONE upon return, then there was
   // an error initializing the client.
-  static RefCountedPtr<XdsClient> GetOrCreate(grpc_error** error);
+  static RefCountedPtr<XdsClient> GetOrCreate(const grpc_channel_args* args,
+                                              grpc_error** error);
 
   // Most callers should not instantiate directly.  Use GetOrCreate() instead.
   XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,

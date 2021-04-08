@@ -2392,8 +2392,26 @@ std::string GetBootstrapContents(const char* fallback_config,
 
 }  // namespace
 
-RefCountedPtr<XdsClient> XdsClient::GetOrCreate(grpc_error** error) {
+RefCountedPtr<XdsClient> XdsClient::GetOrCreate(const grpc_channel_args* args,
+                                                grpc_error** error) {
   RefCountedPtr<XdsClient> xds_client;
+  // If getting bootstrap from channel args, create a local XdsClient
+  // instance for the channel or server instead of using the global instance.
+  const char* bootstrap_config = grpc_channel_args_find_string(
+      args, GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG);
+  if (bootstrap_config != nullptr) {
+    std::unique_ptr<XdsBootstrap> bootstrap =
+        XdsBootstrap::Create(bootstrap_config, error);
+    if (*error == GRPC_ERROR_NONE) {
+      grpc_channel_args* xds_channel_args =
+          grpc_channel_args_find_pointer<grpc_channel_args>(
+              args,
+              GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
+      return MakeRefCounted<XdsClient>(std::move(bootstrap), xds_channel_args);
+    }
+    return nullptr;
+  }
+  // Otherwise, use the global instance.
   {
     MutexLock lock(g_mu);
     if (g_xds_client != nullptr) {
@@ -2487,7 +2505,7 @@ grpc_slice grpc_dump_xds_configs() {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_error* error = GRPC_ERROR_NONE;
-  auto xds_client = grpc_core::XdsClient::GetOrCreate(&error);
+  auto xds_client = grpc_core::XdsClient::GetOrCreate(nullptr, &error);
   if (error != GRPC_ERROR_NONE) {
     // If we isn't using xDS, just return an empty string.
     GRPC_ERROR_UNREF(error);

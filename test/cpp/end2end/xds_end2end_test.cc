@@ -1682,7 +1682,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Start the load balancers.
     for (size_t i = 0; i < num_balancers_; ++i) {
       balancers_.emplace_back(
-          new BalancerServerThread(GetParam().enable_load_reporting()
+          new BalancerServerThread(this,
+                                   GetParam().enable_load_reporting()
                                        ? client_load_reporting_interval_seconds_
                                        : 0));
       balancers_.back()->Start();
@@ -1735,7 +1736,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
     // Start the backends.
     for (size_t i = 0; i < num_backends_; ++i) {
-      backends_.emplace_back(new BackendServerThread(use_xds_enabled_server_));
+      backends_.emplace_back(
+          new BackendServerThread(this, use_xds_enabled_server_));
       backends_.back()->Start();
     }
     // Create channel and stub.
@@ -2275,8 +2277,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   class ServerThread {
    public:
-    explicit ServerThread(bool use_xds_enabled_server = false)
-        : port_(grpc_pick_unused_port_or_die()),
+    explicit ServerThread(XdsEnd2endTest* test_obj,
+                          bool use_xds_enabled_server = false)
+        : test_obj_(test_obj),
+          port_(grpc_pick_unused_port_or_die()),
           use_xds_enabled_server_(use_xds_enabled_server) {}
     virtual ~ServerThread(){};
 
@@ -2304,6 +2308,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       server_address << "localhost:" << port_;
       if (use_xds_enabled_server_) {
         experimental::XdsServerBuilder builder;
+        if (GetParam().bootstrap_source() ==
+            TestType::kBootstrapFromChannelArg) {
+          builder.SetOption(
+              absl::make_unique<XdsChannelArgsServerBuilderOption>(test_obj_));
+        }
         builder.set_status_notifier(&notifier_);
         builder.AddListeningPort(server_address.str(), Credentials());
         RegisterAllServices(&builder);
@@ -2339,12 +2348,35 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     XdsServingStatusNotifier* notifier() { return &notifier_; }
 
    private:
+    class XdsChannelArgsServerBuilderOption
+        : public ::grpc::ServerBuilderOption {
+     public:
+      explicit XdsChannelArgsServerBuilderOption(XdsEnd2endTest* test_obj)
+          : test_obj_(test_obj) {}
+
+      void UpdateArguments(grpc::ChannelArguments* args) override {
+        args->SetString(
+            GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
+            GetParam().use_v2() ? kBootstrapFileV2 : kBootstrapFileV3);
+        args->SetPointerWithVtable(
+            GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
+            &test_obj_->xds_channel_args_, &kChannelArgsArgVtable);
+      }
+
+      void UpdatePlugins(
+          std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>* plugins) {}
+
+     private:
+      XdsEnd2endTest* test_obj_;
+    };
+
     virtual void RegisterAllServices(ServerBuilder* builder) = 0;
     virtual void StartAllServices() = 0;
     virtual void ShutdownAllServices() = 0;
 
     virtual const char* Type() = 0;
 
+    XdsEnd2endTest* test_obj_;
     const int port_;
     std::unique_ptr<Server> server_;
     XdsServingStatusNotifier notifier_;
@@ -2355,8 +2387,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   class BackendServerThread : public ServerThread {
    public:
-    explicit BackendServerThread(bool use_xds_enabled_server)
-        : ServerThread(use_xds_enabled_server) {}
+    explicit BackendServerThread(XdsEnd2endTest* test_obj,
+                                 bool use_xds_enabled_server)
+        : ServerThread(test_obj, use_xds_enabled_server) {}
 
     BackendServiceImpl<::grpc::testing::EchoTestService::Service>*
     backend_service() {
@@ -2430,8 +2463,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   class BalancerServerThread : public ServerThread {
    public:
-    explicit BalancerServerThread(int client_load_reporting_interval = 0)
-        : ads_service_(new AdsServiceImpl()),
+    explicit BalancerServerThread(XdsEnd2endTest* test_obj,
+                                  int client_load_reporting_interval = 0)
+        : ServerThread(test_obj),
+          ads_service_(new AdsServiceImpl()),
           lrs_service_(new LrsServiceImpl(client_load_reporting_interval)) {}
 
     AdsServiceImpl* ads_service() { return ads_service_.get(); }
@@ -2463,6 +2498,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
   class AdminServerThread : public ServerThread {
+   public:
+    explicit AdminServerThread(XdsEnd2endTest* test_obj)
+        : ServerThread(test_obj) {}
+
    private:
     void RegisterAllServices(ServerBuilder* builder) override {
       builder->RegisterService(&csds_service_);
@@ -2989,7 +3028,9 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
             backends_[0]->backend_service()->request_count());
 }
 
-TEST_P(XdsResolverOnlyTest, MultipleChannelsShareXdsClient) {
+using GlobalXdsClientTest = BasicTest;
+
+TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   const char* kNewServerName = "new-server.example.com";
   Listener listener = default_listener_;
   listener.set_name(kNewServerName);
@@ -3008,6 +3049,38 @@ TEST_P(XdsResolverOnlyTest, MultipleChannelsShareXdsClient) {
       channel2->WaitForConnected(grpc_timeout_milliseconds_to_deadline(100)));
   // Make sure there's only one client connected.
   EXPECT_EQ(1UL, balancers_[0]->ads_service()->clients().size());
+}
+
+// Tests that the NACK for multiple bad LDS resources includes both errors.
+TEST_P(GlobalXdsClientTest, MultipleBadResources) {
+  constexpr char kServerName2[] = "server.other.com";
+  auto listener = default_listener_;
+  listener.clear_api_listener();
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  listener.set_name(kServerName2);
+  balancers_[0]->ads_service()->SetLdsResource(listener);
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  // Need to create a second channel to subscribe to a second LDS resource.
+  auto channel2 = CreateChannel(0, kServerName2);
+  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
+  ClientContext context;
+  EchoRequest request;
+  request.set_message(kRequestMessage);
+  EchoResponse response;
+  grpc::Status status = stub2->Echo(&context, request, &response);
+  EXPECT_FALSE(status.ok());
+  const auto response_state =
+      balancers_[0]->ads_service()->lds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::AllOf(
+          ::testing::HasSubstr(absl::StrCat(
+              kServerName, ": Listener has neither address nor ApiListener")),
+          ::testing::HasSubstr(
+              absl::StrCat(kServerName2,
+                           ": Listener has neither address nor ApiListener"))));
 }
 
 class XdsResolverLoadReportingOnlyTest : public XdsEnd2endTest {
@@ -3261,38 +3334,6 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
       response_state.error_message,
       ::testing::HasSubstr(
           "HttpConnectionManager ConfigSource for RDS does not specify ADS."));
-}
-
-// Tests that the NACK for multiple bad LDS resources includes both errors.
-TEST_P(LdsTest, MultipleBadResources) {
-  constexpr char kServerName2[] = "server.other.com";
-  auto listener = default_listener_;
-  listener.clear_api_listener();
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  listener.set_name(kServerName2);
-  balancers_[0]->ads_service()->SetLdsResource(listener);
-  SetNextResolutionForLbChannelAllBalancers();
-  CheckRpcSendFailure();
-  // Need to create a second channel to subscribe to a second LDS resource.
-  auto channel2 = CreateChannel(0, kServerName2);
-  auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
-  ClientContext context;
-  EchoRequest request;
-  request.set_message(kRequestMessage);
-  EchoResponse response;
-  grpc::Status status = stub2->Echo(&context, request, &response);
-  EXPECT_FALSE(status.ok());
-  const auto response_state =
-      balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      response_state.error_message,
-      ::testing::AllOf(
-          ::testing::HasSubstr(absl::StrCat(
-              kServerName, ": Listener has neither address nor ApiListener")),
-          ::testing::HasSubstr(
-              absl::StrCat(kServerName2,
-                           ": Listener has neither address nor ApiListener"))));
 }
 
 // Tests that we ignore filters after the router filter.
@@ -10427,7 +10468,7 @@ class ClientStatusDiscoveryServiceTest : public XdsEnd2endTest {
 
   void SetUp() override {
     XdsEnd2endTest::SetUp();
-    admin_server_thread_ = absl::make_unique<AdminServerThread>();
+    admin_server_thread_ = absl::make_unique<AdminServerThread>(this);
     admin_server_thread_->Start();
     std::string admin_server_address = absl::StrCat(
         ipv6_only_ ? "[::1]:" : "127.0.0.1:", admin_server_thread_->port());
@@ -11280,6 +11321,14 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(TestType(), TestType().set_enable_load_reporting()),
     &TestTypeName);
 
+// Runs with bootstrap from env var, so that there's a global XdsClient.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, GlobalXdsClientTest,
+    ::testing::Values(
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_enable_load_reporting()),
+    &TestTypeName);
+
 // XdsResolverLoadReprtingOnlyTest depends on XdsResolver and load reporting.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, XdsResolverLoadReportingOnlyTest,
@@ -11352,20 +11401,23 @@ INSTANTIATE_TEST_SUITE_P(
 
 #ifndef DISABLED_XDS_PROTO_IN_CC
 // Run CSDS tests with RDS enabled and disabled.
+// These need to run with the bootstrap from an env var instead of from
+// a channel arg, since there needs to be a global XdsClient instance.
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, ClientStatusDiscoveryServiceTest,
     ::testing::Values(
-        TestType(), TestType().set_enable_rds_testing(),
-        TestType().set_use_csds_streaming(),
-        TestType().set_enable_rds_testing().set_use_csds_streaming()),
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_enable_rds_testing(),
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_use_csds_streaming(),
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_enable_rds_testing().set_use_csds_streaming()),
     &TestTypeName);
-
 INSTANTIATE_TEST_SUITE_P(
     XdsTest, CsdsShortAdsTimeoutTest,
     ::testing::Values(
-        TestType(), TestType().set_enable_rds_testing(),
-        TestType().set_use_csds_streaming(),
-        TestType().set_enable_rds_testing().set_use_csds_streaming()),
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar),
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_enable_rds_testing(),
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_use_csds_streaming(),
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar).set_enable_rds_testing().set_use_csds_streaming()),
     &TestTypeName);
 #endif  // DISABLED_XDS_PROTO_IN_CC
 
