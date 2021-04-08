@@ -28,6 +28,7 @@
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -717,7 +718,12 @@ void XdsResolver::StartLocked() {
     std::unique_ptr<XdsBootstrap> bootstrap = XdsBootstrap::Create(
         bootstrap_config, &error);
     if (error == GRPC_ERROR_NONE) {
-      xds_client_ = MakeRefCounted<XdsClient>(std::move(bootstrap), args_);
+      grpc_channel_args* xds_channel_args =
+          grpc_channel_args_find_pointer<grpc_channel_args>(
+              args_,
+              GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
+      xds_client_ =
+          MakeRefCounted<XdsClient>(std::move(bootstrap), xds_channel_args);
     }
   } else {
     xds_client_ = XdsClient::GetOrCreate(&error);

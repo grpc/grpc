@@ -1106,8 +1106,24 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         XdsClient::GetFromChannelArgs(*args.args);
     if (xds_client == nullptr) {
       if (!is_xds_uri) {
+        const char* bootstrap_config = grpc_channel_args_find_string(
+            args.args,
+            GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG);
         grpc_error* error = GRPC_ERROR_NONE;
-        xds_client = XdsClient::GetOrCreate(&error);
+        if (bootstrap_config != nullptr) {
+          std::unique_ptr<XdsBootstrap> bootstrap = XdsBootstrap::Create(
+              bootstrap_config, &error);
+          if (error == GRPC_ERROR_NONE) {
+            grpc_channel_args* xds_channel_args =
+                grpc_channel_args_find_pointer<grpc_channel_args>(
+                    args.args,
+                    GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
+            xds_client = MakeRefCounted<XdsClient>(std::move(bootstrap),
+                                                   xds_channel_args);
+          }
+        } else {
+          xds_client = XdsClient::GetOrCreate(&error);
+        }
         if (error != GRPC_ERROR_NONE) {
           gpr_log(GPR_ERROR,
                   "cannot get XdsClient to instantiate xds_cluster_resolver LB "
