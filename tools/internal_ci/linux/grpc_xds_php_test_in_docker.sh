@@ -79,7 +79,7 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,c
   --path_to_server_binary=/java_server/grpc-java/interop-testing/build/install/grpc-interop-testing/bin/xds-test-server \
   --gcp_suffix=$(date '+%s') \
   --verbose \
-  --qps=25 \
+  --qps=20 \
   ${XDS_V3_OPT-} \
   --client_cmd='./src/php/bin/run_xds_client.sh --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {fail_on_failed_rpc} {rpcs_to_send} {metadata_to_send}'
 
@@ -93,4 +93,4 @@ GRPC_VERBOSITY=debug GRPC_TRACE=xds_client,xds_resolver,xds_cluster_manager_lb,c
   --gcp_suffix=$(date '+%s') \
   --verbose \
   ${XDS_V3_OPT-} \
-  --client_cmd='php -d extension=grpc.so -d extension=pthreads.so src/php/tests/interop/xds_client.php --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {fail_on_failed_rpc} {rpcs_to_send} {metadata_to_send}'
+  --client_cmd='./src/php/bin/run_xds_client.sh --server=xds:///{server_uri} --stats_port={stats_port} --qps={qps} {fail_on_failed_rpc} {rpcs_to_send} {metadata_to_send}'

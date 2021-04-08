@@ -36,8 +36,6 @@ if __name__ == '__main__':
     open_processes = {}
     client_env = dict(os.environ)
     client_env['GRPC_XDS_BOOTSTRAP'] = args.bootstrap_path
-    client_env['GRPC_XDS_EXPERIMENTAL_V3_SUPPORT'] = 'true'
-    client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
     while True:
         # tmp_file1 contains a list of RPCs (and their spec) the parent process
         # wants executed
