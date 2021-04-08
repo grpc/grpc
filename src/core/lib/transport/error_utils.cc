@@ -136,6 +136,16 @@ absl::Status grpc_error_to_absl_status(grpc_error* error) {
                                         GRPC_SLICE_LENGTH(message)));
 }
 
+grpc_error* absl_status_to_grpc_error(absl::Status status) {
+  // Special error checks
+  if (status.ok()) {
+    return GRPC_ERROR_NONE;
+  }
+  return grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_STRING_VIEW(status.message()),
+      GRPC_ERROR_INT_GRPC_STATUS, static_cast<grpc_status_code>(status.code()));
+}
+
 bool grpc_error_has_clear_grpc_status(grpc_error* error) {
   intptr_t unused;
   if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &unused)) {

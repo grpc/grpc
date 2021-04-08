@@ -43,6 +43,12 @@ void grpc_error_get_status(grpc_error* error, grpc_millis deadline,
 /// Does NOT consume a ref to grpc_error.
 absl::Status grpc_error_to_absl_status(grpc_error* error);
 
+/// Utility function to convert an absl::Status \a status to grpc_error. Note
+/// that this method does not return "special case" errors such as
+/// GRPC_ERROR_CANCELLED, with the exception of GRPC_ERROR_NONE returned for
+/// \a absl::OkStatus().
+grpc_error* absl_status_to_grpc_error(absl::Status status);
+
 /// A utility function to check whether there is a clear status code that
 /// doesn't need to be guessed in \a error. This means that \a error or some
 /// child has GRPC_ERROR_INT_GRPC_STATUS set, or that it is GRPC_ERROR_NONE or

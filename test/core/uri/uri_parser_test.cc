@@ -16,8 +16,6 @@
  *
  */
 
-// TODO(hork): rewrite with googletest
-
 #include "src/core/lib/uri/uri_parser.h"
 
 #include "absl/strings/str_join.h"
