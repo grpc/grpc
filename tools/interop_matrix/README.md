@@ -18,7 +18,7 @@ We have continuous nightly test setup to test gRPC backward compatibility betwee
   - `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_java:v1.9.9` followed by
   - `docker_image=gcr.io/grpc-testing/grpc_interop_java:v1.9.9 tools/interop_matrix/testcases/java__master`
 - Commit the change and create a PR to upstream/master.
-- Trigger an adhoc run of interop matrix tests: https://fusion.corp.google.com/projectanalysis/summary/KOKORO/prod:grpc%2Fcore%2Fmaster%2Flinux%2Fgrpc_interop_matrix
+- Trigger an adhoc run of interop matrix tests: https://fusion.corp.google.com/projectanalysis/summary/KOKORO/prod:grpc%2Fcore%2Fexperimental%2Flinux%2Fgrpc_interop_matrix_adhoc
 - Once tests pass, request a PR review.
 - (Optional) clean up the tmp directory to where grpc source is cloned at `/export/hda3/tmp/grpc_matrix/`.
 For more details on each step, refer to sections below.
