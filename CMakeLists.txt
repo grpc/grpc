@@ -3800,7 +3800,9 @@ endif()
 
 if(gRPC_BUILD_CODEGEN)
 
-if(gRPC_INSTALL)
+# grpcpp_channelz doesn't build with protobuf-lite, so no install required
+# See https://github.com/grpc/grpc/issues/22826
+if(gRPC_INSTALL AND NOT gRPC_USE_PROTO_LITE)
   install(TARGETS grpcpp_channelz EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
