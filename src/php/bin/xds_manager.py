@@ -54,7 +54,7 @@ if __name__ == '__main__':
                 # src/php/tests/interop/xds_client.php
                 items = key.split('|')
                 num = items[0]
-                rpc_behavior = items[2]
+                metadata = items[2]
                 timeout_sec = items[3]
                 if items[1] == 'UnaryCall':
                     p = subprocess.Popen([
@@ -62,8 +62,7 @@ if __name__ == '__main__':
                         'extension=pthreads.so',
                         'src/php/tests/interop/xds_unary_call.php',
                         '--server=' + server_address, '--num=' + str(num),
-                        '--rpc_behavior=' + rpc_behavior,
-                        '--timeout_sec=' + timeout_sec
+                        '--metadata=' + metadata, '--timeout_sec=' + timeout_sec
                     ],
                                          env=client_env)
                 elif items[1] == 'EmptyCall':
@@ -72,8 +71,7 @@ if __name__ == '__main__':
                         'extension=pthreads.so',
                         'src/php/tests/interop/xds_empty_call.php',
                         '--server=' + server_address, '--num=' + str(num),
-                        '--rpc_behavior=' + rpc_behavior,
-                        '--timeout=' + timeout_sec
+                        '--metadata=' + metadata, '--timeout=' + timeout_sec
                     ],
                                          env=client_env)
                 else:
