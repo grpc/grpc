@@ -62,8 +62,7 @@ if __name__ == '__main__':
                         'extension=pthreads.so',
                         'src/php/tests/interop/xds_unary_call.php',
                         '--server=' + server_address, '--num=' + str(num),
-                        '--metadata=' + metadata,
-                        '--timeout_sec=' + timeout_sec
+                        '--metadata=' + metadata, '--timeout_sec=' + timeout_sec
                     ],
                                          env=client_env)
                 elif items[1] == 'EmptyCall':
@@ -72,8 +71,7 @@ if __name__ == '__main__':
                         'extension=pthreads.so',
                         'src/php/tests/interop/xds_empty_call.php',
                         '--server=' + server_address, '--num=' + str(num),
-                        '--metadata=' + metadata,
-                        '--timeout=' + timeout_sec
+                        '--metadata=' + metadata, '--timeout=' + timeout_sec
                     ],
                                          env=client_env)
                 else:
