@@ -223,26 +223,24 @@ static int check_x509_pem_cert_chain(const grpc_auth_context* ctx,
 }
 
 static int check_dns(const grpc_auth_context* ctx,
-                     const std::vector<std::string>& expected_dns,
-                     int num_dns) {
+                     const std::vector<std::string>& expected_dns) {
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
       ctx, GRPC_PEER_DNS_PROPERTY_NAME);
-  for (int i = 0; i < num_dns; ++i) {
+  for (const auto& dns : expected_dns) {
     const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
     if (prop == nullptr) {
-      gpr_log(GPR_ERROR, "Expected dns value %s not found.",
-              expected_dns[i].c_str());
+      gpr_log(GPR_ERROR, "Expected dns value %s not found.", dns.c_str());
       return 0;
     }
-    if (strncmp(prop->value, expected_dns[i].c_str(), prop->value_length) !=
-        0) {
-      gpr_log(GPR_ERROR, "Expected peer dns %s and got %s.",
-              expected_dns[i].c_str(), prop->value);
+    if (strncmp(prop->value, dns.c_str(), prop->value_length) != 0) {
+      gpr_log(GPR_ERROR, "Expected peer dns %s and got %s.", dns.c_str(),
+              prop->value);
       return 0;
     }
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    gpr_log(GPR_ERROR, "Expected only %zu dns property values.", num_dns);
+    gpr_log(GPR_ERROR, "Expected only %zu dns property values.",
+            expected_dns.size());
     return 0;
   }
   return 1;
@@ -474,7 +472,7 @@ static void test_dns_peer_to_auth_context(void) {
   tsi_peer peer;
   const std::vector<std::string> expected_dns = {"dns1", "dns2", "dns3"};
   GPR_ASSERT(tsi_construct_peer(expected_dns.size(), &peer) == TSI_OK);
-  for (int i = 0; i < expected_dns.size(); ++i) {
+  for (size_t i = 0; i < expected_dns.size(); ++i) {
     GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
                    TSI_X509_DNS_PEER_PROPERTY, expected_dns[i].c_str(),
                    &peer.properties[i]) == TSI_OK);
@@ -482,7 +480,7 @@ static void test_dns_peer_to_auth_context(void) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
-  GPR_ASSERT(check_dns(ctx.get(), expected_dns, expected_dns.size()));
+  GPR_ASSERT(check_dns(ctx.get(), expected_dns));
   tsi_peer_destruct(&peer);
   ctx.reset(DEBUG_LOCATION, "test");
 }
