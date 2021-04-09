@@ -1110,6 +1110,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/request_with_payload.cc
   test/core/end2end/tests/resource_quota_server.cc
   test/core/end2end/tests/retry.cc
+  test/core/end2end/tests/retry_cancel_during_delay.cc
   test/core/end2end/tests/retry_cancellation.cc
   test/core/end2end/tests/retry_disabled.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
@@ -1243,6 +1244,7 @@ add_library(end2end_tests
   test/core/end2end/tests/request_with_payload.cc
   test/core/end2end/tests/resource_quota_server.cc
   test/core/end2end/tests/retry.cc
+  test/core/end2end/tests/retry_cancel_during_delay.cc
   test/core/end2end/tests/retry_cancellation.cc
   test/core/end2end/tests/retry_disabled.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc

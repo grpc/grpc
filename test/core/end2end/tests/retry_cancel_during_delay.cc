@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2017 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2017 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include "test/core/end2end/end2end_tests.h"
 
@@ -96,9 +94,9 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-// Tests retry cancellation.
-static void test_retry_cancellation(grpc_end2end_test_config config,
-                                    cancellation_mode mode) {
+// Tests retry cancellation during backoff.
+static void test_retry_cancel_during_delay(grpc_end2end_test_config config,
+                                           cancellation_mode mode) {
   grpc_call* c;
   grpc_call* s;
   grpc_op ops[6];
@@ -134,7 +132,7 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
               "    ],\n"
               "    \"retryPolicy\": {\n"
               "      \"maxAttempts\": 3,\n"
-              "      \"initialBackoff\": \"1s\",\n"
+              "      \"initialBackoff\": \"10s\",\n"
               "      \"maxBackoff\": \"120s\",\n"
               "      \"backoffMultiplier\": 1.6,\n"
               "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
@@ -144,12 +142,13 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
               "}")),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
-  std::string name = absl::StrCat("retry_cancellation/", mode.name);
+  std::string name = absl::StrCat("retry_cancel_during_delay/", mode.name);
   grpc_end2end_test_fixture f =
       begin_test(config, name.c_str(), &client_args, nullptr);
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
+  gpr_timespec expect_finish_before = n_seconds_from_now(10);
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
                                grpc_slice_from_static_string("/service/method"),
@@ -236,13 +235,13 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   grpc_call_details_destroy(&call_details);
   grpc_call_details_init(&call_details);
 
-  // Server gets a second call (the retry).
+  // Server should never get a second call, because the initial retry
+  // delay is longer than the call's deadline.
   error =
       grpc_server_request_call(f.server, &s, &call_details,
                                &request_metadata_recv, f.cq, f.cq, tag(201));
   GPR_ASSERT(GRPC_CALL_OK == error);
-  CQ_EXPECT_COMPLETION(cqv, tag(201), true);
-  cq_verify(cqv);
+  cq_verify_empty(cqv);
 
   // Initiate cancellation.
   GPR_ASSERT(GRPC_CALL_OK == mode.initiate_cancel(c, nullptr));
@@ -250,6 +249,14 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   CQ_EXPECT_COMPLETION(cqv, tag(1), true);
   cq_verify(cqv);
 
+  // Make sure we didn't wait the full deadline before failing.
+  gpr_log(
+      GPR_INFO, "Expect completion before: %s",
+      absl::FormatTime(grpc_core::ToAbslTime(expect_finish_before)).c_str());
+  GPR_ASSERT(gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), expect_finish_before) <
+             0);
+
+  gpr_log(GPR_INFO, "status=%d expected=%d", status, mode.expect_status);
   GPR_ASSERT(status == mode.expect_status);
   GPR_ASSERT(was_cancelled == 0);
 
@@ -264,7 +271,6 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   grpc_byte_buffer_destroy(response_payload_recv);
 
   grpc_call_unref(c);
-  grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
 
@@ -272,11 +278,11 @@ static void test_retry_cancellation(grpc_end2end_test_config config,
   config.tear_down_data(&f);
 }
 
-void retry_cancellation(grpc_end2end_test_config config) {
+void retry_cancel_during_delay(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   for (size_t i = 0; i < GPR_ARRAY_SIZE(cancellation_modes); ++i) {
-    test_retry_cancellation(config, cancellation_modes[i]);
+    test_retry_cancel_during_delay(config, cancellation_modes[i]);
   }
 }
 
-void retry_cancellation_pre_init(void) {}
+void retry_cancel_during_delay_pre_init(void) {}
