@@ -55,12 +55,17 @@ class grpc_security_connector
         url_scheme_(url_scheme) {}
   ~grpc_security_connector() override = default;
 
-  /* Check the peer. Callee takes ownership of the peer object.
-     When done, sets *auth_context and invokes on_peer_checked. */
+  // Checks the peer. Callee takes ownership of the peer object.
+  // When done, sets *auth_context and invokes on_peer_checked.
   virtual void check_peer(
       tsi_peer peer, grpc_endpoint* ep,
       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
       grpc_closure* on_peer_checked) = 0;
+
+  // Cancels the pending check_peer() request associated with on_peer_checked.
+  // If there is no such request pending, this is a no-op.
+  virtual void cancel_check_peer(grpc_closure* on_peer_checked,
+                                 grpc_error* error) = 0;
 
   /* Compares two security connectors. */
   virtual int cmp(const grpc_security_connector* other) const = 0;
