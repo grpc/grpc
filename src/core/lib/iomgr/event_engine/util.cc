@@ -21,30 +21,50 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-std::shared_ptr<EventEngine> grpc_get_default_event_engine() {
+std::shared_ptr<EventEngine> GetDefaultEventEngine() {
   // TODO(nnoble): instantiate a singleton LibuvEventEngine
   return nullptr;
 }
 
 // grpc_closure to std::function conversions for an EventEngine-based iomgr
 EventEngine::Callback event_engine_closure_to_callback(grpc_closure* closure) {
-  (void)closure;
-  return [](absl::Status) {};
+  return [&](absl::Status status) {
+    // TODO(hork): Do we need to add grpc_error to closure's error data?
+    // if (!status.ok()) {
+    //   closure->error_data.error = grpc_error_add_child(
+    //       closure->error_data.error,
+    //       GRPC_ERROR_CREATE_FROM_COPIED_STRING(status.ToString().c_str()));
+    // }
+    grpc_core::Closure::Run(DEBUG_LOCATION, closure,
+                            absl_status_to_grpc_error(status));
+  };
 }
 
+// DO NOT SUBMIT NOTES: the closure is already initialized, and does not take an
+// Endpoint. See chttp2_connector:L74. Instead, the closure arg contains a ptr
+// to the endpoint that iomgr is expected to populate. When gRPC eventually uses
+// the EventEngine directly, closures will be replaced with EE callback types.
+// For now, the Endpiont can be ignored as the closure is expected to have
+// access to it already.
 EventEngine::OnConnectCallback event_engine_closure_to_on_connect_callback(
     grpc_closure* closure) {
-  (void)closure;
-  return [](absl::Status, EventEngine::Endpoint*) {};
+  return [closure](absl::Status status, EventEngine::Endpoint* /* endpoint */) {
+    // TODO(hork): Do we need to add grpc_error to closure's error data?
+    grpc_core::Closure::Run(DEBUG_LOCATION, closure,
+                            absl_status_to_grpc_error(status));
+  };
 }
 
 EventEngine::Listener::AcceptCallback event_engine_closure_to_accept_callback(
-    grpc_closure* closure) {
+    grpc_closure* closure, void* arg) {
   (void)closure;
+  (void)arg;
   return [](absl::Status, EventEngine::Endpoint*) {};
 }
 

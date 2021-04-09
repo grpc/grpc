@@ -20,7 +20,7 @@ namespace grpc_event_engine {
 namespace experimental {
 
 // TODO(hork): define
-class ChannelArgs;
+class ChannelArgs {};
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

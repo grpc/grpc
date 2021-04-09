@@ -276,6 +276,8 @@ class EventEngine {
 // default instance will never be instantiated.
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
+absl::Status SetDefaultEventEngine(std::shared_ptr<EventEngine> engine);
+
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

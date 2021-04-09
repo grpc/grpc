@@ -33,22 +33,29 @@ extern grpc_address_resolver_vtable grpc_event_engine_resolver_vtable;
 // TODO(hork): temporary
 extern grpc_timer_vtable grpc_generic_timer_vtable;
 
-static void iomgr_platform_init(void) {
-  // The default EventEngine is lazily instantiated via
-  // `grpc_get_default_event_engine`
-}
+// The default EventEngine is lazily instantiated via
+// `grpc_event_engine::experimental::GetDefaultEventEngine()`
+static void iomgr_platform_init(void) {}
+
 static void iomgr_platform_flush(void) {
-  // EventEngine::Flush??
+  // TODO(hork): Do we need EventEngine::Flush??
 }
-static void iomgr_platform_shutdown(void) {}
+
+static void iomgr_platform_shutdown(void) {
+  // TODO(hork): if default event engine, EventEngine::Shutdown();
+}
+
 static void iomgr_platform_shutdown_background_closure(void) {}
+
 static bool iomgr_platform_is_any_background_poller_thread(void) {
   return false;
 }
+
 static bool iomgr_platform_add_closure_to_background_poller(
     grpc_closure* closure, grpc_error* error) {
   (void)closure;
   (void)error;
+  // TODO(hork): schedule the closure
   return false;
 }
 

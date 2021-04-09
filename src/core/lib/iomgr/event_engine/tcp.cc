@@ -17,33 +17,59 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/sockaddr.h"
+#include "src/core/lib/iomgr/event_engine/endpoint.h"
 #include "src/core/lib/iomgr/event_engine/util.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 
 namespace {
+using ::grpc_event_engine::experimental::ChannelArgs;
+using ::grpc_event_engine::experimental::
+    event_engine_closure_to_on_connect_callback;
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::SliceAllocator;
 }  // namespace
 
+struct grpc_tcp_server {
+  gpr_refcount refs;
+  std::shared_ptr<EventEngine> engine;
+};
+
+namespace {
+
+/// Argument ownership stories:
+/// * closure: ?
+/// * endpoint: owned by caller
+/// * interested_parties: owned by caller
+/// * channel_args: owned by caller
+/// * addr: owned by caller
+/// * deadline: copied
 static void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                         grpc_pollset_set* interested_parties,
                         const grpc_channel_args* channel_args,
                         const grpc_resolved_address* addr,
                         grpc_millis deadline) {
-  EventEngine::OnConnectCallback ee_on_connect = grpc_event_engine::
-      experimental::event_engine_closure_to_on_connect_callback(on_connect);
-  // Needs:
-  //  * grpc_endpoint -> EventEngine::Endpoint
-  //  * Ignore interested_parties? Hope so.
-  //  * convert channel_args to ChannelArgs
-  //  * grpc_resolved_address -> ResolvedAddress
-  //  * retrieve EventEngine from Endpoint or from channel_args
-
-  (void)endpoint;
+  EventEngine::OnConnectCallback ee_on_connect =
+      event_engine_closure_to_on_connect_callback(on_connect);
+  // TODO(hork): peer_string needs to be set to ResolvedAddress name
+  grpc_event_engine_endpoint* ee_endpoint =
+      grpc_endpoint_create(channel_args, "UNIMPLEMENTED");
+  endpoint* = ee_endpoint->base;
+  SliceAllocator sa(ee_endpoint->ru);
+  EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
+                                  addr->len);
+  absl::Time ee_deadline = grpc_core::ToAbslTime(
+      grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
+  // TODO(hork): retrieve EventEngine from Endpoint or from channel_args
+  std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
+  // TODO(hork): Convert channel_args to ChannelArgs
+  ChannelArgs ca;
+  if (!ee->Connect(ee_on_connect, ra, ca, std::move(sa), ee_deadline).ok()) {
+    // Do nothing. The callback will be executed once with an error
+  }
   (void)interested_parties;
-  (void)channel_args;
-  (void)addr;
-  (void)deadline;
 }
 
 static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
@@ -108,6 +134,8 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
 }
 static void tcp_server_unref(grpc_tcp_server* s) { (void)s; }
 static void tcp_server_shutdown_listeners(grpc_tcp_server* s) { (void)s; }
+
+}  // namespace
 
 grpc_tcp_client_vtable grpc_event_engine_tcp_client_vtable = {tcp_connect};
 grpc_tcp_server_vtable grpc_event_engine_tcp_server_vtable = {

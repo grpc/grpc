@@ -968,6 +968,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
+        "src/core/lib/iomgr/event_engine/endpoint.h",
         "src/core/lib/iomgr/event_engine/util.h",
         "src/core/lib/iomgr/exec_ctx.h",
         "src/core/lib/iomgr/executor.h",

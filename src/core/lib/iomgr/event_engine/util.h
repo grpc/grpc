@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+//
+/// grpc_closure to std::function conversions for an EventEngine-based iomgr
 #ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_UTIL_H
 #define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_UTIL_H
 #ifdef GRPC_EVENT_ENGINE_TEST
@@ -27,10 +29,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-// Lazily instantiates and returns a shared_ptr to the default EventEngine.
-std::shared_ptr<EventEngine> grpc_get_default_event_engine();
-
-// grpc_closure to std::function conversions for an EventEngine-based iomgr
 EventEngine::Callback event_engine_closure_to_callback(grpc_closure* closure);
 
 EventEngine::OnConnectCallback event_engine_closure_to_on_connect_callback(

@@ -17,6 +17,7 @@
 #ifdef GRPC_EVENT_ENGINE_TEST
 
 #include <grpc/support/port_platform.h>
+#include <grpc/event_engine/port.h>
 
 // TODO(hork): much of this can be removed when we migrate fully to EventEngine
 #include "src/core/lib/iomgr/port.h"
