@@ -334,14 +334,14 @@ class ClientThread extends Thread {
         }
     }
 
-    public function execute_rpc_in_child_process($rpc, $rpc_behavior) {
+    public function execute_rpc_in_child_process($rpc, $metadata_serialized) {
         // tmp_file1 contains the list of RPCs (and their
         // specs) we want executed. This will be picked up
         // by src/php/bin/xds_manager.py
         $f1 = fopen($this->rpc_config->tmp_file1, 'a');
         $key = implode('|', [$this->num_results,
                              $rpc,
-                             $rpc_behavior,
+                             $metadata_serialized,
                              $this->rpc_config->timeout_sec]);
         flock($f1, LOCK_EX);
         fwrite($f1, $key."\n");
@@ -386,17 +386,14 @@ class ClientThread extends Thread {
                 // $this->metadata_to_send[$rpc] somehow becomes a
                 // Volatile object, instead of an associative array.
                 $metadata_array = [];
-                $rpc_behavior = false;
                 foreach ($metadata as $key => $value) {
                     $metadata_array[$key] = [$value];
-                    if ($key == 'rpc-behavior') {
-                        $rpc_behavior = $value;
-                    }
                 }
-                if ($rpc_behavior && $this->rpc_config->tmp_file1) {
+                if ($metadata_array && $this->rpc_config->tmp_file1) {
                     // if 'rpc-behavior' is set, we need to pawn off
                     // the execution to some other child PHP processes
-                    $this->execute_rpc_in_child_process($rpc, $rpc_behavior);
+                    $this->execute_rpc_in_child_process(
+                        $rpc, serialize($metadata_array));
                     continue;
                 }
                 // Execute RPC within this script

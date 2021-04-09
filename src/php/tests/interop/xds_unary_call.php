@@ -29,7 +29,7 @@ require_once $autoload_path;
 // from there.
 
 $args = getopt('', ['server:', 'num:',
-                    'rpc_behavior:', 'timeout_sec:']);
+                    'metadata:', 'timeout_sec:']);
 $TIMEOUT_US = 30 * 1e6; // 30 seconds
 
 $server_address = $args['server'];
@@ -43,8 +43,8 @@ $simple_request = new Grpc\Testing\SimpleRequest();
 
 $timeout = $args['timeout_sec'] ? $args['timeout_sec'] * 1e6 : $TIMEOUT_US;
 $metadata = [];
-if ($args['rpc_behavior']) {
-    $metadata['rpc-behavior'] = [$args['rpc_behavior']];
+if ($args['metadata']) {
+    $metadata = unserialize($args['metadata']);
 }
 
 $call = $stub->UnaryCall($simple_request,
