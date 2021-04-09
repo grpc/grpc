@@ -103,7 +103,7 @@ class grpc_alts_channel_security_connector final
     alts_check_peer(peer, auth_context, on_peer_checked);
   }
 
-  void cancel_check_peer(grpc_closure* on_peer_checked,
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error* error) override {
     GRPC_ERROR_UNREF(error);
   }
@@ -173,7 +173,7 @@ class grpc_alts_server_security_connector final
     alts_check_peer(peer, auth_context, on_peer_checked);
   }
 
-  void cancel_check_peer(grpc_closure* on_peer_checked,
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error* error) override {
     GRPC_ERROR_UNREF(error);
   }

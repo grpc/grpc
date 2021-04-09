@@ -60,9 +60,10 @@ class TlsChannelSecurityConnector final
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
-  void cancel_check_peer(grpc_closure* on_peer_checked,
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error* error) override {
     // TODO(ZhenLian): call verifier->cancel() once the verifier is ready.
+    GRPC_ERROR_UNREF(error);
   }
 
   int cmp(const grpc_security_connector* other_sc) const override;
@@ -166,9 +167,10 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
-  void cancel_check_peer(grpc_closure* on_peer_checked,
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error* error) override {
     // TODO(ZhenLian): call verifier->cancel() once the verifier is ready.
+    GRPC_ERROR_UNREF(error);
   }
 
   int cmp(const grpc_security_connector* other) const override;

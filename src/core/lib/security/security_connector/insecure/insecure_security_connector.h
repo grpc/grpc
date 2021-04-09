@@ -60,7 +60,7 @@ class InsecureChannelSecurityConnector
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
-  void cancel_check_peer(grpc_closure* on_peer_checked,
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error* error) override {
     GRPC_ERROR_UNREF(error);
   }
@@ -83,7 +83,7 @@ class InsecureServerSecurityConnector : public grpc_server_security_connector {
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
-  void cancel_check_peer(grpc_closure* on_peer_checked,
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
                          grpc_error* error) override {
     GRPC_ERROR_UNREF(error);
   }
