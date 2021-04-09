@@ -468,9 +468,11 @@ void CallData::HijackedRecvTrailingMetadataReady(void* arg, grpc_error* error) {
   if (calld->abort_error_ != GRPC_ERROR_NONE) {
     error = grpc_error_add_child(GRPC_ERROR_REF(error),
                                  GRPC_ERROR_REF(calld->abort_error_));
-    Closure::Run(DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
-                 error);
+  } else {
+    error = GRPC_ERROR_REF(error);
   }
+  Closure::Run(DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
+               error);
 }
 
 }  // namespace
