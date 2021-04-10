@@ -43,6 +43,7 @@ class EvaluateArgs {
     int peer_port = 0;
   };
 
+  EvaluateArgs() = default;
   EvaluateArgs(grpc_metadata_batch* metadata, PerChannelArgs* channel_args)
       : metadata_(metadata), channel_args_(channel_args) {}
 
