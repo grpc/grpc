@@ -857,6 +857,7 @@ if(gRPC_BUILD_TESTS)
   endif()
   add_dependencies(buildtests_cxx global_config_test)
   add_dependencies(buildtests_cxx google_mesh_ca_certificate_provider_factory_test)
+  add_dependencies(buildtests_cxx grpc_authorization_engine_test)
   add_dependencies(buildtests_cxx grpc_cli)
   add_dependencies(buildtests_cxx grpc_tls_certificate_distributor_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_provider_test)
@@ -8015,6 +8016,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(authorization_matchers_test
   src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
   test/core/security/authorization_matchers_test.cc
@@ -9129,6 +9131,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(cel_authorization_engine_test
   src/core/lib/security/authorization/cel_authorization_engine.cc
   src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
   test/core/security/cel_authorization_engine_test.cc
@@ -10312,6 +10315,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(evaluate_args_test
   src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
   test/core/security/evaluate_args_test.cc
@@ -10716,6 +10720,45 @@ target_include_directories(google_mesh_ca_certificate_provider_factory_test
 )
 
 target_link_libraries(google_mesh_ca_certificate_provider_factory_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(grpc_authorization_engine_test
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/grpc_authorization_engine.cc
+  src/core/lib/security/authorization/matchers.cc
+  src/core/lib/security/authorization/rbac_policy.cc
+  test/core/security/grpc_authorization_engine_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(grpc_authorization_engine_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_authorization_engine_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -12755,6 +12798,7 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(rbac_translator_test
   src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/grpc_authorization_engine.cc
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
