@@ -222,25 +222,27 @@ static int check_x509_pem_cert_chain(const grpc_auth_context* ctx,
   return 1;
 }
 
-static int check_dns(const grpc_auth_context* ctx,
-                     const std::vector<std::string>& expected_dns) {
-  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-      ctx, GRPC_PEER_DNS_PROPERTY_NAME);
-  for (const auto& dns : expected_dns) {
+static int check_sans(
+    const grpc_auth_context* ctx, const char* expected_property_name,
+    const std::vector<std::string>& expected_property_values) {
+  grpc_auth_property_iterator it =
+      grpc_auth_context_find_properties_by_name(ctx, expected_property_name);
+  for (const auto& property_value : expected_property_values) {
     const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
     if (prop == nullptr) {
-      gpr_log(GPR_ERROR, "Expected dns value %s not found.", dns.c_str());
+      gpr_log(GPR_ERROR, "Expected value %s not found.",
+              property_value.c_str());
       return 0;
     }
-    if (strncmp(prop->value, dns.c_str(), prop->value_length) != 0) {
-      gpr_log(GPR_ERROR, "Expected peer dns %s and got %s.", dns.c_str(),
+    if (strncmp(prop->value, property_value.c_str(), prop->value_length) != 0) {
+      gpr_log(GPR_ERROR, "Expected peer %s and got %s.", property_value.c_str(),
               prop->value);
       return 0;
     }
   }
   if (grpc_auth_property_iterator_next(&it) != nullptr) {
-    gpr_log(GPR_ERROR, "Expected only %zu dns property values.",
-            expected_dns.size());
+    gpr_log(GPR_ERROR, "Expected only %zu property values.",
+            expected_property_values.size());
     return 0;
   }
   return 1;
@@ -480,7 +482,43 @@ static void test_dns_peer_to_auth_context(void) {
   grpc_core::RefCountedPtr<grpc_auth_context> ctx =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
   GPR_ASSERT(ctx != nullptr);
-  GPR_ASSERT(check_dns(ctx.get(), expected_dns));
+  GPR_ASSERT(check_sans(ctx.get(), GRPC_PEER_DNS_PROPERTY_NAME, expected_dns));
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
+static void test_email_peer_to_auth_context(void) {
+  tsi_peer peer;
+  const std::vector<std::string> expected_emails = {"email1", "email2"};
+  GPR_ASSERT(tsi_construct_peer(expected_emails.size(), &peer) == TSI_OK);
+  for (size_t i = 0; i < expected_emails.size(); ++i) {
+    GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                   TSI_X509_EMAIL_PEER_PROPERTY, expected_emails[i].c_str(),
+                   &peer.properties[i]) == TSI_OK);
+  }
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  GPR_ASSERT(ctx != nullptr);
+  GPR_ASSERT(
+      check_sans(ctx.get(), GRPC_PEER_EMAIL_PROPERTY_NAME, expected_emails));
+  tsi_peer_destruct(&peer);
+  ctx.reset(DEBUG_LOCATION, "test");
+}
+
+static void test_ip_peer_to_auth_context(void) {
+  tsi_peer peer;
+  const std::vector<std::string> expected_ips = {"128.128.128.128",
+                                                 "255.255.255.255"};
+  GPR_ASSERT(tsi_construct_peer(expected_ips.size(), &peer) == TSI_OK);
+  for (size_t i = 0; i < expected_ips.size(); ++i) {
+    GPR_ASSERT(tsi_construct_string_peer_property_from_cstring(
+                   TSI_X509_IP_PEER_PROPERTY, expected_ips[i].c_str(),
+                   &peer.properties[i]) == TSI_OK);
+  }
+  grpc_core::RefCountedPtr<grpc_auth_context> ctx =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  GPR_ASSERT(ctx != nullptr);
+  GPR_ASSERT(check_sans(ctx.get(), GRPC_PEER_IP_PROPERTY_NAME, expected_ips));
   tsi_peer_destruct(&peer);
   ctx.reset(DEBUG_LOCATION, "test");
 }
@@ -599,6 +637,7 @@ static void test_ipv6_address_san(void) {
   }
   tsi_peer_destruct(&peer);
 }
+
 namespace grpc_core {
 namespace {
 
@@ -714,6 +753,8 @@ int main(int argc, char** argv) {
   test_cn_and_multiple_sans_ssl_peer_to_auth_context();
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
   test_dns_peer_to_auth_context();
+  test_email_peer_to_auth_context();
+  test_ip_peer_to_auth_context();
   test_spiffe_id_peer_to_auth_context();
   test_ipv6_address_san();
   test_default_ssl_roots();
