@@ -292,7 +292,7 @@ void TlsChannelSecurityConnector::check_peer(
   tsi_peer_destruct(&peer);
   // Perform the check specified in the options.
   grpc_tls_certificate_verifier* verifier = options_->certificate_verifier();
-  bool is_async =
+  bool is_done =
       verifier->Verify(internal_request, [internal_request, on_peer_checked] {
         grpc_error* error = GRPC_ERROR_NONE;
         if (internal_request->request.status != GRPC_STATUS_OK) {
@@ -304,7 +304,7 @@ void TlsChannelSecurityConnector::check_peer(
         delete internal_request;
         Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
       });
-  if (is_async) {
+  if (!is_done) {
     return;
   }
   // Process the check result synchronously.
@@ -606,7 +606,7 @@ void TlsServerSecurityConnector::check_peer(
   tsi_peer_destruct(&peer);
   // Perform the check specified in the options.
   grpc_tls_certificate_verifier* verifier = options_->certificate_verifier();
-  bool is_async =
+  bool is_done =
       verifier->Verify(internal_request, [internal_request, on_peer_checked] {
         grpc_error* error = GRPC_ERROR_NONE;
         if (internal_request->request.status != GRPC_STATUS_OK) {
@@ -618,7 +618,7 @@ void TlsServerSecurityConnector::check_peer(
         delete internal_request;
         Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
       });
-  if (is_async) {
+  if (!is_done) {
     return;
   }
   // Process the check result synchronously.

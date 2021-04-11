@@ -88,11 +88,11 @@ int SyncExternalVerifier::Verify(
   auto* data = static_cast<UserData*>(user_data);
   if (data->is_good) {
     request->status = GRPC_STATUS_OK;
-    return false;  // Synchronous call
+    return true;  // Synchronous call
   }
   request->status = GRPC_STATUS_UNAUTHENTICATED;
   request->error_details = gpr_strdup("SyncExternalVerifierBadVerify failed");
-  return false;  // Synchronous call
+  return true;  // Synchronous call
 }
 
 void SyncExternalVerifier::Destruct(void* user_data) {
@@ -134,7 +134,7 @@ int AsyncExternalVerifier::Verify(
                                          static_cast<void*>(thread_args));
   }
   data->thread->Start();
-  return true;  // Asynchronous call
+  return false;  // Asynchronous call
 }
 
 void AsyncExternalVerifier::Destruct(void* user_data) {

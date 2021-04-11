@@ -38,27 +38,12 @@ namespace grpc_core {
 // of |request| to the external verifier, and cast it back to the original
 // CertificateVerificationRequest struct when we get the callback.
 struct CertificateVerificationRequest {
-  CertificateVerificationRequest() {
-    CertificateVerificationRequestInit(&request);
-  }
+  CertificateVerificationRequest();
 
-  CertificateVerificationRequest(RefCountedPtr<grpc_security_connector> sc)
-      : security_connector(std::move(sc)) {
-    CertificateVerificationRequestInit(&request);
-  }
+  explicit CertificateVerificationRequest(
+      RefCountedPtr<grpc_security_connector> sc);
 
-  ~CertificateVerificationRequest() {
-    CertificateVerificationRequestDestroy(&request);
-  }
-  // A utility function to help build up the request.
-  // This is needed because C-core API doesn't allow default data member
-  // initialization. It should be called every time when a request is created.
-  static void CertificateVerificationRequestInit(
-      grpc_tls_custom_verification_check_request* request);
-  // A utility function to help clean up the request.
-  // Note the request pointer itself won't be deleted.
-  static void CertificateVerificationRequestDestroy(
-      grpc_tls_custom_verification_check_request* request);
+  ~CertificateVerificationRequest();
 
   // public request struct.
   grpc_tls_custom_verification_check_request request;
@@ -79,9 +64,9 @@ struct grpc_tls_certificate_verifier
 
   virtual ~grpc_tls_certificate_verifier() = default;
   // Verifies the specific request. It can be processed in sync or async mode.
-  // If the caller want it to be processed asynchronously, return true and
+  // If the caller want it to be processed asynchronously, return false and
   // invoke the callback after the final verification results are populated.
-  // Otherwise, populate the results synchronously and return false.
+  // Otherwise, populate the results synchronously and return true.
   // The caller is expected to populate verification results by setting request.
   virtual bool Verify(
       grpc_core::CertificateVerificationRequest* internal_request,

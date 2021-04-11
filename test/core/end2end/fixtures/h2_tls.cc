@@ -87,7 +87,7 @@ class SyncExternalVerifier {
                     grpc_tls_on_custom_verification_check_done_cb callback,
                     void* callback_arg) {
     request->status = GRPC_STATUS_OK;
-    return false;  // Synchronous call
+    return true;  // Synchronous call
   }
 
   static void Cancel(void* user_data,
@@ -148,7 +148,7 @@ class AsyncExternalVerifier {
                                               &AsyncExternalVerifierVerifyCb,
                                               static_cast<void*>(thread_args)));
     ffd->thd_list[ffd->thd_list.size() - 1].Start();
-    return true;  // Asynchronous call
+    return false;  // Asynchronous call
   }
 
   static void Cancel(void* user_data,

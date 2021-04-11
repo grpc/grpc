@@ -30,7 +30,9 @@
 
 namespace grpc_core {
 
-void CertificateVerificationRequest::CertificateVerificationRequestInit(
+namespace {
+
+void CertificateVerificationRequestInit(
     grpc_tls_custom_verification_check_request* request) {
   GPR_ASSERT(request != nullptr);
   request->target_name = nullptr;
@@ -47,41 +49,51 @@ void CertificateVerificationRequest::CertificateVerificationRequestInit(
   request->error_details = nullptr;
 }
 
-void CertificateVerificationRequest::CertificateVerificationRequestDestroy(
-    grpc_tls_custom_verification_check_request* request) {
-  GPR_ASSERT(request != nullptr);
-  if (request->target_name != nullptr) {
-    gpr_free(const_cast<char*>(request->target_name));
+}  // namespace
+
+CertificateVerificationRequest::CertificateVerificationRequest() {
+  CertificateVerificationRequestInit(&request);
+}
+
+CertificateVerificationRequest::CertificateVerificationRequest(
+    RefCountedPtr<grpc_security_connector> sc)
+    : security_connector(std::move(sc)) {
+  CertificateVerificationRequestInit(&request);
+}
+
+CertificateVerificationRequest::~CertificateVerificationRequest() {
+  if (request.target_name != nullptr) {
+    gpr_free(const_cast<char*>(request.target_name));
   }
-  if (request->peer_info.common_name != nullptr) {
-    gpr_free(const_cast<char*>(request->peer_info.common_name));
+  if (request.peer_info.common_name != nullptr) {
+    gpr_free(const_cast<char*>(request.peer_info.common_name));
   }
-  if (request->peer_info.san_names.uri_names_size > 0) {
-    for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
-      delete[] request->peer_info.san_names.uri_names[i];
+  if (request.peer_info.san_names.uri_names_size > 0) {
+    for (size_t i = 0; i < request.peer_info.san_names.uri_names_size; ++i) {
+      delete[] request.peer_info.san_names.uri_names[i];
     }
-    delete[] request->peer_info.san_names.uri_names;
+    delete[] request.peer_info.san_names.uri_names;
   }
-  if (request->peer_info.san_names.ip_names_size > 0) {
-    for (size_t i = 0; i < request->peer_info.san_names.ip_names_size; ++i) {
-      delete[] request->peer_info.san_names.ip_names[i];
+  if (request.peer_info.san_names.ip_names_size > 0) {
+    for (size_t i = 0; i < request.peer_info.san_names.ip_names_size; ++i) {
+      delete[] request.peer_info.san_names.ip_names[i];
     }
-    delete[] request->peer_info.san_names.ip_names;
+    delete[] request.peer_info.san_names.ip_names;
   }
-  if (request->peer_info.san_names.dns_names_size > 0) {
-    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
-      delete[] request->peer_info.san_names.dns_names[i];
+  if (request.peer_info.san_names.dns_names_size > 0) {
+    for (size_t i = 0; i < request.peer_info.san_names.dns_names_size; ++i) {
+      delete[] request.peer_info.san_names.dns_names[i];
     }
-    delete[] request->peer_info.san_names.dns_names;
+    delete[] request.peer_info.san_names.dns_names;
   }
-  if (request->peer_info.peer_cert != nullptr) {
-    gpr_free(const_cast<char*>(request->peer_info.peer_cert));
+  if (request.peer_info.peer_cert != nullptr) {
+    gpr_free(const_cast<char*>(request.peer_info.peer_cert));
   }
-  if (request->peer_info.peer_cert_full_chain != nullptr) {
-    gpr_free(const_cast<char*>(request->peer_info.peer_cert_full_chain));
+  if (request.peer_info.peer_cert_full_chain != nullptr) {
+    gpr_free(const_cast<char*>(request.peer_info.peer_cert_full_chain));
   }
-  if (request->error_details != nullptr) {
-    gpr_free(const_cast<char*>(request->error_details));
+  if (request.error_details != nullptr) {
+    gpr_free(const_cast<char*>(request.error_details));
   }
 }
 
@@ -94,14 +106,14 @@ bool ExternalCertificateVerifier::Verify(
   }
   // Invoke the caller-specified verification logic embedded in
   // external_verifier_.
-  bool is_async = external_verifier_->verify(external_verifier_->user_data,
-                                             &internal_request->request,
-                                             &OnVerifyDone, this);
-  if (!is_async) {
+  bool is_done = external_verifier_->verify(external_verifier_->user_data,
+                                            &internal_request->request,
+                                            &OnVerifyDone, this);
+  if (is_done) {
     grpc_core::MutexLock lock(&mu_);
     request_map_.erase(internal_request);
   }
-  return is_async;
+  return is_done;
 }
 
 void ExternalCertificateVerifier::OnVerifyDone(
@@ -142,7 +154,7 @@ bool HostNameCertificateVerifier::Verify(
   if (target_name == nullptr) {
     request->status = GRPC_STATUS_UNAUTHENTICATED;
     request->error_details = gpr_strdup("Target name is not specified.");
-    return false;  // synchronous check
+    return true;  // synchronous check
   }
   absl::string_view allocated_name;
   absl::string_view ignored_port;
@@ -150,7 +162,7 @@ bool HostNameCertificateVerifier::Verify(
   if (allocated_name.empty()) {
     request->status = GRPC_STATUS_UNAUTHENTICATED;
     request->error_details = gpr_strdup("Failed to split hostname and port.");
-    return false;  // synchronous check
+    return true;  // synchronous check
   }
   // IPv6 zone-id should not be included in comparisons.
   const size_t zone_id = allocated_name.find('%');
@@ -166,7 +178,7 @@ bool HostNameCertificateVerifier::Verify(
       const char* dns_name = dns_names[i];
       if (internal::VerifyIdentityAsHostname(dns_name, allocated_name)) {
         request->status = GRPC_STATUS_OK;
-        return false;  // synchronous check
+        return true;  // synchronous check
       }
     }
   }
@@ -178,7 +190,7 @@ bool HostNameCertificateVerifier::Verify(
       const char* ip_name = ip_names[i];
       if (allocated_name == ip_name) {
         request->status = GRPC_STATUS_OK;
-        return false;  // synchronous check
+        return true;  // synchronous check
       }
     }
   }
@@ -187,12 +199,12 @@ bool HostNameCertificateVerifier::Verify(
     const char* common_name = request->peer_info.common_name;
     if (internal::VerifyIdentityAsHostname(common_name, allocated_name)) {
       request->status = GRPC_STATUS_OK;
-      return false;  // synchronous check
+      return true;  // synchronous check
     }
   }
   request->status = GRPC_STATUS_UNAUTHENTICATED;
   request->error_details = gpr_strdup("Hostname Verification Check failed.");
-  return false;  // synchronous check
+  return true;  // synchronous check
 }
 
 }  // namespace grpc_core
@@ -209,10 +221,10 @@ int grpc_tls_certificate_verifier_verify(
   grpc_core::ExecCtx exec_ctx;
   grpc_core::CertificateVerificationRequest* internal_request =
       reinterpret_cast<grpc_core::CertificateVerificationRequest*>(request);
-  std::function<void()> async_done = [callback, request, callback_arg] {
+  std::function<void()> async_cb = [callback, request, callback_arg] {
     callback(request, callback_arg);
   };
-  return verifier->Verify(internal_request, async_done);
+  return verifier->Verify(internal_request, async_cb);
 }
 
 void grpc_tls_certificate_verifier_cancel(

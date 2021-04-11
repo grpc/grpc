@@ -942,34 +942,30 @@ struct grpc_tls_custom_verification_check_request {
   /* -- The following fields are read-only. -- */
   /* The target name of the server when the client initiates the connection. */
   /* This field will be nullptr if on the server side. */
-  const char* target_name = nullptr;
+  const char* target_name;
   /* The information contained in the certificate chain sent from the peer. */
   struct peer_info {
     /* The Common Name field on the peer leaf certificate. */
-    const char* common_name = nullptr;
+    const char* common_name;
     /* The list of Subject Alternative Names on the peer leaf certificate. */
     struct san_names {
-      char** uri_names = nullptr;
-      size_t uri_names_size = 0;
-      char** ip_names = nullptr;
-      size_t ip_names_size = 0;
-      char** dns_names = nullptr;
-      size_t dns_names_size = 0;
+      char** uri_names;
+      size_t uri_names_size;
+      char** ip_names;
+      size_t ip_names_size;
+      char** dns_names;
+      size_t dns_names_size;
       /*TODO(ZhenLian): Other SAN name fields go here. This will likely require
        * changes in TSI, which might go into  another PR... */
     } san_names;
     /* The raw peer leaf certificate. */
-    const char* peer_cert = nullptr;
-    /* The raw peer certificate chain. Note that currently we just faithfully
-     * pass whatever value we get from SSL_get_peer_certificate(
-     * https://www.openssl.org/docs/man1.1.1/man3/SSL_get_peer_certificate.html
-     * ), which means it is not always guaranteed to get the peer full chain:
-     * 1. On the server side, it will be the chain excluding the leaf cert.
-     * Callers will need to combine this with |peer_cert| to get the full chain.
-     * 2. If session resumption happens, this will be nullptr(on both sides),
-     * since no peer certs are sent.
+    const char* peer_cert;
+    /* The raw peer certificate chain. Note that it is not always guaranteed to
+     * get the peer full chain. For more, please refer to
+     * GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME defined in file
+     * grpc_security_constants.h.
      * TODO(ZhenLian): Consider fixing this in the future. */
-    const char* peer_cert_full_chain = nullptr;
+    const char* peer_cert_full_chain;
   } peer_info;
   /* -- The following fields can be modified. -- */
   /* Indicates if a connection should be allowed. This should be properly
@@ -979,7 +975,7 @@ struct grpc_tls_custom_verification_check_request {
    * GRPC_STATUS_OK. When setting, the callers need to use gpr_malloc(),
    * gpr_strdup() or gpr_asprintf() and pass the ownership; gRPC will free
    * it when it is not needed. */
-  char* error_details = nullptr;
+  char* error_details;
 };
 
 /**
@@ -1024,11 +1020,8 @@ struct grpc_tls_certificate_verifier_external {
    * callback_arg: A pointer to the internal ExternalVerifier instance. This is
    * mainly used as an argument in |callback|, if want to invoke |callback| in
    * async mode.
-   * user_data: any argument that is passed in the user_data of
-   * grpc_tls_certificate_verifier_external during construction time can be
-   * retrieved later here.
-   * return: return a non-zero value if |verify| is expected to be executed
-   *         asynchronously, otherwise return 0.
+   * return: return 0 if |verify| is expected to be executed asynchronously,
+   *         otherwise return a non-zero value.
    */
   int (*verify)(void* user_data,
                 grpc_tls_custom_verification_check_request* request,
