@@ -8785,7 +8785,6 @@ TEST_P(EdsTest, RingHashSize4) {
   hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0",
        GetBackendPorts(0, 4),
@@ -8796,12 +8795,19 @@ TEST_P(EdsTest, RingHashSize4) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
-  for (size_t i = 0; i < 20; ++i) {
-    (void)SendRpc();
-  }
-  for (size_t i = 0; i <= 3; ++i) {
-    gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
-            backends_[i]->backend_service()->request_count());
+  for (size_t j = 0; j < 20; ++j) {
+    gpr_log(GPR_INFO, "donna round %zu ", j);
+    for (size_t i = 0; i < 10; ++i) {
+      (void)SendRpc();
+    }
+    gpr_log(GPR_INFO, "donna after round %zu ", j);
+    ResetStub();
+    SetNextResolution({});
+    gpr_log(GPR_INFO, "donna reset stub after round %zu ", j);
+    for (size_t i = 0; i <= 3; ++i) {
+      gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
+              backends_[i]->backend_service()->request_count());
+    }
   }
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
