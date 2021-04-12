@@ -132,21 +132,21 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
       activation->InsertValue(kHeaders,
                               mock_cel::CelValue::CreateMap(headers_.get()));
     } else if (elem == kSourceAddress) {
-      absl::string_view source_address(args.GetPeerAddress());
+      std::string source_address(args.GetPeerAddress());
       if (!source_address.empty()) {
         activation->InsertValue(
             kSourceAddress,
-            mock_cel::CelValue::CreateStringView(source_address));
+            mock_cel::CelValue::CreateString(&source_address));
       }
     } else if (elem == kSourcePort) {
       activation->InsertValue(
           kSourcePort, mock_cel::CelValue::CreateInt64(args.GetPeerPort()));
     } else if (elem == kDestinationAddress) {
-      absl::string_view destination_address(args.GetLocalAddress());
+      std::string destination_address(args.GetLocalAddress());
       if (!destination_address.empty()) {
         activation->InsertValue(
             kDestinationAddress,
-            mock_cel::CelValue::CreateStringView(destination_address));
+            mock_cel::CelValue::CreateString(&destination_address));
       }
     } else if (elem == kDestinationPort) {
       activation->InsertValue(kDestinationPort, mock_cel::CelValue::CreateInt64(
