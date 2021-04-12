@@ -135,8 +135,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
       std::string source_address(args.GetPeerAddress());
       if (!source_address.empty()) {
         activation->InsertValue(
-            kSourceAddress,
-            mock_cel::CelValue::CreateString(&source_address));
+            kSourceAddress, mock_cel::CelValue::CreateString(&source_address));
       }
     } else if (elem == kSourcePort) {
       activation->InsertValue(
