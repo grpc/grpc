@@ -298,6 +298,33 @@ class Status(six.with_metaclass(abc.ABCMeta)):
 class RpcError(Exception):
     """Raised by the gRPC library to indicate non-OK-status RPC termination."""
 
+    def trailing_metadata(self):
+        """Accesses the trailing metadata sent by the server.
+
+        This method blocks until the value is available.
+
+        Returns:
+          The trailing :term:`metadata`.
+        """
+
+    def code(self):
+        """Accesses the status code sent by the server.
+
+        This method blocks until the value is available.
+
+        Returns:
+          The StatusCode value for the RPC.
+        """
+
+    def details(self):
+        """Accesses the details sent by the server.
+
+        This method blocks until the value is available.
+
+        Returns:
+          The details string of the RPC.
+        """
+
 
 ##############################  Shared Context  ################################
 
