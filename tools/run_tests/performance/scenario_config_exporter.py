@@ -22,8 +22,9 @@
 # field in the format accepted by the OSS benchmarks framework.
 # See https://github.com/grpc/test-infra/blob/master/config/samples/cxx_example_loadtest.yaml
 #
-# It can also be used to dump scenarios to files, and to count scenarios by
-# language.
+# It can also be used to dump scenarios to files, to count scenarios by
+# language, and to export scenario languages in a format that can be used for
+# automation.
 #
 # Example usage:
 #
@@ -31,6 +32,13 @@
 #     --category=scalable
 #
 # scenario_config.py --count_scenarios
+#
+# scenario_config.py --count_scenarios --category=scalable
+#
+# scenario_config.py --language_config_output=language_config.yaml \
+#     --category=scalable
+#
+# For usage of the language config output, see loadtest_config.py.
 
 import argparse
 import collections
@@ -38,9 +46,23 @@ import json
 import re
 import sys
 
-from typing import Any, Callable, Dict, Iterable, Optional, Tuple
+from typing import Any, Callable, Dict, Iterable, NamedTuple
+
+import yaml
 
 import scenario_config
+
+
+class LanguageConfig(NamedTuple):
+    """Language parameters for load test config generation."""
+    category: str
+    language: str
+    client_language: str = ''
+    server_language: str = ''
+
+    def as_dict_no_empty_values(self):
+        """Returns the parameters as a dictionary, ignoring empty values."""
+        return dict((item for item in self._asdict().items() if item[1]))
 
 
 def category_string(categories: Iterable[str], category: str) -> str:
@@ -58,24 +80,31 @@ def category_string(categories: Iterable[str], category: str) -> str:
 
 
 def gen_scenario_languages(
-        category: str) -> Iterable[Tuple[str, str, str, str]]:
+        category: str,
+        show_multiple_categories: bool = True) -> Iterable[LanguageConfig]:
     """Generates tuples containing the languages specified in each scenario."""
     for language in scenario_config.LANGUAGES:
         for scenario in scenario_config.LANGUAGES[language].scenarios():
-            client_language = scenario.get('CLIENT_LANGUAGE')
-            server_language = scenario.get('SERVER_LANGUAGE')
+            client_language = scenario.get('CLIENT_LANGUAGE', '')
+            server_language = scenario.get('SERVER_LANGUAGE', '')
             categories = scenario.get('CATEGORIES', [])
             if category != 'all' and category not in categories:
                 continue
-            yield (language, client_language, server_language,
-                   category_string(categories, category))
+            if show_multiple_categories:
+                cat = category_string(categories, category)
+            else:
+                cat = category
+            yield LanguageConfig(category=cat,
+                                 language=language,
+                                 client_language=client_language,
+                                 server_language=server_language)
 
 
 def scenario_filter(
-        scenario_name_regex: str = '.*',
-        category: str = 'all',
-        client_language: Optional[str] = None,
-        server_language: Optional[str] = None
+    scenario_name_regex: str = '.*',
+    category: str = 'all',
+    client_language: str = '',
+    server_language: str = '',
 ) -> Callable[[Dict[str, Any]], bool]:
     """Returns a function to filter scenarios to process."""
 
@@ -91,12 +120,12 @@ def scenario_filter(
         if category not in scenario_categories and category != 'all':
             return False
 
-        scenario_client_language = scenario.get('CLIENT_LANGUAGE')
+        scenario_client_language = scenario.get('CLIENT_LANGUAGE', '')
         if client_language != scenario_client_language:
             if scenario_client_language:
                 return False
 
-        scenario_server_language = scenario.get('SERVER_LANGUAGE')
+        scenario_server_language = scenario.get('SERVER_LANGUAGE', '')
         if server_language != scenario_server_language:
             if scenario_client_language:
                 return False
@@ -168,12 +197,20 @@ def main() -> None:
         help='Select scenarios for a category of tests.')
     argp.add_argument(
         '--client_language',
+        default='',
         choices=language_choices,
         help='Select only scenarios with a specified client language.')
     argp.add_argument(
         '--server_language',
+        default='',
         choices=language_choices,
         help='Select only scenarios with a specified server language.')
+    argp.add_argument(
+        '-o',
+        '--language_config_output',
+        type=str,
+        help='Output file for scenario language configurations, in yaml format.'
+    )
     args = argp.parse_args()
 
     if args.export_scenarios and not args.language:
@@ -197,16 +234,25 @@ def main() -> None:
                                                  'Server', 'Categories'))
         c = collections.Counter(gen_scenario_languages(args.category))
         total = 0
-        for ((l, cl, sl, cat), count) in c.most_common():
+        for ((cat, l, cl, sl), count) in c.most_common():
             print('{count:5}  {l:16} {cl:8} {sl:8} {cat}'.format(l=l,
-                                                                 cl=str(cl),
-                                                                 sl=str(sl),
+                                                                 cl=cl or '.',
+                                                                 sl=sl or '.',
                                                                  count=count,
                                                                  cat=cat))
             total += count
 
         print('\n{:>5}  total scenarios (category: {})'.format(
             total, args.category))
+
+    if args.language_config_output:
+        c = collections.Counter(
+            gen_scenario_languages(args.category,
+                                   show_multiple_categories=False))
+        with open(args.language_config_output, 'w') as f:
+            yaml.dump_all((config.as_dict_no_empty_values()
+                           for (config, _) in c.most_common()),
+                          stream=f)
 
 
 if __name__ == "__main__":

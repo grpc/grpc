@@ -21,6 +21,7 @@
 import argparse
 import copy
 import datetime
+import itertools
 import json
 import os
 import string
@@ -95,14 +96,25 @@ def gen_run_indices(runs_per_test: int) -> Iterable[str]:
 
 
 def gen_loadtest_configs(base_config: yaml.YAMLObject,
-                         scenarios: Iterable[Mapping[str, Any]],
+                         scenario_name_regex: str,
+                         language_config: scenarios_exporter.LanguageConfig,
                          loadtest_name_prefix: str,
                          uniquifiers: Iterable[str],
                          annotations: Mapping[str, str],
                          runs_per_test: int = 1) -> Iterable[yaml.YAMLObject]:
     """Generates LoadTest configurations as YAML objects."""
-    validate_annotations(annotations),
+    validate_annotations(annotations)
     prefix = loadtest_name_prefix or default_prefix()
+    cl = language_config.client_language or language_config.language
+    sl = language_config.server_language or language_config.language
+    scenario_filter = scenario_config_exporter.scenario_filter(
+        scenario_name_regex=scenario_name_regex,
+        category=language_config.category,
+        client_language=language_config.client_language,
+        server_language=language_config.server_language)
+    scenarios = scenario_config_exporter.gen_scenarios(language_config.language,
+                                                       scenario_filter)
+
     for scenario in scenarios:
         for run_index in gen_run_indices(runs_per_test):
             uniq = uniquifiers + [run_index] if run_index else uniquifiers
@@ -110,6 +122,7 @@ def gen_loadtest_configs(base_config: yaml.YAMLObject,
             scenario_str = json.dumps({'scenarios': scenario}, indent='  ')
 
             config = copy.deepcopy(base_config)
+
             metadata = config['metadata']
             metadata['name'] = name
             if 'labels' not in metadata:
@@ -122,6 +135,17 @@ def gen_loadtest_configs(base_config: yaml.YAMLObject,
                 'scenario': scenario['name'],
                 'uniquifiers': uniq,
             })
+
+            clients = config['spec']['clients']
+            clients.clear()
+            clients.extend((client for client in base_config['spec']['clients']
+                            if client.language == cl))
+
+            servers = config['spec']['servers']
+            servers.clear()
+            servers.extend((server for server in base_config['spec']['server']
+                            if server.language == sl))
+
             config['spec']['scenariosJSON'] = scenario_str
 
             yield config
@@ -217,6 +241,11 @@ def main() -> None:
         '--server_language',
         choices=language_choices,
         help='Select only scenarios with a specified server language.')
+    argp.add_argument(
+        '-i',
+        '--language_config_input',
+        type=str,
+        help='File specifying client and server languages, in yaml format.')
     argp.add_argument('--runs_per_test',
                       default=1,
                       type=int,
@@ -227,20 +256,13 @@ def main() -> None:
                       help='Output file name. Output to stdout if not set.')
     args = argp.parse_args()
 
+    if args.language_config_input and (args.client_language or
+                                       args.server_language):
+        raise ValueError('--language_config_input must not be specified '
+                         'together with --client_language '
+                         'or --server_language.')
+
     substitutions = parse_key_value_args(args.substitutions)
-
-    with open(args.template) as f:
-        base_config = yaml.safe_load(
-            string.Template(f.read()).substitute(substitutions))
-
-    scenario_filter = scenario_config_exporter.scenario_filter(
-        scenario_name_regex=args.regex,
-        category=args.category,
-        client_language=args.client_language,
-        server_language=args.server_language)
-
-    scenarios = scenario_config_exporter.gen_scenarios(args.language,
-                                                       scenario_filter)
 
     uniquifiers = args.uniquifiers
     if args.d:
@@ -248,17 +270,40 @@ def main() -> None:
 
     annotations = parse_key_value_args(args.annotations)
 
-    configs = gen_loadtest_configs(base_config,
-                                   scenarios,
-                                   loadtest_name_prefix=args.prefix,
-                                   uniquifiers=uniquifiers,
-                                   annotations=annotations,
-                                   runs_per_test=args.runs_per_test)
+    with open(args.template) as f:
+        base_config = yaml.safe_load(
+            string.Template(f.read()).substitute(substitutions))
+
+    language_configs = []
+    if args.language_config_input:
+        with open(args.language_config_input, 'r') as f:
+            language_configs.extend(
+                (scenario_config_exporter.LanguageConfig(config)
+                 for config in yaml.safe_load_all(f.read())))
+
+    if not language_configs:
+        language_configs.append(
+            scenario_config_exporter.LanguageConfig(
+                category=args.category,
+                language=args.language,
+                client_language=args.client_language,
+                server_language=args.server_language))
+
+    config_generators = []
+    for language_config in language_configs:
+        config_generators.append(
+            gen_loadtest_configs(base_config,
+                                 args.regex,
+                                 language_config,
+                                 loadtest_name_prefix=args.prefix,
+                                 uniquifiers=uniquifiers,
+                                 annotations=annotations,
+                                 runs_per_test=args.runs_per_test))
 
     configure_yaml()
 
     with open(args.output, 'w') if args.output else sys.stdout as f:
-        yaml.dump_all(configs, stream=f)
+        yaml.dump_all(itertools.chain(config_generators), stream=f)
 
 
 if __name__ == '__main__':

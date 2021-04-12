@@ -177,24 +177,25 @@ The following example counts scenarios in the `scalable` category:
 $ ./tools/run_tests/performance/scenario_config_exporter.py --count_scenarios --category=scalable
 Scenario count for all languages (category: scalable):
 Count  Language         Client   Server   Categories
-   77  c++              None     None     scalable
-   19  python_asyncio   None     None     scalable
-   16  java             None     None     scalable
-   12  go               None     None     scalable
-   12  node             None     node     scalable
-   12  node_purejs      None     node     scalable
-    9  csharp           None     None     scalable
-    7  python           None     None     scalable
-    5  ruby             None     None     scalable
-    4  csharp           None     c++      scalable
-    4  php7             None     c++      scalable
-    4  php7_protobuf_c  None     c++      scalable
-    3  python_asyncio   None     c++      scalable
-    2  ruby             None     c++      scalable
-    2  python           None     c++      scalable
-    1  csharp           c++      None     scalable
+   77  c++              .        .        scalable
+   19  python_asyncio   .        .        scalable
+   16  java             .        .        scalable
+   12  go               .        .        scalable
+   12  node             .        node     scalable
+   12  node_purejs      .        node     scalable
+    9  csharp           .        .        scalable
+    7  python           .        .        scalable
+    5  ruby             .        .        scalable
+    4  csharp           .        c++      scalable
+    4  php7             .        c++      scalable
+    4  php7_protobuf_c  .        c++      scalable
+    3  python_asyncio   .        c++      scalable
+    2  ruby             .        c++      scalable
+    2  python           .        c++      scalable
+    1  csharp           c++      .        scalable
 
   189  total scenarios (category: scalable)
+
 ```
 
 ### Generating load test configurations
