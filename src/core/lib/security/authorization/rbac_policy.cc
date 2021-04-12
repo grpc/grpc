@@ -56,15 +56,6 @@ std::string Rbac::ToString() const {
 Rbac::CidrRange::CidrRange(std::string address_prefix, uint32_t prefix_len)
     : address_prefix(std::move(address_prefix)), prefix_len(prefix_len) {}
 
-Rbac::CidrRange::CidrRange(const Rbac::CidrRange& other)
-    : address_prefix(other.address_prefix), prefix_len(other.prefix_len) {}
-
-Rbac::CidrRange& Rbac::CidrRange::operator=(const Rbac::CidrRange& other) {
-  address_prefix = other.address_prefix;
-  prefix_len = other.prefix_len;
-  return *this;
-}
-
 Rbac::CidrRange::CidrRange(Rbac::CidrRange&& other) noexcept
     : address_prefix(std::move(other.address_prefix)),
       prefix_len(other.prefix_len) {}

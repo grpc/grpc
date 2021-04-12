@@ -37,8 +37,6 @@ struct Rbac {
 
     CidrRange(CidrRange&& other) noexcept;
     CidrRange& operator=(CidrRange&& other) noexcept;
-    CidrRange(const CidrRange& other);
-    CidrRange& operator=(const CidrRange& other);
 
     std::string ToString() const;
 

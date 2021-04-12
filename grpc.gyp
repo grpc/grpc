@@ -1029,6 +1029,7 @@
       ],
       'sources': [
         'test/core/util/cmdline.cc',
+        'test/core/util/eval_args_mock_endpoint.cc',
         'test/core/util/fuzzer_util.cc',
         'test/core/util/grpc_profiler.cc',
         'test/core/util/histogram.cc',
@@ -1063,6 +1064,7 @@
       ],
       'sources': [
         'test/core/util/cmdline.cc',
+        'test/core/util/eval_args_mock_endpoint.cc',
         'test/core/util/fuzzer_util.cc',
         'test/core/util/grpc_profiler.cc',
         'test/core/util/histogram.cc',
