@@ -174,6 +174,10 @@ cc_library(
         "src/tools/ares_getopt.c",
     ],
     hdrs = [
+        "include/ares.h",
+        "include/ares_dns.h",
+        "include/ares_rules.h",
+        "include/ares_version.h",
         "src/lib/ares_android.h",
         "src/lib/ares_build.h",
         "src/lib/ares_config.h",
@@ -197,12 +201,6 @@ cc_library(
         "src/lib/nameser.h",
         "src/lib/setup_once.h",
         "src/lib/ares_getopt.h",
-    ],
-    public_hdrs = [
-	"include/ares.h",
-        "include/ares_dns.h",
-	"include/ares_rules.h",
-	"include/ares_version.h",
     ],
     copts = [
         "-D_GNU_SOURCE",
