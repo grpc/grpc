@@ -324,12 +324,23 @@ def grpc_deps():
             ],
         )
 
+    if "com_github_cncf_udpa" not in native.existing_rules():
+        http_archive(
+            name = "com_github_cncf_udpa",
+            sha256 = "822a007cf155855d0c08a2e753a39e222e5816b904436196244066a818a8a230",
+            strip_prefix = "udpa-cc1b757b3eddccaaaf0743cbb107742bb7e3ee4f",
+            urls = [
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/cncf/udpa/archive/cc1b757b3eddccaaaf0743cbb107742bb7e3ee4f.tar.gz",
+                "https://github.com/cncf/udpa/archive/cc1b757b3eddccaaaf0743cbb107742bb7e3ee4f.tar.gz",
+            ],
+        )
+
     if "io_bazel_rules_go" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_go",
             sha256 = "dbf5a9ef855684f84cac2e7ae7886c5a001d4f66ae23f6904da0faaaef0d61fc",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/rules_go/releases/download/v0.24.11/rules_go-v0.24.11.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/bazelbuild/rules_go/releases/download/v0.24.11/rules_go-v0.24.11.tar.gz",
                 "https://github.com/bazelbuild/rules_go/releases/download/v0.24.11/rules_go-v0.24.11.tar.gz",
             ],
         )
@@ -392,11 +403,11 @@ def grpc_deps():
     if "opencensus_proto" not in native.existing_rules():
         http_archive(
             name = "opencensus_proto",
-            sha256 = "b7e13f0b4259e80c3070b583c2f39e53153085a6918718b1c710caf7037572b0",
-            strip_prefix = "opencensus-proto-0.3.0/src",
+            sha256 = "27b7982d3ab3a0a66e09d997bbb373e1c83a48abad6da09bbc866428f443a727",
+            strip_prefix = "opencensus-proto-4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89/src",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz",
-                "https://github.com/census-instrumentation/opencensus-proto/archive/v0.3.0.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/census-instrumentation/opencensus-proto/archive/4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89.tar.gz",
+                "https://github.com/census-instrumentation/opencensus-proto/archive/4aa53e15cbf1a47bc9087e6cfdca214c1eea4e89.tar.gz",
             ],
         )
 
