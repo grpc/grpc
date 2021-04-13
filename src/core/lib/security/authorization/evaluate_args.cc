@@ -1,6 +1,4 @@
-//
-//
-// Copyright 2020 gRPC authors.
+// Copyright 2021 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,21 +11,76 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-//
 
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
-#include "absl/strings/str_join.h"
-
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/parse_address.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/slice/slice_utils.h"
 
 namespace grpc_core {
+
+namespace {
+
+absl::string_view GetAuthPropertyValue(grpc_auth_context* context,
+                                       const char* property_name) {
+  grpc_auth_property_iterator it =
+      grpc_auth_context_find_properties_by_name(context, property_name);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  if (prop == nullptr) {
+    gpr_log(GPR_DEBUG, "No value found for %s property.", property_name);
+    return "";
+  }
+  if (grpc_auth_property_iterator_next(&it) != nullptr) {
+    gpr_log(GPR_DEBUG, "Multiple values found for %s property.", property_name);
+    return "";
+  }
+  return absl::string_view(prop->value, prop->value_length);
+}
+
+void ParseEndpointUri(absl::string_view uri_text, std::string* address,
+                      int* port) {
+  absl::StatusOr<URI> uri = URI::Parse(uri_text);
+  if (!uri.ok()) {
+    gpr_log(GPR_DEBUG, "Failed to parse uri.");
+    return;
+  }
+  absl::string_view host_view;
+  absl::string_view port_view;
+  if (!SplitHostPort(uri->path(), &host_view, &port_view)) {
+    gpr_log(GPR_DEBUG, "Failed to split %s into host and port.",
+            uri->path().c_str());
+    return;
+  }
+  *address = std::string(host_view);
+  if (!absl::SimpleAtoi(port_view, port)) {
+    gpr_log(GPR_DEBUG, "Port %s is out of range or null.",
+            std::string(port_view).c_str());
+  }
+}
+
+}  // namespace
+
+EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
+                                             grpc_endpoint* endpoint) {
+  if (endpoint != nullptr) {
+    ParseEndpointUri(grpc_endpoint_get_local_address(endpoint), &local_address,
+                     &local_port);
+    ParseEndpointUri(grpc_endpoint_get_peer(endpoint), &peer_address,
+                     &peer_port);
+  }
+  if (auth_context != nullptr) {
+    auth_ctx = auth_context->Ref();
+    transport_security_type = GetAuthPropertyValue(
+        auth_ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
+    spiffe_id =
+        GetAuthPropertyValue(auth_ctx.get(), GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
+    common_name =
+        GetAuthPropertyValue(auth_ctx.get(), GRPC_X509_CN_PROPERTY_NAME);
+  }
+}
 
 absl::string_view EvaluateArgs::GetPath() const {
   absl::string_view path;
@@ -80,79 +133,6 @@ absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
     return absl::nullopt;
   }
   return grpc_metadata_batch_get_value(metadata_, key, concatenated_value);
-}
-
-absl::string_view EvaluateArgs::GetLocalAddress() const {
-  absl::string_view addr = grpc_endpoint_get_local_address(endpoint_);
-  size_t first_colon = addr.find(":");
-  size_t last_colon = addr.rfind(":");
-  if (first_colon == std::string::npos || last_colon == std::string::npos) {
-    return "";
-  } else {
-    return addr.substr(first_colon + 1, last_colon - first_colon - 1);
-  }
-}
-
-int EvaluateArgs::GetLocalPort() const {
-  if (endpoint_ == nullptr) {
-    return 0;
-  }
-  absl::StatusOr<URI> uri =
-      URI::Parse(grpc_endpoint_get_local_address(endpoint_));
-  grpc_resolved_address resolved_addr;
-  if (!uri.ok() || !grpc_parse_uri(*uri, &resolved_addr)) {
-    return 0;
-  }
-  return grpc_sockaddr_get_port(&resolved_addr);
-}
-
-absl::string_view EvaluateArgs::GetPeerAddress() const {
-  absl::string_view addr = grpc_endpoint_get_peer(endpoint_);
-  size_t first_colon = addr.find(":");
-  size_t last_colon = addr.rfind(":");
-  if (first_colon == std::string::npos || last_colon == std::string::npos) {
-    return "";
-  } else {
-    return addr.substr(first_colon + 1, last_colon - first_colon - 1);
-  }
-}
-
-int EvaluateArgs::GetPeerPort() const {
-  if (endpoint_ == nullptr) {
-    return 0;
-  }
-  absl::StatusOr<URI> uri = URI::Parse(grpc_endpoint_get_peer(endpoint_));
-  grpc_resolved_address resolved_addr;
-  if (!uri.ok() || !grpc_parse_uri(*uri, &resolved_addr)) {
-    return 0;
-  }
-  return grpc_sockaddr_get_port(&resolved_addr);
-}
-
-absl::string_view EvaluateArgs::GetSpiffeId() const {
-  if (auth_context_ == nullptr) {
-    return "";
-  }
-  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-      auth_context_, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
-  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr || grpc_auth_property_iterator_next(&it) != nullptr) {
-    return "";
-  }
-  return absl::string_view(prop->value, prop->value_length);
-}
-
-absl::string_view EvaluateArgs::GetCertServerName() const {
-  if (auth_context_ == nullptr) {
-    return "";
-  }
-  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
-      auth_context_, GRPC_X509_CN_PROPERTY_NAME);
-  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
-  if (prop == nullptr || grpc_auth_property_iterator_next(&it) != nullptr) {
-    return "";
-  }
-  return absl::string_view(prop->value, prop->value_length);
 }
 
 }  // namespace grpc_core
