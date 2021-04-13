@@ -7338,7 +7338,6 @@ TEST_P(XdsEnabledServerTest, UnsupportedL4Filter) {
 }
 
 TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
-  // Set env var to enable filters parsing.
   Listener listener;
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
@@ -7372,7 +7371,6 @@ TEST_P(XdsEnabledServerTest, UnsupportedHttpFilter) {
 }
 
 TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
-  // Set env var to enable filters parsing.
   Listener listener;
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
@@ -7408,7 +7406,6 @@ TEST_P(XdsEnabledServerTest, HttpFilterNotSupportedOnServer) {
 
 TEST_P(XdsEnabledServerTest,
        HttpFilterNotSupportedOnServerIgnoredWhenOptional) {
-  // Set env var to enable filters parsing.
   Listener listener;
   listener.set_name(
       absl::StrCat("grpc/server?xds.resource.listening_address=",
@@ -11292,8 +11289,14 @@ INSTANTIATE_TEST_SUITE_P(
     ::testing::Values(TestType().set_use_xds_credentials()), &TestTypeName);
 
 // We are only testing the server here.
-INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
-                         ::testing::Values(TestType()), &TestTypeName);
+// Run with bootstrap from env var, so that we use a global XdsClient
+// instance.  Otherwise, we would need to use a separate fake resolver
+// result generator on the client and server sides.
+INSTANTIATE_TEST_SUITE_P(
+    XdsTest, XdsEnabledServerTest,
+    ::testing::Values(
+        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
+    &TestTypeName);
 
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerSecurityTest,
