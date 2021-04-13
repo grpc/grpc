@@ -21,6 +21,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/event_engine/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/transport/error_utils.h"
 
@@ -53,8 +54,9 @@ EventEngine::Callback event_engine_closure_to_callback(grpc_closure* closure) {
 // For now, the Endpiont can be ignored as the closure is expected to have
 // access to it already.
 EventEngine::OnConnectCallback event_engine_closure_to_on_connect_callback(
-    grpc_closure* closure) {
-  return [closure](absl::Status status, EventEngine::Endpoint* /* endpoint */) {
+    grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
+  return [&](absl::Status status, EventEngine::Endpoint* endpoint) {
+    grpc_endpoint_out->endpoint = endpoint;
     // TODO(hork): Do we need to add grpc_error to closure's error data?
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));

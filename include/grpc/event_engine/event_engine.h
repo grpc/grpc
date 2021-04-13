@@ -80,6 +80,7 @@ class EventEngine {
   /// callback. Each EventEngine method that takes a callback parameter, defines
   /// the expected sets and meanings of statuses for that use case.
   using Callback = std::function<void(absl::Status)>;
+  /// A callback handle, used to cancel a callback.
   struct TaskHandle {
     intptr_t key;
   };

@@ -25,6 +25,7 @@
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/event_engine/endpoint.h"
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -32,7 +33,7 @@ namespace experimental {
 EventEngine::Callback event_engine_closure_to_callback(grpc_closure* closure);
 
 EventEngine::OnConnectCallback event_engine_closure_to_on_connect_callback(
-    grpc_closure* closure);
+    grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out);
 
 EventEngine::Listener::AcceptCallback event_engine_closure_to_accept_callback(
     grpc_closure* closure);

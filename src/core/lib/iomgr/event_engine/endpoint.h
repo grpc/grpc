@@ -11,6 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
+#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H
+#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H
 #if defined(GRPC_EVENT_ENGINE_TEST)
 
 #include "absl/strings/string_view.h"
@@ -31,3 +33,4 @@ grpc_event_engine_endpoint* grpc_endpoint_create(
     const grpc_channel_args* channel_args, absl::string_view peer_string);
 
 #endif  // GRPC_EVENT_ENGINE_TEST
+#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H

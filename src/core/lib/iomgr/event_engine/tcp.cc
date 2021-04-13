@@ -51,12 +51,13 @@ static void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                         const grpc_channel_args* channel_args,
                         const grpc_resolved_address* addr,
                         grpc_millis deadline) {
-  EventEngine::OnConnectCallback ee_on_connect =
-      event_engine_closure_to_on_connect_callback(on_connect);
+  (void)interested_parties;
   // TODO(hork): peer_string needs to be set to ResolvedAddress name
   grpc_event_engine_endpoint* ee_endpoint =
       grpc_endpoint_create(channel_args, "UNIMPLEMENTED");
-  endpoint* = ee_endpoint->base;
+  *endpoint = &ee_endpoint->base;
+  EventEngine::OnConnectCallback ee_on_connect =
+      event_engine_closure_to_on_connect_callback(on_connect, ee_endpoint);
   SliceAllocator sa(ee_endpoint->ru);
   EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
                                   addr->len);
@@ -69,7 +70,6 @@ static void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   if (!ee->Connect(ee_on_connect, ra, ca, std::move(sa), ee_deadline).ok()) {
     // Do nothing. The callback will be executed once with an error
   }
-  (void)interested_parties;
 }
 
 static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
