@@ -95,13 +95,14 @@ def gen_run_indices(runs_per_test: int) -> Iterable[str]:
         yield prefix_fmt.format(i)
 
 
-def gen_loadtest_configs(base_config: yaml.YAMLObject,
-                         scenario_name_regex: str,
-                         language_config: scenario_config_exporter.LanguageConfig,
-                         loadtest_name_prefix: str,
-                         uniquifiers: Iterable[str],
-                         annotations: Mapping[str, str],
-                         runs_per_test: int = 1) -> Iterable[yaml.YAMLObject]:
+def gen_loadtest_configs(
+        base_config: yaml.YAMLObject,
+        scenario_name_regex: str,
+        language_config: scenario_config_exporter.LanguageConfig,
+        loadtest_name_prefix: str,
+        uniquifiers: Iterable[str],
+        annotations: Mapping[str, str],
+        runs_per_test: int = 1) -> Iterable[yaml.YAMLObject]:
     """Generates LoadTest configurations as YAML objects."""
     validate_annotations(annotations)
     prefix = loadtest_name_prefix or default_prefix()
