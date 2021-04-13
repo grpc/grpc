@@ -97,7 +97,7 @@ def gen_run_indices(runs_per_test: int) -> Iterable[str]:
 
 def gen_loadtest_configs(base_config: yaml.YAMLObject,
                          scenario_name_regex: str,
-                         language_config: scenarios_exporter.LanguageConfig,
+                         language_config: scenario_config_exporter.LanguageConfig,
                          loadtest_name_prefix: str,
                          uniquifiers: Iterable[str],
                          annotations: Mapping[str, str],
