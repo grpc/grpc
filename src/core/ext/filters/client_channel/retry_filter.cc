@@ -550,7 +550,7 @@ class RetryFilter::CallData::CallStackDestructionBarrier
  public:
   CallStackDestructionBarrier() {}
 
-  ~CallStackDestructionBarrier() {
+  ~CallStackDestructionBarrier() override {
     // TODO(yashkt) : This can potentially be a Closure::Run
     ExecCtx::Run(DEBUG_LOCATION, on_call_stack_destruction_, GRPC_ERROR_NONE);
   }
@@ -572,7 +572,7 @@ class RetryFilter::CallData::CallStackDestructionBarrier
   }
 
  private:
-  static void OnLbCallDestructionComplete(void* arg, grpc_error* error) {
+  static void OnLbCallDestructionComplete(void* arg, grpc_error* /*error*/) {
     auto* self = static_cast<CallStackDestructionBarrier*>(arg);
     self->Unref();
   }
