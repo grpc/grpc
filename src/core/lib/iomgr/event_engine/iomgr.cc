@@ -30,9 +30,6 @@ extern grpc_pollset_vtable grpc_event_engine_pollset_vtable;
 extern grpc_pollset_set_vtable grpc_event_engine_pollset_set_vtable;
 extern grpc_address_resolver_vtable grpc_event_engine_resolver_vtable;
 
-// TODO(hork): temporary
-extern grpc_timer_vtable grpc_generic_timer_vtable;
-
 // The default EventEngine is lazily instantiated via
 // `grpc_event_engine::experimental::GetDefaultEventEngine()`
 static void iomgr_platform_init(void) {}
@@ -70,7 +67,7 @@ static grpc_iomgr_platform_vtable vtable = {
 void grpc_set_default_iomgr_platform() {
   grpc_set_tcp_client_impl(&grpc_event_engine_tcp_client_vtable);
   grpc_set_tcp_server_impl(&grpc_event_engine_tcp_server_vtable);
-  grpc_set_timer_impl(&grpc_generic_timer_vtable);
+  grpc_set_timer_impl(&grpc_event_engine_timer_vtable);
   grpc_set_pollset_vtable(&grpc_event_engine_pollset_vtable);
   grpc_set_pollset_set_vtable(&grpc_event_engine_pollset_set_vtable);
   grpc_set_resolver_impl(&grpc_event_engine_resolver_vtable);

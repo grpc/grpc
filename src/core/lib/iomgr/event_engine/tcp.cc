@@ -22,11 +22,10 @@
 #include "src/core/lib/iomgr/event_engine/util.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace {
 using ::grpc_event_engine::experimental::ChannelArgs;
-using ::grpc_event_engine::experimental::
-    event_engine_closure_to_on_connect_callback;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::SliceAllocator;
@@ -38,6 +37,26 @@ struct grpc_tcp_server {
 };
 
 namespace {
+
+// DO NOT SUBMIT NOTES: the closure is already initialized, and does not take an
+// Endpoint. See chttp2_connector:L74. Instead, the closure arg contains a ptr
+// to the endpoint that iomgr is expected to populate. When gRPC eventually uses
+// the EventEngine directly, closures will be replaced with EE callback types.
+EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
+    grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
+  return [&](absl::Status status, EventEngine::Endpoint* endpoint) {
+    grpc_endpoint_out->endpoint = endpoint;
+    // TODO(hork): Do we need to add grpc_error to closure's error data?
+    grpc_core::Closure::Run(DEBUG_LOCATION, closure,
+                            absl_status_to_grpc_error(status));
+  };
+}
+
+EventEngine::Listener::AcceptCallback GrpcClosureToAcceptCallback(
+    grpc_closure* closure) {
+  (void)closure;
+  return [](absl::Status, EventEngine::Endpoint*) {};
+}
 
 /// Argument ownership stories:
 /// * closure: ?
@@ -57,7 +76,7 @@ static void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
       grpc_endpoint_create(channel_args, "UNIMPLEMENTED");
   *endpoint = &ee_endpoint->base;
   EventEngine::OnConnectCallback ee_on_connect =
-      event_engine_closure_to_on_connect_callback(on_connect, ee_endpoint);
+      GrpcClosureToOnConnectCallback(on_connect, ee_endpoint);
   SliceAllocator sa(ee_endpoint->ru);
   EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
                                   addr->len);
@@ -106,18 +125,15 @@ static grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
   return nullptr;
 }
 
-static unsigned tcp_server_port_fd_count(grpc_tcp_server* s,
-                                         unsigned port_index) {
-  (void)s;
-  (void)port_index;
+static unsigned tcp_server_port_fd_count(grpc_tcp_server* /* s */,
+                                         unsigned /* port_index */) {
   return 0;
 }
 
-static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
-                              unsigned fd_index) {
-  (void)s;
-  (void)port_index;
-  (void)fd_index;
+static int tcp_server_port_fd(grpc_tcp_server* /* s */,
+                              unsigned /* port_index */,
+                              unsigned /* fd_index */) {
+  // Note: only used internally
   return -1;
 }
 

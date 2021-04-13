@@ -30,22 +30,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::Callback event_engine_closure_to_callback(grpc_closure* closure);
-
-EventEngine::OnConnectCallback event_engine_closure_to_on_connect_callback(
-    grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out);
-
-EventEngine::Listener::AcceptCallback event_engine_closure_to_accept_callback(
-    grpc_closure* closure);
-
-EventEngine::DNSResolver::LookupHostnameCallback
-event_engine_closure_to_lookup_hostname_callback(grpc_closure* closure);
-
-EventEngine::DNSResolver::LookupSRVCallback
-event_engine_closure_to_lookup_srv_callback(grpc_closure* closure);
-
-EventEngine::DNSResolver::LookupTXTCallback
-event_engine_closure_to_lookup_txt_callback(grpc_closure* closure);
+EventEngine::Callback EventEngineClosureToCallback(grpc_closure* closure);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

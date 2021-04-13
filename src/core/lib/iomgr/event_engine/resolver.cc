@@ -20,6 +20,27 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
+namespace {
+using ::grpc_event_engine::experimental::EventEngine;
+
+EventEngine::DNSResolver::LookupHostnameCallback
+event_engine_closure_to_lookup_hostname_callback(grpc_closure* closure) {
+  (void)closure;
+  return [](absl::Status, std::vector<EventEngine::ResolvedAddress>) {};
+}
+
+EventEngine::DNSResolver::LookupSRVCallback
+event_engine_closure_to_lookup_srv_callback(grpc_closure* closure) {
+  (void)closure;
+  return [](absl::Status, std::vector<EventEngine::DNSResolver::SRVRecord>) {};
+}
+
+EventEngine::DNSResolver::LookupTXTCallback
+event_engine_closure_to_lookup_txt_callback(grpc_closure* closure) {
+  (void)closure;
+  return [](absl::Status, std::string) {};
+}
+
 static void resolve_address(const char* addr, const char* default_port,
                             grpc_pollset_set* interested_parties,
                             grpc_closure* on_done,
@@ -39,6 +60,7 @@ static grpc_error* blocking_resolve_address(
   (void)addresses;
   return GRPC_ERROR_NONE;
 }
+}  // namespace
 
 grpc_address_resolver_vtable grpc_event_engine_resolver_vtable{
     resolve_address, blocking_resolve_address};
