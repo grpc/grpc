@@ -6674,7 +6674,7 @@ targets:
   - test/cpp/interop/xds_interop_client.cc
   deps:
   - absl/flags:flag
-  - grpc++
+  - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
 - name: xds_interop_server
@@ -6692,7 +6692,7 @@ targets:
   - test/cpp/interop/xds_interop_server.cc
   deps:
   - absl/flags:flag
-  - grpc++
+  - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
 tests: []
