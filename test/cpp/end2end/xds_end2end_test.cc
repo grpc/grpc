@@ -2067,8 +2067,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   void SetNextResolutionForLbChannel(
-      const std::vector<int>& ports,
-      const char* service_config_json = nullptr,
+      const std::vector<int>& ports, const char* service_config_json = nullptr,
       const char* expected_targets = nullptr,
       grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
     grpc_core::ExecCtx exec_ctx;
@@ -2531,9 +2530,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
    public:
     void StartRpc(grpc::testing::EchoTestService::Stub* stub,
                   const RpcOptions& rpc_options =
-                      RpcOptions().set_timeout_ms(0)
-                                  .set_client_cancel_after_us(1 * 1000 *
-                                                              1000)) {
+                      RpcOptions().set_timeout_ms(0).set_client_cancel_after_us(
+                          1 * 1000 * 1000)) {
       sender_thread_ = std::thread([this, stub, rpc_options]() {
         EchoRequest request;
         EchoResponse response;
@@ -11296,11 +11294,10 @@ INSTANTIATE_TEST_SUITE_P(
 // Run with bootstrap from env var, so that we use a global XdsClient
 // instance.  Otherwise, we would need to use a separate fake resolver
 // result generator on the client and server sides.
-INSTANTIATE_TEST_SUITE_P(
-    XdsTest, XdsEnabledServerTest,
-    ::testing::Values(
-        TestType().set_bootstrap_source(TestType::kBootstrapFromEnvVar)),
-    &TestTypeName);
+INSTANTIATE_TEST_SUITE_P(XdsTest, XdsEnabledServerTest,
+                         ::testing::Values(TestType().set_bootstrap_source(
+                             TestType::kBootstrapFromEnvVar)),
+                         &TestTypeName);
 
 // We are only testing the server here.
 INSTANTIATE_TEST_SUITE_P(XdsTest, XdsServerSecurityTest,
