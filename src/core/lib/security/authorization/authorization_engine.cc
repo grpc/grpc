@@ -16,7 +16,7 @@
 
 #include "absl/memory/memory.h"
 
-#include "src/core/lib/security/authorization/cel_authorization_engine.h"
+#include "src/core/lib/security/authorization/authorization_engine.h"
 
 namespace grpc_core {
 
@@ -36,8 +36,8 @@ constexpr char kCertServerName[] = "cert_server_name";
 
 }  // namespace
 
-std::unique_ptr<CelAuthorizationEngine>
-CelAuthorizationEngine::CreateCelAuthorizationEngine(
+std::unique_ptr<AuthorizationEngine>
+AuthorizationEngine::CreateAuthorizationEngine(
     const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies) {
   if (rbac_policies.empty() || rbac_policies.size() > 2) {
     gpr_log(GPR_ERROR,
@@ -52,11 +52,11 @@ CelAuthorizationEngine::CreateCelAuthorizationEngine(
                          policy and one allow policy, in that order.");
     return nullptr;
   } else {
-    return absl::make_unique<CelAuthorizationEngine>(rbac_policies);
+    return absl::make_unique<AuthorizationEngine>(rbac_policies);
   }
 }
 
-CelAuthorizationEngine::CelAuthorizationEngine(
+AuthorizationEngine::AuthorizationEngine(
     const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies) {
   for (const auto& rbac_policy : rbac_policies) {
     // Extract array of policies and store their condition fields in either
@@ -90,7 +90,7 @@ CelAuthorizationEngine::CelAuthorizationEngine(
   }
 }
 
-std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
+std::unique_ptr<mock_cel::Activation> AuthorizationEngine::CreateActivation(
     const EvaluateArgs& args) {
   std::unique_ptr<mock_cel::Activation> activation;
   for (const auto& elem : envoy_attributes_) {
@@ -158,7 +158,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
             kSpiffeId, mock_cel::CelValue::CreateStringView(spiffe_id));
       }
     } else if (elem == kCertServerName) {
-      absl::string_view cert_server_name(args.GetCommonNameInPeerCert());
+      absl::string_view cert_server_name(args.GetCertServerName());
       if (!cert_server_name.empty()) {
         activation->InsertValue(
             kCertServerName,

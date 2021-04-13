@@ -737,7 +737,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx alts_util_test)
   add_dependencies(buildtests_cxx async_end2end_test)
   add_dependencies(buildtests_cxx auth_property_iterator_test)
-  add_dependencies(buildtests_cxx authorization_matchers_test)
+  add_dependencies(buildtests_cxx authorization_engine_test)
   add_dependencies(buildtests_cxx aws_request_signer_test)
   add_dependencies(buildtests_cxx backoff_test)
   add_dependencies(buildtests_cxx bad_streaming_id_bad_client_test)
@@ -811,7 +811,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx byte_buffer_test)
   add_dependencies(buildtests_cxx byte_stream_test)
   add_dependencies(buildtests_cxx cancel_ares_query_test)
-  add_dependencies(buildtests_cxx cel_authorization_engine_test)
   add_dependencies(buildtests_cxx certificate_provider_registry_test)
   add_dependencies(buildtests_cxx certificate_provider_store_test)
   add_dependencies(buildtests_cxx cfstream_test)
@@ -2163,6 +2162,7 @@ if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util
   test/core/util/cmdline.cc
+  test/core/util/eval_args_mock_endpoint.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2232,6 +2232,7 @@ if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util_unsecure
   test/core/util/cmdline.cc
+  test/core/util/eval_args_mock_endpoint.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -8023,16 +8024,16 @@ target_link_libraries(auth_property_iterator_test
 endif()
 if(gRPC_BUILD_TESTS)
 
-add_executable(authorization_matchers_test
+add_executable(authorization_engine_test
+  src/core/lib/security/authorization/authorization_engine.cc
   src/core/lib/security/authorization/evaluate_args.cc
-  src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
-  test/core/security/authorization_matchers_test.cc
+  test/core/security/authorization_engine_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-target_include_directories(authorization_matchers_test
+target_include_directories(authorization_engine_test
   PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8051,9 +8052,10 @@ target_include_directories(authorization_matchers_test
     ${_gRPC_PROTO_GENS_DIR}
 )
 
-target_link_libraries(authorization_matchers_test
+target_link_libraries(authorization_engine_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  absl::flat_hash_set
   grpc_test_util
 )
 
@@ -9130,46 +9132,6 @@ target_link_libraries(cancel_ares_query_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc++_test_config
   grpc++_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_executable(cel_authorization_engine_test
-  src/core/lib/security/authorization/cel_authorization_engine.cc
-  src/core/lib/security/authorization/evaluate_args.cc
-  src/core/lib/security/authorization/matchers.cc
-  src/core/lib/security/authorization/rbac_policy.cc
-  test/core/security/cel_authorization_engine_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(cel_authorization_engine_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(cel_authorization_engine_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  absl::flat_hash_set
-  grpc_test_util
 )
 
 
@@ -10322,7 +10284,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(evaluate_args_test
   src/core/lib/security/authorization/evaluate_args.cc
-  src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
   test/core/security/evaluate_args_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -12765,7 +12726,6 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(rbac_translator_test
   src/core/lib/security/authorization/evaluate_args.cc
-  src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc
   test/core/security/rbac_translator_test.cc
@@ -14542,6 +14502,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
     test/core/util/cmdline.cc
+    test/core/util/eval_args_mock_endpoint.cc
     test/core/util/fuzzer_util.cc
     test/core/util/grpc_profiler.cc
     test/core/util/histogram.cc
