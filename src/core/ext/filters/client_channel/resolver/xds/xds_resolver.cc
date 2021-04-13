@@ -561,6 +561,8 @@ absl::optional<uint64_t> HeaderHashHelper(
   std::string value_buffer;
   absl::optional<absl::string_view> header_value =
       GetHeaderValue(initial_metadata, policy.header_name, &value_buffer);
+  gpr_log(GPR_INFO, "donna header val is %s",
+          std::string(header_value.value()).c_str());
   if (policy.regex != nullptr) {
     // If GetHeaderValue() did not already store the value in
     // value_buffer, copy it there now, so we can modify it.

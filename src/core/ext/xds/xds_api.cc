@@ -1602,40 +1602,35 @@ grpc_error* RouteActionParse(const EncodingContext& context,
             regex_rewrite =
                 envoy_config_route_v3_RouteAction_HashPolicy_Header_regex_rewrite(
                     header);
-        if (regex_rewrite == nullptr) {
-          gpr_log(
-              GPR_DEBUG,
-              "RouteAction HashPolicy contains policy specifier Header with "
-              "RegexMatchAndSubstitution but Regex is missing");
-          continue;
+        if (regex_rewrite != nullptr) {
+          const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
+              envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
+                  regex_rewrite);
+          if (regex_matcher == nullptr) {
+            gpr_log(
+                GPR_DEBUG,
+                "RouteAction HashPolicy contains policy specifier Header with "
+                "RegexMatchAndSubstitution but RegexMatcher pattern is "
+                "missing");
+            continue;
+          }
+          RE2::Options options;
+          policy.regex = absl::make_unique<RE2>(
+              UpbStringToStdString(
+                  envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
+              options);
+          if (!policy.regex->ok()) {
+            gpr_log(
+                GPR_DEBUG,
+                "RouteAction HashPolicy contains policy specifier Header with "
+                "RegexMatchAndSubstitution but RegexMatcher pattern does not "
+                "compile");
+            continue;
+          }
+          policy.regex_substitution = UpbStringToStdString(
+              envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
+                  regex_rewrite));
         }
-        const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
-            envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
-                regex_rewrite);
-        if (regex_matcher == nullptr) {
-          gpr_log(
-              GPR_DEBUG,
-              "RouteAction HashPolicy contains policy specifier Header with "
-              "RegexMatchAndSubstitution but RegexMatcher pattern is "
-              "missing");
-          continue;
-        }
-        RE2::Options options;
-        policy.regex = absl::make_unique<RE2>(
-            UpbStringToStdString(
-                envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
-            options);
-        if (!policy.regex->ok()) {
-          gpr_log(
-              GPR_DEBUG,
-              "RouteAction HashPolicy contains policy specifier Header with "
-              "RegexMatchAndSubstitution but RegexMatcher pattern does not "
-              "compile");
-          continue;
-        }
-        policy.regex_substitution = UpbStringToStdString(
-            envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
-                regex_rewrite));
       } else if ((filter_state =
                       envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
                           hash_policy)) != nullptr) {

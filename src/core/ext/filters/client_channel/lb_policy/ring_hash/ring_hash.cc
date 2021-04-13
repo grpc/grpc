@@ -325,7 +325,8 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
       absl::string_view hash_key(hash_key_buffer.data(),
                                  hash_key_buffer.size());
       const uint64_t hash = XXH64(hash_key.data(), hash_key.size(), 0);
-      gpr_log(GPR_INFO, "donna push onto ring");
+      gpr_log(GPR_INFO, "donna push onto ring with %s",
+              std::string(hash_key).c_str());
       ring_.push_back({hash,
                        subchannel_list->subchannel(i)->subchannel()->Ref(),
                        current_state});
@@ -362,6 +363,8 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
 
 bool RingHash::Picker::ConnectAndPickHelper(const RingEntry& entry,
                                             PickResult* result) {
+  gpr_log(GPR_INFO, "donna experimenting with ConnectAndPickHelper %d",
+          entry.connectivity_state);
   if (entry.connectivity_state == GRPC_CHANNEL_READY) {
     result->type = PickResult::PICK_COMPLETE;
     result->subchannel = entry.subchannel;
