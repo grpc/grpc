@@ -91,30 +91,31 @@ AuthorizationEngine::AuthorizationEngine(
 }
 
 std::unique_ptr<mock_cel::Activation> AuthorizationEngine::CreateActivation(
-    const EvaluateArgs& args) {
+    const EvaluateChannelArgs& channel_args,
+    const EvaluateHeaderArgs& header_args) {
   std::unique_ptr<mock_cel::Activation> activation;
   for (const auto& elem : envoy_attributes_) {
     if (elem == kUrlPath) {
-      absl::string_view url_path(args.GetPath());
+      absl::string_view url_path(header_args.GetPath());
       if (!url_path.empty()) {
         activation->InsertValue(kUrlPath,
                                 mock_cel::CelValue::CreateStringView(url_path));
       }
     } else if (elem == kHost) {
-      absl::string_view host(args.GetHost());
+      absl::string_view host(header_args.GetHost());
       if (!host.empty()) {
         activation->InsertValue(kHost,
                                 mock_cel::CelValue::CreateStringView(host));
       }
     } else if (elem == kMethod) {
-      absl::string_view method(args.GetMethod());
+      absl::string_view method(header_args.GetMethod());
       if (!method.empty()) {
         activation->InsertValue(kMethod,
                                 mock_cel::CelValue::CreateStringView(method));
       }
     } else if (elem == kHeaders) {
       std::multimap<absl::string_view, absl::string_view> headers =
-          args.GetHeaders();
+          header_args.GetHeaders();
       std::vector<std::pair<mock_cel::CelValue, mock_cel::CelValue>>
           header_items;
       for (const auto& header_key : header_keys_) {
@@ -132,33 +133,34 @@ std::unique_ptr<mock_cel::Activation> AuthorizationEngine::CreateActivation(
       activation->InsertValue(kHeaders,
                               mock_cel::CelValue::CreateMap(headers_.get()));
     } else if (elem == kSourceAddress) {
-      absl::string_view source_address(args.GetPeerAddress());
+      absl::string_view source_address(channel_args.GetPeerAddress());
       if (!source_address.empty()) {
         activation->InsertValue(
             kSourceAddress,
             mock_cel::CelValue::CreateStringView(source_address));
       }
     } else if (elem == kSourcePort) {
-      activation->InsertValue(
-          kSourcePort, mock_cel::CelValue::CreateInt64(args.GetPeerPort()));
+      activation->InsertValue(kSourcePort, mock_cel::CelValue::CreateInt64(
+                                               channel_args.GetPeerPort()));
     } else if (elem == kDestinationAddress) {
-      absl::string_view destination_address(args.GetLocalAddress());
+      absl::string_view destination_address(channel_args.GetLocalAddress());
       if (!destination_address.empty()) {
         activation->InsertValue(
             kDestinationAddress,
             mock_cel::CelValue::CreateStringView(destination_address));
       }
     } else if (elem == kDestinationPort) {
-      activation->InsertValue(kDestinationPort, mock_cel::CelValue::CreateInt64(
-                                                    args.GetLocalPort()));
+      activation->InsertValue(
+          kDestinationPort,
+          mock_cel::CelValue::CreateInt64(channel_args.GetLocalPort()));
     } else if (elem == kSpiffeId) {
-      absl::string_view spiffe_id(args.GetSpiffeId());
+      absl::string_view spiffe_id(channel_args.GetSpiffeId());
       if (!spiffe_id.empty()) {
         activation->InsertValue(
             kSpiffeId, mock_cel::CelValue::CreateStringView(spiffe_id));
       }
     } else if (elem == kCertServerName) {
-      absl::string_view cert_server_name(args.GetCertServerName());
+      absl::string_view cert_server_name(channel_args.GetCommonName());
       if (!cert_server_name.empty()) {
         activation->InsertValue(
             kCertServerName,

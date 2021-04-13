@@ -29,7 +29,8 @@
 #include "google/api/expr/v1alpha1/syntax.upb.h"
 #include "upb/upb.hpp"
 
-#include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/lib/security/authorization/evaluate_channel_args.h"
+#include "src/core/lib/security/authorization/evaluate_header_args.h"
 #include "src/core/lib/security/authorization/mock_cel/activation.h"
 
 namespace grpc_core {
@@ -67,7 +68,8 @@ class AuthorizationEngine {
   };
 
   std::unique_ptr<mock_cel::Activation> CreateActivation(
-      const EvaluateArgs& args);
+      const EvaluateChannelArgs& channel_args,
+      const EvaluateHeaderArgs& header_args);
 
   std::map<const std::string, const google_api_expr_v1alpha1_Expr*>
       deny_if_matched_;

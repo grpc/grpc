@@ -2061,11 +2061,13 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_rbac_engine",
     srcs = [
-        "src/core/lib/security/authorization/evaluate_args.cc",
+        "src/core/lib/security/authorization/evaluate_channel_args.cc",
+        "src/core/lib/security/authorization/evaluate_header_args.cc",
         "src/core/lib/security/authorization/rbac_policy.cc",
     ],
     hdrs = [
-        "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/evaluate_channel_args.h",
+        "src/core/lib/security/authorization/evaluate_header_args.h",
         "src/core/lib/security/authorization/rbac_policy.h",
     ],
     language = "c++",

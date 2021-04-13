@@ -110,8 +110,8 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "evaluate_args_test",
-    srcs = ["evaluate_args_test.cc"],
+    name = "evaluate_header_args_test",
+    srcs = ["evaluate_header_args_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     deps = [
@@ -423,5 +423,19 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc_authorization_provider",
         "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "evaluate_channel_args_test",
+    srcs = ["evaluate_channel_args_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_rbac_engine",
+        "//test/core/util:grpc_test_util",
+        "//test/core/util:grpc_test_util_base",
     ],
 )
