@@ -1712,6 +1712,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     xds_channel_args_.num_args = xds_channel_args_to_add_.size();
     xds_channel_args_.args = xds_channel_args_to_add_.data();
     // Initialize XdsClient state.
+    // TODO(roth): Consider changing this to dynamically generate the
+    // bootstrap config in each individual test instead of hard-coding
+    // the contents here.  That would allow us to use an ipv4: or ipv6:
+    // URI for the xDS server instead of using the fake resolver.
     if (GetParam().bootstrap_source() == TestType::kBootstrapFromEnvVar) {
       gpr_setenv("GRPC_XDS_BOOTSTRAP_CONFIG",
                  GetParam().use_v2() ? kBootstrapFileV2 : kBootstrapFileV3);
