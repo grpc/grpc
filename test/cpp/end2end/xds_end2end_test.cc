@@ -8740,34 +8740,8 @@ TEST_P(EdsTest, EdsServiceNameDefaultsToClusterName) {
   CheckRpcSendOk();
 }
 
-TEST_P(EdsTest, RingHashSize1) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
-  auto cluster = default_cluster_;
-  cluster.set_lb_policy(Cluster::RING_HASH);
-  cluster.mutable_ring_hash_lb_config()->set_hash_function(
-      Cluster::RingHashLbConfig::XX_HASH);
-  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
-      1);
-  cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
-      100);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1, {}, {1}},
-      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2, {}, {2}},
-      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3, {}, {3}},
-      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0, {}, {4}},
-  });
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(3, false);
-  for (size_t i = 0; i < 3; ++i) {
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
-  }
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
-}
-
+// Tests that ring hash policy that hashes using channel id ensures all RPCs to
+// go 1 particular backend.
 TEST_P(EdsTest, RingHashChannelIdHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
@@ -8786,6 +8760,7 @@ TEST_P(EdsTest, RingHashChannelIdHashing) {
   hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0",
        GetBackendPorts(0, 4),
@@ -8796,26 +8771,29 @@ TEST_P(EdsTest, RingHashChannelIdHashing) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
-  for (size_t j = 0; j < 4; ++j) {
-    gpr_log(GPR_INFO, "donna round %zu ", j);
-    for (size_t i = 0; i < 5; ++i) {
-      auto status = SendRpc();
-      gpr_log(GPR_INFO, "donna channel is %p with state %d and status %d",
-              channel_.get(), channel_->GetState(false), status.error_code());
-    }
-    gpr_log(GPR_INFO, "donna after round %zu ", j);
-    ResetStub();
-    SetNextResolution({});
-    SetNextResolutionForLbChannelAllBalancers();
-    gpr_log(GPR_INFO, "donna reset stub after round %zu ", j);
-    for (size_t i = 0; i <= 3; ++i) {
-      gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
-              backends_[i]->backend_service()->request_count());
+  for (size_t i = 0; i < 100; ++i) {
+    auto status = SendRpc();
+    gpr_log(GPR_INFO, "donna channel is %p with state %d and status %d",
+            channel_.get(), channel_->GetState(false), status.error_code());
+  }
+  size_t received = 0;
+  size_t empty = 0;
+  for (size_t i = 0; i <= 3; ++i) {
+    gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
+            backends_[i]->backend_service()->request_count());
+    if (backends_[i]->backend_service()->request_count() == 0) {
+      ++empty;
+    } else {
+      ++received;
     }
   }
+  EXPECT_EQ(1, received);
+  EXPECT_EQ(3, empty);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
+// Tests that ring hash policy that hashes using a header value can spread RPCs
+// across all the backends.
 TEST_P(EdsTest, RingHashHeaderHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
@@ -8834,6 +8812,7 @@ TEST_P(EdsTest, RingHashHeaderHashing) {
   hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0",
        GetBackendPorts(0, 4),
@@ -8849,30 +8828,59 @@ TEST_P(EdsTest, RingHashHeaderHashing) {
        absl::StrFormat("%s:%d_0", ipv6_only_ ? "::1" : "127.0.0.1",
                        backends_[0]->port())},
   };
+  std::vector<std::pair<std::string, std::string>> metadata1 = {
+      {"address_hash",
+       absl::StrFormat("%s:%d_0", ipv6_only_ ? "::1" : "127.0.0.1",
+                       backends_[1]->port())},
+  };
+  std::vector<std::pair<std::string, std::string>> metadata2 = {
+      {"address_hash",
+       absl::StrFormat("%s:%d_0", ipv6_only_ ? "::1" : "127.0.0.1",
+                       backends_[2]->port())},
+  };
+  std::vector<std::pair<std::string, std::string>> metadata3 = {
+      {"address_hash",
+       absl::StrFormat("%s:%d_0", ipv6_only_ ? "::1" : "127.0.0.1",
+                       backends_[3]->port())},
+  };
   const auto rpc_options = RpcOptions()
                                .set_rpc_service(SERVICE_ECHO)
                                .set_rpc_method(METHOD_ECHO)
                                .set_metadata(std::move(metadata));
-  for (size_t j = 0; j < 4; ++j) {
-    gpr_log(GPR_INFO, "donna round %zu ", j);
-    for (size_t i = 0; i < 5; ++i) {
-      auto status = SendRpc(rpc_options);
-      gpr_log(GPR_INFO, "donna channel is %p with state %d status %d",
-              channel_.get(), channel_->GetState(false), status.error_code());
-    }
-    gpr_log(GPR_INFO, "donna after round %zu ", j);
-    ResetStub();
-    SetNextResolution({});
-    SetNextResolutionForLbChannelAllBalancers();
-    gpr_log(GPR_INFO, "donna reset stub after round %zu ", j);
-    for (size_t i = 0; i <= 3; ++i) {
-      gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
-              backends_[i]->backend_service()->request_count());
-    }
+  const auto rpc_options1 = RpcOptions()
+                                .set_rpc_service(SERVICE_ECHO)
+                                .set_rpc_method(METHOD_ECHO)
+                                .set_metadata(std::move(metadata1));
+  const auto rpc_options2 = RpcOptions()
+                                .set_rpc_service(SERVICE_ECHO)
+                                .set_rpc_method(METHOD_ECHO)
+                                .set_metadata(std::move(metadata2));
+  const auto rpc_options3 = RpcOptions()
+                                .set_rpc_service(SERVICE_ECHO)
+                                .set_rpc_method(METHOD_ECHO)
+                                .set_metadata(std::move(metadata3));
+  WaitForAllBackends(0, 1, true, rpc_options);
+  WaitForAllBackends(1, 2, true, rpc_options1);
+  WaitForAllBackends(2, 3, true, rpc_options2);
+  WaitForAllBackends(3, 4, true, rpc_options3);
+  for (size_t i = 0; i < 100; ++i) {
+    (void)SendRpc(rpc_options);
+    (void)SendRpc(rpc_options1);
+    (void)SendRpc(rpc_options2);
+    (void)SendRpc(rpc_options3);
+    gpr_log(GPR_INFO, "donna channel is %p with state %d", channel_.get(),
+            channel_->GetState(false));
+  }
+  for (size_t i = 0; i <= 3; ++i) {
+    gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
+            backends_[i]->backend_service()->request_count());
+    EXPECT_EQ(100, backends_[i]->backend_service()->request_count());
   }
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
+// Test that the channel will go from idle to ready via connecting;
+// (tho it is not possible to catch the connecting state before moving to ready)
 TEST_P(EdsTest, RingHashIdleToReady) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
@@ -8884,27 +8892,115 @@ TEST_P(EdsTest, RingHashIdleToReady) {
   cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
       100);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  hash_policy->set_terminal(true);
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1, {}, {1}},
-      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2, {}, {2}},
-      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3, {}, {3}},
-      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0, {}, {4}},
+      {"locality0",
+       GetBackendPorts(0, 4),
+       kDefaultLocalityWeight,
+       0,
+       {},
+       {1, 2, 3, 4}},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   gpr_log(GPR_INFO, "donna idle channel is %p with state %d", channel_.get(),
           channel_->GetState(false));
   (void)SendRpc();
-  gpr_log(GPR_INFO, "donna connecting channel is %p with state %d",
-          channel_.get(), channel_->GetState(false));
-  WaitForBackend(3, false);
+  EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
   gpr_log(GPR_INFO, "donna ready channel is %p with state %d", channel_.get(),
           channel_->GetState(false));
-  for (size_t i = 0; i < 3; ++i) {
-    EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
+  for (size_t i = 0; i <= 3; ++i) {
+    gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
+            backends_[i]->backend_service()->request_count());
   }
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test that the channel will go from idle to connecting to ready;
+// (this requires the first pick to become unavailable after being picked)
+TEST_P(EdsTest, RingHashIdleToConnectingToRehashing) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  cluster.mutable_ring_hash_lb_config()->set_hash_function(
+      Cluster::RingHashLbConfig::XX_HASH);
+  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
+      1);
+  cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
+      100);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  hash_policy->set_terminal(true);
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0",
+       GetBackendPorts(0, 4),
+       kDefaultLocalityWeight,
+       0,
+       {},
+       {1, 2, 3, 4}},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash",
+       absl::StrFormat("%s:%d_0", ipv6_only_ ? "::1" : "127.0.0.1",
+                       backends_[0]->port())},
+  };
+  std::vector<std::pair<std::string, std::string>> metadata1 = {
+      {"address_hash",
+       absl::StrFormat("%s:%d_0", ipv6_only_ ? "::1" : "127.0.0.1",
+                       backends_[1]->port())},
+  };
+  std::vector<std::pair<std::string, std::string>> metadata2 = {
+      {"address_hash",
+       absl::StrFormat("%s:%d_0", ipv6_only_ ? "::1" : "127.0.0.1",
+                       backends_[2]->port())},
+  };
+  std::vector<std::pair<std::string, std::string>> metadata3 = {
+      {"address_hash",
+       absl::StrFormat("%s:%d_0", ipv6_only_ ? "::1" : "127.0.0.1",
+                       backends_[3]->port())},
+  };
+  const auto rpc_options = RpcOptions()
+                               .set_rpc_service(SERVICE_ECHO)
+                               .set_rpc_method(METHOD_ECHO)
+                               .set_metadata(std::move(metadata));
+  const auto rpc_options1 = RpcOptions()
+                                .set_rpc_service(SERVICE_ECHO)
+                                .set_rpc_method(METHOD_ECHO)
+                                .set_metadata(std::move(metadata1));
+  const auto rpc_options2 = RpcOptions()
+                                .set_rpc_service(SERVICE_ECHO)
+                                .set_rpc_method(METHOD_ECHO)
+                                .set_metadata(std::move(metadata2));
+  const auto rpc_options3 = RpcOptions()
+                                .set_rpc_service(SERVICE_ECHO)
+                                .set_rpc_method(METHOD_ECHO)
+                                .set_metadata(std::move(metadata3));
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
+  gpr_log(GPR_INFO, "donna idle channel is %p with state %d", channel_.get(),
+          channel_->GetState(false));
+  ShutdownBackend(0);
+  (void)SendRpc(rpc_options);
+  gpr_log(GPR_INFO, "donna ready channel is %p with state %d", channel_.get(),
+          channel_->GetState(false));
+  (void)SendRpc(rpc_options);
+  gpr_log(GPR_INFO, "donna ready channel is %p with state %d", channel_.get(),
+          channel_->GetState(false));
   for (size_t i = 0; i <= 3; ++i) {
     gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
             backends_[i]->backend_service()->request_count());
