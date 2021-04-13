@@ -32,15 +32,17 @@ gcloud container clusters get-credentials benchmarks-prod \
 # This step subject to change, just easier to get one file to run a single test
 wget https://raw.githubusercontent.com/grpc/test-infra/master/config/samples/go_example_loadtest.yaml
 
-# The original version of the client is a bit old, update to a newer version.
+# The original version of the client is a bit old, update to the latest release
+# version v1.21.0 .
 kubectl version --client
-curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+curl -LO https://dl.k8s.io/release/v1.21.0/bin/linux/amd64/kubectl
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 chmod +x kubectl
 sudo mv kubectl $(which kubectl)
 kubectl version --client
 
 kubectl apply -f go_example_loadtest.yaml
+
 
 echo "TODO: Add gRPC OSS Benchmarks here..."
 
