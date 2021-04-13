@@ -1779,7 +1779,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   std::shared_ptr<Channel> CreateChannel(
       int failover_timeout = 0, const char* server_name = kServerName,
-      grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
+      grpc_core::FakeResolverResponseGenerator* response_generator = nullptr,
+      grpc_channel_args* xds_channel_args = nullptr) {
     ChannelArguments args;
     if (failover_timeout > 0) {
       args.SetInt(GRPC_ARG_PRIORITY_FAILOVER_TIMEOUT_MS, failover_timeout);
@@ -1800,9 +1801,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       // channel and the xDS resource-does-not-exist timeout value.
       args.SetString(GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG,
                      GetParam().use_v2() ? kBootstrapFileV2 : kBootstrapFileV3);
+      if (xds_channel_args == nullptr) xds_channel_args = &xds_channel_args_;
       args.SetPointerWithVtable(
           GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS,
-          &xds_channel_args_, &kChannelArgsArgVtable);
+          xds_channel_args, &kChannelArgsArgVtable);
     }
     args.SetPointerWithVtable(
         GRPC_ARG_XDS_LOGICAL_DNS_CLUSTER_FAKE_RESOLVER_RESPONSE_GENERATOR,
@@ -2050,17 +2052,21 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
 
   void SetNextResolutionForLbChannelAllBalancers(
       const char* service_config_json = nullptr,
-      const char* expected_targets = nullptr) {
+      const char* expected_targets = nullptr,
+      grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
     std::vector<int> ports;
     for (size_t i = 0; i < balancers_.size(); ++i) {
       ports.emplace_back(balancers_[i]->port());
     }
-    SetNextResolutionForLbChannel(ports, service_config_json, expected_targets);
+    SetNextResolutionForLbChannel(ports, service_config_json, expected_targets,
+                                  response_generator);
   }
 
-  void SetNextResolutionForLbChannel(const std::vector<int>& ports,
-                                     const char* service_config_json = nullptr,
-                                     const char* expected_targets = nullptr) {
+  void SetNextResolutionForLbChannel(
+      const std::vector<int>& ports,
+      const char* service_config_json = nullptr,
+      const char* expected_targets = nullptr,
+      grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(ports);
@@ -2078,7 +2084,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       result.args =
           grpc_channel_args_copy_and_add(nullptr, &expected_targets_arg, 1);
     }
-    lb_channel_response_generator_->SetResponse(std::move(result));
+    if (response_generator == nullptr) {
+      response_generator = lb_channel_response_generator_.get();
+    }
+    response_generator->SetResponse(std::move(result));
   }
 
   void SetNextReresolutionResponse(const std::vector<int>& ports) {
@@ -2518,7 +2527,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
    public:
     void StartRpc(grpc::testing::EchoTestService::Stub* stub,
                   const RpcOptions& rpc_options =
-                      RpcOptions().set_client_cancel_after_us(1 * 1000 *
+                      RpcOptions().set_timeout_ms(0)
+                                  .set_client_cancel_after_us(1 * 1000 *
                                                               1000)) {
       sender_thread_ = std::thread([this, stub, rpc_options]() {
         EchoRequest request;
@@ -2990,14 +3000,21 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   // Create second channel.
   auto response_generator2 =
       grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+  auto lb_response_generator2 =
+      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
+  grpc_arg xds_arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
+      lb_response_generator2.get());
+  grpc_channel_args xds_channel_args2 = {1, &xds_arg};
   auto channel2 = CreateChannel(
       /*failover_timeout=*/0, /*server_name=*/kServerName,
-      response_generator2.get());
+      response_generator2.get(), &xds_channel_args2);
   auto stub2 = grpc::testing::EchoTestService::NewStub(channel2);
   // Set resolution results for both channels and for the xDS channel.
   SetNextResolution({});
   SetNextResolution({}, response_generator2.get());
   SetNextResolutionForLbChannelAllBalancers();
+  SetNextResolutionForLbChannelAllBalancers(nullptr, nullptr,
+                                            lb_response_generator2.get());
   // Send exactly max_concurrent_requests long RPCs, alternating between
   // the two channels.
   LongRunningRpc rpcs[kMaxConcurrentRequests];
