@@ -160,16 +160,10 @@ def main() -> None:
     language_choices = sorted(scenario_config.LANGUAGES.keys())
     argp = argparse.ArgumentParser(description='Exports scenarios to files.')
     argp.add_argument('--export_scenarios',
-                      nargs='?',
-                      const=True,
-                      default=False,
-                      type=bool,
+                      action='store_true',
                       help='Export scenarios to JSON files.')
     argp.add_argument('--count_scenarios',
-                      nargs='?',
-                      const=True,
-                      default=False,
-                      type=bool,
+                      action='store_true',
                       help='Count scenarios for all test languages.')
     argp.add_argument('-l',
                       '--language',
@@ -211,8 +205,8 @@ def main() -> None:
     if args.export_scenarios:
         s_filter = scenario_filter(scenario_name_regex=args.regex,
                                    category=args.category,
-                                   client_languages=[args.client_language],
-                                   server_languages=[args.server_language])
+                                   client_language=args.client_language,
+                                   server_language=args.server_language)
         scenarios = gen_scenarios(args.language, s_filter)
         dump_to_json_files(scenarios, args.filename_prefix)
 

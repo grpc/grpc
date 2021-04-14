@@ -19,8 +19,6 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
-python3 --version
-
 # This is to insure we can push and pull images from gcr.io, we do not
 # necessarily need it to run load tests, but would need it when we employ
 # pre-built images in the optimization.
@@ -34,8 +32,8 @@ gcloud container clusters get-credentials benchmarks-prod \
 # This step subject to change, just easier to get one file to run a single test
 tools/run_tests/performance/loadtest_config.py -l go \
     -t ./tools/run_tests/performance/templates/basic_template.yaml \
-    -s client_pool=workers-8core server_pool=workers-8core \
-        big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
+    -s client_pool=workers-8core -s server_pool=workers-8core \
+    -s big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
     --prefix="kokoro-test" -u "$(date +%Y%m%d%H%M%S)" \
     -r go_generic_sync_streaming_ping_pong_secure -o ./loadtest.yaml
 
