@@ -30,6 +30,8 @@ DEFAULT_KEYS = {
     'client_pool': '${client_pool}',
     'server_pool': '${server_pool}',
     'big_query_table': '${big_query_table}',
+    'timeoutSeconds': '',
+    'ttlSeconds': '',
 }
 
 
@@ -56,8 +58,11 @@ def loadtest_set_keys(
             server['pool'] = server_pool
 
     if keys.get('big_query_table'):
-        big_query_table = keys['big_query_table']
-        template['spec']['big_query_table'] = big_query_table
+        template['spec']['big_query_table'] = keys['big_query_table']
+
+    for key in ('timeoutSeconds', 'ttlSeconds'):
+        if keys.get(key):
+            template[key] = keys[key]
 
 
 def loadtest_template(input_file_names: Iterable[str], keys: Mapping[str, str],

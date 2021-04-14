@@ -253,7 +253,7 @@ was generated from the example configurations in
 $ ./tools/run_tests/performance/loadtest_template.py \
     -i ../test-infra/config/samples/*.yaml \
     -o ./tools/run_tests/performance/templates/basic_template.yaml \
-    -a test_infra_tag=v0.5.0 --name basic_template
+    --name basic_template
 ```
 
 Configurations for C# and Java tests, including tests against C++ clients and
@@ -266,5 +266,5 @@ $ ./tools/run_tests/performance/loadtest_config.py -l go -l java \
     -s client_pool=workers-8core server_pool=workers-8core \
         big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
         timeoutSeconds=3600 \
-    --client_language=c++ --server_language=c++ -o ./loadtest.yaml
+    -d --client_language=c++ --server_language=c++ -o ./loadtest.yaml
 ```

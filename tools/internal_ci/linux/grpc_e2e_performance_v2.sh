@@ -33,8 +33,9 @@ gcloud container clusters get-credentials benchmarks-prod \
 tools/run_tests/performance/loadtest_config.py -l go \
     -t ./tools/run_tests/performance/templates/basic_template.yaml \
     -s client_pool=workers-8core server_pool=workers-8core \
-        big_query_table=grpc-testing.e2e_benchmarks.experimental_results
-    --prefix="kokoro-test" -u "$(date +%Y%m%d%H%M%S)" -o ./loadtest.yaml
+        big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
+    --prefix="kokoro-test" -u "$(date +%Y%m%d%H%M%S)" \
+    -r go_generic_sync_streaming_ping_pong_secure -o ./loadtest.yaml
 
 # The original version of the client is a bit old, update to the latest release
 # version v1.21.0 .
