@@ -51,9 +51,10 @@ from typing import Any, Callable, Dict, Iterable, NamedTuple
 import scenario_config
 
 # Language parameters for load test config generation.
-LanguageConfig = NamedTuple('LanguageConfig', ('category', str),
-                            ('language', str), ('client_language', str),
-                            ('server_language', str))
+LanguageConfig = NamedTuple('LanguageConfig', [('category', str),
+                                               ('language', str),
+                                               ('client_language', str),
+                                               ('server_language', str)])
 
 
 def as_dict_no_empty_values(self):
