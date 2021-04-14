@@ -277,8 +277,6 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
         std::min(address.normalized_weight, min_normalized_weight);
     max_normalized_weight =
         std::max(address.normalized_weight, max_normalized_weight);
-    gpr_log(GPR_INFO, "donna weight %u sum %zu norm %f", address.weight, sum,
-            address.normalized_weight);
   }
   // Scale up the number of hashes per host such that the least-weighted host
   // gets a whole number of hashes on the ring. Other hosts might not end up
@@ -289,16 +287,11 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
   // to fit.
   const size_t min_ring_size = parent_->config_->min_ring_size();
   const size_t max_ring_size = parent_->config_->max_ring_size();
-  gpr_log(GPR_INFO, "donna verify min %zu and max %zu", min_ring_size,
-          max_ring_size);
   const double scale = std::min(
       std::ceil(min_normalized_weight * min_ring_size) / min_normalized_weight,
       static_cast<double>(max_ring_size));
   // Reserve memory for the entire ring up front.
   const uint64_t ring_size = std::ceil(scale);
-  gpr_log(GPR_INFO, "donna sum %zu max weight %f and min weight 2 %f", sum,
-          max_normalized_weight, min_normalized_weight);
-  gpr_log(GPR_INFO, "donna scale %f and ring size %zu", scale, ring_size);
   ring_.reserve(ring_size);
   // Populate the hash ring by walking through the (host, weight) pairs in
   // normalized_host_weights, and generating (scale * weight) hashes for each
@@ -325,8 +318,6 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
       absl::string_view hash_key(hash_key_buffer.data(),
                                  hash_key_buffer.size());
       const uint64_t hash = XXH64(hash_key.data(), hash_key.size(), 0);
-      gpr_log(GPR_INFO, "donna push onto ring with %s and size %d",
-              std::string(hash_key).c_str(), hash_key.size());
       ring_.push_back({hash,
                        subchannel_list->subchannel(i)->subchannel()->Ref(),
                        current_state});
@@ -336,14 +327,6 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
     }
     min_hashes_per_host = std::min(i, min_hashes_per_host);
     max_hashes_per_host = std::max(i, max_hashes_per_host);
-    gpr_log(GPR_INFO, "donna after building: scale %f and ring size %zu", scale,
-            ring_size);
-    gpr_log(GPR_INFO, "donna count %zu current %f", count, current_hashes);
-    gpr_log(GPR_INFO, "donna max weight %f and min weight %f",
-            max_normalized_weight, min_normalized_weight);
-    gpr_log(GPR_INFO,
-            "donna max_hashes_per_host %zu and min_hashes_per_host %zu",
-            max_hashes_per_host, min_hashes_per_host);
   }
   std::sort(ring_.begin(), ring_.end(),
             [](const RingEntry& lhs, const RingEntry& rhs) -> bool {
@@ -351,24 +334,18 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
             });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(GPR_INFO,
-            "[RH %p picker %p] =====created picker from subchannel_list=%p "
+            "[RH %p picker %p] created picker from subchannel_list=%p "
             "with %" PRIuPTR " subchannels",
             parent_.get(), this, subchannel_list, ring_.size());
     for (const auto& r : ring_) {
-      gpr_log(GPR_INFO, "donna ring hash %zu channel %p state %d", r.hash,
-              r.subchannel.get(), r.connectivity_state);
+      gpr_log(GPR_INFO, "ring hash: %" PRIx64 " subchannel: %p state: %d",
+              r.hash, r.subchannel.get(), r.connectivity_state);
     }
-    gpr_log(GPR_INFO,
-            "[RH %p picker %p] =====created picker from subchannel_list=%p "
-            "with %" PRIuPTR " subchannels",
-            parent_.get(), this, subchannel_list, ring_.size());
   }
 }
 
 bool RingHash::Picker::ConnectAndPickHelper(const RingEntry& entry,
                                             PickResult* result) {
-  gpr_log(GPR_INFO, "donna picker ConnectAndPickHelper state %d",
-          entry.connectivity_state);
   if (entry.connectivity_state == GRPC_CHANNEL_READY) {
     result->type = PickResult::PICK_COMPLETE;
     result->subchannel = entry.subchannel;
@@ -390,22 +367,16 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   PickResult result;
   // Initialize to PICK_FAILED.
   result.type = PickResult::PICK_FAILED;
-  auto cluster_name =
-      args.call_state->ExperimentalGetCallAttribute("xds_cluster_name");
   auto hash =
       args.call_state->ExperimentalGetCallAttribute(kRequestRingHashAttribute);
-  gpr_log(GPR_INFO, "donna picker name %s and hash %s", cluster_name.data(),
-          hash.data());
   uint64_t h;
   if (!absl::SimpleAtoi(hash, &h)) {
-    gpr_log(GPR_INFO, "donna picker error for hash %s", hash.data());
     result.error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrCat("xds ring hash value is not a number").c_str()),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
     return result;
   }
-  gpr_log(GPR_INFO, "donna picker got hash val %zu", h);
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) I've generally kept the variable names to make the code
   // easier to compare. NOTE: The algorithm depends on using signed integers for
@@ -434,12 +405,6 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       break;
     }
   }
-  gpr_log(GPR_INFO, "donna picker decision pick midp %ld", midp);
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
-    gpr_log(GPR_INFO,
-            "[RH %p picker %p] hashed to index %" PRIdPTR ", subchannel=%p",
-            parent_.get(), this, midp, ring_[midp].subchannel.get());
-  }
   OrphanablePtr<SubchannelConnectionAttempter> subchannel_connection_attempter;
   auto ScheduleSubchannelConnectionAttempt =
       [&](RefCountedPtr<SubchannelInterface> subchannel) {
@@ -449,10 +414,9 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         }
         subchannel_connection_attempter->AddSubchannel(std::move(subchannel));
       };
-  gpr_log(GPR_INFO,
-          "donna picker attempt to connect with ConnectAndPickHelper");
   bool attempt_to_connect = ConnectAndPickHelper(ring_[midp], &result);
   if (attempt_to_connect) {
+    gpr_log(GPR_INFO, "donna needing to reattempt");
     ScheduleSubchannelConnectionAttempt(ring_[midp].subchannel);
   }
   if (result.type != PickResult::PICK_FAILED) {
@@ -461,15 +425,14 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   // Subchannel is in TRANSIENT_FAILURE.
   // Check the next one.
   midp = (midp + 1) % ring_.size();
-  gpr_log(GPR_INFO,
-          "donna picker moving on first time with ConnectAndPickHelper");
   attempt_to_connect = ConnectAndPickHelper(ring_[midp], &result);
   if (attempt_to_connect) {
+    gpr_log(GPR_INFO,
+            "donna attempt and picker moving on first time with "
+            "ConnectAndPickHelper");
     ScheduleSubchannelConnectionAttempt(ring_[midp].subchannel);
   }
   if (result.type != PickResult::PICK_FAILED) {
-    gpr_log(GPR_INFO, "donna picker moving on first time with subchannel=%p",
-            result.subchannel.get());
     return result;
   }
   // Second subchannel was in TRANSIENT_FAILURE.
@@ -529,14 +492,11 @@ void RingHash::RingHashSubchannelList::StartWatchingLocked() {
 
 void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
     grpc_connectivity_state old_state, grpc_connectivity_state new_state) {
-  gpr_log(GPR_INFO, "donna counter old %d and cur %d", old_state, new_state);
   GPR_ASSERT(old_state != GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (old_state == GRPC_CHANNEL_IDLE) {
     if (num_idle_ > 0) {
       --num_idle_;
-    } else {
-      gpr_log(GPR_INFO, "donna counter very first time");
     }
   } else if (old_state == GRPC_CHANNEL_READY) {
     GPR_ASSERT(num_ready_ > 0);
@@ -557,9 +517,6 @@ void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
   } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     ++num_transient_failure_;
   }
-  gpr_log(GPR_INFO,
-          "donna counter result idle %d, ready %d, connecting %d, and tf %d",
-          num_idle_, num_ready_, num_connecting_, num_transient_failure_);
 }
 
 // Sets the RH policy's connectivity state and generates a new picker based
@@ -805,8 +762,6 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
           "min_ring_size"));
     }
     if (error_list.empty()) {
-      gpr_log(GPR_INFO, "donna min %zu and max %zu", min_ring_size,
-              max_ring_size);
       return MakeRefCounted<RingHashLbConfig>(min_ring_size, max_ring_size);
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR(
