@@ -2170,7 +2170,7 @@ void PrintSourceService(grpc_generator::Printer* printer,
   printer->Print(*vars,
                  "$ns$$Service$::Stub::Stub(const std::shared_ptr< "
                  "::grpc::ChannelInterface>& channel, const "
-                 "::grpc::StubOptions& options = ::grpc::StubOptions())\n");
+                 "::grpc::StubOptions& options)\n");
   printer->Indent();
   printer->Print(": channel_(channel)");
   for (int i = 0; i < service->method_count(); ++i) {
@@ -2192,7 +2192,7 @@ void PrintSourceService(grpc_generator::Printer* printer,
     printer->Print(
         *vars,
         ", rpcmethod_$Method$_("
-        "$prefix$$Service$_method_names[$Idx$], options.suffix_for_stats()"
+        "$prefix$$Service$_method_names[$Idx$], options.suffix_for_stats(),"
         "::grpc::internal::RpcMethod::$StreamingType$, "
         "channel"
         ")\n");
