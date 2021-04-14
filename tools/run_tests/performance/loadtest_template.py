@@ -43,19 +43,19 @@ def loadtest_set_keys(
     template: Mapping[str, Any],
     keys: Mapping[str, str],
 ) -> None:
-    if 'client_pool' in keys:
+    if keys.get('client_pool'):
         client_pool = keys['client_pool']
         clients = template['spec']['clients']
         for client in clients:
             client['pool'] = client_pool
 
-    if 'server_pool' in keys:
+    if keys.get('server_pool'):
         server_pool = keys['server_pool']
         servers = template['spec']['servers']
         for server in servers:
             server['pool'] = server_pool
 
-    if 'big_query_table' in keys:
+    if keys.get('big_query_table'):
         big_query_table = keys['big_query_table']
         template['spec']['big_query_table'] = big_query_table
 
@@ -67,9 +67,21 @@ def loadtest_template(input_file_names: Iterable[str], keys: Mapping[str, str],
     spec = dict()
     client_languages = set()
     server_languages = set()
+    template = {
+        'apiVersion': 'e2etest.grpc.io/v1',
+        'kind': 'LoadTest',
+        'metadata': metadata,
+    }
     for input_file_name in input_file_names:
         with open(input_file_name) as f:
             input_config = yaml.safe_load(f.read())
+
+            if input_config.get('apiVersion') != template['apiVersion']:
+                raise ValueError('Unexpected api version in file {}: {}'.format(
+                    input_file_name, input_config.get('apiVersion')))
+            if input_config.get('kind') != template['kind']:
+                raise ValueError('Unexpected kind in file {}: {}'.format(
+                    input_file_name, input_config.get('kind')))
 
             for client in input_config['spec']['clients']:
                 if client['language'] in client_languages:
@@ -97,10 +109,7 @@ def loadtest_template(input_file_names: Iterable[str], keys: Mapping[str, str],
         'servers': servers,
     })
 
-    template = {
-        'metadata': metadata,
-        'spec': spec,
-    }
+    template['spec'] = spec
 
     loadtest_set_keys(template, keys)
 

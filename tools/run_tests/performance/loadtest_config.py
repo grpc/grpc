@@ -96,7 +96,7 @@ def gen_run_indices(runs_per_test: int) -> Iterable[str]:
 
 
 def gen_loadtest_configs(
-        base_config: yaml.YAMLObject,
+        base_config: Mapping[str, Any],
         scenario_name_regex: str,
         language_config: scenario_config_exporter.LanguageConfig,
         loadtest_name_prefix: str,
@@ -128,6 +128,7 @@ def gen_loadtest_configs(
             metadata['name'] = name
             if 'labels' not in metadata:
                 metadata['labels'] = dict()
+            metadata['labels']['language'] = language_config.language
             metadata['labels']['prefix'] = prefix
             if 'annotations' not in metadata:
                 metadata['annotations'] = dict()
@@ -140,12 +141,12 @@ def gen_loadtest_configs(
             clients = config['spec']['clients']
             clients.clear()
             clients.extend((client for client in base_config['spec']['clients']
-                            if client.language == cl))
+                            if client['language'] == cl))
 
             servers = config['spec']['servers']
             servers.clear()
-            servers.extend((server for server in base_config['spec']['server']
-                            if server.language == sl))
+            servers.extend((server for server in base_config['spec']['servers']
+                            if server['language'] == sl))
 
             config['spec']['scenariosJSON'] = scenario_str
 
@@ -183,9 +184,11 @@ def main() -> None:
     argp = argparse.ArgumentParser(description='Generates load test configs.')
     argp.add_argument('-l',
                       '--language',
+                      action='append',
                       choices=language_choices,
                       required=True,
-                      help='Language to benchmark.')
+                      help='Language(s) to benchmark.',
+                      dest='languages')
     argp.add_argument('-t',
                       '--template',
                       type=str,
@@ -212,10 +215,7 @@ def main() -> None:
                       help='One or more strings to make the test name unique.')
     argp.add_argument(
         '-d',
-        nargs='?',
-        const=True,
-        default=False,
-        type=bool,
+        action='store_true',
         help='Use creation date and time as an addditional uniquifier.')
     argp.add_argument('-a',
                       '--annotations',
@@ -236,17 +236,18 @@ def main() -> None:
         help='Select a category of tests to run.')
     argp.add_argument(
         '--client_language',
+        action='append',
         choices=language_choices,
-        help='Select only scenarios with a specified client language.')
+        default=[],
+        help='Add additional scenarios with this specified client language.',
+        dest='client_languages')
     argp.add_argument(
         '--server_language',
+        action='append',
         choices=language_choices,
-        help='Select only scenarios with a specified server language.')
-    argp.add_argument(
-        '-i',
-        '--language_config_input',
-        type=str,
-        help='File specifying client and server languages, in yaml format.')
+        default=[],
+        help='Add additional scenarios with this specified server language.',
+        dest='server_languages')
     argp.add_argument('--runs_per_test',
                       default=1,
                       type=int,
@@ -256,12 +257,6 @@ def main() -> None:
                       type=str,
                       help='Output file name. Output to stdout if not set.')
     args = argp.parse_args()
-
-    if args.language_config_input and (args.client_language or
-                                       args.server_language):
-        raise ValueError('--language_config_input must not be specified '
-                         'together with --client_language '
-                         'or --server_language.')
 
     substitutions = parse_key_value_args(args.substitutions)
 
@@ -275,23 +270,16 @@ def main() -> None:
         base_config = yaml.safe_load(
             string.Template(f.read()).substitute(substitutions))
 
-    language_configs = []
-    if args.language_config_input:
-        with open(args.language_config_input, 'r') as f:
-            language_configs.extend(
-                (scenario_config_exporter.LanguageConfig(config)
-                 for config in yaml.safe_load_all(f.read())))
-
-    if not language_configs:
-        language_configs.append(
-            scenario_config_exporter.LanguageConfig(
-                category=args.category,
-                language=args.language,
-                client_language=args.client_language,
-                server_language=args.server_language))
-
+    client_languages = [''] + args.client_languages
+    server_languages = [''] + args.server_languages
     config_generators = []
-    for language_config in language_configs:
+    for l, cl, sl in itertools.product(args.languages, client_languages,
+                                       server_languages):
+        language_config = scenario_config_exporter.LanguageConfig(
+            category=args.category,
+            language=l,
+            client_language=cl,
+            server_language=sl)
         config_generators.append(
             gen_loadtest_configs(base_config,
                                  args.regex,
@@ -300,11 +288,12 @@ def main() -> None:
                                  uniquifiers=uniquifiers,
                                  annotations=annotations,
                                  runs_per_test=args.runs_per_test))
+    configs = (config for config in itertools.chain(*config_generators))
 
     configure_yaml()
 
     with open(args.output, 'w') if args.output else sys.stdout as f:
-        yaml.dump_all(itertools.chain(config_generators), stream=f)
+        yaml.dump_all(configs, stream=f)
 
 
 if __name__ == '__main__':

@@ -46,9 +46,7 @@ import json
 import re
 import sys
 
-from typing import Any, Callable, Dict, Iterable, NamedTuple
-
-import yaml
+from typing import Any, Callable, Container, Dict, Iterable, NamedTuple
 
 import scenario_config
 
@@ -122,13 +120,11 @@ def scenario_filter(
 
         scenario_client_language = scenario.get('CLIENT_LANGUAGE', '')
         if client_language != scenario_client_language:
-            if scenario_client_language:
-                return False
+            return False
 
         scenario_server_language = scenario.get('SERVER_LANGUAGE', '')
         if server_language != scenario_server_language:
-            if scenario_client_language:
-                return False
+            return False
 
         return True
 
@@ -205,12 +201,6 @@ def main() -> None:
         default='',
         choices=language_choices,
         help='Select only scenarios with a specified server language.')
-    argp.add_argument(
-        '-o',
-        '--language_config_output',
-        type=str,
-        help='Output file for scenario language configurations, in yaml format.'
-    )
     args = argp.parse_args()
 
     if args.export_scenarios and not args.language:
@@ -222,8 +212,8 @@ def main() -> None:
     if args.export_scenarios:
         s_filter = scenario_filter(scenario_name_regex=args.regex,
                                    category=args.category,
-                                   client_language=args.client_language,
-                                   server_language=args.server_language)
+                                   client_languages=[args.client_language],
+                                   server_languages=[args.server_language])
         scenarios = gen_scenarios(args.language, s_filter)
         dump_to_json_files(scenarios, args.filename_prefix)
 
@@ -244,15 +234,6 @@ def main() -> None:
 
         print('\n{:>5}  total scenarios (category: {})'.format(
             total, args.category))
-
-    if args.language_config_output:
-        c = collections.Counter(
-            gen_scenario_languages(args.category,
-                                   show_multiple_categories=False))
-        with open(args.language_config_output, 'w') as f:
-            yaml.dump_all((config.as_dict_no_empty_values()
-                           for (config, _) in c.most_common()),
-                          stream=f)
 
 
 if __name__ == "__main__":

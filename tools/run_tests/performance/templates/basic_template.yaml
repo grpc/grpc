@@ -1,9 +1,10 @@
+apiVersion: e2etest.grpc.io/v1
+kind: LoadTest
 metadata:
   annotations:
     test_infra_tag: v0.5.0
   name: basic_template
 spec:
-  big_query_table: ${big_query_table}
   clients:
   - build:
       command:
@@ -13,7 +14,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc.git
     language: csharp
-    pool: ${client_pool}
     run:
       args:
       - exec
@@ -30,7 +30,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc.git
     language: cxx
-    pool: ${client_pool}
     run:
       command:
       - bazel-bin/test/cpp/qps/qps_worker
@@ -46,7 +45,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc-go.git
     language: go
-    pool: ${client_pool}
     run:
       command:
       - /src/workspace/bin/worker
@@ -61,7 +59,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc-java.git
     language: java
-    pool: ${client_pool}
     run:
       command:
       - benchmarks/build/install/grpc-benchmarks/bin/benchmark_worker
@@ -73,7 +70,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc-node.git
     language: node
-    pool: ${client_pool}
     run:
       args:
       - -r
@@ -90,7 +86,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc.git
     language: php
-    pool: ${client_pool}
     run:
       command:
       - bash
@@ -105,7 +100,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc.git
     language: python
-    pool: ${client_pool}
     run:
       command:
       - bazel-bin/src/python/grpcio_tests/tests/qps/qps_worker
@@ -117,7 +111,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc
     language: ruby
-    pool: ${client_pool}
     run:
       args:
       - src/ruby/qps/worker.rb
@@ -132,7 +125,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc.git
     language: csharp
-    pool: ${server_pool}
     run:
       args:
       - exec
@@ -149,7 +141,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc.git
     language: cxx
-    pool: ${server_pool}
     run:
       args:
       - --server_port=10010
@@ -167,7 +158,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc-go.git
     language: go
-    pool: ${server_pool}
     run:
       command:
       - /src/workspace/bin/worker
@@ -182,7 +172,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc-java.git
     language: java
-    pool: ${server_pool}
     run:
       command:
       - benchmarks/build/install/grpc-benchmarks/bin/benchmark_worker
@@ -194,7 +183,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc-node.git
     language: node
-    pool: ${server_pool}
     run:
       args:
       - -r
@@ -211,7 +199,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc.git
     language: php
-    pool: ${server_pool}
     run:
       command:
       - bash
@@ -226,7 +213,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc.git
     language: python
-    pool: ${server_pool}
     run:
       command:
       - bazel-bin/src/python/grpcio_tests/tests/qps/qps_worker
@@ -238,7 +224,6 @@ spec:
       gitRef: master
       repo: https://github.com/grpc/grpc
     language: ruby
-    pool: ${server_pool}
     run:
       args:
       - src/ruby/qps/worker.rb
