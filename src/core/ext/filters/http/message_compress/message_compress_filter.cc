@@ -539,6 +539,7 @@ const grpc_channel_filter grpc_message_compress_filter = {
     CompressInitCallElem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     CompressDestroyCallElem,
+    grpc_call_pre_cancel_next_filter,
     sizeof(ChannelData),
     CompressInitChannelElem,
     CompressDestroyChannelElem,

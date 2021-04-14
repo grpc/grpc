@@ -526,6 +526,7 @@ const grpc_channel_filter grpc_max_age_filter = {
     max_age_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     max_age_destroy_call_elem,
+    grpc_call_pre_cancel_next_filter,
     sizeof(channel_data),
     max_age_init_channel_elem,
     max_age_destroy_channel_elem,

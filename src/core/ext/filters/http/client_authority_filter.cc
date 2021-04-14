@@ -124,6 +124,7 @@ const grpc_channel_filter grpc_client_authority_filter = {
     client_authority_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     client_authority_destroy_call_elem,
+    grpc_call_pre_cancel_next_filter,
     sizeof(channel_data),
     client_authority_init_channel_elem,
     client_authority_destroy_channel_elem,

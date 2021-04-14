@@ -109,9 +109,9 @@ class CallData {
   static void StartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
 
- private:
-  class ResumeBatchCanceller;
+  static void PreCancel(grpc_call_element* elem, grpc_error* error);
 
+ private:
   CallData(grpc_call_element* elem, const grpc_call_element_args* args);
   ~CallData();
 
@@ -163,7 +163,7 @@ class CallData {
 
   // Delay states
   grpc_timer delay_timer_ ABSL_GUARDED_BY(delay_mu_);
-  ResumeBatchCanceller* resume_batch_canceller_ ABSL_GUARDED_BY(delay_mu_);
+  bool delay_timer_pending_ ABSL_GUARDED_BY(delay_mu_) = false;
   grpc_transport_stream_op_batch* delayed_batch_ ABSL_GUARDED_BY(delay_mu_);
   // Abort states
   grpc_error* abort_error_ = GRPC_ERROR_NONE;
@@ -191,49 +191,6 @@ ChannelData::ChannelData(grpc_channel_element* elem,
                          grpc_channel_element_args* args)
     : index_(grpc_channel_stack_filter_instance_number(args->channel_stack,
                                                        elem)) {}
-
-// CallData::ResumeBatchCanceller
-
-class CallData::ResumeBatchCanceller {
- public:
-  explicit ResumeBatchCanceller(grpc_call_element* elem) : elem_(elem) {
-    auto* calld = static_cast<CallData*>(elem->call_data);
-    GRPC_CALL_STACK_REF(calld->owning_call_, "ResumeBatchCanceller");
-    GRPC_CLOSURE_INIT(&closure_, &Cancel, this, grpc_schedule_on_exec_ctx);
-    calld->call_combiner_->SetNotifyOnCancel(&closure_);
-  }
-
- private:
-  static void Cancel(void* arg, grpc_error* error) {
-    auto* self = static_cast<ResumeBatchCanceller*>(arg);
-    auto* chand = static_cast<ChannelData*>(self->elem_->channel_data);
-    auto* calld = static_cast<CallData*>(self->elem_->call_data);
-    {
-      MutexLock lock(&calld->delay_mu_);
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
-        gpr_log(GPR_INFO,
-                "chand=%p calld=%p: cancelling schdueled pick: "
-                "error=%s self=%p calld->resume_batch_canceller_=%p",
-                chand, calld, grpc_error_string(error), self,
-                calld->resume_batch_canceller_);
-      }
-      if (error != GRPC_ERROR_NONE && calld->resume_batch_canceller_ == self) {
-        // Cancel the delayed pick.
-        calld->CancelDelayTimer();
-        calld->FaultInjectionFinished();
-        // Fail pending batches on the call.
-        grpc_transport_stream_op_batch_finish_with_failure(
-            calld->delayed_batch_, GRPC_ERROR_REF(error),
-            calld->call_combiner_);
-      }
-    }
-    GRPC_CALL_STACK_UNREF(calld->owning_call_, "ResumeBatchCanceller");
-    delete self;
-  }
-
-  grpc_call_element* elem_;
-  grpc_closure closure_;
-};
 
 // CallData
 
@@ -300,6 +257,30 @@ void CallData::StartTransportStreamOpBatch(
   }
   // Chain to the next filter.
   grpc_call_next_op(elem, batch);
+}
+
+void CallData::PreCancel(grpc_call_element* elem, grpc_error* error) {
+  auto* calld = static_cast<CallData*>(elem->call_data);
+  auto* chand = static_cast<ChannelData*>(elem->channel_data);
+  {
+    MutexLock lock(&calld->delay_mu_);
+    if (calld->delay_timer_pending_) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
+        gpr_log(GPR_INFO, "chand=%p calld=%p: cancelling delay timer: %s",
+                chand, calld, grpc_error_string(error));
+      }
+      calld->delay_timer_pending_ = false;
+      // Cancel the delayed pick.
+      calld->CancelDelayTimer();
+      calld->FaultInjectionFinished();
+      // Fail pending batches on the call.
+      grpc_transport_stream_op_batch_finish_with_failure(
+          calld->delayed_batch_, error, calld->call_combiner_);
+      return;
+    }
+  }
+  grpc_call_pre_cancel_next_filter(elem, error);
+
 }
 
 CallData::CallData(grpc_call_element* elem, const grpc_call_element_args* args)
@@ -427,10 +408,10 @@ void CallData::DelayBatch(grpc_call_element* elem,
                           grpc_transport_stream_op_batch* batch) {
   MutexLock lock(&delay_mu_);
   delayed_batch_ = batch;
-  resume_batch_canceller_ = new ResumeBatchCanceller(elem);
   grpc_millis resume_time = ExecCtx::Get()->Now() + fi_policy_->delay;
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, ResumeBatch, elem,
                     grpc_schedule_on_exec_ctx);
+  delay_timer_pending_ = true;
   grpc_timer_init(&delay_timer_, resume_time, &batch->handler_private.closure);
 }
 
@@ -438,17 +419,14 @@ void CallData::ResumeBatch(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<CallData*>(elem->call_data);
   MutexLock lock(&calld->delay_mu_);
-  // Cancelled or canceller has already run
-  if (error == GRPC_ERROR_CANCELLED ||
-      calld->resume_batch_canceller_ == nullptr) {
-    return;
-  }
+  // Timer cancelled or pre-cancellation has already run.
+  if (error == GRPC_ERROR_CANCELLED || !calld->delay_timer_pending_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: Resuming delayed stream op batch %p",
             elem->channel_data, calld, calld->delayed_batch_);
   }
-  // Lame the canceller
-  calld->resume_batch_canceller_ = nullptr;
+  // Lame the pre-canceller
+  calld->delay_timer_pending_ = false;
   // Finish fault injection.
   calld->FaultInjectionFinished();
   // Abort if needed.

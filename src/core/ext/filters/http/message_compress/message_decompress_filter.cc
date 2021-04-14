@@ -391,6 +391,7 @@ const grpc_channel_filter MessageDecompressFilter = {
     DecompressInitCallElem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     DecompressDestroyCallElem,
+    grpc_call_pre_cancel_next_filter,
     sizeof(ChannelData),
     DecompressInitChannelElem,
     DecompressDestroyChannelElem,

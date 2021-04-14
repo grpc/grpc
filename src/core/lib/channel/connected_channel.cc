@@ -207,6 +207,7 @@ const grpc_channel_filter grpc_connected_filter = {
     connected_channel_init_call_elem,
     set_pollset_or_pollset_set,
     connected_channel_destroy_call_elem,
+    grpc_call_pre_cancel_next_filter,
     sizeof(channel_data),
     connected_channel_init_channel_elem,
     connected_channel_destroy_channel_elem,

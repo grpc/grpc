@@ -87,6 +87,11 @@ struct call_data {
   // `destroy_call_elem`, we cannot call the dtor in them. Otherwise,
   // fields will be accessed after calling dtor, and msan correctly complains
   // that the memory is not initialized.
+  // TODO(roth): Is the above still true now that
+  // https://github.com/grpc/grpc/pull/25827 has been merged?  The
+  // callback is holding a ref to the call stack, so it should not be
+  // possible for the call stack to be destroyed until the callback completes.
+// FIXME: also may not be relevant now that cancellation is different
   void destroy() {
     grpc_credentials_mdelem_array_destroy(&md_array);
     creds.reset();
@@ -110,8 +115,6 @@ struct call_data {
   grpc_auth_metadata_context auth_md_context =
       grpc_auth_metadata_context();  // Zero-initialize the C struct.
   grpc_closure async_result_closure;
-  grpc_closure check_call_host_cancel_closure;
-  grpc_closure get_request_metadata_cancel_closure;
 };
 
 }  // namespace
@@ -225,16 +228,6 @@ void grpc_auth_metadata_context_build(
   gpr_free(host_and_port);
 }
 
-static void cancel_get_request_metadata(void* arg, grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  if (error != GRPC_ERROR_NONE) {
-    calld->creds->cancel_get_request_metadata(&calld->md_array,
-                                              GRPC_ERROR_REF(error));
-  }
-  GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_get_request_metadata");
-}
-
 static void send_security_metadata(grpc_call_element* elem,
                                    grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -319,14 +312,6 @@ static void send_security_metadata(grpc_call_element* elem,
     // Synchronous return; invoke on_credentials_metadata() directly.
     on_credentials_metadata(batch, error);
     GRPC_ERROR_UNREF(error);
-  } else {
-    // Async return; register cancellation closure with call combiner.
-    // TODO(yashykt): We would not need this ref if call combiners used
-    // Closure::Run() instead of ExecCtx::Run()
-    GRPC_CALL_STACK_REF(calld->owning_call, "cancel_get_request_metadata");
-    calld->call_combiner->SetNotifyOnCancel(GRPC_CLOSURE_INIT(
-        &calld->get_request_metadata_cancel_closure,
-        cancel_get_request_metadata, elem, grpc_schedule_on_exec_ctx));
   }
 }
 
@@ -350,17 +335,6 @@ static void on_host_checked(void* arg, grpc_error* error) {
         calld->call_combiner);
   }
   GRPC_CALL_STACK_UNREF(calld->owning_call, "check_call_host");
-}
-
-static void cancel_check_call_host(void* arg, grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  if (error != GRPC_ERROR_NONE) {
-    chand->security_connector->cancel_check_call_host(
-        &calld->async_result_closure, GRPC_ERROR_REF(error));
-  }
-  GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_check_call_host");
 }
 
 static void client_auth_start_transport_stream_op_batch(
@@ -393,14 +367,6 @@ static void client_auth_start_transport_stream_op_batch(
         // Synchronous return; invoke on_host_checked() directly.
         on_host_checked(batch, error);
         GRPC_ERROR_UNREF(error);
-      } else {
-        // Async return; register cancellation closure with call combiner.
-        // TODO(yashykt): We would not need this ref if call combiners used
-        // Closure::Run() instead of ExecCtx::Run()
-        GRPC_CALL_STACK_REF(calld->owning_call, "cancel_check_call_host");
-        calld->call_combiner->SetNotifyOnCancel(GRPC_CLOSURE_INIT(
-            &calld->check_call_host_cancel_closure, cancel_check_call_host,
-            elem, grpc_schedule_on_exec_ctx));
       }
       return; /* early exit */
     }
@@ -408,6 +374,18 @@ static void client_auth_start_transport_stream_op_batch(
 
   /* pass control down the stack */
   grpc_call_next_op(elem, batch);
+}
+
+static void client_auth_pre_cancel_call(grpc_call_element* elem,
+                                        grpc_error* error) {
+  call_data* calld = static_cast<call_data*>(elem->call_data);
+// FIXME: synchronization?
+  calld->creds->cancel_get_request_metadata(&calld->md_array,
+                                            GRPC_ERROR_REF(error));
+  chand->security_connector->cancel_check_call_host(
+      &calld->async_result_closure, GRPC_ERROR_REF(error));
+// FIXME: don't do this unless needed?
+  grpc_call_pre_cancel_next_filter(elem, error);
 }
 
 /* Constructor for call_data */
@@ -468,6 +446,7 @@ const grpc_channel_filter grpc_client_auth_filter = {
     client_auth_init_call_elem,
     client_auth_set_pollset_or_pollset_set,
     client_auth_destroy_call_elem,
+    client_auth_pre_cancel_call,
     sizeof(channel_data),
     client_auth_init_channel_elem,
     client_auth_destroy_channel_elem,

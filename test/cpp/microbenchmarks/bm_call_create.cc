@@ -343,6 +343,10 @@ struct Fixture {
   const uint32_t flags = kFlags;
 };
 
+static void PreCancelCallNoOp(grpc_call_element* /*elem*/, grpc_error* error) {
+  GRPC_ERROR_UNREF(error);
+}
+
 namespace phony_filter {
 
 static void StartTransportStreamOp(grpc_call_element* /*elem*/,
@@ -379,6 +383,7 @@ static const grpc_channel_filter phony_filter = {StartTransportStreamOp,
                                                  InitCallElem,
                                                  SetPollsetOrPollsetSet,
                                                  DestroyCallElem,
+                                                 PreCancelCallNoOp,
                                                  0,
                                                  InitChannelElem,
                                                  DestroyChannelElem,
@@ -675,6 +680,7 @@ static const grpc_channel_filter isolated_call_filter = {
     InitCallElem,
     SetPollsetOrPollsetSet,
     DestroyCallElem,
+    PreCancelCallNoOp,
     0,
     InitChannelElem,
     DestroyChannelElem,

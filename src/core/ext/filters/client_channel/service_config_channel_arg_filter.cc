@@ -110,6 +110,7 @@ const grpc_channel_filter ServiceConfigChannelArgFilter = {
     ServiceConfigChannelArgInitCallElem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     ServiceConfigChannelArgDestroyCallElem,
+    grpc_call_pre_cancel_next_filter,
     sizeof(ServiceConfigChannelArgChannelData),
     ServiceConfigChannelArgInitChannelElem,
     ServiceConfigChannelArgDestroyChannelElem,

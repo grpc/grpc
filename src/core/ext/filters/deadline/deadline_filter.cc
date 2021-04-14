@@ -343,6 +343,7 @@ const grpc_channel_filter grpc_client_deadline_filter = {
     deadline_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     deadline_destroy_call_elem,
+    grpc_call_pre_cancel_next_filter,
     0,  // sizeof(channel_data)
     deadline_init_channel_elem,
     deadline_destroy_channel_elem,
@@ -357,6 +358,7 @@ const grpc_channel_filter grpc_server_deadline_filter = {
     deadline_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     deadline_destroy_call_elem,
+    grpc_call_pre_cancel_next_filter,
     0,  // sizeof(channel_data)
     deadline_init_channel_elem,
     deadline_destroy_channel_elem,

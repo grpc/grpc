@@ -87,7 +87,6 @@ struct call_data {
   grpc_metadata_array md;
   const grpc_metadata* consumed_md;
   size_t num_consumed_md;
-  grpc_closure cancel_closure;
   gpr_atm state = STATE_INIT;  // async_state
 };
 
@@ -196,19 +195,6 @@ static void on_md_processing_done(
   GRPC_CALL_STACK_UNREF(calld->owning_call, "server_auth_metadata");
 }
 
-static void cancel_call(void* arg, grpc_error* error) {
-  grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  // If the result was not already processed, invoke the callback now.
-  if (error != GRPC_ERROR_NONE &&
-      gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
-                       static_cast<gpr_atm>(STATE_CANCELLED))) {
-    on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0,
-                                GRPC_ERROR_REF(error));
-  }
-  GRPC_CALL_STACK_UNREF(calld->owning_call, "cancel_call");
-}
-
 static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -217,14 +203,6 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   if (error == GRPC_ERROR_NONE) {
     if (chand->creds != nullptr &&
         chand->creds->auth_metadata_processor().process != nullptr) {
-      // We're calling out to the application, so we need to make sure
-      // to drop the call combiner early if we get cancelled.
-      // TODO(yashykt): We would not need this ref if call combiners used
-      // Closure::Run() instead of ExecCtx::Run()
-      GRPC_CALL_STACK_REF(calld->owning_call, "cancel_call");
-      GRPC_CLOSURE_INIT(&calld->cancel_closure, cancel_call, elem,
-                        grpc_schedule_on_exec_ctx);
-      calld->call_combiner->SetNotifyOnCancel(&calld->cancel_closure);
       GRPC_CALL_STACK_REF(calld->owning_call, "server_auth_metadata");
       calld->md = metadata_batch_to_md_array(
           batch->payload->recv_initial_metadata.recv_initial_metadata);
@@ -283,6 +261,17 @@ static void server_auth_start_transport_stream_op_batch(
   grpc_call_next_op(elem, batch);
 }
 
+static void server_auth_pre_cancel_call(grpc_call_element* elem,
+                                        grpc_error* error) {
+  // If the result was not already processed, invoke the callback now.
+  if (gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
+                       static_cast<gpr_atm>(STATE_CANCELLED))) {
+    on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0, error);
+  } else {
+    grpc_call_pre_cancel_next_filter(elem, error);
+  }
+}
+
 /* Constructor for call_data */
 static grpc_error* server_auth_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
@@ -331,6 +320,7 @@ const grpc_channel_filter grpc_server_auth_filter = {
     server_auth_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     server_auth_destroy_call_elem,
+    server_auth_pre_cancel_call,
     sizeof(channel_data),
     server_auth_init_channel_elem,
     server_auth_destroy_channel_elem,

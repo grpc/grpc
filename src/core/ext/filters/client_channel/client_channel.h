@@ -361,6 +361,7 @@ class ClientChannel::LoadBalancedCall
   ~LoadBalancedCall() override;
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
+  void PreCancel(grpc_error* error);
 
   // Invoked by channel for queued LB picks when the picker is updated.
   static void PickSubchannel(void* arg, grpc_error* error);
@@ -378,7 +379,6 @@ class ClientChannel::LoadBalancedCall
   }
 
  private:
-  class LbQueuedCallCanceller;
   class Metadata;
   class LbCallState;
 
@@ -447,6 +447,7 @@ class ClientChannel::LoadBalancedCall
 
   grpc_closure pick_closure_;
 
+// FIXME: lock annotations (in a separate PR)
   // Accessed while holding ClientChannel::data_plane_mu_.
   ClientChannel::LbQueuedCall queued_call_;
   bool queued_pending_lb_pick_ = false;
@@ -455,9 +456,11 @@ class ClientChannel::LoadBalancedCall
   std::function<void(grpc_error*, LoadBalancingPolicy::MetadataInterface*,
                      LoadBalancingPolicy::CallState*)>
       lb_recv_trailing_metadata_ready_;
-  LbQueuedCallCanceller* lb_call_canceller_ = nullptr;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
+  Mutex subchannel_call_creation_mu_;
+  bool subchannel_call_pre_cancelled_
+      ABSL_GUARDED_BY(subchannel_call_creation_mu_) = false;
 
   // For intercepting recv_trailing_metadata_ready for the LB policy.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;

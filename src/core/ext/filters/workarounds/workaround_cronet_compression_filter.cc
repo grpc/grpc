@@ -177,6 +177,7 @@ const grpc_channel_filter grpc_workaround_cronet_compression_filter = {
     cronet_compression_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     cronet_compression_destroy_call_elem,
+    grpc_call_pre_cancel_next_filter,
     0,
     cronet_compression_init_channel_elem,
     cronet_compression_destroy_channel_elem,
