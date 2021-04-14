@@ -19,6 +19,8 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+python3 --version
+
 # This is to insure we can push and pull images from gcr.io, we do not
 # necessarily need it to run load tests, but would need it when we employ
 # pre-built images in the optimization.
