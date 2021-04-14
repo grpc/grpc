@@ -116,10 +116,8 @@ def parse_port_range(port_arg):
 
 
 @contextlib.contextmanager
-def generate_bootstrap_file(bootstrap_file_path,
-        project_num,
-        network,
-        bootstrap_server_features):
+def generate_bootstrap_file(bootstrap_file_path, project_num, network,
+                            bootstrap_server_features):
     """
     Generates a bootstrap file or returns the path to a selected one.
 
@@ -137,15 +135,13 @@ def generate_bootstrap_file(bootstrap_file_path,
     else:
         with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
             bootstrap_content = _BOOTSTRAP_TEMPLATE.format(
-                    node_id='projects/%s/networks/%s/nodes/%s' %
-                    (project_num, network,
-                     uuid.uuid1()),
-                    server_features=json.dumps(
-                        bootstrap_server_features)).encode('utf-8')
+                node_id='projects/%s/networks/%s/nodes/%s' %
+                (project_num, network, uuid.uuid1()),
+                server_features=json.dumps(bootstrap_server_features)).encode(
+                    'utf-8')
             bootstrap_file.write(bootstrap_content)
             bootstrap_file.flush()
             yield bootstrap_file.name
-
 
 
 argp = argparse.ArgumentParser(description='Run xDS interop tests on GCP')
@@ -2640,24 +2636,24 @@ try:
         if args.bootstrap_file:
             seed_bootstrap_file = os.path.abspath(args.bootstrap_file)
         network = args.network.split('/')[-1]
-        with generate_bootstrap_file(seed_bootstrap_file,
-                gcp.project_num, network,
-                bootstrap_server_features) as bootstrap_path:
-            client_env['GRPC_XDS_BOOTSTRAP'] = bootstrap_path
-            client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
-            client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
-            client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
-            test_results = {}
-            failed_tests = []
-            for test_case in args.test_case:
-                if test_case in _V3_TEST_CASES and not args.xds_v3_support:
-                    logger.info('skipping test %s due to missing v3 support',
-                                test_case)
-                    continue
-                if test_case in _ALPHA_TEST_CASES and not gcp.alpha_compute:
-                    logger.info('skipping test %s due to missing alpha support',
-                                test_case)
-                    continue
+        client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
+        client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
+        client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
+        test_results = {}
+        failed_tests = []
+        for test_case in args.test_case:
+            if test_case in _V3_TEST_CASES and not args.xds_v3_support:
+                logger.info('skipping test %s due to missing v3 support',
+                            test_case)
+                continue
+            if test_case in _ALPHA_TEST_CASES and not gcp.alpha_compute:
+                logger.info('skipping test %s due to missing alpha support',
+                            test_case)
+                continue
+            with generate_bootstrap_file(
+                    seed_bootstrap_file, gcp.project_num, network,
+                    bootstrap_server_features) as bootstrap_path:
+                client_env['GRPC_XDS_BOOTSTRAP'] = bootstrap_path
                 result = jobset.JobResult()
                 log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
                 if not os.path.exists(log_dir):
@@ -2713,19 +2709,22 @@ try:
                             metadata_to_send=metadata_to_send)
                         logger.debug('running client: %s', client_cmd_formatted)
                         client_cmd = shlex.split(client_cmd_formatted)
-                        client_process = subprocess.Popen(client_cmd,
-                                                          env=client_env,
-                                                          stderr=subprocess.STDOUT,
-                                                          stdout=test_log_file)
+                        client_process = subprocess.Popen(
+                            client_cmd,
+                            env=client_env,
+                            stderr=subprocess.STDOUT,
+                            stdout=test_log_file)
                     if test_case == 'backends_restart':
-                        test_backends_restart(gcp, backend_service, instance_group)
+                        test_backends_restart(gcp, backend_service,
+                                              instance_group)
                     elif test_case == 'change_backend_service':
                         test_change_backend_service(gcp, backend_service,
                                                     instance_group,
                                                     alternate_backend_service,
                                                     same_zone_instance_group)
                     elif test_case == 'gentle_failover':
-                        test_gentle_failover(gcp, backend_service, instance_group,
+                        test_gentle_failover(gcp, backend_service,
+                                             instance_group,
                                              secondary_zone_instance_group)
                     elif test_case == 'load_report_based_failover':
                         test_load_report_based_failover(
@@ -2748,7 +2747,8 @@ try:
                             gcp, backend_service, instance_group,
                             secondary_zone_instance_group)
                     elif test_case == 'traffic_splitting':
-                        test_traffic_splitting(gcp, backend_service, instance_group,
+                        test_traffic_splitting(gcp, backend_service,
+                                               instance_group,
                                                alternate_backend_service,
                                                same_zone_instance_group)
                     elif test_case == 'path_matching':
@@ -2756,23 +2756,26 @@ try:
                                            alternate_backend_service,
                                            same_zone_instance_group)
                     elif test_case == 'header_matching':
-                        test_header_matching(gcp, backend_service, instance_group,
+                        test_header_matching(gcp, backend_service,
+                                             instance_group,
                                              alternate_backend_service,
                                              same_zone_instance_group)
                     elif test_case == 'circuit_breaking':
-                        test_circuit_breaking(gcp, backend_service, instance_group,
+                        test_circuit_breaking(gcp, backend_service,
+                                              instance_group,
                                               same_zone_instance_group)
                     elif test_case == 'timeout':
                         test_timeout(gcp, backend_service, instance_group)
                     elif test_case == 'fault_injection':
-                        test_fault_injection(gcp, backend_service, instance_group)
+                        test_fault_injection(gcp, backend_service,
+                                             instance_group)
                     else:
                         logger.error('Unknown test case: %s', test_case)
                         sys.exit(1)
                     if client_process and client_process.poll() is not None:
                         raise Exception(
-                            'Client process exited prematurely with exit code %d' %
-                            client_process.returncode)
+                            'Client process exited prematurely with exit code %d'
+                            % client_process.returncode)
                     result.state = 'PASSED'
                     result.returncode = 0
                 except Exception as e:
