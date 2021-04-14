@@ -72,6 +72,10 @@ COMPILE_BOTH = COMPILE_PROTO_ONLY + ['--grpc_python_out={}'.format(OUTPUT_PATH)]
 
 
 # Compile xDS protos
+def has_grpc_service(proto_package_path: str) -> bool:
+    return proto_package_path.startswith('envoy/service')
+
+
 def compile_protos(proto_root: str, sub_dir: str = '.') -> None:
     for root, _, files in os.walk(os.path.join(proto_root, sub_dir)):
         proto_package_path = os.path.relpath(root, proto_root)
@@ -81,7 +85,7 @@ def compile_protos(proto_root: str, sub_dir: str = '.') -> None:
         for file_name in files:
             if file_name.endswith('.proto'):
                 # Compile proto
-                if proto_package_path.startswith('envoy/service'):
+                if has_grpc_service(proto_package_path):
                     return_code = protoc.main(COMPILE_BOTH +
                                               [os.path.join(root, file_name)])
                     add_test_import(proto_package_path, file_name, service=True)
@@ -131,7 +135,7 @@ CLASSIFIERS = [
 ]
 setuptools.setup(
     name='xds-protos',
-    version='v0.0.1',
+    version='0.0.1',
     packages=setuptools.find_packages(where=".", exclude=[TEST_FILE_NAME]),
     description='Generated Python code from envoyproxy/data-plane-api',
     author='The gRPC Authors',
