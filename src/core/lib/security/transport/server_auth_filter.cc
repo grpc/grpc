@@ -263,6 +263,7 @@ static void server_auth_start_transport_stream_op_batch(
 
 static void server_auth_pre_cancel_call(grpc_call_element* elem,
                                         grpc_error* error) {
+  auto* calld = static_cast<call_data*>(elem->call_data);
   // If the result was not already processed, invoke the callback now.
   if (gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
                        static_cast<gpr_atm>(STATE_CANCELLED))) {

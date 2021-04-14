@@ -280,7 +280,6 @@ void CallData::PreCancel(grpc_call_element* elem, grpc_error* error) {
     }
   }
   grpc_call_pre_cancel_next_filter(elem, error);
-
 }
 
 CallData::CallData(grpc_call_element* elem, const grpc_call_element_args* args)
@@ -462,6 +461,7 @@ extern const grpc_channel_filter FaultInjectionFilterVtable = {
     CallData::Init,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     CallData::Destroy,
+    CallData::PreCancel,
     sizeof(ChannelData),
     ChannelData::Init,
     ChannelData::Destroy,

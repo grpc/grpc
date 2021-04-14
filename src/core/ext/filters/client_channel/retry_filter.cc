@@ -469,8 +469,8 @@ class RetryFilter::CallData {
   RefCountedPtr<ClientChannel::LoadBalancedCall> committed_call_;
 
 // FIXME: USE THIS
-  Mutex lb_call_creation_mu_;
-  bool lb_call_pre_cancelled_ ABSL_GUARDED_BY(lb_call_creation_mu_) = false;
+//  Mutex lb_call_creation_mu_;
+//  bool lb_call_pre_cancelled_ ABSL_GUARDED_BY(lb_call_creation_mu_) = false;
 
   // When are are not yet fully committed to a particular call (i.e.,
   // either we might still retry or we have committed to the call but
@@ -1629,26 +1629,27 @@ void RetryFilter::CallData::SetPollent(grpc_call_element* elem,
 
 void RetryFilter::CallData::PreCancel(grpc_call_element* elem,
                                       grpc_error* error) {
+  auto* calld = static_cast<CallData*>(elem->call_data);
   {
     MutexLock lock(&calld->timer_mu_);
-    if (retry_timer_pending_) {
+    if (calld->retry_timer_pending_) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-        gpr_log(GPR_INFO, "calld=%p: cancelling retry timer: %s", this,
+        gpr_log(GPR_INFO, "calld=%p: cancelling retry timer: %s", calld,
                 grpc_error_string(error));
       }
-      retry_timer_pending_ = false;  // Checked by OnRetryTimer().
-      grpc_timer_cancel(&retry_timer_);
-      FreeAllCachedSendOpData();
-      GRPC_CALL_COMBINER_STOP(call_combiner_, "Canceller");
+      calld->retry_timer_pending_ = false;  // Checked by OnRetryTimer().
+      grpc_timer_cancel(&calld->retry_timer_);
+      calld->FreeAllCachedSendOpData();
+      GRPC_CALL_COMBINER_STOP(calld->call_combiner_, "Canceller");
       return;
     }
   }
   // Retry timer not pending, so propagate pre-cancellation down to LB call.
 // FIXME: synchronization
-  if (committed_call_ != nullptr) {
-    committed_call_->PreCancel(error);
-  } else if (call_attempt_ != nullptr) {
-    call_attempt_->lb_call()->PreCancel(error);
+  if (calld->committed_call_ != nullptr) {
+    calld->committed_call_->PreCancel(error);
+  } else if (calld->call_attempt_ != nullptr) {
+    calld->call_attempt_->lb_call()->PreCancel(error);
   }
 }
 

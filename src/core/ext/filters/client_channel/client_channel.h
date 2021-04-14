@@ -433,7 +433,6 @@ class ClientChannel::LoadBalancedCall
   gpr_cycle_counter call_start_time_;
   grpc_millis deadline_;
   Arena* arena_;
-  grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
 

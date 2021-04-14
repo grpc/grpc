@@ -102,6 +102,7 @@ class ClientChannel::CallData {
                       grpc_closure* then_schedule_closure);
   static void StartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
+  static void PreCancel(grpc_call_element* elem, grpc_error* error);
   static void SetPollent(grpc_call_element* elem, grpc_polling_entity* pollent);
 
   // Invoked by channel for queued calls when name resolution is completed.
@@ -189,7 +190,6 @@ class ClientChannel::CallData {
   gpr_cycle_counter call_start_time_;
   grpc_millis deadline_;
   Arena* arena_;
-  grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
 
@@ -1838,7 +1838,6 @@ ClientChannel::CallData::CallData(grpc_call_element* elem,
       call_start_time_(args.start_time),
       deadline_(args.deadline),
       arena_(args.arena),
-      owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       call_context_(args.context) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -1884,7 +1883,7 @@ void ClientChannel::CallData::PreCancel(grpc_call_element* elem,
   // Check if we're queued pending a resolver result.
   {
     MutexLock lock(&chand->resolution_mu_);
-    if (queued_pending_resolver_result_) {
+    if (calld->queued_pending_resolver_result_) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
                 "chand=%p calld=%p: cancelling resolver queued pick: %s", chand,
@@ -1899,11 +1898,11 @@ void ClientChannel::CallData::PreCancel(grpc_call_element* elem,
     }
   }
   // Not pending resolver result, so check if we have a dynamic call.
-  MutexLock lock(&dynamic_call_creation_mu_);
-  if (dynamic_call_ != nullptr) {
-    dynamic_call_->PreCancel(error);
+  MutexLock lock(&calld->dynamic_call_creation_mu_);
+  if (calld->dynamic_call_ != nullptr) {
+    calld->dynamic_call_->PreCancel(error);
   } else {
-    dynamic_call_pre_cancelled_ = true;
+    calld->dynamic_call_pre_cancelled_ = true;
   }
 }
 
@@ -2356,7 +2355,7 @@ void ClientChannel::CallData::CreateDynamicCall(grpc_call_element* elem) {
         chand, this, channel_stack);
   }
   {
-    MutexLock lock(dynamic_call_creation_mu_);
+    MutexLock lock(&dynamic_call_creation_mu_);
     if (dynamic_call_pre_cancelled_) {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("call pre_cancel seen");
     } else {
@@ -2493,7 +2492,6 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
       call_start_time_(args.start_time),
       deadline_(args.deadline),
       arena_(args.arena),
-      owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       call_context_(args.context),
       pollent_(pollent) {}

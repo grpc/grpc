@@ -378,7 +378,8 @@ static void client_auth_start_transport_stream_op_batch(
 
 static void client_auth_pre_cancel_call(grpc_call_element* elem,
                                         grpc_error* error) {
-  call_data* calld = static_cast<call_data*>(elem->call_data);
+  auto* calld = static_cast<call_data*>(elem->call_data);
+  auto* chand = static_cast<channel_data*>(elem->channel_data);
 // FIXME: synchronization?
   calld->creds->cancel_get_request_metadata(&calld->md_array,
                                             GRPC_ERROR_REF(error));

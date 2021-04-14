@@ -290,7 +290,8 @@ void grpc_call_stack_ignore_set_pollset_or_pollset_set(
 void grpc_call_next_op(grpc_call_element* elem,
                        grpc_transport_stream_op_batch* op);
 // Pre-cancel the next filter in the call stack.
-void grpc_call_pre_cancel_next_filter(grpc_call_elem* elem, grpc_error* error);
+void grpc_call_pre_cancel_next_filter(grpc_call_element* elem,
+                                      grpc_error* error);
 /* Call the next operation (depending on call directionality) in a channel
    stack */
 void grpc_channel_next_op(grpc_channel_element* elem, grpc_transport_op* op);
