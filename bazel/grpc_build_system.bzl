@@ -270,6 +270,12 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
         features = features,
     )
 
+# TODO(lidiz) remove this rule once we can depend on the xDS protos internally
+def grpc_cc_binary_xds(
+        *args,
+        **kwargs):
+    grpc_cc_binary(*args, **kwargs)
+
 def grpc_generate_one_off_targets():
     # In open-source, grpc_objc* libraries depend directly on //:grpc
     native.alias(

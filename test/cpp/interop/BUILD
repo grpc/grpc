@@ -14,7 +14,7 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_binary_xds", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 grpc_package(
     name = "test/cpp/interop",
@@ -219,7 +219,7 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_binary(
+grpc_cc_binary_xds(
     name = "xds_interop_client",
     srcs = [
         "xds_interop_client.cc",
@@ -229,7 +229,8 @@ grpc_cc_binary(
     ],
     deps = [
         "//:grpc++",
-        "//:grpcpp_channelz",
+        "//:grpc++_reflection",
+        "//:grpcpp_admin",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
@@ -238,7 +239,7 @@ grpc_cc_binary(
     ],
 )
 
-grpc_cc_binary(
+grpc_cc_binary_xds(
     name = "xds_interop_server",
     testonly = True,
     srcs = [
@@ -249,7 +250,8 @@ grpc_cc_binary(
     ],
     deps = [
         "//:grpc++",
-        "//:grpcpp_channelz",
+        "//:grpc++_reflection",
+        "//:grpcpp_admin",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
