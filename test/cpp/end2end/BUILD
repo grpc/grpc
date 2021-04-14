@@ -874,7 +874,7 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test(
+grpc_cc_test_xds(
     name = "admin_services_end2end_test",
     srcs = ["admin_services_end2end_test.cc"],
     external_deps = [
