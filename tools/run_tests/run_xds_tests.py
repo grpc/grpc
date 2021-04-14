@@ -15,6 +15,7 @@
 """Run xDS integration tests on GCP using Traffic Director."""
 
 import argparse
+import contextlib
 import googleapiclient.discovery
 import grpc
 import json
@@ -112,6 +113,39 @@ def parse_port_range(port_arg):
     except:
         port_min, port_max = port_arg.split(':')
         return range(int(port_min), int(port_max) + 1)
+
+
+@contextlib.contextmanager
+def generate_bootstrap_file(bootstrap_file_path,
+        project_num,
+        network,
+        bootstrap_server_features):
+    """
+    Generates a bootstrap file or returns the path to a selected one.
+
+    Args:
+      bootstrap_file_path: If None, generates a bootstrap file. Otherwise,
+        uses the one provided.
+      project_num: The GCP project number.
+      network: The network on which the test is running.
+      bootstrap_server_features: The features to enable in the bootstrap.
+    Returns:
+      The path to the bootstrap file.
+    """
+    if bootstrap_file_path is not None:
+        yield bootstrap_file_path
+    else:
+        with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
+            bootstrap_content = _BOOTSTRAP_TEMPLATE.format(
+                    node_id='projects/%s/networks/%s/nodes/%s' %
+                    (project_num, network,
+                     uuid.uuid1()),
+                    server_features=json.dumps(
+                        bootstrap_server_features)).encode('utf-8')
+            bootstrap_file.write(bootstrap_content)
+            bootstrap_file.flush()
+            yield bootstrap_file.name
+
 
 
 argp = argparse.ArgumentParser(description='Run xDS interop tests on GCP')
@@ -2602,182 +2636,177 @@ try:
         if args.xds_v3_support:
             client_env['GRPC_XDS_EXPERIMENTAL_V3_SUPPORT'] = 'true'
             bootstrap_server_features.append('xds_v3')
+        seed_bootstrap_file = None
         if args.bootstrap_file:
-            bootstrap_path = os.path.abspath(args.bootstrap_file)
-        else:
-            with tempfile.NamedTemporaryFile(delete=False) as bootstrap_file:
-                bootstrap_file.write(
-                    _BOOTSTRAP_TEMPLATE.format(
-                        node_id='projects/%s/networks/%s/nodes/%s' %
-                        (gcp.project_num, args.network.split('/')[-1],
-                         uuid.uuid1()),
-                        server_features=json.dumps(
-                            bootstrap_server_features)).encode('utf-8'))
-                bootstrap_path = bootstrap_file.name
-        client_env['GRPC_XDS_BOOTSTRAP'] = bootstrap_path
-        client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
-        client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
-        client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
-        test_results = {}
-        failed_tests = []
-        for test_case in args.test_case:
-            if test_case in _V3_TEST_CASES and not args.xds_v3_support:
-                logger.info('skipping test %s due to missing v3 support',
-                            test_case)
-                continue
-            if test_case in _ALPHA_TEST_CASES and not gcp.alpha_compute:
-                logger.info('skipping test %s due to missing alpha support',
-                            test_case)
-                continue
-            result = jobset.JobResult()
-            log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
-            if not os.path.exists(log_dir):
-                os.makedirs(log_dir)
-            test_log_filename = os.path.join(log_dir, _SPONGE_LOG_NAME)
-            test_log_file = open(test_log_filename, 'w+')
-            client_process = None
+            seed_bootstrap_file = os.path.abspath(args.bootstrap_file)
+        network = args.network.split('/')[-1]
+        with generate_bootstrap_file(seed_bootstrap_file,
+                gcp.project_num, network,
+                bootstrap_server_features) as bootstrap_path:
+            client_env['GRPC_XDS_BOOTSTRAP'] = bootstrap_path
+            client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
+            client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
+            client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
+            test_results = {}
+            failed_tests = []
+            for test_case in args.test_case:
+                if test_case in _V3_TEST_CASES and not args.xds_v3_support:
+                    logger.info('skipping test %s due to missing v3 support',
+                                test_case)
+                    continue
+                if test_case in _ALPHA_TEST_CASES and not gcp.alpha_compute:
+                    logger.info('skipping test %s due to missing alpha support',
+                                test_case)
+                    continue
+                result = jobset.JobResult()
+                log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
+                if not os.path.exists(log_dir):
+                    os.makedirs(log_dir)
+                test_log_filename = os.path.join(log_dir, _SPONGE_LOG_NAME)
+                test_log_file = open(test_log_filename, 'w+')
+                client_process = None
 
-            if test_case in _TESTS_TO_RUN_MULTIPLE_RPCS:
-                rpcs_to_send = '--rpc="UnaryCall,EmptyCall"'
-            else:
-                rpcs_to_send = '--rpc="UnaryCall"'
+                if test_case in _TESTS_TO_RUN_MULTIPLE_RPCS:
+                    rpcs_to_send = '--rpc="UnaryCall,EmptyCall"'
+                else:
+                    rpcs_to_send = '--rpc="UnaryCall"'
 
-            if test_case in _TESTS_TO_SEND_METADATA:
-                metadata_to_send = '--metadata="EmptyCall:{keyE}:{valueE},UnaryCall:{keyU}:{valueU},UnaryCall:{keyNU}:{valueNU}"'.format(
-                    keyE=_TEST_METADATA_KEY,
-                    valueE=_TEST_METADATA_VALUE_EMPTY,
-                    keyU=_TEST_METADATA_KEY,
-                    valueU=_TEST_METADATA_VALUE_UNARY,
-                    keyNU=_TEST_METADATA_NUMERIC_KEY,
-                    valueNU=_TEST_METADATA_NUMERIC_VALUE)
-            else:
-                # Setting the arg explicitly to empty with '--metadata=""'
-                # makes C# client fail
-                # (see https://github.com/commandlineparser/commandline/issues/412),
-                # so instead we just rely on clients using the default when
-                # metadata arg is not specified.
-                metadata_to_send = ''
+                if test_case in _TESTS_TO_SEND_METADATA:
+                    metadata_to_send = '--metadata="EmptyCall:{keyE}:{valueE},UnaryCall:{keyU}:{valueU},UnaryCall:{keyNU}:{valueNU}"'.format(
+                        keyE=_TEST_METADATA_KEY,
+                        valueE=_TEST_METADATA_VALUE_EMPTY,
+                        keyU=_TEST_METADATA_KEY,
+                        valueU=_TEST_METADATA_VALUE_UNARY,
+                        keyNU=_TEST_METADATA_NUMERIC_KEY,
+                        valueNU=_TEST_METADATA_NUMERIC_VALUE)
+                else:
+                    # Setting the arg explicitly to empty with '--metadata=""'
+                    # makes C# client fail
+                    # (see https://github.com/commandlineparser/commandline/issues/412),
+                    # so instead we just rely on clients using the default when
+                    # metadata arg is not specified.
+                    metadata_to_send = ''
 
-            # TODO(ericgribkoff) Temporarily disable fail_on_failed_rpc checks
-            # in the client. This means we will ignore intermittent RPC
-            # failures (but this framework still checks that the final result
-            # is as expected).
-            #
-            # Reason for disabling this is, the resources are shared by
-            # multiple tests, and a change in previous test could be delayed
-            # until the second test starts. The second test may see
-            # intermittent failures because of that.
-            #
-            # A fix is to not share resources between tests (though that does
-            # mean the tests will be significantly slower due to creating new
-            # resources).
-            fail_on_failed_rpc = ''
+                # TODO(ericgribkoff) Temporarily disable fail_on_failed_rpc checks
+                # in the client. This means we will ignore intermittent RPC
+                # failures (but this framework still checks that the final result
+                # is as expected).
+                #
+                # Reason for disabling this is, the resources are shared by
+                # multiple tests, and a change in previous test could be delayed
+                # until the second test starts. The second test may see
+                # intermittent failures because of that.
+                #
+                # A fix is to not share resources between tests (though that does
+                # mean the tests will be significantly slower due to creating new
+                # resources).
+                fail_on_failed_rpc = ''
 
-            try:
-                if not CLIENT_HOSTS:
-                    client_cmd_formatted = args.client_cmd.format(
-                        server_uri=server_uri,
-                        stats_port=args.stats_port,
-                        qps=args.qps,
-                        fail_on_failed_rpc=fail_on_failed_rpc,
-                        rpcs_to_send=rpcs_to_send,
-                        metadata_to_send=metadata_to_send)
-                    logger.debug('running client: %s', client_cmd_formatted)
-                    client_cmd = shlex.split(client_cmd_formatted)
-                    client_process = subprocess.Popen(client_cmd,
-                                                      env=client_env,
-                                                      stderr=subprocess.STDOUT,
-                                                      stdout=test_log_file)
-                if test_case == 'backends_restart':
-                    test_backends_restart(gcp, backend_service, instance_group)
-                elif test_case == 'change_backend_service':
-                    test_change_backend_service(gcp, backend_service,
-                                                instance_group,
-                                                alternate_backend_service,
-                                                same_zone_instance_group)
-                elif test_case == 'gentle_failover':
-                    test_gentle_failover(gcp, backend_service, instance_group,
-                                         secondary_zone_instance_group)
-                elif test_case == 'load_report_based_failover':
-                    test_load_report_based_failover(
-                        gcp, backend_service, instance_group,
-                        secondary_zone_instance_group)
-                elif test_case == 'ping_pong':
-                    test_ping_pong(gcp, backend_service, instance_group)
-                elif test_case == 'remove_instance_group':
-                    test_remove_instance_group(gcp, backend_service,
-                                               instance_group,
+                try:
+                    if not CLIENT_HOSTS:
+                        client_cmd_formatted = args.client_cmd.format(
+                            server_uri=server_uri,
+                            stats_port=args.stats_port,
+                            qps=args.qps,
+                            fail_on_failed_rpc=fail_on_failed_rpc,
+                            rpcs_to_send=rpcs_to_send,
+                            metadata_to_send=metadata_to_send)
+                        logger.debug('running client: %s', client_cmd_formatted)
+                        client_cmd = shlex.split(client_cmd_formatted)
+                        client_process = subprocess.Popen(client_cmd,
+                                                          env=client_env,
+                                                          stderr=subprocess.STDOUT,
+                                                          stdout=test_log_file)
+                    if test_case == 'backends_restart':
+                        test_backends_restart(gcp, backend_service, instance_group)
+                    elif test_case == 'change_backend_service':
+                        test_change_backend_service(gcp, backend_service,
+                                                    instance_group,
+                                                    alternate_backend_service,
+                                                    same_zone_instance_group)
+                    elif test_case == 'gentle_failover':
+                        test_gentle_failover(gcp, backend_service, instance_group,
+                                             secondary_zone_instance_group)
+                    elif test_case == 'load_report_based_failover':
+                        test_load_report_based_failover(
+                            gcp, backend_service, instance_group,
+                            secondary_zone_instance_group)
+                    elif test_case == 'ping_pong':
+                        test_ping_pong(gcp, backend_service, instance_group)
+                    elif test_case == 'remove_instance_group':
+                        test_remove_instance_group(gcp, backend_service,
+                                                   instance_group,
+                                                   same_zone_instance_group)
+                    elif test_case == 'round_robin':
+                        test_round_robin(gcp, backend_service, instance_group)
+                    elif test_case == 'secondary_locality_gets_no_requests_on_partial_primary_failure':
+                        test_secondary_locality_gets_no_requests_on_partial_primary_failure(
+                            gcp, backend_service, instance_group,
+                            secondary_zone_instance_group)
+                    elif test_case == 'secondary_locality_gets_requests_on_primary_failure':
+                        test_secondary_locality_gets_requests_on_primary_failure(
+                            gcp, backend_service, instance_group,
+                            secondary_zone_instance_group)
+                    elif test_case == 'traffic_splitting':
+                        test_traffic_splitting(gcp, backend_service, instance_group,
+                                               alternate_backend_service,
                                                same_zone_instance_group)
-                elif test_case == 'round_robin':
-                    test_round_robin(gcp, backend_service, instance_group)
-                elif test_case == 'secondary_locality_gets_no_requests_on_partial_primary_failure':
-                    test_secondary_locality_gets_no_requests_on_partial_primary_failure(
-                        gcp, backend_service, instance_group,
-                        secondary_zone_instance_group)
-                elif test_case == 'secondary_locality_gets_requests_on_primary_failure':
-                    test_secondary_locality_gets_requests_on_primary_failure(
-                        gcp, backend_service, instance_group,
-                        secondary_zone_instance_group)
-                elif test_case == 'traffic_splitting':
-                    test_traffic_splitting(gcp, backend_service, instance_group,
+                    elif test_case == 'path_matching':
+                        test_path_matching(gcp, backend_service, instance_group,
                                            alternate_backend_service,
                                            same_zone_instance_group)
-                elif test_case == 'path_matching':
-                    test_path_matching(gcp, backend_service, instance_group,
-                                       alternate_backend_service,
-                                       same_zone_instance_group)
-                elif test_case == 'header_matching':
-                    test_header_matching(gcp, backend_service, instance_group,
-                                         alternate_backend_service,
-                                         same_zone_instance_group)
-                elif test_case == 'circuit_breaking':
-                    test_circuit_breaking(gcp, backend_service, instance_group,
-                                          same_zone_instance_group)
-                elif test_case == 'timeout':
-                    test_timeout(gcp, backend_service, instance_group)
-                elif test_case == 'fault_injection':
-                    test_fault_injection(gcp, backend_service, instance_group)
-                else:
-                    logger.error('Unknown test case: %s', test_case)
-                    sys.exit(1)
-                if client_process and client_process.poll() is not None:
-                    raise Exception(
-                        'Client process exited prematurely with exit code %d' %
-                        client_process.returncode)
-                result.state = 'PASSED'
-                result.returncode = 0
-            except Exception as e:
-                logger.exception('Test case %s failed', test_case)
-                failed_tests.append(test_case)
-                result.state = 'FAILED'
-                result.message = str(e)
-            finally:
-                if client_process:
-                    if client_process.returncode:
-                        logger.info('Client exited with code %d' %
-                                    client_process.returncode)
+                    elif test_case == 'header_matching':
+                        test_header_matching(gcp, backend_service, instance_group,
+                                             alternate_backend_service,
+                                             same_zone_instance_group)
+                    elif test_case == 'circuit_breaking':
+                        test_circuit_breaking(gcp, backend_service, instance_group,
+                                              same_zone_instance_group)
+                    elif test_case == 'timeout':
+                        test_timeout(gcp, backend_service, instance_group)
+                    elif test_case == 'fault_injection':
+                        test_fault_injection(gcp, backend_service, instance_group)
                     else:
-                        client_process.terminate()
-                test_log_file.close()
-                # Workaround for Python 3, as report_utils will invoke decode() on
-                # result.message, which has a default value of ''.
-                result.message = result.message.encode('UTF-8')
-                test_results[test_case] = [result]
-                if args.log_client_output:
-                    logger.info('Client output:')
-                    with open(test_log_filename, 'r') as client_output:
-                        logger.info(client_output.read())
-        if not os.path.exists(_TEST_LOG_BASE_DIR):
-            os.makedirs(_TEST_LOG_BASE_DIR)
-        report_utils.render_junit_xml_report(test_results,
-                                             os.path.join(
-                                                 _TEST_LOG_BASE_DIR,
-                                                 _SPONGE_XML_NAME),
-                                             suite_name='xds_tests',
-                                             multi_target=True)
-        if failed_tests:
-            logger.error('Test case(s) %s failed', failed_tests)
-            sys.exit(1)
+                        logger.error('Unknown test case: %s', test_case)
+                        sys.exit(1)
+                    if client_process and client_process.poll() is not None:
+                        raise Exception(
+                            'Client process exited prematurely with exit code %d' %
+                            client_process.returncode)
+                    result.state = 'PASSED'
+                    result.returncode = 0
+                except Exception as e:
+                    logger.exception('Test case %s failed', test_case)
+                    failed_tests.append(test_case)
+                    result.state = 'FAILED'
+                    result.message = str(e)
+                finally:
+                    if client_process:
+                        if client_process.returncode:
+                            logger.info('Client exited with code %d' %
+                                        client_process.returncode)
+                        else:
+                            client_process.terminate()
+                    test_log_file.close()
+                    # Workaround for Python 3, as report_utils will invoke decode() on
+                    # result.message, which has a default value of ''.
+                    result.message = result.message.encode('UTF-8')
+                    test_results[test_case] = [result]
+                    if args.log_client_output:
+                        logger.info('Client output:')
+                        with open(test_log_filename, 'r') as client_output:
+                            logger.info(client_output.read())
+            if not os.path.exists(_TEST_LOG_BASE_DIR):
+                os.makedirs(_TEST_LOG_BASE_DIR)
+            report_utils.render_junit_xml_report(test_results,
+                                                 os.path.join(
+                                                     _TEST_LOG_BASE_DIR,
+                                                     _SPONGE_XML_NAME),
+                                                 suite_name='xds_tests',
+                                                 multi_target=True)
+            if failed_tests:
+                logger.error('Test case(s) %s failed', failed_tests)
+                sys.exit(1)
 finally:
     if not args.keep_gcp_resources:
         logger.info('Cleaning up GCP resources. This may take some time.')
