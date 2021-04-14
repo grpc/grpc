@@ -195,7 +195,8 @@ class TemplatedGenericStub final {
   }
 
   void PrepareBidiStreamingCallInternal(
-      ClientContext* context, const std::string& method, char* suffix_for_stats,
+      ClientContext* context, const std::string& method,
+      const char* suffix_for_stats,
       ClientBidiReactor<RequestType, ResponseType>* reactor) {
     internal::ClientCallbackReaderWriterFactory<RequestType, ResponseType>::
         Create(channel_.get(),
@@ -207,7 +208,7 @@ class TemplatedGenericStub final {
 
   std::unique_ptr<ClientAsyncReaderWriter<RequestType, ResponseType>>
   CallInternal(grpc::ChannelInterface* channel, ClientContext* context,
-               const std::string& method, char* suffix_for_stats,
+               const std::string& method, const char* suffix_for_stats,
                ::grpc::CompletionQueue* cq, bool start, void* tag) {
     return std::unique_ptr<ClientAsyncReaderWriter<RequestType, ResponseType>>(
         internal::ClientAsyncReaderWriterFactory<RequestType, ResponseType>::
