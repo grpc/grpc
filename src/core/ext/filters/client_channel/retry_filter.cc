@@ -2134,6 +2134,10 @@ void RetryFilter::CallData::DoRetry(grpc_millis server_pushback_ms) {
             this, next_attempt_time - ExecCtx::Get()->Now());
   }
   // Schedule retry after computed delay.
+// FIXME: for hedging, probably want to yield call combiner here and
+// then reacquire it in the timer callback -- otherwise, we will
+// unnecessarily delay recv ops on pending calls that may commit the
+// call and make the next attempt unnecessary anyway
   GRPC_CLOSURE_INIT(&retry_closure_, OnRetryTimer, this, nullptr);
   GRPC_CALL_STACK_REF(owning_call_, "OnRetryTimer");
   MutexLock lock(&timer_mu_);
