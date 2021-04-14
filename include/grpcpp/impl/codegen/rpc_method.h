@@ -62,7 +62,7 @@ class RpcMethod {
         channel_tag_(channel->RegisterMethod(name)) {}
 
   const char* name() const { return name_; }
-  const char* suffix_for_stats() const { return suffix_for_stats; }
+  const char* suffix_for_stats() const { return suffix_for_stats_; }
   RpcType method_type() const { return method_type_; }
   void SetMethodType(RpcType type) { method_type_ = type; }
   void* channel_tag() const { return channel_tag_; }
