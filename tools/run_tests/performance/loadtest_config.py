@@ -102,7 +102,7 @@ def gen_loadtest_configs(
         loadtest_name_prefix: str,
         uniquifiers: Iterable[str],
         annotations: Mapping[str, str],
-        runs_per_test: int = 1) -> Iterable[yaml.YAMLObject]:
+        runs_per_test: int = 1) -> Iterable[Dict[str, Any]]:
     """Generates LoadTest configurations as YAML objects."""
     validate_annotations(annotations)
     prefix = loadtest_name_prefix or default_prefix()
@@ -195,35 +195,32 @@ def main() -> None:
                       required=True,
                       help='LoadTest configuration yaml file template.')
     argp.add_argument('-s',
-                      '--substitutions',
-                      action='extend',
-                      nargs='+',
+                      '--substitution',
+                      action='append',
                       default=[],
-                      type=str,
-                      help='Template substitutions, in the form key=value.')
+                      help='Template substitutions, in the form key=value.',
+                      dest='substitutions')
     argp.add_argument('-p',
                       '--prefix',
                       default='',
                       type=str,
                       help='Test name prefix.')
     argp.add_argument('-u',
-                      '--uniquifiers',
-                      action='extend',
-                      nargs='+',
+                      '--uniquifier',
+                      action='append',
                       default=[],
-                      type=str,
-                      help='One or more strings to make the test name unique.')
+                      help='One or more strings to make the test name unique.',
+                      dest='uniquifiers')
     argp.add_argument(
         '-d',
         action='store_true',
         help='Use creation date and time as an addditional uniquifier.')
     argp.add_argument('-a',
-                      '--annotations',
-                      action='extend',
-                      nargs='+',
+                      '--annotation',
+                      action='append',
                       default=[],
-                      type=str,
-                      help='Test annotations, in the form key=value.')
+                      help='Test annotation(s), in the form key=value.',
+                      dest='annotations')
     argp.add_argument('-r',
                       '--regex',
                       default='.*',
