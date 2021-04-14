@@ -606,12 +606,6 @@ void grpc_call_unref(grpc_call* c) {
                 gpr_atm_acq_load(&c->received_final_op_atm) == 0;
   if (cancel) {
     cancel_with_error(c, GRPC_ERROR_CANCELLED);
-  } else {
-    // Unset the call combiner cancellation closure.  This has the
-    // effect of scheduling the previously set cancellation closure, if
-    // any, so that it can release any internal references it may be
-    // holding to the call stack.
-    c->call_combiner.SetNotifyOnCancel(nullptr);
   }
   GRPC_CALL_INTERNAL_UNREF(c, "destroy");
 }
@@ -702,11 +696,13 @@ static void cancel_with_error(grpc_call* c, grpc_error* error) {
     return;
   }
   GRPC_CALL_INTERNAL_REF(c, "termination");
-  // Inform the call combiner of the cancellation, so that it can cancel
-  // any in-flight asynchronous actions that may be holding the call
-  // combiner.  This ensures that the cancel_stream batch can be sent
-  // down the filter stack in a timely manner.
-  c->call_combiner.Cancel(GRPC_ERROR_REF(error));
+  // Call the channel stack's pre_cancel_call() function.  This allows
+  // the filters to cancel any in-flight asynchronous actions that may be
+  // holding the call combiner.  This ensures that the cancel_stream batch
+  // can be sent down the filter stack in a timely manner.
+  grpc_call_element* elem = CALL_ELEM_FROM_CALL(c, 0);
+  elem->filter->pre_cancel_call(elem, GRPC_ERROR_REF(error));
+  // Now send down a batch containing the cancel_stream op.
   cancel_state* state = static_cast<cancel_state*>(gpr_malloc(sizeof(*state)));
   state->call = c;
   GRPC_CLOSURE_INIT(&state->finish_batch, done_termination, state,

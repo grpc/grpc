@@ -139,6 +139,11 @@ static void connected_channel_start_transport_stream_op_batch(
   GRPC_CALL_COMBINER_STOP(calld->call_combiner, "passed batch to transport");
 }
 
+static void connected_channel_pre_cancel_call(grpc_call_element* elem,
+                                              grpc_error* error) {
+  GRPC_ERROR_UNREF(error);
+}
+
 static void connected_channel_start_transport_op(grpc_channel_element* elem,
                                                  grpc_transport_op* op) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -207,7 +212,7 @@ const grpc_channel_filter grpc_connected_filter = {
     connected_channel_init_call_elem,
     set_pollset_or_pollset_set,
     connected_channel_destroy_call_elem,
-    grpc_call_pre_cancel_next_filter,
+    connected_channel_pre_cancel_call,
     sizeof(channel_data),
     connected_channel_init_channel_elem,
     connected_channel_destroy_channel_elem,

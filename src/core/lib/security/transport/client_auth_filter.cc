@@ -381,10 +381,14 @@ static void client_auth_pre_cancel_call(grpc_call_element* elem,
   auto* calld = static_cast<call_data*>(elem->call_data);
   auto* chand = static_cast<channel_data*>(elem->channel_data);
 // FIXME: synchronization?
-  calld->creds->cancel_get_request_metadata(&calld->md_array,
-                                            GRPC_ERROR_REF(error));
-  chand->security_connector->cancel_check_call_host(
-      &calld->async_result_closure, GRPC_ERROR_REF(error));
+  if (chand->security_connector != nullptr) {
+    chand->security_connector->cancel_check_call_host(
+        &calld->async_result_closure, GRPC_ERROR_REF(error));
+  }
+  if (calld->creds != nullptr) {
+    calld->creds->cancel_get_request_metadata(&calld->md_array,
+                                              GRPC_ERROR_REF(error));
+  }
 // FIXME: don't do this unless needed?
   grpc_call_pre_cancel_next_filter(elem, error);
 }

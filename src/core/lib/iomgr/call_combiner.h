@@ -50,7 +50,6 @@ extern DebugOnlyTraceFlag grpc_call_combiner_trace;
 class CallCombiner {
  public:
   CallCombiner();
-  ~CallCombiner();
 
 #ifndef NDEBUG
 #define GRPC_CALL_COMBINER_START(call_combiner, closure, error, reason) \
@@ -73,32 +72,6 @@ class CallCombiner {
   void Stop(const char* reason);
 #endif
 
-  /// Registers \a closure to be invoked when Cancel() is called.
-  ///
-  /// Once a closure is registered, it will always be scheduled exactly
-  /// once; this allows the closure to hold references that will be freed
-  /// regardless of whether or not the call was cancelled.  If a cancellation
-  /// does occur, the closure will be scheduled with the cancellation error;
-  /// otherwise, it will be scheduled with GRPC_ERROR_NONE.
-  ///
-  /// The closure will be scheduled in the following cases:
-  /// - If Cancel() was called prior to registering the closure, it will be
-  ///   scheduled immediately with the cancelation error.
-  /// - If Cancel() is called after registering the closure, the closure will
-  ///   be scheduled with the cancellation error.
-  /// - If SetNotifyOnCancel() is called again to register a new cancellation
-  ///   closure, the previous cancellation closure will be scheduled with
-  ///   GRPC_ERROR_NONE.
-  ///
-  /// If \a closure is NULL, then no closure will be invoked on
-  /// cancellation; this effectively unregisters the previously set closure.
-  /// However, most filters will not need to explicitly unregister their
-  /// callbacks, as this is done automatically when the call is destroyed.
-  void SetNotifyOnCancel(grpc_closure* closure);
-
-  /// Indicates that the call has been cancelled.
-  void Cancel(grpc_error* error);
-
  private:
   void ScheduleClosure(grpc_closure* closure, grpc_error* error);
 #ifdef GRPC_TSAN_ENABLED
@@ -107,10 +80,6 @@ class CallCombiner {
 
   gpr_atm size_ = 0;  // size_t, num closures in queue or currently executing
   MultiProducerSingleConsumerQueue queue_;
-  // Either 0 (if not cancelled and no cancellation closure set),
-  // a grpc_closure* (if the lowest bit is 0),
-  // or a grpc_error* (if the lowest bit is 1).
-  gpr_atm cancel_state_ = 0;
 #ifdef GRPC_TSAN_ENABLED
   // A fake ref-counted lock that is kept alive after the destruction of
   // grpc_call_combiner, when we are running the original closure.

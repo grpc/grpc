@@ -153,7 +153,6 @@ class CallData {
   // Used to track the policy structs that needs to be destroyed in dtor.
   bool fi_policy_owned_ = false;
   const FaultInjectionMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
-  grpc_call_stack* owning_call_;
   Arena* arena_;
   CallCombiner* call_combiner_;
 
@@ -283,8 +282,7 @@ void CallData::PreCancel(grpc_call_element* elem, grpc_error* error) {
 }
 
 CallData::CallData(grpc_call_element* elem, const grpc_call_element_args* args)
-    : owning_call_(args->call_stack),
-      arena_(args->arena),
+    : arena_(args->arena),
       call_combiner_(args->call_combiner) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   // Fetch the fault injection policy from the service config, based on the
