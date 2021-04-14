@@ -229,6 +229,7 @@ grpc_cc_binary(
     ],
     deps = [
         "//:grpc++",
+        "//:grpcpp_channelz",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
@@ -248,6 +249,7 @@ grpc_cc_binary(
     ],
     deps = [
         "//:grpc++",
+        "//:grpcpp_channelz",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
