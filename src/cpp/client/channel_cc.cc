@@ -146,9 +146,9 @@ void ChannelResetConnectionBackoff(Channel* channel) {
   // ClientRpcInfo should be set before call because set_call also checks
   // whether the call has been cancelled, and if the call was cancelled, we
   // should notify the interceptors too.
-  auto* info =
-      context->set_client_rpc_info(method.name(), method.method_type(), this,
-                                   interceptor_creators_, interceptor_pos);
+  auto* info = context->set_client_rpc_info(
+      method.name(), method.suffix_for_stats(), method.method_type(), this,
+      interceptor_creators_, interceptor_pos);
   context->set_call(c_call, shared_from_this());
 
   return ::grpc::internal::Call(c_call, this, cq, info);
