@@ -8772,15 +8772,11 @@ TEST_P(EdsTest, RingHashChannelIdHashing) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   for (size_t i = 0; i < 100; ++i) {
-    auto status = SendRpc();
-    gpr_log(GPR_INFO, "donna channel is %p with state %d and status %d",
-            channel_.get(), channel_->GetState(false), status.error_code());
+    (void)SendRpc();
   }
   size_t received = 0;
   size_t empty = 0;
   for (size_t i = 0; i <= 3; ++i) {
-    gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
-            backends_[i]->backend_service()->request_count());
     if (backends_[i]->backend_service()->request_count() == 0) {
       ++empty;
     } else {
@@ -8859,20 +8855,13 @@ TEST_P(EdsTest, RingHashHeaderHashing) {
   WaitForAllBackends(1, 2, true, rpc_options1);
   WaitForAllBackends(2, 3, true, rpc_options2);
   WaitForAllBackends(3, 4, true, rpc_options3);
-  gpr_log(GPR_INFO, "donna test after waiting");
   for (size_t i = 0; i < 100; ++i) {
-    auto s1 = SendRpc(rpc_options);
-    auto s2 = SendRpc(rpc_options1);
-    auto s3 = SendRpc(rpc_options2);
-    auto s4 = SendRpc(rpc_options3);
-    gpr_log(GPR_INFO,
-            "donna test channel is %p with state %d status %d %d %d %d",
-            channel_.get(), channel_->GetState(false), s1.error_code(),
-            s2.error_code(), s3.error_code(), s4.error_code());
+    (void)SendRpc(rpc_options);
+    (void)SendRpc(rpc_options1);
+    (void)SendRpc(rpc_options2);
+    (void)SendRpc(rpc_options3);
   }
   for (size_t i = 0; i <= 3; ++i) {
-    gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
-            backends_[i]->backend_service()->request_count());
     EXPECT_EQ(100, backends_[i]->backend_service()->request_count());
   }
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
@@ -8910,16 +8899,8 @@ TEST_P(EdsTest, RingHashIdleToReady) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  gpr_log(GPR_INFO, "donna idle channel is %p with state %d", channel_.get(),
-          channel_->GetState(false));
   (void)SendRpc();
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
-  gpr_log(GPR_INFO, "donna ready channel is %p with state %d", channel_.get(),
-          channel_->GetState(false));
-  for (size_t i = 0; i <= 3; ++i) {
-    gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
-            backends_[i]->backend_service()->request_count());
-  }
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
@@ -8963,35 +8944,17 @@ TEST_P(EdsTest, RingHashTransientFailureCheckNextOne) {
       {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
                                     backends_[0]->port(), "_0")},
   };
-  std::vector<std::pair<std::string, std::string>> metadata1 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[1]->port(), "_0")},
-  };
   const auto rpc_options = RpcOptions()
                                .set_rpc_service(SERVICE_ECHO)
                                .set_rpc_method(METHOD_ECHO)
                                .set_metadata(std::move(metadata));
-  const auto rpc_options1 = RpcOptions()
-                                .set_rpc_service(SERVICE_ECHO)
-                                .set_rpc_method(METHOD_ECHO)
-                                .set_metadata(std::move(metadata1));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  gpr_log(GPR_INFO, "donna test start idle channel is %p with state %d",
-          channel_.get(), channel_->GetState(false));
   ShutdownBackend(0);
-  gpr_log(GPR_INFO, "donna test send after shutdown %p with state %d",
-          channel_.get(), channel_->GetState(false));
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   WaitForAllBackends(1, 2, true, rpc_options, true);
-  gpr_log(GPR_INFO, "donna test after wait ready channel is %p with state %d",
-          channel_.get(), channel_->GetState(false));
+  EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
   for (size_t i = 0; i < 100; ++i) {
-    auto s1 = SendRpc(rpc_options);
-    gpr_log(GPR_INFO, "donna test channel is %p with state %d status %d",
-            channel_.get(), channel_->GetState(false), s1.error_code());
-  }
-  for (size_t i = 0; i <= 1; ++i) {
-    gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
-            backends_[i]->backend_service()->request_count());
+    (void)SendRpc(rpc_options);
   }
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
@@ -9032,37 +8995,19 @@ TEST_P(EdsTest, RingHashAllFailReattempt) {
       {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
                                     backends_[0]->port(), "_0")},
   };
-  std::vector<std::pair<std::string, std::string>> metadata1 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[1]->port(), "_0")},
-  };
   const auto rpc_options = RpcOptions()
                                .set_rpc_service(SERVICE_ECHO)
                                .set_rpc_method(METHOD_ECHO)
                                .set_metadata(std::move(metadata));
-  const auto rpc_options1 = RpcOptions()
-                                .set_rpc_service(SERVICE_ECHO)
-                                .set_rpc_method(METHOD_ECHO)
-                                .set_metadata(std::move(metadata1));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  gpr_log(GPR_INFO, "donna test start idle channel is %p with state %d",
-          channel_.get(), channel_->GetState(false));
   ShutdownBackend(0);
   ShutdownBackend(1);
-  gpr_log(GPR_INFO, "donna test send after shutdown %p with state %d",
-          channel_.get(), channel_->GetState(false));
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   StartBackend(1);
   WaitForAllBackends(1, 2, true, rpc_options, true);
-  gpr_log(GPR_INFO, "donna test after wait ready channel is %p with state %d",
-          channel_.get(), channel_->GetState(false));
+  EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
   for (size_t i = 0; i < 100; ++i) {
-    auto s1 = SendRpc(rpc_options);
-    gpr_log(GPR_INFO, "donna test channel is %p with state %d status %d",
-            channel_.get(), channel_->GetState(false), s1.error_code());
-  }
-  for (size_t i = 0; i <= 1; ++i) {
-    gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
-            backends_[i]->backend_service()->request_count());
+    (void)SendRpc(rpc_options);
   }
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());

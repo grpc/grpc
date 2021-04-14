@@ -561,8 +561,6 @@ absl::optional<uint64_t> HeaderHashHelper(
   std::string value_buffer;
   absl::optional<absl::string_view> header_value =
       GetHeaderValue(initial_metadata, policy.header_name, &value_buffer);
-  gpr_log(GPR_INFO, "donna rpc header val is %s of size %d",
-          std::string(header_value.value()).c_str(), header_value->size());
   if (policy.regex != nullptr) {
     // If GetHeaderValue() did not already store the value in
     // value_buffer, copy it there now, so we can modify it.
@@ -645,7 +643,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
         case XdsApi::Route::HashPolicy::CHANNEL_ID:
-          gpr_log(GPR_INFO, "donna CHANNEL ID case");
           new_hash =
               (static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver))
                << 48) |
@@ -688,9 +685,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     memcpy(hash_value, hash_string.c_str(), hash_string.size());
     hash_value[hash_string.size()] = '\0';
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
-    gpr_log(GPR_INFO, "donna rpc hash stored as %s size %zu",
-            call_config.call_attributes[kRequestRingHashAttribute],
-            hash_string.size());
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
       ExecCtx::Run(
