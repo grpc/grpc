@@ -34,7 +34,7 @@ std::shared_ptr<EventEngine> GetDefaultEventEngine() {
 }
 
 // grpc_closure to std::function conversions for an EventEngine-based iomgr
-EventEngine::Callback EventEngineClosureToCallback(grpc_closure* closure) {
+EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure) {
   return [&](absl::Status status) {
     // TODO(hork): Do we need to add grpc_error to closure's error data?
     // if (!status.ok()) {

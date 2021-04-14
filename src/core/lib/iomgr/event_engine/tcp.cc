@@ -28,20 +28,23 @@ namespace {
 using ::grpc_event_engine::experimental::ChannelArgs;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
+using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 }  // namespace
 
 struct grpc_tcp_server {
   gpr_refcount refs;
+  std::unique_ptr<EventEngine::Listener> listener;
   std::shared_ptr<EventEngine> engine;
 };
 
 namespace {
 
-// DO NOT SUBMIT NOTES: the closure is already initialized, and does not take an
-// Endpoint. See chttp2_connector:L74. Instead, the closure arg contains a ptr
-// to the endpoint that iomgr is expected to populate. When gRPC eventually uses
-// the EventEngine directly, closures will be replaced with EE callback types.
+// NOTE: the closure is already initialized, and does not take an Endpoint.
+// See chttp2_connector:L74. Instead, the closure arg contains a ptr to the
+// endpoint that iomgr is expected to populate. When gRPC eventually uses the
+// EventEngine directly, closures will be replaced with EE callback types.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
   return [&](absl::Status status, EventEngine::Endpoint* endpoint) {
@@ -94,9 +97,31 @@ static void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
 static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                                      const grpc_channel_args* args,
                                      grpc_tcp_server** server) {
-  (void)shutdown_complete;
-  (void)args;
-  (void)server;
+  // TODO(hork): retrieve EventEngine from Endpoint or from channel_args
+  std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
+  // TODO(hork): Convert channel_args to ChannelArgs
+  ChannelArgs ca;
+  grpc_resource_quota* rq = grpc_resource_quota_from_channel_args(args);
+  if (rq == nullptr) {
+    rq = grpc_resource_quota_create(nullptr);
+  }
+  // TODO(nnoble): The on_accept callback needs to be set later due to iomgr
+  // API differences. We can solve this with an overloaded
+  // Listener::Start(on_accept) method in a custom EE impl. This should not be
+  // needed once iomgr goes away.
+  absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
+      ee->CreateListener(GrpcClosureToAcceptCallback(nullptr),
+                         GrpcClosureToCallback(shutdown_complete), ca,
+                         SliceAllocatorFactory(rq));
+  if (!listener.ok()) {
+    return absl_status_to_grpc_error(listener.status());
+  }
+  grpc_tcp_server* s =
+      static_cast<grpc_tcp_server*>(gpr_zalloc(sizeof(grpc_tcp_server)));
+  gpr_ref_init(&s->refs, 1);
+  s->listener = std::move(*listener);
+  s->engine = ee;
+  *server = s;
   return GRPC_ERROR_NONE;
 }
 
@@ -107,6 +132,8 @@ static void tcp_server_start(grpc_tcp_server* server,
   (void)pollsets;
   (void)on_accept_cb;
   (void)cb_arg;
+  // TODO(nnoble): Needs something like:
+  // LibuvEventEngine::Listener::Start(AcceptCallback)
 }
 
 static grpc_error* tcp_server_add_port(grpc_tcp_server* s,

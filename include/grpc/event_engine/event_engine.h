@@ -157,9 +157,7 @@ class EventEngine {
     /// has accepted a new client connection. This callback takes ownership of
     /// the Endpoint and is responsible its destruction.
     using AcceptCallback = std::function<void(absl::Status, Endpoint*)>;
-
     virtual ~Listener() = 0;
-
     // TODO(hork): define return status codes
     // TODO(hork): requires output port argument, return value, or callback
     /// Bind an address/port to this Listener. It is expected that multiple
@@ -174,7 +172,7 @@ class EventEngine {
   // TODO(hork): define return status codes
   // TODO(hork): document status arg meanings for on_accept and on_shutdown
   /// Factory method to create a network listener.
-  virtual absl::StatusOr<Listener> CreateListener(
+  virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept, Callback on_shutdown,
       const ChannelArgs& args,
       SliceAllocatorFactory slice_allocator_factory) = 0;

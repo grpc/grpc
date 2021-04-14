@@ -110,9 +110,6 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
     endpoint_get_fd,
     endpoint_can_track_err};
 
-// DO NOT SUBMIT - Why is this not a constructor of a class? Central question:
-// when is a grpc_endpoint's type relied upon without casting to the more
-// specific type.
 grpc_event_engine_endpoint* grpc_endpoint_create(
     const grpc_channel_args* channel_args, absl::string_view peer_string) {
   auto endpoint = new grpc_event_engine_endpoint();

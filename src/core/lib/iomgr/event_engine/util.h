@@ -30,7 +30,7 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::Callback EventEngineClosureToCallback(grpc_closure* closure);
+EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
