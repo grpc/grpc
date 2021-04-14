@@ -14926,7 +14926,7 @@ target_link_libraries(xds_interop_client
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flags
-  grpc++
+  grpcpp_channelz
   grpc_test_util
   grpc++_test_config
 )
@@ -14981,7 +14981,7 @@ target_link_libraries(xds_interop_server
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flags
-  grpc++
+  grpcpp_channelz
   grpc_test_util
   grpc++_test_config
 )
