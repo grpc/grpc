@@ -682,16 +682,13 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       call_config.service_config = std::move(method_config);
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
-    gpr_log(GPR_INFO, "donna rpc hash generated is %zu", hash.value());
     std::string hash_string = absl::StrCat("", hash.value());
-    gpr_log(GPR_INFO, "donna str cat generated size is %d", hash_string.size());
     char* hash_value =
         static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
     memcpy(hash_value, hash_string.c_str(), hash_string.size());
     hash_value[hash_string.size()] = '\0';
-    // TODO@donnadionne: this trips MemorySanitizer: use-of-uninitialized-value?
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
-    gpr_log(GPR_INFO, "donna rpc hash stroed as %s size %zu",
+    gpr_log(GPR_INFO, "donna rpc hash stored as %s size %zu",
             call_config.call_attributes[kRequestRingHashAttribute],
             hash_string.size());
     call_config.on_call_committed = [resolver, cluster_state]() {
