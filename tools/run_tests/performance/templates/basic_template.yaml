@@ -229,5 +229,5 @@ spec:
       - src/ruby/qps/worker.rb
       command:
       - ruby
-  timeoutSeconds: 900
+  timeoutSeconds: 3600
   ttlSeconds: 86400

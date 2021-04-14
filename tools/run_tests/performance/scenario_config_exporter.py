@@ -46,7 +46,7 @@ import json
 import re
 import sys
 
-from typing import Any, Callable, Container, Dict, Iterable, NamedTuple
+from typing import Any, Callable, Dict, Iterable, NamedTuple
 
 import scenario_config
 
