@@ -173,7 +173,7 @@ class EventEngine {
   // TODO(hork): define return status codes
   // TODO(hork): document status arg meanings for on_accept and on_shutdown
   /// Factory method to create a network listener.
-  virtual absl::StatusOr<Listener> CreateListener(
+  virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept, Callback on_shutdown,
       const ChannelArgs& args,
       SliceAllocatorFactory slice_allocator_factory) = 0;
@@ -236,7 +236,7 @@ class EventEngine {
 
   // TODO(hork): define return status codes
   /// Retrieves an instance of a DNSResolver.
-  virtual absl::StatusOr<DNSResolver> GetDNSResolver() = 0;
+  virtual absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver() = 0;
 
   /// Intended for future expansion of Task run functionality.
   struct RunOptions {};
