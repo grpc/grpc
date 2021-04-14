@@ -19,5 +19,33 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+# This is to insure we can push and pull images from gcr.io, we do not
+# necessarily need it to run load tests, but would need it when we employ
+# pre-built images in the optimization.
+gcloud auth configure-docker
+
+# Connect to benchmarks-prod cluster
+gcloud config set project grpc-testing
+gcloud container clusters get-credentials benchmarks-prod \
+    --zone us-central1-b --project grpc-testing
+
+# This step subject to change, just easier to get one file to run a single test
+tools/run_tests/performance/loadtest_config.py -l go \
+    -t ./tools/run_tests/performance/templates/basic_template.yaml \
+    -s client_pool=workers-8core server_pool=workers-8core \
+        big_query_table=grpc-testing.e2e_benchmarks.experimental_results
+    --prefix="kokoro-test" -u "$(date +%Y%m%d%H%M%S)" -o ./loadtest.yaml
+
+# The original version of the client is a bit old, update to the latest release
+# version v1.21.0 .
+kubectl version --client
+curl -LO https://dl.k8s.io/release/v1.21.0/bin/linux/amd64/kubectl
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+chmod +x kubectl
+sudo mv kubectl $(which kubectl)
+kubectl version --client
+
+kubectl apply -f ./loadtest.yaml
+
 echo "TODO: Add gRPC OSS Benchmarks here..."
 

@@ -1,8 +1,6 @@
 apiVersion: e2etest.grpc.io/v1
 kind: LoadTest
 metadata:
-  annotations:
-    test_infra_tag: v0.5.0
   name: basic_template
 spec:
   clients:
@@ -229,5 +227,5 @@ spec:
       - src/ruby/qps/worker.rb
       command:
       - ruby
-  timeoutSeconds: 3600
+  timeoutSeconds: 900
   ttlSeconds: 86400
