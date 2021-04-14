@@ -325,8 +325,8 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
       absl::string_view hash_key(hash_key_buffer.data(),
                                  hash_key_buffer.size());
       const uint64_t hash = XXH64(hash_key.data(), hash_key.size(), 0);
-      gpr_log(GPR_INFO, "donna push onto ring with %s",
-              std::string(hash_key).c_str());
+      gpr_log(GPR_INFO, "donna push onto ring with %s and size %d",
+              std::string(hash_key).c_str(), hash_key.size());
       ring_.push_back({hash,
                        subchannel_list->subchannel(i)->subchannel()->Ref(),
                        current_state});
@@ -351,19 +351,23 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
             });
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(GPR_INFO,
-            "[RH %p picker %p] created picker from subchannel_list=%p "
+            "[RH %p picker %p] =====created picker from subchannel_list=%p "
             "with %" PRIuPTR " subchannels",
             parent_.get(), this, subchannel_list, ring_.size());
     for (auto r : ring_) {
       gpr_log(GPR_INFO, "donna ring hash %zu channel %p state %d", r.hash,
               r.subchannel.get(), r.connectivity_state);
     }
+    gpr_log(GPR_INFO,
+            "[RH %p picker %p] =====created picker from subchannel_list=%p "
+            "with %" PRIuPTR " subchannels",
+            parent_.get(), this, subchannel_list, ring_.size());
   }
 }
 
 bool RingHash::Picker::ConnectAndPickHelper(const RingEntry& entry,
                                             PickResult* result) {
-  gpr_log(GPR_INFO, "donna experimenting with ConnectAndPickHelper %d",
+  gpr_log(GPR_INFO, "donna picker ConnectAndPickHelper state %d",
           entry.connectivity_state);
   if (entry.connectivity_state == GRPC_CHANNEL_READY) {
     result->type = PickResult::PICK_COMPLETE;
@@ -390,17 +394,18 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       args.call_state->ExperimentalGetCallAttribute("xds_cluster_name");
   auto hash =
       args.call_state->ExperimentalGetCallAttribute(kRequestRingHashAttribute);
-  gpr_log(GPR_INFO, "donna pick name %s and hash %s", cluster_name.data(),
+  gpr_log(GPR_INFO, "donna picker name %s and hash %s", cluster_name.data(),
           hash.data());
   uint64_t h;
   if (!absl::SimpleAtoi(hash, &h)) {
+    gpr_log(GPR_INFO, "donna picker error for hash %s", hash.data());
     result.error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrCat("xds ring hash value is not a number").c_str()),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
     return result;
   }
-  gpr_log(GPR_INFO, "donna got hash val %zu", h);
+  gpr_log(GPR_INFO, "donna picker got hash val %zu", h);
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
   // (ketama_get_server) I've generally kept the variable names to make the code
   // easier to compare. NOTE: The algorithm depends on using signed integers for
@@ -409,7 +414,6 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   int64_t highp = ring_.size();
   int64_t midp = 0;
   while (true) {
-    gpr_log(GPR_INFO, "donna pick midp %ld", midp);
     midp = (lowp + highp) / 2;
     if (midp == static_cast<int64_t>(ring_.size())) {
       midp = 0;
@@ -430,7 +434,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       break;
     }
   }
-  gpr_log(GPR_INFO, "donna after while pick midp %ld", midp);
+  gpr_log(GPR_INFO, "donna picker decision pick midp %ld", midp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(GPR_INFO,
             "[RH %p picker %p] hashed to index %" PRIdPTR ", subchannel=%p",
@@ -445,6 +449,8 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         }
         subchannel_connection_attempter->AddSubchannel(std::move(subchannel));
       };
+  gpr_log(GPR_INFO,
+          "donna picker attempt to connect with ConnectAndPickHelper");
   bool attempt_to_connect = ConnectAndPickHelper(ring_[midp], &result);
   if (attempt_to_connect) {
     ScheduleSubchannelConnectionAttempt(ring_[midp].subchannel);
@@ -455,11 +461,15 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   // Subchannel is in TRANSIENT_FAILURE.
   // Check the next one.
   midp = (midp + 1) % ring_.size();
+  gpr_log(GPR_INFO,
+          "donna picker moving on first time with ConnectAndPickHelper");
   attempt_to_connect = ConnectAndPickHelper(ring_[midp], &result);
   if (attempt_to_connect) {
     ScheduleSubchannelConnectionAttempt(ring_[midp].subchannel);
   }
   if (result.type != PickResult::PICK_FAILED) {
+    gpr_log(GPR_INFO, "donna picker moving on first time with subchannel=%p",
+            result.subchannel.get());
     return result;
   }
   // Second subchannel was in TRANSIENT_FAILURE.
@@ -473,6 +483,8 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     if (entry.connectivity_state == GRPC_CHANNEL_READY) {
       result.type = PickResult::PICK_COMPLETE;
       result.subchannel = entry.subchannel;
+      gpr_log(GPR_INFO, "donna picker moving on second time with subchannel=%p",
+              result.subchannel.get());
       return result;
     }
     if (!found_first_non_failed) {
@@ -517,14 +529,14 @@ void RingHash::RingHashSubchannelList::StartWatchingLocked() {
 
 void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
     grpc_connectivity_state old_state, grpc_connectivity_state new_state) {
-  gpr_log(GPR_INFO, "donna old %d and cur %d", old_state, new_state);
+  gpr_log(GPR_INFO, "donna counter old %d and cur %d", old_state, new_state);
   GPR_ASSERT(old_state != GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (old_state == GRPC_CHANNEL_IDLE) {
     if (num_idle_ > 0) {
       --num_idle_;
     } else {
-      gpr_log(GPR_INFO, "donna very first time");
+      gpr_log(GPR_INFO, "donna counter very first time");
     }
   } else if (old_state == GRPC_CHANNEL_READY) {
     GPR_ASSERT(num_ready_ > 0);
@@ -545,6 +557,9 @@ void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
   } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     ++num_transient_failure_;
   }
+  gpr_log(GPR_INFO,
+          "donna counter result idle %d, ready %d, connecting %d, and tf %d",
+          num_idle_, num_ready_, num_connecting_, num_transient_failure_);
 }
 
 // Sets the RH policy's connectivity state and generates a new picker based

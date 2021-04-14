@@ -8824,24 +8824,20 @@ TEST_P(EdsTest, RingHashHeaderHashing) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"address_hash",
-       absl::StrFormat("%s:%d_0", ipv6_only_ ? "::1" : "127.0.0.1",
-                       backends_[0]->port())},
+      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
+                                    backends_[0]->port(), "_0")},
   };
   std::vector<std::pair<std::string, std::string>> metadata1 = {
-      {"address_hash",
-       absl::StrFormat("%s:%d_0", ipv6_only_ ? "::1" : "127.0.0.1",
-                       backends_[1]->port())},
+      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
+                                    backends_[1]->port(), "_0")},
   };
   std::vector<std::pair<std::string, std::string>> metadata2 = {
-      {"address_hash",
-       absl::StrFormat("%s:%d_0", ipv6_only_ ? "::1" : "127.0.0.1",
-                       backends_[2]->port())},
+      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
+                                    backends_[2]->port(), "_0")},
   };
   std::vector<std::pair<std::string, std::string>> metadata3 = {
-      {"address_hash",
-       absl::StrFormat("%s:%d_0", ipv6_only_ ? "::1" : "127.0.0.1",
-                       backends_[3]->port())},
+      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
+                                    backends_[3]->port(), "_0")},
   };
   const auto rpc_options = RpcOptions()
                                .set_rpc_service(SERVICE_ECHO)
@@ -8863,13 +8859,16 @@ TEST_P(EdsTest, RingHashHeaderHashing) {
   WaitForAllBackends(1, 2, true, rpc_options1);
   WaitForAllBackends(2, 3, true, rpc_options2);
   WaitForAllBackends(3, 4, true, rpc_options3);
+  gpr_log(GPR_INFO, "donna test after waiting");
   for (size_t i = 0; i < 100; ++i) {
-    (void)SendRpc(rpc_options);
-    (void)SendRpc(rpc_options1);
-    (void)SendRpc(rpc_options2);
-    (void)SendRpc(rpc_options3);
-    gpr_log(GPR_INFO, "donna channel is %p with state %d", channel_.get(),
-            channel_->GetState(false));
+    auto s1 = SendRpc(rpc_options);
+    auto s2 = SendRpc(rpc_options1);
+    auto s3 = SendRpc(rpc_options2);
+    auto s4 = SendRpc(rpc_options3);
+    gpr_log(GPR_INFO,
+            "donna test channel is %p with state %d status %d %d %d %d",
+            channel_.get(), channel_->GetState(false), s1.error_code(),
+            s2.error_code(), s3.error_code(), s4.error_code());
   }
   for (size_t i = 0; i <= 3; ++i) {
     gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
@@ -8992,15 +8991,23 @@ TEST_P(EdsTest, RingHashIdleToConnectingToRehashing) {
                                 .set_rpc_method(METHOD_ECHO)
                                 .set_metadata(std::move(metadata3));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  gpr_log(GPR_INFO, "donna idle channel is %p with state %d", channel_.get(),
-          channel_->GetState(false));
+  gpr_log(GPR_INFO, "donna test start idle channel is %p with state %d",
+          channel_.get(), channel_->GetState(false));
   ShutdownBackend(0);
-  (void)SendRpc(rpc_options);
-  gpr_log(GPR_INFO, "donna ready channel is %p with state %d", channel_.get(),
-          channel_->GetState(false));
-  (void)SendRpc(rpc_options);
-  gpr_log(GPR_INFO, "donna ready channel is %p with state %d", channel_.get(),
-          channel_->GetState(false));
+  gpr_log(GPR_INFO, "donna test send after shutdown %p with state %d",
+          channel_.get(), channel_->GetState(false));
+  auto s = SendRpc(rpc_options);
+  gpr_log(GPR_INFO, "donna test rpc sent result %d", s.error_code());
+  gpr_log(GPR_INFO,
+          "donna test before trying 20 between channel is %p with state %d",
+          channel_.get(), channel_->GetState(false));
+  for (int i = 0; i < 20; ++i) {
+    s = SendRpc(rpc_options);
+    gpr_log(GPR_INFO, "donna test rpc sent result %d", s.error_code());
+  }
+  gpr_log(GPR_INFO,
+          "donna test after trying 20 ready channel is %p with state %d",
+          channel_.get(), channel_->GetState(false));
   for (size_t i = 0; i <= 3; ++i) {
     gpr_log(GPR_INFO, "donna result for backend %zu count %zu", i,
             backends_[i]->backend_service()->request_count());

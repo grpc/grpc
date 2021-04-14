@@ -561,8 +561,8 @@ absl::optional<uint64_t> HeaderHashHelper(
   std::string value_buffer;
   absl::optional<absl::string_view> header_value =
       GetHeaderValue(initial_metadata, policy.header_name, &value_buffer);
-  gpr_log(GPR_INFO, "donna header val is %s",
-          std::string(header_value.value()).c_str());
+  gpr_log(GPR_INFO, "donna rpc header val is %s of size %d",
+          std::string(header_value.value()).c_str(), header_value->size());
   if (policy.regex != nullptr) {
     // If GetHeaderValue() did not already store the value in
     // value_buffer, copy it there now, so we can modify it.
@@ -682,14 +682,18 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       call_config.service_config = std::move(method_config);
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
-    std::string hash_view = absl::StrFormat("%" PRIu64 "\0", hash.value());
-    char* hash_value = static_cast<char*>(args.arena->Alloc(hash_view.size()));
-    memcpy(hash_value, hash_view.data(), hash_view.size());
+    gpr_log(GPR_INFO, "donna rpc hash generated is %zu", hash.value());
+    std::string hash_string = absl::StrCat("", hash.value());
+    gpr_log(GPR_INFO, "donna str cat generated size is %d", hash_string.size());
+    char* hash_value =
+        static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
+    memcpy(hash_value, hash_string.c_str(), hash_string.size());
+    hash_value[hash_string.size()] = '\0';
     // TODO@donnadionne: this trips MemorySanitizer: use-of-uninitialized-value?
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
-    gpr_log(GPR_INFO, "donna hash stroed as %s size %zu",
+    gpr_log(GPR_INFO, "donna rpc hash stroed as %s size %zu",
             call_config.call_attributes[kRequestRingHashAttribute],
-            hash_view.size());
+            hash_string.size());
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
       ExecCtx::Run(
