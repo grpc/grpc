@@ -135,7 +135,7 @@ def gen_loadtest_configs(
             metadata['annotations'].update(annotations)
             metadata['annotations'].update({
                 'scenario': scenario['name'],
-                'uniquifiers': uniq,
+                'uniquifiers': '-'.join(uniq),
             })
 
             clients = config['spec']['clients']
