@@ -2626,7 +2626,7 @@ grpc_cc_library(
     alwayslink = 1,
 )
 
-grpc_cc_library_xds(
+grpc_cc_library(
     name = "grpcpp_csds",
     srcs = [
         "src/cpp/server/csds/csds.cc",
