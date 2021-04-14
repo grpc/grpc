@@ -19,9 +19,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#ifndef DISABLED_XDS_PROTO_IN_CC
 #include <grpcpp/ext/admin_services.h>
-#endif  // DISABLED_XDS_PROTO_IN_CC
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/server.h>
@@ -139,9 +137,7 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
     gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
     builder.RegisterService(&health_check_service);
     builder.RegisterService(&update_health_service);
-#ifndef DISABLED_XDS_PROTO_IN_CC
     grpc::AddAdminServices(&builder);
-#endif  // DISABLED_XDS_PROTO_IN_CC
     builder.AddListeningPort(absl::StrCat("0.0.0.0:", maintenance_port),
                              grpc::InsecureServerCredentials());
     server = builder.BuildAndStart();
@@ -151,9 +147,7 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
     builder.RegisterService(&service);
     builder.RegisterService(&health_check_service);
     builder.RegisterService(&update_health_service);
-#ifndef DISABLED_XDS_PROTO_IN_CC
     grpc::AddAdminServices(&builder);
-#endif  // DISABLED_XDS_PROTO_IN_CC
     builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
                              grpc::InsecureServerCredentials());
     server = builder.BuildAndStart();

@@ -16,9 +16,7 @@
  *
  */
 
-#ifndef DISABLED_XDS_PROTO_IN_CC
 #include <grpcpp/ext/admin_services.h>
-#endif  // DISABLED_XDS_PROTO_IN_CC
 #include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server.h>
@@ -521,9 +519,7 @@ void RunServer(const int port, StatsWatchers* stats_watchers,
   ServerBuilder builder;
   builder.RegisterService(&stats_service);
   builder.RegisterService(&client_config_service);
-#ifndef DISABLED_XDS_PROTO_IN_CC
   grpc::AddAdminServices(&builder);
-#endif  // DISABLED_XDS_PROTO_IN_CC
   builder.AddListeningPort(server_address.str(),
                            grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
