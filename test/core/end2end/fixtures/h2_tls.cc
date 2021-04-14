@@ -459,7 +459,7 @@ static void chttp2_init_server(grpc_end2end_test_fixture* f,
   chttp2_init_server_secure_fullstack(f, server_args, ssl_creds);
 }
 
-const static uint32_t kH2TLSFeatureMask =
+static const uint32_t kH2TLSFeatureMask =
     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
     FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
     FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |

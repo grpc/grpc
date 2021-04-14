@@ -226,7 +226,7 @@ MakeChannelzSecurityFromAuthContext(grpc_auth_context* auth_context) {
 }  // namespace
 
 void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
-  // MutexLock lock(&mu_);
+  MutexLock lock(&mu_);
   if (error != GRPC_ERROR_NONE || is_shutdown_) {
     HandshakeFailedLocked(error);
     return;

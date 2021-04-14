@@ -491,7 +491,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest,
 // logic is not invoked.
 //
 
-TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsWithGoodExternalVerifier) {
+TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsWithExternalVerifier) {
   auto* sync_verifier_ = new SyncExternalVerifier(true);
   ExternalCertificateVerifier core_external_verifier(sync_verifier_->base());
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
@@ -509,7 +509,7 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ClientOptionsWithGoodExternalVerifier) {
   EXPECT_NE(tls_connector, nullptr);
 }
 
-TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithGoodExternalVerifier) {
+TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithExternalVerifier) {
   auto* sync_verifier_ = new SyncExternalVerifier(true);
   ExternalCertificateVerifier core_external_verifier(sync_verifier_->base());
   auto options = MakeRefCounted<grpc_tls_credentials_options>();
@@ -527,29 +527,6 @@ TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithGoodExternalVerifier) {
   TlsServerSecurityConnector* tls_connector =
       static_cast<TlsServerSecurityConnector*>(connector.get());
   EXPECT_NE(tls_connector, nullptr);
-}
-
-TEST_F(GrpcTlsCredentialsOptionsTest, ServerOptionsWithBadExternalVerifier) {
-  auto* async_verifier = new AsyncExternalVerifier(false, nullptr);
-  auto* core_external_verifier =
-      new ExternalCertificateVerifier(async_verifier->base());
-  auto options = MakeRefCounted<grpc_tls_credentials_options>();
-  options->set_cert_request_type(GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE);
-  options->set_certificate_verifier(core_external_verifier->Ref());
-  // On server side we have to set the provider providing identity certs.
-  auto provider = MakeRefCounted<StaticDataCertificateProvider>(
-      root_cert_, PemKeyCertPairList());
-  options->set_certificate_provider(std::move(provider));
-  options->set_watch_identity_pair(true);
-  auto credentials = MakeRefCounted<TlsServerCredentials>(options);
-  ASSERT_NE(credentials, nullptr);
-  auto connector = credentials->create_security_connector(nullptr);
-  ASSERT_NE(connector, nullptr);
-  TlsServerSecurityConnector* tls_connector =
-      static_cast<TlsServerSecurityConnector*>(connector.get());
-  // Having a bad verifier shouldn't affect the creation of tls_connector.
-  EXPECT_NE(tls_connector, nullptr);
-  core_external_verifier->Unref();
 }
 
 //

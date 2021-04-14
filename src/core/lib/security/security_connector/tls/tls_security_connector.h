@@ -69,16 +69,6 @@ class TlsChannelSecurityConnector final
   void cancel_check_call_host(grpc_closure* on_call_host_checked,
                               grpc_error* error) override;
 
-  // A utility function to help build up the request.
-  // This is needed because C-core API doesn't allow default data member
-  // initialization. It should be called every time when a request is created.
-  static void CertificateVerificationRequestInit(
-      grpc_tls_custom_verification_check_request* request);
-  // A utility function to help clean up the request.
-  // Note the request pointer itself won't be deleted.
-  static void CertificateVerificationRequestDestroy(
-      grpc_tls_custom_verification_check_request* request);
-
   tsi_ssl_client_handshaker_factory* ClientHandshakerFactoryForTesting() {
     grpc_core::MutexLock lock(&mu_);
     return client_handshaker_factory_;

@@ -202,7 +202,7 @@ void TlsChannelSecurityConnector::check_peer(
                                 : overridden_target_name_.c_str();
   grpc_error* error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
-    Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
+    ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
     return;
   }
@@ -302,7 +302,7 @@ void TlsChannelSecurityConnector::check_peer(
                   .c_str());
         }
         delete internal_request;
-        Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
+        ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
       });
   if (!is_done) {
     return;
@@ -315,7 +315,7 @@ void TlsChannelSecurityConnector::check_peer(
             .c_str());
   }
   delete internal_request;
-  Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
+  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
 int TlsChannelSecurityConnector::cmp(
@@ -518,7 +518,7 @@ void TlsServerSecurityConnector::check_peer(
     grpc_closure* on_peer_checked) {
   grpc_error* error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
-    Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
+    ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
     return;
   }
@@ -616,7 +616,7 @@ void TlsServerSecurityConnector::check_peer(
                   .c_str());
         }
         delete internal_request;
-        Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
+        ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
       });
   if (!is_done) {
     return;
@@ -629,7 +629,7 @@ void TlsServerSecurityConnector::check_peer(
             .c_str());
   }
   delete internal_request;
-  Closure::Run(DEBUG_LOCATION, on_peer_checked, error);
+  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
 int TlsServerSecurityConnector::cmp(

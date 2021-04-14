@@ -101,7 +101,7 @@ bool ExternalCertificateVerifier::Verify(
     CertificateVerificationRequest* internal_request,
     std::function<void()> callback) {
   {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     request_map_.emplace(internal_request, std::move(callback));
   }
   // Invoke the caller-specified verification logic embedded in
@@ -110,7 +110,7 @@ bool ExternalCertificateVerifier::Verify(
                                             &internal_request->request,
                                             &OnVerifyDone, this);
   if (is_done) {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     request_map_.erase(internal_request);
   }
   return is_done;
@@ -118,30 +118,21 @@ bool ExternalCertificateVerifier::Verify(
 
 void ExternalCertificateVerifier::OnVerifyDone(
     grpc_tls_custom_verification_check_request* request, void* user_data) {
-  grpc_core::ExecCtx exec_ctx;
+  ExecCtx exec_ctx;
   auto* self = static_cast<ExternalCertificateVerifier*>(user_data);
   CertificateVerificationRequest* internal_request =
       reinterpret_cast<CertificateVerificationRequest*>(request);
-  grpc_core::MutexLock lock(&self->mu_);
-  auto it = self->request_map_.find(internal_request);
-  if (it != self->request_map_.end()) {
-    std::function<void()> callback = std::move(it->second);
-    callback();
-    self->request_map_.erase(it->first);
+  std::function<void()> callback;
+  {
+    MutexLock lock(&self->mu_);
+    auto it = self->request_map_.find(internal_request);
+    if (it != self->request_map_.end()) {
+      callback = std::move(it->second);
+      self->request_map_.erase(it);
+    }
   }
+  if (callback != nullptr) callback();
 }
-
-namespace internal {
-
-static bool VerifyIdentityAsHostname(absl::string_view identity_name,
-                                     absl::string_view target_name) {
-  // We are using the target name sent from the client as a matcher to match
-  // against identity name on the peer cert.
-  return grpc_core::VerifySubjectAlternativeName(identity_name,
-                                                 std::string(target_name));
-}
-
-}  // namespace internal
 
 bool HostNameCertificateVerifier::Verify(
     CertificateVerificationRequest* internal_request,
@@ -158,7 +149,7 @@ bool HostNameCertificateVerifier::Verify(
   }
   absl::string_view allocated_name;
   absl::string_view ignored_port;
-  grpc_core::SplitHostPort(target_name, &allocated_name, &ignored_port);
+  SplitHostPort(target_name, &allocated_name, &ignored_port);
   if (allocated_name.empty()) {
     request->status = GRPC_STATUS_UNAUTHENTICATED;
     request->error_details = gpr_strdup("Failed to split hostname and port.");
@@ -176,7 +167,9 @@ bool HostNameCertificateVerifier::Verify(
   if (dns_names != nullptr && dns_names_size > 0) {
     for (int i = 0; i < dns_names_size; ++i) {
       const char* dns_name = dns_names[i];
-      if (internal::VerifyIdentityAsHostname(dns_name, allocated_name)) {
+      // We are using the target name sent from the client as a matcher to match
+      // against identity name on the peer cert.
+      if (VerifySubjectAlternativeName(dns_name, std::string(allocated_name))) {
         request->status = GRPC_STATUS_OK;
         return true;  // synchronous check
       }
@@ -197,7 +190,10 @@ bool HostNameCertificateVerifier::Verify(
   // If there's no SAN, try the CN.
   if (dns_names_size == 0) {
     const char* common_name = request->peer_info.common_name;
-    if (internal::VerifyIdentityAsHostname(common_name, allocated_name)) {
+    // We are using the target name sent from the client as a matcher to match
+    // against identity name on the peer cert.
+    if (VerifySubjectAlternativeName(common_name,
+                                     std::string(allocated_name))) {
       request->status = GRPC_STATUS_OK;
       return true;  // synchronous check
     }
