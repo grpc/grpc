@@ -472,9 +472,20 @@ class RetryFilter::CallData {
   // remainder of the streaming call.
   RefCountedPtr<ClientChannel::LoadBalancedCall> committed_call_;
 
-// FIXME: USE THIS
-//  Mutex lb_call_creation_mu_;
-//  bool lb_call_pre_cancelled_ ABSL_GUARDED_BY(lb_call_creation_mu_) = false;
+  // Mutex guarding LB call creation and destruction.
+  //
+  // Note that call_attempt_ and committed_call_ themselves are not guarded by
+  // this mutex, because we only need to guard the *creation* of the LB call.
+  // If PreCancel() runs before either of those fields are set, then
+  // lb_call_pre_cancelled_ will be true, in which case the LB call will not
+  // be created; if PreCancel() runs after either field is set, it will
+  // propagate the pre-cancellation down to the appropriate LB call(s).
+  //
+  // This mutex should not cause contention *except* when a cancellation
+  // is occurring.
+  Mutex lb_call_pre_cancellation_mu_;
+  bool lb_call_pre_cancelled_ ABSL_GUARDED_BY(lb_call_pre_cancellation_mu_) =
+      false;
 
   // When are are not yet fully committed to a particular call (i.e.,
   // either we might still retry or we have committed to the call but
@@ -1686,6 +1697,7 @@ void RetryFilter::CallData::PreCancel(grpc_call_element* elem,
         gpr_log(GPR_INFO, "calld=%p: cancelling retry timer: %s", calld,
                 grpc_error_string(error));
       }
+      GRPC_ERROR_UNREF(error);
       calld->retry_timer_pending_ = false;  // Checked by OnRetryTimer().
       grpc_timer_cancel(&calld->retry_timer_);
       calld->FreeAllCachedSendOpData();
@@ -1694,7 +1706,8 @@ void RetryFilter::CallData::PreCancel(grpc_call_element* elem,
     }
   }
   // Retry timer not pending, so propagate pre-cancellation down to LB call.
-// FIXME: synchronization
+  MutexLock lock(&calld->lb_call_pre_cancellation_mu_);
+  calld->lb_call_pre_cancelled_ = true;
   if (calld->committed_call_ != nullptr) {
     calld->committed_call_->PreCancel(error);
   } else if (calld->call_attempt_ != nullptr) {
@@ -1790,6 +1803,14 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
   // Add the batch to the pending list.
   PendingBatch* pending = PendingBatchesAdd(batch);
   if (call_attempt_ == nullptr) {
+    MutexLock lock(&lb_call_pre_cancellation_mu_);
+    // If the LB call was already pre-cancelled, yield the call combiner
+    // and return here without doing anything.  The batch will stay
+    // pending until we see the cancel_stream op.
+    if (lb_call_pre_cancelled_) {
+      GRPC_CALL_COMBINER_STOP(call_combiner_, "retry call pre-cancelled");
+      return;
+    }
     // If this is the first batch and retries are already committed
     // (e.g., if this batch put the call above the buffer size limit), then
     // immediately create an LB call and delegate the batch to it.  This
@@ -2134,10 +2155,10 @@ void RetryFilter::CallData::DoRetry(grpc_millis server_pushback_ms) {
             this, next_attempt_time - ExecCtx::Get()->Now());
   }
   // Schedule retry after computed delay.
-// FIXME: for hedging, probably want to yield call combiner here and
-// then reacquire it in the timer callback -- otherwise, we will
-// unnecessarily delay recv ops on pending calls that may commit the
-// call and make the next attempt unnecessary anyway
+  // TODO(roth): For hedging, we probably want to yield the call combiner here
+  // and then reacquire it in the timer callback.  Otherwise, we will
+  // unnecessarily delay recv ops on pending calls that may commit the call
+  // and make the next attempt unnecessary anyway.
   GRPC_CLOSURE_INIT(&retry_closure_, OnRetryTimer, this, nullptr);
   GRPC_CALL_STACK_REF(owning_call_, "OnRetryTimer");
   MutexLock lock(&timer_mu_);
