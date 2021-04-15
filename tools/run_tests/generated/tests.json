@@ -2451,30 +2451,6 @@
     "ci_platforms": [
       "linux",
       "mac",
-      "posix",
-      "windows"
-    ],
-    "cpu_cost": 1.0,
-    "exclude_configs": [],
-    "exclude_iomgrs": [],
-    "flaky": false,
-    "gtest": false,
-    "language": "c",
-    "name": "sockaddr_utils_test",
-    "platforms": [
-      "linux",
-      "mac",
-      "posix",
-      "windows"
-    ],
-    "uses_polling": true
-  },
-  {
-    "args": [],
-    "benchmark": false,
-    "ci_platforms": [
-      "linux",
-      "mac",
       "posix"
     ],
     "cpu_cost": 1.0,
@@ -4406,7 +4382,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "evaluate_args_test",
+    "name": "error_utils_test",
     "platforms": [
       "linux",
       "mac",
@@ -4430,14 +4406,14 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "eventmanager_libuv_test",
+    "name": "evaluate_args_test",
     "platforms": [
       "linux",
       "mac",
       "posix",
       "windows"
     ],
-    "uses_polling": false
+    "uses_polling": true
   },
   {
     "args": [],
@@ -5166,6 +5142,30 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
+    "name": "mock_stream_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
     "name": "mock_test",
     "platforms": [
       "linux",
@@ -5831,6 +5831,30 @@
     "gtest": true,
     "language": "c++",
     "name": "simple_request_bad_client_test",
+    "platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "uses_polling": true
+  },
+  {
+    "args": [],
+    "benchmark": false,
+    "ci_platforms": [
+      "linux",
+      "mac",
+      "posix",
+      "windows"
+    ],
+    "cpu_cost": 1.0,
+    "exclude_configs": [],
+    "exclude_iomgrs": [],
+    "flaky": false,
+    "gtest": true,
+    "language": "c++",
+    "name": "sockaddr_utils_test",
     "platforms": [
       "linux",
       "mac",

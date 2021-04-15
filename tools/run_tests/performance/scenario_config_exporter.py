@@ -14,48 +14,200 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Helper script to extract JSON scenario definitions from scenario_config.py
-# Useful to construct "ScenariosJSON" configuration accepted by the OSS benchmarks framework
+# Library to extract scenario definitions from scenario_config.py
+#
+# Contains functions to filter, analyze and dump scenario definitions.
+#
+# This library is used in loadtest_config.py to generate the "scenariosJSON"
+# field in the format accepted by the OSS benchmarks framework.
 # See https://github.com/grpc/test-infra/blob/master/config/samples/cxx_example_loadtest.yaml
+#
+# It can also be used to dump scenarios to files, and to count scenarios by
+# language.
+#
+# Example usage:
+#
+# scenario_config.py --export_scenarios -l cxx -f cxx_scenario_ -r '.*' \
+#     --category=scalable
+#
+# scenario_config.py --count_scenarios
 
+import argparse
+import collections
 import json
 import re
-import scenario_config
 import sys
 
+from typing import Any, Callable, Dict, Iterable, Optional, Tuple
 
-def get_json_scenarios(language_name, scenario_name_regex='.*', category='all'):
-    """Returns list of scenarios that match given constraints."""
-    result = []
-    scenarios = scenario_config.LANGUAGES[language_name].scenarios()
-    for scenario_json in scenarios:
-        if re.search(scenario_name_regex, scenario_json['name']):
-            # if the 'CATEGORIES' key is missing, treat scenario as part of 'scalable' and 'smoketest'
-            # this matches the behavior of run_performance_tests.py
-            scenario_categories = scenario_json.get('CATEGORIES',
-                                                    ['scalable', 'smoketest'])
-            # TODO(jtattermusch): consider adding filtering for 'CLIENT_LANGUAGE' and 'SERVER_LANGUAGE'
-            # fields, before the get stripped away.
-            if category in scenario_categories or category == 'all':
-                scenario_json_stripped = scenario_config.remove_nonproto_fields(
-                    scenario_json)
-                result.append(scenario_json_stripped)
-    return result
+import scenario_config
 
 
-def dump_to_json_files(json_scenarios, filename_prefix='scenario_dump_'):
-    """Dump a list of json scenarios to json files"""
-    for scenario in json_scenarios:
-        filename = "%s%s.json" % (filename_prefix, scenario['name'])
-        print('Writing file %s' % filename, file=sys.stderr)
+def category_string(categories: Iterable[str], category: str) -> str:
+    """Converts a list of categories into a single string for counting."""
+    if category != 'all':
+        return category if category in categories else ''
+
+    main_categories = ('scalable', 'smoketest')
+    s = set(categories)
+
+    c = [m for m in main_categories if m in s]
+    s.difference_update(main_categories)
+    c.extend(s)
+    return ' '.join(c)
+
+
+def gen_scenario_languages(
+        category: str) -> Iterable[Tuple[str, str, str, str]]:
+    """Generates tuples containing the languages specified in each scenario."""
+    for language in scenario_config.LANGUAGES:
+        for scenario in scenario_config.LANGUAGES[language].scenarios():
+            client_language = scenario.get('CLIENT_LANGUAGE')
+            server_language = scenario.get('SERVER_LANGUAGE')
+            categories = scenario.get('CATEGORIES', [])
+            if category != 'all' and category not in categories:
+                continue
+            yield (language, client_language, server_language,
+                   category_string(categories, category))
+
+
+def scenario_filter(
+        scenario_name_regex: str = '.*',
+        category: str = 'all',
+        client_language: Optional[str] = None,
+        server_language: Optional[str] = None
+) -> Callable[[Dict[str, Any]], bool]:
+    """Returns a function to filter scenarios to process."""
+
+    def filter_scenario(scenario: Dict[str, Any]) -> bool:
+        """Filters scenarios that match specified criteria."""
+        if not re.search(scenario_name_regex, scenario["name"]):
+            return False
+        # if the 'CATEGORIES' key is missing, treat scenario as part of
+        # 'scalable' and 'smoketest'. This matches the behavior of
+        # run_performance_tests.py.
+        scenario_categories = scenario.get('CATEGORIES',
+                                           ['scalable', 'smoketest'])
+        if category not in scenario_categories and category != 'all':
+            return False
+
+        scenario_client_language = scenario.get('CLIENT_LANGUAGE')
+        if client_language != scenario_client_language:
+            if scenario_client_language:
+                return False
+
+        scenario_server_language = scenario.get('SERVER_LANGUAGE')
+        if server_language != scenario_server_language:
+            if scenario_client_language:
+                return False
+
+        return True
+
+    return filter_scenario
+
+
+def gen_scenarios(
+    language_name: str, scenario_filter_function: Callable[[Dict[str, Any]],
+                                                           bool]
+) -> Iterable[Dict[str, Any]]:
+    """Generates scenarios that match a given filter function."""
+    return map(
+        scenario_config.remove_nonproto_fields,
+        filter(scenario_filter_function,
+               scenario_config.LANGUAGES[language_name].scenarios()))
+
+
+def dump_to_json_files(scenarios: Iterable[Dict[str, Any]],
+                       filename_prefix: str) -> None:
+    """Dumps a list of scenarios to JSON files"""
+    count = 0
+    for scenario in scenarios:
+        filename = '{}{}.json'.format(filename_prefix, scenario['name'])
+        print('Writing file {}'.format(filename), file=sys.stderr)
         with open(filename, 'w') as outfile:
-            # the dump file should have {"scenarios" : []} as the top level element
+            # The dump file should have {"scenarios" : []} as the top level
+            # element, when embedded in a LoadTest configuration YAML file.
             json.dump({'scenarios': [scenario]}, outfile, indent=2)
+        count += 1
+    print('Wrote {} scenarios'.format(count), file=sys.stderr)
+
+
+def main() -> None:
+    language_choices = sorted(scenario_config.LANGUAGES.keys())
+    argp = argparse.ArgumentParser(description='Exports scenarios to files.')
+    argp.add_argument('--export_scenarios',
+                      nargs='?',
+                      const=True,
+                      default=False,
+                      type=bool,
+                      help='Export scenarios to JSON files.')
+    argp.add_argument('--count_scenarios',
+                      nargs='?',
+                      const=True,
+                      default=False,
+                      type=bool,
+                      help='Count scenarios for all test languages.')
+    argp.add_argument('-l',
+                      '--language',
+                      choices=language_choices,
+                      help='Language to export.')
+    argp.add_argument('-f',
+                      '--filename_prefix',
+                      default='scenario_dump_',
+                      type=str,
+                      help='Prefix for exported JSON file names.')
+    argp.add_argument('-r',
+                      '--regex',
+                      default='.*',
+                      type=str,
+                      help='Regex to select scenarios to run.')
+    argp.add_argument(
+        '--category',
+        default='all',
+        choices=['all', 'inproc', 'scalable', 'smoketest', 'sweep'],
+        help='Select scenarios for a category of tests.')
+    argp.add_argument(
+        '--client_language',
+        choices=language_choices,
+        help='Select only scenarios with a specified client language.')
+    argp.add_argument(
+        '--server_language',
+        choices=language_choices,
+        help='Select only scenarios with a specified server language.')
+    args = argp.parse_args()
+
+    if args.export_scenarios and not args.language:
+        print('Dumping scenarios requires a specified language.',
+              file=sys.stderr)
+        argp.print_usage(file=sys.stderr)
+        return
+
+    if args.export_scenarios:
+        s_filter = scenario_filter(scenario_name_regex=args.regex,
+                                   category=args.category,
+                                   client_language=args.client_language,
+                                   server_language=args.server_language)
+        scenarios = gen_scenarios(args.language, s_filter)
+        dump_to_json_files(scenarios, args.filename_prefix)
+
+    if args.count_scenarios:
+        print('Scenario count for all languages (category: {}):'.format(
+            args.category))
+        print('{:>5}  {:16} {:8} {:8} {}'.format('Count', 'Language', 'Client',
+                                                 'Server', 'Categories'))
+        c = collections.Counter(gen_scenario_languages(args.category))
+        total = 0
+        for ((l, cl, sl, cat), count) in c.most_common():
+            print('{count:5}  {l:16} {cl:8} {sl:8} {cat}'.format(l=l,
+                                                                 cl=str(cl),
+                                                                 sl=str(sl),
+                                                                 count=count,
+                                                                 cat=cat))
+            total += count
+
+        print('\n{:>5}  total scenarios (category: {})'.format(
+            total, args.category))
 
 
 if __name__ == "__main__":
-    # example usage: extract C# scenarios and dump them as .json files
-    scenarios = get_json_scenarios('csharp',
-                                   scenario_name_regex='.*',
-                                   category='scalable')
-    dump_to_json_files(scenarios, 'scenario_dump_')
+    main()

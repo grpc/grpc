@@ -86,11 +86,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "gilded"  # @unused
+g_stands_for = "guadalupe_river_park_conservancy"  # @unused
 
-core_version = "15.0.0"  # @unused
+core_version = "16.0.0"  # @unused
 
-version = "1.37.0-dev"  # @unused
+version = "1.38.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -126,6 +126,13 @@ GRPC_PUBLIC_HDRS = [
     "include/grpc/status.h",
     "include/grpc/load_reporting.h",
     "include/grpc/support/workaround_list.h",
+]
+
+GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
+    "include/grpc/event_engine/channel_args.h",
+    "include/grpc/event_engine/event_engine.h",
+    "include/grpc/event_engine/port.h",
+    "include/grpc/event_engine/slice_allocator.h",
 ]
 
 GRPC_SECURE_PUBLIC_HDRS = [
@@ -767,6 +774,8 @@ grpc_cc_library(
         "src/core/lib/compression/stream_compression_identity.cc",
         "src/core/lib/debug/stats.cc",
         "src/core/lib/debug/stats_data.cc",
+        "src/core/lib/event_engine/slice_allocator.cc",
+        "src/core/lib/event_engine/sockaddr.cc",
         "src/core/lib/http/format_request.cc",
         "src/core/lib/http/httpcli.cc",
         "src/core/lib/http/parser.cc",
@@ -1057,10 +1066,9 @@ grpc_cc_library(
         "absl/container:flat_hash_map",
     ],
     language = "c++",
-    public_hdrs = GRPC_PUBLIC_HDRS,
+    public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     deps = [
         "dual_ref_counted",
-        "eventmanager_libuv",
         "gpr_base",
         "grpc_codegen",
         "grpc_trace",
@@ -1135,6 +1143,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver.cc",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
         "src/core/ext/filters/client_channel/resolver_result_parsing.cc",
+        "src/core/ext/filters/client_channel/retry_filter.cc",
+        "src/core/ext/filters/client_channel/retry_service_config.cc",
         "src/core/ext/filters/client_channel/retry_throttle.cc",
         "src/core/ext/filters/client_channel/server_address.cc",
         "src/core/ext/filters/client_channel/service_config.cc",
@@ -1167,6 +1177,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/resolver_factory.h",
         "src/core/ext/filters/client_channel/resolver_registry.h",
         "src/core/ext/filters/client_channel/resolver_result_parsing.h",
+        "src/core/ext/filters/client_channel/retry_filter.h",
+        "src/core/ext/filters/client_channel/retry_service_config.h",
         "src/core/ext/filters/client_channel/retry_throttle.h",
         "src/core/ext/filters/client_channel/server_address.h",
         "src/core/ext/filters/client_channel/service_config.h",
@@ -2630,7 +2642,7 @@ grpc_cc_library_xds(
     alwayslink = 1,
 )
 
-grpc_cc_library(
+grpc_cc_library_xds(
     name = "grpcpp_admin",
     srcs = [
         "src/cpp/server/admin/admin_services.cc",
@@ -2735,6 +2747,7 @@ grpc_cc_library(
         "absl-time",
         "opencensus-trace",
         "opencensus-trace-context_util",
+        "opencensus-trace-propagation",
         "opencensus-stats",
         "opencensus-context",
     ],
@@ -3604,26 +3617,4 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
-)
-
-# Base classes of EventManagerInterface
-grpc_cc_library(
-    name = "eventmanager_interface",
-    hdrs = [
-        "src/core/lib/iomgr/poller/eventmanager_interface.h",
-    ],
-)
-
-# Libuv-based EventManager implementation
-grpc_cc_library(
-    name = "eventmanager_libuv",
-    srcs = [
-        "src/core/lib/iomgr/poller/eventmanager_libuv.cc",
-    ],
-    hdrs = [
-        "src/core/lib/iomgr/poller/eventmanager_libuv.h",
-    ],
-    deps = [
-        "gpr_base",
-    ],
 )

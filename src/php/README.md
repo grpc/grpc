@@ -230,7 +230,7 @@ Or require the `google/protobuf` composer package. Add this to your
 
 ### Generate PHP classes from your service definition
 
-With all the above done, now you can define your message and service defintion
+With all the above done, now you can define your message and service definition
 in a `.proto` file and generate the corresponding PHP classes, which you can
 import into your project, with a command similar to the following:
 

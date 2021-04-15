@@ -1,20 +1,18 @@
-/*
- *
- * Copyright 2018 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
+//
+// Copyright 2018 gRPC authors.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
 
 #include "test/core/util/test_lb_policies.h"
 
@@ -50,14 +48,14 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
   ForwardingLoadBalancingPolicy(
       std::unique_ptr<ChannelControlHelper> delegating_helper, Args args,
-      const std::string& delegate_policy_name, intptr_t initial_refcount = 1)
+      const char* delegate_policy_name, intptr_t initial_refcount = 1)
       : LoadBalancingPolicy(std::move(args), initial_refcount) {
     Args delegate_args;
     delegate_args.work_serializer = work_serializer();
     delegate_args.channel_control_helper = std::move(delegating_helper);
     delegate_args.args = args.args;
     delegate_ = LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-        delegate_policy_name.c_str(), std::move(delegate_args));
+        delegate_policy_name, std::move(delegate_args));
     grpc_pollset_set_add_pollset_set(delegate_->interested_parties(),
                                      interested_parties());
   }
@@ -99,11 +97,11 @@ constexpr char kTestPickArgsLbPolicyName[] = "test_pick_args_lb";
 
 class TestPickArgsLb : public ForwardingLoadBalancingPolicy {
  public:
-  TestPickArgsLb(Args args, TestPickArgsCallback cb)
+  TestPickArgsLb(Args args, TestPickArgsCallback cb,
+                 const char* delegate_policy_name)
       : ForwardingLoadBalancingPolicy(
             absl::make_unique<Helper>(RefCountedPtr<TestPickArgsLb>(this), cb),
-            std::move(args),
-            /*delegate_policy_name=*/"pick_first",
+            std::move(args), delegate_policy_name,
             /*initial_refcount=*/2) {}
 
   ~TestPickArgsLb() override = default;
@@ -171,12 +169,14 @@ class TestPickArgsLbConfig : public LoadBalancingPolicy::Config {
 
 class TestPickArgsLbFactory : public LoadBalancingPolicyFactory {
  public:
-  explicit TestPickArgsLbFactory(TestPickArgsCallback cb)
-      : cb_(std::move(cb)) {}
+  explicit TestPickArgsLbFactory(TestPickArgsCallback cb,
+                                 const char* delegate_policy_name)
+      : cb_(std::move(cb)), delegate_policy_name_(delegate_policy_name) {}
 
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    return MakeOrphanable<TestPickArgsLb>(std::move(args), cb_);
+    return MakeOrphanable<TestPickArgsLb>(std::move(args), cb_,
+                                          delegate_policy_name_);
   }
 
   const char* name() const override { return kTestPickArgsLbPolicyName; }
@@ -188,6 +188,7 @@ class TestPickArgsLbFactory : public LoadBalancingPolicyFactory {
 
  private:
   TestPickArgsCallback cb_;
+  const char* delegate_policy_name_;
 };
 
 //
@@ -416,9 +417,11 @@ class AddressTestFactory : public LoadBalancingPolicyFactory {
 
 }  // namespace
 
-void RegisterTestPickArgsLoadBalancingPolicy(TestPickArgsCallback cb) {
+void RegisterTestPickArgsLoadBalancingPolicy(TestPickArgsCallback cb,
+                                             const char* delegate_policy_name) {
   LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
-      absl::make_unique<TestPickArgsLbFactory>(std::move(cb)));
+      absl::make_unique<TestPickArgsLbFactory>(std::move(cb),
+                                               delegate_policy_name));
 }
 
 void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(

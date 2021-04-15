@@ -85,7 +85,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   static RefCountedPtr<XdsClient> GetOrCreate(grpc_error** error);
 
   // Callers should not instantiate directly.  Use GetOrCreate() instead.
-  explicit XdsClient(grpc_error** error);
+  XdsClient(grpc_channel_args* args, grpc_error** error);
   ~XdsClient() override;
 
   const XdsBootstrap& bootstrap() const {
@@ -236,9 +236,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
     void StartConnectivityWatchLocked();
     void CancelConnectivityWatchLocked();
 
-    void Subscribe(const std::string& type_url, const std::string& name);
-    void Unsubscribe(const std::string& type_url, const std::string& name,
-                     bool delay_unsubscription);
+    void SubscribeLocked(const std::string& type_url, const std::string& name)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
+    void UnsubscribeLocked(const std::string& type_url, const std::string& name,
+                           bool delay_unsubscription)
+        ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
    private:
     class StateWatcher;
@@ -308,17 +310,18 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   // Sends an error notification to all watchers.
-  void NotifyOnErrorLocked(grpc_error* error);
+  void NotifyOnErrorLocked(grpc_error* error)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(
-      bool send_all_clusters, const std::set<std::string>& clusters);
+      bool send_all_clusters, const std::set<std::string>& clusters)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  void UpdateResourceMetadataWithFailedParseResult(
-      grpc_millis update_time, const XdsApi::AdsParseResult& result);
-  void UpdatePendingResources(
-      const std::string& type_url,
-      XdsApi::ResourceMetadataMap* resource_metadata_map);
+  void UpdateResourceMetadataWithFailedParseResultLocked(
+      grpc_millis update_time, const XdsApi::AdsParseResult& result)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  grpc_channel_args* args_;
   const grpc_millis request_timeout_;
   grpc_pollset_set* interested_parties_;
   std::unique_ptr<XdsBootstrap> bootstrap_;
@@ -328,28 +331,32 @@ class XdsClient : public DualRefCounted<XdsClient> {
   Mutex mu_;
 
   // The channel for communicating with the xds server.
-  OrphanablePtr<ChannelState> chand_;
+  OrphanablePtr<ChannelState> chand_ ABSL_GUARDED_BY(mu_);
 
   // One entry for each watched LDS resource.
-  std::map<std::string /*listener_name*/, ListenerState> listener_map_;
+  std::map<std::string /*listener_name*/, ListenerState> listener_map_
+      ABSL_GUARDED_BY(mu_);
   // One entry for each watched RDS resource.
   std::map<std::string /*route_config_name*/, RouteConfigState>
-      route_config_map_;
+      route_config_map_ ABSL_GUARDED_BY(mu_);
   // One entry for each watched CDS resource.
-  std::map<std::string /*cluster_name*/, ClusterState> cluster_map_;
+  std::map<std::string /*cluster_name*/, ClusterState> cluster_map_
+      ABSL_GUARDED_BY(mu_);
   // One entry for each watched EDS resource.
-  std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_;
+  std::map<std::string /*eds_service_name*/, EndpointState> endpoint_map_
+      ABSL_GUARDED_BY(mu_);
 
   // Load report data.
   std::map<
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       LoadReportState>
-      load_report_map_;
+      load_report_map_ ABSL_GUARDED_BY(mu_);
 
   // Stores the most recent accepted resource version for each resource type.
-  std::map<std::string /*type*/, std::string /*version*/> resource_version_map_;
+  std::map<std::string /*type*/, std::string /*version*/> resource_version_map_
+      ABSL_GUARDED_BY(mu_);
 
-  bool shutting_down_ = false;
+  bool shutting_down_ ABSL_GUARDED_BY(mu_) = false;
 };
 
 namespace internal {
@@ -362,4 +369,4 @@ void SetXdsFallbackBootstrapConfig(const char* config);
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_XDS_XDS_CLIENT_H */
+#endif  // GRPC_CORE_EXT_XDS_XDS_CLIENT_H

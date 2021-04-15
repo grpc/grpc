@@ -1338,7 +1338,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                       }];
                    }];
 
-  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [self waitForExpectationsWithTimeout:STREAMING_CALL_TEST_TIMEOUT handler:nil];
 }
 
 - (void)testCompressedUnaryRPC {
@@ -1592,15 +1592,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
   XCTAssertEqual(didWriteDataCount, 4);
 }
 
-// Chain a default interceptor and a hook interceptor which, after two writes, cancels the call
+// Chain a default interceptor and a hook interceptor which, after one write, cancels the call
 // under the hood but forward further data to the user.
 - (void)testHijackingInterceptor {
-  NSUInteger kCancelAfterWrites = 2;
+  NSUInteger kCancelAfterWrites = 1;
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *expectUserCallComplete =
       [self expectationWithDescription:@"User call completed."];
-  __weak XCTestExpectation *expectCallInternalComplete =
-      [self expectationWithDescription:@"Internal gRPC call completed."];
 
   NSArray *responses = @[ @1, @2, @3, @4 ];
   __block int index = 0;
@@ -1657,7 +1655,6 @@ static dispatch_once_t initGlobalInterceptorFactory;
         XCTAssertNil(trailingMetadata);
         XCTAssertNotNil(error);
         XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
-        [expectCallInternalComplete fulfill];
       }
       didWriteDataHook:nil];
 
@@ -1713,7 +1710,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   XCTAssertEqual(writeDataCount, 4);
   XCTAssertEqual(finishCount, 1);
   XCTAssertEqual(responseHeaderCount, 1);
-  XCTAssertEqual(responseDataCount, 2);
+  XCTAssertEqual(responseDataCount, 1);
   XCTAssertEqual(responseCloseCount, 1);
 }
 
