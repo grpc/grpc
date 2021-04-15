@@ -730,7 +730,8 @@ static grpc_error* error_from_status(grpc_status_code status,
 
 static void cancel_with_status(grpc_call* c, grpc_status_code status,
                                const char* description) {
-  grpc_call_cancel_with_error_internal(c, error_from_status(status, description));
+  grpc_call_cancel_with_error_internal(c,
+                                       error_from_status(status, description));
 }
 
 static void set_final_status(grpc_call* call, grpc_error* error) {
