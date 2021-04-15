@@ -2360,7 +2360,7 @@ std::string GetBootstrapContents(const char* fallback_config,
     grpc_slice contents;
     *error =
         grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
-    if (*error != GRPC_ERROR_NONE) return nullptr;
+    if (*error != GRPC_ERROR_NONE) return "";
     std::string contents_str(StringViewFromSlice(contents));
     grpc_slice_unref_internal(contents);
     return contents_str;

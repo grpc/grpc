@@ -51,8 +51,9 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
   // Called at the beginning of BuildAndStart().
   ChannelArguments BuildChannelArgs() override {
     ChannelArguments args = ServerBuilder::BuildChannelArgs();
+    grpc_channel_args c_channel_args = args.c_channel_args();
     grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(
-        {OnServingStatusChange, notifier_}, &args.c_channel_args());
+        {OnServingStatusChange, notifier_}, &c_channel_args);
     if (fetcher != nullptr) set_fetcher(fetcher);
     return args;
   }
