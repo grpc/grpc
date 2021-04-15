@@ -82,17 +82,7 @@ struct call_data {
         chand->auth_context->Ref(DEBUG_LOCATION, "client_auth_filter");
   }
 
-  // This method is technically the dtor of this class. However, since
-  // `get_request_metadata_cancel_closure` can run in parallel to
-  // `destroy_call_elem`, we cannot call the dtor in them. Otherwise,
-  // fields will be accessed after calling dtor, and msan correctly complains
-  // that the memory is not initialized.
-  // TODO(roth): Is the above still true now that
-  // https://github.com/grpc/grpc/pull/25827 has been merged?  The
-  // callback is holding a ref to the call stack, so it should not be
-  // possible for the call stack to be destroyed until the callback completes.
-  // FIXME: also may not be relevant now that cancellation is different
-  void destroy() {
+  ~call_data() {
     grpc_credentials_mdelem_array_destroy(&md_array);
     creds.reset();
     grpc_slice_unref_internal(host);
@@ -462,7 +452,7 @@ static void client_auth_destroy_call_elem(
     grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
     grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->destroy();
+  calld->~call_data();
 }
 
 /* Constructor for channel_data */
