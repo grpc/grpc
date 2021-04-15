@@ -65,12 +65,6 @@ void ParseEndpointUri(absl::string_view uri_text, std::string* address,
 
 EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
                                              grpc_endpoint* endpoint) {
-  if (endpoint != nullptr) {
-    ParseEndpointUri(grpc_endpoint_get_local_address(endpoint), &local_address,
-                     &local_port);
-    ParseEndpointUri(grpc_endpoint_get_peer(endpoint), &peer_address,
-                     &peer_port);
-  }
   if (auth_context != nullptr) {
     auth_ctx = auth_context->Ref();
     transport_security_type = GetAuthPropertyValue(
@@ -79,6 +73,12 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
         GetAuthPropertyValue(auth_ctx.get(), GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
     common_name =
         GetAuthPropertyValue(auth_ctx.get(), GRPC_X509_CN_PROPERTY_NAME);
+  }
+  if (endpoint != nullptr) {
+    ParseEndpointUri(grpc_endpoint_get_local_address(endpoint), &local_address,
+                     &local_port);
+    ParseEndpointUri(grpc_endpoint_get_peer(endpoint), &peer_address,
+                     &peer_port);
   }
 }
 
@@ -133,6 +133,55 @@ absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
     return absl::nullopt;
   }
   return grpc_metadata_batch_get_value(metadata_, key, concatenated_value);
+}
+
+absl::string_view EvaluateArgs::GetLocalAddress() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->local_address;
+}
+
+int EvaluateArgs::GetLocalPort() const {
+  if (channel_args_ == nullptr) {
+    return 0;
+  }
+  return channel_args_->local_port;
+}
+
+absl::string_view EvaluateArgs::GetPeerAddress() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->peer_address;
+}
+
+int EvaluateArgs::GetPeerPort() const {
+  if (channel_args_ == nullptr) {
+    return 0;
+  }
+  return channel_args_->peer_port;
+}
+
+absl::string_view EvaluateArgs::GetTransportSecurityType() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->transport_security_type;
+}
+
+absl::string_view EvaluateArgs::GetSpiffeId() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->spiffe_id;
+}
+
+absl::string_view EvaluateArgs::GetCommonName() const {
+  if (channel_args_ == nullptr) {
+    return "";
+  }
+  return channel_args_->common_name;
 }
 
 }  // namespace grpc_core
