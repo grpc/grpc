@@ -263,8 +263,8 @@ follows:
 ```shell
 $ ./tools/run_tests/performance/loadtest_config.py -l go -l java \
     -t ./tools/run_tests/performance/templates/basic_template.yaml \
-    -s client_pool=workers-8core server_pool=workers-8core \
-        big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
-        timeoutSeconds=3600 \
+    -s client_pool=workers-8core -s server_pool=workers-8core \
+    -s big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
+    -s timeoutSeconds=3600 --category=scalable \
     -d --client_language=c++ --server_language=c++ -o ./loadtest.yaml
 ```

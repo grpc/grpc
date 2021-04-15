@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Library to extract scenario definitions from scenario_config.py
+# Library to extract scenario definitions from scenario_config.py.
 #
 # Contains functions to filter, analyze and dump scenario definitions.
 #
@@ -34,9 +34,6 @@
 # scenario_config.py --count_scenarios
 #
 # scenario_config.py --count_scenarios --category=scalable
-#
-# scenario_config.py --language_config_output=language_config.yaml \
-#     --category=scalable
 #
 # For usage of the language config output, see loadtest_config.py.
 

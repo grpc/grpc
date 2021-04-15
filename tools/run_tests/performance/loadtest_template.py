@@ -13,10 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Script to generate test configurations for the OSS benchmarks framework.
+# This script generates a load test configuration template from a collection of
+# load test configurations.
 #
-# This script filters test scenarios and generates uniquely named configurations
-# for each test. Configurations are dumped in multipart YAML format.
+# The following example generates a basic template from the example configs
+# in https://github.com/grpc/test-infra/tree/master/config/samples:
+#
+# $ ./tools/run_tests/performance/loadtest_template.py \
+#     -i ../test-infra/config/samples/*.yaml \
+#     -o ./tools/run_tests/performance/templates/basic_template.yaml \
+#     --name basic_template
+
 import argparse
 import sys
 
@@ -36,6 +43,7 @@ DEFAULT_KEYS = {
 
 
 def validate_keys(keys: Mapping[str, str]) -> None:
+    """Validates that substitution keys are a subset of default keys."""
     extra_keys = set(keys).difference(DEFAULT_KEYS)
     if extra_keys:
         raise ValueError('Unrecognized replacement keys: %s', ' '.join(keys))
@@ -45,6 +53,10 @@ def loadtest_set_keys(
     template: Mapping[str, Any],
     keys: Mapping[str, str],
 ) -> None:
+    """Sets substitution keys in the template.
+
+     These keys are set so they can be replaced later by the config gemerator.
+     """
     if keys.get('client_pool'):
         client_pool = keys['client_pool']
         clients = template['spec']['clients']
@@ -67,6 +79,7 @@ def loadtest_set_keys(
 
 def loadtest_template(input_file_names: Iterable[str], keys: Mapping[str, str],
                       metadata: Mapping[str, Any]) -> Dict[str, Any]:
+    """Generates the load test template."""
     clients = list()
     servers = list()
     spec = dict()
@@ -138,7 +151,7 @@ def main() -> None:
     argp.add_argument('-k',
                       '--keys',
                       action='extend',
-                      nargs='+',
+                      nargs='*',
                       default=[],
                       type=str,
                       help='Value of keys to insert, in the form key=value.')

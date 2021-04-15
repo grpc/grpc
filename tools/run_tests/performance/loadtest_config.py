@@ -17,12 +17,22 @@
 #
 # This script filters test scenarios and generates uniquely named configurations
 # for each test. Configurations are dumped in multipart YAML format.
+#
+# The following example generates configurations for C# and Java tests,
+# including tests against C++ clients and servers, running each test twice:
+#
+# ./tools/run_tests/performance/loadtest_config.py -l go -l java \
+#    -t ./tools/run_tests/performance/templates/basic_template.yaml \
+#    -s client_pool=workers-8core -s server_pool=workers-8core \
+#    -s big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
+#    -s timeoutSeconds=3600 --category=scalable -d \
+#    --client_language=c++ --server_language=c++ --runs_per_test=2 \
+#    -o ./loadtest.yaml
 
 import argparse
 import copy
 import datetime
 import itertools
-import json
 import os
 import string
 import sys
@@ -30,6 +40,7 @@ import uuid
 
 from typing import Any, Dict, Iterable, List, Mapping, Optional
 
+import json
 import yaml
 
 import scenario_config
@@ -42,6 +53,7 @@ def default_prefix() -> str:
 
 
 def now_string() -> str:
+    """Returns the current date and time in string format."""
     return datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
 
@@ -79,7 +91,7 @@ def validate_annotations(annotations: Dict[str, str]) -> None:
 
     These names are automatically added by the config generator.
     """
-    names = set(('scenario', 'uniquifiers')).intersection(annotations)
+    names = set(('scenario', 'uniquifier')).intersection(annotations)
     if names:
         raise ValueError('Annotations contain reserved names: %s' % names)
 
@@ -103,7 +115,10 @@ def gen_loadtest_configs(
         uniquifiers: Iterable[str],
         annotations: Mapping[str, str],
         runs_per_test: int = 1) -> Iterable[Dict[str, Any]]:
-    """Generates LoadTest configurations as YAML objects."""
+    """Generates LoadTest configurations for a given language config.
+
+    The LoadTest configurations are generated as YAML objects.
+    """
     validate_annotations(annotations)
     prefix = loadtest_name_prefix or default_prefix()
     cl = language_config.client_language or language_config.language
@@ -135,7 +150,7 @@ def gen_loadtest_configs(
             metadata['annotations'].update(annotations)
             metadata['annotations'].update({
                 'scenario': scenario['name'],
-                'uniquifiers': '-'.join(uniq),
+                'uniquifier': '-'.join(uniq),
             })
 
             clients = config['spec']['clients']
