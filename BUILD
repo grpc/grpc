@@ -32,7 +32,6 @@ package(
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
-    "grpc_cc_library_xds",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
     "python_config_settings",
@@ -2626,7 +2625,7 @@ grpc_cc_library(
     alwayslink = 1,
 )
 
-grpc_cc_library_xds(
+grpc_cc_library(
     name = "grpcpp_csds",
     srcs = [
         "src/cpp/server/csds/csds.cc",
@@ -2642,7 +2641,7 @@ grpc_cc_library_xds(
     alwayslink = 1,
 )
 
-grpc_cc_library_xds(
+grpc_cc_library(
     name = "grpcpp_admin",
     srcs = [
         "src/cpp/server/admin/admin_services.cc",
