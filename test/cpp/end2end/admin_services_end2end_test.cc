@@ -72,26 +72,24 @@ class AdminServicesTest : public ::testing::Test {
       stream_;
 };
 
-#if !defined(GRPC_NO_XDS) && !defined(DISABLED_XDS_PROTO_IN_CC)
-// The ifndef conflicts with TEST_F and EXPECT_THAT macros, so we better isolate
-// the condition at test case level.
-TEST_F(AdminServicesTest, XdsEnabled) {
-  EXPECT_THAT(GetServiceList(),
-              ::testing::UnorderedElementsAre(
-                  "envoy.service.status.v3.ClientStatusDiscoveryService",
-                  "grpc.channelz.v1.Channelz",
-                  "grpc.reflection.v1alpha.ServerReflection"));
-}
-#endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
-
+TEST_F(AdminServicesTest, ValidateRegisteredServices) {
+  // Using Contains here, because the server builder might register other
+  // services in certain environments.
+  EXPECT_THAT(
+      GetServiceList(),
+      ::testing::AllOf(
+          ::testing::Contains("grpc.channelz.v1.Channelz"),
+          ::testing::Contains("grpc.reflection.v1alpha.ServerReflection")));
 #if defined(GRPC_NO_XDS) || defined(DISABLED_XDS_PROTO_IN_CC)
-TEST_F(AdminServicesTest, XdsDisabled) {
   EXPECT_THAT(GetServiceList(),
-              ::testing::UnorderedElementsAre(
-                  "grpc.channelz.v1.Channelz",
-                  "grpc.reflection.v1alpha.ServerReflection"));
-}
+              ::testing::Not(::testing::Contains(
+                  "envoy.service.status.v3.ClientStatusDiscoveryService")));
+#else
+  EXPECT_THAT(GetServiceList(),
+              ::testing::Contains(
+                  "envoy.service.status.v3.ClientStatusDiscoveryService"));
 #endif  // GRPC_NO_XDS or DISABLED_XDS_PROTO_IN_CC
+}
 
 }  // namespace testing
 }  // namespace grpc
