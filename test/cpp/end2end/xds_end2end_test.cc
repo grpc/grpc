@@ -2375,7 +2375,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       }
 
       void UpdatePlugins(
-          std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>* plugins)
+          std::vector<std::unique_ptr<grpc::ServerBuilderPlugin>>* /*plugins*/)
           override {}
 
      private:
