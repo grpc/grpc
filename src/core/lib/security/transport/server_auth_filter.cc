@@ -267,10 +267,11 @@ static void server_auth_pre_cancel_call(grpc_call_element* elem,
   // If the result was not already processed, invoke the callback now.
   if (gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
                        static_cast<gpr_atm>(STATE_CANCELLED))) {
-    on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0, error);
-  } else {
-    grpc_call_pre_cancel_next_filter(elem, error);
+    on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0,
+                                GRPC_ERROR_REF(error));
   }
+  // Propagate pre-cancellation to next filter.
+  grpc_call_pre_cancel_next_filter(elem, error);
 }
 
 /* Constructor for call_data */
