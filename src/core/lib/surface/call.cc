@@ -290,7 +290,6 @@ static void execute_batch(grpc_call* call,
 
 static void cancel_with_status(grpc_call* c, grpc_status_code status,
                                const char* description);
-static void cancel_with_error(grpc_call* c, grpc_error* error);
 static void destroy_call(void* call_stack, grpc_error* error);
 static void receiving_slice_ready(void* bctlp, grpc_error* error);
 static void set_final_status(grpc_call* call, grpc_error* error);
@@ -454,10 +453,10 @@ grpc_error* grpc_call_create(const grpc_call_create_args* args,
   }
 
   if (error != GRPC_ERROR_NONE) {
-    cancel_with_error(call, GRPC_ERROR_REF(error));
+    grpc_call_cancel_with_error_internal(call, GRPC_ERROR_REF(error));
   }
   if (immediately_cancel) {
-    cancel_with_error(call, GRPC_ERROR_CANCELLED);
+    grpc_call_cancel_with_error_internal(call, GRPC_ERROR_CANCELLED);
   }
   if (args->cq != nullptr) {
     GPR_ASSERT(args->pollset_set_alternative == nullptr &&
@@ -605,7 +604,7 @@ void grpc_call_unref(grpc_call* c) {
   bool cancel = gpr_atm_acq_load(&c->any_ops_sent_atm) != 0 &&
                 gpr_atm_acq_load(&c->received_final_op_atm) == 0;
   if (cancel) {
-    cancel_with_error(c, GRPC_ERROR_CANCELLED);
+    grpc_call_cancel_with_error_internal(c, GRPC_ERROR_CANCELLED);
   }
   GRPC_CALL_INTERNAL_UNREF(c, "destroy");
 }
@@ -615,7 +614,7 @@ grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
   GPR_ASSERT(!reserved);
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  cancel_with_error(call, GRPC_ERROR_CANCELLED);
+  grpc_call_cancel_with_error_internal(call, GRPC_ERROR_CANCELLED);
   return GRPC_CALL_OK;
 }
 
@@ -690,7 +689,7 @@ static void done_termination(void* arg, grpc_error* /*error*/) {
   gpr_free(state);
 }
 
-static void cancel_with_error(grpc_call* c, grpc_error* error) {
+void grpc_call_cancel_with_error_internal(grpc_call* c, grpc_error* error) {
   if (!gpr_atm_rel_cas(&c->cancelled_with_error, 0, 1)) {
     GRPC_ERROR_UNREF(error);
     return;
@@ -715,7 +714,7 @@ static void cancel_with_error(grpc_call* c, grpc_error* error) {
 }
 
 void grpc_call_cancel_internal(grpc_call* call) {
-  cancel_with_error(call, GRPC_ERROR_CANCELLED);
+  grpc_call_cancel_with_error_internal(call, GRPC_ERROR_CANCELLED);
 }
 
 static grpc_error* error_from_status(grpc_status_code status,
@@ -731,7 +730,7 @@ static grpc_error* error_from_status(grpc_status_code status,
 
 static void cancel_with_status(grpc_call* c, grpc_status_code status,
                                const char* description) {
-  cancel_with_error(c, error_from_status(status, description));
+  grpc_call_cancel_with_error_internal(c, error_from_status(status, description));
 }
 
 static void set_final_status(grpc_call* call, grpc_error* error) {
@@ -1093,6 +1092,10 @@ grpc_call_stack* grpc_call_get_call_stack(grpc_call* call) {
   return CALL_STACK_FROM_CALL(call);
 }
 
+grpc_call* grpc_call_from_call_stack(grpc_call_stack* call_stack) {
+  return CALL_FROM_CALL_STACK(call_stack);
+}
+
 /*******************************************************************************
  * BATCH API IMPLEMENTATION
  */
@@ -1206,7 +1209,7 @@ static void post_batch_completion(batch_control* bctl) {
           next_child_call = child->child->sibling_next;
           if (child->cancellation_is_inherited) {
             GRPC_CALL_INTERNAL_REF(child, "propagate_cancel");
-            cancel_with_error(child, GRPC_ERROR_CANCELLED);
+            grpc_call_cancel_with_error_internal(child, GRPC_ERROR_CANCELLED);
             GRPC_CALL_INTERNAL_UNREF(child, "propagate_cancel");
           }
           child = next_child_call;
@@ -1348,7 +1351,7 @@ static void receiving_stream_ready(void* bctlp, grpc_error* error) {
       gpr_atm_rel_store(&bctl->batch_error,
                         reinterpret_cast<gpr_atm>(GRPC_ERROR_REF(error)));
     }
-    cancel_with_error(call, GRPC_ERROR_REF(error));
+    grpc_call_cancel_with_error_internal(call, GRPC_ERROR_REF(error));
   }
   /* If recv_state is RECV_NONE, we will save the batch_control
    * object with rel_cas, and will not use it after the cas. Its corresponding
@@ -1481,7 +1484,7 @@ static void receiving_initial_metadata_ready(void* bctlp, grpc_error* error) {
       gpr_atm_rel_store(&bctl->batch_error,
                         reinterpret_cast<gpr_atm>(GRPC_ERROR_REF(error)));
     }
-    cancel_with_error(call, GRPC_ERROR_REF(error));
+    grpc_call_cancel_with_error_internal(call, GRPC_ERROR_REF(error));
   }
 
   grpc_closure* saved_rsr_closure = nullptr;
@@ -1536,7 +1539,7 @@ static void finish_batch(void* bctlp, grpc_error* error) {
                       reinterpret_cast<gpr_atm>(GRPC_ERROR_REF(error)));
   }
   if (error != GRPC_ERROR_NONE) {
-    cancel_with_error(call, GRPC_ERROR_REF(error));
+    grpc_call_cancel_with_error_internal(call, GRPC_ERROR_REF(error));
   }
   finish_batch_step(bctl);
 }

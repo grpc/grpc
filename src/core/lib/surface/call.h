@@ -77,6 +77,7 @@ void grpc_call_internal_unref(grpc_call* call);
 grpc_core::Arena* grpc_call_get_arena(grpc_call* call);
 
 grpc_call_stack* grpc_call_get_call_stack(grpc_call* call);
+grpc_call* grpc_call_from_call_stack(grpc_call_stack* call_stack);
 
 grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
                                                   const grpc_op* ops,
@@ -86,6 +87,7 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
 /* gRPC core internal version of grpc_call_cancel that does not create
  * exec_ctx. */
 void grpc_call_cancel_internal(grpc_call* call);
+void grpc_call_cancel_with_error_internal(grpc_call* call, grpc_error* error);
 
 /* Given the top call_element, get the call object. */
 grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);
