@@ -103,6 +103,24 @@ struct call_data {
   grpc_call_stack* owning_call;
   grpc_core::CallCombiner* call_combiner;
   grpc_core::RefCountedPtr<grpc_call_credentials> creds;
+
+  enum class AsyncRequestState {
+    // Initial state.
+    kNotStarted,
+    // State when the async request is started before
+    // client_auth_pre_cancel_call() is invoked.
+    kStarted,
+    // State when client_auth_pre_cancel_call() is invoked before the async
+    // request is started.
+    kPreCancelled
+  };
+  // Synchronizes cancellation of chand->security_connector->check_call_host().
+  grpc_core::Atomic<AsyncRequestState> check_call_host_state{
+      AsyncRequestState::kNotStarted};
+  // Synchronizes cancellation of creds->get_request_metadata().
+  grpc_core::Atomic<AsyncRequestState> get_request_metadata_state{
+      AsyncRequestState::kNotStarted};
+
   grpc_slice host = grpc_empty_slice();
   grpc_slice method = grpc_empty_slice();
   /* pollset{_set} bound to this call; if we need to make external
@@ -306,9 +324,21 @@ static void send_security_metadata(grpc_call_element* elem,
   GRPC_CLOSURE_INIT(&calld->async_result_closure, on_credentials_metadata,
                     batch, grpc_schedule_on_exec_ctx);
   grpc_error* error = GRPC_ERROR_NONE;
-  if (calld->creds->get_request_metadata(
-          calld->pollent, calld->auth_md_context, &calld->md_array,
-          &calld->async_result_closure, &error)) {
+  bool is_done;
+  call_data::AsyncRequestState expected =
+      call_data::AsyncRequestState::kNotStarted;
+  if (calld->get_request_metadata_state.CompareExchangeStrong(
+          &expected, call_data::AsyncRequestState::kStarted,
+          grpc_core::MemoryOrder::ACQ_REL, grpc_core::MemoryOrder::RELAXED)) {
+    is_done = calld->creds->get_request_metadata(
+        calld->pollent, calld->auth_md_context, &calld->md_array,
+        &calld->async_result_closure, &error);
+  } else {
+    is_done = true;
+    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "get_request_metadata pre-cancelled");
+  }
+  if (is_done) {
     // Synchronous return; invoke on_credentials_metadata() directly.
     on_credentials_metadata(batch, error);
     GRPC_ERROR_UNREF(error);
@@ -361,9 +391,22 @@ static void client_auth_start_transport_stream_op_batch(
                         grpc_schedule_on_exec_ctx);
       absl::string_view call_host(grpc_core::StringViewFromSlice(calld->host));
       grpc_error* error = GRPC_ERROR_NONE;
-      if (chand->security_connector->check_call_host(
-              call_host, chand->auth_context.get(),
-              &calld->async_result_closure, &error)) {
+      bool is_done;
+      call_data::AsyncRequestState expected =
+          call_data::AsyncRequestState::kNotStarted;
+      if (calld->check_call_host_state.CompareExchangeStrong(
+              &expected, call_data::AsyncRequestState::kStarted,
+              grpc_core::MemoryOrder::ACQ_REL,
+              grpc_core::MemoryOrder::RELAXED)) {
+        is_done = chand->security_connector->check_call_host(
+            call_host, chand->auth_context.get(),
+            &calld->async_result_closure, &error);
+      } else {
+        is_done = true;
+        error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "check_call_host pre-cancelled");
+      }
+      if (is_done) {
         // Synchronous return; invoke on_host_checked() directly.
         on_host_checked(batch, error);
         GRPC_ERROR_UNREF(error);
@@ -380,16 +423,24 @@ static void client_auth_pre_cancel_call(grpc_call_element* elem,
                                         grpc_error* error) {
   auto* calld = static_cast<call_data*>(elem->call_data);
   auto* chand = static_cast<channel_data*>(elem->channel_data);
-// FIXME: synchronization?
-  if (chand->security_connector != nullptr) {
+  // Check if check_call_host() needs to be cancelled.
+  call_data::AsyncRequestState expected =
+      call_data::AsyncRequestState::kNotStarted;
+  if (!calld->check_call_host_state.CompareExchangeStrong(
+          &expected, call_data::AsyncRequestState::kPreCancelled,
+          grpc_core::MemoryOrder::ACQ_REL, grpc_core::MemoryOrder::RELAXED)) {
     chand->security_connector->cancel_check_call_host(
         &calld->async_result_closure, GRPC_ERROR_REF(error));
   }
-  if (calld->creds != nullptr) {
+  // Otherwise, check whether get_request_metadata() needs to be cancelled.
+  expected = call_data::AsyncRequestState::kNotStarted;
+  if (!calld->get_request_metadata_state.CompareExchangeStrong(
+          &expected, call_data::AsyncRequestState::kPreCancelled,
+          grpc_core::MemoryOrder::ACQ_REL, grpc_core::MemoryOrder::RELAXED)) {
     calld->creds->cancel_get_request_metadata(&calld->md_array,
                                               GRPC_ERROR_REF(error));
   }
-// FIXME: don't do this unless needed?
+  // Propagate pre-cancellation to next filter.
   grpc_call_pre_cancel_next_filter(elem, error);
 }
 
