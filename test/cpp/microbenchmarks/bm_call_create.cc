@@ -674,18 +674,12 @@ void GetChannelInfo(grpc_channel_element* /*elem*/,
                     const grpc_channel_info* /*channel_info*/) {}
 
 static const grpc_channel_filter isolated_call_filter = {
-    StartTransportStreamOp,
-    StartTransportOp,
-    sizeof(call_data),
-    InitCallElem,
-    SetPollsetOrPollsetSet,
-    DestroyCallElem,
-    PreCancelCallNoOp,
-    0,
-    InitChannelElem,
-    DestroyChannelElem,
-    GetChannelInfo,
-    "isolated_call_filter"};
+    StartTransportStreamOp, StartTransportOp,
+    sizeof(call_data),      InitCallElem,
+    SetPollsetOrPollsetSet, DestroyCallElem,
+    PreCancelCallNoOp,      0,
+    InitChannelElem,        DestroyChannelElem,
+    GetChannelInfo,         "isolated_call_filter"};
 }  // namespace isolated_call_filter
 
 class IsolatedCallFixture : public TrackCounters {

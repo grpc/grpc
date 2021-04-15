@@ -282,8 +282,7 @@ void CallData::PreCancel(grpc_call_element* elem, grpc_error* error) {
 }
 
 CallData::CallData(grpc_call_element* elem, const grpc_call_element_args* args)
-    : arena_(args->arena),
-      call_combiner_(args->call_combiner) {
+    : arena_(args->arena), call_combiner_(args->call_combiner) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   // Fetch the fault injection policy from the service config, based on the
   // relative index for which policy should this CallData use.

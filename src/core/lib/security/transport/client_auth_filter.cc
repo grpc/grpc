@@ -91,7 +91,7 @@ struct call_data {
   // https://github.com/grpc/grpc/pull/25827 has been merged?  The
   // callback is holding a ref to the call stack, so it should not be
   // possible for the call stack to be destroyed until the callback completes.
-// FIXME: also may not be relevant now that cancellation is different
+  // FIXME: also may not be relevant now that cancellation is different
   void destroy() {
     grpc_credentials_mdelem_array_destroy(&md_array);
     creds.reset();
@@ -399,8 +399,8 @@ static void client_auth_start_transport_stream_op_batch(
               grpc_core::MemoryOrder::ACQ_REL,
               grpc_core::MemoryOrder::RELAXED)) {
         is_done = chand->security_connector->check_call_host(
-            call_host, chand->auth_context.get(),
-            &calld->async_result_closure, &error);
+            call_host, chand->auth_context.get(), &calld->async_result_closure,
+            &error);
       } else {
         is_done = true;
         error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
