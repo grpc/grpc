@@ -32,11 +32,6 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error);
 static void recv_trailing_metadata_ready(void* user_data, grpc_error* error);
 
 namespace {
-enum async_state {
-  STATE_INIT = 0,
-  STATE_DONE,
-  STATE_CANCELLED,
-};
 
 struct channel_data {
   channel_data(grpc_auth_context* auth_context, grpc_server_credentials* creds)
@@ -74,6 +69,8 @@ struct call_data {
 
   ~call_data() { GRPC_ERROR_UNREF(recv_initial_metadata_error); }
 
+  enum class AsyncState { kInit, kStarted, kDone, kCancelled };
+
   grpc_core::CallCombiner* call_combiner;
   grpc_call_stack* owning_call;
   grpc_transport_stream_op_batch* recv_initial_metadata_batch;
@@ -87,7 +84,7 @@ struct call_data {
   grpc_metadata_array md;
   const grpc_metadata* consumed_md;
   size_t num_consumed_md;
-  gpr_atm state = STATE_INIT;  // async_state
+  grpc_core::Atomic<AsyncState> state{AsyncState::kInit};
 };
 
 }  // namespace
@@ -172,8 +169,10 @@ static void on_md_processing_done(
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   // If the call was not cancelled while we were in flight, process the result.
-  if (gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
-                       static_cast<gpr_atm>(STATE_DONE))) {
+  call_data::AsyncState expected = call_data::AsyncState::kStarted;
+  if (calld->state.CompareExchangeStrong(
+          &expected, call_data::AsyncState::kDone,
+          grpc_core::MemoryOrder::ACQ_REL, grpc_core::MemoryOrder::RELAXED)) {
     grpc_error* error = GRPC_ERROR_NONE;
     if (status != GRPC_STATUS_OK) {
       if (error_details == nullptr) {
@@ -200,9 +199,16 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_transport_stream_op_batch* batch = calld->recv_initial_metadata_batch;
-  if (error == GRPC_ERROR_NONE) {
-    if (chand->creds != nullptr &&
-        chand->creds->auth_metadata_processor().process != nullptr) {
+  if (error == GRPC_ERROR_NONE && chand->creds != nullptr &&
+      chand->creds->auth_metadata_processor().process != nullptr) {
+    // If we've already been cancelled, return an error.
+    call_data::AsyncState expected = call_data::AsyncState::kInit;
+    if (!calld->state.CompareExchangeStrong(
+            &expected, call_data::AsyncState::kStarted,
+            grpc_core::MemoryOrder::ACQ_REL, grpc_core::MemoryOrder::RELAXED)) {
+      error = GRPC_ERROR_CANCELLED;
+    } else {
+      // Not cancelled, so invoke the auth metadata processor.
       GRPC_CALL_STACK_REF(calld->owning_call, "server_auth_metadata");
       calld->md = metadata_batch_to_md_array(
           batch->payload->recv_initial_metadata.recv_initial_metadata);
@@ -265,8 +271,10 @@ static void server_auth_pre_cancel_call(grpc_call_element* elem,
                                         grpc_error* error) {
   auto* calld = static_cast<call_data*>(elem->call_data);
   // If the result was not already processed, invoke the callback now.
-  if (gpr_atm_full_cas(&calld->state, static_cast<gpr_atm>(STATE_INIT),
-                       static_cast<gpr_atm>(STATE_CANCELLED))) {
+  call_data::AsyncState expected = call_data::AsyncState::kStarted;
+  if (calld->state.CompareExchangeStrong(
+          &expected, call_data::AsyncState::kCancelled,
+          grpc_core::MemoryOrder::ACQ_REL, grpc_core::MemoryOrder::RELAXED)) {
     on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0,
                                 GRPC_ERROR_REF(error));
   }
