@@ -46,6 +46,7 @@ grpc_cc_library(
         "trickle_endpoint.cc",
     ],
     hdrs = [
+        "authorization_args.h",
         "cmdline.h",
         "fuzzer_util.h",
         "grpc_profiler.h",

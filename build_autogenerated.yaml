@@ -1470,6 +1470,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/util/authorization_args.h
   - test/core/util/cmdline.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
@@ -1524,6 +1525,7 @@ libs:
   language: c
   public_headers: []
   headers:
+  - test/core/util/authorization_args.h
   - test/core/util/cmdline.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
@@ -6512,6 +6514,7 @@ targets:
   build: test
   language: c++
   headers:
+  - test/core/util/authorization_args.h
   - test/core/util/cmdline.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h

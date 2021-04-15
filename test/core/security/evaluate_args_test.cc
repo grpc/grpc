@@ -18,239 +18,151 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
-#include "test/core/util/mock_authorization_endpoint.h"
+#include "test/core/util/authorization_args.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
 TEST(EvaluateArgsTest, EmptyMetadata) {
-  grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
-  EvaluateArgs args(&metadata, nullptr);
-  EXPECT_EQ(args.GetPath(), nullptr);
-  EXPECT_EQ(args.GetMethod(), nullptr);
-  EXPECT_EQ(args.GetHost(), nullptr);
-  EXPECT_THAT(args.GetHeaders(), ::testing::ElementsAre());
-  EXPECT_EQ(args.GetHeaderValue("some_key", nullptr), absl::nullopt);
-  grpc_metadata_batch_destroy(&metadata);
+  AuthorizationArgs args;
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_EQ(eval_args.GetPath(), nullptr);
+  EXPECT_EQ(eval_args.GetMethod(), nullptr);
+  EXPECT_EQ(eval_args.GetHost(), nullptr);
+  EXPECT_THAT(eval_args.GetHeaders(), ::testing::ElementsAre());
+  EXPECT_EQ(eval_args.GetHeaderValue("some_key", nullptr), absl::nullopt);
 }
 
 TEST(EvaluateArgsTest, GetPathSuccess) {
-  grpc_init();
-  const char* kPath = "/some/path";
-  grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
-  grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string(kPath));
-  grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_PATH, fake_val);
-  grpc_linked_mdelem storage;
-  storage.md = fake_val_md;
-  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage),
-            GRPC_ERROR_NONE);
-  EvaluateArgs args(&metadata, nullptr);
-  EXPECT_EQ(args.GetPath(), kPath);
-  grpc_metadata_batch_destroy(&metadata);
-  grpc_shutdown();
+  AuthorizationArgs args;
+  args.AddPairToMetadata(":path", "/expected/path");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_EQ(eval_args.GetPath(), "/expected/path");
 }
 
 TEST(EvaluateArgsTest, GetHostSuccess) {
-  grpc_init();
-  const char* kHost = "host";
-  grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
-  grpc_slice fake_val = grpc_slice_intern(grpc_slice_from_static_string(kHost));
-  grpc_mdelem fake_val_md = grpc_mdelem_from_slices(GRPC_MDSTR_HOST, fake_val);
-  grpc_linked_mdelem storage;
-  storage.md = fake_val_md;
-  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage),
-            GRPC_ERROR_NONE);
-  EvaluateArgs args(&metadata, nullptr);
-  EXPECT_EQ(args.GetHost(), kHost);
-  grpc_metadata_batch_destroy(&metadata);
-  grpc_shutdown();
+  AuthorizationArgs args;
+  args.AddPairToMetadata("host", "host123");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_EQ(eval_args.GetHost(), "host123");
 }
 
 TEST(EvaluateArgsTest, GetMethodSuccess) {
-  grpc_init();
-  const char* kMethod = "GET";
-  grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
-  grpc_slice fake_val =
-      grpc_slice_intern(grpc_slice_from_static_string(kMethod));
-  grpc_mdelem fake_val_md =
-      grpc_mdelem_from_slices(GRPC_MDSTR_METHOD, fake_val);
-  grpc_linked_mdelem storage;
-  storage.md = fake_val_md;
-  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage),
-            GRPC_ERROR_NONE);
-  EvaluateArgs args(&metadata, nullptr);
-  EXPECT_EQ(args.GetMethod(), kMethod);
-  grpc_metadata_batch_destroy(&metadata);
-  grpc_shutdown();
+  AuthorizationArgs args;
+  args.AddPairToMetadata(":method", "GET");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_EQ(eval_args.GetMethod(), "GET");
 }
 
 TEST(EvaluateArgsTest, GetHeadersSuccess) {
-  grpc_init();
-  const char* kPath = "/some/path";
-  const char* kHost = "host";
-  grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
-  grpc_slice fake_path =
-      grpc_slice_intern(grpc_slice_from_static_string(kPath));
-  grpc_mdelem fake_path_md =
-      grpc_mdelem_from_slices(GRPC_MDSTR_PATH, fake_path);
-  grpc_linked_mdelem storage;
-  storage.md = fake_path_md;
-  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage, GRPC_BATCH_PATH),
-            GRPC_ERROR_NONE);
-  grpc_slice fake_host =
-      grpc_slice_intern(grpc_slice_from_static_string(kHost));
-  grpc_mdelem fake_host_md =
-      grpc_mdelem_from_slices(GRPC_MDSTR_HOST, fake_host);
-  grpc_linked_mdelem storage2;
-  storage2.md = fake_host_md;
-  ASSERT_EQ(
-      grpc_metadata_batch_link_tail(&metadata, &storage2, GRPC_BATCH_HOST),
-      GRPC_ERROR_NONE);
-  EvaluateArgs args(&metadata, nullptr);
-  EXPECT_THAT(
-      args.GetHeaders(),
-      ::testing::UnorderedElementsAre(
-          ::testing::Pair(StringViewFromSlice(GRPC_MDSTR_HOST), kHost),
-          ::testing::Pair(StringViewFromSlice(GRPC_MDSTR_PATH), kPath)));
-  grpc_metadata_batch_destroy(&metadata);
-  grpc_shutdown();
+  AuthorizationArgs args;
+  args.AddPairToMetadata("host", "host123");
+  args.AddPairToMetadata(":path", "/expected/path");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_THAT(eval_args.GetHeaders(),
+              ::testing::UnorderedElementsAre(
+                  ::testing::Pair("host", "host123"),
+                  ::testing::Pair(":path", "/expected/path")));
 }
 
 TEST(EvaluateArgsTest, GetHeaderValueSuccess) {
-  grpc_init();
-  const char* kKey = "some_key";
-  const char* kValue = "some_value";
-  grpc_metadata_batch metadata;
-  grpc_metadata_batch_init(&metadata);
-  grpc_linked_mdelem storage;
-  storage.md = grpc_mdelem_from_slices(
-      grpc_slice_intern(grpc_slice_from_static_string(kKey)),
-      grpc_slice_intern(grpc_slice_from_static_string(kValue)));
-  ASSERT_EQ(grpc_metadata_batch_link_head(&metadata, &storage),
-            GRPC_ERROR_NONE);
-  EvaluateArgs args(&metadata, nullptr);
+  AuthorizationArgs args;
+  args.AddPairToMetadata("key123", "value123");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
   std::string concatenated_value;
   absl::optional<absl::string_view> value =
-      args.GetHeaderValue(kKey, &concatenated_value);
+      eval_args.GetHeaderValue("key123", &concatenated_value);
   ASSERT_TRUE(value.has_value());
-  EXPECT_EQ(value.value(), kValue);
-  grpc_metadata_batch_destroy(&metadata);
-  grpc_shutdown();
+  EXPECT_EQ(value.value(), "value123");
 }
 
 TEST(EvaluateArgsTest, TestIpv4LocalAddressAndPort) {
-  MockAuthorizationEndpoint endpoint("ipv4:255.255.255.255:123", "");
-  auto channel_args =
-      absl::make_unique<EvaluateArgs::PerChannelArgs>(nullptr, &endpoint);
-  EvaluateArgs args(nullptr, std::move(channel_args));
-  EXPECT_EQ(args.GetLocalAddress(), "255.255.255.255");
-  EXPECT_EQ(args.GetLocalPort(), 123);
+  AuthorizationArgs args;
+  args.SetLocalEndpoint("ipv4:255.255.255.255:123");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_EQ(eval_args.GetLocalAddress(), "255.255.255.255");
+  EXPECT_EQ(eval_args.GetLocalPort(), 123);
 }
 
 TEST(EvaluateArgsTest, TestIpv4PeerAddressAndPort) {
-  MockAuthorizationEndpoint endpoint("", "ipv4:128.128.128.128:321");
-  auto channel_args =
-      absl::make_unique<EvaluateArgs::PerChannelArgs>(nullptr, &endpoint);
-  EvaluateArgs args(nullptr, std::move(channel_args));
-  EXPECT_EQ(args.GetPeerAddress(), "128.128.128.128");
-  EXPECT_EQ(args.GetPeerPort(), 321);
+  AuthorizationArgs args;
+  args.SetPeerEndpoint("ipv4:128.128.128.128:321");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_EQ(eval_args.GetPeerAddress(), "128.128.128.128");
+  EXPECT_EQ(eval_args.GetPeerPort(), 321);
 }
 
 TEST(EvaluateArgsTest, TestIpv6LocalAddressAndPort) {
-  MockAuthorizationEndpoint endpoint(
-      "ipv6:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:456", "");
-  auto channel_args =
-      absl::make_unique<EvaluateArgs::PerChannelArgs>(nullptr, &endpoint);
-  EvaluateArgs args(nullptr, std::move(channel_args));
-  EXPECT_EQ(args.GetLocalAddress(), "2001:0db8:85a3:0000:0000:8a2e:0370:7334");
-  EXPECT_EQ(args.GetLocalPort(), 456);
+  AuthorizationArgs args;
+  args.SetLocalEndpoint("ipv6:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:456");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_EQ(eval_args.GetLocalAddress(),
+            "2001:0db8:85a3:0000:0000:8a2e:0370:7334");
+  EXPECT_EQ(eval_args.GetLocalPort(), 456);
 }
 
 TEST(EvaluateArgsTest, TestIpv6PeerAddressAndPort) {
-  MockAuthorizationEndpoint endpoint("", "ipv6:[2001:db8::1]:654");
-  auto channel_args =
-      absl::make_unique<EvaluateArgs::PerChannelArgs>(nullptr, &endpoint);
-  EvaluateArgs args(nullptr, std::move(channel_args));
-  EXPECT_EQ(args.GetPeerAddress(), "2001:db8::1");
-  EXPECT_EQ(args.GetPeerPort(), 654);
+  AuthorizationArgs args;
+  args.SetPeerEndpoint("ipv6:[2001:db8::1]:654");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_EQ(eval_args.GetPeerAddress(), "2001:db8::1");
+  EXPECT_EQ(eval_args.GetPeerPort(), 654);
 }
 
 TEST(EvaluateArgsTest, EmptyAuthContext) {
-  grpc_auth_context auth_context(nullptr);
-  auto channel_args =
-      absl::make_unique<EvaluateArgs::PerChannelArgs>(&auth_context, nullptr);
-  EvaluateArgs args(nullptr, std::move(channel_args));
-  EXPECT_TRUE(args.GetTransportSecurityType().empty());
-  EXPECT_TRUE(args.GetSpiffeId().empty());
-  EXPECT_TRUE(args.GetCommonName().empty());
+  AuthorizationArgs args;
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_TRUE(eval_args.GetTransportSecurityType().empty());
+  EXPECT_TRUE(eval_args.GetSpiffeId().empty());
+  EXPECT_TRUE(eval_args.GetCommonName().empty());
 }
 
 TEST(EvaluateArgsTest, GetTransportSecurityTypeSuccessOneProperty) {
-  grpc_auth_context auth_context(nullptr);
-  const char* kType = "ssl";
-  auth_context.add_cstring_property(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-                                    kType);
-  auto channel_args =
-      absl::make_unique<EvaluateArgs::PerChannelArgs>(&auth_context, nullptr);
-  EvaluateArgs args(nullptr, std::move(channel_args));
-  EXPECT_EQ(args.GetTransportSecurityType(), kType);
+  AuthorizationArgs args;
+  args.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+                                "ssl");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_EQ(eval_args.GetTransportSecurityType(), "ssl");
 }
 
 TEST(EvaluateArgsTest, GetTransportSecurityTypeFailDuplicateProperty) {
-  grpc_auth_context auth_context(nullptr);
-  auth_context.add_cstring_property(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-                                    "type1");
-  auth_context.add_cstring_property(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-                                    "type2");
-  auto channel_args =
-      absl::make_unique<EvaluateArgs::PerChannelArgs>(&auth_context, nullptr);
-  EvaluateArgs args(nullptr, std::move(channel_args));
-  EXPECT_TRUE(args.GetTransportSecurityType().empty());
+  AuthorizationArgs args;
+  args.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+                                "type1");
+  args.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+                                "type2");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_TRUE(eval_args.GetTransportSecurityType().empty());
 }
 
 TEST(EvaluateArgsTest, GetSpiffeIdSuccessOneProperty) {
-  grpc_auth_context auth_context(nullptr);
-  const char* kId = "spiffeid";
-  auth_context.add_cstring_property(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, kId);
-  auto channel_args =
-      absl::make_unique<EvaluateArgs::PerChannelArgs>(&auth_context, nullptr);
-  EvaluateArgs args(nullptr, std::move(channel_args));
-  EXPECT_EQ(args.GetSpiffeId(), kId);
+  AuthorizationArgs args;
+  args.AddPropertyToAuthContext(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "id123");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_EQ(eval_args.GetSpiffeId(), "id123");
 }
 
 TEST(EvaluateArgsTest, GetSpiffeIdFailDuplicateProperty) {
-  grpc_auth_context auth_context(nullptr);
-  auth_context.add_cstring_property(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "id1");
-  auth_context.add_cstring_property(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "id2");
-  auto channel_args =
-      absl::make_unique<EvaluateArgs::PerChannelArgs>(&auth_context, nullptr);
-  EvaluateArgs args(nullptr, std::move(channel_args));
-  EXPECT_TRUE(args.GetSpiffeId().empty());
+  AuthorizationArgs args;
+  args.AddPropertyToAuthContext(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "id123");
+  args.AddPropertyToAuthContext(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "id456");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_TRUE(eval_args.GetSpiffeId().empty());
 }
 
 TEST(EvaluateArgsTest, GetCommonNameSuccessOneProperty) {
-  grpc_auth_context auth_context(nullptr);
-  const char* kServer = "server";
-  auth_context.add_cstring_property(GRPC_X509_CN_PROPERTY_NAME, kServer);
-  auto channel_args =
-      absl::make_unique<EvaluateArgs::PerChannelArgs>(&auth_context, nullptr);
-  EvaluateArgs args(nullptr, std::move(channel_args));
-  EXPECT_EQ(args.GetCommonName(), kServer);
+  AuthorizationArgs args;
+  args.AddPropertyToAuthContext(GRPC_X509_CN_PROPERTY_NAME, "server123");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_EQ(eval_args.GetCommonName(), "server123");
 }
 
 TEST(EvaluateArgsTest, GetCommonNameFailDuplicateProperty) {
-  grpc_auth_context auth_context(nullptr);
-  auth_context.add_cstring_property(GRPC_X509_CN_PROPERTY_NAME, "server1");
-  auth_context.add_cstring_property(GRPC_X509_CN_PROPERTY_NAME, "server2");
-  auto channel_args =
-      absl::make_unique<EvaluateArgs::PerChannelArgs>(&auth_context, nullptr);
-  EvaluateArgs args(nullptr, std::move(channel_args));
-  EXPECT_TRUE(args.GetCommonName().empty());
+  AuthorizationArgs args;
+  args.AddPropertyToAuthContext(GRPC_X509_CN_PROPERTY_NAME, "server123");
+  args.AddPropertyToAuthContext(GRPC_X509_CN_PROPERTY_NAME, "server456");
+  EvaluateArgs eval_args = args.MakeEvaluateArgs();
+  EXPECT_TRUE(eval_args.GetCommonName().empty());
 }
 
 }  // namespace grpc_core
@@ -258,5 +170,8 @@ TEST(EvaluateArgsTest, GetCommonNameFailDuplicateProperty) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  grpc_init();
+  int ret = RUN_ALL_TESTS();
+  grpc_shutdown();
+  return ret;
 }

@@ -66,13 +66,12 @@ void ParseEndpointUri(absl::string_view uri_text, std::string* address,
 EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
                                              grpc_endpoint* endpoint) {
   if (auth_context != nullptr) {
-    auth_ctx = auth_context->Ref();
     transport_security_type = GetAuthPropertyValue(
-        auth_ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
+        auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
     spiffe_id =
-        GetAuthPropertyValue(auth_ctx.get(), GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
+        GetAuthPropertyValue(auth_context, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
     common_name =
-        GetAuthPropertyValue(auth_ctx.get(), GRPC_X509_CN_PROPERTY_NAME);
+        GetAuthPropertyValue(auth_context, GRPC_X509_CN_PROPERTY_NAME);
   }
   if (endpoint != nullptr) {
     ParseEndpointUri(grpc_endpoint_get_local_address(endpoint), &local_address,

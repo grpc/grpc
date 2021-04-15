@@ -29,10 +29,11 @@ namespace grpc_core {
 
 class EvaluateArgs {
  public:
+  // Caller is responsible for ensuring auth_context outlives PerChannelArgs
+  // struct.
   struct PerChannelArgs {
     PerChannelArgs(grpc_auth_context* auth_context, grpc_endpoint* endpoint);
 
-    grpc_core::RefCountedPtr<grpc_auth_context> auth_ctx;
     absl::string_view transport_security_type;
     absl::string_view spiffe_id;
     absl::string_view common_name;
@@ -42,9 +43,8 @@ class EvaluateArgs {
     int peer_port = 0;
   };
 
-  EvaluateArgs(grpc_metadata_batch* metadata,
-               std::unique_ptr<PerChannelArgs> channel_args)
-      : metadata_(metadata), channel_args_(std::move(channel_args)) {}
+  EvaluateArgs(grpc_metadata_batch* metadata, PerChannelArgs* channel_args)
+      : metadata_(metadata), channel_args_(channel_args) {}
 
   absl::string_view GetPath() const;
   absl::string_view GetHost() const;
@@ -70,7 +70,7 @@ class EvaluateArgs {
 
  private:
   grpc_metadata_batch* metadata_ = nullptr;
-  std::unique_ptr<PerChannelArgs> channel_args_ = nullptr;
+  PerChannelArgs* channel_args_ = nullptr;
 };
 
 }  // namespace grpc_core
