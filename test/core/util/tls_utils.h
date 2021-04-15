@@ -48,14 +48,14 @@ class SyncExternalVerifier {
  public:
   SyncExternalVerifier(bool is_good);
 
+  grpc_tls_certificate_verifier_external* base() { return &base_; }
+
+ private:
   struct UserData {
     SyncExternalVerifier* self = nullptr;
     bool is_good = false;
   };
 
-  grpc_tls_certificate_verifier_external* base() { return &base_; }
-
- private:
   static int Verify(void* user_data,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
@@ -82,25 +82,25 @@ class AsyncExternalVerifier {
   // security connector is not invoked), pass nullptr here.
   AsyncExternalVerifier(bool is_good, gpr_event* event_ptr);
 
+  grpc_tls_certificate_verifier_external* base() { return &base_; }
+
+ private:
   struct UserData {
     AsyncExternalVerifier* self = nullptr;
     grpc_core::Thread* thread = nullptr;
     bool is_good = false;
     gpr_event* event_ptr = nullptr;
   };
-
   // This is the arg we will pass in when creating the thread, and retrieve it
   // later in the thread callback.
   struct ThreadArgs {
     grpc_tls_custom_verification_check_request* request = nullptr;
     grpc_tls_on_custom_verification_check_done_cb callback;
     void* callback_arg = nullptr;
+    bool is_good = false;
     gpr_event* event_ptr = nullptr;
   };
 
-  grpc_tls_certificate_verifier_external* base() { return &base_; }
-
- private:
   static int Verify(void* user_data,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
@@ -111,9 +111,7 @@ class AsyncExternalVerifier {
 
   static void Destruct(void* user_data);
 
-  static void AsyncExternalVerifierGoodVerifyCb(void* args);
-
-  static void AsyncExternalVerifierBadVerifyCb(void* args);
+  static void AsyncExternalVerifierVerifyCb(void* args);
 
   grpc_tls_certificate_verifier_external base_;
 };

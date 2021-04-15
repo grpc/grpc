@@ -60,20 +60,25 @@ TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierFails) {
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierSucceeds) {
-  auto* async_verifier = new AsyncExternalVerifier(true, nullptr);
+  gpr_event event;
+  gpr_event_init(&event);
+  auto* async_verifier = new AsyncExternalVerifier(true, &event);
   auto* core_external_verifier =
       new ExternalCertificateVerifier(async_verifier->base());
   core_external_verifier->Verify(&internal_request_, [this] {
     gpr_log(GPR_INFO, "Callback is invoked.");
     EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_OK);
   });
-  // Deleting the verifier will wait for the async thread to be completed.
-  // We need to make sure it is completed before checking request's information.
+  // Wait for the async callback to be completed.
+  gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
   delete core_external_verifier;
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
-  auto* async_verifier = new AsyncExternalVerifier(false, nullptr);
+  gpr_event event;
+  gpr_event_init(&event);
+  auto* async_verifier = new AsyncExternalVerifier(false, &event);
   auto* core_external_verifier =
       new ExternalCertificateVerifier(async_verifier->base());
   core_external_verifier->Verify(&internal_request_, [this] {
@@ -82,8 +87,9 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
     EXPECT_STREQ(internal_request_.request.error_details,
                  "AsyncExternalVerifierBadVerify failed");
   });
-  // Deleting the verifier will wait for the async thread to be completed.
-  // We need to make sure it is completed before checking request's information.
+  // Wait for the async callback to be completed.
+  gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
   delete core_external_verifier;
 }
 

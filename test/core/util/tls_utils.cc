@@ -16,6 +16,8 @@
 
 #include "test/core/util/tls_utils.h"
 
+#include <grpc/support/log.h>
+
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -75,7 +77,7 @@ SyncExternalVerifier::SyncExternalVerifier(bool is_good) {
   auto* user_data = new UserData();
   user_data->self = this;
   user_data->is_good = is_good;
-  base_.user_data = (void*)user_data;
+  base_.user_data = user_data;
   base_.verify = Verify;
   base_.cancel = Cancel;
   base_.destruct = Destruct;
@@ -107,7 +109,7 @@ AsyncExternalVerifier::AsyncExternalVerifier(bool is_good,
   user_data->self = this;
   user_data->is_good = is_good;
   user_data->event_ptr = event_ptr;
-  base_.user_data = (void*)user_data;
+  base_.user_data = user_data;
   base_.verify = Verify;
   base_.cancel = Cancel;
   base_.destruct = Destruct;
@@ -124,15 +126,11 @@ int AsyncExternalVerifier::Verify(
   thread_args->callback = callback;
   thread_args->callback_arg = callback_arg;
   thread_args->event_ptr = data->event_ptr;
-  if (data->is_good) {
-    data->thread = new grpc_core::Thread("AsyncExternalVerifierGoodVerify",
-                                         &AsyncExternalVerifierGoodVerifyCb,
-                                         static_cast<void*>(thread_args));
-  } else {
-    data->thread = new grpc_core::Thread("AsyncExternalVerifierBadVerify",
-                                         &AsyncExternalVerifierBadVerifyCb,
-                                         static_cast<void*>(thread_args));
-  }
+  thread_args->is_good = data->is_good;
+  data->thread = new grpc_core::Thread("AsyncExternalVerifierVerify",
+                                       &AsyncExternalVerifierVerifyCb,
+                                       static_cast<void*>(thread_args), nullptr,
+                                       Thread::Options().set_joinable(false));
   data->thread->Start();
   return false;  // Asynchronous call
 }
@@ -140,7 +138,6 @@ int AsyncExternalVerifier::Verify(
 void AsyncExternalVerifier::Destruct(void* user_data) {
   auto* data = static_cast<UserData*>(user_data);
   if (data->thread != nullptr) {
-    data->thread->Join();
     delete data->thread;
   }
   if (data->self != nullptr) {
@@ -149,13 +146,19 @@ void AsyncExternalVerifier::Destruct(void* user_data) {
   delete data;
 }
 
-void AsyncExternalVerifier::AsyncExternalVerifierGoodVerifyCb(void* args) {
+void AsyncExternalVerifier::AsyncExternalVerifierVerifyCb(void* args) {
   ThreadArgs* thread_args = static_cast<ThreadArgs*>(args);
   grpc_tls_custom_verification_check_request* request = thread_args->request;
   grpc_tls_on_custom_verification_check_done_cb callback =
       thread_args->callback;
   void* callback_arg = thread_args->callback_arg;
-  request->status = GRPC_STATUS_OK;
+  if (thread_args->is_good) {
+    request->status = GRPC_STATUS_OK;
+  } else {
+    request->status = GRPC_STATUS_UNAUTHENTICATED;
+    request->error_details =
+        gpr_strdup("AsyncExternalVerifierBadVerify failed");
+  }
   callback(request, callback_arg);
   // Now we can notify the main testing thread that the thread object is set.
   if (thread_args->event_ptr != nullptr) {
@@ -164,7 +167,7 @@ void AsyncExternalVerifier::AsyncExternalVerifierGoodVerifyCb(void* args) {
   delete thread_args;
 }
 
-void AsyncExternalVerifier::AsyncExternalVerifierBadVerifyCb(void* args) {
+/*void AsyncExternalVerifier::AsyncExternalVerifierBadVerifyCb(void* args) {
   ThreadArgs* thread_args = static_cast<ThreadArgs*>(args);
   grpc_tls_custom_verification_check_request* request = thread_args->request;
   grpc_tls_on_custom_verification_check_done_cb callback =
@@ -178,7 +181,7 @@ void AsyncExternalVerifier::AsyncExternalVerifierBadVerifyCb(void* args) {
     gpr_event_set(thread_args->event_ptr, reinterpret_cast<void*>(1));
   }
   delete thread_args;
-}
+}*/
 
 }  // namespace testing
 
