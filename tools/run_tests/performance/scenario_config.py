@@ -55,7 +55,7 @@ def _get_secargs(is_secure):
 def remove_nonproto_fields(scenario):
     """Removes special-purpose fields that don't belong in the protobuf.
 
-    This function removes dditional information abt the scenario that is not
+    This function removes additional information about the scenario that is not
     included in the ScenarioConfig protobuf message.
     """
     scenario.pop('CATEGORIES', None)
