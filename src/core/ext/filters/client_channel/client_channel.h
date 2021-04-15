@@ -281,6 +281,7 @@ class ClientChannel {
   std::string server_name_;
   UniquePtr<char> target_uri_;
   channelz::ChannelNode* channelz_node_;
+  grpc_pollset_set* interested_parties_;
 
   //
   // Fields related to name resolution.  Guarded by resolution_mu_.
@@ -312,9 +313,8 @@ class ClientChannel {
   // Fields used in the control plane.  Guarded by work_serializer.
   //
   std::shared_ptr<WorkSerializer> work_serializer_;
-  grpc_pollset_set* interested_parties_ /*FIXME ABSL_GUARDED_BY(work_serializer_) */;
-  ConnectivityStateTracker state_tracker_ /*FIXME ABSL_GUARDED_BY(work_serializer_) */;
-  OrphanablePtr<Resolver> resolver_ /*FIXME ABSL_GUARDED_BY(work_serializer_) */;
+  ConnectivityStateTracker state_tracker_ ABSL_GUARDED_BY(work_serializer_);
+  OrphanablePtr<Resolver> resolver_ ABSL_GUARDED_BY(work_serializer_);
   bool previous_resolution_contained_addresses_
       ABSL_GUARDED_BY(work_serializer_) = false;
   RefCountedPtr<ServiceConfig> saved_service_config_
@@ -322,11 +322,11 @@ class ClientChannel {
   RefCountedPtr<ConfigSelector> saved_config_selector_
       ABSL_GUARDED_BY(work_serializer_);
   absl::optional<std::string> health_check_service_name_
-      /*FIXME ABSL_GUARDED_BY(work_serializer_) */;
+      ABSL_GUARDED_BY(work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> lb_policy_
       ABSL_GUARDED_BY(work_serializer_);
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_
-      /*FIXME ABSL_GUARDED_BY(work_serializer_) */;
+      ABSL_GUARDED_BY(work_serializer_);
   // The number of SubchannelWrapper instances referencing a given Subchannel.
   std::map<Subchannel*, int> subchannel_refcount_map_
       ABSL_GUARDED_BY(work_serializer_);
@@ -339,8 +339,8 @@ class ClientChannel {
   // Updates are queued here in the control plane work_serializer and then
   // applied in the data plane mutex when the picker is updated.
   std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>>
-      pending_subchannel_updates_ /*FIXME ABSL_GUARDED_BY(work_serializer_) */;
-  int keepalive_time_ /*FIXME ABSL_GUARDED_BY(work_serializer_) */ = -1;
+      pending_subchannel_updates_ ABSL_GUARDED_BY(work_serializer_);
+  int keepalive_time_ ABSL_GUARDED_BY(work_serializer_) = -1;
 
   //
   // Fields accessed from both data plane mutex and control plane

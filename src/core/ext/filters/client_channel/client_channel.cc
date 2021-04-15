@@ -485,7 +485,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
   }
 
-  grpc_connectivity_state CheckConnectivityState() override {
+  grpc_connectivity_state CheckConnectivityState() override
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     grpc_connectivity_state connectivity_state =
         subchannel_->CheckConnectivityState(health_check_service_name_,
@@ -564,7 +565,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   }
 
   // Caller must be holding the control-plane work_serializer.
-  ConnectedSubchannel* connected_subchannel() const {
+  ConnectedSubchannel* connected_subchannel() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::work_serializer_) {
     return connected_subchannel_.get();
   }
 
@@ -702,7 +704,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   };
 
   void MaybeUpdateConnectedSubchannel(
-      RefCountedPtr<ConnectedSubchannel> connected_subchannel) {
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::work_serializer_) {
     // Update the connected subchannel only if the channel is not shutting
     // down.  This is because once the channel is shutting down, we
     // ignore picker updates from the LB policy, which means that
@@ -732,7 +735,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
   std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_;
   // To be accessed only in the control plane work_serializer.
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_
+      ABSL_GUARDED_BY(&ClientChannel::work_serializer_);
   // To be accessed only in the data plane mutex.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_in_data_plane_;
 };
@@ -1078,8 +1082,8 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
       client_channel_factory_(
           ClientChannelFactory::GetFromChannelArgs(args->channel_args)),
       channelz_node_(GetChannelzNode(args->channel_args)),
-      work_serializer_(std::make_shared<WorkSerializer>()),
       interested_parties_(grpc_pollset_set_create()),
+      work_serializer_(std::make_shared<WorkSerializer>()),
       state_tracker_("client_channel", GRPC_CHANNEL_IDLE),
       subchannel_pool_(GetSubchannelPool(args->channel_args)),
       disconnect_error_(GRPC_ERROR_NONE) {
@@ -1822,7 +1826,11 @@ void ClientChannel::TryToConnectLocked() {
 
 grpc_connectivity_state ClientChannel::CheckConnectivityState(
     bool try_to_connect) {
-  grpc_connectivity_state out = state_tracker_.state();
+  // state_tracker_ is guarded by work_serializer_, which we're not
+  // holding here.  But the one method of state_tracker_ that *is*
+  // thread-safe to call without external synchronization is the state()
+  // method, so we can disable thread-safety analysis for this one read.
+  grpc_connectivity_state out = ABSL_TS_UNCHECKED_READ(state_tracker_).state();
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     GRPC_CHANNEL_STACK_REF(owning_stack_, "TryToConnect");
     work_serializer_->Run([this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(
