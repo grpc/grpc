@@ -106,7 +106,8 @@ struct grpc_call_final_info {
    Members are laid out in approximate frequency of use order. */
 struct grpc_channel_filter {
   /* Called to eg. send/receive data on a call.
-     See grpc_call_next_op on how to call the next element in the stack */
+     This will always be called while holding the call combiner.
+     See grpc_call_next_op on how to call the next element in the stack. */
   void (*start_transport_stream_op_batch)(grpc_call_element* elem,
                                           grpc_transport_stream_op_batch* op);
   /* Called to handle channel level operations - e.g. new calls, or transport
@@ -144,6 +145,8 @@ struct grpc_channel_filter {
   // cancel any async work that they may be doing that may be holding
   // the call combiner, thus preventing the cancel_stream batch from
   // starting.
+  // Use grpc_call_pre_cancel_next_filter() to delegate to the next filter
+  // in the stack.
   void (*pre_cancel_call)(grpc_call_element* elem, grpc_error* error);
 
   /* sizeof(per channel data) */

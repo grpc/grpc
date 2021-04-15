@@ -80,8 +80,13 @@ class TimerState {
       error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
-// FIXME: need to find top of call stack for pre_cancel call!
-//      deadline_state->call_combiner->Cancel(GRPC_ERROR_REF(error));
+      // Invoke pre_cancel_call() starting at the top of the stack.
+      // This ensures the cancellation of any async callbacks that may
+      // be holding the call combiner.
+      grpc_call_element* elem =
+          grpc_call_stack_element(deadline_state->call_stack, 0);
+      elem->filter->pre_cancel_call(elem, GRPC_ERROR_REF(error));
+      // Now hop into the call combiner to start the cancel_stream op.
       GRPC_CLOSURE_INIT(&self->closure_, SendCancelOpInCallCombiner, self,
                         nullptr);
       GRPC_CALL_COMBINER_START(deadline_state->call_combiner, &self->closure_,

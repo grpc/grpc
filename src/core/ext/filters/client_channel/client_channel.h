@@ -467,6 +467,18 @@ class ClientChannel::LoadBalancedCall
       lb_recv_trailing_metadata_ready_;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
+
+  // Mutex guarding subchannel call creation.
+  //
+  // Note that subchannel_call_ itself is not guarded by this mutex, because we
+  // only need to guard the *creation* of the subchannel call.  If PreCancel()
+  // runs before subchannel_call_ is set, then subchannel_call_pre_cancelled_
+  // will be true, in which case subchannel_call_ will not be created; if
+  // PreCancel() runs after subchannel_call_ is set, it will propagate the
+  // pre-cancellation down to subchannel_call_.
+  //
+  // This mutex should not cause contention *except* when a cancellation
+  // is occurring.
   Mutex subchannel_call_creation_mu_;
   bool subchannel_call_pre_cancelled_
       ABSL_GUARDED_BY(subchannel_call_creation_mu_) = false;

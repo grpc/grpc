@@ -212,6 +212,18 @@ class ClientChannel::CallData {
 
   RefCountedPtr<DynamicFilters> dynamic_filters_;
   RefCountedPtr<DynamicFilters::Call> dynamic_call_;
+
+  // Mutex guarding dynamic call creation.
+  //
+  // Note that dynamic_call_ itself is not guarded by this mutex, because we
+  // only need to guard the *creation* of the dynamic call.  If PreCancel()
+  // runs before dynamic_call_ is set, then dynamic_call_pre_cancelled_ will
+  // be true, in which case dynamic_call_ will not be created; if PreCancel()
+  // runs after dynamic_call_ is set, it will propagate the pre-cancellation
+  // down to dynamic_call_.
+  //
+  // This mutex should not cause contention *except* when a cancellation
+  // is occurring.
   Mutex dynamic_call_creation_mu_;
   bool dynamic_call_pre_cancelled_ ABSL_GUARDED_BY(dynamic_call_creation_mu_) =
       false;
@@ -1906,6 +1918,7 @@ void ClientChannel::CallData::PreCancel(grpc_call_element* elem,
     calld->dynamic_call_->PreCancel(error);
   } else {
     calld->dynamic_call_pre_cancelled_ = true;
+    GRPC_ERROR_UNREF(error);
   }
 }
 
@@ -2734,6 +2747,7 @@ void ClientChannel::LoadBalancedCall::PreCancel(grpc_error* error) {
     subchannel_call_->PreCancel(error);
   } else {
     subchannel_call_pre_cancelled_ = true;
+    GRPC_ERROR_UNREF(error);
   }
 }
 
