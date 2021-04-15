@@ -400,8 +400,9 @@ void RegisterChannelFilter(
       {FilterType::StartTransportStreamOpBatch, FilterType::StartTransportOp,
        FilterType::call_data_size, FilterType::InitCallElement,
        FilterType::SetPollsetOrPollsetSet, FilterType::DestroyCallElement,
-       FilterType::channel_data_size, FilterType::InitChannelElement,
-       FilterType::DestroyChannelElement, FilterType::GetChannelInfo, name}};
+       FilterType::PreCancelCall, FilterType::channel_data_size,
+       FilterType::InitChannelElement, FilterType::DestroyChannelElement,
+       FilterType::GetChannelInfo, name}};
   internal::channel_filters->push_back(filter_record);
 }
 
