@@ -16,6 +16,7 @@
  *
  */
 
+#include <grpcpp/ext/channelz_service_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -574,6 +575,7 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
+  grpc::channelz::experimental::InitChannelzService();
   // Validate the expect_status flag.
   grpc_status_code code;
   GPR_ASSERT(grpc_status_code_from_string(

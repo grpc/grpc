@@ -12,13 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/security/authorization/cel_authorization_engine.h"
+#include "src/core/lib/security/authorization/authorization_engine.h"
 
 #include <gtest/gtest.h>
 
 namespace grpc_core {
 
-class CelAuthorizationEngineTest : public ::testing::Test {
+class AuthorizationEngineTest : public ::testing::Test {
  protected:
   void SetUp() override {
     deny_policy_ = envoy_config_rbac_v3_RBAC_new(arena_.ptr());
@@ -31,43 +31,43 @@ class CelAuthorizationEngineTest : public ::testing::Test {
   envoy_config_rbac_v3_RBAC* allow_policy_;
 };
 
-TEST_F(CelAuthorizationEngineTest, CreateEngineSuccessOnePolicy) {
+TEST_F(AuthorizationEngineTest, CreateEngineSuccessOnePolicy) {
   std::vector<envoy_config_rbac_v3_RBAC*> policies{allow_policy_};
-  std::unique_ptr<CelAuthorizationEngine> engine =
-      CelAuthorizationEngine::CreateCelAuthorizationEngine(policies);
+  std::unique_ptr<AuthorizationEngine> engine =
+      AuthorizationEngine::CreateAuthorizationEngine(policies);
   EXPECT_NE(engine, nullptr)
       << "Error: Failed to create an AuthorizationEngine with one policy.";
 }
 
-TEST_F(CelAuthorizationEngineTest, CreateEngineSuccessTwoPolicies) {
+TEST_F(AuthorizationEngineTest, CreateEngineSuccessTwoPolicies) {
   std::vector<envoy_config_rbac_v3_RBAC*> policies{deny_policy_, allow_policy_};
-  std::unique_ptr<CelAuthorizationEngine> engine =
-      CelAuthorizationEngine::CreateCelAuthorizationEngine(policies);
+  std::unique_ptr<AuthorizationEngine> engine =
+      AuthorizationEngine::CreateAuthorizationEngine(policies);
   EXPECT_NE(engine, nullptr)
       << "Error: Failed to create an AuthorizationEngine with two policies.";
 }
 
-TEST_F(CelAuthorizationEngineTest, CreateEngineFailNoPolicies) {
+TEST_F(AuthorizationEngineTest, CreateEngineFailNoPolicies) {
   std::vector<envoy_config_rbac_v3_RBAC*> policies{};
-  std::unique_ptr<CelAuthorizationEngine> engine =
-      CelAuthorizationEngine::CreateCelAuthorizationEngine(policies);
+  std::unique_ptr<AuthorizationEngine> engine =
+      AuthorizationEngine::CreateAuthorizationEngine(policies);
   EXPECT_EQ(engine, nullptr)
       << "Error: Created an AuthorizationEngine without policies.";
 }
 
-TEST_F(CelAuthorizationEngineTest, CreateEngineFailTooManyPolicies) {
+TEST_F(AuthorizationEngineTest, CreateEngineFailTooManyPolicies) {
   std::vector<envoy_config_rbac_v3_RBAC*> policies{deny_policy_, allow_policy_,
                                                    deny_policy_};
-  std::unique_ptr<CelAuthorizationEngine> engine =
-      CelAuthorizationEngine::CreateCelAuthorizationEngine(policies);
+  std::unique_ptr<AuthorizationEngine> engine =
+      AuthorizationEngine::CreateAuthorizationEngine(policies);
   EXPECT_EQ(engine, nullptr)
       << "Error: Created an AuthorizationEngine with more than two policies.";
 }
 
-TEST_F(CelAuthorizationEngineTest, CreateEngineFailWrongPolicyOrder) {
+TEST_F(AuthorizationEngineTest, CreateEngineFailWrongPolicyOrder) {
   std::vector<envoy_config_rbac_v3_RBAC*> policies{allow_policy_, deny_policy_};
-  std::unique_ptr<CelAuthorizationEngine> engine =
-      CelAuthorizationEngine::CreateCelAuthorizationEngine(policies);
+  std::unique_ptr<AuthorizationEngine> engine =
+      AuthorizationEngine::CreateAuthorizationEngine(policies);
   EXPECT_EQ(engine, nullptr) << "Error: Created an AuthorizationEngine with "
                                 "policies in the wrong order.";
 }

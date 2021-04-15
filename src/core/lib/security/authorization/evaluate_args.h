@@ -50,21 +50,19 @@ class EvaluateArgs {
   // string_view of that string.
   absl::optional<absl::string_view> GetHeaderValue(
       absl::string_view key, std::string* concatenated_value) const;
-  // TODO(ashithasantosh): Modify endpoint getters, such that per-channel data
-  // is constructed only once. The construction can happen in authorization
-  // filter's channel data. Also update methods to return string_view.
-  std::string GetLocalAddress() const;
+  absl::string_view GetLocalAddress() const;
   int GetLocalPort() const;
-  std::string GetPeerAddress() const;
+  absl::string_view GetPeerAddress() const;
   int GetPeerPort() const;
   absl::string_view GetSpiffeId() const;
-  absl::string_view GetCommonNameInPeerCert() const;
-  absl::string_view GetTransportSecurityType() const;
+  absl::string_view GetCertServerName() const;
+
+  // TODO(unknown): Add a getter function for source.principal
 
  private:
-  grpc_metadata_batch* metadata_ = nullptr;
-  grpc_auth_context* auth_context_ = nullptr;
-  grpc_endpoint* endpoint_ = nullptr;
+  grpc_metadata_batch* metadata_;
+  grpc_auth_context* auth_context_;
+  grpc_endpoint* endpoint_;
 };
 
 }  // namespace grpc_core

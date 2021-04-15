@@ -13,8 +13,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_AUTHORIZATION_ENGINE_H
-#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_AUTHORIZATION_ENGINE_H
+#ifndef GRPC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_ENGINE_H
+#define GRPC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_ENGINE_H
 
 #include <grpc/support/port_platform.h>
 
@@ -34,7 +34,7 @@
 
 namespace grpc_core {
 
-// CelAuthorizationEngine makes an AuthorizationDecision to ALLOW or DENY the
+// AuthorizationEngine makes an AuthorizationDecision to ALLOW or DENY the
 // current action based on the condition fields in provided RBAC policies.
 // The engine may be constructed with one or two policies. If two polcies,
 // the first policy is deny-if-matched and the second is allow-if-matched.
@@ -44,20 +44,19 @@ namespace grpc_core {
 // are compatible with this engine.
 //
 // Example:
-// CelAuthorizationEngine*
-// auth_engine =
-// CelAuthorizationEngine::CreateCelAuthorizationEngine(rbac_policies);
+// AuthorizationEngine*
+// auth_engine = AuthorizationEngine::CreateAuthorizationEngine(rbac_policies);
 // auth_engine->Evaluate(evaluate_args); // returns authorization decision.
-class CelAuthorizationEngine {
+class AuthorizationEngine {
  public:
   // rbac_policies must be a vector containing either a single policy of any
   // kind, or one deny policy and one allow policy, in that order.
-  static std::unique_ptr<CelAuthorizationEngine> CreateCelAuthorizationEngine(
+  static std::unique_ptr<AuthorizationEngine> CreateAuthorizationEngine(
       const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies);
 
-  // Users should use the CreateCelAuthorizationEngine factory function
-  // instead of calling the CelAuthorizationEngine constructor directly.
-  explicit CelAuthorizationEngine(
+  // Users should use the CreateAuthorizationEngine factory function
+  // instead of calling the AuthorizationEngine constructor directly.
+  explicit AuthorizationEngine(
       const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies);
   // TODO(mywang@google.com): add an Evaluate member function.
 
@@ -82,4 +81,4 @@ class CelAuthorizationEngine {
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_CEL_AUTHORIZATION_ENGINE_H */
+#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_AUTHORIZATION_ENGINE_H */
