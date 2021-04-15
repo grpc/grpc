@@ -31,12 +31,7 @@
  * Defines GPR_ABSEIL_SYNC to use synchronization features from Abseil
  */
 #ifndef GPR_ABSEIL_SYNC
-#if defined(__APPLE__)
-// This is disabled on Apple platforms because macos/grpc_basictests_c_cpp
-// fails with this. https://github.com/grpc/grpc/issues/23661
-#else
 #define GPR_ABSEIL_SYNC 1
-#endif
 #endif  // GPR_ABSEIL_SYNC
 
 /* Get windows.h included everywhere (we need it) */
@@ -657,26 +652,6 @@ typedef unsigned __int64 uint64_t;
 
 #ifndef __STDC_FORMAT_MACROS
 #define __STDC_FORMAT_MACROS
-#endif
-
-// Platform-specific sockaddr includes
-#ifdef GRPC_UV
-#include <uv.h>
-#elif defined(GPR_ANDROID) || defined(GPR_LINUX) || defined(GPR_APPLE) ||   \
-    defined(GPR_FREEBSD) || defined(GPR_OPENBSD) || defined(GPR_SOLARIS) || \
-    defined(GPR_AIX) || defined(GPR_NACL) || defined(GPR_FUCHSIA) ||        \
-    defined(GRPC_POSIX_SOCKET)
-#define GRPC_EVENT_ENGINE_POSIX
-#include <netdb.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#elif defined(GPR_WINDOWS)
-#include <winsock2.h>
-#include <ws2tcpip.h>
-// must be included after the above
-#include <mswsock.h>
-#else
-#error UNKNOWN PLATFORM
 #endif
 
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */

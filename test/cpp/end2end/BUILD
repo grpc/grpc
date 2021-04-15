@@ -14,7 +14,7 @@
 
 licenses(["notice"])
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_cc_test_xds", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 grpc_package(
     name = "test/cpp/end2end",
@@ -510,7 +510,7 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test_xds(
+grpc_cc_test(
     name = "xds_end2end_test",
     size = "large",
     srcs = ["xds_end2end_test.cc"],
@@ -874,7 +874,7 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_test_xds(
+grpc_cc_test(
     name = "admin_services_end2end_test",
     srcs = ["admin_services_end2end_test.cc"],
     external_deps = [

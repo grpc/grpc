@@ -32,7 +32,6 @@ package(
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
-    "grpc_cc_library_xds",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
     "python_config_settings",
@@ -131,6 +130,7 @@ GRPC_PUBLIC_HDRS = [
 GRPC_PUBLIC_EVENT_ENGINE_HDRS = [
     "include/grpc/event_engine/channel_args.h",
     "include/grpc/event_engine/event_engine.h",
+    "include/grpc/event_engine/port.h",
     "include/grpc/event_engine/slice_allocator.h",
 ]
 
@@ -1068,7 +1068,6 @@ grpc_cc_library(
     public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
     deps = [
         "dual_ref_counted",
-        "eventmanager_libuv",
         "gpr_base",
         "grpc_codegen",
         "grpc_trace",
@@ -2631,7 +2630,7 @@ grpc_cc_library(
     alwayslink = 1,
 )
 
-grpc_cc_library_xds(
+grpc_cc_library(
     name = "grpcpp_csds",
     srcs = [
         "src/cpp/server/csds/csds.cc",
@@ -2647,7 +2646,7 @@ grpc_cc_library_xds(
     alwayslink = 1,
 )
 
-grpc_cc_library_xds(
+grpc_cc_library(
     name = "grpcpp_admin",
     srcs = [
         "src/cpp/server/admin/admin_services.cc",
@@ -2752,6 +2751,7 @@ grpc_cc_library(
         "absl-time",
         "opencensus-trace",
         "opencensus-trace-context_util",
+        "opencensus-trace-propagation",
         "opencensus-stats",
         "opencensus-context",
     ],
@@ -3621,26 +3621,4 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
-)
-
-# Base classes of EventManagerInterface
-grpc_cc_library(
-    name = "eventmanager_interface",
-    hdrs = [
-        "src/core/lib/iomgr/poller/eventmanager_interface.h",
-    ],
-)
-
-# Libuv-based EventManager implementation
-grpc_cc_library(
-    name = "eventmanager_libuv",
-    srcs = [
-        "src/core/lib/iomgr/poller/eventmanager_libuv.cc",
-    ],
-    hdrs = [
-        "src/core/lib/iomgr/poller/eventmanager_libuv.h",
-    ],
-    deps = [
-        "gpr_base",
-    ],
 )

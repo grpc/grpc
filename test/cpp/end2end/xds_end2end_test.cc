@@ -7461,11 +7461,12 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                     absl::string_view identity_certificate_name,
                     bool require_client_certificates) {
     Listener listener;
-    listener.set_name(
-        absl::StrCat("grpc/server?xds.resource.listening_address=127.0.0.1:",
-                     backends_[0]->port()));
+    listener.set_name(absl::StrCat(
+        ipv6_only_ ? "grpc/server?xds.resource.listening_address=[::1]:"
+                   : "grpc/server?xds.resource.listening_address=127.0.0.1:",
+        backends_[0]->port()));
     listener.mutable_address()->mutable_socket_address()->set_address(
-        "127.0.0.1");
+        ipv6_only_ ? "[::1]" : "127.0.0.1");
     listener.mutable_address()->mutable_socket_address()->set_port_value(
         backends_[0]->port());
     auto* filter_chain = listener.add_filter_chains();
@@ -7496,11 +7497,6 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
       transport_socket->mutable_typed_config()->PackFrom(
           downstream_tls_context);
     }
-    balancers_[0]->ads_service()->SetLdsResource(listener);
-    listener.set_name(
-        absl::StrCat("grpc/server?xds.resource.listening_address=[::1]:",
-                     backends_[0]->port()));
-    listener.mutable_address()->mutable_socket_address()->set_address("[::1]");
     balancers_[0]->ads_service()->SetLdsResource(listener);
   }
 
@@ -8437,15 +8433,14 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchNacked) {
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
   balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto initial_time = absl::Now();
   do {
     CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
-  const auto response_state =
-      balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  } while (balancers_[0]->ads_service()->lds_response_state().state !=
+               AdsServiceImpl::ResponseState::NACKED &&
+           initial_time + absl::Seconds(60) > absl::Now());
   EXPECT_THAT(
-      response_state.error_message,
+      balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr(
           "Duplicate matching rules detected when adding filter chain: {}"));
 }
@@ -8483,23 +8478,22 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnPrefixRangesNacked) {
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(32);
   balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto initial_time = absl::Now();
   do {
     CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
-  const auto response_state =
-      balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  } while (balancers_[0]->ads_service()->lds_response_state().state !=
+               AdsServiceImpl::ResponseState::NACKED &&
+           initial_time + absl::Seconds(60) > absl::Now());
   if (ipv6_only_) {
     EXPECT_THAT(
-        response_state.error_message,
+        balancers_[0]->ads_service()->lds_response_state().error_message,
         ::testing::HasSubstr(
             "Duplicate matching rules detected when adding filter chain: "
             "{prefix_ranges={{address_prefix=[::]:0, prefix_len=16}, "
             "{address_prefix=[::]:0, prefix_len=32}}}"));
   } else {
     EXPECT_THAT(
-        response_state.error_message,
+        balancers_[0]->ads_service()->lds_response_state().error_message,
         ::testing::HasSubstr(
             "Duplicate matching rules detected when adding filter chain: "
             "{prefix_ranges={{address_prefix=127.0.0.0:0, prefix_len=16}, "
@@ -8529,15 +8523,14 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
   balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto initial_time = absl::Now();
   do {
     CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
-  const auto response_state =
-      balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  } while (balancers_[0]->ads_service()->lds_response_state().state !=
+               AdsServiceImpl::ResponseState::NACKED &&
+           initial_time + absl::Seconds(60) > absl::Now());
   EXPECT_THAT(
-      response_state.error_message,
+      balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
                            "filter chain: {transport_protocol=raw_buffer}"));
 }
@@ -8563,15 +8556,14 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnLocalSourceTypeNacked) {
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::SAME_IP_OR_LOOPBACK);
   balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto initial_time = absl::Now();
   do {
     CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
-  const auto response_state =
-      balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  } while (balancers_[0]->ads_service()->lds_response_state().state !=
+               AdsServiceImpl::ResponseState::NACKED &&
+           initial_time + absl::Seconds(60) > absl::Now());
   EXPECT_THAT(
-      response_state.error_message,
+      balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
                            "filter chain: {source_type=SAME_IP_OR_LOOPBACK}"));
 }
@@ -8598,15 +8590,14 @@ TEST_P(XdsServerFilterChainMatchTest,
   filter_chain->mutable_filter_chain_match()->set_source_type(
       FilterChainMatch::EXTERNAL);
   balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto initial_time = absl::Now();
   do {
     CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
-  const auto response_state =
-      balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  } while (balancers_[0]->ads_service()->lds_response_state().state !=
+               AdsServiceImpl::ResponseState::NACKED &&
+           initial_time + absl::Seconds(60) > absl::Now());
   EXPECT_THAT(
-      response_state.error_message,
+      balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
                            "filter chain: {source_type=EXTERNAL}"));
 }
@@ -8645,23 +8636,22 @@ TEST_P(XdsServerFilterChainMatchTest,
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(32);
   balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto initial_time = absl::Now();
   do {
     CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
-  const auto response_state =
-      balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  } while (balancers_[0]->ads_service()->lds_response_state().state !=
+               AdsServiceImpl::ResponseState::NACKED &&
+           initial_time + absl::Seconds(60) > absl::Now());
   if (ipv6_only_) {
     EXPECT_THAT(
-        response_state.error_message,
+        balancers_[0]->ads_service()->lds_response_state().error_message,
         ::testing::HasSubstr(
             "Duplicate matching rules detected when adding filter chain: "
             "{source_prefix_ranges={{address_prefix=[::]:0, prefix_len=16}, "
             "{address_prefix=[::]:0, prefix_len=32}}}"));
   } else {
     EXPECT_THAT(
-        response_state.error_message,
+        balancers_[0]->ads_service()->lds_response_state().error_message,
         ::testing::HasSubstr(
             "Duplicate matching rules detected when adding filter chain: "
             "{source_prefix_ranges={{address_prefix=127.0.0.0:0, "
@@ -8689,15 +8679,14 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnSourcePortNacked) {
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_source_ports(8080);
   balancers_[0]->ads_service()->SetLdsResource(listener);
+  auto initial_time = absl::Now();
   do {
     CheckRpcSendFailure();
-  } while (balancers_[0]->ads_service()->lds_response_state().state ==
-           AdsServiceImpl::ResponseState::SENT);
-  const auto response_state =
-      balancers_[0]->ads_service()->lds_response_state();
-  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  } while (balancers_[0]->ads_service()->lds_response_state().state !=
+               AdsServiceImpl::ResponseState::NACKED &&
+           initial_time + absl::Seconds(60) > absl::Now());
   EXPECT_THAT(
-      response_state.error_message,
+      balancers_[0]->ads_service()->lds_response_state().error_message,
       ::testing::HasSubstr("Duplicate matching rules detected when adding "
                            "filter chain: {source_ports={8080}}"));
 }

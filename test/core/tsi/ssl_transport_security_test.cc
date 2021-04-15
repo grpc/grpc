@@ -910,8 +910,8 @@ void ssl_tsi_test_extract_x509_subject_names() {
   GPR_ASSERT(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer) ==
              TSI_OK);
   // tsi_peer should include one common name, one certificate, one security
-  // level, seven SAN fields, three URI fields.
-  size_t expected_property_count = 12;
+  // level, ten SAN fields, three URI fields.
+  size_t expected_property_count = 15;
   GPR_ASSERT(peer.property_count == expected_property_count);
   // Check common name
   const char* expected_cn = "xpigors";

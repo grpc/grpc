@@ -1412,7 +1412,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/parse_address.cc \
-    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -1599,6 +1598,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/event_engine/channel_args.h \
     include/grpc/event_engine/event_engine.h \
+    include/grpc/event_engine/port.h \
     include/grpc/event_engine/slice_allocator.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \
@@ -1895,7 +1895,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/load_file.cc \
     src/core/lib/iomgr/lockfree_event.cc \
     src/core/lib/iomgr/parse_address.cc \
-    src/core/lib/iomgr/poller/eventmanager_libuv.cc \
     src/core/lib/iomgr/polling_entity.cc \
     src/core/lib/iomgr/pollset.cc \
     src/core/lib/iomgr/pollset_custom.cc \
@@ -2002,6 +2001,7 @@ PUBLIC_HEADERS_C += \
     include/grpc/compression.h \
     include/grpc/event_engine/channel_args.h \
     include/grpc/event_engine/event_engine.h \
+    include/grpc/event_engine/port.h \
     include/grpc/event_engine/slice_allocator.h \
     include/grpc/fork.h \
     include/grpc/grpc.h \

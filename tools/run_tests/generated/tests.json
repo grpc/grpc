@@ -4382,7 +4382,7 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "evaluate_args_test",
+    "name": "error_utils_test",
     "platforms": [
       "linux",
       "mac",
@@ -4406,14 +4406,14 @@
     "flaky": false,
     "gtest": true,
     "language": "c++",
-    "name": "eventmanager_libuv_test",
+    "name": "evaluate_args_test",
     "platforms": [
       "linux",
       "mac",
       "posix",
       "windows"
     ],
-    "uses_polling": false
+    "uses_polling": true
   },
   {
     "args": [],

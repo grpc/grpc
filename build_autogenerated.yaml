@@ -84,6 +84,7 @@ libs:
   - test/core/end2end/tests/request_with_payload.cc
   - test/core/end2end/tests/resource_quota_server.cc
   - test/core/end2end/tests/retry.cc
+  - test/core/end2end/tests/retry_cancel_during_delay.cc
   - test/core/end2end/tests/retry_cancellation.cc
   - test/core/end2end/tests/retry_disabled.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
@@ -192,6 +193,7 @@ libs:
   - test/core/end2end/tests/request_with_payload.cc
   - test/core/end2end/tests/resource_quota_server.cc
   - test/core/end2end/tests/retry.cc
+  - test/core/end2end/tests/retry_cancel_during_delay.cc
   - test/core/end2end/tests/retry_cancellation.cc
   - test/core/end2end/tests/retry_disabled.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
@@ -370,6 +372,7 @@ libs:
   - include/grpc/compression.h
   - include/grpc/event_engine/channel_args.h
   - include/grpc/event_engine/event_engine.h
+  - include/grpc/event_engine/port.h
   - include/grpc/event_engine/slice_allocator.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
@@ -735,7 +738,6 @@ libs:
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/nameser.h
   - src/core/lib/iomgr/parse_address.h
-  - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_custom.h
@@ -1265,7 +1267,6 @@ libs:
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/parse_address.cc
-  - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
   - src/core/lib/iomgr/pollset_custom.cc
@@ -1582,6 +1583,7 @@ libs:
   - include/grpc/compression.h
   - include/grpc/event_engine/channel_args.h
   - include/grpc/event_engine/event_engine.h
+  - include/grpc/event_engine/port.h
   - include/grpc/event_engine/slice_allocator.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
@@ -1759,7 +1761,6 @@ libs:
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/nameser.h
   - src/core/lib/iomgr/parse_address.h
-  - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_custom.h
@@ -2026,7 +2027,6 @@ libs:
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/parse_address.cc
-  - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
   - src/core/lib/iomgr/pollset_custom.cc
@@ -5043,6 +5043,15 @@ targets:
   deps:
   - grpc++_error_details
   - grpc_test_util
+- name: error_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/error_utils_test.cc
+  deps:
+  - grpc_test_util
 - name: evaluate_args_test
   gtest: true
   build: test
@@ -5056,16 +5065,6 @@ targets:
   - test/core/security/evaluate_args_test.cc
   deps:
   - grpc_test_util
-- name: eventmanager_libuv_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/poller/eventmanager_libuv_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: examine_stack_test
   gtest: true
   build: test
@@ -6678,7 +6677,7 @@ targets:
   - test/cpp/interop/xds_interop_client.cc
   deps:
   - absl/flags:flag
-  - grpc++
+  - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
 - name: xds_interop_server
@@ -6696,7 +6695,7 @@ targets:
   - test/cpp/interop/xds_interop_server.cc
   deps:
   - absl/flags:flag
-  - grpc++
+  - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
 tests: []

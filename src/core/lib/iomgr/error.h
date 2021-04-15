@@ -159,6 +159,10 @@ grpc_error* grpc_error_create(const char* file, int line,
 #define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc)                           \
   grpc_error_create(__FILE__, __LINE__, grpc_slice_from_copied_string(desc), \
                     NULL, 0)
+#define GRPC_ERROR_CREATE_FROM_STRING_VIEW(desc) \
+  grpc_error_create(                             \
+      __FILE__, __LINE__,                        \
+      grpc_slice_from_copied_buffer((desc).data(), (desc).size()), NULL, 0)
 
 // Create an error that references some other errors. This function adds a
 // reference to each error in errs - it does not consume an existing reference

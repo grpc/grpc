@@ -7,8 +7,6 @@ metadata:
   labels:
     app: ${deployment_name}
     owner: xds-k8s-interop-test
-  annotations:
-    security.cloud.google.com/use-workload-certificates: ""
 spec:
   replicas: ${replica_count}
   selector:
@@ -16,6 +14,8 @@ spec:
       app: ${deployment_name}
   template:
     metadata:
+      annotations:
+        security.cloud.google.com/use-workload-certificates: ""
       labels:
         app: ${deployment_name}
         owner: xds-k8s-interop-test
