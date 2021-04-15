@@ -73,9 +73,7 @@ def category_string(categories: Iterable[str], category: str) -> str:
     return ' '.join(c)
 
 
-def gen_scenario_languages(
-        category: str,
-        show_multiple_categories: bool = True) -> Iterable[LanguageConfig]:
+def gen_scenario_languages(category: str) -> Iterable[LanguageConfig]:
     """Generates tuples containing the languages specified in each scenario."""
     for language in scenario_config.LANGUAGES:
         for scenario in scenario_config.LANGUAGES[language].scenarios():
@@ -84,10 +82,7 @@ def gen_scenario_languages(
             categories = scenario.get('CATEGORIES', [])
             if category != 'all' and category not in categories:
                 continue
-            if show_multiple_categories:
-                cat = category_string(categories, category)
-            else:
-                cat = category
+            cat = category_string(categories, category)
             yield LanguageConfig(category=cat,
                                  language=language,
                                  client_language=client_language,
