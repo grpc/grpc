@@ -292,43 +292,6 @@ class Status(six.with_metaclass(abc.ABCMeta)):
     """
 
 
-#############################  gRPC Exceptions  ################################
-
-
-class RpcError(Exception):
-    """Raised by the gRPC library to indicate non-OK-status RPC termination."""
-
-    def trailing_metadata(self):
-        """Accesses the trailing metadata sent by the server.
-
-        This method blocks until the value is available.
-
-        Returns:
-          The trailing :term:`metadata`.
-        """
-        raise NotImplementedError()
-
-    def code(self):
-        """Accesses the status code sent by the server.
-
-        This method blocks until the value is available.
-
-        Returns:
-          The StatusCode value for the RPC.
-        """
-        raise NotImplementedError()
-
-    def details(self):
-        """Accesses the details sent by the server.
-
-        This method blocks until the value is available.
-
-        Returns:
-          The details string of the RPC.
-        """
-        raise NotImplementedError()
-
-
 ##############################  Shared Context  ################################
 
 
@@ -428,6 +391,13 @@ class Call(six.with_metaclass(abc.ABCMeta, RpcContext)):
           The details string of the RPC.
         """
         raise NotImplementedError()
+
+
+#############################  gRPC Exceptions  ################################
+
+
+class RpcError(Exception, Call):
+    """Raised by the gRPC library to indicate non-OK-status RPC termination."""
 
 
 ##############  Invocation-Side Interceptor Interfaces & Classes  ##############
