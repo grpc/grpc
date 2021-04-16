@@ -137,6 +137,7 @@ INSTALL_REQUIRES = [
     'protobuf',
     'grpcio',
 ]
+SETUP_REQUIRES = INSTALL_REQUIRES + ["grpcio-tools"]
 setuptools.setup(
     name='xds-protos',
     version='0.0.1',
@@ -147,4 +148,5 @@ setuptools.setup(
     url='https://grpc.io',
     license='Apache License 2.0',
     install_requires=INSTALL_REQUIRES,
+    setup_requires=SETUP_REQUIRES,
     classifiers=CLASSIFIERS)
