@@ -19,6 +19,7 @@ windows = RUBY_PLATFORM =~ /mingw|mswin/
 bsd = RUBY_PLATFORM =~ /bsd/
 darwin = RUBY_PLATFORM =~ /darwin/
 linux = RUBY_PLATFORM =~ /linux/
+cross_compiling = ENV['RCD_HOST_RUBY_VERSION'] # set by rake-compiler-dock in build containers
 
 grpc_root = File.expand_path(File.join(File.dirname(__FILE__), '../../../..'))
 
@@ -39,7 +40,7 @@ if ENV['LD'].nil? || ENV['LD'].size == 0
     ENV['LD'] = ENV['CC']
 end
 
-if darwin
+if darwin && !cross_compiling
   ENV['AR'] = 'libtool'
   ENV['ARFLAGS'] = '-o'
 end
@@ -49,7 +50,7 @@ ENV['EMBED_ZLIB'] = 'true'
 ENV['EMBED_CARES'] = 'true'
 
 ENV['ARCH_FLAGS'] = RbConfig::CONFIG['ARCH_FLAG']
-if darwin
+if darwin && !cross_compiling
   if RUBY_PLATFORM =~ /arm64/
     ENV['ARCH_FLAGS'] = '-arch arm64'
   else
@@ -104,7 +105,7 @@ puts 'Generating Makefile for ' + output
 create_makefile(output)
 
 strip_tool = RbConfig::CONFIG['STRIP']
-strip_tool = 'strip -x' if darwin
+strip_tool += ' -x' if darwin
 
 if grpc_config == 'opt'
   File.open('Makefile.new', 'w') do |o|
