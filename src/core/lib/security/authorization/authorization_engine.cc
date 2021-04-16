@@ -158,7 +158,7 @@ std::unique_ptr<mock_cel::Activation> AuthorizationEngine::CreateActivation(
             kSpiffeId, mock_cel::CelValue::CreateStringView(spiffe_id));
       }
     } else if (elem == kCertServerName) {
-      absl::string_view cert_server_name(args.GetCertServerName());
+      absl::string_view cert_server_name(args.GetCommonName());
       if (!cert_server_name.empty()) {
         activation->InsertValue(
             kCertServerName,
