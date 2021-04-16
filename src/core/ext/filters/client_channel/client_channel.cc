@@ -2820,7 +2820,18 @@ void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
       // need to use a separate call context for each subchannel call.
       call_context_, call_combiner_};
   grpc_error* error = GRPC_ERROR_NONE;
-  subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
+  {
+    MutexLock lock(&subchannel_call_creation_mu_);
+    // If we were already pre-cancelled, yield the call combiner to
+    // allow the cancel_stream op to be started, and then return.  Any
+    // pending batches will be failed with the right error when the
+    // cancel_stream op comes down.
+    if (subchannel_call_pre_cancelled_) {
+      GRPC_CALL_COMBINER_STOP(call_combiner_, "LoadBalancedCall pre-cancelled");
+      return;
+    }
+    subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p lb_call=%p: create subchannel_call=%p: error=%s", chand_,
