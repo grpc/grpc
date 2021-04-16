@@ -108,12 +108,10 @@ class ChannelzServicer(_channelz_pb2_grpc.ChannelzServicer):
     @staticmethod
     def GetSocket(request, context):
         try:
-            response = json_format.Parse(
+            return json_format.Parse(
                 cygrpc.channelz_get_socket(request.socket_id),
                 _channelz_pb2.GetSocketResponse(),
             )
-
-            return response
         except ValueError as e:
             context.set_code(grpc.StatusCode.NOT_FOUND)
             context.set_details(str(e))

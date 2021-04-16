@@ -386,8 +386,6 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     }
   }
   if (channelz_enabled) {
-    auto sec = grpc_core::channelz::SocketNode::Security::GetFromChannelArgs(
-        channel_args);
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             std::string(grpc_endpoint_get_local_address(t->ep)), t->peer_string,

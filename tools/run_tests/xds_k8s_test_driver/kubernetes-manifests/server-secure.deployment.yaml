@@ -42,10 +42,6 @@ spec:
           # TODO(sergiitk): this should be conditional for if version < v1.37.x
           - name: GRPC_XDS_EXPERIMENTAL_NEW_SERVER_API
             value: "true"
-          - name: GRPC_VERBOSITY
-            value: "DEBUG"
-          - name: GRPC_TRACE
-            value: "all,-timer"
         volumeMounts:
           - mountPath: /tmp/grpc-xds/
             name: grpc-td-conf
