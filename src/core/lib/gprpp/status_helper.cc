@@ -37,10 +37,79 @@ namespace grpc_core {
 namespace {
 
 const absl::string_view kTypeUrlPrefix = "type.googleapis.com/grpc.status.";
-const absl::string_view kFileField = "file";
-const absl::string_view kFileLineField = "file_line";
-const absl::string_view kCreatedField = "created";
 const absl::string_view kChildrenField = "children";
+
+const char* GetStatusIntPropertyName(StatusIntProperty key) {
+  switch (key) {
+    case StatusIntProperty::ERRNO:
+      return "errno";
+    case StatusIntProperty::FILE_LINE:
+      return "file_line";
+    case StatusIntProperty::STREAM_ID:
+      return "stream_id";
+    case StatusIntProperty::GRPC_STATUS:
+      return "grpc_status";
+    case StatusIntProperty::OFFSET:
+      return "offset";
+    case StatusIntProperty::INDEX:
+      return "index";
+    case StatusIntProperty::SIZE:
+      return "size";
+    case StatusIntProperty::HTTP2_ERROR:
+      return "http2_error";
+    case StatusIntProperty::TSI_CODE:
+      return "tsi_code";
+    case StatusIntProperty::SECURITY_STATUS:
+      return "security_status";
+    case StatusIntProperty::FD:
+      return "fd";
+    case StatusIntProperty::WSA_ERROR:
+      return "wsa_error";
+    case StatusIntProperty::HTTP_STATUS:
+      return "http_status";
+    case StatusIntProperty::LIMIT:
+      return "limit";
+    case StatusIntProperty::OCCURRED_DURING_WRITE:
+      return "occurred_during_write";
+    case StatusIntProperty::CHANNEL_CONNECTIVITY_STATE:
+      return "channel_connectivity_state";
+    case StatusIntProperty::LB_POLICY_DROP:
+      return "lb_policy_drop";
+  }
+  GPR_UNREACHABLE_CODE(return "unknown");
+}
+
+const char* GetStatusStrPropertyName(StatusStrProperty key) {
+  switch (key) {
+    case StatusStrProperty::KEY:
+      return "key";
+    case StatusStrProperty::VALUE:
+      return "value";
+    case StatusStrProperty::DESCRIPTION:
+      return "description";
+    case StatusStrProperty::OS_ERROR:
+      return "os_error";
+    case StatusStrProperty::TARGET_ADDRESS:
+      return "target_address";
+    case StatusStrProperty::SYSCALL:
+      return "syscall";
+    case StatusStrProperty::FILE:
+      return "file";
+    case StatusStrProperty::GRPC_MESSAGE:
+      return "grpc_message";
+    case StatusStrProperty::RAW_BYTES:
+      return "raw_bytes";
+    case StatusStrProperty::TSI_ERROR:
+      return "tsi_error";
+    case StatusStrProperty::FILENAME:
+      return "filename";
+    case StatusStrProperty::QUEUED_BUFFERS:
+      return "queued_buffers";
+    case StatusStrProperty::CREATED_TIME:
+      return "created_time";
+  }
+  GPR_UNREACHABLE_CODE(return "unknown");
+}
 
 void EncodeUInt32ToBytes(uint32_t v, char* buf) {
   buf[0] = v & 0xFF;
@@ -61,13 +130,13 @@ absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
                           std::initializer_list<absl::Status> children) {
   absl::Status s(code, msg);
   if (location.file() != nullptr) {
-    StatusSetStr(&s, kFileField, location.file());
+    StatusSetStr(&s, StatusStrProperty::FILE, location.file());
   }
   if (location.line() != -1) {
-    StatusSetInt(&s, kFileLineField, location.line());
+    StatusSetInt(&s, StatusIntProperty::FILE_LINE, location.line());
   }
   absl::Time now = grpc_core::ToAbslTime(gpr_now(GPR_CLOCK_REALTIME));
-  StatusSetStr(&s, kCreatedField, absl::FormatTime(now));
+  StatusSetStr(&s, StatusStrProperty::CREATED_TIME, absl::FormatTime(now));
   for (const absl::Status& child : children) {
     if (!child.ok()) {
       StatusAddChild(&s, child);
@@ -76,16 +145,19 @@ absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
   return s;
 }
 
-void StatusSetInt(absl::Status* status, absl::string_view field,
-                  intptr_t value) {
-  status->SetPayload(absl::StrCat(kTypeUrlPrefix, field),
-                     absl::Cord(std::to_string(value)));
+void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value) {
+  status->SetPayload(
+      absl::StrCat(kTypeUrlPrefix, GetStatusIntPropertyName(key)),
+      absl::Cord(std::to_string(value)));
 }
 
 absl::optional<intptr_t> StatusGetInt(const absl::Status& status,
-                                      absl::string_view field) {
-  absl::optional<absl::Cord> p =
-      status.GetPayload(absl::StrCat(kTypeUrlPrefix, field));
+                                      StatusIntProperty key) {
+  if (key == StatusIntProperty::GRPC_STATUS) {
+    return status.code;
+  }
+  absl::optional<absl::Cord> p = status.GetPayload(
+      absl::StrCat(kTypeUrlPrefix, GetStatusIntPropertyName(key)));
   if (p.has_value()) {
     absl::optional<absl::string_view> sv = p->TryFlat();
     intptr_t value;
@@ -102,15 +174,17 @@ absl::optional<intptr_t> StatusGetInt(const absl::Status& status,
   return {};
 }
 
-void StatusSetStr(absl::Status* status, absl::string_view field,
+void StatusSetStr(absl::Status* status, StatusStrProperty key,
                   absl::string_view value) {
-  status->SetPayload(absl::StrCat(kTypeUrlPrefix, field), absl::Cord(value));
+  status->SetPayload(
+      absl::StrCat(kTypeUrlPrefix, GetStatusStrPropertyName(key)),
+      absl::Cord(value));
 }
 
 absl::optional<std::string> StatusGetStr(const absl::Status& status,
-                                         absl::string_view field) {
-  absl::optional<absl::Cord> p =
-      status.GetPayload(absl::StrCat(kTypeUrlPrefix, field));
+                                         StatusStrProperty key) {
+  absl::optional<absl::Cord> p = status.GetPayload(
+      absl::StrCat(kTypeUrlPrefix, GetStatusStrPropertyName(key)));
   if (p.has_value()) {
     return std::string(*p);
   }

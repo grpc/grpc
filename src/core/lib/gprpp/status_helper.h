@@ -28,26 +28,95 @@
 
 namespace grpc_core {
 
+/// This enum should have the same value of grpc_error_ints
+enum class StatusIntProperty {
+  /// 'errno' from the operating system
+  ERRNO,
+  /// __LINE__ from the call site creating the error
+  FILE_LINE,
+  /// stream identifier: for errors that are associated with an individual
+  /// wire stream
+  STREAM_ID,
+  /// grpc status code representing this error
+  GRPC_STATUS,
+  /// offset into some binary blob (usually represented by
+  /// RAW_BYTES) where the error occurred
+  OFFSET,
+  /// context sensitive index associated with the error
+  INDEX,
+  /// context sensitive size associated with the error
+  SIZE,
+  /// http2 error code associated with the error (see the HTTP2 RFC)
+  HTTP2_ERROR,
+  /// TSI status code associated with the error
+  TSI_CODE,
+  /// grpc_security_status associated with the error
+  SECURITY_STATUS,
+  /// WSAGetLastError() reported when this error occurred
+  WSA_ERROR,
+  /// File descriptor associated with this error
+  FD,
+  /// HTTP status (i.e. 404)
+  HTTP_STATUS,
+  /// context sensitive limit associated with the error
+  LIMIT,
+  /// chttp2: did the error occur while a write was in progress
+  OCCURRED_DURING_WRITE,
+  /// channel connectivity state associated with the error
+  CHANNEL_CONNECTIVITY_STATE,
+  /// LB policy drop
+  LB_POLICY_DROP,
+};
+
+/// This enum should have the same value of grpc_error_strs
+enum class StatusStrProperty {
+  /// top-level textual description of this error
+  DESCRIPTION,
+  /// source file in which this error occurred
+  FILE,
+  /// operating system description of this error
+  OS_ERROR,
+  /// syscall that generated this error
+  SYSCALL,
+  /// peer that we were trying to communicate when this error occurred
+  TARGET_ADDRESS,
+  /// grpc status message associated with this error
+  GRPC_MESSAGE,
+  /// hex dump (or similar) with the data that generated this error
+  RAW_BYTES,
+  /// tsi error string associated with this error
+  TSI_ERROR,
+  /// filename that we were trying to read/write when this error occurred
+  FILENAME,
+  /// which data was queued for writing when the error occurred
+  QUEUED_BUFFERS,
+  /// key associated with the error
+  KEY,
+  /// value associated with the error
+  VALUE,
+  /// time string to create the error
+  CREATED_TIME,
+};
+
 /// Creates a status with given additional information
 absl::Status StatusCreate(
     absl::StatusCode code, absl::string_view msg, const DebugLocation& location,
     std::initializer_list<absl::Status> children) GRPC_MUST_USE_RESULT;
 
 /// Sets the int property to the status
-void StatusSetInt(absl::Status* status, absl::string_view field,
-                  intptr_t value);
+void StatusSetInt(absl::Status* status, StatusIntProperty key, intptr_t value);
 
 /// Gets the int property from the status
 absl::optional<intptr_t> StatusGetInt(
-    const absl::Status& status, absl::string_view field) GRPC_MUST_USE_RESULT;
+    const absl::Status& status, StatusIntProperty key) GRPC_MUST_USE_RESULT;
 
 /// Sets the str property to the status
-void StatusSetStr(absl::Status* status, absl::string_view field,
+void StatusSetStr(absl::Status* status, StatusStrProperty key,
                   absl::string_view value);
 
 /// Gets the str property from the status
 absl::optional<std::string> StatusGetStr(
-    const absl::Status& status, absl::string_view field) GRPC_MUST_USE_RESULT;
+    const absl::Status& status, StatusStrProperty key) GRPC_MUST_USE_RESULT;
 
 /// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);
@@ -66,10 +135,12 @@ std::string StatusToString(const absl::Status& status) GRPC_MUST_USE_RESULT;
 namespace internal {
 
 /// Builds a upb message, google_rpc_Status from a status
+/// This is for internal implementation & test only
 google_rpc_Status* StatusToProto(absl::Status status,
                                  upb_arena* arena) GRPC_MUST_USE_RESULT;
 
 /// Build a status from a upb message, google_rpc_Status
+/// This is for internal implementation & test only
 absl::Status StatusFromProto(google_rpc_Status* msg) GRPC_MUST_USE_RESULT;
 
 }  // namespace internal
