@@ -18,16 +18,8 @@
 # This script filters test scenarios and generates uniquely named configurations
 # for each test. Configurations are dumped in multipart YAML format.
 #
-# The following example generates configurations for C# and Java tests,
-# including tests against C++ clients and servers, running each test twice:
-#
-# ./tools/run_tests/performance/loadtest_config.py -l go -l java \
-#    -t ./tools/run_tests/performance/templates/basic_template.yaml \
-#    -s client_pool=workers-8core -s server_pool=workers-8core \
-#    -s big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
-#    -s timeoutSeconds=3600 --category=scalable -d \
-#    --client_language=c++ --server_language=c++ --runs_per_test=2 \
-#    -o ./loadtest.yaml
+# See documentation below:
+# https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md#grpc-oss-benchmarks
 
 import argparse
 import copy
@@ -242,7 +234,7 @@ def main() -> None:
                       '--substitution',
                       action='append',
                       default=[],
-                      help='Template substitutions, in the form key=value.',
+                      help='Template substitution(s), in the form key=value.',
                       dest='substitutions')
     argp.add_argument('-p',
                       '--prefix',
@@ -253,7 +245,7 @@ def main() -> None:
                       '--uniquifier_element',
                       action='append',
                       default=[],
-                      help='One or more strings to make the test name unique.',
+                      help='String element(s) to make the test name unique.',
                       dest='uniquifier_elements')
     argp.add_argument(
         '-d',
@@ -263,7 +255,7 @@ def main() -> None:
                       '--annotation',
                       action='append',
                       default=[],
-                      help='Test annotation(s), in the form key=value.',
+                      help='metadata.annotation(s), in the form key=value.',
                       dest='annotations')
     argp.add_argument('-r',
                       '--regex',

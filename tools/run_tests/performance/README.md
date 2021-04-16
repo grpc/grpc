@@ -226,7 +226,86 @@ run by applying the test to a cluster running the LoadTest controller with
 $ kubectl apply -f loadtest_config.yaml
 ```
 
-<!-- TODO(paulosjca): add more details on scripts and running tests. -->
+A basic template for generating tests in various languages can be found here:
+[loadtest_template_basic_all_languages.yaml](./templates/loadtest_template_basic_all_languages.yaml).
+The following example generates configurations for C# and Java tests using this
+template, including tests against C++ clients and servers, and running each test
+twice:
+
+```
+$ ./tools/run_tests/performance/loadtest_config.py -l go -l java \
+    -t ./tools/run_tests/performance/templates/loadtest_template_basic_all_languages.yaml \
+    -s client_pool=workers-8core -s server_pool=workers-8core \
+    -s big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
+    -s timeout_seconds=3600 --category=scalable \
+    -d --allow_client_language=c++ --allow_server_language=c++ \
+    --runs_per_test=2 -o ./loadtest.yaml
+```
+
+The script `loadtest_config.py` takes the following options:
+
+- `-l`, `--language`<br> Language to benchmark. May be repeated.
+- `-t`, `--template`<br> Template file. A template is a configuration file that
+  may contain multiple client and server configuration, and may also include
+  substitution keys.
+- `p`, `--prefix`<br> Test names consist of a prefix_joined with a uuid with a
+  dash. Test names are stored in metadata\.name. The prefix is also added as the
+  `prefix` label in metadata.labels. The prefix defaults to the user name if not
+  set.
+- `-u`, `--uniquifier_element`<br> Uniquifier elements may be passed to the test
+  to make the test name unique. This option may be repeated to add multiple
+  elements. The uniquifier elements (plus a date string and a run index, if
+  applicable) are joined with a dash to form a _uniquifier_. The test name uuid
+  is derived from the scenario name and the uniquifier. The uniquifier is also
+  added as the `uniquifier` annotation in metadata.annotations.
+- `-d`<br> This option is a shorthand for the addition of a date string as a
+  uniquifier element.
+- `-a`, `--annotation`<br> Metadata annotation to be stored in
+  metadata.annotations, in the form key=value. May be repeated.
+- `-r`, `--regex`<br> Regex to select scenarios to run. Each scenario is
+  embedded in a LoadTest configuration containing a client and server of the
+  language(s) required for the test. Defaults to `.*`, i.e., select all
+  scenarios.
+- `--category`<br> Select scenarios of a specified _category_, or of all
+  categories. Defaults to `all`. Continuous runs typically run tests in the
+  `scalable` category.
+- `--allow_client_language`<br> Allows cross-language scenarios where the client
+  is of a specified language, different from the scenario language. This is
+  typically `c++`. This flag may be repeated.
+- `--allow_server_language`<br> Allows cross-language scenarios where the server
+  is of a specified language, different from the scenario language. This is
+  typically `node` or `c++`. This flag may be repeated.
+- `--runs_per_test`<br> This option specifies that each test should be repeated
+  `n` times, where `n` is the value of the flag. If `n` > 1, the index of each
+  test run is added as a uniquifier element for that run.
+- `-o`, `--output`<br> Output file name. The LoadTest configurations are added
+  to this file, in multipart YAML format. Output is streamed to `sys.stdout` if
+  not set.
+
+The script adds labels and annotations to the metadata of each LoadTest
+configuration:
+
+The following labels are added to metadata.labels:
+
+- `language`<br> The language of the LoadTest scenario.
+- `prefix`<br> The prefix used in metadata\.name.
+
+The following annotations are added to metadata.annotations:
+
+- `scenario`<br> The name of the LoadTest scenario.
+- `uniquifier`<br> The uniquifier used to generate the LoadTest name, including
+  the run index if applicable.
+
+[Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)
+can be used in selectors in resource queries. Adding the prefix, in particular,
+allows the user (or an automation script) to select the resources started from a
+given run of the config geneator.
+
+[Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
+contain additional information that is available to the user (or an automation
+script) but is not indexed and cannot be used to select objects. Scenario name
+and uniquifier are added to provide the elements of the LoadTest name uuid in
+human-readable form. Additional annotations may be added later for automation.
 
 ### Concatenating load test configurations
 
@@ -243,11 +322,12 @@ $ loadtest_concat_yaml.py -i infile1.yaml infile2.yaml -o outfile.yaml
 
 ### Generating configuration templates
 
-The script [loadtest_template.py][./loadtest_template.py] generates a load test
+The script [loadtest_template.py](./loadtest_template.py) generates a load test
 configuration template from a set of load test configurations. The generated
 template supports all languages supported in any of the input configurations.
 
-The example template in [basic_template.yaml][./templates/basic_template.yaml]
+The example template in
+[loadtest_template_basic_template_all_languages.yaml](./templates/loadtest_template_basic_all_languages.yaml)
 was generated from the example configurations in
 [grpc/test-infra](https://github.com/grpc/test-infra) by the following command:
 
@@ -260,16 +340,35 @@ $ ./tools/run_tests/performance/loadtest_template.py \
     --name basic_all_languages
 ```
 
-Configurations for C# and Java tests, including tests against C++ clients and
-servers, running each test twice, can be generated from this template as
-follows:
+The script `loadest_template.py` takes the following options:
 
-```shell
-$ ./tools/run_tests/performance/loadtest_config.py -l go -l java \
-    -t ./tools/run_tests/performance/templates/loadtest_template_basic_all_languages.yaml \
-    -s client_pool=workers-8core -s server_pool=workers-8core \
-    -s big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
-    -s timeout_seconds=3600 --category=scalable \
-    -d --allow_client_language=c++ --allow_server_language=c++ \
-    --runs_per_test=2 -o ./loadtest.yaml
-```
+- `-i`, `--inputs`<br> Space-separated list of the names of input files
+  containing LoadTest configurations. May be repeated.
+- `-o`, `--output`<br> Output file name. Outputs to `sys.stdout` if not set.
+- `--inject_client_pool`<br> If this option is set, the pool attribute of all
+  clients in spec.clients is set to `${client_pool}`, for later substitution.
+- `--inject_server_pool`<br> If this option is set, the pool attribute of all
+  servers in spec.servers is set to `${server_pool}`, for later substitution.
+- `--inject_big_query_table`<br> If this option is set, spec.bigQueryTable is
+  set to `${big_query_table}`.
+- `--inject_timeout_seconds`<br> If this option is set, spec.timeoutSeconds is
+  set to `${timeout_seconds}`.
+- `--inject_ttl_seconds`<br> If this optoin is set, spec.ttlSeconds is set to
+  `${ttl_seconds}`.
+- `-n`, `--name`<br> Name to be set in metadata\.name.
+- `-a`, `--annotation`<br> Metadata annotation to be stored in
+  metadata.annotations, in the form key=value. May be repeated.
+
+The four options that inject substitution keys are the most useful for template
+reuse. When running tests on different node pools, it becomes necessary to set
+the pool, and usually also to store the data on a different table. When running
+as part of a larger collection of tests, it may also be necessary to adjust test
+timeout and time-to-live, to ensure that all tests have time to complete.
+
+The template name is replaced again by `loadtest_config.py`, and so is set only
+as a human-readable memo.
+
+Annotations, on the other hand, are passed on to the test configuratopms, and
+may be set to values or to substitution keys in themselves, allowing future
+automation scripts to process the tests generated from these configurations in
+different ways.

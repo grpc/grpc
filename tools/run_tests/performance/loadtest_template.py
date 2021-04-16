@@ -137,9 +137,8 @@ def main() -> None:
     argp.add_argument('-i',
                       '--inputs',
                       action='extend',
-                      nargs='*',
+                      nargs='+',
                       type=str,
-                      required=True,
                       help='Input files.')
     argp.add_argument('-o',
                       '--output',

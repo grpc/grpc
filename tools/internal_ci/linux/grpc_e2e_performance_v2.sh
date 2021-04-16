@@ -32,10 +32,10 @@ gcloud container clusters get-credentials benchmarks-prod \
 # This is subject to change. Runs a single test and does not wait for the
 # result.
 tools/run_tests/performance/loadtest_config.py -l go \
-    -t ./tools/run_tests/performance/templates/basic_template.yaml \
+    -t ./tools/run_tests/performance/templates/loadtest_template_basic_all_languages.yaml \
     -s client_pool=workers-8core -s server_pool=workers-8core \
     -s big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
-    --prefix="kokoro-test" -u "$(date +%Y%m%d%H%M%S)" \
+    -s timeout_seconds=900 --prefix="kokoro-test" -u "$(date +%Y%m%d%H%M%S)" \
     -r go_generic_sync_streaming_ping_pong_secure -o ./loadtest.yaml
 
 # The original version of the client is a bit old, update to the latest release
@@ -49,5 +49,5 @@ kubectl version --client
 
 kubectl apply -f ./loadtest.yaml
 
-echo "TODO: Add gRPC OSS Benchmarks here..."
+echo "TODO: Add more gRPC OSS Benchmarks here..."
 
