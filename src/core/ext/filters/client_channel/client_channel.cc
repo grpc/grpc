@@ -2373,10 +2373,13 @@ void ClientChannel::CallData::CreateDynamicCall(grpc_call_element* elem) {
   {
     MutexLock lock(&dynamic_call_creation_mu_);
     if (dynamic_call_pre_cancelled_) {
-      error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("call pre_cancel seen");
-    } else {
-      dynamic_call_ = channel_stack->CreateCall(std::move(args), &error);
+      // If the call was already pre-cancelled, then yield the call
+      // combiner without doing anything.  Any pending batches will be
+      // failed when we see the cancel_stream op.
+      GRPC_CALL_COMBINER_STOP(call_combiner_, "call pre_cancel seen");
+      return;
     }
+    dynamic_call_ = channel_stack->CreateCall(std::move(args), &error);
   }
   if (error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {

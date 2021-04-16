@@ -1523,7 +1523,7 @@ TEST_P(ProxyEnd2endTest, RpcDeadlineExpires) {
       std::chrono::system_clock::now() + std::chrono::milliseconds(1);
   context.set_deadline(deadline);
   Status s = stub_->Echo(&context, request, &response);
-  EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.error_code());
+  EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, s.error_code()) << s.error_message();
 }
 
 // Set a long but finite deadline.
