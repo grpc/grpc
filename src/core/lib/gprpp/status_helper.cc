@@ -210,7 +210,7 @@ void StatusAddChild(absl::Status* status, absl::Status child) {
   status->SetPayload(kChildrenField, std::move(children));
 }
 
-static std::vector<absl::Status> ParseChildren(absl::Cord children) {
+std::vector<absl::Status> ParseChildren(absl::Cord children) {
   std::vector<absl::Status> result;
   upb::Arena arena;
   // Cord is flattened to iterate the buffer easily at the cost of memory copy.
