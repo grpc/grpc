@@ -1,4 +1,4 @@
-#! /bin/bash -ex
+#! /bin/bash
 # Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -13,6 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set -ex
+
 WORK_DIR="$(dirname "$0")"
 cd ${WORK_DIR}
 
@@ -24,4 +26,5 @@ python3 -m pip install .
 python3 generated_file_import_test.py
 
 # Upload the package
+python3 -m twine check dist/*
 python3 -m twine upload dist/*

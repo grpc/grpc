@@ -133,6 +133,10 @@ CLASSIFIERS = [
     'Programming Language :: Python :: 3',
     'License :: OSI Approved :: Apache Software License',
 ]
+INSTALL_REQUIRES = [
+    'protobuf',
+    'grpcio',
+]
 setuptools.setup(
     name='xds-protos',
     version='0.0.1',
@@ -142,4 +146,5 @@ setuptools.setup(
     author_email='grpc-io@googlegroups.com',
     url='https://grpc.io',
     license='Apache License 2.0',
+    install_requires=INSTALL_REQUIRES,
     classifiers=CLASSIFIERS)
