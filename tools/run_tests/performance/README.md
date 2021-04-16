@@ -249,7 +249,7 @@ The script `loadtest_config.py` takes the following options:
   may contain multiple client and server configuration, and may also include
   substitution keys.
 - `p`, `--prefix`<br> Test names consist of a prefix_joined with a uuid with a
-  dash. Test names are stored in metadata\.name. The prefix is also added as the
+  dash. Test names are stored in metadata.name. The prefix is also added as the
   `prefix` label in metadata.labels. The prefix defaults to the user name if not
   set.
 - `-u`, `--uniquifier_element`<br> Uniquifier elements may be passed to the test
@@ -288,7 +288,7 @@ configuration:
 The following labels are added to metadata.labels:
 
 - `language`<br> The language of the LoadTest scenario.
-- `prefix`<br> The prefix used in metadata\.name.
+- `prefix`<br> The prefix used in metadata.name.
 
 The following annotations are added to metadata.annotations:
 
@@ -355,7 +355,7 @@ The script `loadest_template.py` takes the following options:
   set to `${timeout_seconds}`.
 - `--inject_ttl_seconds`<br> If this optoin is set, spec.ttlSeconds is set to
   `${ttl_seconds}`.
-- `-n`, `--name`<br> Name to be set in metadata\.name.
+- `-n`, `--name`<br> Name to be set in metadata.name.
 - `-a`, `--annotation`<br> Metadata annotation to be stored in
   metadata.annotations, in the form key=value. May be repeated.
 
