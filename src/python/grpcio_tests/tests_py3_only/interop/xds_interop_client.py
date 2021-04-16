@@ -258,10 +258,9 @@ class _ChannelConfiguration:
     When accessing any of its members, the lock member should be held.
     """
 
-    def __init__(self, method: str, metadata: Sequence[Tuple[str,
-                                                             str]], qps: int,
-                 server: str, rpc_timeout_sec: int, print_response: bool,
-                 secure_mode: bool):
+    def __init__(self, method: str, metadata: Sequence[Tuple[str, str]],
+                 qps: int, server: str, rpc_timeout_sec: int,
+                 print_response: bool, secure_mode: bool):
         # condition is signalled when a change is made to the config.
         self.condition = threading.Condition()
 
@@ -272,6 +271,7 @@ class _ChannelConfiguration:
         self.rpc_timeout_sec = rpc_timeout_sec
         self.print_response = print_response
         self.secure_mode = secure_mode
+
 
 def _run_single_channel(config: _ChannelConfiguration) -> None:
     global _global_rpc_id  # pylint: disable=global-statement
@@ -391,7 +391,8 @@ def _run(args: argparse.Namespace, methods: Sequence[str],
             qps = 0
         channel_config = _ChannelConfiguration(
             method, per_method_metadata.get(method, []), qps, args.server,
-            args.rpc_timeout_sec, bool(args.print_response), bool(args.secure_mode))
+            args.rpc_timeout_sec, bool(args.print_response),
+            bool(args.secure_mode))
         channel_configs[method] = channel_config
         method_handles.append(_MethodHandle(args.num_channels, channel_config))
     _global_server = grpc.server(futures.ThreadPoolExecutor())
