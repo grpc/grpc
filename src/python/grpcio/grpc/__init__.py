@@ -306,6 +306,7 @@ class RpcError(Exception):
         Returns:
           The trailing :term:`metadata`.
         """
+        raise NotImplementedError()
 
     def code(self):
         """Accesses the status code sent by the server.
@@ -315,6 +316,7 @@ class RpcError(Exception):
         Returns:
           The StatusCode value for the RPC.
         """
+        raise NotImplementedError()
 
     def details(self):
         """Accesses the details sent by the server.
@@ -324,6 +326,7 @@ class RpcError(Exception):
         Returns:
           The details string of the RPC.
         """
+        raise NotImplementedError()
 
 
 ##############################  Shared Context  ################################
