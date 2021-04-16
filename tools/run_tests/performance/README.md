@@ -249,19 +249,19 @@ The script `loadtest_config.py` takes the following options:
   may contain multiple client and server configuration, and may also include
   substitution keys.
 - `p`, `--prefix`<br> Test names consist of a prefix_joined with a uuid with a
-  dash. Test names are stored in metadata.name. The prefix is also added as the
-  `prefix` label in metadata.labels. The prefix defaults to the user name if not
+  dash. Test names are stored in `metadata.name`. The prefix is also added as the
+  `prefix` label in `metadata.labels`. The prefix defaults to the user name if not
   set.
 - `-u`, `--uniquifier_element`<br> Uniquifier elements may be passed to the test
   to make the test name unique. This option may be repeated to add multiple
   elements. The uniquifier elements (plus a date string and a run index, if
   applicable) are joined with a dash to form a _uniquifier_. The test name uuid
   is derived from the scenario name and the uniquifier. The uniquifier is also
-  added as the `uniquifier` annotation in metadata.annotations.
+  added as the `uniquifier` annotation in `metadata.annotations`.
 - `-d`<br> This option is a shorthand for the addition of a date string as a
   uniquifier element.
 - `-a`, `--annotation`<br> Metadata annotation to be stored in
-  metadata.annotations, in the form key=value. May be repeated.
+  `metadata.annotations`, in the form key=value. May be repeated.
 - `-r`, `--regex`<br> Regex to select scenarios to run. Each scenario is
   embedded in a LoadTest configuration containing a client and server of the
   language(s) required for the test. Defaults to `.*`, i.e., select all
@@ -285,12 +285,12 @@ The script `loadtest_config.py` takes the following options:
 The script adds labels and annotations to the metadata of each LoadTest
 configuration:
 
-The following labels are added to metadata.labels:
+The following labels are added to `metadata.labels`:
 
 - `language`<br> The language of the LoadTest scenario.
-- `prefix`<br> The prefix used in metadata.name.
+- `prefix`<br> The prefix used in `metadata.name`.
 
-The following annotations are added to metadata.annotations:
+The following annotations are added to `metadata.annotations`:
 
 - `scenario`<br> The name of the LoadTest scenario.
 - `uniquifier`<br> The uniquifier used to generate the LoadTest name, including
@@ -346,18 +346,18 @@ The script `loadest_template.py` takes the following options:
   containing LoadTest configurations. May be repeated.
 - `-o`, `--output`<br> Output file name. Outputs to `sys.stdout` if not set.
 - `--inject_client_pool`<br> If this option is set, the pool attribute of all
-  clients in spec.clients is set to `${client_pool}`, for later substitution.
+  clients in `spec.clients` is set to `${client_pool}`, for later substitution.
 - `--inject_server_pool`<br> If this option is set, the pool attribute of all
-  servers in spec.servers is set to `${server_pool}`, for later substitution.
+  servers in `spec.servers` is set to `${server_pool}`, for later substitution.
 - `--inject_big_query_table`<br> If this option is set, spec.bigQueryTable is
   set to `${big_query_table}`.
-- `--inject_timeout_seconds`<br> If this option is set, spec.timeoutSeconds is
+- `--inject_timeout_seconds`<br> If this option is set, `spec.timeoutSeconds` is
   set to `${timeout_seconds}`.
-- `--inject_ttl_seconds`<br> If this optoin is set, spec.ttlSeconds is set to
+- `--inject_ttl_seconds`<br> If this optoin is set, `spec.ttlSeconds` is set to
   `${ttl_seconds}`.
-- `-n`, `--name`<br> Name to be set in metadata.name.
+- `-n`, `--name`<br> Name to be set in `metadata.name`.
 - `-a`, `--annotation`<br> Metadata annotation to be stored in
-  metadata.annotations, in the form key=value. May be repeated.
+  `metadata.annotations`, in the form key=value. May be repeated.
 
 The four options that inject substitution keys are the most useful for template
 reuse. When running tests on different node pools, it becomes necessary to set
