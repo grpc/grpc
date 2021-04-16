@@ -27,58 +27,32 @@
 import argparse
 import sys
 
-from typing import Any, Dict, Iterable, Mapping
+from typing import Any, Dict, Iterable, Mapping, Type
 
 import yaml
 
 import loadtest_config
 
-DEFAULT_KEYS = {
-    'client_pool': '${client_pool}',
-    'server_pool': '${server_pool}',
-    'big_query_table': '${big_query_table}',
-    'timeoutSeconds': '',
-    'ttlSeconds': '',
-}
+TEMPLATE_FILE_HEADER_COMMENT = """
+# Template generated from load test configurations by loadtest_template.py.
+#
+# Configuration templates contain client and server configurations for multiple
+# languages, and may contain template substitution keys. These templates are
+# used to generate load test configurations by selecting clients and servers for
+# the required languages. Load test configuration generation is performed by
+# loadtest_config.py. See documentation below:
+# https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md
+"""
 
 
-def validate_keys(keys: Mapping[str, str]) -> None:
-    """Validates that substitution keys are a subset of default keys."""
-    extra_keys = set(keys).difference(DEFAULT_KEYS)
-    if extra_keys:
-        raise ValueError('Unrecognized replacement keys: %s', ' '.join(keys))
-
-
-def loadtest_set_keys(
-    template: Mapping[str, Any],
-    keys: Mapping[str, str],
-) -> None:
-    """Sets substitution keys in the template.
-
-     These keys are set so they can be replaced later by the config gemerator.
-     """
-    if keys.get('client_pool'):
-        client_pool = keys['client_pool']
-        clients = template['spec']['clients']
-        for client in clients:
-            client['pool'] = client_pool
-
-    if keys.get('server_pool'):
-        server_pool = keys['server_pool']
-        servers = template['spec']['servers']
-        for server in servers:
-            server['pool'] = server_pool
-
-    if keys.get('big_query_table'):
-        template['spec']['big_query_table'] = keys['big_query_table']
-
-    for key in ('timeoutSeconds', 'ttlSeconds'):
-        if keys.get(key):
-            template[key] = keys[key]
-
-
-def loadtest_template(input_file_names: Iterable[str], keys: Mapping[str, str],
-                      metadata: Mapping[str, Any]) -> Dict[str, Any]:
+def loadtest_template(
+        input_file_names: Iterable[str],
+        metadata: Mapping[str, Any],  # Hello
+        inject_client_pool: bool,
+        inject_server_pool: bool,
+        inject_big_query_table: bool,
+        inject_timeout_seconds: bool,
+        inject_ttl_seconds: bool) -> Dict[str, Any]:
     """Generates the load test template."""
     clients = list()
     servers = list()
@@ -104,12 +78,16 @@ def loadtest_template(input_file_names: Iterable[str], keys: Mapping[str, str],
             for client in input_config['spec']['clients']:
                 if client['language'] in client_languages:
                     continue
+                if inject_client_pool:
+                    client['pool'] = '${client_pool}'
                 clients.append(client)
                 client_languages.add(client['language'])
 
             for server in input_config['spec']['servers']:
                 if server['language'] in server_languages:
                     continue
+                if inject_server_pool:
+                    server['pool'] = '${server_pool}'
                 servers.append(server)
                 server_languages.add(server['language'])
 
@@ -127,11 +105,30 @@ def loadtest_template(input_file_names: Iterable[str], keys: Mapping[str, str],
         'servers': servers,
     })
 
+    if inject_big_query_table:
+        spec['big_query_table'] = '${big_query_table}'
+    if inject_timeout_seconds:
+        spec['timeoutSeconds'] = '${timeout_seconds}'
+    if inject_ttl_seconds:
+        spec['ttlSeconds'] = '${ttl_seconds}'
+
     template['spec'] = spec
 
-    loadtest_set_keys(template, keys)
-
     return template
+
+
+def template_dumper(header_comment: str) -> Type[yaml.Dumper]:
+    """Returns a custom dumper to dump templates in the expected format."""
+
+    class TemplateDumper(yaml.Dumper):
+
+        def expect_stream_start(self):
+            super().expect_stream_start()
+            if isinstance(self.event, yaml.StreamStartEvent):
+                self.write_indent()
+                self.write_indicator(header_comment, need_whitespace=False)
+
+    return TemplateDumper
 
 
 def main() -> None:
@@ -148,31 +145,35 @@ def main() -> None:
                       '--output',
                       type=str,
                       help='Output file. Outputs to stdout if not set.')
-    argp.add_argument('-k',
-                      '--keys',
-                      action='extend',
-                      nargs='*',
-                      default=[],
-                      type=str,
-                      help='Value of keys to insert, in the form key=value.')
+    argp.add_argument(
+        '--inject_client_pool',
+        action='store_true',
+        help='Set spec.client(s).pool values to \'${client_pool}\'.')
+    argp.add_argument(
+        '--inject_server_pool',
+        action='store_true',
+        help='Set spec.server(s).pool values to \'${server_pool}\'.')
+    argp.add_argument('--inject_big_query_table',
+                      action='store_true',
+                      help='Set spec.bigQueryTable to \'${big_query_table}\'.')
+    argp.add_argument('--inject_timeout_seconds',
+                      action='store_true',
+                      help='Set spec.timeoutSeconds to \'${timeout_seconds}\'.')
+    argp.add_argument('--inject_ttl_seconds',
+                      action='store_true',
+                      help='Set timeout ')
     argp.add_argument('-n',
                       '--name',
                       default='',
                       type=str,
-                      help='Name to insert.')
+                      help='metadata.name.')
     argp.add_argument('-a',
-                      '--annotations',
-                      action='extend',
-                      nargs='+',
-                      default=[],
+                      '--annotation',
+                      action='append',
                       type=str,
-                      help='Annotations to insert, in the form key=value.')
-
+                      help='metadata.annotation(s), in the form key=value.',
+                      dest='annotations')
     args = argp.parse_args()
-
-    keys = DEFAULT_KEYS.copy()
-    keys.update(loadtest_config.parse_key_value_args(args.keys))
-    validate_keys(keys)
 
     annotations = loadtest_config.parse_key_value_args(args.annotations)
 
@@ -180,10 +181,19 @@ def main() -> None:
     if annotations:
         metadata['annotations'] = annotations
 
-    template = loadtest_template(args.inputs, keys, metadata)
+    template = loadtest_template(
+        input_file_names=args.inputs,
+        metadata=metadata,
+        inject_client_pool=args.inject_client_pool,
+        inject_server_pool=args.inject_server_pool,
+        inject_big_query_table=args.inject_big_query_table,
+        inject_timeout_seconds=args.inject_timeout_seconds,
+        inject_ttl_seconds=args.inject_ttl_seconds)
 
     with open(args.output, 'w') if args.output else sys.stdout as f:
-        yaml.dump(template, stream=f)
+        yaml.dump(template,
+                  stream=f,
+                  Dumper=template_dumper(TEMPLATE_FILE_HEADER_COMMENT.strip()))
 
 
 if __name__ == '__main__':

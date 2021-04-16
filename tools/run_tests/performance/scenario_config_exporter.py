@@ -211,8 +211,8 @@ def main() -> None:
         total = 0
         for ((cat, l, cl, sl), count) in c.most_common():
             print('{count:5}  {l:16} {cl:8} {sl:8} {cat}'.format(l=l,
-                                                                 cl=cl or '.',
-                                                                 sl=sl or '.',
+                                                                 cl=cl,
+                                                                 sl=sl,
                                                                  count=count,
                                                                  cat=cat))
             total += count

@@ -1,7 +1,15 @@
+# Template generated from load test configurations by loadtest_template.py.
+#
+# Configuration templates contain client and server configurations for multiple
+# languages, and may contain template substitution keys. These templates are
+# used to generate load test configurations by selecting clients and servers for
+# the required languages. Load test configuration generation is performed by
+# loadtest_config.py. See documentation below:
+# https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md
 apiVersion: e2etest.grpc.io/v1
 kind: LoadTest
 metadata:
-  name: basic_template
+  name: basic_all_languages
 spec:
   big_query_table: ${big_query_table}
   clients:
@@ -244,5 +252,5 @@ spec:
       - src/ruby/qps/worker.rb
       command:
       - ruby
-  timeoutSeconds: 900
+  timeoutSeconds: ${timeout_seconds}
   ttlSeconds: 86400

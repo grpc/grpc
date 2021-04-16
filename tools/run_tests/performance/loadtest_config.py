@@ -38,13 +38,20 @@ import string
 import sys
 import uuid
 
-from typing import Any, Dict, Iterable, List, Mapping, Optional
+from typing import Any, Dict, Iterable, Mapping, Optional, Type
 
 import json
 import yaml
 
 import scenario_config
 import scenario_config_exporter
+
+
+CONFIGURATION_FILE_HEADER_COMMENT = """
+# Load test configurations generated from a template by loadtest_config.py.
+# See documentation below:
+# https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md#grpc-oss-benchmarks
+"""
 
 
 def default_prefix() -> str:
@@ -66,22 +73,23 @@ def validate_loadtest_name(name: str) -> None:
         raise ValueError('Invalid elements in LoadTest name: %s' % name)
 
 
-def loadtest_base_name(scenario_name: str, uniquifiers: Iterable[str]) -> str:
+def loadtest_base_name(scenario_name: str,
+                       uniquifier_elements: Iterable[str]) -> str:
     """Constructs and returns the base name for a LoadTest resource."""
-    elements = scenario_name.split('_')
-    elements.extend(uniquifiers)
-    return '-'.join(elements)
+    name_elements = scenario_name.split('_')
+    name_elements.extend(uniquifier_elements)
+    return '-'.join(name_elements)
 
 
 def loadtest_name(prefix: str, scenario_name: str,
-                  uniquifiers: Iterable[str]) -> str:
+                  uniquifier_elements: Iterable[str]) -> str:
     """Constructs and returns a valid name for a LoadTest resource."""
-    base_name = loadtest_base_name(scenario_name, uniquifiers)
-    elements = []
+    base_name = loadtest_base_name(scenario_name, uniquifier_elements)
+    name_elements = []
     if prefix:
-        elements.append(prefix)
-    elements.append(str(uuid.uuid5(uuid.NAMESPACE_DNS, base_name)))
-    name = '-'.join(elements)
+        name_elements.append(prefix)
+    name_elements.append(str(uuid.uuid5(uuid.NAMESPACE_DNS, base_name)))
+    name = '-'.join(name_elements)
     validate_loadtest_name(name)
     return name
 
@@ -109,10 +117,12 @@ def gen_run_indices(runs_per_test: int) -> Iterable[str]:
 
 def gen_loadtest_configs(
         base_config: Mapping[str, Any],
+        base_config_clients: Iterable[Mapping[str, Any]],
+        base_config_servers: Iterable[Mapping[str, Any]],
         scenario_name_regex: str,
         language_config: scenario_config_exporter.LanguageConfig,
         loadtest_name_prefix: str,
-        uniquifiers: Iterable[str],
+        uniquifier_elements: Iterable[str],
         annotations: Mapping[str, str],
         runs_per_test: int = 1) -> Iterable[Dict[str, Any]]:
     """Generates LoadTest configurations for a given language config.
@@ -133,7 +143,8 @@ def gen_loadtest_configs(
 
     for scenario in scenarios:
         for run_index in gen_run_indices(runs_per_test):
-            uniq = uniquifiers + [run_index] if run_index else uniquifiers
+            uniq = (uniquifier_elements +
+                    [run_index] if run_index else uniquifier_elements)
             name = loadtest_name(prefix, scenario['name'], uniq)
             scenario_str = json.dumps({'scenarios': scenario}, indent='  ')
 
@@ -153,17 +164,25 @@ def gen_loadtest_configs(
                 'uniquifier': '-'.join(uniq),
             })
 
-            clients = config['spec']['clients']
-            clients.clear()
-            clients.extend((client for client in base_config['spec']['clients']
-                            if client['language'] == cl))
+            spec = config['spec']
 
-            servers = config['spec']['servers']
-            servers.clear()
-            servers.extend((server for server in base_config['spec']['servers']
-                            if server['language'] == sl))
+            spec['clients'] = [
+                client for client in base_config_clients
+                if client['language'] == cl
+            ]
+            if not spec['clients']:
+                raise IndexError(
+                    'Client language not found in template: %s' % cl)
 
-            config['spec']['scenariosJSON'] = scenario_str
+            spec['servers'] = [
+                server for server in base_config_servers
+                if server['language'] == sl
+            ]
+            if not spec['servers']:
+                raise IndexError(
+                    'Server language not found in template: %s' % cl)
+
+            spec['scenariosJSON'] = scenario_str
 
             yield config
 
@@ -181,8 +200,16 @@ def parse_key_value_args(args: Optional[Iterable[str]]) -> Dict[str, str]:
     return d
 
 
-def configure_yaml() -> None:
-    """Configures the YAML library to dump data in the expected format."""
+def config_dumper(header_comment: str) -> Type[yaml.Dumper]:
+    """Returns a custom dumper to dump configurations in the expected format."""
+
+    class ConfigDumper(yaml.Dumper):
+
+        def expect_stream_start(self):
+            super().expect_stream_start()
+            if isinstance(self.event, yaml.StreamStartEvent):
+                self.write_indent()
+                self.write_indicator(header_comment, need_whitespace=False)
 
     def str_presenter(dumper, data):
         if '\n' in data:
@@ -191,7 +218,9 @@ def configure_yaml() -> None:
                                            style='|')
         return dumper.represent_scalar('tag:yaml.org,2002:str', data)
 
-    yaml.add_representer(str, str_presenter)
+    ConfigDumper.add_representer(str, str_presenter)
+
+    return ConfigDumper
 
 
 def main() -> None:
@@ -221,15 +250,15 @@ def main() -> None:
                       type=str,
                       help='Test name prefix.')
     argp.add_argument('-u',
-                      '--uniquifier',
+                      '--uniquifier_element',
                       action='append',
                       default=[],
                       help='One or more strings to make the test name unique.',
-                      dest='uniquifiers')
+                      dest='uniquifier_elements')
     argp.add_argument(
         '-d',
         action='store_true',
-        help='Use creation date and time as an addditional uniquifier.')
+        help='Use creation date and time as an addditional uniquifier element.')
     argp.add_argument('-a',
                       '--annotation',
                       action='append',
@@ -247,19 +276,19 @@ def main() -> None:
         default='all',
         help='Select a category of tests to run.')
     argp.add_argument(
-        '--client_language',
+        '--allow_client_language',
         action='append',
         choices=language_choices,
         default=[],
-        help='Add additional scenarios with this specified client language.',
-        dest='client_languages')
+        help='Allow cross-language scenarios with this client language.',
+        dest='allow_client_languages')
     argp.add_argument(
-        '--server_language',
+        '--allow_server_language',
         action='append',
         choices=language_choices,
         default=[],
-        help='Add additional scenarios with this specified server language.',
-        dest='server_languages')
+        help='Allow cross-language scenarios with this server language.',
+        dest='allow_server_languages')
     argp.add_argument('--runs_per_test',
                       default=1,
                       type=int,
@@ -272,9 +301,9 @@ def main() -> None:
 
     substitutions = parse_key_value_args(args.substitutions)
 
-    uniquifiers = args.uniquifiers
+    uniquifier_elements = args.uniquifier_elements
     if args.d:
-        uniquifiers.append(now_string())
+        uniquifier_elements.append(now_string())
 
     annotations = parse_key_value_args(args.annotations)
 
@@ -282,8 +311,14 @@ def main() -> None:
         base_config = yaml.safe_load(
             string.Template(f.read()).substitute(substitutions))
 
-    client_languages = [''] + args.client_languages
-    server_languages = [''] + args.server_languages
+    spec = base_config['spec']
+    base_config_clients = spec['clients']
+    del spec['clients']
+    base_config_servers = spec['servers']
+    del spec['servers']
+
+    client_languages = [''] + args.allow_client_languages
+    server_languages = [''] + args.allow_server_languages
     config_generators = []
     for l, cl, sl in itertools.product(args.languages, client_languages,
                                        server_languages):
@@ -294,18 +329,19 @@ def main() -> None:
             server_language=sl)
         config_generators.append(
             gen_loadtest_configs(base_config,
+                                 base_config_clients,
+                                 base_config_servers,
                                  args.regex,
                                  language_config,
                                  loadtest_name_prefix=args.prefix,
-                                 uniquifiers=uniquifiers,
+                                 uniquifier_elements=uniquifier_elements,
                                  annotations=annotations,
                                  runs_per_test=args.runs_per_test))
     configs = (config for config in itertools.chain(*config_generators))
 
-    configure_yaml()
-
     with open(args.output, 'w') if args.output else sys.stdout as f:
-        yaml.dump_all(configs, stream=f)
+        yaml.dump_all(configs, stream=f, Dumper=config_dumper(
+            CONFIGURATION_FILE_HEADER_COMMENT.strip()))
 
 
 if __name__ == '__main__':
