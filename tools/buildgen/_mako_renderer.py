@@ -49,7 +49,7 @@ def showhelp() -> None:
 
 def render_template(template: Template, context: Context) -> None:
     """Render the mako template with given context.
-    
+
     Prints an error template to indicate where and what in the template caused
     the render failure.
     """

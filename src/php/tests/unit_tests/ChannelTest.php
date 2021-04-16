@@ -64,9 +64,21 @@ class ChannelTest extends \PHPUnit\Framework\TestCase
         $xdsCreds = \Grpc\ChannelCredentials::createXds(null);
     }
 
-    public function testCreateXdsWithInvalidType() {
-        $this->expectException(\TypeError::class);
-        $xdsCreds = \Grpc\ChannelCredentials::createXds("invalid-type");
+    public function testCreateXdsWithInvalidType()
+    {
+        $expected = $this->logicalOr(
+            // PHP8
+            new \PHPUnit\Framework\Constraint\Exception(\InvalidArgumentException::class),
+            // PHP7
+            new \PHPUnit\Framework\Constraint\Exception(\TypeError::class)
+        );
+        try {
+            $xdsCreds = \Grpc\ChannelCredentials::createXds("invalid-type");
+        } catch (\Throwable $exception) {
+            $this->assertThat($exception, $expected);
+            return;
+        }
+        $this->assertThat(null, $expected);
     }
 
     public function testGetConnectivityState()
