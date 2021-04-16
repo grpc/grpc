@@ -122,6 +122,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "opencensus-trace-propagation",
+        actual = "@io_opencensus_cpp//opencensus/trace:grpc_trace_bin",
+    )
+
+    native.bind(
         name = "opencensus-stats",
         actual = "@io_opencensus_cpp//opencensus/stats:stats",
     )

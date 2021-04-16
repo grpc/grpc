@@ -134,7 +134,7 @@ class ClientChannel {
 
   RefCountedPtr<LoadBalancedCall> CreateLoadBalancedCall(
       const grpc_call_element_args& args, grpc_polling_entity* pollent,
-      size_t parent_data_size);
+      grpc_closure* on_call_destruction_complete);
 
  private:
   class CallData;
@@ -263,7 +263,6 @@ class ClientChannel {
   //
   const bool deadline_checking_enabled_;
   const bool enable_retries_;
-  const size_t per_rpc_retry_buffer_size_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
   const grpc_channel_args* channel_args_;
@@ -355,22 +354,19 @@ class ClientChannel {
 // because it is allocated on the arena and can't free its memory when
 // its refcount goes to zero.  So instead, it manually implements the
 // same API as RefCounted<>, so that it can be used with RefCountedPtr<>.
-class ClientChannel::LoadBalancedCall {
+class ClientChannel::LoadBalancedCall
+    : public RefCounted<LoadBalancedCall, PolymorphicRefCount, kUnrefCallDtor> {
  public:
+  // If on_call_destruction_complete is non-null, then it will be
+  // invoked once the LoadBalancedCall is completely destroyed.
+  // If it is null, then the caller is responsible for checking whether
+  // the LB call has a subchannel call and ensuring that the
+  // on_call_destruction_complete closure passed down from the surface
+  // is not invoked until after the subchannel call stack is destroyed.
   LoadBalancedCall(ClientChannel* chand, const grpc_call_element_args& args,
-                   grpc_polling_entity* pollent);
-  ~LoadBalancedCall();
-
-  // Interface of RefCounted<>.
-  RefCountedPtr<LoadBalancedCall> Ref() GRPC_MUST_USE_RESULT;
-  RefCountedPtr<LoadBalancedCall> Ref(const DebugLocation& location,
-                                      const char* reason) GRPC_MUST_USE_RESULT;
-  // When refcount drops to 0, destroys itself and the associated call stack,
-  // but does NOT free the memory because it's in the call arena.
-  void Unref();
-  void Unref(const DebugLocation& location, const char* reason);
-
-  void* GetParentData();
+                   grpc_polling_entity* pollent,
+                   grpc_closure* on_call_destruction_complete);
+  ~LoadBalancedCall() override;
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
@@ -390,17 +386,9 @@ class ClientChannel::LoadBalancedCall {
   }
 
  private:
-  // Allow RefCountedPtr<> to access IncrementRefCount().
-  template <typename T>
-  friend class ::grpc_core::RefCountedPtr;
-
   class LbQueuedCallCanceller;
   class Metadata;
   class LbCallState;
-
-  // Interface of RefCounted<>.
-  void IncrementRefCount();
-  void IncrementRefCount(const DebugLocation& location, const char* reason);
 
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
@@ -444,8 +432,6 @@ class ClientChannel::LoadBalancedCall {
   void MaybeAddCallToLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
 
-  RefCount refs_;
-
   ClientChannel* chand_;
 
   // TODO(roth): Instead of duplicating these fields in every filter
@@ -458,11 +444,14 @@ class ClientChannel::LoadBalancedCall {
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
+  grpc_polling_entity* pollent_;
+  grpc_closure* on_call_destruction_complete_;
 
   // Set when we get a cancel_stream op.
   grpc_error* cancel_error_ = GRPC_ERROR_NONE;
 
-  grpc_polling_entity* pollent_ = nullptr;
+  // Set when we fail inside the LB call.
+  grpc_error* failure_error_ = GRPC_ERROR_NONE;
 
   grpc_closure pick_closure_;
 

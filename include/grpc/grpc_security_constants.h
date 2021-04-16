@@ -29,10 +29,24 @@ extern "C" {
 #define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
 #define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
 #define GRPC_X509_PEM_CERT_PROPERTY_NAME "x509_pem_cert"
+// Please note that internally, we just faithfully pass whatever value we got by
+// calling SSL_get_peer_cert_chain() in OpenSSL/BoringSSL. This will mean in
+// OpenSSL, the following conditions might apply:
+// 1. On the client side, this property returns the full certificate chain. On
+// the server side, this property will return the certificate chain without the
+// leaf certificate. Application can use GRPC_X509_PEM_CERT_PROPERTY_NAME to
+// get the peer leaf certificate.
+// 2. If the session is resumed, this property could be empty for OpenSSL (but
+// not for BoringSSL).
+// For more, please refer to the official OpenSSL manual:
+// https://www.openssl.org/docs/man1.1.0/man3/SSL_get_peer_cert_chain.html.
 #define GRPC_X509_PEM_CERT_CHAIN_PROPERTY_NAME "x509_pem_cert_chain"
 #define GRPC_SSL_SESSION_REUSED_PROPERTY "ssl_session_reused"
 #define GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME "security_level"
+#define GRPC_PEER_DNS_PROPERTY_NAME "peer_dns"
 #define GRPC_PEER_SPIFFE_ID_PROPERTY_NAME "peer_spiffe_id"
+#define GRPC_PEER_EMAIL_PROPERTY_NAME "peer_email"
+#define GRPC_PEER_IP_PROPERTY_NAME "peer_ip"
 
 /** Environment variable that points to the default SSL roots file. This file
    must be a PEM encoded file with all the roots such as the one that can be

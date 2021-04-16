@@ -24,6 +24,7 @@ libs:
   - test/core/end2end/fixtures/local_util.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/util/test_lb_policies.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
@@ -83,10 +84,12 @@ libs:
   - test/core/end2end/tests/request_with_payload.cc
   - test/core/end2end/tests/resource_quota_server.cc
   - test/core/end2end/tests/retry.cc
+  - test/core/end2end/tests/retry_cancel_during_delay.cc
   - test/core/end2end/tests/retry_cancellation.cc
   - test/core/end2end/tests/retry_disabled.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  - test/core/end2end/tests/retry_lb_drop.cc
   - test/core/end2end/tests/retry_non_retriable_status.cc
   - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   - test/core/end2end/tests/retry_recv_initial_metadata.cc
@@ -114,6 +117,7 @@ libs:
   - test/core/end2end/tests/workaround_cronet_compression.cc
   - test/core/end2end/tests/write_buffering.cc
   - test/core/end2end/tests/write_buffering_at_end.cc
+  - test/core/util/test_lb_policies.cc
   deps:
   - grpc_test_util
 - name: end2end_tests
@@ -128,6 +132,7 @@ libs:
   - test/core/end2end/fixtures/local_util.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/end2end/tests/cancel_test_helpers.h
+  - test/core/util/test_lb_policies.h
   src:
   - test/core/end2end/cq_verifier.cc
   - test/core/end2end/data/client_certs.cc
@@ -188,10 +193,12 @@ libs:
   - test/core/end2end/tests/request_with_payload.cc
   - test/core/end2end/tests/resource_quota_server.cc
   - test/core/end2end/tests/retry.cc
+  - test/core/end2end/tests/retry_cancel_during_delay.cc
   - test/core/end2end/tests/retry_cancellation.cc
   - test/core/end2end/tests/retry_disabled.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   - test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
+  - test/core/end2end/tests/retry_lb_drop.cc
   - test/core/end2end/tests/retry_non_retriable_status.cc
   - test/core/end2end/tests/retry_non_retriable_status_before_recv_trailing_metadata_started.cc
   - test/core/end2end/tests/retry_recv_initial_metadata.cc
@@ -219,6 +226,7 @@ libs:
   - test/core/end2end/tests/workaround_cronet_compression.cc
   - test/core/end2end/tests/write_buffering.cc
   - test/core/end2end/tests/write_buffering_at_end.cc
+  - test/core/util/test_lb_policies.cc
   deps:
   - grpc_test_util
 - name: gpr
@@ -362,6 +370,10 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/event_engine/channel_args.h
+  - include/grpc/event_engine/event_engine.h
+  - include/grpc/event_engine/port.h
+  - include/grpc/event_engine/slice_allocator.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -726,7 +738,6 @@ libs:
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/nameser.h
   - src/core/lib/iomgr/parse_address.h
-  - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_custom.h
@@ -1208,6 +1219,8 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/slice_allocator.cc
+  - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/httpcli_security_connector.cc
@@ -1254,7 +1267,6 @@ libs:
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/parse_address.cc
-  - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
   - src/core/lib/iomgr/pollset_custom.cc
@@ -1569,6 +1581,10 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
+  - include/grpc/event_engine/channel_args.h
+  - include/grpc/event_engine/event_engine.h
+  - include/grpc/event_engine/port.h
+  - include/grpc/event_engine/slice_allocator.h
   - include/grpc/fork.h
   - include/grpc/grpc.h
   - include/grpc/grpc_posix.h
@@ -1744,7 +1760,6 @@ libs:
   - src/core/lib/iomgr/lockfree_event.h
   - src/core/lib/iomgr/nameser.h
   - src/core/lib/iomgr/parse_address.h
-  - src/core/lib/iomgr/poller/eventmanager_libuv.h
   - src/core/lib/iomgr/polling_entity.h
   - src/core/lib/iomgr/pollset.h
   - src/core/lib/iomgr/pollset_custom.h
@@ -1962,6 +1977,8 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/slice_allocator.cc
+  - src/core/lib/event_engine/sockaddr.cc
   - src/core/lib/http/format_request.cc
   - src/core/lib/http/httpcli.cc
   - src/core/lib/http/parser.cc
@@ -2007,7 +2024,6 @@ libs:
   - src/core/lib/iomgr/load_file.cc
   - src/core/lib/iomgr/lockfree_event.cc
   - src/core/lib/iomgr/parse_address.cc
-  - src/core/lib/iomgr/poller/eventmanager_libuv.cc
   - src/core/lib/iomgr/polling_entity.cc
   - src/core/lib/iomgr/pollset.cc
   - src/core/lib/iomgr/pollset_custom.cc
@@ -5024,6 +5040,15 @@ targets:
   deps:
   - grpc++_error_details
   - grpc_test_util
+- name: error_utils_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/transport/error_utils_test.cc
+  deps:
+  - grpc_test_util
 - name: evaluate_args_test
   gtest: true
   build: test
@@ -5037,16 +5062,6 @@ targets:
   - test/core/security/evaluate_args_test.cc
   deps:
   - grpc_test_util
-- name: eventmanager_libuv_test
-  gtest: true
-  build: test
-  language: c++
-  headers: []
-  src:
-  - test/core/iomgr/poller/eventmanager_libuv_test.cc
-  deps:
-  - grpc_test_util
-  uses_polling: false
 - name: examine_stack_test
   gtest: true
   build: test
@@ -6659,7 +6674,7 @@ targets:
   - test/cpp/interop/xds_interop_client.cc
   deps:
   - absl/flags:flag
-  - grpc++
+  - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
 - name: xds_interop_server
@@ -6677,7 +6692,7 @@ targets:
   - test/cpp/interop/xds_interop_server.cc
   deps:
   - absl/flags:flag
-  - grpc++
+  - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
 tests: []

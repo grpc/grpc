@@ -30,6 +30,7 @@ import time
 import uuid
 
 from oauth2client.client import GoogleCredentials
+from google.protobuf import json_format
 
 import python_utils.jobset as jobset
 import python_utils.report_utils as report_utils
@@ -48,6 +49,13 @@ logger.handlers = []
 logger.addHandler(console_handler)
 logger.setLevel(logging.WARNING)
 
+# Suppress excessive logs for gRPC Python
+original_grpc_trace = os.environ.pop('GRPC_TRACE', None)
+original_grpc_verbosity = os.environ.pop('GRPC_VERBOSITY', None)
+# Suppress not-essential logs for GCP clients
+logging.getLogger('google_auth_httplib2').setLevel(logging.WARNING)
+logging.getLogger('googleapiclient.discovery').setLevel(logging.WARNING)
+
 _TEST_CASES = [
     'backends_restart',
     'change_backend_service',
@@ -59,14 +67,15 @@ _TEST_CASES = [
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure',
     'traffic_splitting',
+    'path_matching',
+    'header_matching',
 ]
+
 # Valid test cases, but not in all. So the tests can only run manually, and
 # aren't enabled automatically for all languages.
 #
 # TODO: Move them into _TEST_CASES when support is ready in all languages.
 _ADDITIONAL_TEST_CASES = [
-    'path_matching',
-    'header_matching',
     'circuit_breaking',
     'timeout',
     'fault_injection',
@@ -190,7 +199,7 @@ argp.add_argument('--network',
                   default='global/networks/default',
                   help='GCP network to use')
 argp.add_argument('--service_port_range',
-                  default='8080:8110',
+                  default='8080:8280',
                   type=parse_port_range,
                   help='Listening port for created gRPC backends. Specified as '
                   'either a single int or as a range in the format min:max, in '
@@ -330,7 +339,8 @@ def get_client_stats(num_rpcs, timeout_sec):
             response = stub.GetClientStats(request,
                                            wait_for_ready=True,
                                            timeout=rpc_timeout)
-            logger.debug('Invoked GetClientStats RPC to %s: %s', host, response)
+            logger.debug('Invoked GetClientStats RPC to %s: %s', host,
+                         json_format.MessageToJson(response))
             return response
 
 
@@ -2580,6 +2590,10 @@ try:
 
     if args.test_case:
         client_env = dict(os.environ)
+        if original_grpc_trace:
+            client_env['GRPC_TRACE'] = original_grpc_trace
+        if original_grpc_verbosity:
+            client_env['GRPC_VERBOSITY'] = original_grpc_verbosity
         bootstrap_server_features = []
         if gcp.service_port == _DEFAULT_SERVICE_PORT:
             server_uri = service_host_name

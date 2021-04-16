@@ -80,14 +80,6 @@
 // Client channel filter
 //
 
-// By default, we buffer 256 KiB per RPC for retries.
-// TODO(roth): Do we have any data to suggest a better value?
-#define DEFAULT_PER_RPC_RETRY_BUFFER_SIZE (256 << 10)
-
-// This value was picked arbitrarily.  It can be changed if there is
-// any even moderately compelling reason to do so.
-#define RETRY_BACKOFF_JITTER 0.2
-
 namespace grpc_core {
 
 using internal::ClientChannelGlobalParsedConfig;
@@ -352,7 +344,8 @@ class DynamicTerminationFilter::CallData {
         calld->call_context_,    calld->path_,
         calld->call_start_time_, calld->deadline_,
         calld->arena_,           calld->call_combiner_};
-    calld->lb_call_ = client_channel->CreateLoadBalancedCall(args, pollent, 0);
+    calld->lb_call_ =
+        client_channel->CreateLoadBalancedCall(args, pollent, nullptr);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p dynamic_termination_calld=%p: create lb_call=%p", chand,
@@ -916,8 +909,8 @@ class ClientChannel::ClientChannelControlHelper
       ServerAddress address, const grpc_channel_args& args) override {
     if (chand_->resolver_ == nullptr) return nullptr;  // Shutting down.
     // Determine health check service name.
-    bool inhibit_health_checking = grpc_channel_arg_get_bool(
-        grpc_channel_args_find(&args, GRPC_ARG_INHIBIT_HEALTH_CHECKING), false);
+    bool inhibit_health_checking = grpc_channel_args_find_bool(
+        &args, GRPC_ARG_INHIBIT_HEALTH_CHECKING, false);
     absl::optional<std::string> health_check_service_name;
     if (!inhibit_health_checking) {
       health_check_service_name = chand_->health_check_service_name_;
@@ -1031,20 +1024,13 @@ void ClientChannel::Destroy(grpc_channel_element* elem) {
 namespace {
 
 bool GetEnableRetries(const grpc_channel_args* args) {
-  return grpc_channel_arg_get_bool(
-      grpc_channel_args_find(args, GRPC_ARG_ENABLE_RETRIES), true);
-}
-
-size_t GetMaxPerRpcRetryBufferSize(const grpc_channel_args* args) {
-  return static_cast<size_t>(grpc_channel_arg_get_integer(
-      grpc_channel_args_find(args, GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE),
-      {DEFAULT_PER_RPC_RETRY_BUFFER_SIZE, 0, INT_MAX}));
+  return grpc_channel_args_find_bool(args, GRPC_ARG_ENABLE_RETRIES, false);
 }
 
 RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
     const grpc_channel_args* args) {
-  const bool use_local_subchannel_pool = grpc_channel_arg_get_bool(
-      grpc_channel_args_find(args, GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), false);
+  const bool use_local_subchannel_pool = grpc_channel_args_find_bool(
+      args, GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, false);
   if (use_local_subchannel_pool) {
     return MakeRefCounted<LocalSubchannelPool>();
   }
@@ -1052,12 +1038,8 @@ RefCountedPtr<SubchannelPoolInterface> GetSubchannelPool(
 }
 
 channelz::ChannelNode* GetChannelzNode(const grpc_channel_args* args) {
-  const grpc_arg* arg =
-      grpc_channel_args_find(args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
-  if (arg != nullptr && arg->type == GRPC_ARG_POINTER) {
-    return static_cast<channelz::ChannelNode*>(arg->value.pointer.p);
-  }
-  return nullptr;
+  return grpc_channel_args_find_pointer<channelz::ChannelNode>(
+      args, GRPC_ARG_CHANNELZ_CHANNEL_NODE);
 }
 
 }  // namespace
@@ -1067,8 +1049,6 @@ ClientChannel::ClientChannel(grpc_channel_element_args* args,
     : deadline_checking_enabled_(
           grpc_deadline_checking_enabled(args->channel_args)),
       enable_retries_(GetEnableRetries(args->channel_args)),
-      per_rpc_retry_buffer_size_(
-          GetMaxPerRpcRetryBufferSize(args->channel_args)),
       owning_stack_(args->channel_stack),
       client_channel_factory_(
           ClientChannelFactory::GetFromChannelArgs(args->channel_args)),
@@ -1153,17 +1133,11 @@ ClientChannel::~ClientChannel() {
 }
 
 RefCountedPtr<ClientChannel::LoadBalancedCall>
-ClientChannel::CreateLoadBalancedCall(const grpc_call_element_args& args,
-                                      grpc_polling_entity* pollent,
-                                      size_t parent_data_size) {
-  const size_t alloc_size =
-      parent_data_size > 0
-          ? (GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(LoadBalancedCall)) +
-             parent_data_size)
-          : sizeof(LoadBalancedCall);
-  auto* lb_call = static_cast<LoadBalancedCall*>(args.arena->Alloc(alloc_size));
-  new (lb_call) LoadBalancedCall(this, args, pollent);
-  return lb_call;
+ClientChannel::CreateLoadBalancedCall(
+    const grpc_call_element_args& args, grpc_polling_entity* pollent,
+    grpc_closure* on_call_destruction_complete) {
+  return args.arena->New<LoadBalancedCall>(this, args, pollent,
+                                           on_call_destruction_complete);
 }
 
 namespace {
@@ -1181,9 +1155,8 @@ RefCountedPtr<LoadBalancingPolicy::Config> ChooseLbPolicy(
   if (!parsed_service_config->parsed_deprecated_lb_policy().empty()) {
     policy_name = parsed_service_config->parsed_deprecated_lb_policy().c_str();
   } else {
-    const grpc_arg* channel_arg =
-        grpc_channel_args_find(resolver_result.args, GRPC_ARG_LB_POLICY_NAME);
-    policy_name = grpc_channel_arg_get_string(channel_arg);
+    policy_name = grpc_channel_args_find_string(resolver_result.args,
+                                                GRPC_ARG_LB_POLICY_NAME);
   }
   // Use pick_first if nothing was specified and we didn't select grpclb
   // above.
@@ -1996,7 +1969,8 @@ void ClientChannel::CallData::SetPollent(grpc_call_element* elem,
 size_t ClientChannel::CallData::GetBatchIndex(
     grpc_transport_stream_op_batch* batch) {
   // Note: It is important the send_initial_metadata be the first entry
-  // here, since the code in pick_subchannel_locked() assumes it will be.
+  // here, since the code in ApplyServiceConfigToCallLocked() and
+  // CheckResolutionLocked() assumes it will be.
   if (batch->send_initial_metadata) return 0;
   if (batch->send_message) return 1;
   if (batch->send_trailing_metadata) return 2;
@@ -2509,10 +2483,10 @@ class ClientChannel::LoadBalancedCall::LbCallState
 
 ClientChannel::LoadBalancedCall::LoadBalancedCall(
     ClientChannel* chand, const grpc_call_element_args& args,
-    grpc_polling_entity* pollent)
-    : refs_(1, GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
-                   ? "LoadBalancedCall"
-                   : nullptr),
+    grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete)
+    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
+                     ? "LoadBalancedCall"
+                     : nullptr),
       chand_(chand),
       path_(grpc_slice_ref_internal(args.path)),
       call_start_time_(args.start_time),
@@ -2521,11 +2495,13 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
       owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       call_context_(args.context),
-      pollent_(pollent) {}
+      pollent_(pollent),
+      on_call_destruction_complete_(on_call_destruction_complete) {}
 
 ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   grpc_slice_unref_internal(path_);
   GRPC_ERROR_UNREF(cancel_error_);
+  GRPC_ERROR_UNREF(failure_error_);
   if (backend_metric_data_ != nullptr) {
     backend_metric_data_
         ->LoadBalancingPolicy::BackendMetricData::~BackendMetricData();
@@ -2534,50 +2510,16 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i] == nullptr);
   }
-}
-
-RefCountedPtr<ClientChannel::LoadBalancedCall>
-ClientChannel::LoadBalancedCall::Ref() {
-  IncrementRefCount();
-  return RefCountedPtr<LoadBalancedCall>(this);
-}
-
-RefCountedPtr<ClientChannel::LoadBalancedCall>
-ClientChannel::LoadBalancedCall::Ref(const DebugLocation& location,
-                                     const char* reason) {
-  IncrementRefCount(location, reason);
-  return RefCountedPtr<LoadBalancedCall>(this);
-}
-
-void ClientChannel::LoadBalancedCall::Unref() {
-  if (GPR_UNLIKELY(refs_.Unref())) {
-    this->~LoadBalancedCall();
+  if (on_call_destruction_complete_ != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
+                 GRPC_ERROR_NONE);
   }
-}
-
-void ClientChannel::LoadBalancedCall::Unref(const DebugLocation& location,
-                                            const char* reason) {
-  if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-    this->~LoadBalancedCall();
-  }
-}
-
-void ClientChannel::LoadBalancedCall::IncrementRefCount() { refs_.Ref(); }
-
-void ClientChannel::LoadBalancedCall::IncrementRefCount(
-    const DebugLocation& location, const char* reason) {
-  refs_.Ref(location, reason);
-}
-
-void* ClientChannel::LoadBalancedCall::GetParentData() {
-  return reinterpret_cast<char*>(this) +
-         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(LoadBalancedCall));
 }
 
 size_t ClientChannel::LoadBalancedCall::GetBatchIndex(
     grpc_transport_stream_op_batch* batch) {
   // Note: It is important the send_initial_metadata be the first entry
-  // here, since the code in pick_subchannel_locked() assumes it will be.
+  // here, since the code in PickSubchannelLocked() assumes it will be.
   if (batch->send_initial_metadata) return 0;
   if (batch->send_message) return 1;
   if (batch->send_trailing_metadata) return 2;
@@ -2616,6 +2558,8 @@ void ClientChannel::LoadBalancedCall::PendingBatchesFail(
     grpc_error* error,
     YieldCallCombinerPredicate yield_call_combiner_predicate) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GRPC_ERROR_UNREF(failure_error_);
+  failure_error_ = error;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     size_t num_batches = 0;
     for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2643,7 +2587,6 @@ void ClientChannel::LoadBalancedCall::PendingBatchesFail(
   } else {
     closures.RunClosuresWithoutYielding(call_combiner_);
   }
-  GRPC_ERROR_UNREF(error);
 }
 
 // This is called via the call combiner, so access to calld is synchronized.
@@ -2801,12 +2744,16 @@ void ClientChannel::LoadBalancedCall::
     if (error == GRPC_ERROR_NONE) GRPC_ERROR_UNREF(error_for_lb);
   }
   // Chain to original callback.
+  if (self->failure_error_ != GRPC_ERROR_NONE) {
+    error = self->failure_error_;
+    self->failure_error_ = GRPC_ERROR_NONE;
+  } else {
+    error = GRPC_ERROR_REF(error);
+  }
   Closure::Run(DEBUG_LOCATION, self->original_recv_trailing_metadata_ready_,
-               GRPC_ERROR_REF(error));
+               error);
 }
 
-// TODO(roth): Consider not intercepting this callback unless we
-// actually need to, if this causes a performance problem.
 void ClientChannel::LoadBalancedCall::
     InjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
         grpc_transport_stream_op_batch* batch) {
@@ -2834,6 +2781,10 @@ void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
     gpr_log(GPR_INFO,
             "chand=%p lb_call=%p: create subchannel_call=%p: error=%s", chand_,
             this, subchannel_call_.get(), grpc_error_string(error));
+  }
+  if (on_call_destruction_complete_ != nullptr) {
+    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
+    on_call_destruction_complete_ = nullptr;
   }
   if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
     PendingBatchesFail(error, YieldCallCombiner);
@@ -3023,9 +2974,11 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(grpc_error** error) {
       // Handle drops.
       if (GPR_UNLIKELY(result.subchannel == nullptr)) {
         result.error = grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                "Call dropped by load balancing policy"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
+            grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                   "Call dropped by load balancing policy"),
+                               GRPC_ERROR_INT_GRPC_STATUS,
+                               GRPC_STATUS_UNAVAILABLE),
+            GRPC_ERROR_INT_LB_POLICY_DROP, 1);
       } else {
         // Grab a ref to the connected subchannel while we're still
         // holding the data plane mutex.
