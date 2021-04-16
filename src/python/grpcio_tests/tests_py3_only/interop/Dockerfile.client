@@ -13,8 +13,8 @@ RUN ln -s /usr/bin/python3 /usr/bin/python
 RUN mkdir /artifacts
 
 COPY . .
-RUN tools/bazel build -c dbg //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_server
-RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds_interop_server* /artifacts/
+RUN tools/bazel build -c dbg //src/python/grpcio_tests/tests_py3_only/interop:xds_interop_client
+RUN cp -rL /workdir/bazel-bin/src/python/grpcio_tests/tests_py3_only/interop/xds_interop_client* /artifacts/
 
 FROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64bdb429e2354d58f5462750
 COPY --from=0 /artifacts ./
@@ -22,4 +22,4 @@ COPY --from=0 /artifacts ./
 RUN apt-get update -y && apt-get install -y python3
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
-ENTRYPOINT ["/xds_interop_server"]
+ENTRYPOINT ["/xds_interop_client"]
