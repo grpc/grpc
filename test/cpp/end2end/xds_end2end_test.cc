@@ -10058,7 +10058,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
-  const size_t kNumRpcs = 100;
+  const size_t kNumRpcs = 2000;
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.2;
@@ -10095,7 +10095,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
-  const size_t kNumRpcs = 100;
+  const size_t kNumRpcs = 2000;
   const uint32_t kAbortPercentageCap = 100;
   const uint32_t kAbortPercentage = 50;
   const double kAbortRate = kAbortPercentage / 100.0;
@@ -10223,7 +10223,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
-  const size_t kNumRpcs = 100;
+  const size_t kNumRpcs = 500;
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   const uint32_t kFixedDelayNanos = 10 * 1000 * 1000;  // 10 ms
