@@ -33,7 +33,6 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "absl/synchronization/notification.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -1611,10 +1610,6 @@ grpc_millis NowFromCycleCounter() {
   return grpc_cycle_counter_to_millis_round_up(now);
 }
 
-void ExpectBetween(double value, double a, double b) {
-  EXPECT_THAT(value, ::testing::AllOf(::testing::Ge(a), ::testing::Le(b)));
-}
-
 // Returns the number of RPCs needed to pass error_tolerance at 99.99% chance.
 // Rolling dices in drop/fault-injection generates a binomial distribution (if
 // our code is not horribly wrong). Let's make "n" the number of samples, "p"
@@ -1634,8 +1629,12 @@ void ExpectBetween(double value, double a, double b) {
 // E.g., with p=0.5 k=0.1, n >= 378; with p=0.5 k=0.05, n >= 1513; with p=0.5
 // k=0.01, n >= 37830.
 size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
-  ExpectBetween(p, 0, 1);
-  return ceil(p * (1 - p) * 3.89 * 3.89 / error_tolerance / error_tolerance);
+  GPR_ASSERT(p >= 0 && p <= 1);
+  size_t num_rpcs =
+      ceil(p * (1 - p) * 3.89 * 3.89 / error_tolerance / error_tolerance);
+  gpr_log(GPR_INFO, "sending %zu RPCs for percentage=%.3f error_tolerance=%.3f",
+          num_rpcs, p, error_tolerance);
+  return num_rpcs;
 }
 
 }  // namespace
@@ -2522,19 +2521,19 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // it on heap and let C++ handle its life cycle.
     std::vector<std::unique_ptr<ConcurrentRpc>> rpcs;
     EchoRequest request;
-    grpc_millis t0 = NowFromCycleCounter();
     // Variables for synchronization
     absl::Mutex mu;
-    absl::Notification notification;
+    absl::CondVar cv;
     size_t completed = 0;
     // Set-off callback RPCs
     for (size_t i = 0; i < num_rpcs; i++) {
       rpcs.push_back(absl::make_unique<ConcurrentRpc>());
       ConcurrentRpc* rpc = rpcs.back().get();
       rpc_options.SetupRpc(&rpc->context, &request);
+      grpc_millis t0 = NowFromCycleCounter();
       stub->experimental_async()->Echo(
           &rpc->context, &request, &rpc->response,
-          [rpc, &mu, &completed, &notification, num_rpcs, t0](Status s) {
+          [rpc, &mu, &completed, &cv, num_rpcs, t0](Status s) {
             rpc->status = s;
             rpc->elapsed_time = NowFromCycleCounter() - t0;
             mu.Lock();
@@ -2542,13 +2541,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
               mu.Unlock();
               // This wakes up another thread, if we don't unlock first, the
               // mutex might go away before this thread can react.
-              notification.Notify();
+              cv.Signal();
             } else {
               mu.Unlock();
             }
           });
     }
-    notification.WaitForNotification();
+    {
+      absl::MutexLock lock(&mu);
+      cv.Wait(&mu);
+    }
     EXPECT_EQ(completed, num_rpcs);
     return rpcs;
   }
@@ -4625,12 +4627,10 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
       backends_[2]->backend_service1()->request_count();
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
-  ExpectBetween(static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs,
-                kWeight75Percent - kErrorTolerance,
-                kWeight75Percent + kErrorTolerance);
-  ExpectBetween(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs,
-                kWeight25Percent - kErrorTolerance,
-                kWeight25Percent + kErrorTolerance);
+  EXPECT_THAT(static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs,
+              ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs,
+              ::testing::DoubleNear(kWeight25Percent, kErrorTolerance));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
@@ -4700,12 +4700,10 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
       backends_[2]->backend_service()->request_count();
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
-  ExpectBetween(static_cast<double>(weight_75_request_count) / kNumEchoRpcs,
-                kWeight75Percent - kErrorTolerance,
-                kWeight75Percent + kErrorTolerance);
-  ExpectBetween(static_cast<double>(weight_25_request_count) / kNumEchoRpcs,
-                kWeight25Percent - kErrorTolerance,
-                kWeight25Percent + kErrorTolerance);
+  EXPECT_THAT(static_cast<double>(weight_75_request_count) / kNumEchoRpcs,
+              ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEchoRpcs,
+              ::testing::DoubleNear(kWeight25Percent, kErrorTolerance));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
@@ -4804,12 +4802,10 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
-  ExpectBetween(
-      static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
-      kWeight75Percent - kErrorTolerance, kWeight75Percent + kErrorTolerance);
-  ExpectBetween(
-      static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
-      kWeight25Percent - kErrorTolerance, kWeight25Percent + kErrorTolerance);
+  EXPECT_THAT(static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
+              ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
+              ::testing::DoubleNear(kWeight25Percent, kErrorTolerance));
   // Change Route Configurations: same clusters different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
@@ -4833,12 +4829,12 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(kNumEchoRpcs, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  ExpectBetween(
+  EXPECT_THAT(
       static_cast<double>(weight_50_request_count_1) / kNumEcho1Rpcs5050,
-      kWeight50Percent - kErrorTolerance, kWeight50Percent + kErrorTolerance);
-  ExpectBetween(
+      ::testing::DoubleNear(kWeight50Percent, kErrorTolerance));
+  EXPECT_THAT(
       static_cast<double>(weight_50_request_count_2) / kNumEcho1Rpcs5050,
-      kWeight50Percent - kErrorTolerance, kWeight50Percent + kErrorTolerance);
+      ::testing::DoubleNear(kWeight50Percent, kErrorTolerance));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
@@ -4936,12 +4932,10 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
-  ExpectBetween(
-      static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
-      kWeight75Percent - kErrorTolerance, kWeight75Percent + kErrorTolerance);
-  ExpectBetween(
-      static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
-      kWeight25Percent - kErrorTolerance, kWeight25Percent + kErrorTolerance);
+  EXPECT_THAT(static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
+              ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
+              ::testing::DoubleNear(kWeight25Percent, kErrorTolerance));
   // Change Route Configurations: new set of clusters with different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->set_name(kNewCluster2Name);
@@ -4963,12 +4957,12 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
       backends_[2]->backend_service1()->request_count();
   EXPECT_EQ(0, backends_[3]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[3]->backend_service1()->request_count());
-  ExpectBetween(
+  EXPECT_THAT(
       static_cast<double>(weight_50_request_count_1) / kNumEcho1Rpcs5050,
-      kWeight50Percent - kErrorTolerance, kWeight50Percent + kErrorTolerance);
-  ExpectBetween(
+      ::testing::DoubleNear(kWeight50Percent, kErrorTolerance));
+  EXPECT_THAT(
       static_cast<double>(weight_50_request_count_2) / kNumEcho1Rpcs5050,
-      kWeight50Percent - kErrorTolerance, kWeight50Percent + kErrorTolerance);
+      ::testing::DoubleNear(kWeight50Percent, kErrorTolerance));
   // Change Route Configurations.
   weighted_cluster1->mutable_weight()->set_value(kWeight75);
   weighted_cluster2->set_name(kNewCluster3Name);
@@ -4990,12 +4984,10 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weight_25_request_count = backends_[3]->backend_service1()->request_count();
   gpr_log(GPR_INFO, "target_75 received %d rpcs and target_25 received %d rpcs",
           weight_75_request_count, weight_25_request_count);
-  ExpectBetween(
-      static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
-      kWeight75Percent - kErrorTolerance, kWeight75Percent + kErrorTolerance);
-  ExpectBetween(
-      static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
-      kWeight25Percent - kErrorTolerance, kWeight25Percent + kErrorTolerance);
+  EXPECT_THAT(static_cast<double>(weight_75_request_count) / kNumEcho1Rpcs7525,
+              ::testing::DoubleNear(kWeight75Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight_25_request_count) / kNumEcho1Rpcs7525,
+              ::testing::DoubleNear(kWeight25Percent, kErrorTolerance));
 }
 
 TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
@@ -5616,12 +5608,10 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
       backends_[0]->backend_service()->request_count();
   const int matched_backend_count =
       backends_[1]->backend_service()->request_count();
-  ExpectBetween(static_cast<double>(default_backend_count) / kNumRpcs,
-                (1 - kRouteMatchPercent) - kErrorTolerance,
-                (1 - kRouteMatchPercent) + kErrorTolerance);
-  ExpectBetween(static_cast<double>(matched_backend_count) / kNumRpcs,
-                kRouteMatchPercent - kErrorTolerance,
-                kRouteMatchPercent + kErrorTolerance);
+  EXPECT_THAT(static_cast<double>(default_backend_count) / kNumRpcs,
+              ::testing::DoubleNear(1 - kRouteMatchPercent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(matched_backend_count) / kNumRpcs,
+              ::testing::DoubleNear(kRouteMatchPercent, kErrorTolerance));
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
 }
@@ -8832,10 +8822,10 @@ TEST_P(LocalityMapTest, WeightedRoundRobin) {
   const double locality_picked_rate_1 =
       static_cast<double>(backends_[1]->backend_service()->request_count()) /
       kNumRpcs;
-  ExpectBetween(locality_picked_rate_0, kLocalityWeightRate0 - kErrorTolerance,
-                kLocalityWeightRate0 + kErrorTolerance);
-  ExpectBetween(locality_picked_rate_1, kLocalityWeightRate1 - kErrorTolerance,
-                kLocalityWeightRate1 + kErrorTolerance);
+  EXPECT_THAT(locality_picked_rate_0,
+              ::testing::DoubleNear(kLocalityWeightRate0, kErrorTolerance));
+  EXPECT_THAT(locality_picked_rate_1,
+              ::testing::DoubleNear(kLocalityWeightRate1, kErrorTolerance));
 }
 
 // Tests that we correctly handle a locality containing no endpoints.
@@ -9286,8 +9276,8 @@ TEST_P(DropTest, Vanilla) {
   }
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  ExpectBetween(seen_drop_rate, KDropRateForLbAndThrottle - kErrorTolerance,
-                KDropRateForLbAndThrottle + kErrorTolerance);
+  EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(KDropRateForLbAndThrottle,
+                                                    kErrorTolerance));
 }
 
 // Tests that drop config is converted correctly from per hundred.
@@ -9323,8 +9313,8 @@ TEST_P(DropTest, DropPerHundred) {
   }
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  ExpectBetween(seen_drop_rate, kDropRateForLb - kErrorTolerance,
-                kDropRateForLb + kErrorTolerance);
+  EXPECT_THAT(seen_drop_rate,
+              ::testing::DoubleNear(kDropRateForLb, kErrorTolerance));
 }
 
 // Tests that drop config is converted correctly from per ten thousand.
@@ -9360,8 +9350,8 @@ TEST_P(DropTest, DropPerTenThousand) {
   }
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  ExpectBetween(seen_drop_rate, kDropRateForLb - kErrorTolerance,
-                kDropRateForLb + kErrorTolerance);
+  EXPECT_THAT(seen_drop_rate,
+              ::testing::DoubleNear(kDropRateForLb, kErrorTolerance));
 }
 
 // Tests that drop is working correctly after update.
@@ -9406,8 +9396,8 @@ TEST_P(DropTest, Update) {
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsLbOnly;
   gpr_log(GPR_INFO, "First batch drop rate %f", seen_drop_rate);
-  ExpectBetween(seen_drop_rate, kDropRateForLb - kErrorTolerance,
-                kDropRateForLb + kErrorTolerance);
+  EXPECT_THAT(seen_drop_rate,
+              ::testing::DoubleNear(kDropRateForLb, kErrorTolerance));
   // The second ADS response contains two drop categories, send an update EDS
   // response.
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
@@ -9452,8 +9442,8 @@ TEST_P(DropTest, Update) {
   // The new drop rate should be roughly equal to the expectation.
   seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsBoth;
   gpr_log(GPR_INFO, "Second batch drop rate %f", seen_drop_rate);
-  ExpectBetween(seen_drop_rate, KDropRateForLbAndThrottle - kErrorTolerance,
-                KDropRateForLbAndThrottle + kErrorTolerance);
+  EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(KDropRateForLbAndThrottle,
+                                                    kErrorTolerance));
 }
 
 // Tests that all the RPCs are dropped if any drop category drops 100%.
@@ -9955,8 +9945,8 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   }
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  ExpectBetween(seen_drop_rate, KDropRateForLbAndThrottle - kErrorTolerance,
-                KDropRateForLbAndThrottle + kErrorTolerance);
+  EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(KDropRateForLbAndThrottle,
+                                                    kErrorTolerance));
   // Check client stats.
   const size_t total_rpc = num_warmup + kNumRpcs;
   ClientStats client_stats;
@@ -9970,15 +9960,13 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
                client_stats.total_dropped_requests() <
            total_rpc);
   EXPECT_EQ(num_drops, client_stats.total_dropped_requests());
-  ExpectBetween(
-      static_cast<double>(client_stats.dropped_requests(kLbDropType)) /
-          total_rpc,
-      kDropRateForLb - kErrorTolerance, kDropRateForLb + kErrorTolerance);
-  ExpectBetween(
+  EXPECT_THAT(static_cast<double>(client_stats.dropped_requests(kLbDropType)) /
+                  total_rpc,
+              ::testing::DoubleNear(kDropRateForLb, kErrorTolerance));
+  EXPECT_THAT(
       static_cast<double>(client_stats.dropped_requests(kThrottleDropType)) /
           (total_rpc * (1 - kDropRateForLb)),
-      kDropRateForThrottle - kErrorTolerance,
-      kDropRateForThrottle + kErrorTolerance);
+      ::testing::DoubleNear(kDropRateForThrottle, kErrorTolerance));
 }
 
 class FaultInjectionTest : public XdsEnd2endTest {
@@ -10114,8 +10102,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
   EXPECT_THAT(seen_abort_rate,
-              ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
-                               ::testing::Le(kAbortRate + kErrorTolerance)));
+              ::testing::DoubleNear(kAbortRate, kErrorTolerance));
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
@@ -10155,8 +10142,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
   EXPECT_THAT(seen_abort_rate,
-              ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
-                               ::testing::Le(kAbortRate + kErrorTolerance)));
+              ::testing::DoubleNear(kAbortRate, kErrorTolerance));
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
@@ -10193,13 +10179,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   for (auto& rpc : rpcs) {
     if (rpc->status.error_code() == grpc::OK) continue;
     EXPECT_EQ(grpc::DEADLINE_EXCEEDED, rpc->status.error_code());
-    num_delayed++;
+    ++num_delayed;
   }
   // The delay rate should be roughly equal to the expectation.
   const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
   EXPECT_THAT(seen_delay_rate,
-              ::testing::AllOf(::testing::Ge(kDelayRate - kErrorTolerance),
-                               ::testing::Le(kDelayRate + kErrorTolerance)));
+              ::testing::DoubleNear(kDelayRate, kErrorTolerance));
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
@@ -10241,13 +10226,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   for (auto& rpc : rpcs) {
     if (rpc->status.error_code() == grpc::OK) continue;
     EXPECT_EQ(grpc::DEADLINE_EXCEEDED, rpc->status.error_code());
-    num_delayed++;
+    ++num_delayed;
   }
   // The delay rate should be roughly equal to the expectation.
   const double seen_delay_rate = static_cast<double>(num_delayed) / kNumRpcs;
   EXPECT_THAT(seen_delay_rate,
-              ::testing::AllOf(::testing::Ge(kDelayRate - kErrorTolerance),
-                               ::testing::Le(kDelayRate + kErrorTolerance)));
+              ::testing::DoubleNear(kDelayRate, kErrorTolerance));
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
@@ -10288,13 +10272,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
     EXPECT_GE(rpc->elapsed_time, kFixedDelaySeconds * 1000);
     if (rpc->status.error_code() == grpc::OK) continue;
     EXPECT_EQ("Fault injected", rpc->status.error_message());
-    num_aborted++;
+    ++num_aborted;
   }
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
   EXPECT_THAT(seen_abort_rate,
-              ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
-                               ::testing::Le(kAbortRate + kErrorTolerance)));
+              ::testing::DoubleNear(kAbortRate, kErrorTolerance));
 }
 
 // This test and the above test apply different denominators to delay and abort.
@@ -10339,13 +10322,12 @@ TEST_P(FaultInjectionTest,
     EXPECT_GE(rpc->elapsed_time, kFixedDelaySeconds * 1000);
     if (rpc->status.error_code() == grpc::OK) continue;
     EXPECT_EQ("Fault injected", rpc->status.error_message());
-    num_aborted++;
+    ++num_aborted;
   }
   // The abort rate should be roughly equal to the expectation.
   const double seen_abort_rate = static_cast<double>(num_aborted) / kNumRpcs;
   EXPECT_THAT(seen_abort_rate,
-              ::testing::AllOf(::testing::Ge(kAbortRate - kErrorTolerance),
-                               ::testing::Le(kAbortRate + kErrorTolerance)));
+              ::testing::DoubleNear(kAbortRate, kErrorTolerance));
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
