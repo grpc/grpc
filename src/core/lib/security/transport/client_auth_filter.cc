@@ -196,8 +196,8 @@ static void add_error(grpc_error** combined, grpc_error* error) {
   *combined = grpc_error_add_child(*combined, error);
 }
 
-static void on_credentials_metadata_inner(
-    grpc_transport_stream_op_batch* batch, grpc_error* error) {
+static void on_credentials_metadata_inner(grpc_transport_stream_op_batch* batch,
+                                          grpc_error* error) {
   auto* elem =
       static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
   auto* calld = static_cast<call_data*>(elem->call_data);
@@ -467,9 +467,9 @@ static void client_auth_start_transport_stream_op_batch(
     calld->send_initial_metadata_batch = nullptr;
     send_initial_metadata_batch->handler_private.extra_arg =
         calld->call_combiner;
-    GRPC_CLOSURE_INIT(
-        &send_initial_metadata_batch->handler_private.closure,
-        fail_batch_in_call_combiner, send_initial_metadata_batch, nullptr);
+    GRPC_CLOSURE_INIT(&send_initial_metadata_batch->handler_private.closure,
+                      fail_batch_in_call_combiner, send_initial_metadata_batch,
+                      nullptr);
     GRPC_CALL_COMBINER_START(
         calld->call_combiner,
         &send_initial_metadata_batch->handler_private.closure,
