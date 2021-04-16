@@ -238,7 +238,7 @@ def _remove_completed_rpcs(futures: Mapping[int, grpc.Future],
     done = []
     for future_id, (future, method) in futures.items():
         if future.done():
-            _on_rpc_done(future_id, future, method, bool(args.print_response))
+            _on_rpc_done(future_id, future, method, args.print_response)
             done.append(future_id)
     for rpc_id in done:
         del futures[rpc_id]
@@ -391,8 +391,7 @@ def _run(args: argparse.Namespace, methods: Sequence[str],
             qps = 0
         channel_config = _ChannelConfiguration(
             method, per_method_metadata.get(method, []), qps, args.server,
-            args.rpc_timeout_sec, bool(args.print_response),
-            bool(args.secure_mode))
+            args.rpc_timeout_sec, args.print_response, args.secure_mode)
         channel_configs[method] = channel_config
         method_handles.append(_MethodHandle(args.num_channels, channel_config))
     _global_server = grpc.server(futures.ThreadPoolExecutor())
@@ -431,6 +430,15 @@ def parse_rpc_arg(rpc_arg: str) -> Sequence[str]:
     return methods
 
 
+def bool_arg(arg: str) -> bool:
+    if arg.lower() in ("true", "yes", "y"):
+        return True
+    elif arg.lower() in ("false", "no", "n"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError(f"Could not parse '{arg}' as a bool.")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Run Python XDS interop client.')
@@ -441,7 +449,7 @@ if __name__ == "__main__":
         help="The number of channels from which to send requests.")
     parser.add_argument("--print_response",
                         default="False",
-                        type=str,
+                        type=bool_arg,
                         help="Write RPC response to STDOUT.")
     parser.add_argument(
         "--qps",
@@ -463,7 +471,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--secure_mode",
         default="False",
-        type=str,
+        type=bool_arg,
         help="If specified, uses xDS credentials to connect to the server.")
     parser.add_argument('--verbose',
                         help='verbose log output',
