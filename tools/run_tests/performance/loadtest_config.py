@@ -158,6 +158,7 @@ def gen_loadtest_configs(
 
             spec = config['spec']
 
+            # Select clients with the required language.
             spec['clients'] = [
                 client for client in base_config_clients
                 if client['language'] == cl
@@ -166,6 +167,7 @@ def gen_loadtest_configs(
                 raise IndexError(
                     'Client language not found in template: %s' % cl)
 
+            # Select servers with the required language.
             spec['servers'] = [
                 server for server in base_config_servers
                 if server['language'] == sl
