@@ -15,15 +15,18 @@
 
 set -ex
 
-WORK_DIR="$(dirname "$0")"
+WORK_DIR=$(pwd)/"$(dirname "$0")"
 cd ${WORK_DIR}
 
 # Build the source wheel
 python3 setup.py sdist
 
-# Run the tests to ensure all protos are importable
+# Run the tests to ensure all protos are importable, also avoid confusing normal
+# imports with relative imports
 python3 -m pip install .
-python3 generated_file_import_test.py
+pushd /tmp
+python3 ${WORK_DIR}/generated_file_import_test.py
+popd
 
 # Upload the package
 python3 -m twine check dist/*

@@ -111,21 +111,35 @@ compile_protos(VALIDATE_ROOT, 'validate')
 compile_protos(OPENCENSUS_PROTO_ROOT)
 
 
-# Generate __init__.py files for
+# Generate __init__.py files for all modules
 def create_init_file(path: str) -> None:
     f = open(os.path.join(path, "__init__.py"), 'w')
     f.close()
 
 
 create_init_file(WORK_DIR)
-for root, _, _ in os.walk(os.path.join(WORK_DIR, 'envoy')):
-    create_init_file(root)
+for proto_root_module in [
+        'envoy', 'google', 'opencensus', 'udpa', 'validate', 'xds'
+]:
+    for root, _, _ in os.walk(os.path.join(WORK_DIR, proto_root_module)):
+        package_path = os.path.relpath(root, WORK_DIR)
+        if package_path == "google":
+            # Google packages are namespace packages. We don't want to create a
+            # package named "google", which will create many trouble down the
+            # line.
+            continue
+        create_init_file(root)
 
 # Generate test file
 with open(os.path.join(WORK_DIR, TEST_FILE_NAME), 'w') as f:
     f.writelines(TEST_IMPORTS)
 
 # Use setuptools to build Python package
+with open(os.path.join(WORK_DIR, 'README.rst'), 'r') as f:
+    LONG_DESCRIPTION = f.read()
+PACKAGES = setuptools.find_packages(where=".", exclude=[
+    TEST_FILE_NAME
+]) + setuptools.find_namespace_packages(include=['google.*'])
 CLASSIFIERS = [
     'Development Status :: 3 - Alpha',
     'Programming Language :: Python',
@@ -136,13 +150,16 @@ CLASSIFIERS = [
 INSTALL_REQUIRES = [
     'protobuf',
     'grpcio',
+    'grpcio-tools',
 ]
-SETUP_REQUIRES = INSTALL_REQUIRES + ["grpcio-tools"]
+SETUP_REQUIRES = INSTALL_REQUIRES
 setuptools.setup(
     name='xds-protos',
-    version='0.0.1',
+    version='0.0.3',
     packages=setuptools.find_packages(where=".", exclude=[TEST_FILE_NAME]),
     description='Generated Python code from envoyproxy/data-plane-api',
+    long_description_content_type='text/x-rst',
+    long_description=LONG_DESCRIPTION,
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
     url='https://grpc.io',
