@@ -16,13 +16,14 @@
 # This script generates a load test configuration template from a collection of
 # load test configurations.
 #
-# The following example generates a basic template from the example configs
-# in https://github.com/grpc/test-infra/tree/master/config/samples:
-#
-# $ ./tools/run_tests/performance/loadtest_template.py \
-#     -i ../test-infra/config/samples/*.yaml \
-#     -o ./tools/run_tests/performance/templates/basic_template.yaml \
-#     --name basic_template
+# Configuration templates contain client and server configurations for multiple
+# languages, and may contain template substitution keys. These templates are
+# used to generate load test configurations by selecting clients and servers for
+# the required languages. The source files for template generation may be load
+# test configurations or load test configuration templates. Load test
+# configuration generation is performed by loadtest_config.py. See documentation
+# below:
+# https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md
 
 import argparse
 import sys
@@ -39,8 +40,10 @@ TEMPLATE_FILE_HEADER_COMMENT = """
 # Configuration templates contain client and server configurations for multiple
 # languages, and may contain template substitution keys. These templates are
 # used to generate load test configurations by selecting clients and servers for
-# the required languages. Load test configuration generation is performed by
-# loadtest_config.py. See documentation below:
+# the required languages. The source files for template generation may be load
+# test configurations or load test configuration templates. Load test
+# configuration generation is performed by loadtest_config.py. See documentation
+# below:
 # https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md
 """
 

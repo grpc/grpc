@@ -212,7 +212,8 @@ https://github.com/grpc/test-infra/tree/master/config/samples
 
 The script [loadtest_config.py](./loadtest_config.py) generates LoadTest
 configurations for tests running a set of scenarios. The configurations are
-written in multipart YAML format, either to a file or to stdout.
+written in multipart YAML format, either to a file or to stdout. Each
+configuration contains a single embedded scenario.
 
 The LoadTest configurations are generated from a template. Any configuration can
 be used as a template, as long as it supports the languages that need to be
@@ -323,8 +324,10 @@ $ loadtest_concat_yaml.py -i infile1.yaml infile2.yaml -o outfile.yaml
 ### Generating configuration templates
 
 The script [loadtest_template.py](./loadtest_template.py) generates a load test
-configuration template from a set of load test configurations. The generated
-template supports all languages supported in any of the input configurations.
+configuration template from a set of load test configurations. The source files
+may be load test configurations or load test templates. The generated
+template supports all languages supported in any of the input configurations
+or templates.
 
 The example template in
 [loadtest_template_basic_template_all_languages.yaml](./templates/loadtest_template_basic_all_languages.yaml)

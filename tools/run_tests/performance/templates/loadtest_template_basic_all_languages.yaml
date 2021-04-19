@@ -3,8 +3,10 @@
 # Configuration templates contain client and server configurations for multiple
 # languages, and may contain template substitution keys. These templates are
 # used to generate load test configurations by selecting clients and servers for
-# the required languages. Load test configuration generation is performed by
-# loadtest_config.py. See documentation below:
+# the required languages. The source files for template generation may be load
+# test configurations or load test configuration templates. Load test
+# configuration generation is performed by loadtest_config.py. See documentation
+# below:
 # https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md
 apiVersion: e2etest.grpc.io/v1
 kind: LoadTest
