@@ -389,7 +389,7 @@ def get_client_xds_config_dump():
             logger.debug('Fetched xDS config dump from %s', server_address)
             if len(response.config) != 1:
                 logger.error('Unexpected number of ClientConfigs %d: %s',
-                             len(response.config()), response)
+                             len(response.config), response)
                 return None
             else:
                 return json_format.MessageToDict(
