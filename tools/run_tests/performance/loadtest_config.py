@@ -38,7 +38,6 @@ import yaml
 import scenario_config
 import scenario_config_exporter
 
-
 CONFIGURATION_FILE_HEADER_COMMENT = """
 # Load test configurations generated from a template by loadtest_config.py.
 # See documentation below:
@@ -164,8 +163,8 @@ def gen_loadtest_configs(
                 if client['language'] == cl
             ]
             if not spec['clients']:
-                raise IndexError(
-                    'Client language not found in template: %s' % cl)
+                raise IndexError('Client language not found in template: %s' %
+                                 cl)
 
             # Select servers with the required language.
             spec['servers'] = [
@@ -173,8 +172,8 @@ def gen_loadtest_configs(
                 if server['language'] == sl
             ]
             if not spec['servers']:
-                raise IndexError(
-                    'Server language not found in template: %s' % cl)
+                raise IndexError('Server language not found in template: %s' %
+                                 cl)
 
             spec['scenariosJSON'] = scenario_str
 
@@ -334,8 +333,10 @@ def main() -> None:
     configs = (config for config in itertools.chain(*config_generators))
 
     with open(args.output, 'w') if args.output else sys.stdout as f:
-        yaml.dump_all(configs, stream=f, Dumper=config_dumper(
-            CONFIGURATION_FILE_HEADER_COMMENT.strip()))
+        yaml.dump_all(configs,
+                      stream=f,
+                      Dumper=config_dumper(
+                          CONFIGURATION_FILE_HEADER_COMMENT.strip()))
 
 
 if __name__ == '__main__':
