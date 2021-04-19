@@ -16,7 +16,8 @@
  *
  */
 
-#include <grpcpp/ext/channelz_service_plugin.h>
+#include <grpcpp/ext/admin_services.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/grpcpp.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -514,9 +515,11 @@ void RunServer(const int port, StatsWatchers* stats_watchers,
   LoadBalancerStatsServiceImpl stats_service(stats_watchers);
   XdsUpdateClientConfigureServiceImpl client_config_service(rpc_configs_queue);
 
+  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   builder.RegisterService(&stats_service);
   builder.RegisterService(&client_config_service);
+  grpc::AddAdminServices(&builder);
   builder.AddListeningPort(server_address.str(),
                            grpc::InsecureServerCredentials());
   std::unique_ptr<Server> server(builder.BuildAndStart());
@@ -575,7 +578,6 @@ void BuildRpcConfigsFromFlags(RpcConfigurationsQueue* rpc_configs_queue) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  grpc::channelz::experimental::InitChannelzService();
   // Validate the expect_status flag.
   grpc_status_code code;
   GPR_ASSERT(grpc_status_code_from_string(
