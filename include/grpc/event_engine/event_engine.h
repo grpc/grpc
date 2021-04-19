@@ -165,7 +165,6 @@ class EventEngine {
     /// been called.
     virtual absl::Status Bind(const ResolvedAddress& addr) = 0;
     virtual absl::Status Start() = 0;
-    virtual absl::Status Shutdown() = 0;
   };
 
   // TODO(hork): define status codes for the callback
@@ -235,7 +234,7 @@ class EventEngine {
 
   // TODO(hork): define return status codes
   /// Retrieves an instance of a DNSResolver.
-  virtual absl::StatusOr<DNSResolver> GetDNSResolver() = 0;
+  virtual absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver() = 0;
 
   /// Intended for future expansion of Task run functionality.
   struct RunOptions {};

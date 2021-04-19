@@ -305,6 +305,9 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(
           ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL_PROPERTY_NAME,
           prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_DNS_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(), GRPC_PEER_DNS_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
     } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
       uri_count++;
       absl::string_view spiffe_id(prop->value.data, prop->value.length);
@@ -313,6 +316,12 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
         spiffe_length = prop->value.length;
         has_spiffe_id = true;
       }
+    } else if (strcmp(prop->name, TSI_X509_EMAIL_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(), GRPC_PEER_EMAIL_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_IP_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(), GRPC_PEER_IP_PROPERTY_NAME,
+                                     prop->value.data, prop->value.length);
     }
   }
   if (peer_identity_property_name != nullptr) {
@@ -376,9 +385,18 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
                  0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_PEM_CERT_CHAIN_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_PEER_DNS_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_X509_DNS_PEER_PROPERTY);
       } else if (strcmp(prop->name, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_URI_PEER_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_PEER_EMAIL_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_X509_EMAIL_PEER_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_PEER_IP_PROPERTY_NAME) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_X509_IP_PEER_PROPERTY);
       }
     }
   }

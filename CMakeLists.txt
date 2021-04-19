@@ -843,7 +843,6 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx error_details_test)
   add_dependencies(buildtests_cxx error_utils_test)
   add_dependencies(buildtests_cxx evaluate_args_test)
-  add_dependencies(buildtests_cxx eventmanager_libuv_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx examine_stack_test)
   endif()
@@ -1110,6 +1109,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/request_with_payload.cc
   test/core/end2end/tests/resource_quota_server.cc
   test/core/end2end/tests/retry.cc
+  test/core/end2end/tests/retry_cancel_during_delay.cc
   test/core/end2end/tests/retry_cancellation.cc
   test/core/end2end/tests/retry_disabled.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
@@ -1243,6 +1243,7 @@ add_library(end2end_tests
   test/core/end2end/tests/request_with_payload.cc
   test/core/end2end/tests/resource_quota_server.cc
   test/core/end2end/tests/retry.cc
+  test/core/end2end/tests/retry_cancel_during_delay.cc
   test/core/end2end/tests/retry_cancellation.cc
   test/core/end2end/tests/retry_disabled.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
@@ -1856,7 +1857,6 @@ add_library(grpc
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/parse_address.cc
-  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -2169,7 +2169,6 @@ if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util
   test/core/util/cmdline.cc
-  test/core/util/eval_args_mock_endpoint.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2239,7 +2238,6 @@ if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util_unsecure
   test/core/util/cmdline.cc
-  test/core/util/eval_args_mock_endpoint.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2498,7 +2496,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/load_file.cc
   src/core/lib/iomgr/lockfree_event.cc
   src/core/lib/iomgr/parse_address.cc
-  src/core/lib/iomgr/poller/eventmanager_libuv.cc
   src/core/lib/iomgr/polling_entity.cc
   src/core/lib/iomgr/pollset.cc
   src/core/lib/iomgr/pollset_custom.cc
@@ -3817,7 +3814,9 @@ endif()
 
 if(gRPC_BUILD_CODEGEN)
 
-if(gRPC_INSTALL)
+# grpcpp_channelz doesn't build with protobuf-lite, so no install required
+# See https://github.com/grpc/grpc/issues/22826
+if(gRPC_INSTALL AND NOT gRPC_USE_PROTO_LITE)
   install(TARGETS grpcpp_channelz EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -10331,41 +10330,6 @@ target_link_libraries(evaluate_args_test
 
 endif()
 if(gRPC_BUILD_TESTS)
-
-add_executable(eventmanager_libuv_test
-  test/core/iomgr/poller/eventmanager_libuv_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-target_include_directories(eventmanager_libuv_test
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}/include
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/googletest/googletest/include
-    third_party/googletest/googletest
-    third_party/googletest/googlemock/include
-    third_party/googletest/googlemock
-    ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(eventmanager_libuv_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-)
-
-
-endif()
-if(gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
   add_executable(examine_stack_test
@@ -14550,7 +14514,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
     test/core/util/cmdline.cc
-    test/core/util/eval_args_mock_endpoint.cc
     test/core/util/fuzzer_util.cc
     test/core/util/grpc_profiler.cc
     test/core/util/histogram.cc
@@ -14974,7 +14937,7 @@ target_link_libraries(xds_interop_client
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flags
-  grpc++
+  grpcpp_channelz
   grpc_test_util
   grpc++_test_config
 )
@@ -15029,7 +14992,7 @@ target_link_libraries(xds_interop_server
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flags
-  grpc++
+  grpcpp_channelz
   grpc_test_util
   grpc++_test_config
 )

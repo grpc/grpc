@@ -344,7 +344,8 @@ class DynamicTerminationFilter::CallData {
         calld->call_context_,    calld->path_,
         calld->call_start_time_, calld->deadline_,
         calld->arena_,           calld->call_combiner_};
-    calld->lb_call_ = client_channel->CreateLoadBalancedCall(args, pollent);
+    calld->lb_call_ =
+        client_channel->CreateLoadBalancedCall(args, pollent, nullptr);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p dynamic_termination_calld=%p: create lb_call=%p", chand,
@@ -1132,9 +1133,11 @@ ClientChannel::~ClientChannel() {
 }
 
 RefCountedPtr<ClientChannel::LoadBalancedCall>
-ClientChannel::CreateLoadBalancedCall(const grpc_call_element_args& args,
-                                      grpc_polling_entity* pollent) {
-  return args.arena->New<LoadBalancedCall>(this, args, pollent);
+ClientChannel::CreateLoadBalancedCall(
+    const grpc_call_element_args& args, grpc_polling_entity* pollent,
+    grpc_closure* on_call_destruction_complete) {
+  return args.arena->New<LoadBalancedCall>(this, args, pollent,
+                                           on_call_destruction_complete);
 }
 
 namespace {
@@ -2480,7 +2483,7 @@ class ClientChannel::LoadBalancedCall::LbCallState
 
 ClientChannel::LoadBalancedCall::LoadBalancedCall(
     ClientChannel* chand, const grpc_call_element_args& args,
-    grpc_polling_entity* pollent)
+    grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete)
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
                      ? "LoadBalancedCall"
                      : nullptr),
@@ -2492,7 +2495,8 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
       owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       call_context_(args.context),
-      pollent_(pollent) {}
+      pollent_(pollent),
+      on_call_destruction_complete_(on_call_destruction_complete) {}
 
 ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   grpc_slice_unref_internal(path_);
@@ -2505,6 +2509,10 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i] == nullptr);
+  }
+  if (on_call_destruction_complete_ != nullptr) {
+    ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
+                 GRPC_ERROR_NONE);
   }
 }
 
@@ -2773,6 +2781,10 @@ void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
     gpr_log(GPR_INFO,
             "chand=%p lb_call=%p: create subchannel_call=%p: error=%s", chand_,
             this, subchannel_call_.get(), grpc_error_string(error));
+  }
+  if (on_call_destruction_complete_ != nullptr) {
+    subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
+    on_call_destruction_complete_ = nullptr;
   }
   if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
     PendingBatchesFail(error, YieldCallCombiner);

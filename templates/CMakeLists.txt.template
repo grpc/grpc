@@ -685,7 +685,13 @@
   </%def>
 
   <%def name="cc_install(tgt)">
+  % if tgt.name == 'grpcpp_channelz':
+  # grpcpp_channelz doesn't build with protobuf-lite, so no install required
+  # See https://github.com/grpc/grpc/issues/22826
+  if(gRPC_INSTALL AND NOT gRPC_USE_PROTO_LITE)
+  % else:
   if(gRPC_INSTALL)
+  % endif
     install(TARGETS ${tgt.name} EXPORT gRPCTargets
       RUNTIME DESTINATION <%text>${gRPC_INSTALL_BINDIR}</%text>
       LIBRARY DESTINATION <%text>${gRPC_INSTALL_LIBDIR}</%text>

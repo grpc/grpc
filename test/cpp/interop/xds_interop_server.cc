@@ -19,6 +19,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+#include <grpcpp/ext/channelz_service_plugin.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -155,7 +156,7 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-
+  grpc::channelz::experimental::InitChannelzService();
   char* hostname = grpc_gethostname();
   if (hostname == nullptr) {
     std::cout << "Failed to get hostname, terminating" << std::endl;
