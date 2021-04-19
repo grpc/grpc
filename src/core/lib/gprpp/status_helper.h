@@ -29,6 +29,7 @@
 namespace grpc_core {
 
 /// This enum should have the same value of grpc_error_ints
+// TODO(veblush): Use camel-case names once migration to absl::Status is done.
 enum class StatusIntProperty {
   /// 'errno' from the operating system
   ERRNO,
@@ -50,16 +51,12 @@ enum class StatusIntProperty {
   HTTP2_ERROR,
   /// TSI status code associated with the error
   TSI_CODE,
-  /// grpc_security_status associated with the error
-  SECURITY_STATUS,
   /// WSAGetLastError() reported when this error occurred
   WSA_ERROR,
   /// File descriptor associated with this error
   FD,
   /// HTTP status (i.e. 404)
   HTTP_STATUS,
-  /// context sensitive limit associated with the error
-  LIMIT,
   /// chttp2: did the error occur while a write was in progress
   OCCURRED_DURING_WRITE,
   /// channel connectivity state associated with the error
@@ -69,6 +66,7 @@ enum class StatusIntProperty {
 };
 
 /// This enum should have the same value of grpc_error_strs
+// TODO(veblush): Use camel-case names once migration to absl::Status is done.
 enum class StatusStrProperty {
   /// top-level textual description of this error
   DESCRIPTION,
@@ -88,8 +86,6 @@ enum class StatusStrProperty {
   TSI_ERROR,
   /// filename that we were trying to read/write when this error occurred
   FILENAME,
-  /// which data was queued for writing when the error occurred
-  QUEUED_BUFFERS,
   /// key associated with the error
   KEY,
   /// value associated with the error

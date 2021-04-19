@@ -60,16 +60,12 @@ typedef enum {
   GRPC_ERROR_INT_HTTP2_ERROR,
   /// TSI status code associated with the error
   GRPC_ERROR_INT_TSI_CODE,
-  /// grpc_security_status associated with the error
-  GRPC_ERROR_INT_SECURITY_STATUS,
   /// WSAGetLastError() reported when this error occurred
   GRPC_ERROR_INT_WSA_ERROR,
   /// File descriptor associated with this error
   GRPC_ERROR_INT_FD,
   /// HTTP status (i.e. 404)
   GRPC_ERROR_INT_HTTP_STATUS,
-  /// context sensitive limit associated with the error
-  GRPC_ERROR_INT_LIMIT,
   /// chttp2: did the error occur while a write was in progress
   GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
   /// channel connectivity state associated with the error
@@ -100,8 +96,6 @@ typedef enum {
   GRPC_ERROR_STR_TSI_ERROR,
   /// filename that we were trying to read/write when this error occurred
   GRPC_ERROR_STR_FILENAME,
-  /// which data was queued for writing when the error occurred
-  GRPC_ERROR_STR_QUEUED_BUFFERS,
   /// key associated with the error
   GRPC_ERROR_STR_KEY,
   /// value associated with the error
