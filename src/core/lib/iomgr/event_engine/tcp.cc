@@ -35,8 +35,11 @@ using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 
 struct grpc_tcp_server {
   gpr_refcount refs;
+  gpr_mu mu;
   std::unique_ptr<EventEngine::Listener> listener;
   std::shared_ptr<EventEngine> engine;
+  grpc_closure_list shutdown_starting;
+  grpc_resource_quota* resource_quota;
 };
 
 namespace {
@@ -121,6 +124,10 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   gpr_ref_init(&s->refs, 1);
   s->listener = std::move(*listener);
   s->engine = ee;
+  s->shutdown_starting.head = nullptr;
+  s->shutdown_starting.tail = nullptr;
+  gpr_mu_init(&s->mu);
+  s->resource_quota = rq;
   *server = s;
   return GRPC_ERROR_NONE;
 }
@@ -169,18 +176,40 @@ static int tcp_server_port_fd(grpc_tcp_server* /* s */,
 }
 
 static grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
-  // TODO(hork): verify
-  // gpr_ref_non_zero(&s->refs);
-  (void)s;
+  gpr_ref_non_zero(&s->refs);
   return s;
 }
+
 static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
                                              grpc_closure* shutdown_starting) {
-  (void)s;
-  (void)shutdown_starting;
+  gpr_mu_lock(&s->mu);
+  grpc_closure_list_append(&s->shutdown_starting, shutdown_starting,
+                           GRPC_ERROR_NONE);
+  gpr_mu_unlock(&s->mu);
 }
-static void tcp_server_unref(grpc_tcp_server* s) { (void)s; }
-static void tcp_server_shutdown_listeners(grpc_tcp_server* s) { (void)s; }
+
+static void tcp_server_destroy(grpc_tcp_server* s) {
+  gpr_mu_destroy(&s->mu);
+  s->listener = nullptr;
+  s->engine = nullptr;
+  // TODO(hork): see if we can handle this in ~SliceAllocatorFactory
+  grpc_resource_quota_unref_internal(s->resource_quota);
+  gpr_free(s);
+}
+
+static void tcp_server_unref(grpc_tcp_server* s) {
+  if (gpr_unref(&s->refs)) {
+    gpr_mu_lock(&s->mu);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
+    grpc_core::ExecCtx::Get()->Flush();
+    gpr_mu_unlock(&s->mu);
+    tcp_server_destroy(s);
+  }
+}
+
+// No-op, all are handled on listener unref
+static void tcp_server_shutdown_listeners(grpc_tcp_server* /* s */) {}
 
 }  // namespace
 
