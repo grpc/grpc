@@ -2162,7 +2162,6 @@ if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util
   test/core/util/cmdline.cc
-  test/core/util/eval_args_mock_endpoint.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -2232,7 +2231,6 @@ if(gRPC_BUILD_TESTS)
 
 add_library(grpc_test_util_unsecure
   test/core/util/cmdline.cc
-  test/core/util/eval_args_mock_endpoint.cc
   test/core/util/fuzzer_util.cc
   test/core/util/grpc_profiler.cc
   test/core/util/histogram.cc
@@ -14502,7 +14500,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
     ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
     test/core/util/cmdline.cc
-    test/core/util/eval_args_mock_endpoint.cc
     test/core/util/fuzzer_util.cc
     test/core/util/grpc_profiler.cc
     test/core/util/histogram.cc
@@ -14898,6 +14895,24 @@ add_executable(xds_interop_client
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+  src/cpp/server/admin/admin_services.cc
+  src/cpp/server/csds/csds.cc
   test/cpp/interop/xds_interop_client.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
@@ -14926,6 +14941,7 @@ target_link_libraries(xds_interop_client
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flags
+  grpc++_reflection
   grpcpp_channelz
   grpc_test_util
   grpc++_test_config
@@ -14952,6 +14968,24 @@ add_executable(xds_interop_server
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/base.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/config_dump.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/csds.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/v3/percent.grpc.pb.h
+  src/cpp/server/admin/admin_services.cc
+  src/cpp/server/csds/csds.cc
   test/cpp/end2end/test_health_check_service_impl.cc
   test/cpp/interop/xds_interop_server.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -14981,6 +15015,7 @@ target_link_libraries(xds_interop_server
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   absl::flags
+  grpc++_reflection
   grpcpp_channelz
   grpc_test_util
   grpc++_test_config
