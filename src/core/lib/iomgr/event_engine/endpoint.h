@@ -15,8 +15,8 @@
 #define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H
 #if defined(GRPC_EVENT_ENGINE_TEST)
 
-#include "absl/strings/string_view.h"
 #include <grpc/event_engine/event_engine.h>
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resource_quota.h"
@@ -24,7 +24,8 @@
 struct grpc_event_engine_endpoint {
   grpc_endpoint base;
   grpc_event_engine::experimental::EventEngine::Endpoint* endpoint;
-  absl::string_view peer_string;
+  std::string peer_string;
+  std::string local_address;
   grpc_resource_user* ru;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine;
 };

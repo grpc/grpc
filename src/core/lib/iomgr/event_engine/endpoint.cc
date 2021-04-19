@@ -17,11 +17,11 @@
 
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
 
-#include "absl/strings/string_view.h"
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/slice.h>
 #include <grpc/slice_buffer.h>
 #include <grpc/support/time.h>
+#include "absl/strings/string_view.h"
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/event_engine/util.h"
@@ -75,11 +75,8 @@ static grpc_resource_user* endpoint_get_resource_user(grpc_endpoint* ep) {
 }
 
 static absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
-  // TODO(hork): need to convert ResolvedAddress <-> String
-  // auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
-  // return eeep->endpoint->GetPeerAddress();
-  (void)ep;
-  return "TEMP";
+  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+  return eeep->peer_string;
 }
 
 static absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
@@ -114,7 +111,8 @@ grpc_event_engine_endpoint* grpc_endpoint_create(
     const grpc_channel_args* channel_args, absl::string_view peer_string) {
   auto endpoint = new grpc_event_engine_endpoint();
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
-  endpoint->peer_string = peer_string;
+  endpoint->peer_string = std::string(peer_string);
+  endpoint->local_address = "";
   grpc_resource_quota* resource_quota = grpc_resource_quota_create(nullptr);
   if (channel_args != nullptr) {
     for (size_t i = 0; i < channel_args->num_args; i++) {
@@ -126,6 +124,7 @@ grpc_event_engine_endpoint* grpc_endpoint_create(
       }
     }
   }
+  // TODO(hork): what should the string be?
   endpoint->ru = grpc_resource_user_create(resource_quota, "UNIMPLEMENTED");
   return endpoint;
 }

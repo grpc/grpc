@@ -20,6 +20,8 @@
 #include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
 #include "src/core/lib/iomgr/event_engine/util.h"
+#include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -52,6 +54,10 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
   return [&](absl::Status status, EventEngine::Endpoint* endpoint) {
     grpc_endpoint_out->endpoint = endpoint;
+    // Reusing the existing URI conversion logic for now.
+    grpc_resolved_address gaddr =
+        CreateGRPCResolvedAddress(endpoint->GetLocalAddress());
+    grpc_endpoint_out->local_address = grpc_sockaddr_to_uri(&gaddr);
     // TODO(hork): Do we need to add grpc_error to closure's error data?
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));

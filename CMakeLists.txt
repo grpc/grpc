@@ -1802,7 +1802,6 @@ add_library(grpc
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice_allocator.cc
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/http/format_request.cc
@@ -2442,7 +2441,6 @@ add_library(grpc_unsecure
   src/core/lib/debug/stats.cc
   src/core/lib/debug/stats_data.cc
   src/core/lib/debug/trace.cc
-  src/core/lib/event_engine/resolved_address.cc
   src/core/lib/event_engine/slice_allocator.cc
   src/core/lib/event_engine/sockaddr.cc
   src/core/lib/http/format_request.cc

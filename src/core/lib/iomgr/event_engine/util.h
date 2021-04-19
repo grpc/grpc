@@ -21,16 +21,20 @@
 
 #include <functional>
 
-#include "absl/status/status.h"
 #include <grpc/event_engine/event_engine.h>
+#include "absl/status/status.h"
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
 EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure);
+
+grpc_resolved_address CreateGRPCResolvedAddress(
+    const EventEngine::ResolvedAddress* ra);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
