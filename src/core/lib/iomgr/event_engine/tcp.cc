@@ -139,12 +139,14 @@ static void tcp_server_start(grpc_tcp_server* server,
 static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
                                        const grpc_resolved_address* addr,
                                        int* out_port) {
-  (void)s;
-  (void)addr;
-  (void)out_port;
   EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
                                   addr->len);
-  return absl_status_to_grpc_error(s->listener->Bind(ra));
+  auto port = s->listener->Bind(ra);
+  if (!port.ok()) {
+    return absl_status_to_grpc_error(port.status());
+  }
+  *out_port = *port;
+  return GRPC_ERROR_NONE;
 }
 
 static grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(

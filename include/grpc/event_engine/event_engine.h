@@ -163,7 +163,7 @@ class EventEngine {
     /// Bind an address/port to this Listener. It is expected that multiple
     /// addresses/ports can be bound to this Listener before Listener::Start has
     /// been called.
-    virtual absl::Status Bind(const ResolvedAddress& addr) = 0;
+    virtual absl::StatusOr<int> Bind(const ResolvedAddress& addr) = 0;
     virtual absl::Status Start() = 0;
   };
 
