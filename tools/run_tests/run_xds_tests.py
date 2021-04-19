@@ -392,6 +392,9 @@ def get_client_xds_config_dump():
                              len(response.config), response)
                 return None
             else:
+                # Converting the ClientStatusResponse into JSON, because many
+                # fields are packed in google.protobuf.Any. It will require many
+                # duplicated code to unpack proto message and inspect values.
                 return json_format.MessageToDict(
                     response.config[0], preserving_proto_field_name=True)
 
@@ -1816,22 +1819,18 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
 
 
 def test_csds(gcp, original_backend_service, instance_group, server_uri):
-    logger.info('Running csds')
+    logger.info('Running test_csds')
 
     logger.info('waiting for original backends to become healthy')
     wait_for_healthy_backends(gcp, original_backend_service, instance_group)
-
-    logger.info('start sending traffic')
-    configure_client(
-        rpc_types=[messages_pb2.ClientConfigureRequest.RpcType.UNARY_CALL])
 
     # Test case timeout: 5 minutes
     deadline = time.time() + 300
     cnt = 0
     while time.time() <= deadline:
         client_config = get_client_xds_config_dump()
-        logger.info('received xDS config %s', json.dumps(client_config,
-                                                         indent=2))
+        logger.info('test_csds attempt %d: received xDS config %s',
+                    json.dumps(client_config, indent=2))
         if client_config is not None:
             # Got the xDS config dump, now validate it
             ok = True
@@ -1890,13 +1889,15 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                 ok = False
             finally:
                 if ok:
-                    break
-        logger.info('csds attempt %d failed', cnt)
+                    # Successfully fetched xDS config, and they looks good.
+                    logger.info('success')
+                    return
+        logger.info('test_csds attempt %d failed', cnt)
         # Give the client some time to fetch xDS resources
         time.sleep(2)
         cnt += 1
 
-    logger.info('success')
+    raise RuntimeError('failed to receive valid xDS config')
 
 
 def set_validate_for_proxyless(gcp, validate_for_proxyless):
