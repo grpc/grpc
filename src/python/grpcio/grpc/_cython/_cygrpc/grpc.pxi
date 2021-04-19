@@ -405,7 +405,7 @@ cdef extern from "grpc/grpc.h":
        grpc_server* server, grpc_server_config_fetcher* config_fetcher) nogil
 
   ctypedef struct grpc_server_xds_status_notifier:
-    void (*on_serving_status_change)(void* user_data, const char* uri,
+    void (*on_serving_status_update)(void* user_data, const char* uri,
                                    grpc_status_code code,
                                    const char* error_message)
     void* user_data;
