@@ -1829,7 +1829,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
     cnt = 0
     while time.time() <= deadline:
         client_config = get_client_xds_config_dump()
-        logger.info('test_csds attempt %d: received xDS config %s',
+        logger.info('test_csds attempt %d: received xDS config %s', cnt,
                     json.dumps(client_config, indent=2))
         if client_config is not None:
             # Got the xDS config dump, now validate it
