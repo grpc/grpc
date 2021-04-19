@@ -321,4 +321,16 @@ extern grpc_core::TraceFlag grpc_trace_channel;
     }                                                  \
   } while (0)
 
+// Does NOT take ownership of error.
+void grpc_call_log_pre_cancel(const char* file, int line,
+                              gpr_log_severity severity,
+                              grpc_call_element* elem, grpc_error* error);
+
+#define GRPC_CALL_LOG_PRE_CANCEL(sev, elem, error)     \
+  do {                                                 \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) { \
+      grpc_call_log_pre_cancel(sev, elem, error);      \
+    }                                                  \
+  } while (0)
+
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_STACK_H */

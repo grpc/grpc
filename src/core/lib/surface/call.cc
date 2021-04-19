@@ -700,6 +700,7 @@ void grpc_call_cancel_with_error_internal(grpc_call* c, grpc_error* error) {
   // holding the call combiner.  This ensures that the cancel_stream batch
   // can be sent down the filter stack in a timely manner.
   grpc_call_element* elem = CALL_ELEM_FROM_CALL(c, 0);
+  GRPC_CALL_LOG_PRE_CANCEL(GPR_INFO, elem, error);
   elem->filter->pre_cancel_call(elem, GRPC_ERROR_REF(error));
   // Now send down a batch containing the cancel_stream op.
   cancel_state* state = static_cast<cancel_state*>(gpr_malloc(sizeof(*state)));

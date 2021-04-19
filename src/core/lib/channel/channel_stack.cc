@@ -242,6 +242,7 @@ void grpc_call_next_op(grpc_call_element* elem,
 void grpc_call_pre_cancel_next_filter(grpc_call_element* elem,
                                       grpc_error* error) {
   grpc_call_element* next_elem = elem + 1;
+  GRPC_CALL_LOG_PRE_CANCEL(GPR_INFO, next_elem, error);
   next_elem->filter->pre_cancel_call(next_elem, error);
 }
 
@@ -267,4 +268,11 @@ grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
   return reinterpret_cast<grpc_call_stack*>(
       reinterpret_cast<char*>(elem) -
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)));
+}
+
+void grpc_call_log_pre_cancel(const char* file, int line,
+                              gpr_log_severity severity,
+                              grpc_call_element* elem, grpc_error* error) {
+  gpr_log(file, line, severity, "PRE_CANCEL[%s:%p]: %s", elem->filter->name,
+          elem, grpc_error_string(error));
 }
