@@ -56,7 +56,6 @@ int grpc_channel_num_external_connectivity_watchers(grpc_channel* channel) {
   return client_channel->NumExternalConnectivityWatchers();
 }
 
-
 int grpc_channel_support_connectivity_watcher(grpc_channel* channel) {
   return grpc_core::ClientChannel::GetFromChannel(channel) != nullptr;
 }
