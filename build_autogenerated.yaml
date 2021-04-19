@@ -4246,27 +4246,20 @@ targets:
   deps:
   - grpc++_test_util
   uses_polling: false
-- name: authorization_engine_test
+- name: authorization_matchers_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/evaluate_args.h
-  - src/core/lib/security/authorization/mock_cel/activation.h
-  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
-  - src/core/lib/security/authorization/mock_cel/cel_expression.h
-  - src/core/lib/security/authorization/mock_cel/cel_value.h
-  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
-  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
+  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   src:
-  - src/core/lib/security/authorization/authorization_engine.cc
   - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
-  - test/core/security/authorization_engine_test.cc
+  - test/core/security/authorization_matchers_test.cc
   deps:
-  - absl/container:flat_hash_set
   - grpc_test_util
 - name: aws_request_signer_test
   gtest: true
@@ -4672,6 +4665,30 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: cel_authorization_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/authorization/cel_authorization_engine.h
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/matchers.h
+  - src/core/lib/security/authorization/mock_cel/activation.h
+  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
+  - src/core/lib/security/authorization/mock_cel/cel_expression.h
+  - src/core/lib/security/authorization/mock_cel/cel_value.h
+  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
+  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
+  - src/core/lib/security/authorization/rbac_policy.h
+  src:
+  - src/core/lib/security/authorization/cel_authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
+  - test/core/security/cel_authorization_engine_test.cc
+  deps:
+  - absl/container:flat_hash_set
+  - grpc_test_util
 - name: certificate_provider_registry_test
   gtest: true
   build: test
@@ -5055,9 +5072,11 @@ targets:
   language: c++
   headers:
   - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   src:
   - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/evaluate_args_test.cc
   deps:
@@ -5935,10 +5954,12 @@ targets:
   language: c++
   headers:
   - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   src:
   - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - test/core/security/rbac_translator_test.cc
