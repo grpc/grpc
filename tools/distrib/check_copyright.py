@@ -106,7 +106,7 @@ RE_LICENSE = dict(
     (k, r'\n'.join(LICENSE_PREFIX[k] +
                    (RE_YEAR if re.search(RE_YEAR, line) else re.escape(line))
                    for line in LICENSE_NOTICE))
-    for k, v in LICENSE_PREFIX.items())
+    for k, v in list(LICENSE_PREFIX.items()))
 
 if args.precommit:
     FILE_LIST_COMMAND = 'git status -z | grep -Poz \'(?<=^[MARC][MARCD ] )[^\s]+\''
@@ -133,7 +133,7 @@ def log(cond, why, filename):
     if not cond:
         return
     if args.output == 'details':
-        print('%s: %s' % (why, filename))
+        print(('%s: %s' % (why, filename)))
     else:
         print(filename)
 

@@ -53,7 +53,7 @@ def mako_plugin(dictionary):
     """
     lib_map = {lib['name']: lib for lib in dictionary.get('libs')}
 
-    for target_name, target_list in dictionary.items():
+    for target_name, target_list in list(dictionary.items()):
         for target in target_list:
             if isinstance(target, dict):
                 if 'deps' in target or target_name == 'libs':

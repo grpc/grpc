@@ -31,8 +31,8 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional
 
 import yaml
 
-import scenario_config
-import scenario_config_exporter
+from . import scenario_config
+from . import scenario_config_exporter
 
 
 def default_prefix() -> str:

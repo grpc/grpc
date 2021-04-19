@@ -38,7 +38,7 @@ def create_docker_jobspec(name,
     environ['ARTIFACTS_OUT'] = 'artifacts/%s' % name
 
     docker_args = []
-    for k, v in environ.items():
+    for k, v in list(environ.items()):
         docker_args += ['-e', '%s=%s' % (k, v)]
     docker_env = {
         'DOCKERFILE_DIR': dockerfile_dir,

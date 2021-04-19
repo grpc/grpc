@@ -90,7 +90,7 @@ def get_commit_log(prevRelLabel, relBranch):
         "git", "log", "--pretty=oneline", "--committer=GitHub",
         "%s..%s" % (prevRelLabel, relBranch)
     ]
-    print("Running ", " ".join(glg_command))
+    print(("Running ", " ".join(glg_command)))
     return subprocess.check_output(glg_command)
 
 
@@ -98,9 +98,10 @@ def get_pr_data(pr_num):
     """Get the PR data from github. Return 'error' on exception"""
 
     try:
-        from urllib2 import Request, urlopen, HTTPError
+        from urllib.request import Request, urlopen
+        from urllib.error import HTTPError
     except ImportError:
-        import urllib
+        import urllib.request, urllib.parse, urllib.error
         from urllib.request import Request, urlopen, HTTPError
     url = API_URL + pr_num
     req = Request(url)
@@ -112,7 +113,7 @@ def get_pr_data(pr_num):
     except HTTPError as e:
         response = json.loads(e.fp.read().decode('utf-8'))
         if 'message' in response:
-            print(response['message'])
+            print((response['message']))
         response = "error"
     return response
 
@@ -136,10 +137,11 @@ def get_pr_titles(gitLogs):
     langs_pr = defaultdict(list)
     for pr_num in prlist:
         pr_num = str(pr_num)
-        print("---------- getting data for PR " + pr_num)
+        print(("---------- getting data for PR " + pr_num))
         pr = get_pr_data(pr_num)
         if pr == "error":
-            print("\n***ERROR*** Error in getting data for PR " + pr_num + "\n")
+            print(
+                ("\n***ERROR*** Error in getting data for PR " + pr_num + "\n"))
             error_count += 1
             continue
         rl_no_found = False
@@ -158,7 +160,7 @@ def get_pr_titles(gitLogs):
         if not body.endswith("."):
             body = body + "."
         if not pr["merged_by"]:
-            print("\n***ERROR***: No merge_by found for PR " + pr_num + "\n")
+            print(("\n***ERROR***: No merge_by found for PR " + pr_num + "\n"))
             error_count += 1
             continue
 
@@ -169,17 +171,17 @@ def get_pr_titles(gitLogs):
         print(detail)
         #if no RL label
         if not rl_no_found and not rl_yes_found:
-            print("Release notes label missing for " + pr_num)
+            print(("Release notes label missing for " + pr_num))
             langs_pr["nolabel"].append(detail)
         elif rl_yes_found and not lang_found:
-            print("Lang label missing for " + pr_num)
+            print(("Lang label missing for " + pr_num))
             langs_pr["nolang"].append(detail)
         elif rl_no_found:
-            print("'Release notes:no' found for " + pr_num)
+            print(("'Release notes:no' found for " + pr_num))
             langs_pr["notinrel"].append(detail)
         elif rl_yes_found:
-            print("'Release notes:yes' found for " + pr_num + " with lang " +
-                  lang)
+            print(("'Release notes:yes' found for " + pr_num + " with lang " +
+                   lang))
             langs_pr["inrel"].append(detail)
             langs_pr[lang].append(prline)
 
@@ -356,7 +358,7 @@ def main():
     write_draft(langs_pr, file, version, date)
     file.truncate()
     file.close()
-    print("\nDraft notes written to " + filename)
+    print(("\nDraft notes written to " + filename))
 
     filename = os.path.abspath(rel_file)
     if os.path.exists(filename):
@@ -368,7 +370,7 @@ def main():
     write_rel_notes(langs_pr, file, version, name)
     file.truncate()
     file.close()
-    print("\nRelease notes written to " + filename)
+    print(("\nRelease notes written to " + filename))
     if error_count > 0:
         print("\n\n*** Errors were encountered. See log. *********\n")
 

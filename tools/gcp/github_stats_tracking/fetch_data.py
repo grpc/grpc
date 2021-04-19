@@ -24,7 +24,7 @@ def get_stats_from_github():
     # Please set the access token properly before deploying.
     assert ACCESS_TOKEN
     g = Github(ACCESS_TOKEN)
-    print g.rate_limiting
+    print(g.rate_limiting)
     repo = g.get_repo('grpc/grpc')
 
     LABEL_LANG = set(label for label in repo.get_labels()
@@ -53,15 +53,18 @@ def get_stats_from_github():
 
     lang_to_stats = {}
     for lang in LABEL_LANG:
-        lang_bugs = filter(lambda bug: lang in bug.labels, total_bugs)
-        closed_bugs = filter(lambda bug: bug.state == 'closed', lang_bugs)
-        open_bugs = filter(lambda bug: bug.state == 'open', lang_bugs)
-        open_p0_bugs = filter(lambda bug: LABEL_PRIORITY_P0 in bug.labels,
-                              open_bugs)
-        open_p1_bugs = filter(lambda bug: LABEL_PRIORITY_P1 in bug.labels,
-                              open_bugs)
-        open_p2_bugs = filter(lambda bug: LABEL_PRIORITY_P2 in bug.labels,
-                              open_bugs)
+        lang_bugs = [bug for bug in total_bugs if lang in bug.labels]
+        closed_bugs = [bug for bug in lang_bugs if bug.state == 'closed']
+        open_bugs = [bug for bug in lang_bugs if bug.state == 'open']
+        open_p0_bugs = [
+            bug for bug in open_bugs if LABEL_PRIORITY_P0 in bug.labels
+        ]
+        open_p1_bugs = [
+            bug for bug in open_bugs if LABEL_PRIORITY_P1 in bug.labels
+        ]
+        open_p2_bugs = [
+            bug for bug in open_bugs if LABEL_PRIORITY_P2 in bug.labels
+        ]
         lang_to_stats[lang] = [
             len(lang_bugs),
             len(closed_bugs),
@@ -83,7 +86,7 @@ def insert_stats_to_db(untriaged_open_issues, lang_to_stats):
     table_ref = dataset_ref.table('bug_stats')
     table = client.get_table(table_ref)
     rows = []
-    for lang, stats in lang_to_stats.iteritems():
+    for lang, stats in lang_to_stats.items():
         rows.append((timestamp, lang.name[5:]) + tuple(stats))
     errors = client.insert_rows(table, rows)
 

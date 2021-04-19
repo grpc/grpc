@@ -35,13 +35,13 @@ import dockerjob
 import jobset
 
 _IMAGE_BUILDER = 'tools/run_tests/dockerize/build_interop_image.sh'
-_LANGUAGES = client_matrix.LANG_RUNTIME_MATRIX.keys()
+_LANGUAGES = list(client_matrix.LANG_RUNTIME_MATRIX.keys())
 # All gRPC release tags, flattened, deduped and sorted.
 _RELEASES = sorted(
     list(
         set(release
-            for release_dict in client_matrix.LANG_RELEASE_MATRIX.values()
-            for release in release_dict.keys())))
+            for release_dict in list(client_matrix.LANG_RELEASE_MATRIX.values())
+            for release in list(release_dict.keys()))))
 
 # Destination directory inside docker image to keep extra info from build time.
 _BUILD_INFO = '/var/local/build_info'

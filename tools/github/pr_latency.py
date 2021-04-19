@@ -34,7 +34,7 @@ from __future__ import print_function
 import json
 import logging
 import pprint
-import urllib2
+import urllib.request, urllib.error, urllib.parse
 
 from datetime import datetime, timedelta
 
@@ -45,10 +45,10 @@ COMMITS = 'https://api.github.com/repos/grpc/grpc/pulls/{pr_number}/commits'
 
 
 def gh(url):
-    request = urllib2.Request(url)
+    request = urllib.request.Request(url)
     if TOKEN:
         request.add_header('Authorization', 'token {}'.format(TOKEN))
-    response = urllib2.urlopen(request)
+    response = urllib.request.urlopen(request)
     return response.read()
 
 
