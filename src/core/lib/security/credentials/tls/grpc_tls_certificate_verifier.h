@@ -33,25 +33,29 @@
 
 namespace grpc_core {
 
-// An internal representation of grpc_tls_custom_verification_check_request.
-// Because |request| is the first field in this struct, we can pass the address
-// of |request| to the external verifier, and cast it back to the original
-// CertificateVerificationRequest struct when we get the callback.
-struct CertificateVerificationRequest {
-  CertificateVerificationRequest();
+// The abstract class of a pending request.
+class PendingVerifierRequest {
+ public:
+  PendingVerifierRequest(grpc_closure* on_peer_checked, tsi_peer peer);
 
-  explicit CertificateVerificationRequest(
-      RefCountedPtr<grpc_security_connector> sc);
+  ~PendingVerifierRequest();
 
-  ~CertificateVerificationRequest();
+  // Starts the synchronous or asynchronous verification.
+  virtual void Start() = 0;
 
-  // public request struct.
-  grpc_tls_custom_verification_check_request request;
-  // Pointers kept for internal use only.
-  // The security connector to which this request is attached. This is to make
-  // sure that  a ref to the security connector is held until this request is
-  // complete.
-  RefCountedPtr<grpc_security_connector> security_connector;
+  // The following functions will be invoked directly in ctor and dtor. They are
+  // exposed to be used in some unit tests.
+  static void PendingVerifierRequestInit(
+      grpc_tls_custom_verification_check_request* request);
+  static void PendingVerifierRequestDestroy(
+      grpc_tls_custom_verification_check_request* request);
+
+ protected:
+  grpc_tls_custom_verification_check_request request_;
+  grpc_closure* on_peer_checked_;
+
+ private:
+  tsi_peer peer_;
 };
 
 }  // namespace grpc_core
@@ -68,14 +72,12 @@ struct grpc_tls_certificate_verifier
   // invoke the callback after the final verification results are populated.
   // Otherwise, populate the results synchronously and return true.
   // The caller is expected to populate verification results by setting request.
-  virtual bool Verify(
-      grpc_core::CertificateVerificationRequest* internal_request,
-      std::function<void()> callback) = 0;
+  virtual bool Verify(grpc_tls_custom_verification_check_request* request,
+                      std::function<void()> callback) = 0;
   // Operations that will be performed when a request is cancelled.
   // This is only needed when in async mode.
   // TODO(ZhenLian): find out the place to invoke this...
-  virtual void Cancel(
-      grpc_core::CertificateVerificationRequest* internal_request) = 0;
+  virtual void Cancel(grpc_tls_custom_verification_check_request* request) = 0;
 };
 
 namespace grpc_core {
@@ -94,12 +96,11 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
     }
   }
 
-  bool Verify(CertificateVerificationRequest* internal_request,
+  bool Verify(grpc_tls_custom_verification_check_request* request,
               std::function<void()> callback) override;
 
-  void Cancel(CertificateVerificationRequest* internal_request) override {
-    external_verifier_->cancel(external_verifier_->user_data,
-                               &internal_request->request);
+  void Cancel(grpc_tls_custom_verification_check_request* request) override {
+    external_verifier_->cancel(external_verifier_->user_data, request);
   }
 
  private:
@@ -110,15 +111,16 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
   // Guards members below.
   Mutex mu_;
   // stores each check request and its corresponding callback function.
-  std::map<CertificateVerificationRequest*, std::function<void()>> request_map_;
+  std::map<grpc_tls_custom_verification_check_request*, std::function<void()>>
+      request_map_;
 };
 
 // An internal verifier that will perform hostname verification check.
 class HostNameCertificateVerifier : public grpc_tls_certificate_verifier {
  public:
-  bool Verify(CertificateVerificationRequest* internal_request,
+  bool Verify(grpc_tls_custom_verification_check_request* request,
               std::function<void()> callback) override;
-  void Cancel(CertificateVerificationRequest* request) override {}
+  void Cancel(grpc_tls_custom_verification_check_request* request) override {}
 };
 
 }  // namespace grpc_core

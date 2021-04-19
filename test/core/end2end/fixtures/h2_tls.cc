@@ -58,9 +58,9 @@ struct SecurityPrimitives {
 
 struct fullstack_secure_fixture_data {
   ~fullstack_secure_fixture_data() {
-    for (size_t ind = 0; ind < thd_list.size(); ind++) {
+    /*for (size_t ind = 0; ind < thd_list.size(); ind++) {
       thd_list[ind].Join();
-    }
+    }*/
     grpc_tls_certificate_provider_release(client_provider);
     grpc_tls_certificate_provider_release(server_provider);
     grpc_tls_certificate_verifier_release(client_verifier);
@@ -144,9 +144,10 @@ class AsyncExternalVerifier {
     thread_args->request = request;
     thread_args->callback = callback;
     thread_args->callback_arg = callback_arg;
-    ffd->thd_list.push_back(grpc_core::Thread("AsyncExternalVerifierVerify",
-                                              &AsyncExternalVerifierVerifyCb,
-                                              static_cast<void*>(thread_args)));
+    ffd->thd_list.push_back(grpc_core::Thread(
+        "AsyncExternalVerifierVerify", &AsyncExternalVerifierVerifyCb,
+        static_cast<void*>(thread_args), nullptr,
+        grpc_core::Thread::Options().set_joinable(false)));
     ffd->thd_list[ffd->thd_list.size() - 1].Start();
     return false;  // Asynchronous call
   }

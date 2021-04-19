@@ -167,22 +167,6 @@ void AsyncExternalVerifier::AsyncExternalVerifierVerifyCb(void* args) {
   delete thread_args;
 }
 
-/*void AsyncExternalVerifier::AsyncExternalVerifierBadVerifyCb(void* args) {
-  ThreadArgs* thread_args = static_cast<ThreadArgs*>(args);
-  grpc_tls_custom_verification_check_request* request = thread_args->request;
-  grpc_tls_on_custom_verification_check_done_cb callback =
-      thread_args->callback;
-  void* callback_arg = thread_args->callback_arg;
-  request->status = GRPC_STATUS_UNAUTHENTICATED;
-  request->error_details = gpr_strdup("AsyncExternalVerifierBadVerify failed");
-  callback(request, callback_arg);
-  // Now we can notify the main testing thread that the thread object is set.
-  if (thread_args->event_ptr != nullptr) {
-    gpr_event_set(thread_args->event_ptr, reinterpret_cast<void*>(1));
-  }
-  delete thread_args;
-}*/
-
 }  // namespace testing
 
 }  // namespace grpc_core

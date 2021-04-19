@@ -104,11 +104,43 @@ class TlsChannelSecurityConnector final
     TlsChannelSecurityConnector* security_connector_ = nullptr;
   };
 
+  // Use "new" to create a new instance, and no need to delete it later, since
+  // it will be self-destroyed in |OnVerifyDone|.
+  class ChannelPendingVerifierRequest final : public PendingVerifierRequest {
+   public:
+    ChannelPendingVerifierRequest(
+        RefCountedPtr<TlsChannelSecurityConnector> security_connector,
+        grpc_closure* on_peer_checked, tsi_peer peer, const char* target_name)
+        : PendingVerifierRequest(on_peer_checked, std::move(peer)),
+          security_connector_(security_connector) {
+      this->request_.target_name = gpr_strdup(target_name);
+    }
+
+    ~ChannelPendingVerifierRequest() {}
+
+    void Start() {
+      grpc_tls_certificate_verifier* verifier =
+          security_connector_->options_->certificate_verifier();
+      bool is_done =
+          verifier->Verify(&request_, [this]() { OnVerifyDone(true); });
+      if (is_done) OnVerifyDone(false);
+    }
+
+   private:
+    void OnVerifyDone(bool run_callback_inline);
+    // The request will keep a reference of the security connector to make sure
+    // it won't be destroyed while the request is still ongoing.
+    RefCountedPtr<TlsChannelSecurityConnector> security_connector_;
+  };
+
   // Updates |client_handshaker_factory_| when the certificates that
   // |certificate_watcher_| is watching get updated.
   grpc_security_status UpdateHandshakerFactoryLocked();
 
   grpc_core::Mutex mu_;
+  // We need a separate mutex for |pending_verifier_requests_|, otherwise there
+  // would be deadlock errors.
+  grpc_core::Mutex verifier_request_map_mu_;
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
   grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
       certificate_watcher_ = nullptr;
@@ -118,6 +150,8 @@ class TlsChannelSecurityConnector final
   tsi_ssl_session_cache* ssl_session_cache_ = nullptr;
   absl::optional<absl::string_view> pem_root_certs_;
   absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pair_list_;
+  std::map<grpc_closure* /*on_peer_checked*/, PendingVerifierRequest*>
+      pending_verifier_requests_;
 };
 
 // Server security connector using TLS as transport security protocol.
@@ -180,11 +214,41 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
     TlsServerSecurityConnector* security_connector_ = nullptr;
   };
 
+  // Use "new" to create a new instance, and no need to delete it later, since
+  // it will be self-destroyed in |OnVerifyDone|.
+  class ServerPendingVerifierRequest final : public PendingVerifierRequest {
+   public:
+    ServerPendingVerifierRequest(
+        RefCountedPtr<TlsServerSecurityConnector> security_connector,
+        grpc_closure* on_peer_checked, tsi_peer peer)
+        : PendingVerifierRequest(on_peer_checked, std::move(peer)),
+          security_connector_(security_connector) {}
+
+    ~ServerPendingVerifierRequest() {}
+
+    void Start() {
+      grpc_tls_certificate_verifier* verifier =
+          security_connector_->options_->certificate_verifier();
+      bool is_done =
+          verifier->Verify(&request_, [this]() { OnVerifyDone(true); });
+      if (is_done) OnVerifyDone(false);
+    }
+
+   private:
+    void OnVerifyDone(bool run_callback_inline);
+    // The request will keep a reference of the security connector to make sure
+    // it won't be destroyed while the request is still ongoing.
+    RefCountedPtr<TlsServerSecurityConnector> security_connector_;
+  };
+
   // Updates |server_handshaker_factory_| when the certificates that
   // |certificate_watcher_| is watching get updated.
   grpc_security_status UpdateHandshakerFactoryLocked();
 
   grpc_core::Mutex mu_;
+  // We need a separate mutex for |pending_verifier_requests_|, otherwise there
+  // would be deadlock errors.
+  grpc_core::Mutex verifier_request_map_mu_;
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
   grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
       certificate_watcher_ = nullptr;
@@ -192,6 +256,8 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
   absl::optional<absl::string_view> pem_root_certs_;
   absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pair_list_;
+  std::map<grpc_closure* /*on_peer_checked*/, PendingVerifierRequest*>
+      pending_verifier_requests_;
 };
 
 }  // namespace grpc_core

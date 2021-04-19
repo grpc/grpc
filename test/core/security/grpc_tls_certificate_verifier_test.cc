@@ -39,24 +39,31 @@ namespace testing {
 
 class GrpcTlsCertificateVerifierTest : public ::testing::Test {
  protected:
-  CertificateVerificationRequest internal_request_;
+  void SetUp() override {
+    PendingVerifierRequest::PendingVerifierRequestInit(&request_);
+  }
+
+  void TearDown() override {
+    PendingVerifierRequest::PendingVerifierRequestDestroy(&request_);
+  }
+
+  grpc_tls_custom_verification_check_request request_;
   HostNameCertificateVerifier hostname_certificate_verifier_;
 };
 
 TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierSucceeds) {
   auto* sync_verifier = new SyncExternalVerifier(true);
   ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
-  core_external_verifier.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_OK);
+  core_external_verifier.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_OK);
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierFails) {
   auto* sync_verifier = new SyncExternalVerifier(false);
   ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
-  core_external_verifier.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_UNAUTHENTICATED);
-  EXPECT_STREQ(internal_request_.request.error_details,
-               "SyncExternalVerifierBadVerify failed");
+  core_external_verifier.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);
+  EXPECT_STREQ(request_.error_details, "SyncExternalVerifierBadVerify failed");
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierSucceeds) {
@@ -65,9 +72,9 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierSucceeds) {
   auto* async_verifier = new AsyncExternalVerifier(true, &event);
   auto* core_external_verifier =
       new ExternalCertificateVerifier(async_verifier->base());
-  core_external_verifier->Verify(&internal_request_, [this] {
+  core_external_verifier->Verify(&request_, [this] {
     gpr_log(GPR_INFO, "Callback is invoked.");
-    EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_OK);
+    EXPECT_EQ(request_.status, GRPC_STATUS_OK);
   });
   // Wait for the async callback to be completed.
   gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
@@ -81,10 +88,10 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
   auto* async_verifier = new AsyncExternalVerifier(false, &event);
   auto* core_external_verifier =
       new ExternalCertificateVerifier(async_verifier->base());
-  core_external_verifier->Verify(&internal_request_, [this] {
+  core_external_verifier->Verify(&request_, [this] {
     gpr_log(GPR_INFO, "Callback is invoked.");
-    EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_UNAUTHENTICATED);
-    EXPECT_STREQ(internal_request_.request.error_details,
+    EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);
+    EXPECT_STREQ(request_.error_details,
                  "AsyncExternalVerifierBadVerify failed");
   });
   // Wait for the async callback to be completed.
@@ -94,113 +101,101 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierNullTargetName) {
-  hostname_certificate_verifier_.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_UNAUTHENTICATED);
-  EXPECT_STREQ(internal_request_.request.error_details,
-               "Target name is not specified.");
+  hostname_certificate_verifier_.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);
+  EXPECT_STREQ(request_.error_details, "Target name is not specified.");
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierInvalidTargetName) {
-  internal_request_.request.target_name = gpr_strdup("[foo.com@443");
-  hostname_certificate_verifier_.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_UNAUTHENTICATED);
-  EXPECT_STREQ(internal_request_.request.error_details,
-               "Failed to split hostname and port.");
+  request_.target_name = gpr_strdup("[foo.com@443");
+  hostname_certificate_verifier_.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);
+  EXPECT_STREQ(request_.error_details, "Failed to split hostname and port.");
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierDNSExactCheckSucceeds) {
-  internal_request_.request.target_name = gpr_strdup("foo.com:443");
-  internal_request_.request.peer_info.san_names.dns_names = new char*[1];
-  internal_request_.request.peer_info.san_names.dns_names[0] =
-      gpr_strdup("foo.com");
-  internal_request_.request.peer_info.san_names.dns_names_size = 1;
-  hostname_certificate_verifier_.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_OK);
+  request_.target_name = gpr_strdup("foo.com:443");
+  request_.peer_info.san_names.dns_names = new char*[1];
+  request_.peer_info.san_names.dns_names[0] = gpr_strdup("foo.com");
+  request_.peer_info.san_names.dns_names_size = 1;
+  hostname_certificate_verifier_.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_OK);
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest,
        HostnameVerifierDNSWildcardCheckSucceeds) {
-  internal_request_.request.target_name = gpr_strdup("foo.bar.com:443");
-  internal_request_.request.peer_info.san_names.dns_names = new char*[1];
-  internal_request_.request.peer_info.san_names.dns_names[0] =
-      gpr_strdup("*.bar.com");
-  internal_request_.request.peer_info.san_names.dns_names_size = 1;
-  hostname_certificate_verifier_.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_OK);
+  request_.target_name = gpr_strdup("foo.bar.com:443");
+  request_.peer_info.san_names.dns_names = new char*[1];
+  request_.peer_info.san_names.dns_names[0] = gpr_strdup("*.bar.com");
+  request_.peer_info.san_names.dns_names_size = 1;
+  hostname_certificate_verifier_.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_OK);
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest,
        HostnameVerifierDNSWildcardCaseInsensitiveCheckSucceeds) {
-  internal_request_.request.target_name = gpr_strdup("fOo.bar.cOm:443");
-  internal_request_.request.peer_info.san_names.dns_names = new char*[1];
-  internal_request_.request.peer_info.san_names.dns_names[0] =
-      gpr_strdup("*.BaR.Com");
-  internal_request_.request.peer_info.san_names.dns_names_size = 1;
-  hostname_certificate_verifier_.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_OK);
+  request_.target_name = gpr_strdup("fOo.bar.cOm:443");
+  request_.peer_info.san_names.dns_names = new char*[1];
+  request_.peer_info.san_names.dns_names[0] = gpr_strdup("*.BaR.Com");
+  request_.peer_info.san_names.dns_names_size = 1;
+  hostname_certificate_verifier_.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_OK);
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest,
        HostnameVerifierDNSTopWildcardCheckFails) {
-  internal_request_.request.target_name = gpr_strdup("foo.com:443");
-  internal_request_.request.peer_info.san_names.dns_names = new char*[1];
-  internal_request_.request.peer_info.san_names.dns_names[0] = gpr_strdup("*.");
-  internal_request_.request.peer_info.san_names.dns_names_size = 1;
-  hostname_certificate_verifier_.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_UNAUTHENTICATED);
-  EXPECT_STREQ(internal_request_.request.error_details,
-               "Hostname Verification Check failed.");
+  request_.target_name = gpr_strdup("foo.com:443");
+  request_.peer_info.san_names.dns_names = new char*[1];
+  request_.peer_info.san_names.dns_names[0] = gpr_strdup("*.");
+  request_.peer_info.san_names.dns_names_size = 1;
+  hostname_certificate_verifier_.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);
+  EXPECT_STREQ(request_.error_details, "Hostname Verification Check failed.");
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierDNSExactCheckFails) {
-  internal_request_.request.target_name = gpr_strdup("foo.com:443");
-  internal_request_.request.peer_info.san_names.dns_names = new char*[1];
-  internal_request_.request.peer_info.san_names.dns_names[0] =
-      gpr_strdup("bar.com");
-  internal_request_.request.peer_info.san_names.dns_names_size = 1;
-  hostname_certificate_verifier_.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_UNAUTHENTICATED);
-  EXPECT_STREQ(internal_request_.request.error_details,
-               "Hostname Verification Check failed.");
+  request_.target_name = gpr_strdup("foo.com:443");
+  request_.peer_info.san_names.dns_names = new char*[1];
+  request_.peer_info.san_names.dns_names[0] = gpr_strdup("bar.com");
+  request_.peer_info.san_names.dns_names_size = 1;
+  hostname_certificate_verifier_.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);
+  EXPECT_STREQ(request_.error_details, "Hostname Verification Check failed.");
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierIpCheckSucceeds) {
-  internal_request_.request.target_name = gpr_strdup("192.168.0.1:443");
-  internal_request_.request.peer_info.san_names.ip_names = new char*[1];
-  internal_request_.request.peer_info.san_names.ip_names[0] =
-      gpr_strdup("192.168.0.1");
-  internal_request_.request.peer_info.san_names.ip_names_size = 1;
-  hostname_certificate_verifier_.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_OK);
+  request_.target_name = gpr_strdup("192.168.0.1:443");
+  request_.peer_info.san_names.ip_names = new char*[1];
+  request_.peer_info.san_names.ip_names[0] = gpr_strdup("192.168.0.1");
+  request_.peer_info.san_names.ip_names_size = 1;
+  hostname_certificate_verifier_.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_OK);
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierIpCheckFails) {
-  internal_request_.request.target_name = gpr_strdup("192.168.0.1:443");
-  internal_request_.request.peer_info.san_names.ip_names = new char*[1];
-  internal_request_.request.peer_info.san_names.ip_names[0] =
-      gpr_strdup("192.168.1.1");
-  internal_request_.request.peer_info.san_names.ip_names_size = 1;
-  hostname_certificate_verifier_.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_UNAUTHENTICATED);
-  EXPECT_STREQ(internal_request_.request.error_details,
-               "Hostname Verification Check failed.");
+  request_.target_name = gpr_strdup("192.168.0.1:443");
+  request_.peer_info.san_names.ip_names = new char*[1];
+  request_.peer_info.san_names.ip_names[0] = gpr_strdup("192.168.1.1");
+  request_.peer_info.san_names.ip_names_size = 1;
+  hostname_certificate_verifier_.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);
+  EXPECT_STREQ(request_.error_details, "Hostname Verification Check failed.");
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest,
        HostnameVerifierCommonNameCheckSucceeds) {
-  internal_request_.request.target_name = gpr_strdup("foo.com:443");
-  internal_request_.request.peer_info.common_name = gpr_strdup("foo.com");
-  hostname_certificate_verifier_.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_OK);
+  request_.target_name = gpr_strdup("foo.com:443");
+  request_.peer_info.common_name = gpr_strdup("foo.com");
+  hostname_certificate_verifier_.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_OK);
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierCommonNameCheckFails) {
-  internal_request_.request.target_name = gpr_strdup("foo.com:443");
-  internal_request_.request.peer_info.common_name = gpr_strdup("bar.com");
-  hostname_certificate_verifier_.Verify(&internal_request_, [] {});
-  EXPECT_EQ(internal_request_.request.status, GRPC_STATUS_UNAUTHENTICATED);
-  EXPECT_STREQ(internal_request_.request.error_details,
-               "Hostname Verification Check failed.");
+  request_.target_name = gpr_strdup("foo.com:443");
+  request_.peer_info.common_name = gpr_strdup("bar.com");
+  hostname_certificate_verifier_.Verify(&request_, [] {});
+  EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);
+  EXPECT_STREQ(request_.error_details, "Hostname Verification Check failed.");
 }
 
 }  // namespace testing
