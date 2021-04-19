@@ -142,7 +142,9 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   (void)s;
   (void)addr;
   (void)out_port;
-  return GRPC_ERROR_NONE;
+  EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
+                                  addr->len);
+  return absl_status_to_grpc_error(s->listener->Bind(ra));
 }
 
 static grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
