@@ -20,7 +20,7 @@ namespace grpc_core {
 
 TEST(StringMatcherTest, ExactMatchCaseSensitive) {
   auto string_matcher =
-      StringMatcher::Create(StringMatcher::Type::EXACT,
+      StringMatcher::Create(StringMatcher::Type::kExact,
                             /*matcher=*/"exact", /*case_sensitive=*/true);
   ASSERT_TRUE(string_matcher.ok());
   EXPECT_TRUE(string_matcher->Match("exact"));
@@ -30,7 +30,7 @@ TEST(StringMatcherTest, ExactMatchCaseSensitive) {
 
 TEST(StringMatcherTest, ExactMatchCaseInsensitive) {
   auto string_matcher =
-      StringMatcher::Create(StringMatcher::Type::EXACT,
+      StringMatcher::Create(StringMatcher::Type::kExact,
                             /*matcher=*/"exact", /*case_sensitive=*/false);
   ASSERT_TRUE(string_matcher.ok());
   EXPECT_TRUE(string_matcher->Match("Exact"));
@@ -38,7 +38,7 @@ TEST(StringMatcherTest, ExactMatchCaseInsensitive) {
 }
 
 TEST(StringMatcherTest, PrefixMatchCaseSensitive) {
-  auto string_matcher = StringMatcher::Create(StringMatcher::Type::PREFIX,
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kPrefix,
                                               /*matcher=*/"prefix",
                                               /*case_sensitive=*/true);
   ASSERT_TRUE(string_matcher.ok());
@@ -49,7 +49,7 @@ TEST(StringMatcherTest, PrefixMatchCaseSensitive) {
 }
 
 TEST(StringMatcherTest, PrefixMatchCaseInsensitive) {
-  auto string_matcher = StringMatcher::Create(StringMatcher::Type::PREFIX,
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kPrefix,
                                               /*matcher=*/"prefix",
                                               /*case_sensitive=*/false);
   ASSERT_TRUE(string_matcher.ok());
@@ -59,7 +59,7 @@ TEST(StringMatcherTest, PrefixMatchCaseInsensitive) {
 }
 
 TEST(StringMatcherTest, SuffixMatchCaseSensitive) {
-  auto string_matcher = StringMatcher::Create(StringMatcher::Type::SUFFIX,
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kSuffix,
                                               /*matcher=*/"suffix",
                                               /*case_sensitive=*/true);
   ASSERT_TRUE(string_matcher.ok());
@@ -70,7 +70,7 @@ TEST(StringMatcherTest, SuffixMatchCaseSensitive) {
 }
 
 TEST(StringMatcherTest, SuffixMatchCaseInSensitive) {
-  auto string_matcher = StringMatcher::Create(StringMatcher::Type::SUFFIX,
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kSuffix,
                                               /*matcher=*/"suffix",
                                               /*case_sensitive=*/false);
   ASSERT_TRUE(string_matcher.ok());
@@ -80,7 +80,7 @@ TEST(StringMatcherTest, SuffixMatchCaseInSensitive) {
 }
 
 TEST(StringMatcherTest, InvalidRegex) {
-  auto string_matcher = StringMatcher::Create(StringMatcher::Type::SAFE_REGEX,
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kSafeRegex,
                                               /*matcher=*/"a[b-a]",
                                               /*case_sensitive=*/true);
   EXPECT_FALSE(string_matcher.ok());
@@ -90,7 +90,7 @@ TEST(StringMatcherTest, InvalidRegex) {
 }
 
 TEST(StringMatcherTest, SafeRegexMatchCaseSensitive) {
-  auto string_matcher = StringMatcher::Create(StringMatcher::Type::SAFE_REGEX,
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kSafeRegex,
                                               /*matcher=*/"regex.*",
                                               /*case_sensitive=*/true);
   ASSERT_TRUE(string_matcher.ok());
@@ -101,7 +101,7 @@ TEST(StringMatcherTest, SafeRegexMatchCaseSensitive) {
 }
 
 TEST(StringMatcherTest, SafeRegexMatchCaseInSensitive) {
-  auto string_matcher = StringMatcher::Create(StringMatcher::Type::SAFE_REGEX,
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kSafeRegex,
                                               /*matcher=*/"regex.*",
                                               /*case_sensitive=*/false);
   ASSERT_TRUE(string_matcher.ok());
@@ -112,7 +112,7 @@ TEST(StringMatcherTest, SafeRegexMatchCaseInSensitive) {
 }
 
 TEST(StringMatcherTest, ContainsMatchCaseSensitive) {
-  auto string_matcher = StringMatcher::Create(StringMatcher::Type::CONTAINS,
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kContains,
                                               /*matcher=*/"contains",
                                               /*case_sensitive=*/true);
   ASSERT_TRUE(string_matcher.ok());
@@ -123,7 +123,7 @@ TEST(StringMatcherTest, ContainsMatchCaseSensitive) {
 }
 
 TEST(StringMatcherTest, ContainsMatchCaseInSensitive) {
-  auto string_matcher = StringMatcher::Create(StringMatcher::Type::CONTAINS,
+  auto string_matcher = StringMatcher::Create(StringMatcher::Type::kContains,
                                               /*matcher=*/"contains",
                                               /*case_sensitive=*/false);
   ASSERT_TRUE(string_matcher.ok());
@@ -134,7 +134,7 @@ TEST(StringMatcherTest, ContainsMatchCaseInSensitive) {
 
 TEST(HeaderMatcherTest, StringMatcher) {
   auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::EXACT,
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kExact,
                             /*matcher=*/"exact");
   ASSERT_TRUE(header_matcher.ok());
   EXPECT_TRUE(header_matcher->Match("exact"));
@@ -144,7 +144,7 @@ TEST(HeaderMatcherTest, StringMatcher) {
 
 TEST(HeaderMatcherTest, StringMatcherWithInvertMatch) {
   auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::EXACT,
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kExact,
                             /*matcher=*/"exact",
                             /*range_start=*/0, /*range_end=*/0,
                             /*present_match=*/false, /*invert_match=*/true);
@@ -156,7 +156,7 @@ TEST(HeaderMatcherTest, StringMatcherWithInvertMatch) {
 
 TEST(HeaderMatcherTest, InvalidRegex) {
   auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::SAFE_REGEX,
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kSafeRegex,
                             /*matcher=*/"a[b-a]",
                             /*range_start=*/0, /*range_end=*/0,
                             /*present_match=*/false, /*invert_match=*/true);
@@ -168,7 +168,7 @@ TEST(HeaderMatcherTest, InvalidRegex) {
 
 TEST(HeaderMatcherTest, RangeMatcherValidRange) {
   auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::RANGE,
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kRange,
                             /*matcher=*/"", /*range_start=*/10,
                             /*range_end*/ 20);
   ASSERT_TRUE(header_matcher.ok());
@@ -180,7 +180,7 @@ TEST(HeaderMatcherTest, RangeMatcherValidRange) {
 
 TEST(HeaderMatcherTest, RangeMatcherInvalidRange) {
   auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::RANGE,
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kRange,
                             /*matcher=*/"", /*range_start=*/20,
                             /*range_end*/ 10);
   EXPECT_FALSE(header_matcher.ok());
@@ -192,7 +192,7 @@ TEST(HeaderMatcherTest, RangeMatcherInvalidRange) {
 
 TEST(HeaderMatcherTest, PresentMatcherTrue) {
   auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::PRESENT,
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kPresent,
                             /*matcher=*/"", /*range_start=*/0,
                             /*range_end=*/0, /*present_match=*/true);
   ASSERT_TRUE(header_matcher.ok());
@@ -202,7 +202,7 @@ TEST(HeaderMatcherTest, PresentMatcherTrue) {
 
 TEST(HeaderMatcherTest, PresentMatcherFalse) {
   auto header_matcher =
-      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::PRESENT,
+      HeaderMatcher::Create(/*name=*/"key", HeaderMatcher::Type::kPresent,
                             /*matcher=*/"", /*range_start=*/0,
                             /*range_end=*/0, /*present_match=*/false);
   ASSERT_TRUE(header_matcher.ok());
