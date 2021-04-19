@@ -1633,7 +1633,7 @@ size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
   size_t num_rpcs =
       ceil(p * (1 - p) * 3.89 * 3.89 / error_tolerance / error_tolerance);
   gpr_log(GPR_INFO,
-          "sending %" PRIuPTR " RPCs for percentage=%.3f error_tolerance=%.3f",
+          "Sending %" PRIuPTR " RPCs for percentage=%.3f error_tolerance=%.3f",
           num_rpcs, p, error_tolerance);
   return num_rpcs;
 }
@@ -10144,7 +10144,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   const uint32_t kFixedDelaySeconds = 100;
-  const uint32_t kRpcTimeoutMilliseconds = 2000;  // 2s
+  const uint32_t kRpcTimeoutMilliseconds = 4000;  // 4s
   const uint32_t kDelayPercentagePerHundred = 50;
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.05;
@@ -10186,7 +10186,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   const uint32_t kFixedDelayMilliseconds = 100000;  // 100 seconds
-  const uint32_t kRpcTimeoutMilliseconds = 2000;    // 2s
+  const uint32_t kRpcTimeoutMilliseconds = 4000;    // 4s
   const uint32_t kDelayPercentageCap = 100;
   const uint32_t kDelayPercentage = 50;
   const double kDelayRate = kDelayPercentage / 100.0;
@@ -10330,7 +10330,7 @@ TEST_P(FaultInjectionTest,
 TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   const uint32_t kMaxFault = 10;
   const uint32_t kNumRpcs = 30;  // kNumRpcs should be bigger than kMaxFault
-  const uint32_t kRpcTimeoutMs = 1000;     // 1 seconds
+  const uint32_t kRpcTimeoutMs = 4000;     // 4 seconds
   const uint32_t kLongDelaySeconds = 100;  // 100 seconds
   const uint32_t kAlwaysDelayPercentage = 100;
   SetNextResolution({});
