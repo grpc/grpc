@@ -15,6 +15,7 @@
 """Run xDS integration tests on GCP using Traffic Director."""
 
 import argparse
+import datetime
 import googleapiclient.discovery
 import grpc
 import json
@@ -1819,13 +1820,16 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
 
 
 def test_csds(gcp, original_backend_service, instance_group, server_uri):
+    test_csds_timeout_s = datetime.timedelta(minutes=5).total_seconds()
+    sleep_interval_between_attempts_s = datetime.timedelta(
+        seconds=2).total_seconds()
     logger.info('Running test_csds')
 
     logger.info('waiting for original backends to become healthy')
     wait_for_healthy_backends(gcp, original_backend_service, instance_group)
 
     # Test case timeout: 5 minutes
-    deadline = time.time() + 300
+    deadline = time.time() + test_csds_timeout_s
     cnt = 0
     while time.time() <= deadline:
         client_config = get_client_xds_config_dump()
@@ -1881,7 +1885,8 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                             ok = False
                         else:
                             seen.add('eds')
-                if len(seen) != 4:
+                want = {'lds', 'rds', 'cds', 'eds'}
+                if seen == want:
                     logger.info('Incomplete xDS config dump, seen=%s', seen)
                     ok = False
             except:
@@ -1894,7 +1899,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                     return
         logger.info('test_csds attempt %d failed', cnt)
         # Give the client some time to fetch xDS resources
-        time.sleep(2)
+        time.sleep(sleep_interval_between_attempts_s)
         cnt += 1
 
     raise RuntimeError('failed to receive valid xDS config')
