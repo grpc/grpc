@@ -30,6 +30,10 @@ extern grpc_pollset_vtable grpc_event_engine_pollset_vtable;
 extern grpc_pollset_set_vtable grpc_event_engine_pollset_set_vtable;
 extern grpc_address_resolver_vtable grpc_event_engine_resolver_vtable;
 
+namespace {
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+}  // namespace
+
 // The default EventEngine is lazily instantiated via
 // `grpc_event_engine::experimental::GetDefaultEventEngine()`
 static void iomgr_platform_init(void) {}
@@ -39,7 +43,9 @@ static void iomgr_platform_flush(void) {
 }
 
 static void iomgr_platform_shutdown(void) {
-  // TODO(hork): if default event engine, EventEngine::Shutdown();
+  // TODO(hork): only do this is the default has been instantiated
+  // TODO(hork): log trace if shutdown failed. Is the status necessary?
+  GetDefaultEventEngine()->Shutdown();
 }
 
 static void iomgr_platform_shutdown_background_closure(void) {}
@@ -49,10 +55,7 @@ static bool iomgr_platform_is_any_background_poller_thread(void) {
 }
 
 static bool iomgr_platform_add_closure_to_background_poller(
-    grpc_closure* closure, grpc_error* error) {
-  (void)closure;
-  (void)error;
-  // TODO(hork): schedule the closure
+    grpc_closure* /* closure */, grpc_error* /* error */) {
   return false;
 }
 
