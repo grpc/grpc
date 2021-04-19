@@ -16,7 +16,7 @@
 
 #include "absl/memory/memory.h"
 
-#include "src/core/lib/security/authorization/authorization_engine.h"
+#include "src/core/lib/security/authorization/cel_authorization_engine.h"
 
 namespace grpc_core {
 
@@ -36,8 +36,8 @@ constexpr char kCertServerName[] = "cert_server_name";
 
 }  // namespace
 
-std::unique_ptr<AuthorizationEngine>
-AuthorizationEngine::CreateAuthorizationEngine(
+std::unique_ptr<CelAuthorizationEngine>
+CelAuthorizationEngine::CreateCelAuthorizationEngine(
     const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies) {
   if (rbac_policies.empty() || rbac_policies.size() > 2) {
     gpr_log(GPR_ERROR,
@@ -52,11 +52,11 @@ AuthorizationEngine::CreateAuthorizationEngine(
                          policy and one allow policy, in that order.");
     return nullptr;
   } else {
-    return absl::make_unique<AuthorizationEngine>(rbac_policies);
+    return absl::make_unique<CelAuthorizationEngine>(rbac_policies);
   }
 }
 
-AuthorizationEngine::AuthorizationEngine(
+CelAuthorizationEngine::CelAuthorizationEngine(
     const std::vector<envoy_config_rbac_v3_RBAC*>& rbac_policies) {
   for (const auto& rbac_policy : rbac_policies) {
     // Extract array of policies and store their condition fields in either
@@ -90,7 +90,7 @@ AuthorizationEngine::AuthorizationEngine(
   }
 }
 
-std::unique_ptr<mock_cel::Activation> AuthorizationEngine::CreateActivation(
+std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
     const EvaluateArgs& args) {
   std::unique_ptr<mock_cel::Activation> activation;
   for (const auto& elem : envoy_attributes_) {
