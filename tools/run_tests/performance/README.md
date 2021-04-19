@@ -325,9 +325,9 @@ $ loadtest_concat_yaml.py -i infile1.yaml infile2.yaml -o outfile.yaml
 
 The script [loadtest_template.py](./loadtest_template.py) generates a load test
 configuration template from a set of load test configurations. The source files
-may be load test configurations or load test templates. The generated
-template supports all languages supported in any of the input configurations
-or templates.
+may be load test configurations or load test configuration templates. The
+generated template supports all languages supported in any of the input
+configurations or templates.
 
 The example template in
 [loadtest_template_basic_template_all_languages.yaml](./templates/loadtest_template_basic_all_languages.yaml)
