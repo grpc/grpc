@@ -840,6 +840,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_cfstream.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_cfstream.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_uv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/endpoint_pair_windows.cc" role="src" />

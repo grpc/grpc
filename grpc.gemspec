@@ -860,6 +860,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/endpoint_cfstream.cc )
   s.files += %w( src/core/lib/iomgr/endpoint_cfstream.h )
   s.files += %w( src/core/lib/iomgr/endpoint_pair.h )
+  s.files += %w( src/core/lib/iomgr/endpoint_pair_event_engine.cc )
   s.files += %w( src/core/lib/iomgr/endpoint_pair_posix.cc )
   s.files += %w( src/core/lib/iomgr/endpoint_pair_uv.cc )
   s.files += %w( src/core/lib/iomgr/endpoint_pair_windows.cc )

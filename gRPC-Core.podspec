@@ -937,6 +937,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/endpoint_cfstream.cc',
                       'src/core/lib/iomgr/endpoint_cfstream.h',
                       'src/core/lib/iomgr/endpoint_pair.h',
+                      'src/core/lib/iomgr/endpoint_pair_event_engine.cc',
                       'src/core/lib/iomgr/endpoint_pair_posix.cc',
                       'src/core/lib/iomgr/endpoint_pair_uv.cc',
                       'src/core/lib/iomgr/endpoint_pair_windows.cc',
