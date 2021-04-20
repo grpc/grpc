@@ -157,11 +157,13 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_libuv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_event_engine.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc" role="src" />
@@ -863,6 +865,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/pollset.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/tcp.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/timer.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/util.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.cc" role="src" />
