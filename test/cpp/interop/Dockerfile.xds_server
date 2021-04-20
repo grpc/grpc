@@ -1,0 +1,15 @@
+FROM local/common:1
+
+WORKDIR /workdir
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN mkdir /artifacts
+
+COPY . .
+RUN tools/bazel build //test/cpp/interop:xds_interop_server
+RUN cp -rL /workdir/bazel-bin/test/cpp/interop/xds_interop_server /artifacts/
+
+FROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64bdb429e2354d58f5462750
+COPY --from=0 /artifacts ./
+
+ENTRYPOINT ["/xds_interop_server"]
