@@ -19,6 +19,7 @@
 
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/work_serializer.h"
 
 namespace {
 using ::grpc_event_engine::experimental::EventEngine;

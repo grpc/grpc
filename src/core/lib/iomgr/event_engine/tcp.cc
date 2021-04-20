@@ -85,7 +85,8 @@ static void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   (void)interested_parties;
   // TODO(hork): peer_string needs to be set to ResolvedAddress name
   grpc_event_engine_endpoint* ee_endpoint =
-      grpc_endpoint_create(channel_args, "UNIMPLEMENTED");
+      reinterpret_cast<grpc_event_engine_endpoint*>(
+          grpc_tcp_create(channel_args, "UNIMPLEMENTED"));
   *endpoint = &ee_endpoint->base;
   EventEngine::OnConnectCallback ee_on_connect =
       GrpcClosureToOnConnectCallback(on_connect, ee_endpoint);
@@ -226,5 +227,20 @@ grpc_tcp_server_vtable grpc_event_engine_tcp_server_vtable = {
     tcp_server_port_fd_count, tcp_server_port_fd,
     tcp_server_ref,           tcp_server_shutdown_starting_add,
     tcp_server_unref,         tcp_server_shutdown_listeners};
+
+// Methods that are expected to exist elsewhere in the codebase.
+
+struct grpc_fd {
+  int fd;
+};
+
+grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
+  return nullptr;
+}
+
+grpc_endpoint* grpc_tcp_client_create_from_fd(
+    grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str) {
+  return nullptr;
+}
 
 #endif

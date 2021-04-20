@@ -654,4 +654,8 @@ typedef unsigned __int64 uint64_t;
 #define __STDC_FORMAT_MACROS
 #endif
 
+#ifdef GRPC_EVENT_ENGINE_TEST
+#undef GPR_SUPPORT_CHANNELS_FROM_FD
+#endif  // GRPC_EVENT_ENGINE_TEST
+
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */

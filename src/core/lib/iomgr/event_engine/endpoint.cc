@@ -107,8 +107,8 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
     endpoint_get_fd,
     endpoint_can_track_err};
 
-grpc_event_engine_endpoint* grpc_endpoint_create(
-    const grpc_channel_args* channel_args, absl::string_view peer_string) {
+grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
+                               absl::string_view peer_string) {
   auto endpoint = new grpc_event_engine_endpoint();
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
   endpoint->peer_string = std::string(peer_string);
@@ -126,7 +126,7 @@ grpc_event_engine_endpoint* grpc_endpoint_create(
   }
   // TODO(hork): what should the string be?
   endpoint->ru = grpc_resource_user_create(resource_quota, "UNIMPLEMENTED");
-  return endpoint;
+  return &endpoint->base;
 }
 
 #endif

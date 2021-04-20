@@ -30,8 +30,8 @@ struct grpc_event_engine_endpoint {
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine;
 };
 
-grpc_event_engine_endpoint* grpc_endpoint_create(
-    const grpc_channel_args* channel_args, absl::string_view peer_string);
+grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
+                               absl::string_view peer_string);
 
 #endif  // GRPC_EVENT_ENGINE_TEST
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H

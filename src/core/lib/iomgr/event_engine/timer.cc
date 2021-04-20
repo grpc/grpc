@@ -23,13 +23,15 @@ void timer_init(grpc_timer* timer, grpc_millis, grpc_closure* closure) {}
 void timer_cancel(grpc_timer* timer) {}
 
 /* Internal API */
-grpc_timer_check_result timer_check(grpc_millis* next) {}
+grpc_timer_check_result timer_check(grpc_millis* next) {
+  return GRPC_TIMERS_NOT_CHECKED;
+}
 void timer_list_init() {}
 void timer_list_shutdown(void) {}
 void timer_consume_kick(void) {}
 
 grpc_timer_vtable grpc_event_engine_timer_vtable = {
     timer_init,      timer_cancel,        timer_check,
-    timer_list_init, timer_list_shutdown, timer_consume_kick} grpc_timer_vtable;
+    timer_list_init, timer_list_shutdown, timer_consume_kick};
 
 #endif  // GRPC_EVENT_ENGINE_TEST
