@@ -38,5 +38,5 @@
 #error UNKNOWN PLATFORM
 #endif
 
-#endif  // GRPC_EVENT_ENGINE_TEST
+#endif
 #endif  // GRPC_EVENT_ENGINE_PORT_H

@@ -33,5 +33,5 @@ struct grpc_event_engine_endpoint {
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
                                absl::string_view peer_string);
 
-#endif  // GRPC_EVENT_ENGINE_TEST
+#endif
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H
