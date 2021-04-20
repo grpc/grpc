@@ -583,7 +583,7 @@ cdef extern from "grpc/grpc_security.h":
 
   ctypedef void (*grpc_credentials_plugin_metadata_cb)(
       void *user_data, const grpc_metadata *creds_md, size_t num_creds_md,
-      grpc_status_code status, const char *error_details)
+      grpc_status_code status, const char *error_details) nogil
 
   ctypedef struct grpc_metadata_credentials_plugin:
     int (*get_metadata)(

@@ -19,7 +19,8 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpcpp/ext/channelz_service_plugin.h>
+#include <grpcpp/ext/admin_services.h>
+#include <grpcpp/ext/proto_server_reflection_plugin.h>
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -124,6 +125,7 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
       grpc::health::v1::HealthCheckResponse::SERVING);
   XdsUpdateHealthServiceImpl update_health_service(&health_check_service);
 
+  grpc::reflection::InitProtoReflectionServerBuilderPlugin();
   ServerBuilder builder;
   if (secure_mode) {
     XdsServerBuilder xds_builder;
@@ -135,6 +137,7 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
     gpr_log(GPR_INFO, "Server starting on 0.0.0.0:%d", port);
     builder.RegisterService(&health_check_service);
     builder.RegisterService(&update_health_service);
+    grpc::AddAdminServices(&builder);
     builder.AddListeningPort(absl::StrCat("0.0.0.0:", maintenance_port),
                              grpc::InsecureServerCredentials());
     server = builder.BuildAndStart();
@@ -144,6 +147,7 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
     builder.RegisterService(&service);
     builder.RegisterService(&health_check_service);
     builder.RegisterService(&update_health_service);
+    grpc::AddAdminServices(&builder);
     builder.AddListeningPort(absl::StrCat("0.0.0.0:", port),
                              grpc::InsecureServerCredentials());
     server = builder.BuildAndStart();
@@ -156,7 +160,6 @@ void RunServer(bool secure_mode, const int port, const int maintenance_port,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
-  grpc::channelz::experimental::InitChannelzService();
   char* hostname = grpc_gethostname();
   if (hostname == nullptr) {
     std::cout << "Failed to get hostname, terminating" << std::endl;

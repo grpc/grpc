@@ -181,6 +181,11 @@ class grpc_local_channel_security_connector final
                      creds->connect_type());
   }
 
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error* error) override {
+    GRPC_ERROR_UNREF(error);
+  }
+
   bool check_call_host(absl::string_view host,
                        grpc_auth_context* /*auth_context*/,
                        grpc_closure* /*on_call_host_checked*/,
@@ -228,6 +233,11 @@ class grpc_local_server_security_connector final
         static_cast<grpc_local_server_credentials*>(mutable_server_creds());
     local_check_peer(peer, ep, auth_context, on_peer_checked,
                      creds->connect_type());
+  }
+
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error* error) override {
+    GRPC_ERROR_UNREF(error);
   }
 
   int cmp(const grpc_security_connector* other) const override {

@@ -103,6 +103,11 @@ class grpc_alts_channel_security_connector final
     alts_check_peer(peer, auth_context, on_peer_checked);
   }
 
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error* error) override {
+    GRPC_ERROR_UNREF(error);
+  }
+
   int cmp(const grpc_security_connector* other_sc) const override {
     auto* other =
         reinterpret_cast<const grpc_alts_channel_security_connector*>(other_sc);
@@ -166,6 +171,11 @@ class grpc_alts_server_security_connector final
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     alts_check_peer(peer, auth_context, on_peer_checked);
+  }
+
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error* error) override {
+    GRPC_ERROR_UNREF(error);
   }
 
   int cmp(const grpc_security_connector* other) const override {

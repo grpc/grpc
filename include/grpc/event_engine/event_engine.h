@@ -159,10 +159,9 @@ class EventEngine {
     using AcceptCallback = std::function<void(absl::Status, Endpoint*)>;
     virtual ~Listener() = 0;
     // TODO(hork): define return status codes
-    // TODO(hork): requires output port argument, return value, or callback
     /// Bind an address/port to this Listener. It is expected that multiple
     /// addresses/ports can be bound to this Listener before Listener::Start has
-    /// been called.
+    /// been called. Returns the bound port or an error status.
     virtual absl::StatusOr<int> Bind(const ResolvedAddress& addr) = 0;
     virtual absl::Status Start() = 0;
   };

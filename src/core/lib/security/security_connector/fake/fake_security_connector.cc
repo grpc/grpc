@@ -79,6 +79,11 @@ class grpc_fake_channel_security_connector final
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error* error) override {
+    GRPC_ERROR_UNREF(error);
+  }
+
   int cmp(const grpc_security_connector* other_sc) const override {
     auto* other =
         reinterpret_cast<const grpc_fake_channel_security_connector*>(other_sc);
@@ -285,6 +290,11 @@ class grpc_fake_server_security_connector
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     fake_check_peer(this, peer, auth_context, on_peer_checked);
+  }
+
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error* error) override {
+    GRPC_ERROR_UNREF(error);
   }
 
   void add_handshakers(const grpc_channel_args* args,
