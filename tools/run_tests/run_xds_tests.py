@@ -2878,10 +2878,6 @@ try:
                         test_path_matching(gcp, backend_service, instance_group,
                                            alternate_backend_service,
                                            same_zone_instance_group)
-                    elif test_case == 'path_matching':
-                        test_path_matching(gcp, backend_service, instance_group,
-                                           alternate_backend_service,
-                                           same_zone_instance_group)
                     elif test_case == 'header_matching':
                         test_header_matching(gcp, backend_service, instance_group,
                                              alternate_backend_service,
