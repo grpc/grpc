@@ -136,7 +136,8 @@ def template_dumper(header_comment: str) -> Type[yaml.Dumper]:
 
 def main() -> None:
     argp = argparse.ArgumentParser(
-        description='Creates a load test config generator template.')
+        description='Creates a load test config generator template.',
+        fromfile_prefix_chars='@')
     argp.add_argument('-i',
                       '--inputs',
                       action='extend',

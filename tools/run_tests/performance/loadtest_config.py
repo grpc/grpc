@@ -218,7 +218,9 @@ def config_dumper(header_comment: str) -> Type[yaml.Dumper]:
 
 def main() -> None:
     language_choices = sorted(scenario_config.LANGUAGES.keys())
-    argp = argparse.ArgumentParser(description='Generates load test configs.')
+    argp = argparse.ArgumentParser(
+        description='Generates load test configs from a template.',
+        fromfile_prefix_chars='@')
     argp.add_argument('-l',
                       '--language',
                       action='append',
