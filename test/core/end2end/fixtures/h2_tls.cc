@@ -58,9 +58,6 @@ struct SecurityPrimitives {
 
 struct fullstack_secure_fixture_data {
   ~fullstack_secure_fixture_data() {
-    /*for (size_t ind = 0; ind < thd_list.size(); ind++) {
-      thd_list[ind].Join();
-    }*/
     grpc_tls_certificate_provider_release(client_provider);
     grpc_tls_certificate_provider_release(server_provider);
     grpc_tls_certificate_verifier_release(client_verifier);
@@ -77,7 +74,7 @@ struct fullstack_secure_fixture_data {
 
 class SyncExternalVerifier {
  public:
-  SyncExternalVerifier() : base_{(void*)this, Verify, Cancel, Destruct} {}
+  SyncExternalVerifier() : base_{this, Verify, Cancel, Destruct} {}
 
   grpc_tls_certificate_verifier_external* base() { return &base_; }
 
@@ -107,7 +104,7 @@ class AsyncExternalVerifier {
     auto* user_data = new UserData();
     user_data->self = this;
     user_data->ffd = ffd;
-    base_.user_data = (void*)user_data;
+    base_.user_data = user_data;
     base_.verify = Verify;
     base_.cancel = Cancel;
     base_.destruct = Destruct;

@@ -130,9 +130,9 @@ void PendingVerifierRequest::PendingVerifierRequestInit(
 void PendingVerifierRequest::PendingVerifierRequestDestroy(
     grpc_tls_custom_verification_check_request* request) {
   GPR_ASSERT(request != nullptr);
-  if (request->target_name != nullptr) {
+  /*if (request->target_name != nullptr) {
     gpr_free(const_cast<char*>(request->target_name));
-  }
+  }*/
   if (request->peer_info.common_name != nullptr) {
     gpr_free(const_cast<char*>(request->peer_info.common_name));
   }

@@ -107,14 +107,14 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierNullTargetName) {
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierInvalidTargetName) {
-  request_.target_name = gpr_strdup("[foo.com@443");
+  request_.target_name = "[foo.com@443";
   hostname_certificate_verifier_.Verify(&request_, [] {});
   EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);
   EXPECT_STREQ(request_.error_details, "Failed to split hostname and port.");
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierDNSExactCheckSucceeds) {
-  request_.target_name = gpr_strdup("foo.com:443");
+  request_.target_name = "foo.com:443";
   request_.peer_info.san_names.dns_names = new char*[1];
   request_.peer_info.san_names.dns_names[0] = gpr_strdup("foo.com");
   request_.peer_info.san_names.dns_names_size = 1;
@@ -124,7 +124,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierDNSExactCheckSucceeds) {
 
 TEST_F(GrpcTlsCertificateVerifierTest,
        HostnameVerifierDNSWildcardCheckSucceeds) {
-  request_.target_name = gpr_strdup("foo.bar.com:443");
+  request_.target_name = "foo.bar.com:443";
   request_.peer_info.san_names.dns_names = new char*[1];
   request_.peer_info.san_names.dns_names[0] = gpr_strdup("*.bar.com");
   request_.peer_info.san_names.dns_names_size = 1;
@@ -134,7 +134,7 @@ TEST_F(GrpcTlsCertificateVerifierTest,
 
 TEST_F(GrpcTlsCertificateVerifierTest,
        HostnameVerifierDNSWildcardCaseInsensitiveCheckSucceeds) {
-  request_.target_name = gpr_strdup("fOo.bar.cOm:443");
+  request_.target_name = "fOo.bar.cOm:443";
   request_.peer_info.san_names.dns_names = new char*[1];
   request_.peer_info.san_names.dns_names[0] = gpr_strdup("*.BaR.Com");
   request_.peer_info.san_names.dns_names_size = 1;
@@ -144,7 +144,7 @@ TEST_F(GrpcTlsCertificateVerifierTest,
 
 TEST_F(GrpcTlsCertificateVerifierTest,
        HostnameVerifierDNSTopWildcardCheckFails) {
-  request_.target_name = gpr_strdup("foo.com:443");
+  request_.target_name = "foo.com:443";
   request_.peer_info.san_names.dns_names = new char*[1];
   request_.peer_info.san_names.dns_names[0] = gpr_strdup("*.");
   request_.peer_info.san_names.dns_names_size = 1;
@@ -154,7 +154,7 @@ TEST_F(GrpcTlsCertificateVerifierTest,
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierDNSExactCheckFails) {
-  request_.target_name = gpr_strdup("foo.com:443");
+  request_.target_name = "foo.com:443";
   request_.peer_info.san_names.dns_names = new char*[1];
   request_.peer_info.san_names.dns_names[0] = gpr_strdup("bar.com");
   request_.peer_info.san_names.dns_names_size = 1;
@@ -164,7 +164,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierDNSExactCheckFails) {
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierIpCheckSucceeds) {
-  request_.target_name = gpr_strdup("192.168.0.1:443");
+  request_.target_name = "192.168.0.1:443";
   request_.peer_info.san_names.ip_names = new char*[1];
   request_.peer_info.san_names.ip_names[0] = gpr_strdup("192.168.0.1");
   request_.peer_info.san_names.ip_names_size = 1;
@@ -173,7 +173,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierIpCheckSucceeds) {
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierIpCheckFails) {
-  request_.target_name = gpr_strdup("192.168.0.1:443");
+  request_.target_name = "192.168.0.1:443";
   request_.peer_info.san_names.ip_names = new char*[1];
   request_.peer_info.san_names.ip_names[0] = gpr_strdup("192.168.1.1");
   request_.peer_info.san_names.ip_names_size = 1;
@@ -184,14 +184,14 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierIpCheckFails) {
 
 TEST_F(GrpcTlsCertificateVerifierTest,
        HostnameVerifierCommonNameCheckSucceeds) {
-  request_.target_name = gpr_strdup("foo.com:443");
+  request_.target_name = "foo.com:443";
   request_.peer_info.common_name = gpr_strdup("foo.com");
   hostname_certificate_verifier_.Verify(&request_, [] {});
   EXPECT_EQ(request_.status, GRPC_STATUS_OK);
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierCommonNameCheckFails) {
-  request_.target_name = gpr_strdup("foo.com:443");
+  request_.target_name = "foo.com:443";
   request_.peer_info.common_name = gpr_strdup("bar.com");
   hostname_certificate_verifier_.Verify(&request_, [] {});
   EXPECT_EQ(request_.status, GRPC_STATUS_UNAUTHENTICATED);

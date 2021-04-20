@@ -113,7 +113,10 @@ class TlsChannelSecurityConnector final
         grpc_closure* on_peer_checked, tsi_peer peer, const char* target_name)
         : PendingVerifierRequest(on_peer_checked, std::move(peer)),
           security_connector_(security_connector) {
-      this->request_.target_name = gpr_strdup(target_name);
+      // We can pass the existing string cached in security connector because
+      // the verifier holds a ref to the security connector until this
+      // verification request is completed.
+      this->request_.target_name = target_name;
     }
 
     ~ChannelPendingVerifierRequest() {}
