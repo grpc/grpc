@@ -1886,7 +1886,7 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                         else:
                             seen.add('eds')
                 want = {'lds', 'rds', 'cds', 'eds'}
-                if seen == want:
+                if seen != want:
                     logger.info('Incomplete xDS config dump, seen=%s', seen)
                     ok = False
             except:
@@ -1902,7 +1902,8 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
         time.sleep(sleep_interval_between_attempts_s)
         cnt += 1
 
-    raise RuntimeError('failed to receive valid xDS config')
+    raise RuntimeError('failed to receive a valid xDS config in %s seconds' %
+                       test_csds_timeout_s)
 
 
 def set_validate_for_proxyless(gcp, validate_for_proxyless):
