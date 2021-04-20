@@ -48,7 +48,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
    public:
     virtual ~ListenerWatcherInterface() = default;
     virtual void OnListenerChanged(XdsApi::LdsUpdate listener) = 0;
-    virtual void OnError(grpc_error* error) = 0;
+    virtual void OnError(grpc_error_handle error) = 0;
     virtual void OnResourceDoesNotExist() = 0;
   };
 
@@ -57,7 +57,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
    public:
     virtual ~RouteConfigWatcherInterface() = default;
     virtual void OnRouteConfigChanged(XdsApi::RdsUpdate route_config) = 0;
-    virtual void OnError(grpc_error* error) = 0;
+    virtual void OnError(grpc_error_handle error) = 0;
     virtual void OnResourceDoesNotExist() = 0;
   };
 
@@ -66,7 +66,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
    public:
     virtual ~ClusterWatcherInterface() = default;
     virtual void OnClusterChanged(XdsApi::CdsUpdate cluster_data) = 0;
-    virtual void OnError(grpc_error* error) = 0;
+    virtual void OnError(grpc_error_handle error) = 0;
     virtual void OnResourceDoesNotExist() = 0;
   };
 
@@ -75,17 +75,17 @@ class XdsClient : public DualRefCounted<XdsClient> {
    public:
     virtual ~EndpointWatcherInterface() = default;
     virtual void OnEndpointChanged(XdsApi::EdsUpdate update) = 0;
-    virtual void OnError(grpc_error* error) = 0;
+    virtual void OnError(grpc_error_handle error) = 0;
     virtual void OnResourceDoesNotExist() = 0;
   };
 
   // Factory function to get or create the global XdsClient instance.
   // If *error is not GRPC_ERROR_NONE upon return, then there was
   // an error initializing the client.
-  static RefCountedPtr<XdsClient> GetOrCreate(grpc_error** error);
+  static RefCountedPtr<XdsClient> GetOrCreate(grpc_error_handle* error);
 
   // Callers should not instantiate directly.  Use GetOrCreate() instead.
-  XdsClient(grpc_channel_args* args, grpc_error** error);
+  XdsClient(grpc_channel_args* args, grpc_error_handle* error);
   ~XdsClient() override;
 
   const XdsBootstrap& bootstrap() const {
@@ -310,7 +310,7 @@ class XdsClient : public DualRefCounted<XdsClient> {
   };
 
   // Sends an error notification to all watchers.
-  void NotifyOnErrorLocked(grpc_error* error)
+  void NotifyOnErrorLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   XdsApi::ClusterLoadReportMap BuildLoadReportSnapshotLocked(

@@ -1426,7 +1426,7 @@ class FakeCertificateProvider final : public grpc_tls_certificate_provider {
       if (!root_being_watched && !identity_being_watched) return;
       auto it = cert_data_map_.find(cert_name);
       if (it == cert_data_map_.end()) {
-        grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrCat("No certificates available for cert_name \"",
                          cert_name, "\"")
                 .c_str());
@@ -1487,7 +1487,7 @@ class FakeCertificateProviderFactory
 
   grpc_core::RefCountedPtr<grpc_core::CertificateProviderFactory::Config>
   CreateCertificateProviderConfig(const grpc_core::Json& /*config_json*/,
-                                  grpc_error** /*error*/) override {
+                                  grpc_error_handle* /*error*/) override {
     return grpc_core::MakeRefCounted<Config>(name_);
   }
 
@@ -2005,7 +2005,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(ports);
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
     const char* service_config_json =
         GetParam().enable_load_reporting()
             ? kDefaultServiceConfig
@@ -2037,7 +2037,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(ports);
     if (service_config_json != nullptr) {
-      grpc_error* error = GRPC_ERROR_NONE;
+      grpc_error_handle error = GRPC_ERROR_NONE;
       result.service_config = grpc_core::ServiceConfig::Create(
           nullptr, service_config_json, &error);
       ASSERT_NE(result.service_config.get(), nullptr);

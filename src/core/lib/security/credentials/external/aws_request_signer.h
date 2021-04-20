@@ -45,7 +45,7 @@ class AwsRequestSigner {
                    std::string token, std::string method, std::string url,
                    std::string region, std::string request_payload,
                    std::map<std::string, std::string> additional_headers,
-                   grpc_error** error);
+                   grpc_error_handle* error);
 
   // This method triggers the signing process then returns the headers of the
   // signed request as a map. In case there is an error, the input `error`

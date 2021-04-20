@@ -1068,8 +1068,8 @@ absl::string_view TypeUrlExternalToInternal(bool use_v3,
 grpc_slice XdsApi::CreateAdsRequest(
     const XdsBootstrap::XdsServer& server, const std::string& type_url,
     const std::set<absl::string_view>& resource_names,
-    const std::string& version, const std::string& nonce, grpc_error* error,
-    bool populate_node) {
+    const std::string& version, const std::string& nonce,
+    grpc_error_handle error, bool populate_node) {
   upb::Arena arena;
   const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
                                    server.ShouldUseV3()};
@@ -1197,8 +1197,9 @@ void MaybeLogClusterLoadAssignment(
   }
 }
 
-grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
-                                XdsApi::Route* route, bool* ignore_route) {
+grpc_error_handle RoutePathMatchParse(
+    const envoy_config_route_v3_RouteMatch* match, XdsApi::Route* route,
+    bool* ignore_route) {
   auto* case_sensitive_ptr =
       envoy_config_route_v3_RouteMatch_case_sensitive(match);
   bool case_sensitive = true;
@@ -1290,7 +1291,7 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* RouteHeaderMatchersParse(
+grpc_error_handle RouteHeaderMatchersParse(
     const envoy_config_route_v3_RouteMatch* match, XdsApi::Route* route) {
   size_t size;
   const envoy_config_route_v3_HeaderMatcher* const* headers =
@@ -1357,7 +1358,7 @@ grpc_error* RouteHeaderMatchersParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* RouteRuntimeFractionParse(
+grpc_error_handle RouteRuntimeFractionParse(
     const envoy_config_route_v3_RouteMatch* match, XdsApi::Route* route) {
   const envoy_config_core_v3_RuntimeFractionalPercent* runtime_fraction =
       envoy_config_route_v3_RouteMatch_runtime_fraction(match);
@@ -1390,9 +1391,9 @@ grpc_error* RouteRuntimeFractionParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* ExtractHttpFilterTypeName(const EncodingContext& context,
-                                      const google_protobuf_Any* any,
-                                      absl::string_view* filter_type) {
+grpc_error_handle ExtractHttpFilterTypeName(const EncodingContext& context,
+                                            const google_protobuf_Any* any,
+                                            absl::string_view* filter_type) {
   *filter_type = UpbStringToAbsl(google_protobuf_Any_type_url(any));
   if (*filter_type == "type.googleapis.com/udpa.type.v1.TypedStruct") {
     upb_strview any_value = google_protobuf_Any_value(any);
@@ -1410,7 +1411,7 @@ grpc_error* ExtractHttpFilterTypeName(const EncodingContext& context,
 }
 
 template <typename ParentType, typename EntryType>
-grpc_error* ParseTypedPerFilterConfig(
+grpc_error_handle ParseTypedPerFilterConfig(
     const EncodingContext& context, const ParentType* parent,
     const EntryType* (*entry_func)(const ParentType*, size_t*),
     upb_strview (*key_func)(const EntryType*),
@@ -1454,7 +1455,8 @@ grpc_error* ParseTypedPerFilterConfig(
                 .c_str());
       }
     }
-    grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
+    grpc_error_handle error =
+        ExtractHttpFilterTypeName(context, any, &filter_type);
     if (error != GRPC_ERROR_NONE) return error;
     const XdsHttpFilterImpl* filter_impl =
         XdsHttpFilterRegistry::GetFilterForType(filter_type);
@@ -1478,9 +1480,9 @@ grpc_error* ParseTypedPerFilterConfig(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* RouteActionParse(const EncodingContext& context,
-                             const envoy_config_route_v3_Route* route_msg,
-                             XdsApi::Route* route, bool* ignore_route) {
+grpc_error_handle RouteActionParse(const EncodingContext& context,
+                                   const envoy_config_route_v3_Route* route_msg,
+                                   XdsApi::Route* route, bool* ignore_route) {
   if (!envoy_config_route_v3_Route_has_route(route_msg)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "No RouteAction found in route.");
@@ -1533,7 +1535,7 @@ grpc_error* RouteActionParse(const EncodingContext& context,
       if (cluster.weight == 0) continue;
       sum_of_weights += cluster.weight;
       if (context.use_v3) {
-        grpc_error* error = ParseTypedPerFilterConfig<
+        grpc_error_handle error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_WeightedCluster_ClusterWeight,
             envoy_config_route_v3_WeightedCluster_ClusterWeight_TypedPerFilterConfigEntry>(
             context, cluster_weight,
@@ -1663,7 +1665,7 @@ grpc_error* RouteActionParse(const EncodingContext& context,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* RouteConfigParse(
+grpc_error_handle RouteConfigParse(
     const EncodingContext& context,
     const envoy_config_route_v3_RouteConfiguration* route_config,
     XdsApi::RdsUpdate* rds_update) {
@@ -1695,7 +1697,7 @@ grpc_error* RouteConfigParse(
     }
     // Parse typed_per_filter_config.
     if (context.use_v3) {
-      grpc_error* error = ParseTypedPerFilterConfig<
+      grpc_error_handle error = ParseTypedPerFilterConfig<
           envoy_config_route_v3_VirtualHost,
           envoy_config_route_v3_VirtualHost_TypedPerFilterConfigEntry>(
           context, virtual_hosts[i],
@@ -1728,7 +1730,8 @@ grpc_error* RouteConfigParse(
       }
       XdsApi::Route route;
       bool ignore_route = false;
-      grpc_error* error = RoutePathMatchParse(match, &route, &ignore_route);
+      grpc_error_handle error =
+          RoutePathMatchParse(match, &route, &ignore_route);
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
       error = RouteHeaderMatchersParse(match, &route);
@@ -1739,7 +1742,7 @@ grpc_error* RouteConfigParse(
       if (error != GRPC_ERROR_NONE) return error;
       if (ignore_route) continue;
       if (context.use_v3) {
-        grpc_error* error = ParseTypedPerFilterConfig<
+        grpc_error_handle error = ParseTypedPerFilterConfig<
             envoy_config_route_v3_Route,
             envoy_config_route_v3_Route_TypedPerFilterConfigEntry>(
             context, routes[j],
@@ -1771,11 +1774,11 @@ CertificateProviderInstanceParse(
               certificate_provider_instance_proto))};
 }
 
-grpc_error* CommonTlsContextParse(
+grpc_error_handle CommonTlsContextParse(
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
     XdsApi::CommonTlsContext* common_tls_context) GRPC_MUST_USE_RESULT;
-grpc_error* CommonTlsContextParse(
+grpc_error_handle CommonTlsContextParse(
     const envoy_extensions_transport_sockets_tls_v3_CommonTlsContext*
         common_tls_context_proto,
     XdsApi::CommonTlsContext* common_tls_context) {
@@ -1870,7 +1873,7 @@ grpc_error* CommonTlsContextParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* HttpConnectionManagerParse(
+grpc_error_handle HttpConnectionManagerParse(
     bool is_client, const EncodingContext& context,
     const envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager*
         http_connection_manager_proto,
@@ -1925,7 +1928,8 @@ grpc_error* HttpConnectionManagerParse(
                 .c_str());
       }
       absl::string_view filter_type;
-      grpc_error* error = ExtractHttpFilterTypeName(context, any, &filter_type);
+      grpc_error_handle error =
+          ExtractHttpFilterTypeName(context, any, &filter_type);
       if (error != GRPC_ERROR_NONE) return error;
       const XdsHttpFilterImpl* filter_impl =
           XdsHttpFilterRegistry::GetFilterForType(filter_type);
@@ -1974,7 +1978,8 @@ grpc_error* HttpConnectionManagerParse(
           envoy_extensions_filters_network_http_connection_manager_v3_HttpConnectionManager_route_config(
               http_connection_manager_proto);
       XdsApi::RdsUpdate rds_update;
-      grpc_error* error = RouteConfigParse(context, route_config, &rds_update);
+      grpc_error_handle error =
+          RouteConfigParse(context, route_config, &rds_update);
       if (error != GRPC_ERROR_NONE) return error;
       http_connection_manager->rds_update = std::move(rds_update);
       return GRPC_ERROR_NONE;
@@ -2007,7 +2012,7 @@ grpc_error* HttpConnectionManagerParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* LdsResponseParseClient(
+grpc_error_handle LdsResponseParseClient(
     const EncodingContext& context,
     const envoy_config_listener_v3_ApiListener* api_listener, bool is_v2,
     XdsApi::LdsUpdate* lds_update) {
@@ -2026,7 +2031,7 @@ grpc_error* LdsResponseParseClient(
                                     &lds_update->http_connection_manager);
 }
 
-grpc_error* DownstreamTlsContextParse(
+grpc_error_handle DownstreamTlsContextParse(
     const EncodingContext& context,
     const envoy_config_core_v3_TransportSocket* transport_socket,
     XdsApi::DownstreamTlsContext* downstream_tls_context) {
@@ -2050,7 +2055,7 @@ grpc_error* DownstreamTlsContextParse(
           envoy_extensions_transport_sockets_tls_v3_DownstreamTlsContext_common_tls_context(
               downstream_tls_context_proto);
       if (common_tls_context != nullptr) {
-        grpc_error* error = CommonTlsContextParse(
+        grpc_error_handle error = CommonTlsContextParse(
             common_tls_context, &downstream_tls_context->common_tls_context);
         if (error != GRPC_ERROR_NONE) return error;
       }
@@ -2073,12 +2078,12 @@ grpc_error* DownstreamTlsContextParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* CidrRangeParse(
+grpc_error_handle CidrRangeParse(
     const envoy_config_core_v3_CidrRange* cidr_range_proto,
     XdsApi::LdsUpdate::FilterChainMap::CidrRange* cidr_range) {
   std::string address_prefix = UpbStringToStdString(
       envoy_config_core_v3_CidrRange_address_prefix(cidr_range_proto));
-  grpc_error* error =
+  grpc_error_handle error =
       grpc_string_to_sockaddr(&cidr_range->address, address_prefix.c_str(), 0);
   if (error != GRPC_ERROR_NONE) return error;
   cidr_range->prefix_len = 0;
@@ -2097,7 +2102,7 @@ grpc_error* CidrRangeParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* FilterChainMatchParse(
+grpc_error_handle FilterChainMatchParse(
     const envoy_config_listener_v3_FilterChainMatch* filter_chain_match_proto,
     FilterChain::FilterChainMatch* filter_chain_match) {
   auto* destination_port =
@@ -2113,7 +2118,7 @@ grpc_error* FilterChainMatchParse(
   filter_chain_match->prefix_ranges.reserve(size);
   for (size_t i = 0; i < size; i++) {
     XdsApi::LdsUpdate::FilterChainMap::CidrRange cidr_range;
-    grpc_error* error = CidrRangeParse(prefix_ranges[i], &cidr_range);
+    grpc_error_handle error = CidrRangeParse(prefix_ranges[i], &cidr_range);
     if (error != GRPC_ERROR_NONE) return error;
     filter_chain_match->prefix_ranges.push_back(cidr_range);
   }
@@ -2127,7 +2132,8 @@ grpc_error* FilterChainMatchParse(
   filter_chain_match->source_prefix_ranges.reserve(size);
   for (size_t i = 0; i < size; i++) {
     XdsApi::LdsUpdate::FilterChainMap::CidrRange cidr_range;
-    grpc_error* error = CidrRangeParse(source_prefix_ranges[i], &cidr_range);
+    grpc_error_handle error =
+        CidrRangeParse(source_prefix_ranges[i], &cidr_range);
     if (error != GRPC_ERROR_NONE) return error;
     filter_chain_match->source_prefix_ranges.push_back(cidr_range);
   }
@@ -2156,11 +2162,11 @@ grpc_error* FilterChainMatchParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* FilterChainParse(
+grpc_error_handle FilterChainParse(
     const EncodingContext& context,
     const envoy_config_listener_v3_FilterChain* filter_chain_proto, bool is_v2,
     FilterChain* filter_chain) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto* filter_chain_match =
       envoy_config_listener_v3_FilterChain_filter_chain_match(
           filter_chain_proto);
@@ -2223,8 +2229,8 @@ grpc_error* FilterChainParse(
   return error;
 }
 
-grpc_error* AddressParse(const envoy_config_core_v3_Address* address_proto,
-                         std::string* address) {
+grpc_error_handle AddressParse(
+    const envoy_config_core_v3_Address* address_proto, std::string* address) {
   const auto* socket_address =
       envoy_config_core_v3_Address_socket_address(address_proto);
   if (socket_address == nullptr) {
@@ -2263,7 +2269,7 @@ struct InternalFilterChainMap {
   DestinationIpMap destination_ip_map;
 };
 
-grpc_error* AddFilterChainDataForSourcePort(
+grpc_error_handle AddFilterChainDataForSourcePort(
     const FilterChain& filter_chain,
     XdsApi::LdsUpdate::FilterChainMap::SourcePortsMap* ports_map,
     uint32_t port) {
@@ -2280,14 +2286,14 @@ grpc_error* AddFilterChainDataForSourcePort(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* AddFilterChainDataForSourcePorts(
+grpc_error_handle AddFilterChainDataForSourcePorts(
     const FilterChain& filter_chain,
     XdsApi::LdsUpdate::FilterChainMap::SourcePortsMap* ports_map) {
   if (filter_chain.filter_chain_match.source_ports.empty()) {
     return AddFilterChainDataForSourcePort(filter_chain, ports_map, 0);
   } else {
     for (uint32_t port : filter_chain.filter_chain_match.source_ports) {
-      grpc_error* error =
+      grpc_error_handle error =
           AddFilterChainDataForSourcePort(filter_chain, ports_map, port);
       if (error != GRPC_ERROR_NONE) return error;
     }
@@ -2295,7 +2301,7 @@ grpc_error* AddFilterChainDataForSourcePorts(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* AddFilterChainDataForSourceIpRange(
+grpc_error_handle AddFilterChainDataForSourceIpRange(
     const FilterChain& filter_chain,
     InternalFilterChainMap::SourceIpMap* source_ip_map) {
   if (filter_chain.filter_chain_match.source_prefix_ranges.empty()) {
@@ -2313,7 +2319,7 @@ grpc_error* AddFilterChainDataForSourceIpRange(
       if (insert_result.second) {
         insert_result.first->second.prefix_range.emplace(prefix_range);
       }
-      grpc_error* error = AddFilterChainDataForSourcePorts(
+      grpc_error_handle error = AddFilterChainDataForSourcePorts(
           filter_chain, &insert_result.first->second.ports_map);
       if (error != GRPC_ERROR_NONE) return error;
     }
@@ -2321,7 +2327,7 @@ grpc_error* AddFilterChainDataForSourceIpRange(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* AddFilterChainDataForSourceType(
+grpc_error_handle AddFilterChainDataForSourceType(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip) {
   GPR_ASSERT(static_cast<unsigned int>(
@@ -2331,7 +2337,7 @@ grpc_error* AddFilterChainDataForSourceType(
                         filter_chain.filter_chain_match.source_type)]);
 }
 
-grpc_error* AddFilterChainDataForApplicationProtocols(
+grpc_error_handle AddFilterChainDataForApplicationProtocols(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip) {
   // Only allow filter chains that do not mention application protocols
@@ -2341,7 +2347,7 @@ grpc_error* AddFilterChainDataForApplicationProtocols(
   return AddFilterChainDataForSourceType(filter_chain, destination_ip);
 }
 
-grpc_error* AddFilterChainDataForTransportProtocol(
+grpc_error_handle AddFilterChainDataForTransportProtocol(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip) {
   const std::string& transport_protocol =
@@ -2369,7 +2375,7 @@ grpc_error* AddFilterChainDataForTransportProtocol(
                                                    destination_ip);
 }
 
-grpc_error* AddFilterChainDataForServerNames(
+grpc_error_handle AddFilterChainDataForServerNames(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIp* destination_ip) {
   // Don't continue adding filter chains with server names mentioned
@@ -2379,7 +2385,7 @@ grpc_error* AddFilterChainDataForServerNames(
   return AddFilterChainDataForTransportProtocol(filter_chain, destination_ip);
 }
 
-grpc_error* AddFilterChainDataForDestinationIpRange(
+grpc_error_handle AddFilterChainDataForDestinationIpRange(
     const FilterChain& filter_chain,
     InternalFilterChainMap::DestinationIpMap* destination_ip_map) {
   if (filter_chain.filter_chain_match.prefix_ranges.empty()) {
@@ -2397,7 +2403,7 @@ grpc_error* AddFilterChainDataForDestinationIpRange(
       if (insert_result.second) {
         insert_result.first->second.prefix_range.emplace(prefix_range);
       }
-      grpc_error* error = AddFilterChainDataForServerNames(
+      grpc_error_handle error = AddFilterChainDataForServerNames(
           filter_chain, &insert_result.first->second);
       if (error != GRPC_ERROR_NONE) return error;
     }
@@ -2424,14 +2430,14 @@ XdsApi::LdsUpdate::FilterChainMap BuildFromInternalFilterChainMap(
   return filter_chain_map;
 }
 
-grpc_error* BuildFilterChainMap(
+grpc_error_handle BuildFilterChainMap(
     const std::vector<FilterChain>& filter_chains,
     XdsApi::LdsUpdate::FilterChainMap* filter_chain_map) {
   InternalFilterChainMap internal_filter_chain_map;
   for (const auto& filter_chain : filter_chains) {
     // Discard filter chain entries that specify destination port
     if (filter_chain.filter_chain_match.destination_port != 0) continue;
-    grpc_error* error = AddFilterChainDataForDestinationIpRange(
+    grpc_error_handle error = AddFilterChainDataForDestinationIpRange(
         filter_chain, &internal_filter_chain_map.destination_ip_map);
     if (error != GRPC_ERROR_NONE) return error;
   }
@@ -2440,12 +2446,12 @@ grpc_error* BuildFilterChainMap(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* LdsResponseParseServer(
+grpc_error_handle LdsResponseParseServer(
     const EncodingContext& context,
     const envoy_config_listener_v3_Listener* listener, bool is_v2,
     XdsApi::LdsUpdate* lds_update) {
   lds_update->type = XdsApi::LdsUpdate::ListenerType::kTcpListener;
-  grpc_error* error =
+  grpc_error_handle error =
       AddressParse(envoy_config_listener_v3_Listener_address(listener),
                    &lds_update->address);
   if (error != GRPC_ERROR_NONE) return error;
@@ -2489,13 +2495,13 @@ grpc_error* LdsResponseParseServer(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* LdsResponseParse(
+grpc_error_handle LdsResponseParse(
     const EncodingContext& context,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_listener_names,
     XdsApi::LdsUpdateMap* lds_update_map,
     std::set<std::string>* resource_names_failed) {
-  std::vector<grpc_error*> errors;
+  std::vector<grpc_error_handle> errors;
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -2564,7 +2570,7 @@ grpc_error* LdsResponseParse(
       resource_names_failed->insert(listener_name);
       continue;
     }
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
     if (api_listener != nullptr) {
       error = LdsResponseParseClient(context, api_listener, is_v2, &lds_update);
     } else {
@@ -2581,13 +2587,13 @@ grpc_error* LdsResponseParse(
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing LDS response", &errors);
 }
 
-grpc_error* RdsResponseParse(
+grpc_error_handle RdsResponseParse(
     const EncodingContext& context,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_route_configuration_names,
     XdsApi::RdsUpdateMap* rds_update_map,
     std::set<std::string>* resource_names_failed) {
-  std::vector<grpc_error*> errors;
+  std::vector<grpc_error_handle> errors;
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -2638,7 +2644,8 @@ grpc_error* RdsResponseParse(
     rds_resource_data.serialized_proto =
         UpbStringToStdString(encoded_route_config);
     // Parse the route_config.
-    grpc_error* error = RouteConfigParse(context, route_config, &rds_update);
+    grpc_error_handle error =
+        RouteConfigParse(context, route_config, &rds_update);
     if (error != GRPC_ERROR_NONE) {
       errors.push_back(grpc_error_add_child(
           GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -2650,13 +2657,13 @@ grpc_error* RdsResponseParse(
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing RDS response", &errors);
 }
 
-grpc_error* CdsResponseParse(
+grpc_error_handle CdsResponseParse(
     const EncodingContext& context,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_cluster_names,
     XdsApi::CdsUpdateMap* cds_update_map,
     std::set<std::string>* resource_names_failed) {
-  std::vector<grpc_error*> errors;
+  std::vector<grpc_error_handle> errors;
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -2912,7 +2919,7 @@ grpc_error* CdsResponseParse(
                 envoy_extensions_transport_sockets_tls_v3_UpstreamTlsContext_common_tls_context(
                     upstream_tls_context);
             if (common_tls_context != nullptr) {
-              grpc_error* error = CommonTlsContextParse(
+              grpc_error_handle error = CommonTlsContextParse(
                   common_tls_context, &cds_update.common_tls_context);
               if (error != GRPC_ERROR_NONE) {
                 errors.push_back(grpc_error_add_child(
@@ -2983,7 +2990,7 @@ grpc_error* CdsResponseParse(
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing CDS response", &errors);
 }
 
-grpc_error* ServerAddressParseAndAppend(
+grpc_error_handle ServerAddressParseAndAppend(
     const envoy_config_endpoint_v3_LbEndpoint* lb_endpoint,
     ServerAddressList* list) {
   // If health_status is not HEALTHY or UNKNOWN, skip this endpoint.
@@ -3008,14 +3015,15 @@ grpc_error* ServerAddressParseAndAppend(
   }
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
-  grpc_error* error = grpc_string_to_sockaddr(&addr, address_str.c_str(), port);
+  grpc_error_handle error =
+      grpc_string_to_sockaddr(&addr, address_str.c_str(), port);
   if (error != GRPC_ERROR_NONE) return error;
   // Append the address to the list.
   list->emplace_back(addr, nullptr);
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* LocalityParse(
+grpc_error_handle LocalityParse(
     const envoy_config_endpoint_v3_LocalityLbEndpoints* locality_lb_endpoints,
     XdsApi::EdsUpdate::Priority::Locality* output_locality, size_t* priority) {
   // Parse LB weight.
@@ -3049,7 +3057,7 @@ grpc_error* LocalityParse(
       envoy_config_endpoint_v3_LocalityLbEndpoints_lb_endpoints(
           locality_lb_endpoints, &size);
   for (size_t i = 0; i < size; ++i) {
-    grpc_error* error = ServerAddressParseAndAppend(
+    grpc_error_handle error = ServerAddressParseAndAppend(
         lb_endpoints[i], &output_locality->endpoints);
     if (error != GRPC_ERROR_NONE) return error;
   }
@@ -3059,7 +3067,7 @@ grpc_error* LocalityParse(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* DropParseAndAppend(
+grpc_error_handle DropParseAndAppend(
     const envoy_config_endpoint_v3_ClusterLoadAssignment_Policy_DropOverload*
         drop_overload,
     XdsApi::EdsUpdate::DropConfig* drop_config) {
@@ -3098,13 +3106,13 @@ grpc_error* DropParseAndAppend(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* EdsResponseParse(
+grpc_error_handle EdsResponseParse(
     const EncodingContext& context,
     const envoy_service_discovery_v3_DiscoveryResponse* response,
     const std::set<absl::string_view>& expected_eds_service_names,
     XdsApi::EdsUpdateMap* eds_update_map,
     std::set<std::string>* resource_names_failed) {
-  std::vector<grpc_error*> errors;
+  std::vector<grpc_error_handle> errors;
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -3161,7 +3169,7 @@ grpc_error* EdsResponseParse(
     const envoy_config_endpoint_v3_LocalityLbEndpoints* const* endpoints =
         envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
             cluster_load_assignment, &locality_size);
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
     for (size_t j = 0; j < locality_size; ++j) {
       size_t priority;
       XdsApi::EdsUpdate::Priority::Locality locality;
@@ -3475,10 +3483,10 @@ grpc_slice XdsApi::CreateLrsRequest(
   return SerializeLrsRequest(context, request);
 }
 
-grpc_error* XdsApi::ParseLrsResponse(const grpc_slice& encoded_response,
-                                     bool* send_all_clusters,
-                                     std::set<std::string>* cluster_names,
-                                     grpc_millis* load_reporting_interval) {
+grpc_error_handle XdsApi::ParseLrsResponse(
+    const grpc_slice& encoded_response, bool* send_all_clusters,
+    std::set<std::string>* cluster_names,
+    grpc_millis* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.
   const envoy_service_load_stats_v3_LoadStatsResponse* decoded_response =

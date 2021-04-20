@@ -122,7 +122,7 @@ static void tcp_unref(custom_tcp_endpoint* tcp) {
 static void tcp_ref(custom_tcp_endpoint* tcp) { gpr_ref(&tcp->refcount); }
 #endif
 
-static void call_read_cb(custom_tcp_endpoint* tcp, grpc_error* error) {
+static void call_read_cb(custom_tcp_endpoint* tcp, grpc_error_handle error) {
   grpc_closure* cb = tcp->read_cb;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp->socket, cb, cb->cb,
@@ -146,7 +146,7 @@ static void call_read_cb(custom_tcp_endpoint* tcp, grpc_error* error) {
 }
 
 static void custom_read_callback(grpc_custom_socket* socket, size_t nread,
-                                 grpc_error* error) {
+                                 grpc_error_handle error) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_slice_buffer garbage;
@@ -171,7 +171,7 @@ static void custom_read_callback(grpc_custom_socket* socket, size_t nread,
   call_read_cb(tcp, error);
 }
 
-static void tcp_read_allocation_done(void* tcpp, grpc_error* error) {
+static void tcp_read_allocation_done(void* tcpp, grpc_error_handle error) {
   custom_tcp_endpoint* tcp = static_cast<custom_tcp_endpoint*>(tcpp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p read_allocation_done: %s", tcp->socket,
@@ -213,7 +213,7 @@ static void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
 }
 
 static void custom_write_callback(grpc_custom_socket* socket,
-                                  grpc_error* error) {
+                                  grpc_error_handle error) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   custom_tcp_endpoint* tcp =
@@ -287,7 +287,7 @@ static void endpoint_delete_from_pollset_set(grpc_endpoint* ep,
   (void)pollset;
 }
 
-static void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
+static void endpoint_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   custom_tcp_endpoint* tcp = reinterpret_cast<custom_tcp_endpoint*>(ep);
   if (!tcp->shutting_down) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {

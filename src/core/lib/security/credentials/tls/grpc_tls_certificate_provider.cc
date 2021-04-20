@@ -60,8 +60,8 @@ StaticDataCertificateProvider::StaticDataCertificateProvider(
       distributor_->SetKeyMaterials(cert_name, std::move(root_certificate),
                                     std::move(pem_key_cert_pairs));
     }
-    grpc_error* root_cert_error = GRPC_ERROR_NONE;
-    grpc_error* identity_cert_error = GRPC_ERROR_NONE;
+    grpc_error_handle root_cert_error = GRPC_ERROR_NONE;
+    grpc_error_handle identity_cert_error = GRPC_ERROR_NONE;
     if (root_being_watched && !root_has_update) {
       root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Unable to get latest root certificates.");
@@ -150,8 +150,8 @@ FileWatcherCertificateProvider::FileWatcherCertificateProvider(
       distributor_->SetKeyMaterials(cert_name, root_certificate,
                                     pem_key_cert_pairs);
     }
-    grpc_error* root_cert_error = GRPC_ERROR_NONE;
-    grpc_error* identity_cert_error = GRPC_ERROR_NONE;
+    grpc_error_handle root_cert_error = GRPC_ERROR_NONE;
+    grpc_error_handle identity_cert_error = GRPC_ERROR_NONE;
     if (root_being_watched && !root_certificate.has_value()) {
       root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Unable to get latest root certificates.");
@@ -210,10 +210,11 @@ void FileWatcherCertificateProvider::ForceUpdate() {
   }
   if (root_cert_changed || identity_cert_changed) {
     ExecCtx exec_ctx;
-    grpc_error* root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+    grpc_error_handle root_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Unable to get latest root certificates.");
-    grpc_error* identity_cert_error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Unable to get latest identity certificates.");
+    grpc_error_handle identity_cert_error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "Unable to get latest identity certificates.");
     for (const auto& p : watcher_info_) {
       const std::string& cert_name = p.first;
       const WatcherInfo& info = p.second;
@@ -256,7 +257,7 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
     const std::string& root_cert_full_path) {
   // Read the root file.
   grpc_slice root_slice = grpc_empty_slice();
-  grpc_error* root_error =
+  grpc_error_handle root_error =
       grpc_load_file(root_cert_full_path.c_str(), 0, &root_slice);
   if (root_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Reading file %s failed: %s",
@@ -314,7 +315,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
     }
     // Read the identity files.
     SliceWrapper key_slice, cert_slice;
-    grpc_error* key_error =
+    grpc_error_handle key_error =
         grpc_load_file(private_key_path.c_str(), 0, &key_slice.slice);
     if (key_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
@@ -322,7 +323,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
       GRPC_ERROR_UNREF(key_error);
       continue;
     }
-    grpc_error* cert_error =
+    grpc_error_handle cert_error =
         grpc_load_file(identity_certificate_path.c_str(), 0, &cert_slice.slice);
     if (cert_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",

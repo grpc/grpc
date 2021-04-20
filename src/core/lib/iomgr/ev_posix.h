@@ -52,7 +52,7 @@ typedef struct grpc_event_engine_vtable {
   int (*fd_wrapped_fd)(grpc_fd* fd);
   void (*fd_orphan)(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                     const char* reason);
-  void (*fd_shutdown)(grpc_fd* fd, grpc_error* why);
+  void (*fd_shutdown)(grpc_fd* fd, grpc_error_handle why);
   void (*fd_notify_on_read)(grpc_fd* fd, grpc_closure* closure);
   void (*fd_notify_on_write)(grpc_fd* fd, grpc_closure* closure);
   void (*fd_notify_on_error)(grpc_fd* fd, grpc_closure* closure);
@@ -64,11 +64,11 @@ typedef struct grpc_event_engine_vtable {
   void (*pollset_init)(grpc_pollset* pollset, gpr_mu** mu);
   void (*pollset_shutdown)(grpc_pollset* pollset, grpc_closure* closure);
   void (*pollset_destroy)(grpc_pollset* pollset);
-  grpc_error* (*pollset_work)(grpc_pollset* pollset,
-                              grpc_pollset_worker** worker,
-                              grpc_millis deadline);
-  grpc_error* (*pollset_kick)(grpc_pollset* pollset,
-                              grpc_pollset_worker* specific_worker);
+  grpc_error_handle (*pollset_work)(grpc_pollset* pollset,
+                                    grpc_pollset_worker** worker,
+                                    grpc_millis deadline);
+  grpc_error_handle (*pollset_kick)(grpc_pollset* pollset,
+                                    grpc_pollset_worker* specific_worker);
   void (*pollset_add_fd)(grpc_pollset* pollset, struct grpc_fd* fd);
 
   grpc_pollset_set* (*pollset_set_create)(void);
@@ -88,7 +88,7 @@ typedef struct grpc_event_engine_vtable {
   void (*shutdown_background_closure)(void);
   void (*shutdown_engine)(void);
   bool (*add_closure_to_background_poller)(grpc_closure* closure,
-                                           grpc_error* error);
+                                           grpc_error_handle error);
 } grpc_event_engine_vtable;
 
 /* register a new event engine factory */
@@ -139,7 +139,7 @@ void grpc_fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
 bool grpc_fd_is_shutdown(grpc_fd* fd);
 
 /* Cause any current and future callbacks to fail. */
-void grpc_fd_shutdown(grpc_fd* fd, grpc_error* why);
+void grpc_fd_shutdown(grpc_fd* fd, grpc_error_handle why);
 
 /* Register read interest, causing read_cb to be called once when fd becomes
    readable, on deadline specified by deadline, or on shutdown triggered by
@@ -195,7 +195,7 @@ bool grpc_is_any_background_poller_thread();
  * that the closure may or may not run yet when this function returns, and the
  * closure should not be blocking or long-running. */
 bool grpc_add_closure_to_background_poller(grpc_closure* closure,
-                                           grpc_error* error);
+                                           grpc_error_handle error);
 
 /* Shut down all the closures registered in the background poller. */
 void grpc_shutdown_background_closure();

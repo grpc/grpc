@@ -29,7 +29,7 @@
 
 typedef struct grpc_chttp2_hpack_parser grpc_chttp2_hpack_parser;
 
-typedef grpc_error* (*grpc_chttp2_hpack_parser_state)(
+typedef grpc_error_handle (*grpc_chttp2_hpack_parser_state)(
     grpc_chttp2_hpack_parser* p, const uint8_t* beg, const uint8_t* end);
 
 struct grpc_chttp2_hpack_parser_string {
@@ -45,10 +45,10 @@ struct grpc_chttp2_hpack_parser_string {
 };
 struct grpc_chttp2_hpack_parser {
   /* user specified callback for each header output */
-  grpc_error* (*on_header)(void* user_data, grpc_mdelem md);
+  grpc_error_handle (*on_header)(void* user_data, grpc_mdelem md);
   void* on_header_user_data;
 
-  grpc_error* last_error;
+  grpc_error_handle last_error;
 
   /* current parse state - or a function that implements it */
   grpc_chttp2_hpack_parser_state state;
@@ -103,15 +103,15 @@ void grpc_chttp2_hpack_parser_destroy(grpc_chttp2_hpack_parser* p);
 
 void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser* p);
 
-grpc_error* grpc_chttp2_hpack_parser_parse(grpc_chttp2_hpack_parser* p,
-                                           const grpc_slice& slice);
+grpc_error_handle grpc_chttp2_hpack_parser_parse(grpc_chttp2_hpack_parser* p,
+                                                 const grpc_slice& slice);
 
 /* wraps grpc_chttp2_hpack_parser_parse to provide a frame level parser for
    the transport */
-grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
-                                            grpc_chttp2_transport* t,
-                                            grpc_chttp2_stream* s,
-                                            const grpc_slice& slice,
-                                            int is_last);
+grpc_error_handle grpc_chttp2_header_parser_parse(void* hpack_parser,
+                                                  grpc_chttp2_transport* t,
+                                                  grpc_chttp2_stream* s,
+                                                  const grpc_slice& slice,
+                                                  int is_last);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_HPACK_PARSER_H */

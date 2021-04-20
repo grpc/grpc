@@ -131,7 +131,7 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate() const {
 //
 
 RefCountedPtr<SubchannelCall> SubchannelCall::Create(Args args,
-                                                     grpc_error** error) {
+                                                     grpc_error_handle* error) {
   const size_t allocation_size =
       args.connected_subchannel->GetInitialCallSizeEstimate();
   Arena* arena = args.arena;
@@ -139,7 +139,7 @@ RefCountedPtr<SubchannelCall> SubchannelCall::Create(Args args,
       arena->Alloc(allocation_size)) SubchannelCall(std::move(args), error));
 }
 
-SubchannelCall::SubchannelCall(Args args, grpc_error** error)
+SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
     : connected_subchannel_(std::move(args.connected_subchannel)),
       deadline_(args.deadline) {
   grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(this);
@@ -207,7 +207,7 @@ void SubchannelCall::Unref(const DebugLocation& /*location*/,
   GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
 }
 
-void SubchannelCall::Destroy(void* arg, grpc_error* /*error*/) {
+void SubchannelCall::Destroy(void* arg, grpc_error_handle /*error*/) {
   GPR_TIMER_SCOPE("subchannel_call_destroy", 0);
   SubchannelCall* self = static_cast<SubchannelCall*>(arg);
   // Keep some members before destroying the subchannel call.
@@ -252,7 +252,7 @@ namespace {
 
 // Sets *status based on the rest of the parameters.
 void GetCallStatus(grpc_status_code* status, grpc_millis deadline,
-                   grpc_metadata_batch* md_batch, grpc_error* error) {
+                   grpc_metadata_batch* md_batch, grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     grpc_error_get_status(error, deadline, status, nullptr, nullptr, nullptr);
   } else {
@@ -268,7 +268,8 @@ void GetCallStatus(grpc_status_code* status, grpc_millis deadline,
 
 }  // namespace
 
-void SubchannelCall::RecvTrailingMetadataReady(void* arg, grpc_error* error) {
+void SubchannelCall::RecvTrailingMetadataReady(void* arg,
+                                               grpc_error_handle error) {
   SubchannelCall* call = static_cast<SubchannelCall*>(arg);
   GPR_ASSERT(call->recv_trailing_metadata_ != nullptr);
   grpc_status_code status = GRPC_STATUS_OK;
@@ -375,7 +376,7 @@ class Subchannel::AsyncWatcherNotifierLocked {
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_INIT(
                      &closure_,
-                     [](void* arg, grpc_error* /*error*/) {
+                     [](void* arg, grpc_error_handle /*error*/) {
                        auto* self =
                            static_cast<AsyncWatcherNotifierLocked*>(arg);
                        self->watcher_->OnConnectivityStateChange();
@@ -963,7 +964,7 @@ void Subchannel::MaybeStartConnectingLocked() {
   }
 }
 
-void Subchannel::OnRetryAlarm(void* arg, grpc_error* error) {
+void Subchannel::OnRetryAlarm(void* arg, grpc_error_handle error) {
   WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
   MutexLock lock(&c->mu_);
   c->have_retry_alarm_ = false;
@@ -998,7 +999,7 @@ void Subchannel::ContinueConnectingLocked() {
   connector_->Connect(args, &connecting_result_, &on_connecting_finished_);
 }
 
-void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
+void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
   WeakRefCountedPtr<Subchannel> c(static_cast<Subchannel*>(arg));
   const grpc_channel_args* delete_channel_args =
       c->connecting_result_.channel_args;
@@ -1020,7 +1021,7 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
 
 namespace {
 
-void ConnectionDestroy(void* arg, grpc_error* /*error*/) {
+void ConnectionDestroy(void* arg, grpc_error_handle /*error*/) {
   grpc_channel_stack* stk = static_cast<grpc_channel_stack*>(arg);
   grpc_channel_stack_destroy(stk);
   gpr_free(stk);
@@ -1040,7 +1041,7 @@ bool Subchannel::PublishTransportLocked() {
     return false;
   }
   grpc_channel_stack* stk;
-  grpc_error* error = grpc_channel_stack_builder_finish(
+  grpc_error_handle error = grpc_channel_stack_builder_finish(
       builder, 0, 1, ConnectionDestroy, nullptr,
       reinterpret_cast<void**>(&stk));
   if (error != GRPC_ERROR_NONE) {

@@ -79,10 +79,10 @@ class XdsBootstrap {
   static std::unique_ptr<XdsBootstrap> Create(XdsClient* client,
                                               TraceFlag* tracer,
                                               const char* fallback_config,
-                                              grpc_error** error);
+                                              grpc_error_handle* error);
 
   // Do not instantiate directly -- use ReadFromFile() above instead.
-  XdsBootstrap(Json json, grpc_error** error);
+  XdsBootstrap(Json json, grpc_error_handle* error);
 
   // TODO(roth): We currently support only one server. Fix this when we
   // add support for fallback for the xds channel.
@@ -98,16 +98,17 @@ class XdsBootstrap {
   }
 
  private:
-  grpc_error* ParseXdsServerList(Json* json);
-  grpc_error* ParseXdsServer(Json* json, size_t idx);
-  grpc_error* ParseChannelCredsArray(Json* json, XdsServer* server);
-  grpc_error* ParseChannelCreds(Json* json, size_t idx, XdsServer* server);
-  grpc_error* ParseServerFeaturesArray(Json* json, XdsServer* server);
-  grpc_error* ParseNode(Json* json);
-  grpc_error* ParseLocality(Json* json);
-  grpc_error* ParseCertificateProviders(Json* json);
-  grpc_error* ParseCertificateProvider(const std::string& instance_name,
-                                       Json* certificate_provider_json);
+  grpc_error_handle ParseXdsServerList(Json* json);
+  grpc_error_handle ParseXdsServer(Json* json, size_t idx);
+  grpc_error_handle ParseChannelCredsArray(Json* json, XdsServer* server);
+  grpc_error_handle ParseChannelCreds(Json* json, size_t idx,
+                                      XdsServer* server);
+  grpc_error_handle ParseServerFeaturesArray(Json* json, XdsServer* server);
+  grpc_error_handle ParseNode(Json* json);
+  grpc_error_handle ParseLocality(Json* json);
+  grpc_error_handle ParseCertificateProviders(Json* json);
+  grpc_error_handle ParseCertificateProvider(const std::string& instance_name,
+                                             Json* certificate_provider_json);
 
   absl::InlinedVector<XdsServer, 1> servers_;
   std::unique_ptr<Node> node_;

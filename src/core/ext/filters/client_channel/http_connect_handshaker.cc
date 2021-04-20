@@ -47,7 +47,7 @@ namespace {
 class HttpConnectHandshaker : public Handshaker {
  public:
   HttpConnectHandshaker();
-  void Shutdown(grpc_error* why) override;
+  void Shutdown(grpc_error_handle why) override;
   void DoHandshake(grpc_tcp_server_acceptor* acceptor,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override;
@@ -56,12 +56,12 @@ class HttpConnectHandshaker : public Handshaker {
  private:
   ~HttpConnectHandshaker() override;
   void CleanupArgsForFailureLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  void HandshakeFailedLocked(grpc_error* error)
+  void HandshakeFailedLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  static void OnWriteDone(void* arg, grpc_error* error);
-  static void OnReadDone(void* arg, grpc_error* error);
-  static void OnWriteDoneScheduler(void* arg, grpc_error* error);
-  static void OnReadDoneScheduler(void* arg, grpc_error* error);
+  static void OnWriteDone(void* arg, grpc_error_handle error);
+  static void OnReadDone(void* arg, grpc_error_handle error);
+  static void OnWriteDoneScheduler(void* arg, grpc_error_handle error);
+  static void OnReadDoneScheduler(void* arg, grpc_error_handle error);
 
   Mutex mu_;
 
@@ -108,7 +108,7 @@ void HttpConnectHandshaker::CleanupArgsForFailureLocked() {
 
 // If the handshake failed or we're shutting down, clean up and invoke the
 // callback with the error.
-void HttpConnectHandshaker::HandshakeFailedLocked(grpc_error* error) {
+void HttpConnectHandshaker::HandshakeFailedLocked(grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE) {
     // If we were shut down after an endpoint operation succeeded but
     // before the endpoint callback was invoked, we need to generate our
@@ -134,7 +134,8 @@ void HttpConnectHandshaker::HandshakeFailedLocked(grpc_error* error) {
 
 // This callback can be invoked inline while already holding onto the mutex. To
 // avoid deadlocks, schedule OnWriteDone on ExecCtx.
-void HttpConnectHandshaker::OnWriteDoneScheduler(void* arg, grpc_error* error) {
+void HttpConnectHandshaker::OnWriteDoneScheduler(void* arg,
+                                                 grpc_error_handle error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   grpc_core::ExecCtx::Run(
       DEBUG_LOCATION,
@@ -145,7 +146,7 @@ void HttpConnectHandshaker::OnWriteDoneScheduler(void* arg, grpc_error* error) {
 }
 
 // Callback invoked when finished writing HTTP CONNECT request.
-void HttpConnectHandshaker::OnWriteDone(void* arg, grpc_error* error) {
+void HttpConnectHandshaker::OnWriteDone(void* arg, grpc_error_handle error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   ReleasableMutexLock lock(&handshaker->mu_);
   if (error != GRPC_ERROR_NONE || handshaker->is_shutdown_) {
@@ -168,7 +169,8 @@ void HttpConnectHandshaker::OnWriteDone(void* arg, grpc_error* error) {
 
 // This callback can be invoked inline while already holding onto the mutex. To
 // avoid deadlocks, schedule OnReadDone on ExecCtx.
-void HttpConnectHandshaker::OnReadDoneScheduler(void* arg, grpc_error* error) {
+void HttpConnectHandshaker::OnReadDoneScheduler(void* arg,
+                                                grpc_error_handle error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   grpc_core::ExecCtx::Run(
       DEBUG_LOCATION,
@@ -179,7 +181,7 @@ void HttpConnectHandshaker::OnReadDoneScheduler(void* arg, grpc_error* error) {
 }
 
 // Callback invoked for reading HTTP CONNECT response.
-void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error* error) {
+void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error_handle error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
   ReleasableMutexLock lock(&handshaker->mu_);
   if (error != GRPC_ERROR_NONE || handshaker->is_shutdown_) {
@@ -265,7 +267,7 @@ done:
 // Public handshaker methods
 //
 
-void HttpConnectHandshaker::Shutdown(grpc_error* why) {
+void HttpConnectHandshaker::Shutdown(grpc_error_handle why) {
   {
     MutexLock lock(&mu_);
     if (!is_shutdown_) {

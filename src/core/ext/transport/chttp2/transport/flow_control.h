@@ -168,7 +168,7 @@ class TransportFlowControlBase {
 
   // Called to do bookkeeping when a stream owned by this transport receives
   // data from the wire. Also does error checking for frame size.
-  virtual grpc_error* RecvData(int64_t /* incoming_frame_size */) = 0;
+  virtual grpc_error_handle RecvData(int64_t /* incoming_frame_size */) = 0;
 
   // Called to do bookkeeping when we receive a WINDOW_UPDATE frame.
   virtual void RecvUpdate(uint32_t /* size */) = 0;
@@ -210,7 +210,7 @@ class TransportFlowControlDisabled final : public TransportFlowControlBase {
   FlowControlAction MakeAction() override { return FlowControlAction(); }
   FlowControlAction PeriodicUpdate() override { return FlowControlAction(); }
   void StreamSentData(int64_t /* size */) override {}
-  grpc_error* RecvData(int64_t /* incoming_frame_size */) override {
+  grpc_error_handle RecvData(int64_t /* incoming_frame_size */) override {
     return GRPC_ERROR_NONE;
   }
   void RecvUpdate(uint32_t /* size */) override {}
@@ -246,14 +246,14 @@ class TransportFlowControl final : public TransportFlowControlBase {
 
   void StreamSentData(int64_t size) override { remote_window_ -= size; }
 
-  grpc_error* ValidateRecvData(int64_t incoming_frame_size);
+  grpc_error_handle ValidateRecvData(int64_t incoming_frame_size);
   void CommitRecvData(int64_t incoming_frame_size) {
     announced_window_ -= incoming_frame_size;
   }
 
-  grpc_error* RecvData(int64_t incoming_frame_size) override {
+  grpc_error_handle RecvData(int64_t incoming_frame_size) override {
     FlowControlTrace trace("  data recv", this, nullptr);
-    grpc_error* error = ValidateRecvData(incoming_frame_size);
+    grpc_error_handle error = ValidateRecvData(incoming_frame_size);
     if (error != GRPC_ERROR_NONE) return error;
     CommitRecvData(incoming_frame_size);
     return GRPC_ERROR_NONE;
@@ -352,7 +352,7 @@ class StreamFlowControlBase {
   virtual void SentData(int64_t /* outgoing_frame_size */) = 0;
 
   // Bookkeeping and error checking for when data is received by this stream.
-  virtual grpc_error* RecvData(int64_t /* incoming_frame_size */) = 0;
+  virtual grpc_error_handle RecvData(int64_t /* incoming_frame_size */) = 0;
 
   // Called to check if this stream needs to send a WINDOW_UPDATE frame.
   virtual uint32_t MaybeSendUpdate() = 0;
@@ -395,7 +395,7 @@ class StreamFlowControlDisabled : public StreamFlowControlBase {
   }
   FlowControlAction MakeAction() override { return FlowControlAction(); }
   void SentData(int64_t /* outgoing_frame_size */) override {}
-  grpc_error* RecvData(int64_t /* incoming_frame_size */) override {
+  grpc_error_handle RecvData(int64_t /* incoming_frame_size */) override {
     return GRPC_ERROR_NONE;
   }
   uint32_t MaybeSendUpdate() override { return 0; }
@@ -427,7 +427,7 @@ class StreamFlowControl final : public StreamFlowControlBase {
   }
 
   // we have received data from the wire
-  grpc_error* RecvData(int64_t incoming_frame_size) override;
+  grpc_error_handle RecvData(int64_t incoming_frame_size) override;
 
   // returns an announce if we should send a stream update to our peer, else
   // returns zero

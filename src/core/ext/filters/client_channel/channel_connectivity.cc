@@ -67,7 +67,7 @@ struct state_watcher {
   grpc_completion_queue* cq;
   grpc_cq_completion completion_storage;
   grpc_channel* channel;
-  grpc_error* error;
+  grpc_error_handle error;
   void* tag;
 };
 }  // namespace
@@ -98,10 +98,10 @@ static void finished_completion(void* pw, grpc_cq_completion* /*ignored*/) {
 }
 
 static void partly_done(state_watcher* w, bool due_to_completion,
-                        grpc_error* error) {
+                        grpc_error_handle error) {
   bool end_op = false;
   void* end_op_tag = nullptr;
-  grpc_error* end_op_error = nullptr;
+  grpc_error_handle end_op_error = nullptr;
   grpc_completion_queue* end_op_cq = nullptr;
   grpc_cq_completion* end_op_completion_storage = nullptr;
 
@@ -164,11 +164,11 @@ static void partly_done(state_watcher* w, bool due_to_completion,
   GRPC_ERROR_UNREF(error);
 }
 
-static void watch_complete(void* pw, grpc_error* error) {
+static void watch_complete(void* pw, grpc_error_handle error) {
   partly_done(static_cast<state_watcher*>(pw), true, GRPC_ERROR_REF(error));
 }
 
-static void timeout_complete(void* pw, grpc_error* error) {
+static void timeout_complete(void* pw, grpc_error_handle error) {
   partly_done(static_cast<state_watcher*>(pw), false, GRPC_ERROR_REF(error));
 }
 
@@ -189,7 +189,7 @@ typedef struct watcher_timer_init_arg {
   gpr_timespec deadline;
 } watcher_timer_init_arg;
 
-static void watcher_timer_init(void* arg, grpc_error* /*error_ignored*/) {
+static void watcher_timer_init(void* arg, grpc_error_handle /*error_ignored*/) {
   watcher_timer_init_arg* wa = static_cast<watcher_timer_init_arg*>(arg);
 
   grpc_timer_init(&wa->w->alarm, grpc_timespec_to_millis_round_up(wa->deadline),
