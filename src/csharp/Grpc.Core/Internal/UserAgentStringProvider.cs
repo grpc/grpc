@@ -71,17 +71,11 @@ namespace Grpc.Core.Internal
 
         static string TryGetArchitectureString(CommonPlatformDetection.CpuArchitecture arch)
         {
-            switch (arch)
+            if (arch == CommonPlatformDetection.CpuArchitecture.Unknown)
             {
-                case CommonPlatformDetection.CpuArchitecture.X86:
-                  return "x86";
-                case CommonPlatformDetection.CpuArchitecture.X64:
-                  return "x64";
-                case CommonPlatformDetection.CpuArchitecture.Arm64:
-                  return "arm64";
-                default:
-                  return null;
+                return null;
             }
+            return arch.ToString().ToLowerInvariant();
         }
 
         static string SanitizeFrameworkDescription(string frameworkDescription)
