@@ -13,6 +13,8 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_EVENT_ENGINE_TEST
+
 #include <string.h>
 
 #include "grpc/event_engine/event_engine.h"
@@ -36,3 +38,5 @@ socklen_t EventEngine::ResolvedAddress::size() const { return size_; }
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+
+#endif  // GRPC_EVENT_ENGINE_TEST
