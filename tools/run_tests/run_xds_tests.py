@@ -44,12 +44,17 @@ from src.proto.grpc.testing import test_pb2_grpc
 
 # Envoy protos provided by PyPI package xds-protos
 # Needs to import the generated Python file to load descriptors
-from envoy.service.status.v3 import csds_pb2
-from envoy.service.status.v3 import csds_pb2_grpc
-from envoy.extensions.filters.network.http_connection_manager.v3 import http_connection_manager_pb2
-from envoy.extensions.filters.common.fault.v3 import fault_pb2
-from envoy.extensions.filters.http.fault.v3 import fault_pb2
-from envoy.extensions.filters.http.router.v3 import router_pb2
+try:
+    from envoy.service.status.v3 import csds_pb2
+    from envoy.service.status.v3 import csds_pb2_grpc
+    from envoy.extensions.filters.network.http_connection_manager.v3 import http_connection_manager_pb2
+    from envoy.extensions.filters.common.fault.v3 import fault_pb2
+    from envoy.extensions.filters.http.fault.v3 import fault_pb2
+    from envoy.extensions.filters.http.router.v3 import router_pb2
+except ImportError:
+    # These protos are required by CSDS test. We should not fail the entire
+    # script for one test case.
+    pass
 
 logger = logging.getLogger()
 console_handler = logging.StreamHandler()
