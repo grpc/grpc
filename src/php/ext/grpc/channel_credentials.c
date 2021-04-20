@@ -233,10 +233,7 @@ PHP_METHOD(ChannelCredentials, createComposite) {
  * @return null
  */
 PHP_METHOD(ChannelCredentials, createInsecure) {
-  grpc_channel_credentials* creds = grpc_insecure_credentials_create();
-  zval* creds_object = grpc_php_wrap_channel_credentials(
-      creds, strdup("INSECURE"), false TSRMLS_CC);
-  RETURN_DESTROY_ZVAL(creds_object);
+  RETURN_NULL();
 }
 
 /**
