@@ -50,12 +50,12 @@ TEMPLATE_FILE_HEADER_COMMENT = """
 
 def loadtest_template(
         input_file_names: Iterable[str],
-        metadata: Mapping[str, Any],  # Hello
+        metadata: Mapping[str, Any],
         inject_client_pool: bool,
         inject_server_pool: bool,
         inject_big_query_table: bool,
         inject_timeout_seconds: bool,
-        inject_ttl_seconds: bool) -> Dict[str, Any]:
+        inject_ttl_seconds: bool) -> Dict[str, Any]:  # yapf: disable
     """Generates the load test template."""
     clients = list()
     servers = list()
