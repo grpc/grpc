@@ -38,17 +38,27 @@ grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
   FILE* file;
   size_t bytes_read = 0;
   grpc_error* error = GRPC_ERROR_NONE;
+  int seek_result1 = 0;
+  int seek_result2 = 0;
+  int filenum = 0;
+
+  //gpr_log(GPR_ERROR, "reading file: %s", filename );
+
 
   GRPC_SCHEDULING_START_BLOCKING_REGION;
   file = fopen(filename, "rb");
+  
   if (file == nullptr) {
     error = GRPC_OS_ERROR(errno, "fopen");
     goto end;
   }
-  fseek(file, 0, SEEK_END);
+  seek_result1 = fseek(file, 0, SEEK_END);
+  //gpr_log(GPR_ERROR, "seek to end result: %d", seek_result1 );
   /* Converting to size_t on the assumption that it will not fail */
   contents_size = static_cast<size_t>(ftell(file));
-  fseek(file, 0, SEEK_SET);
+  //gpr_log(GPR_ERROR, "ftell result: %d", (int) contents_size );
+  seek_result2 = fseek(file, 0, SEEK_SET);
+  //gpr_log(GPR_ERROR, "seek to start result: %d", seek_result2 );
   contents = static_cast<unsigned char*>(
       gpr_malloc(contents_size + (add_null_terminator ? 1 : 0)));
   bytes_read = fread(contents, 1, contents_size, file);
@@ -64,6 +74,8 @@ grpc_error* grpc_load_file(const char* filename, int add_null_terminator,
   result = grpc_slice_new(contents, contents_size, gpr_free);
 
 end:
+  filenum = fileno(file);
+  gpr_log(GPR_ERROR, "reading %s : file %p : filenum %d : bytes_read %d : contents_size %d:  seek1 result %d, seek2 result: %d", filename, file, filenum, (int) bytes_read, (int) contents_size, seek_result1, seek_result2 );  
   *output = result;
   if (file != nullptr) fclose(file);
   if (error != GRPC_ERROR_NONE) {

@@ -26,6 +26,7 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "test/core/util/test_config.h"
 
@@ -151,13 +152,37 @@ static void test_load_big_file(void) {
   gpr_free(buffer);
 }
 
+static void read_file_loop(void* arg) {
+  const char* file_name = static_cast<const char*>(arg);
+  for (int i = 0; i < 10; i++) {
+    grpc_slice slice;
+    GPR_ASSERT(GRPC_LOG_IF_ERROR("load_file", grpc_load_file(file_name, 0, &slice)));
+    //GPR_ASSERT(GRPC_SLICE_LENGTH(slice) == strlen(blah));
+    //GPR_ASSERT(!memcmp(GRPC_SLICE_START_PTR(slice), blah, strlen(blah)));
+    grpc_slice_unref(slice);
+  }
+}
+
+static void test_concurrent_load_same_file(void) {
+  LOG_TEST_NAME("test_concurrent_load_same_file");
+  const char* file_name = "src/core/tsi/test_creds/ca.pem";
+
+  bool ok;
+  grpc_core::Thread thd("read_file_thread1", read_file_loop, const_cast<char*>(file_name), &ok);
+  GPR_ASSERT(ok);
+  thd.Start();
+  read_file_loop(const_cast<char*>(file_name));
+  thd.Join();
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  test_load_empty_file();
-  test_load_failure();
-  test_load_small_file();
-  test_load_big_file();
+  //test_load_empty_file();
+  //test_load_failure();
+  //test_load_small_file();
+  //test_load_big_file();
+  test_concurrent_load_same_file();
   grpc_shutdown();
   return 0;
 }
