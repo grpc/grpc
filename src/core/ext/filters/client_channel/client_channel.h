@@ -133,7 +133,8 @@ class ClientChannel {
       AsyncConnectivityStateWatcherInterface* watcher);
 
   RefCountedPtr<LoadBalancedCall> CreateLoadBalancedCall(
-      const grpc_call_element_args& args, grpc_polling_entity* pollent);
+      const grpc_call_element_args& args, grpc_polling_entity* pollent,
+      grpc_closure* on_call_destruction_complete);
 
  private:
   class CallData;
@@ -356,8 +357,15 @@ class ClientChannel {
 class ClientChannel::LoadBalancedCall
     : public RefCounted<LoadBalancedCall, PolymorphicRefCount, kUnrefCallDtor> {
  public:
+  // If on_call_destruction_complete is non-null, then it will be
+  // invoked once the LoadBalancedCall is completely destroyed.
+  // If it is null, then the caller is responsible for checking whether
+  // the LB call has a subchannel call and ensuring that the
+  // on_call_destruction_complete closure passed down from the surface
+  // is not invoked until after the subchannel call stack is destroyed.
   LoadBalancedCall(ClientChannel* chand, const grpc_call_element_args& args,
-                   grpc_polling_entity* pollent);
+                   grpc_polling_entity* pollent,
+                   grpc_closure* on_call_destruction_complete);
   ~LoadBalancedCall() override;
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
@@ -436,14 +444,14 @@ class ClientChannel::LoadBalancedCall
   grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
+  grpc_polling_entity* pollent_;
+  grpc_closure* on_call_destruction_complete_;
 
   // Set when we get a cancel_stream op.
   grpc_error* cancel_error_ = GRPC_ERROR_NONE;
 
   // Set when we fail inside the LB call.
   grpc_error* failure_error_ = GRPC_ERROR_NONE;
-
-  grpc_polling_entity* pollent_ = nullptr;
 
   grpc_closure pick_closure_;
 

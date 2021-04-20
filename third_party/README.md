@@ -105,3 +105,10 @@ Rule 'boringssl' indicated that a canonical reproducible form can be obtained by
 ### Updating third_party/protobuf
 
 See http://go/grpc-third-party-protobuf-update-instructions (internal only)
+
+### Updating third_party/envoy-api
+
+Apart from the above steps, please perform the following two steps to generate the Python `xds-protos` package:
+
+1. Bump the version in the `tools/distrib/python/xds_protos/setup.py`;
+2. Run `tools/distrib/python/xds_protos/build_validate_upload.sh` to upload the built wheel.

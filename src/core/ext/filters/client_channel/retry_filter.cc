@@ -201,6 +201,7 @@ class RetryFilter::CallData {
 
  private:
   class Canceller;
+  class CallStackDestructionBarrier;
 
   // Pending batches stored in call data.
   struct PendingBatch {
@@ -456,6 +457,8 @@ class RetryFilter::CallData {
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
 
+  RefCountedPtr<CallStackDestructionBarrier> call_stack_destruction_barrier_;
+
   // TODO(roth): As part of implementing hedging, we will need to maintain a
   // list of all pending attempts, so that we can cancel them all if the call
   // gets cancelled.
@@ -523,6 +526,58 @@ class RetryFilter::CallData {
   bool seen_send_trailing_metadata_ = false;
   grpc_linked_mdelem* send_trailing_metadata_storage_ = nullptr;
   grpc_metadata_batch send_trailing_metadata_;
+};
+
+//
+// RetryFilter::CallData::CallStackDestructionBarrier
+//
+
+// A class to track the existence of LoadBalancedCall call stacks that
+// we've created.  We wait until all such call stacks have been
+// destroyed before we return the on_call_stack_destruction closure up
+// to the surface.
+//
+// The parent RetryFilter::CallData object holds a ref to this object.
+// When it is destroyed, it will store the on_call_stack_destruction
+// closure from the surface in this object and then release its ref.
+// We also take a ref to this object for each LB call we create, and
+// those refs are not released until the LB call stack is destroyed.
+// When this object is destroyed, it will invoke the
+// on_call_stack_destruction closure from the surface.
+class RetryFilter::CallData::CallStackDestructionBarrier
+    : public RefCounted<CallStackDestructionBarrier, PolymorphicRefCount,
+                        kUnrefCallDtor> {
+ public:
+  CallStackDestructionBarrier() {}
+
+  ~CallStackDestructionBarrier() override {
+    // TODO(yashkt) : This can potentially be a Closure::Run
+    ExecCtx::Run(DEBUG_LOCATION, on_call_stack_destruction_, GRPC_ERROR_NONE);
+  }
+
+  // Set the closure from the surface.  This closure will be invoked
+  // when this object is destroyed.
+  void set_on_call_stack_destruction(grpc_closure* on_call_stack_destruction) {
+    on_call_stack_destruction_ = on_call_stack_destruction;
+  }
+
+  // Invoked to get an on_call_stack_destruction closure for a new LB call.
+  grpc_closure* MakeLbCallDestructionClosure(CallData* calld) {
+    Ref().release();  // Ref held by callback.
+    grpc_closure* on_lb_call_destruction_complete =
+        calld->arena_->New<grpc_closure>();
+    GRPC_CLOSURE_INIT(on_lb_call_destruction_complete,
+                      OnLbCallDestructionComplete, this, nullptr);
+    return on_lb_call_destruction_complete;
+  }
+
+ private:
+  static void OnLbCallDestructionComplete(void* arg, grpc_error* /*error*/) {
+    auto* self = static_cast<CallStackDestructionBarrier*>(arg);
+    self->Unref();
+  }
+
+  grpc_closure* on_call_stack_destruction_ = nullptr;
 };
 
 //
@@ -1631,24 +1686,17 @@ void RetryFilter::CallData::Destroy(grpc_call_element* elem,
                                     const grpc_call_final_info* /*final_info*/,
                                     grpc_closure* then_schedule_closure) {
   auto* calld = static_cast<CallData*>(elem->call_data);
-  RefCountedPtr<SubchannelCall> subchannel_call;
-  // TODO(roth): As part of implementing hedging, the logic around
-  // then_schedule_closure may need to get more complex.  We may
-  // need to have a separate then_schedule_closure for each LB call, and
-  // wait until all of those have been invoked before we invoke the
-  // then_schedule_closure passed in here.
-  if (GPR_LIKELY(calld->committed_call_ != nullptr)) {
-    subchannel_call = calld->committed_call_->subchannel_call();
-  } else if (GPR_LIKELY(calld->call_attempt_ != nullptr)) {
-    subchannel_call = calld->call_attempt_->lb_call()->subchannel_call();
-  }
+  // Save our ref to the CallStackDestructionBarrier until after our
+  // dtor is invoked.
+  RefCountedPtr<CallStackDestructionBarrier> call_stack_destruction_barrier =
+      std::move(calld->call_stack_destruction_barrier_);
   calld->~CallData();
-  if (GPR_LIKELY(subchannel_call != nullptr)) {
-    subchannel_call->SetAfterCallStackDestroy(then_schedule_closure);
-  } else {
-    // TODO(yashkt) : This can potentially be a Closure::Run
-    ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
-  }
+  // Now set the callback in the CallStackDestructionBarrier object,
+  // right before we release our ref to it (implicitly upon returning).
+  // The callback will be invoked when the CallStackDestructionBarrier
+  // is destroyed.
+  call_stack_destruction_barrier->set_on_call_stack_destruction(
+      then_schedule_closure);
 }
 
 void RetryFilter::CallData::StartTransportStreamOpBatch(
@@ -1701,6 +1749,8 @@ RetryFilter::CallData::CallData(RetryFilter* chand,
       owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       call_context_(args.context),
+      call_stack_destruction_barrier_(
+          arena_->New<CallStackDestructionBarrier>()),
       pending_send_initial_metadata_(false),
       pending_send_message_(false),
       pending_send_trailing_metadata_(false),
@@ -1788,7 +1838,11 @@ RetryFilter::CallData::CreateLoadBalancedCall() {
   grpc_call_element_args args = {owning_call_, nullptr,          call_context_,
                                  path_,        call_start_time_, deadline_,
                                  arena_,       call_combiner_};
-  return chand_->client_channel_->CreateLoadBalancedCall(args, pollent_);
+  return chand_->client_channel_->CreateLoadBalancedCall(
+      args, pollent_,
+      // This callback holds a ref to the CallStackDestructionBarrier
+      // object until the LB call is destroyed.
+      call_stack_destruction_barrier_->MakeLbCallDestructionClosure(this));
 }
 
 void RetryFilter::CallData::CreateCallAttempt() {
