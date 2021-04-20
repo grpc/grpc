@@ -45,6 +45,17 @@ CONFIGURATION_FILE_HEADER_COMMENT = """
 """
 
 
+def image_language(language: str) -> str:
+    """Convert scenario languages to image languages."""
+    return {
+        'c++': 'cxx',
+        'node_purejs': 'node',
+        'php7': 'php',
+        'php7_protobuf_c': 'php',
+        'python_asyncio': 'python',
+    }.get(language, language)
+
+
 def default_prefix() -> str:
     """Constructs and returns a default prefix for LoadTest names."""
     return os.environ.get('USER', 'loadtest')
@@ -122,8 +133,10 @@ def gen_loadtest_configs(
     """
     validate_annotations(annotations)
     prefix = loadtest_name_prefix or default_prefix()
-    cl = language_config.client_language or language_config.language
-    sl = language_config.server_language or language_config.language
+    cl = image_language(language_config.client_language or
+                        language_config.language)
+    sl = image_language(language_config.server_language or
+                        language_config.language)
     scenario_filter = scenario_config_exporter.scenario_filter(
         scenario_name_regex=scenario_name_regex,
         category=language_config.category,
@@ -173,7 +186,7 @@ def gen_loadtest_configs(
             ]
             if not spec['servers']:
                 raise IndexError('Server language not found in template: %s' %
-                                 cl)
+                                 sl)
 
             spec['scenariosJSON'] = scenario_str
 
