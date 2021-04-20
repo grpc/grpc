@@ -34,7 +34,7 @@ class StubOptions {
   const char* suffix_for_stats() const { return suffix_for_stats_; }
 
  private:
-  const char* suffix_for_stats_;
+  const char* suffix_for_stats_ = nullptr;
 
 };
 
