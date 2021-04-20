@@ -17,10 +17,39 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/iomgr/event_engine/util.h"
 #include "src/core/lib/iomgr/timer.h"
 
-void timer_init(grpc_timer* timer, grpc_millis, grpc_closure* closure) {}
-void timer_cancel(grpc_timer* timer) {}
+namespace {
+using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::GrpcClosureToCallback;
+}  // namespace
+
+struct grpc_event_engine_timer_data {
+  EventEngine::TaskHandle handle;
+};
+
+void timer_init(grpc_timer* timer, grpc_millis deadline,
+                grpc_closure* closure) {
+  // Note: post-iomgr, callers will find their own EventEngine
+  std::shared_ptr<EventEngine> engine = GetDefaultEventEngine();
+  auto metadata = new grpc_event_engine_timer_data;
+  timer->custom_timer = metadata;
+  metadata->handle =
+      engine->RunAt(grpc_core::ToAbslTime(
+                        grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
+                    GrpcClosureToCallback(closure), {});
+}
+
+void timer_cancel(grpc_timer* timer) {
+  // Note: post-iomgr, callers will find their own EventEngine
+  std::shared_ptr<EventEngine> engine = GetDefaultEventEngine();
+  auto metadata =
+      static_cast<grpc_event_engine_timer_data*>(timer->custom_timer);
+  engine->TryCancel(metadata->handle);
+  delete metadata;
+}
 
 /* Internal API */
 grpc_timer_check_result timer_check(grpc_millis* next) {
