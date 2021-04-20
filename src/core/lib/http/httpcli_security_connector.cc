@@ -105,6 +105,11 @@ class grpc_httpcli_ssl_channel_security_connector final
     tsi_peer_destruct(&peer);
   }
 
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error* error) override {
+    GRPC_ERROR_UNREF(error);
+  }
+
   int cmp(const grpc_security_connector* other_sc) const override {
     auto* other =
         reinterpret_cast<const grpc_httpcli_ssl_channel_security_connector*>(

@@ -60,6 +60,11 @@ class InsecureChannelSecurityConnector
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error* error) override {
+    GRPC_ERROR_UNREF(error);
+  }
+
   int cmp(const grpc_security_connector* other_sc) const override;
 };
 
@@ -77,6 +82,11 @@ class InsecureServerSecurityConnector : public grpc_server_security_connector {
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
+
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error* error) override {
+    GRPC_ERROR_UNREF(error);
+  }
 
   int cmp(const grpc_security_connector* other) const override;
 };

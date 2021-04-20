@@ -486,6 +486,7 @@ void SecurityHandshaker::Shutdown(grpc_error* why) {
   MutexLock lock(&mu_);
   if (!is_shutdown_) {
     is_shutdown_ = true;
+    connector_->cancel_check_peer(&on_peer_checked_, GRPC_ERROR_REF(why));
     tsi_handshaker_shutdown(handshaker_);
     grpc_endpoint_shutdown(args_->endpoint, GRPC_ERROR_REF(why));
     CleanupArgsForFailureLocked();
