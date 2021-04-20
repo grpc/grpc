@@ -328,6 +328,7 @@ void grpc_tls_certificate_distributor::CancelTlsCertificatesWatch(
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
 grpc_tls_identity_pairs* grpc_tls_identity_pairs_create() {
+  grpc_core::ExecCtx exec_ctx;
   return new grpc_tls_identity_pairs();
 }
 
@@ -337,10 +338,12 @@ void grpc_tls_identity_pairs_add_pair(grpc_tls_identity_pairs* pairs,
   GPR_ASSERT(pairs != nullptr);
   GPR_ASSERT(private_key != nullptr);
   GPR_ASSERT(cert_chain != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   pairs->pem_key_cert_pairs.emplace_back(private_key, cert_chain);
 }
 
 void grpc_tls_identity_pairs_destroy(grpc_tls_identity_pairs* pairs) {
   GPR_ASSERT(pairs != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   delete pairs;
 }

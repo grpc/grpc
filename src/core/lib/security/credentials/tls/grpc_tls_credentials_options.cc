@@ -87,6 +87,7 @@ void grpc_tls_server_authorization_check_config::Cancel(
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 
 grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
+  grpc_core::ExecCtx exec_ctx;
   return new grpc_tls_credentials_options();
 }
 
@@ -94,6 +95,7 @@ void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type) {
   GPR_ASSERT(options != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   options->set_cert_request_type(type);
 }
 
@@ -101,6 +103,7 @@ void grpc_tls_credentials_options_set_server_verification_option(
     grpc_tls_credentials_options* options,
     grpc_tls_server_verification_option server_verification_option) {
   GPR_ASSERT(options != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   options->set_server_verification_option(server_verification_option);
 }
 
@@ -109,6 +112,7 @@ void grpc_tls_credentials_options_set_certificate_provider(
     grpc_tls_certificate_provider* provider) {
   GPR_ASSERT(options != nullptr);
   GPR_ASSERT(provider != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   options->set_certificate_provider(
       provider->Ref(DEBUG_LOCATION, "set_certificate_provider"));
 }
@@ -116,24 +120,28 @@ void grpc_tls_credentials_options_set_certificate_provider(
 void grpc_tls_credentials_options_watch_root_certs(
     grpc_tls_credentials_options* options) {
   GPR_ASSERT(options != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   options->set_watch_root_cert(true);
 }
 
 void grpc_tls_credentials_options_set_root_cert_name(
     grpc_tls_credentials_options* options, const char* root_cert_name) {
   GPR_ASSERT(options != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   options->set_root_cert_name(root_cert_name);
 }
 
 void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
     grpc_tls_credentials_options* options) {
   GPR_ASSERT(options != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   options->set_watch_identity_pair(true);
 }
 
 void grpc_tls_credentials_options_set_identity_cert_name(
     grpc_tls_credentials_options* options, const char* identity_cert_name) {
   GPR_ASSERT(options != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   options->set_identity_cert_name(identity_cert_name);
 }
 
@@ -142,6 +150,7 @@ void grpc_tls_credentials_options_set_server_authorization_check_config(
     grpc_tls_server_authorization_check_config* config) {
   GPR_ASSERT(options != nullptr);
   GPR_ASSERT(config != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   options->set_server_authorization_check_config(config->Ref());
 }
 
@@ -159,6 +168,7 @@ grpc_tls_server_authorization_check_config_create(
             "check config.");
     return nullptr;
   }
+  grpc_core::ExecCtx exec_ctx;
   return new grpc_tls_server_authorization_check_config(
       config_user_data, schedule, cancel, destruct);
 }
