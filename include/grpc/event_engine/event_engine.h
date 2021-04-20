@@ -14,6 +14,8 @@
 #ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 #define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 
+#ifdef GRPC_EVENT_ENGINE_TEST
+
 #include <grpc/support/port_platform.h>
 
 #include <functional>
@@ -278,4 +280,5 @@ absl::Status SetDefaultEventEngine(std::shared_ptr<EventEngine> engine);
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
+#endif
 #endif  // GRPC_EVENT_ENGINE_EVENT_ENGINE_H
