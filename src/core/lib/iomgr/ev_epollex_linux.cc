@@ -163,8 +163,8 @@ static void pollable_unref(pollable* p, const grpc_core::DebugLocation& dbg_loc,
 struct grpc_fd {
   grpc_fd(int fd, const char* name, bool track_err)
       : fd(fd), track_err(track_err) {
-    gpr_mu_init(&orphan_mu);
-    gpr_mu_init(&pollable_mu);
+    orphan_mu = new grpc_core::Mutex();
+    pollable_mu = new grpc_core::Mutex();
     read_closure.InitEvent();
     write_closure.InitEvent();
     error_closure.InitEvent();
@@ -196,8 +196,8 @@ struct grpc_fd {
     absl::InlinedVector<int, 1> pollset_fds_tmp;
     pollset_fds_tmp.swap(pollset_fds);
 
-    gpr_mu_destroy(&pollable_mu);
-    gpr_mu_destroy(&orphan_mu);
+    delete pollable_mu;
+    delete orphan_mu;
 
     read_closure.DestroyEvent();
     write_closure.DestroyEvent();
@@ -214,8 +214,8 @@ struct grpc_fd {
   void invalidate() {
     fd = -1;
     gpr_atm_no_barrier_store(&refst, -1);
-    memset(&orphan_mu, -1, sizeof(orphan_mu));
-    memset(&pollable_mu, -1, sizeof(pollable_mu));
+    orphan_mu = nullptr;
+    pollable_mu = nullptr;
     pollable_obj = nullptr;
     on_done_closure = nullptr;
     memset(&iomgr_object, -1, sizeof(iomgr_object));
@@ -233,10 +233,10 @@ struct grpc_fd {
   //  Ref/Unref by two to avoid altering the orphaned bit
   gpr_atm refst = 1;
 
-  gpr_mu orphan_mu;
+  grpc_core::Mutex* orphan_mu;
 
   // Protects pollable_obj and pollset_fds.
-  gpr_mu pollable_mu;
+  grpc_core::Mutex* pollable_mu;
   absl::InlinedVector<int, 1> pollset_fds;  // Used in PO_MULTI.
   pollable* pollable_obj = nullptr;         // Used in PO_FD.
 
@@ -449,11 +449,11 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                       const char* reason) {
   bool is_fd_closed = false;
 
-  gpr_mu_lock(&fd->orphan_mu);
+  fd->orphan_mu->Lock();
 
   // Get the fd->pollable_obj and set the owner_orphaned on that pollable to
   // true so that the pollable will no longer access its owner_fd field.
-  gpr_mu_lock(&fd->pollable_mu);
+  fd->pollable_mu->Lock();
   pollable* pollable_obj = fd->pollable_obj;
 
   if (pollable_obj) {
@@ -498,8 +498,8 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
     gpr_mu_unlock(&pollable_obj->owner_orphan_mu);
   }
 
-  gpr_mu_unlock(&fd->pollable_mu);
-  gpr_mu_unlock(&fd->orphan_mu);
+  fd->pollable_mu->Unlock();
+  fd->orphan_mu->Unlock();
 
   UNREF_BY(fd, 2, reason); /* Drop the reference */
 }
@@ -537,7 +537,7 @@ static void fd_notify_on_error(grpc_fd* fd, grpc_closure* closure) {
 
 static bool fd_has_pollset(grpc_fd* fd, grpc_pollset* pollset) {
   const int epfd = pollset->active_pollable->epfd;
-  grpc_core::MutexLockForGprMu lock(&fd->pollable_mu);
+  grpc_core::MutexLock lock(fd->pollable_mu);
   for (size_t i = 0; i < fd->pollset_fds.size(); ++i) {
     if (fd->pollset_fds[i] == epfd) {
       return true;
@@ -548,7 +548,7 @@ static bool fd_has_pollset(grpc_fd* fd, grpc_pollset* pollset) {
 
 static void fd_add_pollset(grpc_fd* fd, grpc_pollset* pollset) {
   const int epfd = pollset->active_pollable->epfd;
-  grpc_core::MutexLockForGprMu lock(&fd->pollable_mu);
+  grpc_core::MutexLock lock(fd->pollable_mu);
   fd->pollset_fds.push_back(epfd);
 }
 
@@ -829,7 +829,7 @@ static void fd_has_errors(grpc_fd* fd) { fd->error_closure.SetReady(); }
  * Note that if a pollable object is already attached to the fd, it may be of
  * either PO_FD or PO_MULTI type */
 static grpc_error* get_fd_pollable(grpc_fd* fd, pollable** p) {
-  gpr_mu_lock(&fd->pollable_mu);
+  fd->pollable_mu->Lock();
   grpc_error* error = GRPC_ERROR_NONE;
   static const char* err_desc = "get_fd_pollable";
   if (fd->pollable_obj == nullptr) {
@@ -850,7 +850,7 @@ static grpc_error* get_fd_pollable(grpc_fd* fd, pollable** p) {
     GPR_ASSERT(fd->pollable_obj == nullptr);
     *p = nullptr;
   }
-  gpr_mu_unlock(&fd->pollable_mu);
+  fd->pollable_mu->Unlock();
   return error;
 }
 
@@ -1429,9 +1429,9 @@ static grpc_error* add_fds_to_pollsets(grpc_fd** fds, size_t fd_count,
   GPR_TIMER_SCOPE("add_fds_to_pollsets", 0);
   grpc_error* error = GRPC_ERROR_NONE;
   for (size_t i = 0; i < fd_count; i++) {
-    gpr_mu_lock(&fds[i]->orphan_mu);
+    fds[i]->orphan_mu->Lock();
     if ((gpr_atm_no_barrier_load(&fds[i]->refst) & 1) == 0) {
-      gpr_mu_unlock(&fds[i]->orphan_mu);
+      fds[i]->orphan_mu->Unlock();
       UNREF_BY(fds[i], 2, "pollset_set");
     } else {
       for (size_t j = 0; j < pollset_count; j++) {
@@ -1439,7 +1439,7 @@ static grpc_error* add_fds_to_pollsets(grpc_fd** fds, size_t fd_count,
                      pollable_add_fd(pollsets[j]->active_pollable, fds[i]),
                      err_desc);
       }
-      gpr_mu_unlock(&fds[i]->orphan_mu);
+      fds[i]->orphan_mu->Unlock();
       out_fds[(*out_fd_count)++] = fds[i];
     }
   }
