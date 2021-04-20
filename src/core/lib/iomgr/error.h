@@ -36,6 +36,7 @@
 /// full write up of this object.
 
 typedef struct grpc_error grpc_error;
+typedef grpc_error* grpc_error_handle;
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount;
 
@@ -130,7 +131,7 @@ typedef enum {
 #define GRPC_ERROR_CANCELLED ((grpc_error_handle)4)
 #define GRPC_ERROR_SPECIAL_MAX GRPC_ERROR_CANCELLED
 
-inline bool grpc_error_is_special(struct grpc_error_handle err) {
+inline bool grpc_error_is_special(grpc_error_handle err) {
   return err <= GRPC_ERROR_SPECIAL_MAX;
 }
 

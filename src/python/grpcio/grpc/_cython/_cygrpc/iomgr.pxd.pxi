@@ -23,6 +23,7 @@ cdef extern from "grpc/impl/codegen/slice.h":
 cdef extern from "src/core/lib/iomgr/error.h":
   struct grpc_error:
     pass
+  ctypedef grpc_error* grpc_error_handle
 
 # TODO(https://github.com/grpc/grpc/issues/20135) Change the filename
 # for something more meaningful.
