@@ -51,9 +51,7 @@ class RpcServer extends Server
         $event = $this->call->startBatch([
             OP_RECV_MESSAGE => true,
         ]);
-        if (!$event->message) {
-            throw new Exception("Did not receive a proper message");
-        }
+        $request->clear();
         $request->mergeFromString($event->message);
         return $request;
     }
