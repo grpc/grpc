@@ -24,7 +24,6 @@ namespace {
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToCallback;
-}  // namespace
 
 struct grpc_event_engine_timer_data {
   EventEngine::TaskHandle handle;
@@ -36,6 +35,8 @@ void timer_init(grpc_timer* timer, grpc_millis deadline,
   std::shared_ptr<EventEngine> engine = GetDefaultEventEngine();
   auto metadata = new grpc_event_engine_timer_data;
   timer->custom_timer = metadata;
+  // TODO(hork): EventEngine and gRPC need to use the same clock type for
+  // deadlines.
   metadata->handle =
       engine->RunAt(grpc_core::ToAbslTime(
                         grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
@@ -58,6 +59,8 @@ grpc_timer_check_result timer_check(grpc_millis* next) {
 void timer_list_init() {}
 void timer_list_shutdown(void) {}
 void timer_consume_kick(void) {}
+
+}  // namespace
 
 grpc_timer_vtable grpc_event_engine_timer_vtable = {
     timer_init,      timer_cancel,        timer_check,

@@ -47,7 +47,7 @@ struct grpc_tcp_server {
 namespace {
 
 // NOTE: the closure is already initialized, and does not take an Endpoint.
-// See chttp2_connector:L74. Instead, the closure arg contains a ptr to the
+// See Chttp2Connector::Connect. Instead, the closure arg contains a ptr to the
 // endpoint that iomgr is expected to populate. When gRPC eventually uses the
 // EventEngine directly, closures will be replaced with EE callback types.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
@@ -77,11 +77,10 @@ EventEngine::Listener::AcceptCallback GrpcClosureToAcceptCallback(
 /// * channel_args: owned by caller
 /// * addr: owned by caller
 /// * deadline: copied
-static void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
-                        grpc_pollset_set* interested_parties,
-                        const grpc_channel_args* channel_args,
-                        const grpc_resolved_address* addr,
-                        grpc_millis deadline) {
+void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
+                 grpc_pollset_set* interested_parties,
+                 const grpc_channel_args* channel_args,
+                 const grpc_resolved_address* addr, grpc_millis deadline) {
   (void)interested_parties;
   // TODO(hork): peer_string needs to be set to ResolvedAddress name
   grpc_event_engine_endpoint* ee_endpoint =
@@ -104,9 +103,9 @@ static void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   }
 }
 
-static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
-                                     const grpc_channel_args* args,
-                                     grpc_tcp_server** server) {
+grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
+                              const grpc_channel_args* args,
+                              grpc_tcp_server** server) {
   // TODO(hork): retrieve EventEngine from Endpoint or from channel_args
   std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
   // TODO(hork): Convert channel_args to ChannelArgs
@@ -139,9 +138,9 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   return GRPC_ERROR_NONE;
 }
 
-static void tcp_server_start(grpc_tcp_server* server,
-                             const std::vector<grpc_pollset*>* pollsets,
-                             grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
+void tcp_server_start(grpc_tcp_server* server,
+                      const std::vector<grpc_pollset*>* pollsets,
+                      grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
   (void)server;
   (void)pollsets;
   (void)on_accept_cb;
@@ -150,9 +149,9 @@ static void tcp_server_start(grpc_tcp_server* server,
   // LibuvEventEngine::Listener::Start(AcceptCallback)
 }
 
-static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
-                                       const grpc_resolved_address* addr,
-                                       int* out_port) {
+grpc_error* tcp_server_add_port(grpc_tcp_server* s,
+                                const grpc_resolved_address* addr,
+                                int* out_port) {
   EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
                                   addr->len);
   auto port = s->listener->Bind(ra);
@@ -163,39 +162,38 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   return GRPC_ERROR_NONE;
 }
 
-static grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
+grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
     grpc_tcp_server* s) {
   (void)s;
   // TODO(hork): verify
   return nullptr;
 }
 
-static unsigned tcp_server_port_fd_count(grpc_tcp_server* /* s */,
-                                         unsigned /* port_index */) {
+unsigned tcp_server_port_fd_count(grpc_tcp_server* /* s */,
+                                  unsigned /* port_index */) {
   return 0;
 }
 
-static int tcp_server_port_fd(grpc_tcp_server* /* s */,
-                              unsigned /* port_index */,
-                              unsigned /* fd_index */) {
+int tcp_server_port_fd(grpc_tcp_server* /* s */, unsigned /* port_index */,
+                       unsigned /* fd_index */) {
   // Note: only used internally
   return -1;
 }
 
-static grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
+grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
   gpr_ref_non_zero(&s->refs);
   return s;
 }
 
-static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
-                                             grpc_closure* shutdown_starting) {
+void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
+                                      grpc_closure* shutdown_starting) {
   gpr_mu_lock(&s->mu);
   grpc_closure_list_append(&s->shutdown_starting, shutdown_starting,
                            GRPC_ERROR_NONE);
   gpr_mu_unlock(&s->mu);
 }
 
-static void tcp_server_destroy(grpc_tcp_server* s) {
+void tcp_server_destroy(grpc_tcp_server* s) {
   gpr_mu_destroy(&s->mu);
   s->listener = nullptr;
   s->engine = nullptr;
@@ -204,19 +202,21 @@ static void tcp_server_destroy(grpc_tcp_server* s) {
   gpr_free(s);
 }
 
-static void tcp_server_unref(grpc_tcp_server* s) {
+void tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
     gpr_mu_lock(&s->mu);
     grpc_core::ExecCtx exec_ctx;
     grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
     grpc_core::ExecCtx::Get()->Flush();
+    // TODO(hork): might require a way to signal the EE that shutdown is
+    // occurring to prevent race conditions and undefined behavior.
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(s);
   }
 }
 
 // No-op, all are handled on listener unref
-static void tcp_server_shutdown_listeners(grpc_tcp_server* /* s */) {}
+void tcp_server_shutdown_listeners(grpc_tcp_server* /* s */) {}
 
 }  // namespace
 

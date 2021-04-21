@@ -42,10 +42,10 @@ event_engine_closure_to_lookup_txt_callback(grpc_closure* closure) {
   return [](absl::Status, std::string) {};
 }
 
-static void resolve_address(const char* addr, const char* default_port,
-                            grpc_pollset_set* interested_parties,
-                            grpc_closure* on_done,
-                            grpc_resolved_addresses** addresses) {
+void resolve_address(const char* addr, const char* default_port,
+                     grpc_pollset_set* interested_parties,
+                     grpc_closure* on_done,
+                     grpc_resolved_addresses** addresses) {
   (void)addr;
   (void)default_port;
   (void)interested_parties;
@@ -53,14 +53,14 @@ static void resolve_address(const char* addr, const char* default_port,
   (void)addresses;
 }
 
-static grpc_error* blocking_resolve_address(
-    const char* name, const char* default_port,
-    grpc_resolved_addresses** addresses) {
+grpc_error* blocking_resolve_address(const char* name, const char* default_port,
+                                     grpc_resolved_addresses** addresses) {
   (void)name;
   (void)default_port;
   (void)addresses;
   return GRPC_ERROR_NONE;
 }
+
 }  // namespace
 
 grpc_address_resolver_vtable grpc_event_engine_resolver_vtable{

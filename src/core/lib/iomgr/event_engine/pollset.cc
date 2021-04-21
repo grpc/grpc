@@ -21,61 +21,64 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
+namespace {
+
 // --- pollset vtable API ---
-static void pollset_global_init(void) {}
-static void pollset_global_shutdown(void) {}
-static void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
+void pollset_global_init(void) {}
+void pollset_global_shutdown(void) {}
+void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
   (void)pollset;
   (void)mu;
+  // TODO(hork): do callers expect anything here, or are these arguments black
+  // boxes?
 }
-static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
+void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   (void)pollset;
   (void)closure;
 }
-static void pollset_destroy(grpc_pollset* pollset) { (void)pollset; }
-static grpc_error* pollset_work(grpc_pollset* pollset,
-                                grpc_pollset_worker** worker,
-                                grpc_millis deadline) {
+void pollset_destroy(grpc_pollset* pollset) { (void)pollset; }
+grpc_error* pollset_work(grpc_pollset* pollset, grpc_pollset_worker** worker,
+                         grpc_millis deadline) {
   (void)pollset;
   (void)worker;
   (void)deadline;
   return GRPC_ERROR_NONE;
 }
-static grpc_error* pollset_kick(grpc_pollset* pollset,
-                                grpc_pollset_worker* specific_worker) {
+grpc_error* pollset_kick(grpc_pollset* pollset,
+                         grpc_pollset_worker* specific_worker) {
   (void)pollset;
   (void)specific_worker;
   return GRPC_ERROR_NONE;
 }
-static size_t pollset_size(void) { return -1; }
+size_t pollset_size(void) { return 0; }
 
 // --- pollset_set vtable API ---
-static grpc_pollset_set* pollset_set_create(void) {
+grpc_pollset_set* pollset_set_create(void) {
   return reinterpret_cast<grpc_pollset_set*>(static_cast<intptr_t>(0xBAAAAAAD));
 }
-static void pollset_set_destroy(grpc_pollset_set* pollset_set) {
-  (void)pollset_set;
-}
-static void pollset_set_add_pollset(grpc_pollset_set* pollset_set,
-                                    grpc_pollset* pollset) {
+void pollset_set_destroy(grpc_pollset_set* pollset_set) { (void)pollset_set; }
+void pollset_set_add_pollset(grpc_pollset_set* pollset_set,
+                             grpc_pollset* pollset) {
   (void)pollset_set;
   (void)pollset;
 }
-static void pollset_set_del_pollset(grpc_pollset_set* pollset_set,
-                                    grpc_pollset* pollset) {
+void pollset_set_del_pollset(grpc_pollset_set* pollset_set,
+                             grpc_pollset* pollset) {
   (void)pollset_set;
   (void)pollset;
 }
-static void pollset_set_add_pollset_set(grpc_pollset_set* bag,
-                                        grpc_pollset_set* item) {
+void pollset_set_add_pollset_set(grpc_pollset_set* bag,
+                                 grpc_pollset_set* item) {
   (void)bag;
   (void)item;
 }
-static void pollset_set_del_pollset_set(grpc_pollset_set* bag,
-                                        grpc_pollset_set* item) {
+void pollset_set_del_pollset_set(grpc_pollset_set* bag,
+                                 grpc_pollset_set* item) {
   (void)bag;
   (void)item;
 }
+
+}  // namespace
 
 // --- vtables ---
 grpc_pollset_vtable grpc_event_engine_pollset_vtable = {

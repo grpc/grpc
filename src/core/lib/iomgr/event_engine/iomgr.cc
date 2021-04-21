@@ -31,41 +31,41 @@ extern grpc_pollset_set_vtable grpc_event_engine_pollset_set_vtable;
 extern grpc_address_resolver_vtable grpc_event_engine_resolver_vtable;
 
 namespace {
+
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-}  // namespace
 
 // The default EventEngine is lazily instantiated via
 // `grpc_event_engine::experimental::GetDefaultEventEngine()`
-static void iomgr_platform_init(void) {}
+void iomgr_platform_init(void) {}
 
-static void iomgr_platform_flush(void) {
+void iomgr_platform_flush(void) {
   // TODO(hork): Do we need EventEngine::Flush??
 }
 
-static void iomgr_platform_shutdown(void) {
+void iomgr_platform_shutdown(void) {
   // TODO(hork): only do this is the default has been instantiated
   // TODO(hork): log trace if shutdown failed. Is the status necessary?
   GetDefaultEventEngine()->Shutdown();
 }
 
-static void iomgr_platform_shutdown_background_closure(void) {}
+void iomgr_platform_shutdown_background_closure(void) {}
 
-static bool iomgr_platform_is_any_background_poller_thread(void) {
-  return false;
-}
+bool iomgr_platform_is_any_background_poller_thread(void) { return false; }
 
-static bool iomgr_platform_add_closure_to_background_poller(
+bool iomgr_platform_add_closure_to_background_poller(
     grpc_closure* /* closure */, grpc_error* /* error */) {
   return false;
 }
 
-static grpc_iomgr_platform_vtable vtable = {
+grpc_iomgr_platform_vtable vtable = {
     iomgr_platform_init,
     iomgr_platform_flush,
     iomgr_platform_shutdown,
     iomgr_platform_shutdown_background_closure,
     iomgr_platform_is_any_background_poller_thread,
     iomgr_platform_add_closure_to_background_poller};
+
+}  // namespace
 
 void grpc_set_default_iomgr_platform() {
   grpc_set_tcp_client_impl(&grpc_event_engine_tcp_client_vtable);

@@ -29,7 +29,7 @@ struct grpc_event_engine_endpoint {
   grpc_event_engine::experimental::EventEngine::Endpoint* endpoint;
   std::string peer_string;
   std::string local_address;
-  grpc_resource_user* ru;
+  grpc_resource_user* ru = nullptr;
   std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine;
 };
 

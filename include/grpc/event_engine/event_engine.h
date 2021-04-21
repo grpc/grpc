@@ -84,7 +84,7 @@ class EventEngine {
   using Callback = std::function<void(absl::Status)>;
   /// A callback handle, used to cancel a callback.
   struct TaskHandle {
-    intptr_t key = -1;
+    intptr_t key;
   };
   /// A thin wrapper around a platform-specific sockaddr type. A sockaddr struct
   /// exists on all platforms that gRPC supports.
