@@ -2707,6 +2707,9 @@ TEST_P(BasicTest, InitiallyEmptyServerlist) {
 // Tests that RPCs will fail with UNAVAILABLE instead of DEADLINE_EXCEEDED if
 // all the servers are unreachable.
 TEST_P(BasicTest, AllServersUnreachableFailFast) {
+  // Set Rpc timeout to 5 seconds to ensure there is enough time
+  // for communication with the xDS server to take place upon test start up.
+  const uint32_t kRpcTimeoutMs = 5000;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumUnreachableServers = 5;
@@ -2719,8 +2722,10 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
-  const Status status = SendRpc();
-  // The error shouldn't be DEADLINE_EXCEEDED.
+  const Status status = SendRpc(RpcOptions().set_timeout_ms(kRpcTimeoutMs));
+  // The error shouldn't be DEADLINE_EXCEEDED because timeout is set to 5
+  // seconds, and we should disocver in that time that the target backend is
+  // down.
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
 }
 
