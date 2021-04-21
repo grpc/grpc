@@ -456,14 +456,18 @@ class ClientChannel::LoadBalancedCall
   grpc_closure pick_closure_;
 
   // Accessed while holding ClientChannel::data_plane_mu_.
-  ClientChannel::LbQueuedCall queued_call_;
-  bool queued_pending_lb_pick_ = false;
-  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
+  ClientChannel::LbQueuedCall queued_call_
+      ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_);
+  bool queued_pending_lb_pick_ ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) =
+      false;
+  LbQueuedCallCanceller* lb_call_canceller_
+      ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) = nullptr;
+
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   std::function<void(grpc_error*, LoadBalancingPolicy::MetadataInterface*,
                      LoadBalancingPolicy::CallState*)>
       lb_recv_trailing_metadata_ready_;
-  LbQueuedCallCanceller* lb_call_canceller_ = nullptr;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
 

@@ -200,10 +200,14 @@ class ClientChannel::CallData {
   grpc_closure pick_closure_;
 
   // Accessed while holding ClientChannel::resolution_mu_.
-  bool service_config_applied_ = false;
-  bool queued_pending_resolver_result_ = false;
-  ClientChannel::ResolverQueuedCall resolver_queued_call_;
-  ResolverQueuedCallCanceller* resolver_call_canceller_ = nullptr;
+  bool service_config_applied_ ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) =
+      false;
+  bool queued_pending_resolver_result_
+      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = false;
+  ClientChannel::ResolverQueuedCall resolver_queued_call_
+      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_);
+  ResolverQueuedCallCanceller* resolver_call_canceller_
+      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = nullptr;
 
   std::function<void()> on_call_committed_;
 
@@ -567,11 +571,13 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   }
 
   // Caller must be holding the data-plane mutex.
-  ConnectedSubchannel* connected_subchannel_in_data_plane() const {
+  ConnectedSubchannel* connected_subchannel_in_data_plane() const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
     return connected_subchannel_in_data_plane_.get();
   }
   void set_connected_subchannel_in_data_plane(
-      RefCountedPtr<ConnectedSubchannel> connected_subchannel) {
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_) {
     connected_subchannel_in_data_plane_ = std::move(connected_subchannel);
   }
 
@@ -727,7 +733,8 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
   // To be accessed only in the control plane work_serializer.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   // To be accessed only in the data plane mutex.
-  RefCountedPtr<ConnectedSubchannel> connected_subchannel_in_data_plane_;
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_in_data_plane_
+      ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_);
 };
 
 //
