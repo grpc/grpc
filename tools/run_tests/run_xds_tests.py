@@ -59,14 +59,15 @@ _TEST_CASES = [
     'secondary_locality_gets_no_requests_on_partial_primary_failure',
     'secondary_locality_gets_requests_on_primary_failure',
     'traffic_splitting',
+    'path_matching',
+    'header_matching',
 ]
+
 # Valid test cases, but not in all. So the tests can only run manually, and
 # aren't enabled automatically for all languages.
 #
 # TODO: Move them into _TEST_CASES when support is ready in all languages.
 _ADDITIONAL_TEST_CASES = [
-    'path_matching',
-    'header_matching',
     'circuit_breaking',
     'timeout',
     'fault_injection',
