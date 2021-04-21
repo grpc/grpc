@@ -216,8 +216,14 @@ written in multipart YAML format, either to a file or to stdout. Each
 configuration contains a single embedded scenario.
 
 The LoadTest configurations are generated from a template. Any configuration can
-be used as a template, as long as it supports the languages that need to be
-supported in the script output.
+be used as a template, as long as it contains the languages required by the set
+of scenarios we intend to run (for instance, if we are generating configurations
+to run go scenarios, the template must contain a go client and a go server; if
+we are generating configurations for cross-language scenarios that need a go
+client and a C++ server, the template must also coontain a C++ server; and the
+same for all other languages).
+
+A template does not need to contain any substitution keys. That is why I say that any load test contiguration can be used as a template. The important part is that it must contain the languages required by the set of scenarios we intend to run (for instance, if we are generating configurations to run go scenarios, the template must contain a go client and a go server; if we are generating configurations for cross-language scenarios that need a go client and a C++ server, the template must also contain a C++ server, and the same for all other languages).
 
 The LoadTests specified in the script output all have unique names and can be
 run by applying the test to a cluster running the LoadTest controller with
