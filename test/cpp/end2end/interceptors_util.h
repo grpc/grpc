@@ -85,8 +85,7 @@ class PhonyInterceptorFactory
 /* This interceptor can be used to test the interception mechanism. */
 class TestInterceptor : public experimental::Interceptor {
  public:
-  TestInterceptor(const std::string& method,
-                  const char* suffix_for_stats,
+  TestInterceptor(const std::string& method, const char* suffix_for_stats,
                   experimental::ClientRpcInfo* info) {
     EXPECT_EQ(info->method(), method);
 

@@ -35,7 +35,6 @@ class StubOptions {
 
  private:
   const char* suffix_for_stats_ = nullptr;
-
 };
 
 }  // namespace grpc
