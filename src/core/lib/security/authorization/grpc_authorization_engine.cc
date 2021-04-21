@@ -37,7 +37,7 @@ AuthorizationEngine::Decision GrpcAuthorizationEngine::Evaluate(
       break;
     }
   }
-  if (action_ == Rbac::Action::DENY) {
+  if (action_ == Rbac::Action::kDeny) {
     decision.type = matches ? Decision::DecisionType::kDeny
                             : Decision::DecisionType::kAllow;
   } else {

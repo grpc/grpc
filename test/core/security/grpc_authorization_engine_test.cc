@@ -55,7 +55,7 @@ TEST_F(GrpcAuthorizationEngineTest, AllowEngineWithMatchingPolicy) {
   // Policy1 does not match. Policy2 will match.
   EXPECT_CALL(*matcher1_, Matches).Times(1).WillOnce(::testing::Return(false));
   EXPECT_CALL(*matcher2_, Matches).Times(1).WillOnce(::testing::Return(true));
-  auto engine = MakeAuthorizationEngine(Rbac::Action::ALLOW);
+  auto engine = MakeAuthorizationEngine(Rbac::Action::kAllow);
   AuthorizationEngine::Decision decision = engine.Evaluate(EvaluateArgs{});
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::DecisionType::kAllow);
   EXPECT_EQ(decision.matching_policy_name, kPolicy2);
@@ -65,14 +65,14 @@ TEST_F(GrpcAuthorizationEngineTest, AllowEngineWithNoMatchingPolicy) {
   // Policy1 and Policy2 do not match.
   EXPECT_CALL(*matcher1_, Matches).Times(1).WillOnce(::testing::Return(false));
   EXPECT_CALL(*matcher2_, Matches).Times(1).WillOnce(::testing::Return(false));
-  auto engine = MakeAuthorizationEngine(Rbac::Action::ALLOW);
+  auto engine = MakeAuthorizationEngine(Rbac::Action::kAllow);
   AuthorizationEngine::Decision decision = engine.Evaluate(EvaluateArgs{});
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::DecisionType::kDeny);
   EXPECT_TRUE(decision.matching_policy_name.empty());
 }
 
 TEST_F(GrpcAuthorizationEngineTest, AllowEngineWithEmptyPolicies) {
-  auto engine = MakeEmptyAuthorizationEngine(Rbac::Action::ALLOW);
+  auto engine = MakeEmptyAuthorizationEngine(Rbac::Action::kAllow);
   AuthorizationEngine::Decision decision = engine.Evaluate(EvaluateArgs{});
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::DecisionType::kDeny);
   EXPECT_TRUE(decision.matching_policy_name.empty());
@@ -82,7 +82,7 @@ TEST_F(GrpcAuthorizationEngineTest, DenyEngineWithMatchingPolicy) {
   // Policy1 does not match. Policy2 will match.
   EXPECT_CALL(*matcher1_, Matches).Times(1).WillOnce(::testing::Return(false));
   EXPECT_CALL(*matcher2_, Matches).Times(1).WillOnce(::testing::Return(true));
-  auto engine = MakeAuthorizationEngine(Rbac::Action::DENY);
+  auto engine = MakeAuthorizationEngine(Rbac::Action::kDeny);
   AuthorizationEngine::Decision decision = engine.Evaluate(EvaluateArgs{});
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::DecisionType::kDeny);
   EXPECT_EQ(decision.matching_policy_name, kPolicy2);
@@ -92,14 +92,14 @@ TEST_F(GrpcAuthorizationEngineTest, DenyEngineWithNoMatchingPolicy) {
   // Policy1 and Policy2 do not match.
   EXPECT_CALL(*matcher1_, Matches).Times(1).WillOnce(::testing::Return(false));
   EXPECT_CALL(*matcher2_, Matches).Times(1).WillOnce(::testing::Return(false));
-  auto engine = MakeAuthorizationEngine(Rbac::Action::DENY);
+  auto engine = MakeAuthorizationEngine(Rbac::Action::kDeny);
   AuthorizationEngine::Decision decision = engine.Evaluate(EvaluateArgs{});
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::DecisionType::kAllow);
   EXPECT_TRUE(decision.matching_policy_name.empty());
 }
 
 TEST_F(GrpcAuthorizationEngineTest, DenyEngineWithEmptyPolicies) {
-  auto engine = MakeEmptyAuthorizationEngine(Rbac::Action::DENY);
+  auto engine = MakeEmptyAuthorizationEngine(Rbac::Action::kDeny);
   AuthorizationEngine::Decision decision = engine.Evaluate(EvaluateArgs{});
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::DecisionType::kAllow);
   EXPECT_TRUE(decision.matching_policy_name.empty());
