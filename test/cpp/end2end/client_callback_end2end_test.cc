@@ -509,26 +509,26 @@ TEST_P(ClientCallbackEnd2endTest, SequentialRpcsWithVariedBinaryMetadataValue) {
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcs) {
-  ResetStub(std::make_unique<TestInterceptorFactory>(
+  ResetStub(absl::make_unique<TestInterceptorFactory>(
       "/grpc.testing.EchoTestService/Echo", nullptr));
   SendRpcsGeneric(10, false, /*suffix_for_stats=*/nullptr);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsWithSuffix) {
-  ResetStub(std::make_unique<TestInterceptorFactory>(
+  ResetStub(absl::make_unique<TestInterceptorFactory>(
       "/grpc.testing.EchoTestService/Echo", "TestSuffix"));
   SendRpcsGeneric(10, false, "TestSuffix");
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsAsBidi) {
-  ResetStub(std::make_unique<TestInterceptorFactory>(
+  ResetStub(absl::make_unique<TestInterceptorFactory>(
       "/grpc.testing.EchoTestService/Echo", nullptr));
   SendGenericEchoAsBidi(10, 1, /*do_writes_done=*/true,
                         /*suffix_for_stats=*/nullptr);
 }
 
 TEST_P(ClientCallbackEnd2endTest, SequentialGenericRpcsAsBidiWithSuffix) {
-  ResetStub(std::make_unique<TestInterceptorFactory>(
+  ResetStub(absl::make_unique<TestInterceptorFactory>(
       "/grpc.testing.EchoTestService/Echo", "TestSuffix"));
   SendGenericEchoAsBidi(10, 1, /*do_writes_done=*/true, "TestSuffix");
 }
@@ -850,7 +850,7 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
   const std::string kMethodName("/grpc.testing.EchoTestService/Echo");
   constexpr char kSuffixForStats[] = "TestSuffixForStats";
   ResetStub(
-      std::make_unique<TestInterceptorFactory>(kMethodName, kSuffixForStats));
+      absl::make_unique<TestInterceptorFactory>(kMethodName, kSuffixForStats));
   class UnaryClient : public grpc::experimental::ClientUnaryReactor {
    public:
     UnaryClient(grpc::GenericStub* stub, const std::string& method_name,
