@@ -411,7 +411,8 @@ cdef extern from "grpc/grpc.h":
     void* user_data;
 
   grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
-       grpc_server_xds_status_notifier notifier) nogil
+       grpc_server_xds_status_notifier notifier,
+       const grpc_channel_args* args) nogil
 
 
   int grpc_server_add_insecure_http2_port(

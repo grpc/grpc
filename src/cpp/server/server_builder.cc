@@ -223,8 +223,8 @@ ServerBuilder& ServerBuilder::AddListeningPort(
   return *this;
 }
 
-std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
-  grpc::ChannelArguments args;
+ChannelArguments ServerBuilder::BuildChannelArgs() {
+  ChannelArguments args;
   if (max_receive_message_size_ >= -1) {
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
@@ -245,16 +245,19 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                 maybe_default_compression_algorithm_.algorithm);
   }
-
   if (resource_quota_ != nullptr) {
     args.SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA, resource_quota_,
                               grpc_resource_quota_arg_vtable());
   }
-
   for (const auto& plugin : plugins_) {
     plugin->UpdateServerBuilder(this);
     plugin->UpdateChannelArguments(&args);
   }
+  return args;
+}
+
+std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
+  ChannelArguments args = BuildChannelArgs();
 
   // == Determine if the server has any syncrhonous methods ==
   bool has_sync_methods = false;
