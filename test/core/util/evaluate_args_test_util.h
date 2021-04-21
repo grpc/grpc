@@ -19,6 +19,8 @@
 
 #include <list>
 
+#include <gtest/gtest.h>
+
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "test/core/util/mock_authorization_endpoint.h"
 
