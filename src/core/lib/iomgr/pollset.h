@@ -44,10 +44,10 @@ typedef struct grpc_pollset_vtable {
   void (*init)(grpc_pollset* pollset, gpr_mu** mu);
   void (*shutdown)(grpc_pollset* pollset, grpc_closure* closure);
   void (*destroy)(grpc_pollset* pollset);
-  grpc_error* (*work)(grpc_pollset* pollset, grpc_pollset_worker** worker,
-                      grpc_millis deadline);
-  grpc_error* (*kick)(grpc_pollset* pollset,
-                      grpc_pollset_worker* specific_worker);
+  grpc_error_handle (*work)(grpc_pollset* pollset, grpc_pollset_worker** worker,
+                            grpc_millis deadline);
+  grpc_error_handle (*kick)(grpc_pollset* pollset,
+                            grpc_pollset_worker* specific_worker);
   size_t (*pollset_size)(void);
 } grpc_pollset_vtable;
 
@@ -86,14 +86,14 @@ void grpc_pollset_destroy(grpc_pollset* pollset);
    May call grpc_closure_list_run on grpc_closure_list, without holding the
    pollset
    lock */
-grpc_error* grpc_pollset_work(grpc_pollset* pollset,
-                              grpc_pollset_worker** worker,
-                              grpc_millis deadline) GRPC_MUST_USE_RESULT;
+grpc_error_handle grpc_pollset_work(grpc_pollset* pollset,
+                                    grpc_pollset_worker** worker,
+                                    grpc_millis deadline) GRPC_MUST_USE_RESULT;
 
 /* Break one polling thread out of polling work for this pollset.
    If specific_worker is non-NULL, then kick that worker. */
-grpc_error* grpc_pollset_kick(grpc_pollset* pollset,
-                              grpc_pollset_worker* specific_worker)
+grpc_error_handle grpc_pollset_kick(grpc_pollset* pollset,
+                                    grpc_pollset_worker* specific_worker)
     GRPC_MUST_USE_RESULT;
 
 #endif /* GRPC_CORE_LIB_IOMGR_POLLSET_H */

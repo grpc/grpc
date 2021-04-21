@@ -182,7 +182,7 @@ class TestPickArgsLbFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kTestPickArgsLbPolicyName; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error** /*error*/) const override {
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<TestPickArgsLbConfig>();
   }
 
@@ -280,7 +280,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     TrailingMetadataHandler(PickResult* result,
                             InterceptRecvTrailingMetadataCallback cb)
         : cb_(std::move(cb)) {
-      result->recv_trailing_metadata_ready = [this](grpc_error* error,
+      result->recv_trailing_metadata_ready = [this](grpc_error_handle error,
                                                     MetadataInterface* metadata,
                                                     CallState* call_state) {
         RecordRecvTrailingMetadata(error, metadata, call_state);
@@ -288,7 +288,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     }
 
    private:
-    void RecordRecvTrailingMetadata(grpc_error* /*error*/,
+    void RecordRecvTrailingMetadata(grpc_error_handle /*error*/,
                                     MetadataInterface* recv_trailing_metadata,
                                     CallState* call_state) {
       TrailingMetadataArgsSeen args_seen;
@@ -326,7 +326,7 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
   }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error** /*error*/) const override {
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<InterceptTrailingConfig>();
   }
 
@@ -407,7 +407,7 @@ class AddressTestFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kAddressTestLbPolicyName; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error** /*error*/) const override {
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<AddressTestConfig>();
   }
 

@@ -80,10 +80,10 @@ class AresDnsResolver : public Resolver {
   void MaybeStartResolvingLocked();
   void StartResolvingLocked();
 
-  static void OnNextResolution(void* arg, grpc_error* error);
-  static void OnResolved(void* arg, grpc_error* error);
-  void OnNextResolutionLocked(grpc_error* error);
-  void OnResolvedLocked(grpc_error* error);
+  static void OnNextResolution(void* arg, grpc_error_handle error);
+  static void OnResolved(void* arg, grpc_error_handle error);
+  void OnNextResolutionLocked(grpc_error_handle error);
+  void OnResolvedLocked(grpc_error_handle error);
 
   /// DNS server to use (if not system default)
   std::string dns_server_;
@@ -193,14 +193,14 @@ void AresDnsResolver::ShutdownLocked() {
   }
 }
 
-void AresDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
+void AresDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
                            DEBUG_LOCATION);
 }
 
-void AresDnsResolver::OnNextResolutionLocked(grpc_error* error) {
+void AresDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
   GRPC_CARES_TRACE_LOG(
       "resolver:%p re-resolution timer fired. error: %s. shutdown_initiated_: "
       "%d",
@@ -227,7 +227,7 @@ bool ValueInJsonArray(const Json::Array& array, const char* value) {
 }
 
 std::string ChooseServiceConfig(char* service_config_choice_json,
-                                grpc_error** error) {
+                                grpc_error_handle* error) {
   Json json = Json::Parse(service_config_choice_json, error);
   if (*error != GRPC_ERROR_NONE) return "";
   if (json.type() != Json::Type::ARRAY) {
@@ -236,7 +236,7 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
     return "";
   }
   const Json* service_config = nullptr;
-  absl::InlinedVector<grpc_error*, 4> error_list;
+  absl::InlinedVector<grpc_error_handle, 4> error_list;
   for (const Json& choice : json.array_value()) {
     if (choice.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -305,14 +305,14 @@ std::string ChooseServiceConfig(char* service_config_choice_json,
   return service_config->Dump();
 }
 
-void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
+void AresDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnResolvedLocked(error); },
                            DEBUG_LOCATION);
 }
 
-void AresDnsResolver::OnResolvedLocked(grpc_error* error) {
+void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
   gpr_free(pending_request_);
@@ -455,7 +455,7 @@ class AresDnsResolverFactory : public ResolverFactory {
 extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
 static grpc_address_resolver_vtable* default_resolver;
 
-static grpc_error* blocking_resolve_address_ares(
+static grpc_error_handle blocking_resolve_address_ares(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
   return default_resolver->blocking_resolve_address(name, default_port,
@@ -490,7 +490,7 @@ void grpc_resolver_dns_ares_init() {
     g_use_ares_dns_resolver = true;
     gpr_log(GPR_DEBUG, "Using ares dns resolver");
     address_sorting_init();
-    grpc_error* error = grpc_ares_init();
+    grpc_error_handle error = grpc_ares_init();
     if (error != GRPC_ERROR_NONE) {
       GRPC_LOG_IF_ERROR("grpc_ares_init() failed", error);
       return;

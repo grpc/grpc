@@ -27,7 +27,7 @@
 #include "test/core/util/test_config.h"
 
 static void test_set_get_int() {
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
+  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
   GPR_ASSERT(error);
   intptr_t i = 0;
   GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_FILE_LINE, &i));
@@ -49,7 +49,7 @@ static void test_set_get_int() {
 }
 
 static void test_set_get_str() {
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
+  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test");
 
   grpc_slice str;
   GPR_ASSERT(!grpc_error_get_str(error, GRPC_ERROR_STR_SYSCALL, &str));
@@ -76,7 +76,7 @@ static void test_set_get_str() {
 
 static void test_copy_and_unref() {
   // error1 has one ref
-  grpc_error* error1 = grpc_error_set_str(
+  grpc_error_handle error1 = grpc_error_set_str(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Test"), GRPC_ERROR_STR_GRPC_MESSAGE,
       grpc_slice_from_static_string("message"));
   grpc_slice str;
@@ -87,7 +87,7 @@ static void test_copy_and_unref() {
   // error 1 has two refs
   GRPC_ERROR_REF(error1);
   // this gives error3 a ref to the new error, and decrements error1 to one ref
-  grpc_error* error3 = grpc_error_set_str(
+  grpc_error_handle error3 = grpc_error_set_str(
       error1, GRPC_ERROR_STR_SYSCALL, grpc_slice_from_static_string("syscall"));
   GPR_ASSERT(error3 != error1);  // should not be the same because of extra ref
   GPR_ASSERT(grpc_error_get_str(error3, GRPC_ERROR_STR_GRPC_MESSAGE, &str));
@@ -105,10 +105,10 @@ static void test_copy_and_unref() {
 }
 
 static void test_create_referencing() {
-  grpc_error* child = grpc_error_set_str(
+  grpc_error_handle child = grpc_error_set_str(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child"),
       GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_static_string("message"));
-  grpc_error* parent =
+  grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", &child, 1);
   GPR_ASSERT(parent);
 
@@ -117,7 +117,7 @@ static void test_create_referencing() {
 }
 
 static void test_create_referencing_many() {
-  grpc_error* children[3];
+  grpc_error_handle children[3];
   children[0] = grpc_error_set_str(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child1"),
       GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_static_string("message"));
@@ -128,7 +128,7 @@ static void test_create_referencing_many() {
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("Child3"),
       GRPC_ERROR_STR_GRPC_MESSAGE, grpc_slice_from_static_string("message 3"));
 
-  grpc_error* parent =
+  grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", children, 3);
   GPR_ASSERT(parent);
 
@@ -139,7 +139,7 @@ static void test_create_referencing_many() {
 }
 
 static void print_error_string() {
-  grpc_error* error =
+  grpc_error_handle error =
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Error"),
                          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNIMPLEMENTED);
   error = grpc_error_set_int(error, GRPC_ERROR_INT_SIZE, 666);
@@ -150,7 +150,7 @@ static void print_error_string() {
 }
 
 static void print_error_string_reference() {
-  grpc_error* children[2];
+  grpc_error_handle children[2];
   children[0] = grpc_error_set_str(
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("1"),
                          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNIMPLEMENTED),
@@ -162,7 +162,7 @@ static void print_error_string_reference() {
       GRPC_ERROR_STR_GRPC_MESSAGE,
       grpc_slice_from_static_string("message for child 2"));
 
-  grpc_error* parent =
+  grpc_error_handle parent =
       GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Parent", children, 2);
 
   for (size_t i = 0; i < 2; ++i) {
@@ -174,7 +174,7 @@ static void print_error_string_reference() {
 static void test_os_error() {
   int fake_errno = 5;
   const char* syscall = "syscall name";
-  grpc_error* error = GRPC_OS_ERROR(fake_errno, syscall);
+  grpc_error_handle error = GRPC_OS_ERROR(fake_errno, syscall);
 
   intptr_t i = 0;
   GPR_ASSERT(grpc_error_get_int(error, GRPC_ERROR_INT_ERRNO, &i));
@@ -188,7 +188,7 @@ static void test_os_error() {
 }
 
 static void test_overflow() {
-  grpc_error* error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Overflow");
+  grpc_error_handle error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Overflow");
 
   for (size_t i = 0; i < 150; ++i) {
     error = grpc_error_add_child(error,

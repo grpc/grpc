@@ -77,7 +77,7 @@ struct grpc_ares_request {
   size_t pending_queries;
 
   /** the errors explaining query failures, appended to in query callbacks */
-  grpc_error* error;
+  grpc_error_handle error;
 };
 
 typedef struct fd_node {
@@ -268,7 +268,8 @@ static grpc_millis calculate_next_ares_backup_poll_alarm_ms(
          grpc_core::ExecCtx::Get()->Now();
 }
 
-static void on_timeout_locked(grpc_ares_ev_driver* driver, grpc_error* error) {
+static void on_timeout_locked(grpc_ares_ev_driver* driver,
+                              grpc_error_handle error) {
   GRPC_CARES_TRACE_LOG(
       "request:%p ev_driver=%p on_timeout_locked. driver->shutting_down=%d. "
       "err=%s",
@@ -280,7 +281,7 @@ static void on_timeout_locked(grpc_ares_ev_driver* driver, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void on_timeout(void* arg, grpc_error* error) {
+static void on_timeout(void* arg, grpc_error_handle error) {
   grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   driver->work_serializer->Run(
@@ -290,9 +291,9 @@ static void on_timeout(void* arg, grpc_error* error) {
 static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver);
 
 static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
-                                             grpc_error* error);
+                                             grpc_error_handle error);
 
-static void on_ares_backup_poll_alarm(void* arg, grpc_error* error) {
+static void on_ares_backup_poll_alarm(void* arg, grpc_error_handle error) {
   grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
   GRPC_ERROR_REF(error);
   driver->work_serializer->Run(
@@ -309,7 +310,7 @@ static void on_ares_backup_poll_alarm(void* arg, grpc_error* error) {
  * For the latter, we use this backup poller. Also see
  * https://github.com/grpc/grpc/pull/17688 description for more details. */
 static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
-                                             grpc_error* error) {
+                                             grpc_error_handle error) {
   GRPC_CARES_TRACE_LOG(
       "request:%p ev_driver=%p on_ares_backup_poll_alarm_locked. "
       "driver->shutting_down=%d. "
@@ -345,7 +346,7 @@ static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
   GRPC_ERROR_UNREF(error);
 }
 
-static void on_readable_locked(fd_node* fdn, grpc_error* error) {
+static void on_readable_locked(fd_node* fdn, grpc_error_handle error) {
   GPR_ASSERT(fdn->readable_registered);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   const ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
@@ -370,14 +371,14 @@ static void on_readable_locked(fd_node* fdn, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void on_readable(void* arg, grpc_error* error) {
+static void on_readable(void* arg, grpc_error_handle error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
   GRPC_ERROR_REF(error); /* ref owned by lambda */
   fdn->ev_driver->work_serializer->Run(
       [fdn, error]() { on_readable_locked(fdn, error); }, DEBUG_LOCATION);
 }
 
-static void on_writable_locked(fd_node* fdn, grpc_error* error) {
+static void on_writable_locked(fd_node* fdn, grpc_error_handle error) {
   GPR_ASSERT(fdn->writable_registered);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   const ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
@@ -400,7 +401,7 @@ static void on_writable_locked(fd_node* fdn, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void on_writable(void* arg, grpc_error* error) {
+static void on_writable(void* arg, grpc_error_handle error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
   GRPC_ERROR_REF(error); /* ref owned by lambda */
   fdn->ev_driver->work_serializer->Run(
@@ -516,7 +517,7 @@ static void noop_inject_channel_config(ares_channel /*channel*/) {}
 void (*grpc_ares_test_only_inject_config)(ares_channel channel) =
     noop_inject_channel_config;
 
-grpc_error* grpc_ares_ev_driver_create_locked(
+grpc_error_handle grpc_ares_ev_driver_create_locked(
     grpc_ares_ev_driver** ev_driver, grpc_pollset_set* pollset_set,
     int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer,
@@ -529,7 +530,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(
   grpc_ares_test_only_inject_config((*ev_driver)->channel);
   GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", request);
   if (status != ARES_SUCCESS) {
-    grpc_error* err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+    grpc_error_handle err = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Failed to init ares channel. C-ares error: ",
                      ares_strerror(status))
             .c_str());
@@ -713,7 +714,8 @@ static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
         hr->qtype, hr->host, hr->is_balancer, ares_strerror(status));
     GRPC_CARES_TRACE_LOG("request:%p on_hostbyname_done_locked: %s", r,
                          error_msg.c_str());
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
+    grpc_error_handle error =
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
     r->error = grpc_error_add_child(error, r->error);
   }
   destroy_hostbyname_request_locked(hr);
@@ -757,7 +759,8 @@ static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
         ares_strerror(status));
     GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked: %s", r,
                          error_msg.c_str());
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
+    grpc_error_handle error =
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg.c_str());
     r->error = grpc_error_add_child(error, r->error);
   }
   delete q;
@@ -773,7 +776,7 @@ static void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
   const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
   struct ares_txt_ext* result = nullptr;
   struct ares_txt_ext* reply = nullptr;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (status != ARES_SUCCESS) goto fail;
   GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked name=%s ARES_SUCCESS", r,
                        q->name().c_str());
@@ -825,7 +828,7 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
     const char* default_port, grpc_pollset_set* interested_parties,
     int query_timeout_ms,
     std::shared_ptr<grpc_core::WorkSerializer> work_serializer) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_ares_hostbyname_request* hr = nullptr;
   /* parse name, splitting it into host and port parts */
   std::string host;
@@ -1116,7 +1119,7 @@ void (*grpc_cancel_ares_request_locked)(grpc_ares_request* r) =
 // Windows. Calling them may cause race conditions when other parts of the
 // binary calls these functions concurrently.
 #ifdef GPR_WINDOWS
-grpc_error* grpc_ares_init(void) {
+grpc_error_handle grpc_ares_init(void) {
   int status = ares_library_init(ARES_LIB_INIT_ALL);
   if (status != ARES_SUCCESS) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -1128,7 +1131,7 @@ grpc_error* grpc_ares_init(void) {
 
 void grpc_ares_cleanup(void) { ares_library_cleanup(); }
 #else
-grpc_error* grpc_ares_init(void) { return GRPC_ERROR_NONE; }
+grpc_error_handle grpc_ares_init(void) { return GRPC_ERROR_NONE; }
 void grpc_ares_cleanup(void) {}
 #endif  // GPR_WINDOWS
 
@@ -1159,7 +1162,7 @@ typedef struct grpc_resolve_address_ares_request {
 } grpc_resolve_address_ares_request;
 
 static void on_dns_lookup_done_locked(grpc_resolve_address_ares_request* r,
-                                      grpc_error* error) {
+                                      grpc_error_handle error) {
   gpr_free(r->ares_request);
   grpc_resolved_addresses** resolved_addresses = r->addrs_out;
   if (r->addresses == nullptr || r->addresses->empty()) {
@@ -1180,7 +1183,7 @@ static void on_dns_lookup_done_locked(grpc_resolve_address_ares_request* r,
   delete r;
 }
 
-static void on_dns_lookup_done(void* arg, grpc_error* error) {
+static void on_dns_lookup_done(void* arg, grpc_error_handle error) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda

@@ -28,7 +28,7 @@
 gpr_mu g_mu;
 gpr_cv g_cv;
 
-static void inc_int_cb(void* a, grpc_error* /*error*/) {
+static void inc_int_cb(void* a, grpc_error_handle /*error*/) {
   gpr_mu_lock(&g_mu);
   ++*static_cast<int*>(a);
   gpr_cv_signal(&g_cv);
@@ -44,7 +44,7 @@ static void assert_counter_becomes(int* ctr, int value) {
   gpr_mu_unlock(&g_mu);
 }
 
-static void set_event_cb(void* a, grpc_error* /*error*/) {
+static void set_event_cb(void* a, grpc_error_handle /*error*/) {
   gpr_event_set(static_cast<gpr_event*>(a), reinterpret_cast<void*>(1));
 }
 grpc_closure* set_event(gpr_event* ev) {
@@ -57,7 +57,7 @@ typedef struct {
   grpc_closure* then;
 } reclaimer_args;
 
-static void reclaimer_cb(void* args, grpc_error* error) {
+static void reclaimer_cb(void* args, grpc_error_handle error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   reclaimer_args* a = static_cast<reclaimer_args*>(args);
   grpc_resource_user_free(a->resource_user, a->size);
@@ -75,7 +75,7 @@ grpc_closure* make_reclaimer(grpc_resource_user* resource_user, size_t size,
   return GRPC_CLOSURE_CREATE(reclaimer_cb, a, grpc_schedule_on_exec_ctx);
 }
 
-static void unused_reclaimer_cb(void* arg, grpc_error* error) {
+static void unused_reclaimer_cb(void* arg, grpc_error_handle error) {
   GPR_ASSERT(error == GRPC_ERROR_CANCELLED);
   grpc_core::Closure::Run(DEBUG_LOCATION, static_cast<grpc_closure*>(arg),
                           GRPC_ERROR_NONE);

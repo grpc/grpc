@@ -59,7 +59,7 @@ static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect* connect) {
 
 static void custom_close_callback(grpc_custom_socket* /*socket*/) {}
 
-static void on_alarm(void* acp, grpc_error* error) {
+static void on_alarm(void* acp, grpc_error_handle error) {
   int done;
   grpc_custom_socket* socket = static_cast<grpc_custom_socket*>(acp);
   grpc_custom_tcp_connect* connect = socket->connector;
@@ -81,7 +81,7 @@ static void on_alarm(void* acp, grpc_error* error) {
 }
 
 static void custom_connect_callback_internal(grpc_custom_socket* socket,
-                                             grpc_error* error) {
+                                             grpc_error_handle error) {
   grpc_custom_tcp_connect* connect = socket->connector;
   int done;
   grpc_closure* closure = connect->closure;
@@ -99,7 +99,7 @@ static void custom_connect_callback_internal(grpc_custom_socket* socket,
 }
 
 static void custom_connect_callback(grpc_custom_socket* socket,
-                                    grpc_error* error) {
+                                    grpc_error_handle error) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   if (grpc_core::ExecCtx::Get() == nullptr) {
     /* If we are being run on a thread which does not have an exec_ctx created

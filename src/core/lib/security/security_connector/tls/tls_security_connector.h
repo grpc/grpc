@@ -61,7 +61,7 @@ class TlsChannelSecurityConnector final
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error* error) override {
+                         grpc_error_handle error) override {
     // TODO(ZhenLian): call verifier->cancel() once the verifier is ready.
     GRPC_ERROR_UNREF(error);
   }
@@ -70,10 +70,10 @@ class TlsChannelSecurityConnector final
 
   bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
-                       grpc_error** error) override;
+                       grpc_error_handle* error) override;
 
   void cancel_check_call_host(grpc_closure* on_call_host_checked,
-                              grpc_error* error) override;
+                              grpc_error_handle error) override;
 
   tsi_ssl_client_handshaker_factory* ClientHandshakerFactoryForTesting() {
     MutexLock lock(&mu_);
@@ -103,8 +103,8 @@ class TlsChannelSecurityConnector final
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
         absl::optional<PemKeyCertPairList> key_cert_pairs) override;
-    void OnError(grpc_error* root_cert_error,
-                 grpc_error* identity_cert_error) override;
+    void OnError(grpc_error_handle root_cert_error,
+                 grpc_error_handle identity_cert_error) override;
 
    private:
     TlsChannelSecurityConnector* security_connector_ = nullptr;
@@ -121,7 +121,7 @@ class TlsChannelSecurityConnector final
       grpc_tls_server_authorization_check_arg* arg);
 
   // A util function to process server authorization check result.
-  static grpc_error* ProcessServerAuthorizationCheckResult(
+  static grpc_error_handle ProcessServerAuthorizationCheckResult(
       grpc_tls_server_authorization_check_arg* arg);
 
   // A util function to create a server authorization check arg instance.
@@ -172,7 +172,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error* error) override {
+                         grpc_error_handle error) override {
     // TODO(ZhenLian): call verifier->cancel() once the verifier is ready.
     GRPC_ERROR_UNREF(error);
   }
@@ -207,8 +207,8 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
         absl::optional<PemKeyCertPairList> key_cert_pairs) override;
-    void OnError(grpc_error* root_cert_error,
-                 grpc_error* identity_cert_error) override;
+    void OnError(grpc_error_handle root_cert_error,
+                 grpc_error_handle identity_cert_error) override;
 
    private:
     TlsServerSecurityConnector* security_connector_ = nullptr;
@@ -236,7 +236,7 @@ namespace internal {
 
 // TlsCheckHostName checks if |peer_name| matches the identity information
 // contained in |peer|. This is AKA hostname check.
-grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer);
+grpc_error_handle TlsCheckHostName(const char* peer_name, const tsi_peer* peer);
 
 }  // namespace internal
 

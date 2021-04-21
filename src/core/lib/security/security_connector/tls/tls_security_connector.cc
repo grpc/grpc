@@ -202,7 +202,7 @@ void TlsChannelSecurityConnector::check_peer(
   const char* target_name = overridden_target_name_.empty()
                                 ? target_name_.c_str()
                                 : overridden_target_name_.c_str();
-  grpc_error* error = grpc_ssl_check_alpn(&peer);
+  grpc_error_handle error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
     ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
@@ -315,7 +315,7 @@ int TlsChannelSecurityConnector::cmp(
 
 bool TlsChannelSecurityConnector::check_call_host(
     absl::string_view host, grpc_auth_context* auth_context,
-    grpc_closure* /*on_call_host_checked*/, grpc_error** error) {
+    grpc_closure* /*on_call_host_checked*/, grpc_error_handle* error) {
   if (options_->server_verification_option() ==
           GRPC_TLS_SKIP_HOSTNAME_VERIFICATION ||
       options_->server_verification_option() ==
@@ -328,7 +328,7 @@ bool TlsChannelSecurityConnector::check_call_host(
 }
 
 void TlsChannelSecurityConnector::cancel_check_call_host(
-    grpc_closure* /*on_call_host_checked*/, grpc_error* error) {
+    grpc_closure* /*on_call_host_checked*/, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
@@ -359,7 +359,7 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::
 // TODO(ZhenLian): implement the logic to signal waiting handshakers once
 // BlockOnInitialCredentialHandshaker is implemented.
 void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::OnError(
-    grpc_error* root_cert_error, grpc_error* identity_cert_error) {
+    grpc_error_handle root_cert_error, grpc_error_handle identity_cert_error) {
   if (root_cert_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "TlsChannelCertificateWatcher getting root_cert_error: %s",
@@ -415,15 +415,16 @@ void TlsChannelSecurityConnector::ServerAuthorizationCheckDone(
     grpc_tls_server_authorization_check_arg* arg) {
   GPR_ASSERT(arg != nullptr);
   ExecCtx exec_ctx;
-  grpc_error* error = ProcessServerAuthorizationCheckResult(arg);
+  grpc_error_handle error = ProcessServerAuthorizationCheckResult(arg);
   TlsChannelSecurityConnector* connector =
       static_cast<TlsChannelSecurityConnector*>(arg->cb_user_data);
   ExecCtx::Run(DEBUG_LOCATION, connector->on_peer_checked_, error);
 }
 
-grpc_error* TlsChannelSecurityConnector::ProcessServerAuthorizationCheckResult(
+grpc_error_handle
+TlsChannelSecurityConnector::ProcessServerAuthorizationCheckResult(
     grpc_tls_server_authorization_check_arg* arg) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   /* Server authorization check is cancelled by caller. */
   if (arg->status == GRPC_STATUS_CANCELLED) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -572,7 +573,7 @@ void TlsServerSecurityConnector::check_peer(
     tsi_peer peer, grpc_endpoint* /*ep*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
-  grpc_error* error = grpc_ssl_check_alpn(&peer);
+  grpc_error_handle error = grpc_ssl_check_alpn(&peer);
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
   tsi_peer_destruct(&peer);
@@ -616,7 +617,7 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::
 // TODO(ZhenLian): implement the logic to signal waiting handshakers once
 // BlockOnInitialCredentialHandshaker is implemented.
 void TlsServerSecurityConnector::TlsServerCertificateWatcher::OnError(
-    grpc_error* root_cert_error, grpc_error* identity_cert_error) {
+    grpc_error_handle root_cert_error, grpc_error_handle identity_cert_error) {
   if (root_cert_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "TlsServerCertificateWatcher getting root_cert_error: %s",
@@ -666,7 +667,8 @@ TlsServerSecurityConnector::UpdateHandshakerFactoryLocked() {
 
 namespace internal {
 
-grpc_error* TlsCheckHostName(const char* peer_name, const tsi_peer* peer) {
+grpc_error_handle TlsCheckHostName(const char* peer_name,
+                                   const tsi_peer* peer) {
   /* Check the peer name if specified. */
   if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(

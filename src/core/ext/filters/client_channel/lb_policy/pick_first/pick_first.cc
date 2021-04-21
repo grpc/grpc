@@ -197,7 +197,7 @@ void PickFirst::AttemptToConnectUsingLatestUpdateArgsLocked() {
     // (If we are idle, then this will happen in ExitIdleLocked() if we
     // haven't gotten a non-empty update by the time the application tries
     // to start a new call.)
-    grpc_error* error =
+    grpc_error_handle error =
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
@@ -314,7 +314,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
       p->subchannel_list_ = std::move(p->latest_pending_subchannel_list_);
       // Set our state to that of the pending subchannel list.
       if (p->subchannel_list_->in_transient_failure()) {
-        grpc_error* error = grpc_error_set_int(
+        grpc_error_handle error = grpc_error_set_int(
             GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "selected subchannel failed; switching to pending update"),
             GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
@@ -393,7 +393,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
         subchannel_list()->set_in_transient_failure(true);
         // Only report new state in case 1.
         if (subchannel_list() == p->subchannel_list_.get()) {
-          grpc_error* error = grpc_error_set_int(
+          grpc_error_handle error = grpc_error_set_int(
               GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                   "failed to connect to all addresses"),
               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
@@ -497,7 +497,7 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kPickFirst; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error** /*error*/) const override {
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<PickFirstConfig>();
   }
 };

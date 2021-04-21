@@ -192,12 +192,12 @@ class ClientChannel {
     LbQueuedCall* next = nullptr;
   };
 
-  ClientChannel(grpc_channel_element_args* args, grpc_error** error);
+  ClientChannel(grpc_channel_element_args* args, grpc_error_handle* error);
   ~ClientChannel();
 
   // Filter vtable functions.
-  static grpc_error* Init(grpc_channel_element* elem,
-                          grpc_channel_element_args* args);
+  static grpc_error_handle Init(grpc_channel_element* elem,
+                                grpc_channel_element_args* args);
   static void Destroy(grpc_channel_element* elem);
   static void StartTransportOp(grpc_channel_element* elem,
                                grpc_transport_op* op);
@@ -205,7 +205,7 @@ class ClientChannel {
                              const grpc_channel_info* info);
 
   // Note: Does NOT return a new ref.
-  grpc_error* disconnect_error() const {
+  grpc_error_handle disconnect_error() const {
     return disconnect_error_.Load(MemoryOrder::ACQUIRE);
   }
 
@@ -214,7 +214,7 @@ class ClientChannel {
 
   void OnResolverResultChangedLocked(Resolver::Result result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
-  void OnResolverErrorLocked(grpc_error* error)
+  void OnResolverErrorLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   void CreateOrUpdateLbPolicyLocked(
@@ -244,7 +244,7 @@ class ClientChannel {
   void DestroyResolverAndLbPolicyLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
-  grpc_error* DoPingLocked(grpc_transport_op* op)
+  grpc_error_handle DoPingLocked(grpc_transport_op* op)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   void StartTransportOpLocked(grpc_transport_op* op)
@@ -291,7 +291,7 @@ class ClientChannel {
   ResolverQueuedCall* resolver_queued_calls_ ABSL_GUARDED_BY(resolution_mu_) =
       nullptr;
   // Data from service config.
-  grpc_error* resolver_transient_failure_error_
+  grpc_error_handle resolver_transient_failure_error_
       ABSL_GUARDED_BY(resolution_mu_) = GRPC_ERROR_NONE;
   bool received_service_config_data_ ABSL_GUARDED_BY(resolution_mu_) = false;
   RefCountedPtr<ServiceConfig> service_config_ ABSL_GUARDED_BY(resolution_mu_);
@@ -346,7 +346,7 @@ class ClientChannel {
   // Fields accessed from both data plane mutex and control plane
   // work_serializer.
   //
-  Atomic<grpc_error*> disconnect_error_;
+  Atomic<grpc_error_handle> disconnect_error_;
 
   //
   // Fields guarded by a mutex, since they need to be accessed
@@ -390,15 +390,15 @@ class ClientChannel::LoadBalancedCall
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
   // Invoked by channel for queued LB picks when the picker is updated.
-  static void PickSubchannel(void* arg, grpc_error* error);
+  static void PickSubchannel(void* arg, grpc_error_handle error);
   // Helper function for performing an LB pick while holding the data plane
   // mutex.  Returns true if the pick is complete, in which case the caller
   // must invoke PickDone() or AsyncPickDone() with the returned error.
-  bool PickSubchannelLocked(grpc_error** error)
+  bool PickSubchannelLocked(grpc_error_handle* error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
   // Schedules a callback to process the completed pick.  The callback
   // will not run until after this method returns.
-  void AsyncPickDone(grpc_error* error);
+  void AsyncPickDone(grpc_error_handle error);
 
   RefCountedPtr<SubchannelCall> subchannel_call() const {
     return subchannel_call_;
@@ -412,7 +412,8 @@ class ClientChannel::LoadBalancedCall
   // Returns the index into pending_batches_ to be used for batch.
   static size_t GetBatchIndex(grpc_transport_stream_op_batch* batch);
   void PendingBatchesAdd(grpc_transport_stream_op_batch* batch);
-  static void FailPendingBatchInCallCombiner(void* arg, grpc_error* error);
+  static void FailPendingBatchInCallCombiner(void* arg,
+                                             grpc_error_handle error);
   // A predicate type and some useful implementations for PendingBatchesFail().
   typedef bool (*YieldCallCombinerPredicate)(
       const CallCombinerClosureList& closures);
@@ -430,20 +431,21 @@ class ClientChannel::LoadBalancedCall
   // If yield_call_combiner_predicate returns true, assumes responsibility for
   // yielding the call combiner.
   void PendingBatchesFail(
-      grpc_error* error,
+      grpc_error_handle error,
       YieldCallCombinerPredicate yield_call_combiner_predicate);
-  static void ResumePendingBatchInCallCombiner(void* arg, grpc_error* ignored);
+  static void ResumePendingBatchInCallCombiner(void* arg,
+                                               grpc_error_handle ignored);
   // Resumes all pending batches on subchannel_call_.
   void PendingBatchesResume();
 
   static void RecvTrailingMetadataReadyForLoadBalancingPolicy(
-      void* arg, grpc_error* error);
+      void* arg, grpc_error_handle error);
   void InjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
       grpc_transport_stream_op_batch* batch);
 
   void CreateSubchannelCall();
   // Invoked when a pick is completed, on both success or failure.
-  static void PickDone(void* arg, grpc_error* error);
+  static void PickDone(void* arg, grpc_error_handle error);
   // Removes the call from the channel's list of queued picks if present.
   void MaybeRemoveCallFromLbQueuedCallsLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::data_plane_mu_);
@@ -467,10 +469,10 @@ class ClientChannel::LoadBalancedCall
   grpc_closure* on_call_destruction_complete_;
 
   // Set when we get a cancel_stream op.
-  grpc_error* cancel_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
 
   // Set when we fail inside the LB call.
-  grpc_error* failure_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle failure_error_ = GRPC_ERROR_NONE;
 
   grpc_closure pick_closure_;
 
@@ -484,7 +486,7 @@ class ClientChannel::LoadBalancedCall
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
-  std::function<void(grpc_error*, LoadBalancingPolicy::MetadataInterface*,
+  std::function<void(grpc_error_handle, LoadBalancingPolicy::MetadataInterface*,
                      LoadBalancingPolicy::CallState*)>
       lb_recv_trailing_metadata_ready_;
 

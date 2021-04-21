@@ -62,7 +62,7 @@ struct internal_request {
   grpc_closure on_read;
   grpc_closure done_write;
   grpc_closure connected;
-  grpc_error* overall_error;
+  grpc_error_handle overall_error;
   grpc_resource_quota* resource_quota;
 };
 static grpc_httpcli_get_override g_get_override = nullptr;
@@ -86,9 +86,9 @@ void grpc_httpcli_context_destroy(grpc_httpcli_context* context) {
   grpc_pollset_set_destroy(context->pollset_set);
 }
 
-static void next_address(internal_request* req, grpc_error* due_to_error);
+static void next_address(internal_request* req, grpc_error_handle due_to_error);
 
-static void finish(internal_request* req, grpc_error* error) {
+static void finish(internal_request* req, grpc_error_handle error) {
   grpc_polling_entity_del_from_pollset_set(req->pollent,
                                            req->context->pollset_set);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, req->on_done, error);
@@ -110,7 +110,7 @@ static void finish(internal_request* req, grpc_error* error) {
   gpr_free(req);
 }
 
-static void append_error(internal_request* req, grpc_error* error) {
+static void append_error(internal_request* req, grpc_error_handle error) {
   if (req->overall_error == GRPC_ERROR_NONE) {
     req->overall_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
@@ -127,14 +127,14 @@ static void do_read(internal_request* req) {
   grpc_endpoint_read(req->ep, &req->incoming, &req->on_read, /*urgent=*/true);
 }
 
-static void on_read(void* user_data, grpc_error* error) {
+static void on_read(void* user_data, grpc_error_handle error) {
   internal_request* req = static_cast<internal_request*>(user_data);
   size_t i;
 
   for (i = 0; i < req->incoming.count; i++) {
     if (GRPC_SLICE_LENGTH(req->incoming.slices[i])) {
       req->have_read_byte = 1;
-      grpc_error* err = grpc_http_parser_parse(
+      grpc_error_handle err = grpc_http_parser_parse(
           &req->parser, req->incoming.slices[i], nullptr);
       if (err != GRPC_ERROR_NONE) {
         finish(req, err);
@@ -154,7 +154,7 @@ static void on_read(void* user_data, grpc_error* error) {
 
 static void on_written(internal_request* req) { do_read(req); }
 
-static void done_write(void* arg, grpc_error* error) {
+static void done_write(void* arg, grpc_error_handle error) {
   internal_request* req = static_cast<internal_request*>(arg);
   if (error == GRPC_ERROR_NONE) {
     on_written(req);
@@ -182,7 +182,7 @@ static void on_handshake_done(void* arg, grpc_endpoint* ep) {
   start_write(req);
 }
 
-static void on_connected(void* arg, grpc_error* error) {
+static void on_connected(void* arg, grpc_error_handle error) {
   internal_request* req = static_cast<internal_request*>(arg);
 
   if (!req->ep) {
@@ -194,7 +194,7 @@ static void on_connected(void* arg, grpc_error* error) {
       req->deadline, on_handshake_done);
 }
 
-static void next_address(internal_request* req, grpc_error* error) {
+static void next_address(internal_request* req, grpc_error_handle error) {
   grpc_resolved_address* addr;
   if (error != GRPC_ERROR_NONE) {
     append_error(req, error);
@@ -216,7 +216,7 @@ static void next_address(internal_request* req, grpc_error* error) {
                           &args, addr, req->deadline);
 }
 
-static void on_resolved(void* arg, grpc_error* error) {
+static void on_resolved(void* arg, grpc_error_handle error) {
   internal_request* req = static_cast<internal_request*>(arg);
   if (error != GRPC_ERROR_NONE) {
     finish(req, GRPC_ERROR_REF(error));

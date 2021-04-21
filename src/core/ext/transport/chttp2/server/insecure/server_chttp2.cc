@@ -30,7 +30,7 @@
 namespace {
 
 grpc_channel_args* ModifyArgsForConnection(grpc_channel_args* args,
-                                           grpc_error** /*error*/) {
+                                           grpc_error_handle* /*error*/) {
   return args;
 }
 
@@ -41,7 +41,7 @@ int grpc_server_add_insecure_http2_port(grpc_server* server, const char* addr) {
   int port_num = 0;
   GRPC_API_TRACE("grpc_server_add_insecure_http2_port(server=%p, addr=%s)", 2,
                  (server, addr));
-  grpc_error* err = grpc_core::Chttp2ServerAddPort(
+  grpc_error_handle err = grpc_core::Chttp2ServerAddPort(
       server->core_server.get(), addr,
       grpc_channel_args_copy(server->core_server->channel_args()),
       ModifyArgsForConnection, &port_num);
