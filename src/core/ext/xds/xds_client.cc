@@ -41,6 +41,7 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
@@ -1770,36 +1771,40 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 
 namespace {
 
-grpc_millis GetRequestTimeout(grpc_channel_args* args) {
+grpc_millis GetRequestTimeout(const grpc_channel_args* args) {
   return grpc_channel_args_find_integer(
       args, GRPC_ARG_XDS_RESOURCE_DOES_NOT_EXIST_TIMEOUT_MS,
       {15000, 0, INT_MAX});
 }
 
+grpc_channel_args* ModifyChannelArgs(const grpc_channel_args* args) {
+  absl::InlinedVector<grpc_arg, 2> args_to_add = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
+          5 * 60 * GPR_MS_PER_SEC),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
+  };
+  return grpc_channel_args_copy_and_add(args, args_to_add.data(),
+                                        args_to_add.size());
+}
+
 }  // namespace
 
-XdsClient::XdsClient(grpc_channel_args* args, grpc_error** error)
+XdsClient::XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
+                     const grpc_channel_args* args)
     : DualRefCounted<XdsClient>(
           GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_refcount_trace) ? "XdsClient"
                                                                   : nullptr),
-      args_(args),
+      bootstrap_(std::move(bootstrap)),
+      args_(ModifyChannelArgs(args)),
       request_timeout_(GetRequestTimeout(args)),
       interested_parties_(grpc_pollset_set_create()),
-      bootstrap_(XdsBootstrap::Create(this, &grpc_xds_client_trace,
-                                      g_fallback_bootstrap_config, error)),
       certificate_provider_store_(MakeOrphanable<CertificateProviderStore>(
-          bootstrap_ == nullptr
-              ? CertificateProviderStore::PluginDefinitionMap()
-              : bootstrap_->certificate_providers())),
-      api_(this, &grpc_xds_client_trace,
-           bootstrap_ == nullptr ? nullptr : bootstrap_->node()) {
+          bootstrap_->certificate_providers())),
+      api_(this, &grpc_xds_client_trace, bootstrap_->node()) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p] creating xds client", this);
-  }
-  if (*error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "[xds_client %p] failed to read bootstrap file: %s",
-            this, grpc_error_string(*error));
-    return;
   }
   // Create ChannelState object.
   chand_ = MakeOrphanable<ChannelState>(
@@ -2339,27 +2344,95 @@ void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
   XdsHttpFilterRegistry::Shutdown();
 }
 
-RefCountedPtr<XdsClient> XdsClient::GetOrCreate(grpc_error** error) {
+namespace {
+
+std::string GetBootstrapContents(const char* fallback_config,
+                                 grpc_error** error) {
+  // First, try GRPC_XDS_BOOTSTRAP env var.
+  grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
+  if (path != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "Got bootstrap file location from GRPC_XDS_BOOTSTRAP "
+              "environment variable: %s",
+              path.get());
+    }
+    grpc_slice contents;
+    *error =
+        grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
+    if (*error != GRPC_ERROR_NONE) return "";
+    std::string contents_str(StringViewFromSlice(contents));
+    grpc_slice_unref_internal(contents);
+    return contents_str;
+  }
+  // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
+  grpc_core::UniquePtr<char> env_config(
+      gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG"));
+  if (env_config != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO,
+              "Got bootstrap contents from GRPC_XDS_BOOTSTRAP_CONFIG "
+              "environment variable");
+    }
+    return env_config.get();
+  }
+  // Finally, try fallback config.
+  if (fallback_config != nullptr) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO, "Got bootstrap contents from fallback config");
+    }
+    return fallback_config;
+  }
+  // No bootstrap config found.
+  *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+      "Environment variables GRPC_XDS_BOOTSTRAP or GRPC_XDS_BOOTSTRAP_CONFIG "
+      "not defined");
+  return "";
+}
+
+}  // namespace
+
+RefCountedPtr<XdsClient> XdsClient::GetOrCreate(const grpc_channel_args* args,
+                                                grpc_error** error) {
   RefCountedPtr<XdsClient> xds_client;
+  // If getting bootstrap from channel args, create a local XdsClient
+  // instance for the channel or server instead of using the global instance.
+  const char* bootstrap_config = grpc_channel_args_find_string(
+      args, GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG);
+  if (bootstrap_config != nullptr) {
+    std::unique_ptr<XdsBootstrap> bootstrap =
+        XdsBootstrap::Create(bootstrap_config, error);
+    if (*error == GRPC_ERROR_NONE) {
+      grpc_channel_args* xds_channel_args =
+          grpc_channel_args_find_pointer<grpc_channel_args>(
+              args,
+              GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_CLIENT_CHANNEL_ARGS);
+      return MakeRefCounted<XdsClient>(std::move(bootstrap), xds_channel_args);
+    }
+    return nullptr;
+  }
+  // Otherwise, use the global instance.
   {
     MutexLock lock(g_mu);
     if (g_xds_client != nullptr) {
       auto xds_client = g_xds_client->RefIfNonZero();
       if (xds_client != nullptr) return xds_client;
     }
-    // Build channel args.
-    absl::InlinedVector<grpc_arg, 2> args_to_add = {
-        grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_KEEPALIVE_TIME_MS),
-            5 * 60 * GPR_MS_PER_SEC),
-        grpc_channel_arg_integer_create(
-            const_cast<char*>(GRPC_ARG_CHANNELZ_IS_INTERNAL_CHANNEL), 1),
-    };
-    grpc_channel_args* args = grpc_channel_args_copy_and_add(
-        g_channel_args, args_to_add.data(), args_to_add.size());
-    // Instantiate XdsClient.
-    xds_client = MakeRefCounted<XdsClient>(args, error);
+    // Find bootstrap contents.
+    std::string bootstrap_contents =
+        GetBootstrapContents(g_fallback_bootstrap_config, error);
     if (*error != GRPC_ERROR_NONE) return nullptr;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO, "xDS bootstrap contents: %s",
+              bootstrap_contents.c_str());
+    }
+    // Parse bootstrap.
+    std::unique_ptr<XdsBootstrap> bootstrap =
+        XdsBootstrap::Create(bootstrap_contents, error);
+    if (*error != GRPC_ERROR_NONE) return nullptr;
+    // Instantiate XdsClient.
+    xds_client =
+        MakeRefCounted<XdsClient>(std::move(bootstrap), g_channel_args);
     g_xds_client = xds_client.get();
   }
   return xds_client;
@@ -2385,6 +2458,46 @@ void SetXdsFallbackBootstrapConfig(const char* config) {
 
 }  // namespace internal
 
+//
+// embedding XdsClient in channel args
+//
+
+#define GRPC_ARG_XDS_CLIENT "grpc.internal.xds_client"
+
+namespace {
+
+void* XdsClientArgCopy(void* p) {
+  XdsClient* xds_client = static_cast<XdsClient*>(p);
+  xds_client->Ref(DEBUG_LOCATION, "channel arg").release();
+  return p;
+}
+
+void XdsClientArgDestroy(void* p) {
+  XdsClient* xds_client = static_cast<XdsClient*>(p);
+  xds_client->Unref(DEBUG_LOCATION, "channel arg");
+}
+
+int XdsClientArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
+
+const grpc_arg_pointer_vtable kXdsClientArgVtable = {
+    XdsClientArgCopy, XdsClientArgDestroy, XdsClientArgCmp};
+
+}  // namespace
+
+grpc_arg XdsClient::MakeChannelArg() const {
+  return grpc_channel_arg_pointer_create(const_cast<char*>(GRPC_ARG_XDS_CLIENT),
+                                         const_cast<XdsClient*>(this),
+                                         &kXdsClientArgVtable);
+}
+
+RefCountedPtr<XdsClient> XdsClient::GetFromChannelArgs(
+    const grpc_channel_args& args) {
+  XdsClient* xds_client =
+      grpc_channel_args_find_pointer<XdsClient>(&args, GRPC_ARG_XDS_CLIENT);
+  if (xds_client == nullptr) return nullptr;
+  return xds_client->Ref(DEBUG_LOCATION, "GetFromChannelArgs");
+}
+
 }  // namespace grpc_core
 
 // The returned bytes may contain NULL(0), so we can't use c-string.
@@ -2392,7 +2505,7 @@ grpc_slice grpc_dump_xds_configs() {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_error* error = GRPC_ERROR_NONE;
-  auto xds_client = grpc_core::XdsClient::GetOrCreate(&error);
+  auto xds_client = grpc_core::XdsClient::GetOrCreate(nullptr, &error);
   if (error != GRPC_ERROR_NONE) {
     // If we isn't using xDS, just return an empty string.
     GRPC_ERROR_UNREF(error);
