@@ -17,6 +17,7 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
 #include "src/core/lib/iomgr/event_engine/util.h"
@@ -54,10 +55,8 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
   return [&](absl::Status status, EventEngine::Endpoint* endpoint) {
     grpc_endpoint_out->endpoint = endpoint;
-    // Reusing the existing URI conversion logic for now.
-    grpc_resolved_address gaddr =
-        CreateGRPCResolvedAddress(endpoint->GetLocalAddress());
-    grpc_endpoint_out->local_address = grpc_sockaddr_to_uri(&gaddr);
+    grpc_endpoint_out->local_address =
+        ResolvedAddressToURI(endpoint->GetLocalAddress());
     // TODO(hork): Do we need to add grpc_error to closure's error data?
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));
@@ -81,10 +80,9 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                  grpc_pollset_set* /* interested_parties */,
                  const grpc_channel_args* channel_args,
                  const grpc_resolved_address* addr, grpc_millis deadline) {
-  // TODO(hork): peer_string needs to be set to ResolvedAddress name
   grpc_event_engine_endpoint* ee_endpoint =
       reinterpret_cast<grpc_event_engine_endpoint*>(
-          grpc_tcp_create(channel_args, "UNIMPLEMENTED"));
+          grpc_tcp_create(channel_args, grpc_sockaddr_to_uri(addr)));
   *endpoint = &ee_endpoint->base;
   EventEngine::OnConnectCallback ee_on_connect =
       GrpcClosureToOnConnectCallback(on_connect, ee_endpoint);
@@ -206,8 +204,6 @@ void tcp_server_unref(grpc_tcp_server* s) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
     grpc_core::ExecCtx::Get()->Flush();
-    // TODO(hork): might require a way to signal the EE that shutdown is
-    // occurring to prevent race conditions and undefined behavior.
     gpr_mu_unlock(&s->mu);
     tcp_server_destroy(s);
   }

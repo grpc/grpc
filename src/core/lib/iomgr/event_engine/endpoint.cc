@@ -23,6 +23,7 @@
 #include <grpc/support/time.h>
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine/util.h"
@@ -35,6 +36,7 @@ extern grpc_core::TraceFlag grpc_tcp_trace;
 namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
+using ::grpc_event_engine::experimental::ResolvedAddressToURI;
 
 void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
                    grpc_closure* cb, bool /* urgent */) {
@@ -89,10 +91,8 @@ absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
 
 absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
   // TODO(hork): need to convert ResolvedAddress <-> String
-  // auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
-  // return eeep->endpoint->GetLocalAddress();
-  (void)ep;
-  return "TEMP";
+  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+  return ResolvedAddressToURI(eeep->GetLocalAddress());
 }
 
 int endpoint_get_fd(grpc_endpoint* /* ep */) { return -1; }

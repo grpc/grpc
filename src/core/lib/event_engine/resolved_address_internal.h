@@ -11,30 +11,28 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-/// grpc_closure to std::function conversions for an EventEngine-based iomgr
-#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_UTIL_H
-#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_UTIL_H
+#include <grpc/support/port_platform.h>
+#ifndef GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
+#define GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
 #ifdef GRPC_EVENT_ENGINE_TEST
 
-#include <grpc/support/port_platform.h>
-
-#include <functional>
-
 #include <grpc/event_engine/event_engine.h>
-#include "absl/status/status.h"
 
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/event_engine/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure);
+std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress* addr);
+
+EventEngine::ResolvedAddress CreateResolvedAddress(
+    const grpc_resolved_address* addr);
+
+grpc_resolved_address CreateGRPCResolvedAddress(
+    const EventEngine::ResolvedAddress* ra);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif
-#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_UTIL_H
+#endif  // GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H

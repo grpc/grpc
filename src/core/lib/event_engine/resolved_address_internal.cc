@@ -11,30 +11,40 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-/// grpc_closure to std::function conversions for an EventEngine-based iomgr
-#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_UTIL_H
-#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_UTIL_H
-#ifdef GRPC_EVENT_ENGINE_TEST
-
 #include <grpc/support/port_platform.h>
 
-#include <functional>
+#ifdef GRPC_EVENT_ENGINE_TEST
 
 #include <grpc/event_engine/event_engine.h>
-#include "absl/status/status.h"
 
-#include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/event_engine/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure);
+std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress* addr) {
+  auto gra = CreateGRPCResolvedAddress(addr);
+  return grpc_sockaddr_to_uri(&gra);
+}
+
+EventEngine::ResolvedAddress CreateResolvedAddress(
+    const grpc_resolved_address* addr) {
+  GPR_ASSERT(addr != nullptr);
+  return EventEngine::ResolvedAddress(
+      reinterpret_cast<const sockaddr*>(addr->addr), addr->len);
+}
+
+grpc_resolved_address CreateGRPCResolvedAddress(
+    const EventEngine::ResolvedAddress* ra) {
+  GPR_ASSERT(ra != nullptr);
+  grpc_resolved_address grpc_addr;
+  memcpy(grpc_addr.addr, ra->address(), ra->size());
+  grpc_addr.len = ra->size();
+  return grpc_addr;
+}
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
 #endif
-#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_UTIL_H

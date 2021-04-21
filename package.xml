@@ -734,6 +734,8 @@
     <file baseinstalldir="/" name="src/core/lib/debug/stats_data.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/debug/trace.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/resolved_address_internal.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/event_engine/resolved_address_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/slice_allocator.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/event_engine/sockaddr.h" role="src" />

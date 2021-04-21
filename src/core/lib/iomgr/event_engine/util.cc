@@ -70,15 +70,6 @@ EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure) {
   };
 }
 
-grpc_resolved_address CreateGRPCResolvedAddress(
-    const EventEngine::ResolvedAddress* ra) {
-  GPR_ASSERT(ra != nullptr);
-  grpc_resolved_address grpc_addr;
-  memcpy(grpc_addr.addr, ra->address(), ra->size());
-  grpc_addr.len = ra->size();
-  return grpc_addr;
-}
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
