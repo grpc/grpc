@@ -348,7 +348,7 @@ def _python_autoconf_impl(repository_ctx):
         repository_ctx,
         "_python2",
         _PYTHON2_BIN_PATH,
-        "python",
+        "python2",
         _PYTHON2_LIB_PATH,
         True
     )

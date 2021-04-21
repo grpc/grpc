@@ -1471,11 +1471,12 @@ libs:
   public_headers: []
   headers:
   - test/core/util/cmdline.h
-  - test/core/util/eval_args_mock_endpoint.h
+  - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
   - test/core/util/memory_counters.h
+  - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
   - test/core/util/passthru_endpoint.h
@@ -1493,7 +1494,6 @@ libs:
   - test/core/util/trickle_endpoint.h
   src:
   - test/core/util/cmdline.cc
-  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -1526,11 +1526,12 @@ libs:
   public_headers: []
   headers:
   - test/core/util/cmdline.h
-  - test/core/util/eval_args_mock_endpoint.h
+  - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
   - test/core/util/memory_counters.h
+  - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
   - test/core/util/passthru_endpoint.h
@@ -1547,7 +1548,6 @@ libs:
   - test/core/util/trickle_endpoint.h
   src:
   - test/core/util/cmdline.cc
-  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -4246,27 +4246,20 @@ targets:
   deps:
   - grpc++_test_util
   uses_polling: false
-- name: authorization_engine_test
+- name: authorization_matchers_test
   gtest: true
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/evaluate_args.h
-  - src/core/lib/security/authorization/mock_cel/activation.h
-  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
-  - src/core/lib/security/authorization/mock_cel/cel_expression.h
-  - src/core/lib/security/authorization/mock_cel/cel_value.h
-  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
-  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
+  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   src:
-  - src/core/lib/security/authorization/authorization_engine.cc
   - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
-  - test/core/security/authorization_engine_test.cc
+  - test/core/security/authorization_matchers_test.cc
   deps:
-  - absl/container:flat_hash_set
   - grpc_test_util
 - name: aws_request_signer_test
   gtest: true
@@ -4672,6 +4665,30 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: cel_authorization_engine_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/authorization/cel_authorization_engine.h
+  - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/matchers.h
+  - src/core/lib/security/authorization/mock_cel/activation.h
+  - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
+  - src/core/lib/security/authorization/mock_cel/cel_expression.h
+  - src/core/lib/security/authorization/mock_cel/cel_value.h
+  - src/core/lib/security/authorization/mock_cel/evaluator_core.h
+  - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
+  - src/core/lib/security/authorization/rbac_policy.h
+  src:
+  - src/core/lib/security/authorization/cel_authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
+  - test/core/security/cel_authorization_engine_test.cc
+  deps:
+  - absl/container:flat_hash_set
+  - grpc_test_util
 - name: certificate_provider_registry_test
   gtest: true
   build: test
@@ -5055,9 +5072,11 @@ targets:
   language: c++
   headers:
   - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   src:
   - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/evaluate_args_test.cc
   deps:
@@ -5935,10 +5954,12 @@ targets:
   language: c++
   headers:
   - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   src:
   - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
   - test/core/security/rbac_translator_test.cc
@@ -6515,11 +6536,12 @@ targets:
   language: c++
   headers:
   - test/core/util/cmdline.h
-  - test/core/util/eval_args_mock_endpoint.h
+  - test/core/util/evaluate_args_test_util.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
   - test/core/util/histogram.h
   - test/core/util/memory_counters.h
+  - test/core/util/mock_authorization_endpoint.h
   - test/core/util/mock_endpoint.h
   - test/core/util/parse_hexstring.h
   - test/core/util/passthru_endpoint.h
@@ -6539,7 +6561,6 @@ targets:
   - src/proto/grpc/testing/echo_messages.proto
   - src/proto/grpc/testing/simple_messages.proto
   - test/core/util/cmdline.cc
-  - test/core/util/eval_args_mock_endpoint.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
   - test/core/util/histogram.cc
@@ -6666,14 +6687,22 @@ targets:
   build: test
   run: false
   language: c++
-  headers: []
+  headers:
+  - src/cpp/server/csds/csds.h
   src:
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/config_dump.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/server/admin/admin_services.cc
+  - src/cpp/server/csds/csds.cc
   - test/cpp/interop/xds_interop_client.cc
   deps:
   - absl/flags:flag
+  - grpc++_reflection
   - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config
@@ -6682,16 +6711,24 @@ targets:
   run: false
   language: c++
   headers:
+  - src/cpp/server/csds/csds.h
   - test/cpp/end2end/test_health_check_service_impl.h
   src:
   - src/proto/grpc/health/v1/health.proto
   - src/proto/grpc/testing/empty.proto
   - src/proto/grpc/testing/messages.proto
   - src/proto/grpc/testing/test.proto
+  - src/proto/grpc/testing/xds/v3/base.proto
+  - src/proto/grpc/testing/xds/v3/config_dump.proto
+  - src/proto/grpc/testing/xds/v3/csds.proto
+  - src/proto/grpc/testing/xds/v3/percent.proto
+  - src/cpp/server/admin/admin_services.cc
+  - src/cpp/server/csds/csds.cc
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/interop/xds_interop_server.cc
   deps:
   - absl/flags:flag
+  - grpc++_reflection
   - grpcpp_channelz
   - grpc_test_util
   - grpc++_test_config

@@ -32,7 +32,6 @@ package(
 load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
-    "grpc_cc_library_xds",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
     "python_config_settings",
@@ -2062,10 +2061,12 @@ grpc_cc_library(
     name = "grpc_rbac_engine",
     srcs = [
         "src/core/lib/security/authorization/evaluate_args.cc",
+        "src/core/lib/security/authorization/matchers.cc",
         "src/core/lib/security/authorization/rbac_policy.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/matchers.h",
         "src/core/lib/security/authorization/rbac_policy.h",
     ],
     language = "c++",
@@ -2096,10 +2097,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_cel_engine",
     srcs = [
-        "src/core/lib/security/authorization/authorization_engine.cc",
+        "src/core/lib/security/authorization/cel_authorization_engine.cc",
     ],
     hdrs = [
-        "src/core/lib/security/authorization/authorization_engine.h",
+        "src/core/lib/security/authorization/cel_authorization_engine.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",
@@ -2626,7 +2627,7 @@ grpc_cc_library(
     alwayslink = 1,
 )
 
-grpc_cc_library_xds(
+grpc_cc_library(
     name = "grpcpp_csds",
     srcs = [
         "src/cpp/server/csds/csds.cc",
@@ -2642,7 +2643,7 @@ grpc_cc_library_xds(
     alwayslink = 1,
 )
 
-grpc_cc_library_xds(
+grpc_cc_library(
     name = "grpcpp_admin",
     srcs = [
         "src/cpp/server/admin/admin_services.cc",
