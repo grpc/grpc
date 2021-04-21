@@ -20,6 +20,8 @@
 
 #include <functional>
 
+#include "absl/synchronization/mutex.h"
+
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -43,12 +45,26 @@ namespace grpc_core {
 // other callbacks from other threads might also be executed before Run()
 // returns. Since an arbitrary set of callbacks might be executed when Run() is
 // called, generally no locks should be held while calling Run().
-class WorkSerializer {
+class ABSL_LOCKABLE WorkSerializer {
  public:
   WorkSerializer();
 
   ~WorkSerializer();
 
+  // Runs a given callback.
+  //
+  // If you want to use clang thread annotation to make sure that callback is
+  // called by WorkSerializer only, you need to add the annotation to both the
+  // lambda function given to Run and the actual callback function like;
+  //
+  //   void run_callback() {
+  //     work_serializer.Run(
+  //         []() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer) {
+  //            callback();
+  //         }, DEBUG_LOCATION);
+  //   }
+  //   void callback() ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer) { ... }
+  //
   // TODO(yashkt): Replace grpc_core::DebugLocation with absl::SourceLocation
   // once we can start using it directly.
   void Run(std::function<void()> callback,
