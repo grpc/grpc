@@ -119,6 +119,25 @@ uint32_t DecodeUInt32FromBytes(const char* buf) {
          (uint32_t(buf[3]) << 24);
 }
 
+std::vector<absl::Status> ParseChildren(absl::Cord children) {
+  std::vector<absl::Status> result;
+  upb::Arena arena;
+  // Cord is flattened to iterate the buffer easily at the cost of memory copy.
+  // TODO(veblush): Optimize this once CordReader is introduced.
+  absl::string_view buf = children.Flatten();
+  size_t cur = 0;
+  while (buf.size() - cur >= sizeof(uint32_t)) {
+    size_t msg_size = DecodeUInt32FromBytes(buf.data() + cur);
+    cur += sizeof(uint32_t);
+    GPR_ASSERT(buf.size() - cur >= msg_size);
+    google_rpc_Status* msg =
+        google_rpc_Status_parse(buf.data() + cur, msg_size, arena.ptr());
+    cur += msg_size;
+    result.push_back(internal::StatusFromProto(msg));
+  }
+  return result;
+}
+
 }  // namespace
 
 absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
@@ -199,25 +218,6 @@ void StatusAddChild(absl::Status* status, absl::Status child) {
   children.Append(absl::string_view(head_buf, sizeof(uint32_t)));
   children.Append(absl::string_view(buf, buf_len));
   status->SetPayload(kChildrenPropertyUrl, std::move(children));
-}
-
-std::vector<absl::Status> ParseChildren(absl::Cord children) {
-  std::vector<absl::Status> result;
-  upb::Arena arena;
-  // Cord is flattened to iterate the buffer easily at the cost of memory copy.
-  // TODO(veblush): Optimize this once CordReader is introduced.
-  absl::string_view buf = children.Flatten();
-  size_t cur = 0;
-  while (buf.size() - cur >= sizeof(uint32_t)) {
-    size_t msg_size = DecodeUInt32FromBytes(buf.data() + cur);
-    cur += sizeof(uint32_t);
-    GPR_ASSERT(buf.size() - cur >= msg_size);
-    google_rpc_Status* msg =
-        google_rpc_Status_parse(buf.data() + cur, msg_size, arena.ptr());
-    cur += msg_size;
-    result.push_back(internal::StatusFromProto(msg));
-  }
-  return result;
 }
 
 std::vector<absl::Status> StatusGetChildren(absl::Status status) {

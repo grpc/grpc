@@ -39,6 +39,7 @@ enum class StatusIntProperty {
   /// wire stream
   STREAM_ID,
   /// grpc status code representing this error
+  // TODO(veblush): Remove this after grpc_error is replaced with absl::Status
   GRPC_STATUS,
   /// offset into some binary blob (usually represented by
   /// RAW_BYTES) where the error occurred
