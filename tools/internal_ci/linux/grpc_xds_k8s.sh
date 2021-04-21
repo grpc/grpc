@@ -40,12 +40,9 @@ readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
 #   Writes the output of `gcloud builds submit` to stdout, stderr
 #######################################
 build_test_app_docker_images() {
-  echo "Building Java xDS interop test app Docker images"
-  local docker_dir="${SRC_DIR}/buildscripts/xds-k8s"
-  local build_dir
-  build_dir="$(mktemp -d)"
-  docker build -f "${SRC_DIR}/test/cpp/interop/Dockerfile.xds_client" -t "${CLIENT_IMAGE_NAME}"
-  docker build -f "${SRC_DIR}/test/cpp/interop/Dockerfile.xds_server" -t "${SERVER_IMAGE_NAME}"
+  echo "Building C++ xDS interop test app Docker images"
+  docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_client" -t "${CLIENT_IMAGE_NAME}" "${SRC_DIR}"
+  docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_server" -t "${SERVER_IMAGE_NAME}" "${SRC_DIR}"
   docker push "${CLIENT_IMAGE_NAME}"
   docker push "${SERVER_IMAGE_NAME}"
 }
