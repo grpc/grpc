@@ -67,22 +67,16 @@ class XdsBootstrap {
     bool ShouldUseV3() const;
   };
 
-  // Creates bootstrap object, obtaining the bootstrap JSON as appropriate
-  // for the environment:
-  // - If the GRPC_XDS_BOOTSTRAP env var is set, reads the file it specifies
-  //   to obtain the bootstrap JSON.
-  // - Otherwise, if the GRPC_XDS_BOOTSTRAP_CONFIG env var is set, reads the
-  //   content of that env var to obtain the bootstrap JSON.
-  // - Otherwise, the JSON will be read from fallback_config (if non-null).
+  // Creates bootstrap object from json_string.
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
-  // error (e.g., no config found or error reading the file).
-  static std::unique_ptr<XdsBootstrap> Create(XdsClient* client,
-                                              TraceFlag* tracer,
-                                              const char* fallback_config,
+  // error parsing the contents.
+  static std::unique_ptr<XdsBootstrap> Create(absl::string_view json_string,
                                               grpc_error** error);
 
-  // Do not instantiate directly -- use ReadFromFile() above instead.
+  // Do not instantiate directly -- use Create() above instead.
   XdsBootstrap(Json json, grpc_error** error);
+
+  std::string ToString() const;
 
   // TODO(roth): We currently support only one server. Fix this when we
   // add support for fallback for the xds channel.

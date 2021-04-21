@@ -386,10 +386,14 @@ class ClientThread extends Thread {
                 // $this->metadata_to_send[$rpc] somehow becomes a
                 // Volatile object, instead of an associative array.
                 $metadata_array = [];
+                $execute_in_child_process = false;
                 foreach ($metadata as $key => $value) {
                     $metadata_array[$key] = [$value];
+                    if ($key == 'rpc-behavior' || $key == 'fi_testcase') {
+                        $execute_in_child_process = true;
+                    }
                 }
-                if ($metadata_array && $this->rpc_config->tmp_file1) {
+                if ($execute_in_child_process && $this->rpc_config->tmp_file1) {
                     // if 'rpc-behavior' is set, we need to pawn off
                     // the execution to some other child PHP processes
                     $this->execute_rpc_in_child_process(

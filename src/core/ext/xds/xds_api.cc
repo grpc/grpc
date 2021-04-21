@@ -1231,7 +1231,7 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
         return GRPC_ERROR_NONE;
       }
     }
-    type = StringMatcher::Type::PREFIX;
+    type = StringMatcher::Type::kPrefix;
     match_string = std::string(prefix);
   } else if (envoy_config_route_v3_RouteMatch_has_path(match)) {
     absl::string_view path =
@@ -1265,13 +1265,13 @@ grpc_error* RoutePathMatchParse(const envoy_config_route_v3_RouteMatch* match,
       *ignore_route = true;
       return GRPC_ERROR_NONE;
     }
-    type = StringMatcher::Type::EXACT;
+    type = StringMatcher::Type::kExact;
     match_string = std::string(path);
   } else if (envoy_config_route_v3_RouteMatch_has_safe_regex(match)) {
     const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
         envoy_config_route_v3_RouteMatch_safe_regex(match);
     GPR_ASSERT(regex_matcher != nullptr);
-    type = StringMatcher::Type::SAFE_REGEX;
+    type = StringMatcher::Type::kSafeRegex;
     match_string = UpbStringToStdString(
         envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
   } else {
@@ -1305,7 +1305,7 @@ grpc_error* RouteHeaderMatchersParse(
     int64_t range_end = 0;
     bool present_match = false;
     if (envoy_config_route_v3_HeaderMatcher_has_exact_match(header)) {
-      type = HeaderMatcher::Type::EXACT;
+      type = HeaderMatcher::Type::kExact;
       match_string = UpbStringToStdString(
           envoy_config_route_v3_HeaderMatcher_exact_match(header));
     } else if (envoy_config_route_v3_HeaderMatcher_has_safe_regex_match(
@@ -1313,28 +1313,28 @@ grpc_error* RouteHeaderMatchersParse(
       const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
           envoy_config_route_v3_HeaderMatcher_safe_regex_match(header);
       GPR_ASSERT(regex_matcher != nullptr);
-      type = HeaderMatcher::Type::SAFE_REGEX;
+      type = HeaderMatcher::Type::kSafeRegex;
       match_string = UpbStringToStdString(
           envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher));
     } else if (envoy_config_route_v3_HeaderMatcher_has_range_match(header)) {
-      type = HeaderMatcher::Type::RANGE;
+      type = HeaderMatcher::Type::kRange;
       const envoy_type_v3_Int64Range* range_matcher =
           envoy_config_route_v3_HeaderMatcher_range_match(header);
       range_start = envoy_type_v3_Int64Range_start(range_matcher);
       range_end = envoy_type_v3_Int64Range_end(range_matcher);
     } else if (envoy_config_route_v3_HeaderMatcher_has_present_match(header)) {
-      type = HeaderMatcher::Type::PRESENT;
+      type = HeaderMatcher::Type::kPresent;
       present_match = envoy_config_route_v3_HeaderMatcher_present_match(header);
     } else if (envoy_config_route_v3_HeaderMatcher_has_prefix_match(header)) {
-      type = HeaderMatcher::Type::PREFIX;
+      type = HeaderMatcher::Type::kPrefix;
       match_string = UpbStringToStdString(
           envoy_config_route_v3_HeaderMatcher_prefix_match(header));
     } else if (envoy_config_route_v3_HeaderMatcher_has_suffix_match(header)) {
-      type = HeaderMatcher::Type::SUFFIX;
+      type = HeaderMatcher::Type::kSuffix;
       match_string = UpbStringToStdString(
           envoy_config_route_v3_HeaderMatcher_suffix_match(header));
     } else if (envoy_config_route_v3_HeaderMatcher_has_contains_match(header)) {
-      type = HeaderMatcher::Type::CONTAINS;
+      type = HeaderMatcher::Type::kContains;
       match_string = UpbStringToStdString(
           envoy_config_route_v3_HeaderMatcher_contains_match(header));
     } else {
@@ -1796,31 +1796,31 @@ grpc_error* CommonTlsContextParse(
         std::string matcher;
         if (envoy_type_matcher_v3_StringMatcher_has_exact(
                 subject_alt_names_matchers[i])) {
-          type = StringMatcher::Type::EXACT;
+          type = StringMatcher::Type::kExact;
           matcher =
               UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_exact(
                   subject_alt_names_matchers[i]));
         } else if (envoy_type_matcher_v3_StringMatcher_has_prefix(
                        subject_alt_names_matchers[i])) {
-          type = StringMatcher::Type::PREFIX;
+          type = StringMatcher::Type::kPrefix;
           matcher =
               UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_prefix(
                   subject_alt_names_matchers[i]));
         } else if (envoy_type_matcher_v3_StringMatcher_has_suffix(
                        subject_alt_names_matchers[i])) {
-          type = StringMatcher::Type::SUFFIX;
+          type = StringMatcher::Type::kSuffix;
           matcher =
               UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_suffix(
                   subject_alt_names_matchers[i]));
         } else if (envoy_type_matcher_v3_StringMatcher_has_contains(
                        subject_alt_names_matchers[i])) {
-          type = StringMatcher::Type::CONTAINS;
+          type = StringMatcher::Type::kContains;
           matcher =
               UpbStringToStdString(envoy_type_matcher_v3_StringMatcher_contains(
                   subject_alt_names_matchers[i]));
         } else if (envoy_type_matcher_v3_StringMatcher_has_safe_regex(
                        subject_alt_names_matchers[i])) {
-          type = StringMatcher::Type::SAFE_REGEX;
+          type = StringMatcher::Type::kSafeRegex;
           auto* regex_matcher = envoy_type_matcher_v3_StringMatcher_safe_regex(
               subject_alt_names_matchers[i]);
           matcher = UpbStringToStdString(
@@ -1840,7 +1840,7 @@ grpc_error* CommonTlsContextParse(
                            string_matcher.status().message())
                   .c_str());
         }
-        if (type == StringMatcher::Type::SAFE_REGEX && ignore_case) {
+        if (type == StringMatcher::Type::kSafeRegex && ignore_case) {
           return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "StringMatcher: ignore_case has no effect for SAFE_REGEX.");
         }

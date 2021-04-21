@@ -313,48 +313,40 @@ void FakeResolverResponseGenerator::SetFakeResolver(
 
 namespace {
 
-static void* response_generator_arg_copy(void* p) {
-  FakeResolverResponseGenerator* generator =
-      static_cast<FakeResolverResponseGenerator*>(p);
-  // TODO(roth): We currently deal with this ref manually.  Once the
-  // new channel args code is converted to C++, find a way to track this ref
-  // in a cleaner way.
-  RefCountedPtr<FakeResolverResponseGenerator> copy = generator->Ref();
-  copy.release();
+void* ResponseGeneratorChannelArgCopy(void* p) {
+  auto* generator = static_cast<FakeResolverResponseGenerator*>(p);
+  generator->Ref().release();
   return p;
 }
 
-static void response_generator_arg_destroy(void* p) {
-  FakeResolverResponseGenerator* generator =
-      static_cast<FakeResolverResponseGenerator*>(p);
+void ResponseGeneratorChannelArgDestroy(void* p) {
+  auto* generator = static_cast<FakeResolverResponseGenerator*>(p);
   generator->Unref();
 }
 
-static int response_generator_cmp(void* a, void* b) { return GPR_ICMP(a, b); }
-
-static const grpc_arg_pointer_vtable response_generator_arg_vtable = {
-    response_generator_arg_copy, response_generator_arg_destroy,
-    response_generator_cmp};
+int ResponseGeneratorChannelArgCmp(void* a, void* b) { return GPR_ICMP(a, b); }
 
 }  // namespace
 
+const grpc_arg_pointer_vtable
+    FakeResolverResponseGenerator::kChannelArgPointerVtable = {
+        ResponseGeneratorChannelArgCopy, ResponseGeneratorChannelArgDestroy,
+        ResponseGeneratorChannelArgCmp};
+
 grpc_arg FakeResolverResponseGenerator::MakeChannelArg(
     FakeResolverResponseGenerator* generator) {
-  grpc_arg arg;
-  arg.type = GRPC_ARG_POINTER;
-  arg.key = const_cast<char*>(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
-  arg.value.pointer.p = generator;
-  arg.value.pointer.vtable = &response_generator_arg_vtable;
-  return arg;
+  return grpc_channel_arg_pointer_create(
+      const_cast<char*>(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR), generator,
+      &kChannelArgPointerVtable);
 }
 
 RefCountedPtr<FakeResolverResponseGenerator>
 FakeResolverResponseGenerator::GetFromArgs(const grpc_channel_args* args) {
-  const grpc_arg* arg =
-      grpc_channel_args_find(args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
-  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
-  return static_cast<FakeResolverResponseGenerator*>(arg->value.pointer.p)
-      ->Ref();
+  auto* response_generator =
+      grpc_channel_args_find_pointer<FakeResolverResponseGenerator>(
+          args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
+  if (response_generator == nullptr) return nullptr;
+  return response_generator->Ref();
 }
 
 //

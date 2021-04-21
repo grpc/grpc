@@ -519,13 +519,13 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
 }  // namespace grpc_core
 
 grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
-    grpc_server_xds_status_notifier notifier) {
+    grpc_server_xds_status_notifier notifier, const grpc_channel_args* args) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_config_fetcher_xds_create()", 0, ());
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
-      grpc_core::XdsClient::GetOrCreate(&error);
+      grpc_core::XdsClient::GetOrCreate(args, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Failed to create xds client: %s",
             grpc_error_string(error));

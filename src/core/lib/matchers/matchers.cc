@@ -31,7 +31,7 @@ namespace grpc_core {
 absl::StatusOr<StringMatcher> StringMatcher::Create(Type type,
                                                     absl::string_view matcher,
                                                     bool case_sensitive) {
-  if (type == Type::SAFE_REGEX) {
+  if (type == Type::kSafeRegex) {
     RE2::Options options;
     options.set_case_sensitive(case_sensitive);
     auto regex_matcher = absl::make_unique<RE2>(std::string(matcher), options);
@@ -51,13 +51,13 @@ StringMatcher::StringMatcher(Type type, absl::string_view matcher,
 
 StringMatcher::StringMatcher(std::unique_ptr<RE2> regex_matcher,
                              bool case_sensitive)
-    : type_(Type::SAFE_REGEX),
+    : type_(Type::kSafeRegex),
       regex_matcher_(std::move(regex_matcher)),
       case_sensitive_(case_sensitive) {}
 
 StringMatcher::StringMatcher(const StringMatcher& other)
     : type_(other.type_), case_sensitive_(other.case_sensitive_) {
-  if (type_ == Type::SAFE_REGEX) {
+  if (type_ == Type::kSafeRegex) {
     RE2::Options options;
     options.set_case_sensitive(other.case_sensitive_);
     regex_matcher_ =
@@ -69,7 +69,7 @@ StringMatcher::StringMatcher(const StringMatcher& other)
 
 StringMatcher& StringMatcher::operator=(const StringMatcher& other) {
   type_ = other.type_;
-  if (type_ == Type::SAFE_REGEX) {
+  if (type_ == Type::kSafeRegex) {
     RE2::Options options;
     options.set_case_sensitive(other.case_sensitive_);
     regex_matcher_ =
@@ -83,7 +83,7 @@ StringMatcher& StringMatcher::operator=(const StringMatcher& other) {
 
 StringMatcher::StringMatcher(StringMatcher&& other) noexcept
     : type_(other.type_), case_sensitive_(other.case_sensitive_) {
-  if (type_ == Type::SAFE_REGEX) {
+  if (type_ == Type::kSafeRegex) {
     regex_matcher_ = std::move(other.regex_matcher_);
   } else {
     string_matcher_ = std::move(other.string_matcher_);
@@ -92,7 +92,7 @@ StringMatcher::StringMatcher(StringMatcher&& other) noexcept
 
 StringMatcher& StringMatcher::operator=(StringMatcher&& other) noexcept {
   type_ = other.type_;
-  if (type_ == Type::SAFE_REGEX) {
+  if (type_ == Type::kSafeRegex) {
     regex_matcher_ = std::move(other.regex_matcher_);
   } else {
     string_matcher_ = std::move(other.string_matcher_);
@@ -105,7 +105,7 @@ bool StringMatcher::operator==(const StringMatcher& other) const {
   if (type_ != other.type_ || case_sensitive_ != other.case_sensitive_) {
     return false;
   }
-  if (type_ == Type::SAFE_REGEX) {
+  if (type_ == Type::kSafeRegex) {
     return regex_matcher_->pattern() == other.regex_matcher_->pattern();
   } else {
     return string_matcher_ == other.string_matcher_;
@@ -114,22 +114,22 @@ bool StringMatcher::operator==(const StringMatcher& other) const {
 
 bool StringMatcher::Match(absl::string_view value) const {
   switch (type_) {
-    case Type::EXACT:
+    case Type::kExact:
       return case_sensitive_ ? value == string_matcher_
                              : absl::EqualsIgnoreCase(value, string_matcher_);
-    case StringMatcher::Type::PREFIX:
+    case StringMatcher::Type::kPrefix:
       return case_sensitive_
                  ? absl::StartsWith(value, string_matcher_)
                  : absl::StartsWithIgnoreCase(value, string_matcher_);
-    case StringMatcher::Type::SUFFIX:
+    case StringMatcher::Type::kSuffix:
       return case_sensitive_ ? absl::EndsWith(value, string_matcher_)
                              : absl::EndsWithIgnoreCase(value, string_matcher_);
-    case StringMatcher::Type::CONTAINS:
+    case StringMatcher::Type::kContains:
       return case_sensitive_
                  ? absl::StrContains(value, string_matcher_)
                  : absl::StrContains(absl::AsciiStrToLower(value),
                                      absl::AsciiStrToLower(string_matcher_));
-    case StringMatcher::Type::SAFE_REGEX:
+    case StringMatcher::Type::kSafeRegex:
       return RE2::FullMatch(std::string(value), *regex_matcher_);
     default:
       return false;
@@ -138,19 +138,19 @@ bool StringMatcher::Match(absl::string_view value) const {
 
 std::string StringMatcher::ToString() const {
   switch (type_) {
-    case Type::EXACT:
+    case Type::kExact:
       return absl::StrFormat("StringMatcher{exact=%s%s}", string_matcher_,
                              case_sensitive_ ? "" : ", case_sensitive=false");
-    case Type::PREFIX:
+    case Type::kPrefix:
       return absl::StrFormat("StringMatcher{prefix=%s%s}", string_matcher_,
                              case_sensitive_ ? "" : ", case_sensitive=false");
-    case Type::SUFFIX:
+    case Type::kSuffix:
       return absl::StrFormat("StringMatcher{suffix=%s%s}", string_matcher_,
                              case_sensitive_ ? "" : ", case_sensitive=false");
-    case Type::CONTAINS:
+    case Type::kContains:
       return absl::StrFormat("StringMatcher{contains=%s%s}", string_matcher_,
                              case_sensitive_ ? "" : ", case_sensitive=false");
-    case Type::SAFE_REGEX:
+    case Type::kSafeRegex:
       return absl::StrFormat("StringMatcher{safe_regex=%s%s}",
                              regex_matcher_->pattern(),
                              case_sensitive_ ? "" : ", case_sensitive=false");
@@ -177,7 +177,7 @@ absl::StatusOr<HeaderMatcher> HeaderMatcher::Create(
     }
     return HeaderMatcher(name, type, std::move(string_matcher.value()),
                          invert_match);
-  } else if (type == Type::RANGE) {
+  } else if (type == Type::kRange) {
     if (range_start > range_end) {
       return absl::InvalidArgumentError(
           "Invalid range specifier specified: end cannot be smaller than "
@@ -199,7 +199,7 @@ HeaderMatcher::HeaderMatcher(absl::string_view name, Type type,
 HeaderMatcher::HeaderMatcher(absl::string_view name, int64_t range_start,
                              int64_t range_end, bool invert_match)
     : name_(name),
-      type_(Type::RANGE),
+      type_(Type::kRange),
       range_start_(range_start),
       range_end_(range_end),
       invert_match_(invert_match) {}
@@ -207,7 +207,7 @@ HeaderMatcher::HeaderMatcher(absl::string_view name, int64_t range_start,
 HeaderMatcher::HeaderMatcher(absl::string_view name, bool present_match,
                              bool invert_match)
     : name_(name),
-      type_(Type::PRESENT),
+      type_(Type::kPresent),
       present_match_(present_match),
       invert_match_(invert_match) {}
 
@@ -216,11 +216,11 @@ HeaderMatcher::HeaderMatcher(const HeaderMatcher& other)
       type_(other.type_),
       invert_match_(other.invert_match_) {
   switch (type_) {
-    case Type::RANGE:
+    case Type::kRange:
       range_start_ = other.range_start_;
       range_end_ = other.range_end_;
       break;
-    case Type::PRESENT:
+    case Type::kPresent:
       present_match_ = other.present_match_;
       break;
     default:
@@ -233,11 +233,11 @@ HeaderMatcher& HeaderMatcher::operator=(const HeaderMatcher& other) {
   type_ = other.type_;
   invert_match_ = other.invert_match_;
   switch (type_) {
-    case Type::RANGE:
+    case Type::kRange:
       range_start_ = other.range_start_;
       range_end_ = other.range_end_;
       break;
-    case Type::PRESENT:
+    case Type::kPresent:
       present_match_ = other.present_match_;
       break;
     default:
@@ -251,11 +251,11 @@ HeaderMatcher::HeaderMatcher(HeaderMatcher&& other) noexcept
       type_(other.type_),
       invert_match_(other.invert_match_) {
   switch (type_) {
-    case Type::RANGE:
+    case Type::kRange:
       range_start_ = other.range_start_;
       range_end_ = other.range_end_;
       break;
-    case Type::PRESENT:
+    case Type::kPresent:
       present_match_ = other.present_match_;
       break;
     default:
@@ -268,11 +268,11 @@ HeaderMatcher& HeaderMatcher::operator=(HeaderMatcher&& other) noexcept {
   type_ = other.type_;
   invert_match_ = other.invert_match_;
   switch (type_) {
-    case Type::RANGE:
+    case Type::kRange:
       range_start_ = other.range_start_;
       range_end_ = other.range_end_;
       break;
-    case Type::PRESENT:
+    case Type::kPresent:
       present_match_ = other.present_match_;
       break;
     default:
@@ -286,10 +286,10 @@ bool HeaderMatcher::operator==(const HeaderMatcher& other) const {
   if (type_ != other.type_) return false;
   if (invert_match_ != other.invert_match_) return false;
   switch (type_) {
-    case Type::RANGE:
+    case Type::kRange:
       return range_start_ == other.range_start_ &&
              range_end_ == other.range_end_;
-    case Type::PRESENT:
+    case Type::kPresent:
       return present_match_ == other.present_match_;
     default:
       return matcher_ == other.matcher_;
@@ -299,12 +299,12 @@ bool HeaderMatcher::operator==(const HeaderMatcher& other) const {
 bool HeaderMatcher::Match(
     const absl::optional<absl::string_view>& value) const {
   bool match;
-  if (type_ == Type::PRESENT) {
+  if (type_ == Type::kPresent) {
     match = value.has_value() == present_match_;
   } else if (!value.has_value()) {
     // All other types fail to match if field is not present.
     match = false;
-  } else if (type_ == Type::RANGE) {
+  } else if (type_ == Type::kRange) {
     int64_t int_value;
     match = absl::SimpleAtoi(value.value(), &int_value) &&
             int_value >= range_start_ && int_value < range_end_;
@@ -316,19 +316,19 @@ bool HeaderMatcher::Match(
 
 std::string HeaderMatcher::ToString() const {
   switch (type_) {
-    case Type::RANGE:
+    case Type::kRange:
       return absl::StrFormat("HeaderMatcher{%s %srange=[%d, %d]}", name_,
                              invert_match_ ? "not " : "", range_start_,
                              range_end_);
-    case Type::PRESENT:
+    case Type::kPresent:
       return absl::StrFormat("HeaderMatcher{%s %spresent=%s}", name_,
                              invert_match_ ? "not " : "",
                              present_match_ ? "true" : "false");
-    case Type::EXACT:
-    case Type::PREFIX:
-    case Type::SUFFIX:
-    case Type::SAFE_REGEX:
-    case Type::CONTAINS:
+    case Type::kExact:
+    case Type::kPrefix:
+    case Type::kSuffix:
+    case Type::kSafeRegex:
+    case Type::kContains:
       return absl::StrFormat("HeaderMatcher{%s %s%s}", name_,
                              invert_match_ ? "not " : "", matcher_.ToString());
     default:
