@@ -82,10 +82,12 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Factory function to get or create the global XdsClient instance.
   // If *error is not GRPC_ERROR_NONE upon return, then there was
   // an error initializing the client.
-  static RefCountedPtr<XdsClient> GetOrCreate(grpc_error** error);
+  static RefCountedPtr<XdsClient> GetOrCreate(const grpc_channel_args* args,
+                                              grpc_error** error);
 
-  // Callers should not instantiate directly.  Use GetOrCreate() instead.
-  XdsClient(grpc_channel_args* args, grpc_error** error);
+  // Most callers should not instantiate directly.  Use GetOrCreate() instead.
+  XdsClient(std::unique_ptr<XdsBootstrap> bootstrap,
+            const grpc_channel_args* args);
   ~XdsClient() override;
 
   const XdsBootstrap& bootstrap() const {
@@ -199,6 +201,11 @@ class XdsClient : public DualRefCounted<XdsClient> {
   // Expected to be invoked by wrapper languages in their CSDS service
   // implementation.
   std::string DumpClientConfigBinary();
+
+  // Helpers for encoding the XdsClient object in channel args.
+  grpc_arg MakeChannelArg() const;
+  static RefCountedPtr<XdsClient> GetFromChannelArgs(
+      const grpc_channel_args& args);
 
  private:
   // Contains a channel to the xds server and all the data related to the
@@ -321,10 +328,10 @@ class XdsClient : public DualRefCounted<XdsClient> {
       grpc_millis update_time, const XdsApi::AdsParseResult& result)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
+  std::unique_ptr<XdsBootstrap> bootstrap_;
   grpc_channel_args* args_;
   const grpc_millis request_timeout_;
   grpc_pollset_set* interested_parties_;
-  std::unique_ptr<XdsBootstrap> bootstrap_;
   OrphanablePtr<CertificateProviderStore> certificate_provider_store_;
   XdsApi api_;
 

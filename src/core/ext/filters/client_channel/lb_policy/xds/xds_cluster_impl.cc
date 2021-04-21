@@ -596,14 +596,12 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    grpc_error* error = GRPC_ERROR_NONE;
-    RefCountedPtr<XdsClient> xds_client = XdsClient::GetOrCreate(&error);
-    if (error != GRPC_ERROR_NONE) {
-      gpr_log(
-          GPR_ERROR,
-          "cannot get XdsClient to instantiate xds_cluster_impl LB policy: %s",
-          grpc_error_string(error));
-      GRPC_ERROR_UNREF(error);
+    RefCountedPtr<XdsClient> xds_client =
+        XdsClient::GetFromChannelArgs(*args.args);
+    if (xds_client == nullptr) {
+      gpr_log(GPR_ERROR,
+              "XdsClient not present in channel args -- cannot instantiate "
+              "xds_cluster_impl LB policy");
       return nullptr;
     }
     return MakeOrphanable<XdsClusterImplLb>(std::move(xds_client),

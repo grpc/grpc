@@ -28,6 +28,7 @@
 #include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/xds/xds_channel_args.h"
 #include "src/core/ext/xds/xds_client.h"
 #include "src/core/ext/xds/xds_http_filters.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -711,7 +712,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
 
 void XdsResolver::StartLocked() {
   grpc_error* error = GRPC_ERROR_NONE;
-  xds_client_ = XdsClient::GetOrCreate(&error);
+  xds_client_ = XdsClient::GetOrCreate(args_, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
@@ -888,8 +889,12 @@ void XdsResolver::GenerateResult() {
     gpr_log(GPR_INFO, "[xds_resolver %p] generated service config: %s", this,
             result.service_config->json_string().c_str());
   }
-  grpc_arg new_arg = config_selector->MakeChannelArg();
-  result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
+  grpc_arg new_args[] = {
+      xds_client_->MakeChannelArg(),
+      config_selector->MakeChannelArg(),
+  };
+  result.args =
+      grpc_channel_args_copy_and_add(args_, new_args, GPR_ARRAY_SIZE(new_args));
   result_handler_->ReturnResult(std::move(result));
 }
 

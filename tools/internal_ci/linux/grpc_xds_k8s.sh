@@ -26,6 +26,7 @@ readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
+readonly TEST_DRIVER_REPO_DIR_USE_EXISTING=1
 
 #######################################
 # Builds test app Docker images and pushes them to GCR
@@ -103,7 +104,8 @@ run_test() {
     --server_image="${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
-    --force_cleanup
+    --force_cleanup \
+    --nocheck_local_certs
   set +x
 }
 

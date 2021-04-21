@@ -30,7 +30,6 @@
 
 #include "src/core/ext/xds/certificate_provider_registry.h"
 #include "src/core/ext/xds/xds_api.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -81,133 +80,17 @@ bool XdsBootstrap::XdsServer::ShouldUseV3() const {
 // XdsBootstrap
 //
 
-namespace {
-
-std::string BootstrapString(const XdsBootstrap& bootstrap) {
-  std::vector<std::string> parts;
-  if (bootstrap.node() != nullptr) {
-    parts.push_back(absl::StrFormat(
-        "node={\n"
-        "  id=\"%s\",\n"
-        "  cluster=\"%s\",\n"
-        "  locality={\n"
-        "    region=\"%s\",\n"
-        "    zone=\"%s\",\n"
-        "    sub_zone=\"%s\"\n"
-        "  },\n"
-        "  metadata=%s,\n"
-        "},\n",
-        bootstrap.node()->id, bootstrap.node()->cluster,
-        bootstrap.node()->locality_region, bootstrap.node()->locality_zone,
-        bootstrap.node()->locality_sub_zone,
-        bootstrap.node()->metadata.Dump()));
-  }
-  parts.push_back(absl::StrFormat(
-      "servers=[\n"
-      "  {\n"
-      "    uri=\"%s\",\n"
-      "    creds_type=%s,\n",
-      bootstrap.server().server_uri, bootstrap.server().channel_creds_type));
-  if (bootstrap.server().channel_creds_config.type() != Json::Type::JSON_NULL) {
-    parts.push_back(
-        absl::StrFormat("    creds_config=%s,",
-                        bootstrap.server().channel_creds_config.Dump()));
-  }
-  if (!bootstrap.server().server_features.empty()) {
-    parts.push_back(absl::StrCat(
-        "    server_features=[",
-        absl::StrJoin(bootstrap.server().server_features, ", "), "],\n"));
-  }
-  parts.push_back("  }\n],\n");
-  if (!bootstrap.server_listener_resource_name_template().empty()) {
-    parts.push_back(
-        absl::StrFormat("server_listener_resource_name_template=\"%s\",\n",
-                        bootstrap.server_listener_resource_name_template()));
-  }
-  parts.push_back("certificate_providers={\n");
-  for (const auto& entry : bootstrap.certificate_providers()) {
-    parts.push_back(
-        absl::StrFormat("  %s={\n"
-                        "    plugin_name=%s\n"
-                        "    config=%s\n"
-                        "  },\n",
-                        entry.first, entry.second.plugin_name,
-                        entry.second.config->ToString()));
-  }
-  parts.push_back("}");
-  return absl::StrJoin(parts, "");
-}
-
-std::unique_ptr<XdsBootstrap> ParseJsonAndCreate(
-    XdsClient* client, TraceFlag* tracer, absl::string_view json_string,
-    absl::string_view bootstrap_source, grpc_error** error) {
+std::unique_ptr<XdsBootstrap> XdsBootstrap::Create(
+    absl::string_view json_string, grpc_error** error) {
   Json json = Json::Parse(json_string, error);
   if (*error != GRPC_ERROR_NONE) {
-    grpc_error* error_out = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
-        absl::StrCat("Failed to parse bootstrap from ", bootstrap_source)
-            .c_str(),
-        error, 1);
+    grpc_error* error_out = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+        "Failed to parse bootstrap JSON string", error, 1);
     GRPC_ERROR_UNREF(*error);
     *error = error_out;
     return nullptr;
   }
-  std::unique_ptr<XdsBootstrap> result =
-      absl::make_unique<XdsBootstrap>(std::move(json), error);
-  if (*error == GRPC_ERROR_NONE && GRPC_TRACE_FLAG_ENABLED(*tracer)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] Bootstrap config for creating xds client:\n%s",
-            client, BootstrapString(*result).c_str());
-  }
-  return result;
-}
-
-}  // namespace
-
-std::unique_ptr<XdsBootstrap> XdsBootstrap::Create(XdsClient* client,
-                                                   TraceFlag* tracer,
-                                                   const char* fallback_config,
-                                                   grpc_error** error) {
-  // First, try GRPC_XDS_BOOTSTRAP env var.
-  grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
-  if (path != nullptr) {
-    if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
-      gpr_log(GPR_INFO,
-              "[xds_client %p] Got bootstrap file location from "
-              "GRPC_XDS_BOOTSTRAP environment variable: %s",
-              client, path.get());
-    }
-    grpc_slice contents;
-    *error =
-        grpc_load_file(path.get(), /*add_null_terminator=*/true, &contents);
-    if (*error != GRPC_ERROR_NONE) return nullptr;
-    absl::string_view contents_str_view = StringViewFromSlice(contents);
-    if (GRPC_TRACE_FLAG_ENABLED(*tracer)) {
-      gpr_log(GPR_DEBUG, "[xds_client %p] Bootstrap file contents: %s", client,
-              std::string(contents_str_view).c_str());
-    }
-    std::string bootstrap_source = absl::StrCat("file ", path.get());
-    auto result = ParseJsonAndCreate(client, tracer, contents_str_view,
-                                     bootstrap_source, error);
-    grpc_slice_unref_internal(contents);
-    return result;
-  }
-  // Next, try GRPC_XDS_BOOTSTRAP_CONFIG env var.
-  grpc_core::UniquePtr<char> env_config(
-      gpr_getenv("GRPC_XDS_BOOTSTRAP_CONFIG"));
-  if (env_config != nullptr) {
-    return ParseJsonAndCreate(client, tracer, env_config.get(),
-                              "GRPC_XDS_BOOTSTRAP_CONFIG env var", error);
-  }
-  // Finally, try fallback config.
-  if (fallback_config != nullptr) {
-    return ParseJsonAndCreate(client, tracer, fallback_config,
-                              "fallback config", error);
-  }
-  // No bootstrap config found.
-  *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-      "Environment variables GRPC_XDS_BOOTSTRAP or GRPC_XDS_BOOTSTRAP_CONFIG "
-      "not defined");
-  return nullptr;
+  return absl::make_unique<XdsBootstrap>(std::move(json), error);
 }
 
 XdsBootstrap::XdsBootstrap(Json json, grpc_error** error) {
@@ -550,6 +433,58 @@ grpc_error* XdsBootstrap::ParseCertificateProvider(
     error = grpc_error_add_child(error, error_list[i]);
   }
   return error;
+}
+
+std::string XdsBootstrap::ToString() const {
+  std::vector<std::string> parts;
+  if (node_ != nullptr) {
+    parts.push_back(absl::StrFormat(
+        "node={\n"
+        "  id=\"%s\",\n"
+        "  cluster=\"%s\",\n"
+        "  locality={\n"
+        "    region=\"%s\",\n"
+        "    zone=\"%s\",\n"
+        "    sub_zone=\"%s\"\n"
+        "  },\n"
+        "  metadata=%s,\n"
+        "},\n",
+        node_->id, node_->cluster, node_->locality_region, node_->locality_zone,
+        node_->locality_sub_zone, node_->metadata.Dump()));
+  }
+  parts.push_back(
+      absl::StrFormat("servers=[\n"
+                      "  {\n"
+                      "    uri=\"%s\",\n"
+                      "    creds_type=%s,\n",
+                      server().server_uri, server().channel_creds_type));
+  if (server().channel_creds_config.type() != Json::Type::JSON_NULL) {
+    parts.push_back(absl::StrFormat("    creds_config=%s,",
+                                    server().channel_creds_config.Dump()));
+  }
+  if (!server().server_features.empty()) {
+    parts.push_back(absl::StrCat("    server_features=[",
+                                 absl::StrJoin(server().server_features, ", "),
+                                 "],\n"));
+  }
+  parts.push_back("  }\n],\n");
+  if (!server_listener_resource_name_template_.empty()) {
+    parts.push_back(
+        absl::StrFormat("server_listener_resource_name_template=\"%s\",\n",
+                        server_listener_resource_name_template_));
+  }
+  parts.push_back("certificate_providers={\n");
+  for (const auto& entry : certificate_providers_) {
+    parts.push_back(
+        absl::StrFormat("  %s={\n"
+                        "    plugin_name=%s\n"
+                        "    config=%s\n"
+                        "  },\n",
+                        entry.first, entry.second.plugin_name,
+                        entry.second.config->ToString()));
+  }
+  parts.push_back("}");
+  return absl::StrJoin(parts, "");
 }
 
 }  // namespace grpc_core
