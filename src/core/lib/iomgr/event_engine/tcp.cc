@@ -78,10 +78,9 @@ EventEngine::Listener::AcceptCallback GrpcClosureToAcceptCallback(
 /// * addr: owned by caller
 /// * deadline: copied
 void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
-                 grpc_pollset_set* interested_parties,
+                 grpc_pollset_set* /* interested_parties */,
                  const grpc_channel_args* channel_args,
                  const grpc_resolved_address* addr, grpc_millis deadline) {
-  (void)interested_parties;
   // TODO(hork): peer_string needs to be set to ResolvedAddress name
   grpc_event_engine_endpoint* ee_endpoint =
       reinterpret_cast<grpc_event_engine_endpoint*>(
@@ -163,9 +162,8 @@ grpc_error* tcp_server_add_port(grpc_tcp_server* s,
 }
 
 grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
-    grpc_tcp_server* s) {
-  (void)s;
-  // TODO(hork): verify
+    grpc_tcp_server* /* s */) {
+  // EventEngine-iomgr does not support fds.
   return nullptr;
 }
 
@@ -197,7 +195,7 @@ void tcp_server_destroy(grpc_tcp_server* s) {
   gpr_mu_destroy(&s->mu);
   s->listener = nullptr;
   s->engine = nullptr;
-  // TODO(hork): see if we can handle this in ~SliceAllocatorFactory
+  // TODO(nnoble): see if we can handle this in ~SliceAllocatorFactory
   grpc_resource_quota_unref_internal(s->resource_quota);
   gpr_free(s);
 }

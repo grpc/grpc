@@ -24,10 +24,13 @@
 #include "absl/strings/string_view.h"
 
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine/util.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resource_quota.h"
+
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace {
 
@@ -60,14 +63,18 @@ void endpoint_add_to_pollset_set(grpc_endpoint* /* ep */,
 void endpoint_delete_from_pollset_set(grpc_endpoint* /* ep */,
                                       grpc_pollset_set* /* pollset */) {}
 void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
-  (void)ep;
-  (void)why;
-  // TODO(hork): do we need Endpoint shutdown?
+  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    const char* str = grpc_error_string(why);
+    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", tcp->socket, str);
+  }
+  grpc_resource_user_shutdown(eeep->ru);
 }
 
 void endpoint_destroy(grpc_endpoint* ep) {
-  (void)ep;
-  // TODO(hork): implement
+  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+  grpc_resource_user_unref(eeep->ru);
+  delete ep;
 }
 
 grpc_resource_user* endpoint_get_resource_user(grpc_endpoint* ep) {
@@ -125,8 +132,8 @@ grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
       }
     }
   }
-  // TODO(hork): what should the string be?
-  endpoint->ru = grpc_resource_user_create(resource_quota, "UNIMPLEMENTED");
+  endpoint->ru =
+      grpc_resource_user_create(resource_quota, endpoint->peer_string.c_str());
   return &endpoint->base;
 }
 
