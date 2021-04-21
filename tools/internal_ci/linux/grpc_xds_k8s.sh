@@ -26,6 +26,7 @@ readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server"
 readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
+readonly TEST_DRIVER_REPO_DIR_USE_EXISTING=1
 
 #######################################
 # Builds test app Docker images and pushes them to GCR
