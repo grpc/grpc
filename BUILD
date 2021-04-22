@@ -2085,9 +2085,11 @@ grpc_cc_library(
     name = "grpc_authorization_provider",
     srcs = [
         "src/core/lib/security/authorization/rbac_translator.cc",
+        "src/core/lib/security/authorization/grpc_authorization_policy_provider.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/rbac_translator.h",
+        "src/core/lib/security/authorization/grpc_authorization_policy_provider.h",
     ],
     language = "c++",
     deps = [

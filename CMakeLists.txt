@@ -858,6 +858,7 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx global_config_test)
   add_dependencies(buildtests_cxx google_mesh_ca_certificate_provider_factory_test)
   add_dependencies(buildtests_cxx grpc_authorization_engine_test)
+  add_dependencies(buildtests_cxx grpc_authorization_policy_provider_test)
   add_dependencies(buildtests_cxx grpc_cli)
   add_dependencies(buildtests_cxx grpc_tls_certificate_distributor_test)
   add_dependencies(buildtests_cxx grpc_tls_certificate_provider_test)
@@ -10778,6 +10779,47 @@ target_link_libraries(grpc_authorization_engine_test
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(grpc_authorization_policy_provider_test
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/grpc_authorization_engine.cc
+  src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  src/core/lib/security/authorization/matchers.cc
+  src/core/lib/security/authorization/rbac_policy.cc
+  src/core/lib/security/authorization/rbac_translator.cc
+  test/core/security/grpc_authorization_policy_provider_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(grpc_authorization_policy_provider_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_authorization_policy_provider_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(grpc_cli
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
@@ -12809,6 +12851,7 @@ if(gRPC_BUILD_TESTS)
 add_executable(rbac_translator_test
   src/core/lib/security/authorization/evaluate_args.cc
   src/core/lib/security/authorization/grpc_authorization_engine.cc
+  src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   src/core/lib/security/authorization/matchers.cc
   src/core/lib/security/authorization/rbac_policy.cc
   src/core/lib/security/authorization/rbac_translator.cc

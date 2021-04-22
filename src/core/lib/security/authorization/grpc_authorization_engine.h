@@ -45,6 +45,8 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
   // whether allow/deny this request.
   Decision Evaluate(const EvaluateArgs& args) const override;
 
+  Rbac::Action GetType() { return action_; }
+
  private:
   Rbac::Action action_;
   std::map<std::string, std::unique_ptr<AuthorizationMatcher>> policies_;
