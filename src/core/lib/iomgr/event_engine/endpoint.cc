@@ -92,7 +92,7 @@ absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
 absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
   // TODO(hork): need to convert ResolvedAddress <-> String
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
-  return ResolvedAddressToURI(eeep->GetLocalAddress());
+  return ResolvedAddressToURI(eeep->endpoint->GetLocalAddress());
 }
 
 int endpoint_get_fd(grpc_endpoint* /* ep */) { return -1; }
