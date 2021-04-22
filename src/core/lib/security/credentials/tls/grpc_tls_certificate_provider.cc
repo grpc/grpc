@@ -368,6 +368,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
 grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
   GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   grpc_core::PemKeyCertPairList identity_pairs_core;
   if (pem_key_cert_pairs != nullptr) {
     identity_pairs_core = std::move(pem_key_cert_pairs->pem_key_cert_pairs);
@@ -385,6 +386,7 @@ grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_file_watcher_create(
     const char* private_key_path, const char* identity_certificate_path,
     const char* root_cert_path, unsigned int refresh_interval_sec) {
+  grpc_core::ExecCtx exec_ctx;
   return new grpc_core::FileWatcherCertificateProvider(
       private_key_path == nullptr ? "" : private_key_path,
       identity_certificate_path == nullptr ? "" : identity_certificate_path,
