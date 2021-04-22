@@ -42,11 +42,11 @@ readonly TEST_DRIVER_REPO_DIR_USE_EXISTING=1
 #######################################
 build_test_app_docker_images() {
   echo "Building C++ xDS interop test app Docker images"
-  docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_client" -t "${CLIENT_IMAGE_NAME}" "${SRC_DIR}"
-  docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_server" -t "${SERVER_IMAGE_NAME}" "${SRC_DIR}"
+  docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_client" -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" "${SRC_DIR}"
+  docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_server" -t "${SERVER_IMAGE_NAME}:${GIT_COMMIT}" "${SRC_DIR}"
   gcloud -q auth configure-docker
-  docker push "${CLIENT_IMAGE_NAME}"
-  docker push "${SERVER_IMAGE_NAME}"
+  docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
+  docker push "${SERVER_IMAGE_NAME}:${GIT_COMMIT}"
 }
 
 #######################################
