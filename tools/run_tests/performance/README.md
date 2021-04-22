@@ -356,8 +356,8 @@ The script `loadest_template.py` takes the following options:
   clients in `spec.clients` is set to `${client_pool}`, for later substitution.
 - `--inject_server_pool`<br> If this option is set, the pool attribute of all
   servers in `spec.servers` is set to `${server_pool}`, for later substitution.
-- `--inject_big_query_table`<br> If this option is set, spec.bigQueryTable is
-  set to `${big_query_table}`.
+- `--inject_big_query_table`<br> If this option is set,
+  spec.results.bigQueryTable is set to `${big_query_table}`.
 - `--inject_timeout_seconds`<br> If this option is set, `spec.timeoutSeconds` is
   set to `${timeout_seconds}`.
 - `--inject_ttl_seconds`<br> If this option is set, `spec.ttlSeconds` is set to
