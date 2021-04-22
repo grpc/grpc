@@ -168,7 +168,6 @@ bool ExecCtx::Flush() {
 grpc_millis ExecCtx::Now() {
   if (!now_is_valid_) {
     now_ = timespec_to_millis_round_down(gpr_now(GPR_CLOCK_MONOTONIC));
-    now_is_valid_ = true;
   }
   return now_;
 }
