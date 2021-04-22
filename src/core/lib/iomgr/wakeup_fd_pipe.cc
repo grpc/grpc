@@ -33,14 +33,14 @@
 
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
-static grpc_error* pipe_init(grpc_wakeup_fd* fd_info) {
+static grpc_error_handle pipe_init(grpc_wakeup_fd* fd_info) {
   int pipefd[2];
   int r = pipe(pipefd);
   if (0 != r) {
     gpr_log(GPR_ERROR, "pipe creation failed (%d): %s", errno, strerror(errno));
     return GRPC_OS_ERROR(errno, "pipe");
   }
-  grpc_error* err;
+  grpc_error_handle err;
   err = grpc_set_socket_nonblocking(pipefd[0], 1);
   if (err != GRPC_ERROR_NONE) return err;
   err = grpc_set_socket_nonblocking(pipefd[1], 1);
@@ -50,7 +50,7 @@ static grpc_error* pipe_init(grpc_wakeup_fd* fd_info) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* pipe_consume(grpc_wakeup_fd* fd_info) {
+static grpc_error_handle pipe_consume(grpc_wakeup_fd* fd_info) {
   char buf[128];
   ssize_t r;
 
@@ -69,7 +69,7 @@ static grpc_error* pipe_consume(grpc_wakeup_fd* fd_info) {
   }
 }
 
-static grpc_error* pipe_wakeup(grpc_wakeup_fd* fd_info) {
+static grpc_error_handle pipe_wakeup(grpc_wakeup_fd* fd_info) {
   char c = 0;
   while (write(fd_info->write_fd, &c, 1) != 1 && errno == EINTR) {
   }

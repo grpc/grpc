@@ -40,7 +40,7 @@ typedef struct {
   grpc_closure closure;
 } oauth2_request;
 
-static void on_oauth2_response(void* arg, grpc_error* error) {
+static void on_oauth2_response(void* arg, grpc_error_handle error) {
   oauth2_request* request = static_cast<oauth2_request*>(arg);
   char* token = nullptr;
   grpc_slice token_slice;
@@ -64,7 +64,7 @@ static void on_oauth2_response(void* arg, grpc_error* error) {
   gpr_mu_unlock(request->mu);
 }
 
-static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
+static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials* creds) {
@@ -86,7 +86,7 @@ char* grpc_test_fetch_oauth2_token_with_credentials(
   GRPC_CLOSURE_INIT(&request.closure, on_oauth2_response, &request,
                     grpc_schedule_on_exec_ctx);
 
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (creds->get_request_metadata(&request.pops, null_ctx, &request.md_array,
                                   &request.closure, &error)) {
     // Synchronous result; invoke callback directly.

@@ -47,11 +47,11 @@ size_t ServiceConfigParser::RegisterParser(std::unique_ptr<Parser> parser) {
 ServiceConfigParser::ParsedConfigVector
 ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args* args,
                                            const Json& json,
-                                           grpc_error** error) {
+                                           grpc_error_handle* error) {
   ParsedConfigVector parsed_global_configs;
-  std::vector<grpc_error*> error_list;
+  std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < g_registered_parsers->size(); i++) {
-    grpc_error* parser_error = GRPC_ERROR_NONE;
+    grpc_error_handle parser_error = GRPC_ERROR_NONE;
     auto parsed_config = (*g_registered_parsers)[i]->ParseGlobalParams(
         args, json, &parser_error);
     if (parser_error != GRPC_ERROR_NONE) {
@@ -68,11 +68,11 @@ ServiceConfigParser::ParseGlobalParameters(const grpc_channel_args* args,
 ServiceConfigParser::ParsedConfigVector
 ServiceConfigParser::ParsePerMethodParameters(const grpc_channel_args* args,
                                               const Json& json,
-                                              grpc_error** error) {
+                                              grpc_error_handle* error) {
   ParsedConfigVector parsed_method_configs;
-  std::vector<grpc_error*> error_list;
+  std::vector<grpc_error_handle> error_list;
   for (size_t i = 0; i < g_registered_parsers->size(); i++) {
-    grpc_error* parser_error = GRPC_ERROR_NONE;
+    grpc_error_handle parser_error = GRPC_ERROR_NONE;
     auto parsed_config = (*g_registered_parsers)[i]->ParsePerMethodParams(
         args, json, &parser_error);
     if (parser_error != GRPC_ERROR_NONE) {

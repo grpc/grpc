@@ -91,7 +91,7 @@ class grpc_httpcli_ssl_channel_security_connector final
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* /*auth_context*/,
                   grpc_closure* on_peer_checked) override {
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
 
     /* Check the peer name. */
     if (secure_peer_name_ != nullptr &&
@@ -106,7 +106,7 @@ class grpc_httpcli_ssl_channel_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error* error) override {
+                         grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
@@ -120,13 +120,13 @@ class grpc_httpcli_ssl_channel_security_connector final
   bool check_call_host(absl::string_view /*host*/,
                        grpc_auth_context* /*auth_context*/,
                        grpc_closure* /*on_call_host_checked*/,
-                       grpc_error** error) override {
+                       grpc_error_handle* error) override {
     *error = GRPC_ERROR_NONE;
     return true;
   }
 
   void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
-                              grpc_error* error) override {
+                              grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
@@ -165,7 +165,7 @@ struct on_done_closure {
   void* arg;
   grpc_core::RefCountedPtr<grpc_core::HandshakeManager> handshake_mgr;
 };
-static void on_handshake_done(void* arg, grpc_error* error) {
+static void on_handshake_done(void* arg, grpc_error_handle error) {
   auto* args = static_cast<grpc_core::HandshakerArgs*>(arg);
   on_done_closure* c = static_cast<on_done_closure*>(args->user_data);
   if (error != GRPC_ERROR_NONE) {

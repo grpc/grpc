@@ -56,7 +56,7 @@ class LockfreeEvent {
 
   // Sets the shutdown state. If a closure had been provided by NotifyOn and has
   // not yet been scheduled, it will be scheduled with \a shutdown_error.
-  bool SetShutdown(grpc_error* shutdown_error);
+  bool SetShutdown(grpc_error_handle shutdown_error);
 
   // Signals that the event has been received.
   void SetReady();

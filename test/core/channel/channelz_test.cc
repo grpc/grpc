@@ -105,7 +105,7 @@ void ValidateGetTopChannels(size_t expected_channels) {
   std::string json_str = ChannelzRegistry::GetTopChannels(0);
   grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(
       json_str.c_str());
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
@@ -125,7 +125,7 @@ void ValidateGetServers(size_t expected_servers) {
   std::string json_str = ChannelzRegistry::GetServers(0);
   grpc::testing::ValidateGetServersResponseProtoJsonTranslation(
       json_str.c_str());
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
@@ -207,7 +207,7 @@ void ValidateChildInteger(const Json::Object& object, const std::string& key,
 
 void ValidateCounters(const std::string& json_str,
                       const ValidateChannelDataArgs& args) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   ASSERT_EQ(json.type(), Json::Type::OBJECT);
@@ -365,7 +365,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsPagination) {
   std::string json_str = ChannelzRegistry::GetTopChannels(0);
   grpc::testing::ValidateGetTopChannelsResponseProtoJsonTranslation(
       json_str.c_str());
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
@@ -390,7 +390,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidCheck) {
   ChannelFixture channels[kNumChannels];
   (void)channels;  // suppress unused variable error
   std::string json_str = ChannelzRegistry::GetTopChannels(0);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
@@ -410,7 +410,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
   (void)channels;  // suppress unused variable error
   // Only query for the end of the channels.
   std::string json_str = ChannelzRegistry::GetTopChannels(kMidQuery);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
@@ -432,7 +432,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
   (void)channels;                   // suppress unused variable error
   // Query in the middle of the server channels.
   std::string json_str = ChannelzRegistry::GetTopChannels(45);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
@@ -453,7 +453,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
   ChannelFixture channel_with_uuid5;
   // Current state of list: [1, NULL, 3, NULL, 5]
   std::string json_str = ChannelzRegistry::GetTopChannels(2);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
@@ -486,7 +486,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
     }
   }
   std::string json_str = ChannelzRegistry::GetTopChannels(0);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);

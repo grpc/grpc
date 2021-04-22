@@ -83,8 +83,8 @@ inline bool UnderFraction(const uint32_t numerator,
 
 class ChannelData {
  public:
-  static grpc_error* Init(grpc_channel_element* elem,
-                          grpc_channel_element_args* args);
+  static grpc_error_handle Init(grpc_channel_element* elem,
+                                grpc_channel_element_args* args);
   static void Destroy(grpc_channel_element* elem);
 
   int index() const { return index_; }
@@ -99,8 +99,8 @@ class ChannelData {
 
 class CallData {
  public:
-  static grpc_error* Init(grpc_call_element* elem,
-                          const grpc_call_element_args* args);
+  static grpc_error_handle Init(grpc_call_element* elem,
+                                const grpc_call_element_args* args);
 
   static void Destroy(grpc_call_element* elem,
                       const grpc_call_final_info* /*final_info*/,
@@ -129,7 +129,7 @@ class CallData {
   // GRPC_ERROR_NONE.
   // If this call is already been delay injected, skip the active faults
   // quota check.
-  grpc_error* MaybeAbort();
+  grpc_error_handle MaybeAbort();
 
   // Delays the stream operations batch.
   void DelayBatch(grpc_call_element* elem,
@@ -144,11 +144,11 @@ class CallData {
   }
 
   // This is a callback that will be invoked after the delay timer is up.
-  static void ResumeBatch(void* arg, grpc_error* error);
+  static void ResumeBatch(void* arg, grpc_error_handle error);
 
   // This is a callback invoked upon completion of recv_trailing_metadata.
   // Injects the abort_error_ to the recv_trailing_metadata batch if needed.
-  static void HijackedRecvTrailingMetadataReady(void* arg, grpc_error*);
+  static void HijackedRecvTrailingMetadataReady(void* arg, grpc_error_handle);
 
   // Used to track the policy structs that needs to be destroyed in dtor.
   bool fi_policy_owned_ = false;
@@ -166,7 +166,7 @@ class CallData {
   ResumeBatchCanceller* resume_batch_canceller_ ABSL_GUARDED_BY(delay_mu_);
   grpc_transport_stream_op_batch* delayed_batch_ ABSL_GUARDED_BY(delay_mu_);
   // Abort states
-  grpc_error* abort_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle abort_error_ = GRPC_ERROR_NONE;
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ready_;
   // Protects the asynchronous delay, resume, and cancellation.
@@ -175,8 +175,8 @@ class CallData {
 
 // ChannelData
 
-grpc_error* ChannelData::Init(grpc_channel_element* elem,
-                              grpc_channel_element_args* args) {
+grpc_error_handle ChannelData::Init(grpc_channel_element* elem,
+                                    grpc_channel_element_args* args) {
   GPR_ASSERT(elem->filter == &FaultInjectionFilterVtable);
   new (elem->channel_data) ChannelData(elem, args);
   return GRPC_ERROR_NONE;
@@ -204,7 +204,7 @@ class CallData::ResumeBatchCanceller {
   }
 
  private:
-  static void Cancel(void* arg, grpc_error* error) {
+  static void Cancel(void* arg, grpc_error_handle error) {
     auto* self = static_cast<ResumeBatchCanceller*>(arg);
     auto* chand = static_cast<ChannelData*>(self->elem_->channel_data);
     auto* calld = static_cast<CallData*>(self->elem_->call_data);
@@ -237,8 +237,8 @@ class CallData::ResumeBatchCanceller {
 
 // CallData
 
-grpc_error* CallData::Init(grpc_call_element* elem,
-                           const grpc_call_element_args* args) {
+grpc_error_handle CallData::Init(grpc_call_element* elem,
+                                 const grpc_call_element_args* args) {
   auto* calld = new (elem->call_data) CallData(elem, args);
   if (calld->fi_policy_ == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -273,7 +273,7 @@ void CallData::StartTransportStreamOpBatch(
       calld->DelayBatch(elem, batch);
       return;
     }
-    grpc_error* abort_error = calld->MaybeAbort();
+    grpc_error_handle abort_error = calld->MaybeAbort();
     if (abort_error != GRPC_ERROR_NONE) {
       calld->abort_error_ = abort_error;
       grpc_transport_stream_op_batch_finish_with_failure(
@@ -414,7 +414,7 @@ bool CallData::MaybeDelay() {
   return false;
 }
 
-grpc_error* CallData::MaybeAbort() {
+grpc_error_handle CallData::MaybeAbort() {
   if (abort_request_ && (delay_request_ || HaveActiveFaultsQuota(false))) {
     return grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_COPIED_STRING(fi_policy_->abort_message.c_str()),
@@ -434,7 +434,7 @@ void CallData::DelayBatch(grpc_call_element* elem,
   grpc_timer_init(&delay_timer_, resume_time, &batch->handler_private.closure);
 }
 
-void CallData::ResumeBatch(void* arg, grpc_error* error) {
+void CallData::ResumeBatch(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<CallData*>(elem->call_data);
   MutexLock lock(&calld->delay_mu_);
@@ -462,7 +462,8 @@ void CallData::ResumeBatch(void* arg, grpc_error* error) {
   grpc_call_next_op(elem, calld->delayed_batch_);
 }
 
-void CallData::HijackedRecvTrailingMetadataReady(void* arg, grpc_error* error) {
+void CallData::HijackedRecvTrailingMetadataReady(void* arg,
+                                                 grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<CallData*>(elem->call_data);
   if (calld->abort_error_ != GRPC_ERROR_NONE) {

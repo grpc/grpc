@@ -215,7 +215,7 @@ static Json parse_json_part_from_jwt(const char* str, size_t len) {
   grpc_slice slice = grpc_base64_decode(b64, 1);
   gpr_free(b64);
   GPR_ASSERT(!GRPC_SLICE_IS_EMPTY(slice));
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   absl::string_view string = grpc_core::StringViewFromSlice(slice);
   Json json = Json::Parse(string, &error);
   if (error != GRPC_ERROR_NONE) {

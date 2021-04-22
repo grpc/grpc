@@ -36,6 +36,7 @@
 /// full write up of this object.
 
 typedef struct grpc_error grpc_error;
+typedef grpc_error* grpc_error_handle;
 
 extern grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount;
 
@@ -117,14 +118,14 @@ typedef enum {
 /// They are always even so that other code (particularly combiner locks,
 /// polling engines) can safely use the lower bit for themselves.
 
-#define GRPC_ERROR_NONE ((grpc_error*)NULL)
-#define GRPC_ERROR_RESERVED_1 ((grpc_error*)1)
-#define GRPC_ERROR_OOM ((grpc_error*)2)
-#define GRPC_ERROR_RESERVED_2 ((grpc_error*)3)
-#define GRPC_ERROR_CANCELLED ((grpc_error*)4)
+#define GRPC_ERROR_NONE ((grpc_error_handle)NULL)
+#define GRPC_ERROR_RESERVED_1 ((grpc_error_handle)1)
+#define GRPC_ERROR_OOM ((grpc_error_handle)2)
+#define GRPC_ERROR_RESERVED_2 ((grpc_error_handle)3)
+#define GRPC_ERROR_CANCELLED ((grpc_error_handle)4)
 #define GRPC_ERROR_SPECIAL_MAX GRPC_ERROR_CANCELLED
 
-inline bool grpc_error_is_special(struct grpc_error* err) {
+inline bool grpc_error_is_special(grpc_error_handle err) {
   return err <= GRPC_ERROR_SPECIAL_MAX;
 }
 
@@ -133,12 +134,13 @@ inline bool grpc_error_is_special(struct grpc_error* err) {
 void grpc_disable_error_creation();
 void grpc_enable_error_creation();
 
-const char* grpc_error_string(grpc_error* error);
+const char* grpc_error_string(grpc_error_handle error);
 
 /// Create an error - but use GRPC_ERROR_CREATE instead
-grpc_error* grpc_error_create(const char* file, int line,
-                              const grpc_slice& desc, grpc_error** referencing,
-                              size_t num_referencing);
+grpc_error_handle grpc_error_create(const char* file, int line,
+                                    const grpc_slice& desc,
+                                    grpc_error_handle* referencing,
+                                    size_t num_referencing);
 /// Create an error (this is the preferred way of generating an error that is
 ///   not due to a system call - for system calls, use GRPC_OS_ERROR or
 ///   GRPC_WSA_ERROR as appropriate)
@@ -171,26 +173,29 @@ grpc_error* grpc_error_create(const char* file, int line,
   grpc_error_create_from_vector(__FILE__, __LINE__, desc, error_list)
 
 #ifndef NDEBUG
-grpc_error* grpc_error_do_ref(grpc_error* err, const char* file, int line);
-void grpc_error_do_unref(grpc_error* err, const char* file, int line);
-inline grpc_error* grpc_error_ref(grpc_error* err, const char* file, int line) {
+grpc_error_handle grpc_error_do_ref(grpc_error_handle err, const char* file,
+                                    int line);
+void grpc_error_do_unref(grpc_error_handle err, const char* file, int line);
+inline grpc_error_handle grpc_error_ref(grpc_error_handle err, const char* file,
+                                        int line) {
   if (grpc_error_is_special(err)) return err;
   return grpc_error_do_ref(err, file, line);
 }
-inline void grpc_error_unref(grpc_error* err, const char* file, int line) {
+inline void grpc_error_unref(grpc_error_handle err, const char* file,
+                             int line) {
   if (grpc_error_is_special(err)) return;
   grpc_error_do_unref(err, file, line);
 }
 #define GRPC_ERROR_REF(err) grpc_error_ref(err, __FILE__, __LINE__)
 #define GRPC_ERROR_UNREF(err) grpc_error_unref(err, __FILE__, __LINE__)
 #else
-grpc_error* grpc_error_do_ref(grpc_error* err);
-void grpc_error_do_unref(grpc_error* err);
-inline grpc_error* grpc_error_ref(grpc_error* err) {
+grpc_error_handle grpc_error_do_ref(grpc_error_handle err);
+void grpc_error_do_unref(grpc_error_handle err);
+inline grpc_error_handle grpc_error_ref(grpc_error_handle err) {
   if (grpc_error_is_special(err)) return err;
   return grpc_error_do_ref(err);
 }
-inline void grpc_error_unref(grpc_error* err) {
+inline void grpc_error_unref(grpc_error_handle err) {
   if (grpc_error_is_special(err)) return;
   grpc_error_do_unref(err);
 }
@@ -201,10 +206,11 @@ inline void grpc_error_unref(grpc_error* err) {
 // Consumes all the errors in the vector and forms a referencing error from
 // them. If the vector is empty, return GRPC_ERROR_NONE.
 template <typename VectorType>
-static grpc_error* grpc_error_create_from_vector(const char* file, int line,
-                                                 const char* desc,
-                                                 VectorType* error_list) {
-  grpc_error* error = GRPC_ERROR_NONE;
+static grpc_error_handle grpc_error_create_from_vector(const char* file,
+                                                       int line,
+                                                       const char* desc,
+                                                       VectorType* error_list) {
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (error_list->size() != 0) {
     error = grpc_error_create(file, line, grpc_slice_from_static_string(desc),
                               error_list->data(), error_list->size());
@@ -217,18 +223,21 @@ static grpc_error* grpc_error_create_from_vector(const char* file, int line,
   return error;
 }
 
-grpc_error* grpc_error_set_int(grpc_error* src, grpc_error_ints which,
-                               intptr_t value) GRPC_MUST_USE_RESULT;
+grpc_error_handle grpc_error_set_int(grpc_error_handle src,
+                                     grpc_error_ints which,
+                                     intptr_t value) GRPC_MUST_USE_RESULT;
 /// It is an error to pass nullptr as `p`. Caller should allocate a phony
 /// intptr_t for `p`, even if the value of `p` is not used.
-bool grpc_error_get_int(grpc_error* error, grpc_error_ints which, intptr_t* p);
+bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
+                        intptr_t* p);
 /// This call takes ownership of the slice; the error is responsible for
 /// eventually unref-ing it.
-grpc_error* grpc_error_set_str(grpc_error* src, grpc_error_strs which,
-                               const grpc_slice& str) GRPC_MUST_USE_RESULT;
+grpc_error_handle grpc_error_set_str(
+    grpc_error_handle src, grpc_error_strs which,
+    const grpc_slice& str) GRPC_MUST_USE_RESULT;
 /// Returns false if the specified string is not set.
 /// Caller does NOT own the slice.
-bool grpc_error_get_str(grpc_error* error, grpc_error_strs which,
+bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
                         grpc_slice* s);
 
 /// Add a child error: an error that is believed to have contributed to this
@@ -242,13 +251,13 @@ bool grpc_error_get_str(grpc_error* error, grpc_error_strs which,
 /// returns GRPC_ERROR_NONE. 3) If \a src and \a child point to the same error,
 /// returns a single reference. (Note that, 2 references should have been
 /// received to the error in this case.)
-grpc_error* grpc_error_add_child(grpc_error* src,
-                                 grpc_error* child) GRPC_MUST_USE_RESULT;
+grpc_error_handle grpc_error_add_child(
+    grpc_error_handle src, grpc_error_handle child) GRPC_MUST_USE_RESULT;
 
-grpc_error* grpc_os_error(const char* file, int line, int err,
-                          const char* call_name) GRPC_MUST_USE_RESULT;
+grpc_error_handle grpc_os_error(const char* file, int line, int err,
+                                const char* call_name) GRPC_MUST_USE_RESULT;
 
-inline grpc_error* grpc_assert_never_ok(grpc_error* error) {
+inline grpc_error_handle grpc_assert_never_ok(grpc_error_handle error) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   return error;
 }
@@ -256,15 +265,15 @@ inline grpc_error* grpc_assert_never_ok(grpc_error* error) {
 /// create an error associated with errno!=0 (an 'operating system' error)
 #define GRPC_OS_ERROR(err, call_name) \
   grpc_assert_never_ok(grpc_os_error(__FILE__, __LINE__, err, call_name))
-grpc_error* grpc_wsa_error(const char* file, int line, int err,
-                           const char* call_name) GRPC_MUST_USE_RESULT;
+grpc_error_handle grpc_wsa_error(const char* file, int line, int err,
+                                 const char* call_name) GRPC_MUST_USE_RESULT;
 /// windows only: create an error associated with WSAGetLastError()!=0
 #define GRPC_WSA_ERROR(err, call_name) \
   grpc_wsa_error(__FILE__, __LINE__, err, call_name)
 
-bool grpc_log_error(const char* what, grpc_error* error, const char* file,
+bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line);
-inline bool grpc_log_if_error(const char* what, grpc_error* error,
+inline bool grpc_log_if_error(const char* what, grpc_error_handle error,
                               const char* file, int line) {
   return error == GRPC_ERROR_NONE ? true
                                   : grpc_log_error(what, error, file, line);

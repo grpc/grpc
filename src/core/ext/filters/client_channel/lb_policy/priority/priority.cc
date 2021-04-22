@@ -179,10 +179,10 @@ class PriorityLb : public LoadBalancingPolicy {
 
     void StartFailoverTimerLocked();
 
-    static void OnFailoverTimer(void* arg, grpc_error* error);
-    void OnFailoverTimerLocked(grpc_error* error);
-    static void OnDeactivationTimer(void* arg, grpc_error* error);
-    void OnDeactivationTimerLocked(grpc_error* error);
+    static void OnFailoverTimer(void* arg, grpc_error_handle error);
+    void OnFailoverTimerLocked(grpc_error_handle error);
+    static void OnDeactivationTimer(void* arg, grpc_error_handle error);
+    void OnDeactivationTimerLocked(grpc_error_handle error);
 
     RefCountedPtr<PriorityLb> priority_policy_;
     const std::string name_;
@@ -472,7 +472,7 @@ void PriorityLb::TryNextPriorityLocked(bool report_connecting) {
             this);
   }
   current_child_from_before_update_ = nullptr;
-  grpc_error* error = grpc_error_set_int(
+  grpc_error_handle error = grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("no ready priority"),
       GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
   channel_control_helper()->UpdateState(
@@ -655,14 +655,15 @@ void PriorityLb::ChildPriority::MaybeCancelFailoverTimerLocked() {
   }
 }
 
-void PriorityLb::ChildPriority::OnFailoverTimer(void* arg, grpc_error* error) {
+void PriorityLb::ChildPriority::OnFailoverTimer(void* arg,
+                                                grpc_error_handle error) {
   ChildPriority* self = static_cast<ChildPriority*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   self->priority_policy_->work_serializer()->Run(
       [self, error]() { self->OnFailoverTimerLocked(error); }, DEBUG_LOCATION);
 }
 
-void PriorityLb::ChildPriority::OnFailoverTimerLocked(grpc_error* error) {
+void PriorityLb::ChildPriority::OnFailoverTimerLocked(grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE && failover_timer_callback_pending_ &&
       !priority_policy_->shutting_down_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
@@ -712,7 +713,7 @@ void PriorityLb::ChildPriority::MaybeReactivateLocked() {
 }
 
 void PriorityLb::ChildPriority::OnDeactivationTimer(void* arg,
-                                                    grpc_error* error) {
+                                                    grpc_error_handle error) {
   ChildPriority* self = static_cast<ChildPriority*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   self->priority_policy_->work_serializer()->Run(
@@ -720,7 +721,8 @@ void PriorityLb::ChildPriority::OnDeactivationTimer(void* arg,
       DEBUG_LOCATION);
 }
 
-void PriorityLb::ChildPriority::OnDeactivationTimerLocked(grpc_error* error) {
+void PriorityLb::ChildPriority::OnDeactivationTimerLocked(
+    grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE && deactivation_timer_callback_pending_ &&
       !priority_policy_->shutting_down_) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_priority_trace)) {
@@ -785,7 +787,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kPriority; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error** error) const override {
+      const Json& json, grpc_error_handle* error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json.type() == Json::Type::JSON_NULL) {
       // priority was mentioned as a policy in the deprecated
@@ -796,7 +798,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
           "config instead.");
       return nullptr;
     }
-    std::vector<grpc_error*> error_list;
+    std::vector<grpc_error_handle> error_list;
     // Children.
     std::map<std::string, PriorityLbConfig::PriorityLbChild> children;
     auto it = json.object_value().find("children");
@@ -824,7 +826,7 @@ class PriorityLbFactory : public LoadBalancingPolicyFactory {
                              " error:missing 'config' field")
                     .c_str()));
           } else {
-            grpc_error* parse_error = GRPC_ERROR_NONE;
+            grpc_error_handle parse_error = GRPC_ERROR_NONE;
             auto config = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
                 it2->second, &parse_error);
             bool ignore_resolution_requests = false;
