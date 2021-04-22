@@ -37,17 +37,18 @@ tools/run_tests/performance/loadtest_config.py -l go \
     -s big_query_table=e2e_benchmarks.experimental_results \
     -s timeout_seconds=900 --prefix="kokoro-test" -u "$(date +%Y%m%d%H%M%S)" \
     -r go_generic_sync_streaming_ping_pong_secure -o ./loadtest.yaml
+    
+# Dump the contents of the loadtest.yaml (since loadtest_config.py doesn't
+# list the scenarios that will be run).
+cat ./loadtest.yaml
 
 # The original version of the client is a bit old, update to the latest release
 # version v1.21.0.
 kubectl version --client
-curl -LO https://dl.k8s.io/release/v1.21.0/bin/linux/amd64/kubectl
+curl -sSL -O https://dl.k8s.io/release/v1.21.0/bin/linux/amd64/kubectl
 sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
 chmod +x kubectl
 sudo mv kubectl $(which kubectl)
 kubectl version --client
 
 kubectl apply -f ./loadtest.yaml
-
-echo "TODO: Add more gRPC OSS Benchmarks here..."
-
