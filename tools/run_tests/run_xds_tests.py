@@ -30,6 +30,7 @@ import tempfile
 import time
 import uuid
 
+from google.protobuf import json_format
 from oauth2client.client import GoogleCredentials
 
 import python_utils.jobset as jobset
