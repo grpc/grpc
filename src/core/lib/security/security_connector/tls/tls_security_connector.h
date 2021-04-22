@@ -35,18 +35,18 @@ class TlsChannelSecurityConnector final
     : public grpc_channel_security_connector {
  public:
   // static factory method to create a TLS channel security connector.
-  static grpc_core::RefCountedPtr<grpc_channel_security_connector>
+  static RefCountedPtr<grpc_channel_security_connector>
   CreateTlsChannelSecurityConnector(
-      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-      grpc_core::RefCountedPtr<grpc_tls_credentials_options> options,
-      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+      RefCountedPtr<grpc_channel_credentials> channel_creds,
+      RefCountedPtr<grpc_tls_credentials_options> options,
+      RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name, const char* overridden_target_name,
       tsi_ssl_session_cache* ssl_session_cache);
 
   TlsChannelSecurityConnector(
-      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
-      grpc_core::RefCountedPtr<grpc_tls_credentials_options> options,
-      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+      RefCountedPtr<grpc_channel_credentials> channel_creds,
+      RefCountedPtr<grpc_tls_credentials_options> options,
+      RefCountedPtr<grpc_call_credentials> request_metadata_creds,
       const char* target_name, const char* overridden_target_name,
       tsi_ssl_session_cache* ssl_session_cache);
 
@@ -54,10 +54,10 @@ class TlsChannelSecurityConnector final
 
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* interested_parties,
-                       grpc_core::HandshakeManager* handshake_mgr) override;
+                       HandshakeManager* handshake_mgr) override;
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                  RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
@@ -76,17 +76,17 @@ class TlsChannelSecurityConnector final
                               grpc_error* error) override;
 
   tsi_ssl_client_handshaker_factory* ClientHandshakerFactoryForTesting() {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     return client_handshaker_factory_;
   };
 
   absl::optional<absl::string_view> RootCertsForTesting() {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     return pem_root_certs_;
   }
 
-  absl::optional<grpc_core::PemKeyCertPairList> KeyCertPairListForTesting() {
-    grpc_core::MutexLock lock(&mu_);
+  absl::optional<PemKeyCertPairList> KeyCertPairListForTesting() {
+    MutexLock lock(&mu_);
     return pem_key_cert_pair_list_;
   }
 
@@ -102,7 +102,7 @@ class TlsChannelSecurityConnector final
         : security_connector_(security_connector) {}
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
-        absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) override;
+        absl::optional<PemKeyCertPairList> key_cert_pairs) override;
     void OnError(grpc_error* root_cert_error,
                  grpc_error* identity_cert_error) override;
 
@@ -112,7 +112,8 @@ class TlsChannelSecurityConnector final
 
   // Updates |client_handshaker_factory_| when the certificates that
   // |certificate_watcher_| is watching get updated.
-  grpc_security_status UpdateHandshakerFactoryLocked();
+  grpc_security_status UpdateHandshakerFactoryLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // gRPC-provided callback executed by application, which servers to bring the
   // control back to gRPC core.
@@ -131,40 +132,43 @@ class TlsChannelSecurityConnector final
   static void ServerAuthorizationCheckArgDestroy(
       grpc_tls_server_authorization_check_arg* arg);
 
-  grpc_core::Mutex mu_;
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
+  RefCountedPtr<grpc_tls_credentials_options> options_;
   grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
       certificate_watcher_ = nullptr;
   grpc_closure* on_peer_checked_ = nullptr;
   std::string target_name_;
   std::string overridden_target_name_;
-  tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   grpc_tls_server_authorization_check_arg* check_arg_ = nullptr;
-  tsi_ssl_session_cache* ssl_session_cache_ = nullptr;
-  absl::optional<absl::string_view> pem_root_certs_;
-  absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pair_list_;
+
+  Mutex mu_;
+  tsi_ssl_client_handshaker_factory* client_handshaker_factory_
+      ABSL_GUARDED_BY(mu_) = nullptr;
+  tsi_ssl_session_cache* ssl_session_cache_ ABSL_GUARDED_BY(mu_) = nullptr;
+  absl::optional<absl::string_view> pem_root_certs_ ABSL_GUARDED_BY(mu_);
+  absl::optional<PemKeyCertPairList> pem_key_cert_pair_list_
+      ABSL_GUARDED_BY(mu_);
 };
 
 // Server security connector using TLS as transport security protocol.
 class TlsServerSecurityConnector final : public grpc_server_security_connector {
  public:
   // static factory method to create a TLS server security connector.
-  static grpc_core::RefCountedPtr<grpc_server_security_connector>
+  static RefCountedPtr<grpc_server_security_connector>
   CreateTlsServerSecurityConnector(
-      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds,
-      grpc_core::RefCountedPtr<grpc_tls_credentials_options> options);
+      RefCountedPtr<grpc_server_credentials> server_creds,
+      RefCountedPtr<grpc_tls_credentials_options> options);
 
   TlsServerSecurityConnector(
-      grpc_core::RefCountedPtr<grpc_server_credentials> server_creds,
-      grpc_core::RefCountedPtr<grpc_tls_credentials_options> options);
+      RefCountedPtr<grpc_server_credentials> server_creds,
+      RefCountedPtr<grpc_tls_credentials_options> options);
   ~TlsServerSecurityConnector() override;
 
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* interested_parties,
-                       grpc_core::HandshakeManager* handshake_mgr) override;
+                       HandshakeManager* handshake_mgr) override;
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
-                  grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
+                  RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
@@ -176,18 +180,17 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   int cmp(const grpc_security_connector* other) const override;
 
   tsi_ssl_server_handshaker_factory* ServerHandshakerFactoryForTesting() {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     return server_handshaker_factory_;
   };
 
   const absl::optional<absl::string_view>& RootCertsForTesting() {
-    grpc_core::MutexLock lock(&mu_);
+    MutexLock lock(&mu_);
     return pem_root_certs_;
   }
 
-  const absl::optional<grpc_core::PemKeyCertPairList>&
-  KeyCertPairListForTesting() {
-    grpc_core::MutexLock lock(&mu_);
+  const absl::optional<PemKeyCertPairList>& KeyCertPairListForTesting() {
+    MutexLock lock(&mu_);
     return pem_key_cert_pair_list_;
   }
 
@@ -203,7 +206,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
         : security_connector_(security_connector) {}
     void OnCertificatesChanged(
         absl::optional<absl::string_view> root_certs,
-        absl::optional<grpc_core::PemKeyCertPairList> key_cert_pairs) override;
+        absl::optional<PemKeyCertPairList> key_cert_pairs) override;
     void OnError(grpc_error* root_cert_error,
                  grpc_error* identity_cert_error) override;
 
@@ -213,16 +216,19 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 
   // Updates |server_handshaker_factory_| when the certificates that
   // |certificate_watcher_| is watching get updated.
-  grpc_security_status UpdateHandshakerFactoryLocked();
+  grpc_security_status UpdateHandshakerFactoryLocked()
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  grpc_core::Mutex mu_;
-  grpc_core::RefCountedPtr<grpc_tls_credentials_options> options_;
+  RefCountedPtr<grpc_tls_credentials_options> options_;
   grpc_tls_certificate_distributor::TlsCertificatesWatcherInterface*
       certificate_watcher_ = nullptr;
 
-  tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
-  absl::optional<absl::string_view> pem_root_certs_;
-  absl::optional<grpc_core::PemKeyCertPairList> pem_key_cert_pair_list_;
+  Mutex mu_;
+  tsi_ssl_server_handshaker_factory* server_handshaker_factory_
+      ABSL_GUARDED_BY(mu_) = nullptr;
+  absl::optional<absl::string_view> pem_root_certs_ ABSL_GUARDED_BY(mu_);
+  absl::optional<PemKeyCertPairList> pem_key_cert_pair_list_
+      ABSL_GUARDED_BY(mu_);
 };
 
 // ---- Functions below are exposed for testing only -----------------------
