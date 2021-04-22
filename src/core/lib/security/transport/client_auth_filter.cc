@@ -445,39 +445,38 @@ static void fail_batch_in_call_combiner(void* arg, grpc_error* error) {
 static void client_auth_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   GPR_TIMER_SCOPE("auth_start_transport_stream_op_batch", 0);
-
-  /* grab pointers to our data from the call element */
-  call_data* calld = static_cast<call_data*>(elem->call_data);
-  channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-
-  // If we've already been cancelled, fail any new batches immediately.
-  if (calld->cancel_error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        batch, GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
-    return;
-  }
-
-  // If this is a cancellation and we previously stored the
-  // send_initial_metadata batch in calld due to a pre-cancellation,
-  // fail that batch here.
-  if (batch->cancel_stream && calld->send_initial_metadata_batch != nullptr) {
+  auto* calld = static_cast<call_data*>(elem->call_data);
+  auto* chand = static_cast<channel_data*>(elem->channel_data);
+  // If this is a cancellation, save the cancel error for later use.
+  if (batch->cancel_stream) {
     calld->cancel_error =
         GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
-    auto* send_initial_metadata_batch = calld->send_initial_metadata_batch;
-    calld->send_initial_metadata_batch = nullptr;
-    send_initial_metadata_batch->handler_private.extra_arg =
-        calld->call_combiner;
-    GRPC_CLOSURE_INIT(&send_initial_metadata_batch->handler_private.closure,
-                      fail_batch_in_call_combiner, send_initial_metadata_batch,
-                      nullptr);
-    GRPC_CALL_COMBINER_START(
-        calld->call_combiner,
-        &send_initial_metadata_batch->handler_private.closure,
-        GRPC_ERROR_REF(calld->cancel_error),
-        "client_auth failing send_initial_metadata batch");
+    // If we previously stored the send_initial_metadata batch in calld due
+    // to a pre-cancellation, fail that batch now.
+    if (calld->send_initial_metadata_batch != nullptr) {
+      auto* send_initial_metadata_batch = calld->send_initial_metadata_batch;
+      calld->send_initial_metadata_batch = nullptr;
+      send_initial_metadata_batch->handler_private.extra_arg =
+          calld->call_combiner;
+      GRPC_CLOSURE_INIT(&send_initial_metadata_batch->handler_private.closure,
+                        fail_batch_in_call_combiner,
+                        send_initial_metadata_batch, nullptr);
+      GRPC_CALL_COMBINER_START(
+          calld->call_combiner,
+          &send_initial_metadata_batch->handler_private.closure,
+          GRPC_ERROR_REF(calld->cancel_error),
+          "client_auth failing send_initial_metadata batch");
+    }
   }
-
+  // The only op we actually handle in this filter is send_initial_metadata.
   if (batch->send_initial_metadata) {
+    // If we were already cancelled, fail the batch immediately.
+    if (calld->cancel_error != GRPC_ERROR_NONE) {
+      grpc_transport_stream_op_batch_finish_with_failure(
+          batch, GRPC_ERROR_REF(calld->cancel_error), calld->call_combiner);
+      return;
+    }
+    // Otherwise, process metadata.
     grpc_metadata_batch* metadata =
         batch->payload->send_initial_metadata.send_initial_metadata;
     if (metadata->idx.named.path != nullptr) {
@@ -522,8 +521,7 @@ static void client_auth_start_transport_stream_op_batch(
       return;  // early exit
     }
   }
-
-  /* pass control down the stack */
+  // Delegate to next filter.
   grpc_call_next_op(elem, batch);
 }
 
