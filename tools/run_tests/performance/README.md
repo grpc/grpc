@@ -2,7 +2,7 @@
 
 For design of the tests, see https://grpc.io/docs/guides/benchmarking.
 
-For scripts related ot the GKE-based performance test suite (in development).
+For scripts related to the GKE-based performance test suite (in development),
 see [gRPC OSS benchmarks](#grpc-oss-benchmarks).
 
 ## Pre-reqs for running these manually:
@@ -220,10 +220,8 @@ be used as a template, as long as it contains the languages required by the set
 of scenarios we intend to run (for instance, if we are generating configurations
 to run go scenarios, the template must contain a go client and a go server; if
 we are generating configurations for cross-language scenarios that need a go
-client and a C++ server, the template must also coontain a C++ server; and the
+client and a C++ server, the template must also contain a C++ server; and the
 same for all other languages).
-
-A template does not need to contain any substitution keys. That is why I say that any load test contiguration can be used as a template. The important part is that it must contain the languages required by the set of scenarios we intend to run (for instance, if we are generating configurations to run go scenarios, the template must contain a go client and a go server; if we are generating configurations for cross-language scenarios that need a go client and a C++ server, the template must also contain a C++ server, and the same for all other languages).
 
 The LoadTests specified in the script output all have unique names and can be
 run by applying the test to a cluster running the LoadTest controller with
@@ -256,9 +254,9 @@ The script `loadtest_config.py` takes the following options:
   may contain multiple client and server configuration, and may also include
   substitution keys.
 - `p`, `--prefix`<br> Test names consist of a prefix_joined with a uuid with a
-  dash. Test names are stored in `metadata.name`. The prefix is also added as the
-  `prefix` label in `metadata.labels`. The prefix defaults to the user name if not
-  set.
+  dash. Test names are stored in `metadata.name`. The prefix is also added as
+  the `prefix` label in `metadata.labels`. The prefix defaults to the user name
+  if not set.
 - `-u`, `--uniquifier_element`<br> Uniquifier elements may be passed to the test
   to make the test name unique. This option may be repeated to add multiple
   elements. The uniquifier elements (plus a date string and a run index, if
@@ -306,7 +304,7 @@ The following annotations are added to `metadata.annotations`:
 [Labels](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/)
 can be used in selectors in resource queries. Adding the prefix, in particular,
 allows the user (or an automation script) to select the resources started from a
-given run of the config geneator.
+given run of the config generator.
 
 [Annotations](https://kubernetes.io/docs/concepts/overview/working-with-objects/annotations/)
 contain additional information that is available to the user (or an automation
@@ -362,7 +360,7 @@ The script `loadest_template.py` takes the following options:
   set to `${big_query_table}`.
 - `--inject_timeout_seconds`<br> If this option is set, `spec.timeoutSeconds` is
   set to `${timeout_seconds}`.
-- `--inject_ttl_seconds`<br> If this optoin is set, `spec.ttlSeconds` is set to
+- `--inject_ttl_seconds`<br> If this option is set, `spec.ttlSeconds` is set to
   `${ttl_seconds}`.
 - `-n`, `--name`<br> Name to be set in `metadata.name`.
 - `-a`, `--annotation`<br> Metadata annotation to be stored in
@@ -377,7 +375,7 @@ timeout and time-to-live, to ensure that all tests have time to complete.
 The template name is replaced again by `loadtest_config.py`, and so is set only
 as a human-readable memo.
 
-Annotations, on the other hand, are passed on to the test configuratopms, and
+Annotations, on the other hand, are passed on to the test configurations, and
 may be set to values or to substitution keys in themselves, allowing future
 automation scripts to process the tests generated from these configurations in
 different ways.
