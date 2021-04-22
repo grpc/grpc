@@ -95,7 +95,6 @@ void grpc_tls_credentials_options_set_cert_request_type(
     grpc_tls_credentials_options* options,
     grpc_ssl_client_certificate_request_type type) {
   GPR_ASSERT(options != nullptr);
-  grpc_core::ExecCtx exec_ctx;
   options->set_cert_request_type(type);
 }
 
@@ -103,7 +102,6 @@ void grpc_tls_credentials_options_set_server_verification_option(
     grpc_tls_credentials_options* options,
     grpc_tls_server_verification_option server_verification_option) {
   GPR_ASSERT(options != nullptr);
-  grpc_core::ExecCtx exec_ctx;
   options->set_server_verification_option(server_verification_option);
 }
 
@@ -120,28 +118,24 @@ void grpc_tls_credentials_options_set_certificate_provider(
 void grpc_tls_credentials_options_watch_root_certs(
     grpc_tls_credentials_options* options) {
   GPR_ASSERT(options != nullptr);
-  grpc_core::ExecCtx exec_ctx;
   options->set_watch_root_cert(true);
 }
 
 void grpc_tls_credentials_options_set_root_cert_name(
     grpc_tls_credentials_options* options, const char* root_cert_name) {
   GPR_ASSERT(options != nullptr);
-  grpc_core::ExecCtx exec_ctx;
   options->set_root_cert_name(root_cert_name);
 }
 
 void grpc_tls_credentials_options_watch_identity_key_cert_pairs(
     grpc_tls_credentials_options* options) {
   GPR_ASSERT(options != nullptr);
-  grpc_core::ExecCtx exec_ctx;
   options->set_watch_identity_pair(true);
 }
 
 void grpc_tls_credentials_options_set_identity_cert_name(
     grpc_tls_credentials_options* options, const char* identity_cert_name) {
   GPR_ASSERT(options != nullptr);
-  grpc_core::ExecCtx exec_ctx;
   options->set_identity_cert_name(identity_cert_name);
 }
 
