@@ -113,7 +113,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
   struct ResolverOutput {
     grpc_core::Resolver::Result result;
-    grpc_error_handle error = nullptr;
+    grpc_error_handle error = GRPC_ERROR_NONE;
     gpr_event ev;
 
     ResolverOutput() { gpr_event_init(&ev); }

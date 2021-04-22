@@ -133,7 +133,7 @@ class StateWatcher {
   void PartlyDone(bool due_to_completion, grpc_error_handle error) {
     bool end_op = false;
     void* end_op_tag = nullptr;
-    grpc_error_handle end_op_error = nullptr;
+    grpc_error_handle end_op_error = GRPC_ERROR_NONE;
     grpc_completion_queue* end_op_cq = nullptr;
     grpc_cq_completion* end_op_completion_storage = nullptr;
     if (due_to_completion) {

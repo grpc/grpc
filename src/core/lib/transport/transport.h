@@ -339,11 +339,11 @@ typedef struct grpc_transport_op {
   /** should the transport be disconnected
    * Error contract: the transport that gets this op must cause
    *                 disconnect_with_error to be unref'ed after processing it */
-  grpc_error_handle disconnect_with_error = nullptr;
+  grpc_error_handle disconnect_with_error = GRPC_ERROR_NONE;
   /** what should the goaway contain?
    * Error contract: the transport that gets this op must cause
    *                 goaway_error to be unref'ed after processing it */
-  grpc_error_handle goaway_error = nullptr;
+  grpc_error_handle goaway_error = GRPC_ERROR_NONE;
   /** set the callback for accepting new streams;
       this is a permanent callback, unlike the other one-shot closures.
       If true, the callback is set to set_accept_stream_fn, with its
