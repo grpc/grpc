@@ -452,12 +452,12 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
-static grpc_error* UnrefHeader(void* /*user_data*/, grpc_mdelem md) {
+static grpc_error_handle UnrefHeader(void* /*user_data*/, grpc_mdelem md) {
   GRPC_MDELEM_UNREF(md);
   return GRPC_ERROR_NONE;
 }
 
-template <class Fixture, grpc_error* (*OnHeader)(void*, grpc_mdelem)>
+template <class Fixture, grpc_error_handle (*OnHeader)(void*, grpc_mdelem)>
 static void BM_HpackParserParseHeader(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
@@ -784,7 +784,7 @@ class RepresentativeServerTrailingMetadata {
 static void free_timeout(void* p) { gpr_free(p); }
 
 // Benchmark the current on_initial_header implementation
-static grpc_error* OnInitialHeader(void* user_data, grpc_mdelem md) {
+static grpc_error_handle OnInitialHeader(void* user_data, grpc_mdelem md) {
   // Setup for benchmark. This will bloat the absolute values of this benchmark
   grpc_chttp2_incoming_metadata_buffer buffer(
       static_cast<grpc_core::Arena*>(user_data));
@@ -825,7 +825,8 @@ static grpc_error* OnInitialHeader(void* user_data, grpc_mdelem md) {
     if (!seen_error) {
       buffer.size = new_size;
     }
-    grpc_error* error = grpc_chttp2_incoming_metadata_buffer_add(&buffer, md);
+    grpc_error_handle error =
+        grpc_chttp2_incoming_metadata_buffer_add(&buffer, md);
     if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(0);
     }
@@ -834,7 +835,7 @@ static grpc_error* OnInitialHeader(void* user_data, grpc_mdelem md) {
 }
 
 // Benchmark timeout handling
-static grpc_error* OnHeaderTimeout(void* /*user_data*/, grpc_mdelem md) {
+static grpc_error_handle OnHeaderTimeout(void* /*user_data*/, grpc_mdelem md) {
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
     grpc_millis* cached_timeout =
         static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));

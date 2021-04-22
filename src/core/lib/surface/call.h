@@ -55,8 +55,8 @@ typedef struct grpc_call_create_args {
 /* Create a new call based on \a args.
    Regardless of success or failure, always returns a valid new call into *call
    */
-grpc_error* grpc_call_create(const grpc_call_create_args* args,
-                             grpc_call** call);
+grpc_error_handle grpc_call_create(const grpc_call_create_args* args,
+                                   grpc_call** call);
 
 void grpc_call_set_completion_queue(grpc_call* call, grpc_completion_queue* cq);
 
@@ -87,7 +87,8 @@ grpc_call_error grpc_call_start_batch_and_execute(grpc_call* call,
 /* gRPC core internal version of grpc_call_cancel that does not create
  * exec_ctx. */
 void grpc_call_cancel_internal(grpc_call* call);
-void grpc_call_cancel_with_error_internal(grpc_call* call, grpc_error* error);
+void grpc_call_cancel_with_error_internal(grpc_call* call,
+                                          grpc_error_handle error);
 
 /* Given the top call_element, get the call object. */
 grpc_call* grpc_call_from_top_element(grpc_call_element* surface_element);

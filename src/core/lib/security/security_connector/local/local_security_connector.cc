@@ -103,7 +103,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
       }
     }
   }
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (!is_endpoint_local) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Endpoint is neither UDS or TCP loopback address.");
@@ -182,14 +182,14 @@ class grpc_local_channel_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error* error) override {
+                         grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
   bool check_call_host(absl::string_view host,
                        grpc_auth_context* /*auth_context*/,
                        grpc_closure* /*on_call_host_checked*/,
-                       grpc_error** error) override {
+                       grpc_error_handle* error) override {
     if (host.empty() || host != target_name_) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "local call host does not match target name");
@@ -198,7 +198,7 @@ class grpc_local_channel_security_connector final
   }
 
   void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
-                              grpc_error* error) override {
+                              grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
@@ -236,7 +236,7 @@ class grpc_local_server_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error* error) override {
+                         grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 

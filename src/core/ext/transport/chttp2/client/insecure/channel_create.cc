@@ -51,7 +51,7 @@ class Chttp2InsecureClientChannelFactory : public ClientChannelFactory {
 namespace {
 
 grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
-                            grpc_error** error) {
+                            grpc_error_handle* error) {
   if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     if (error != nullptr) {
@@ -106,7 +106,7 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
   const char* arg_to_remove = arg.key;
   grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
       args, &arg_to_remove, 1, &arg, 1);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   // Create channel.
   grpc_channel* channel = grpc_core::CreateChannel(target, new_args, &error);
   // Clean up.

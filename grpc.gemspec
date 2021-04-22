@@ -827,6 +827,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/stat.h )
   s.files += %w( src/core/lib/gprpp/stat_posix.cc )
   s.files += %w( src/core/lib/gprpp/stat_windows.cc )
+  s.files += %w( src/core/lib/gprpp/status_helper.cc )
+  s.files += %w( src/core/lib/gprpp/status_helper.h )
   s.files += %w( src/core/lib/gprpp/sync.h )
   s.files += %w( src/core/lib/gprpp/thd.h )
   s.files += %w( src/core/lib/gprpp/thd_posix.cc )

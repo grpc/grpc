@@ -163,8 +163,8 @@ const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForSourceType(
     return nullptr;
   }
   grpc_resolved_address source_addr;
-  grpc_error* error = grpc_string_to_sockaddr(&source_addr, host.c_str(),
-                                              0 /* port doesn't matter here */);
+  grpc_error_handle error = grpc_string_to_sockaddr(
+      &source_addr, host.c_str(), 0 /* port doesn't matter here */);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_DEBUG, "Could not parse string to socket address: %s",
             host.c_str());
@@ -214,8 +214,8 @@ const XdsApi::LdsUpdate::FilterChainData* FindFilterChainDataForDestinationIp(
     return nullptr;
   }
   grpc_resolved_address destination_addr;
-  grpc_error* error = grpc_string_to_sockaddr(&destination_addr, host.c_str(),
-                                              0 /* port doesn't matter here */);
+  grpc_error_handle error = grpc_string_to_sockaddr(
+      &destination_addr, host.c_str(), 0 /* port doesn't matter here */);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_DEBUG, "Could not parse string to socket address: %s",
             host.c_str());
@@ -448,7 +448,7 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
       }
     }
 
-    void OnError(grpc_error* error) override {
+    void OnError(grpc_error_handle error) override {
       if (filter_chain_match_manager_ != nullptr) {
         gpr_log(GPR_ERROR,
                 "ListenerWatcher:%p XdsClient reports error: %s for %s; "
@@ -523,7 +523,7 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   GRPC_API_TRACE("grpc_server_config_fetcher_xds_create()", 0, ());
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::RefCountedPtr<grpc_core::XdsClient> xds_client =
       grpc_core::XdsClient::GetOrCreate(args, &error);
   if (error != GRPC_ERROR_NONE) {

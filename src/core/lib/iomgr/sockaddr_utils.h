@@ -68,8 +68,8 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* addr,
 
 // Newer form of grpc_string_to_sockaddr which returns an error instead of
 // crashing if \a addr is not IPv6/IPv6
-grpc_error* grpc_string_to_sockaddr(grpc_resolved_address* out,
-                                    const char* addr, int port);
+grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
+                                          const char* addr, int port);
 
 /* Returns the URI string corresponding to \a addr */
 std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);

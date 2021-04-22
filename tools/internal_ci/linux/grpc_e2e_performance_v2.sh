@@ -34,7 +34,7 @@ gcloud container clusters get-credentials benchmarks-prod \
 tools/run_tests/performance/loadtest_config.py -l go \
     -t ./tools/run_tests/performance/templates/loadtest_template_basic_all_languages.yaml \
     -s client_pool=workers-8core -s server_pool=workers-8core \
-    -s big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
+    -s big_query_table=e2e_benchmarks.experimental_results \
     -s timeout_seconds=900 --prefix="kokoro-test" -u "$(date +%Y%m%d%H%M%S)" \
     -r go_generic_sync_streaming_ping_pong_secure -o ./loadtest.yaml
 

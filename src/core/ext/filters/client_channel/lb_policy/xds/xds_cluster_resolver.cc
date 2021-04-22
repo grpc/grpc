@@ -185,7 +185,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       void OnEndpointChanged(XdsApi::EdsUpdate update) override {
         new Notifier(discovery_mechanism_, std::move(update));
       }
-      void OnError(grpc_error* error) override {
+      void OnError(grpc_error_handle error) override {
         new Notifier(discovery_mechanism_, error);
       }
       void OnResourceDoesNotExist() override {
@@ -198,7 +198,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
         Notifier(RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism,
                  XdsApi::EdsUpdate update);
         Notifier(RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism,
-                 grpc_error* error);
+                 grpc_error_handle error);
         explicit Notifier(
             RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism);
         ~Notifier() { discovery_mechanism_.reset(DEBUG_LOCATION, "Notifier"); }
@@ -206,8 +206,8 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
        private:
         enum Type { kUpdate, kError, kDoesNotExist };
 
-        static void RunInExecCtx(void* arg, grpc_error* error);
-        void RunInWorkSerializer(grpc_error* error);
+        static void RunInExecCtx(void* arg, grpc_error_handle error);
+        void RunInWorkSerializer(grpc_error_handle error);
 
         RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism_;
         grpc_closure closure_;
@@ -250,7 +250,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
       void ReturnResult(Resolver::Result result) override;
 
-      void ReturnError(grpc_error* error) override;
+      void ReturnError(grpc_error_handle error) override;
 
      private:
       RefCountedPtr<LogicalDNSDiscoveryMechanism> discovery_mechanism_;
@@ -304,7 +304,7 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
   void ShutdownLocked() override;
 
   void OnEndpointChanged(size_t index, XdsApi::EdsUpdate update);
-  void OnError(size_t index, grpc_error* error);
+  void OnError(size_t index, grpc_error_handle error);
   void OnResourceDoesNotExist(size_t index);
 
   void MaybeDestroyChildPolicyLocked();
@@ -430,7 +430,7 @@ XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
 XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
     Notifier(RefCountedPtr<XdsClusterResolverLb::EdsDiscoveryMechanism>
                  discovery_mechanism,
-             grpc_error* error)
+             grpc_error_handle error)
     : discovery_mechanism_(std::move(discovery_mechanism)), type_(kError) {
   GRPC_CLOSURE_INIT(&closure_, &RunInExecCtx, this, nullptr);
   ExecCtx::Run(DEBUG_LOCATION, &closure_, error);
@@ -446,7 +446,7 @@ XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
 }
 
 void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    RunInExecCtx(void* arg, grpc_error* error) {
+    RunInExecCtx(void* arg, grpc_error_handle error) {
   Notifier* self = static_cast<Notifier*>(arg);
   GRPC_ERROR_REF(error);
   self->discovery_mechanism_->parent()->work_serializer()->Run(
@@ -454,7 +454,7 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
 }
 
 void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
-    RunInWorkSerializer(grpc_error* error) {
+    RunInWorkSerializer(grpc_error_handle error) {
   switch (type_) {
     case kUpdate:
       discovery_mechanism_->parent()->OnEndpointChanged(
@@ -542,7 +542,7 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
 }
 
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::ResolverResultHandler::
-    ReturnError(grpc_error* error) {
+    ReturnError(grpc_error_handle error) {
   discovery_mechanism_->parent()->OnError(discovery_mechanism_->index(), error);
 }
 
@@ -730,7 +730,7 @@ void XdsClusterResolverLb::OnEndpointChanged(size_t index,
   UpdatePriorityList(std::move(priority_list));
 }
 
-void XdsClusterResolverLb::OnError(size_t index, grpc_error* error) {
+void XdsClusterResolverLb::OnError(size_t index, grpc_error_handle error) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
           " xds watcher reported error: %s",
@@ -1002,7 +1002,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
         "[xds_cluster_resolver_lb %p] generated config for child policy: %s",
         this, json_str.c_str());
   }
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   RefCountedPtr<LoadBalancingPolicy::Config> config =
       LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(json, &error);
   if (error != GRPC_ERROR_NONE) {
@@ -1106,7 +1106,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
         XdsClient::GetFromChannelArgs(*args.args);
     if (xds_client == nullptr) {
       if (!is_xds_uri) {
-        grpc_error* error = GRPC_ERROR_NONE;
+        grpc_error_handle error = GRPC_ERROR_NONE;
         xds_client = XdsClient::GetOrCreate(args.args, &error);
         if (error != GRPC_ERROR_NONE) {
           gpr_log(GPR_ERROR,
@@ -1130,7 +1130,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kXdsClusterResolver; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error** error) const override {
+      const Json& json, grpc_error_handle* error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json.type() == Json::Type::JSON_NULL) {
       // xds_cluster_resolver was mentioned as a policy in the deprecated
@@ -1141,7 +1141,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           "Please use loadBalancingConfig field of service config instead.");
       return nullptr;
     }
-    std::vector<grpc_error*> error_list;
+    std::vector<grpc_error_handle> error_list;
     std::vector<XdsClusterResolverLbConfig::DiscoveryMechanism>
         discovery_mechanisms;
     auto it = json.object_value().find("discoveryMechanisms");
@@ -1155,13 +1155,13 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       const Json::Array& array = it->second.array_value();
       for (size_t i = 0; i < array.size(); ++i) {
         XdsClusterResolverLbConfig::DiscoveryMechanism discovery_mechanism;
-        std::vector<grpc_error*> discovery_mechanism_errors =
+        std::vector<grpc_error_handle> discovery_mechanism_errors =
             ParseDiscoveryMechanism(array[i], &discovery_mechanism);
         if (!discovery_mechanism_errors.empty()) {
-          grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+          grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
               absl::StrCat("field:discovery_mechanism element: ", i, " error")
                   .c_str());
-          for (grpc_error* discovery_mechanism_error :
+          for (grpc_error_handle discovery_mechanism_error :
                discovery_mechanism_errors) {
             error = grpc_error_add_child(error, discovery_mechanism_error);
           }
@@ -1276,10 +1276,10 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
   }
 
  private:
-  static std::vector<grpc_error*> ParseDiscoveryMechanism(
+  static std::vector<grpc_error_handle> ParseDiscoveryMechanism(
       const Json& json,
       XdsClusterResolverLbConfig::DiscoveryMechanism* discovery_mechanism) {
-    std::vector<grpc_error*> error_list;
+    std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "value should be of type object"));

@@ -129,7 +129,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
 namespace {
 
 grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
-                            grpc_error** error) {
+                            grpc_error_handle* error) {
   if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     if (error != nullptr) {
@@ -181,7 +181,7 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
       4, ((void*)creds, target, (void*)args, (void*)reserved));
   GPR_ASSERT(reserved == nullptr);
   grpc_channel* channel = nullptr;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (creds != nullptr) {
     // Add channel args containing the client channel factory and channel
     // credentials.

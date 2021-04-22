@@ -145,7 +145,7 @@ struct call_data {
   bool get_request_metadata_started ABSL_GUARDED_BY(pre_cancel_mu) = false;
 
   // The error seen from a cancel_stream op.
-  grpc_error* cancel_error = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_error = GRPC_ERROR_NONE;
 
   // The batch containing send_initial_metadata is stored here if we
   // receive a pre-cancellation but have not yet seen the cancel_stream
@@ -187,7 +187,7 @@ void grpc_auth_metadata_context_reset(
   }
 }
 
-static void add_error(grpc_error** combined, grpc_error* error) {
+static void add_error(grpc_error_handle* combined, grpc_error_handle error) {
   if (error == GRPC_ERROR_NONE) return;
   if (*combined == GRPC_ERROR_NONE) {
     *combined = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -197,7 +197,7 @@ static void add_error(grpc_error** combined, grpc_error* error) {
 }
 
 static void on_credentials_metadata_inner(grpc_transport_stream_op_batch* batch,
-                                          grpc_error* error) {
+                                          grpc_error_handle error) {
   auto* elem =
       static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
   auto* calld = static_cast<call_data*>(elem->call_data);
@@ -224,7 +224,7 @@ static void on_credentials_metadata_inner(grpc_transport_stream_op_batch* batch,
   GRPC_CALL_STACK_UNREF(calld->owning_call, "get_request_metadata");
 }
 
-static void on_credentials_metadata(void* arg, grpc_error* error) {
+static void on_credentials_metadata(void* arg, grpc_error_handle error) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   auto* elem =
@@ -363,7 +363,7 @@ static void send_security_metadata(grpc_call_element* elem,
   GRPC_CALL_STACK_REF(calld->owning_call, "get_request_metadata");
   GRPC_CLOSURE_INIT(&calld->async_result_closure, on_credentials_metadata,
                     batch, grpc_schedule_on_exec_ctx);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   bool is_done = false;
   bool pre_cancelled = false;
   {
@@ -392,7 +392,7 @@ static void send_security_metadata(grpc_call_element* elem,
 }
 
 static void on_host_checked_inner(grpc_transport_stream_op_batch* batch,
-                                  grpc_error* error) {
+                                  grpc_error_handle error) {
   auto* elem =
       static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
   auto* calld = static_cast<call_data*>(elem->call_data);
@@ -413,7 +413,7 @@ static void on_host_checked_inner(grpc_transport_stream_op_batch* batch,
   GRPC_ERROR_UNREF(error);
 }
 
-static void on_host_checked(void* arg, grpc_error* error) {
+static void on_host_checked(void* arg, grpc_error_handle error) {
   auto* batch = static_cast<grpc_transport_stream_op_batch*>(arg);
   auto* elem =
       static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
@@ -434,7 +434,7 @@ static void on_host_checked(void* arg, grpc_error* error) {
   on_host_checked_inner(batch, GRPC_ERROR_REF(error));
 }
 
-static void fail_batch_in_call_combiner(void* arg, grpc_error* error) {
+static void fail_batch_in_call_combiner(void* arg, grpc_error_handle error) {
   auto* batch = static_cast<grpc_transport_stream_op_batch*>(arg);
   auto* call_combiner =
       static_cast<grpc_core::CallCombiner*>(batch->handler_private.extra_arg);
@@ -491,7 +491,7 @@ static void client_auth_start_transport_stream_op_batch(
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
                         grpc_schedule_on_exec_ctx);
       absl::string_view call_host(grpc_core::StringViewFromSlice(calld->host));
-      grpc_error* error = GRPC_ERROR_NONE;
+      grpc_error_handle error = GRPC_ERROR_NONE;
       bool is_done = false;
       bool pre_cancelled = false;
       {
@@ -526,7 +526,7 @@ static void client_auth_start_transport_stream_op_batch(
 }
 
 static void client_auth_pre_cancel_call(grpc_call_element* elem,
-                                        grpc_error* error) {
+                                        grpc_error_handle error) {
   auto* calld = static_cast<call_data*>(elem->call_data);
   auto* chand = static_cast<channel_data*>(elem->channel_data);
   {
@@ -557,7 +557,7 @@ static void client_auth_pre_cancel_call(grpc_call_element* elem,
 }
 
 /* Constructor for call_data */
-static grpc_error* client_auth_init_call_elem(
+static grpc_error_handle client_auth_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   new (elem->call_data) call_data(elem, *args);
   return GRPC_ERROR_NONE;
@@ -578,7 +578,7 @@ static void client_auth_destroy_call_elem(
 }
 
 /* Constructor for channel_data */
-static grpc_error* client_auth_init_channel_elem(
+static grpc_error_handle client_auth_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   /* The first and the last filters tend to be implemented differently to
      handle the case that there's no 'next' filter to call on the up or down

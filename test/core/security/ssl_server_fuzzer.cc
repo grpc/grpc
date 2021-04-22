@@ -42,7 +42,7 @@ struct handshake_state {
   bool done_callback_called;
 };
 
-static void on_handshake_done(void* arg, grpc_error* error) {
+static void on_handshake_done(void* arg, grpc_error_handle error) {
   grpc_core::HandshakerArgs* args =
       static_cast<grpc_core::HandshakerArgs*>(arg);
   struct handshake_state* state =

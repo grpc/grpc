@@ -101,8 +101,8 @@ class XdsClient::ChannelState::RetryableCall
  private:
   void StartNewCallLocked();
   void StartRetryTimerLocked();
-  static void OnRetryTimer(void* arg, grpc_error* error);
-  void OnRetryTimerLocked(grpc_error* error);
+  static void OnRetryTimer(void* arg, grpc_error_handle error);
+  void OnRetryTimerLocked(grpc_error_handle error);
 
   // The wrapped xds call that talks to the xds server. It's instantiated
   // every time we start a new call. It's null during call retry backoff.
@@ -179,7 +179,7 @@ class XdsClient::ChannelState::AdsCallState
     }
 
    private:
-    static void OnTimer(void* arg, grpc_error* error) {
+    static void OnTimer(void* arg, grpc_error_handle error) {
       ResourceState* self = static_cast<ResourceState*>(arg);
       {
         MutexLock lock(&self->ads_calld_->xds_client()->mu_);
@@ -189,11 +189,11 @@ class XdsClient::ChannelState::AdsCallState
       self->Unref(DEBUG_LOCATION, "timer");
     }
 
-    void OnTimerLocked(grpc_error* error)
+    void OnTimerLocked(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_) {
       if (error == GRPC_ERROR_NONE && timer_pending_) {
         timer_pending_ = false;
-        grpc_error* watcher_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        grpc_error_handle watcher_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrFormat(
                 "timeout obtaining resource {type=%s name=%s} from xds server",
                 type_url_, name_)
@@ -252,7 +252,7 @@ class XdsClient::ChannelState::AdsCallState
 
     // Nonce and error for this resource type.
     std::string nonce;
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
 
     // Subscribed resources of this type.
     std::map<std::string /* name */, OrphanablePtr<ResourceState>>
@@ -275,14 +275,14 @@ class XdsClient::ChannelState::AdsCallState
                              XdsApi::EdsUpdateMap eds_update_map)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
-  static void OnRequestSent(void* arg, grpc_error* error);
-  void OnRequestSentLocked(grpc_error* error)
+  static void OnRequestSent(void* arg, grpc_error_handle error);
+  void OnRequestSentLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-  static void OnResponseReceived(void* arg, grpc_error* error);
+  static void OnResponseReceived(void* arg, grpc_error_handle error);
   bool OnResponseReceivedLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-  static void OnStatusReceived(void* arg, grpc_error* error);
-  void OnStatusReceivedLocked(grpc_error* error)
+  static void OnStatusReceived(void* arg, grpc_error_handle error);
+  void OnStatusReceivedLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   bool IsCurrentCallOnChannel() const;
@@ -358,12 +358,12 @@ class XdsClient::ChannelState::LrsCallState
    private:
     void ScheduleNextReportLocked()
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-    static void OnNextReportTimer(void* arg, grpc_error* error);
-    bool OnNextReportTimerLocked(grpc_error* error)
+    static void OnNextReportTimer(void* arg, grpc_error_handle error);
+    bool OnNextReportTimerLocked(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
     bool SendReportLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-    static void OnReportDone(void* arg, grpc_error* error);
-    bool OnReportDoneLocked(grpc_error* error)
+    static void OnReportDone(void* arg, grpc_error_handle error);
+    bool OnReportDoneLocked(grpc_error_handle error)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
     bool IsCurrentReporterOnCall() const {
@@ -383,14 +383,14 @@ class XdsClient::ChannelState::LrsCallState
     grpc_closure on_report_done_;
   };
 
-  static void OnInitialRequestSent(void* arg, grpc_error* error);
+  static void OnInitialRequestSent(void* arg, grpc_error_handle error);
   void OnInitialRequestSentLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-  static void OnResponseReceived(void* arg, grpc_error* error);
+  static void OnResponseReceived(void* arg, grpc_error_handle error);
   bool OnResponseReceivedLocked()
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
-  static void OnStatusReceived(void* arg, grpc_error* error);
-  void OnStatusReceivedLocked(grpc_error* error)
+  static void OnStatusReceived(void* arg, grpc_error_handle error);
+  void OnStatusReceivedLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&XdsClient::mu_);
 
   bool IsCurrentCallOnChannel() const;
@@ -651,7 +651,7 @@ void XdsClient::ChannelState::RetryableCall<T>::StartRetryTimerLocked() {
 
 template <typename T>
 void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimer(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error_handle error) {
   RetryableCall* calld = static_cast<RetryableCall*>(arg);
   {
     MutexLock lock(&calld->chand_->xds_client()->mu_);
@@ -662,7 +662,7 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimer(
 
 template <typename T>
 void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
-    grpc_error* error) {
+    grpc_error_handle error) {
   retry_timer_callback_pending_ = false;
   if (!shutting_down_ && error == GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1145,8 +1145,8 @@ void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdateLocked(
   }
 }
 
-void XdsClient::ChannelState::AdsCallState::OnRequestSent(void* arg,
-                                                          grpc_error* error) {
+void XdsClient::ChannelState::AdsCallState::OnRequestSent(
+    void* arg, grpc_error_handle error) {
   AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
   {
     MutexLock lock(&ads_calld->xds_client()->mu_);
@@ -1156,7 +1156,7 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSent(void* arg,
 }
 
 void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
-    grpc_error* error) {
+    grpc_error_handle error) {
   if (IsCurrentCallOnChannel() && error == GRPC_ERROR_NONE) {
     // Clean up the sent message.
     grpc_byte_buffer_destroy(send_message_payload_);
@@ -1180,7 +1180,7 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
 }
 
 void XdsClient::ChannelState::AdsCallState::OnResponseReceived(
-    void* arg, grpc_error* /* error */) {
+    void* arg, grpc_error_handle /* error */) {
   AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
   bool done;
   {
@@ -1279,7 +1279,7 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
 }
 
 void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error_handle error) {
   AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
   {
     MutexLock lock(&ads_calld->xds_client()->mu_);
@@ -1289,7 +1289,7 @@ void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
 }
 
 void XdsClient::ChannelState::AdsCallState::OnStatusReceivedLocked(
-    grpc_error* error) {
+    grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     char* status_details = grpc_slice_to_c_string(status_details_);
     gpr_log(GPR_INFO,
@@ -1351,7 +1351,7 @@ void XdsClient::ChannelState::LrsCallState::Reporter::
 }
 
 void XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimer(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error_handle error) {
   Reporter* self = static_cast<Reporter*>(arg);
   bool done;
   {
@@ -1362,7 +1362,7 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimer(
 }
 
 bool XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimerLocked(
-    grpc_error* error) {
+    grpc_error_handle error) {
   next_report_timer_callback_pending_ = false;
   if (error != GRPC_ERROR_NONE || !IsCurrentReporterOnCall()) {
     GRPC_ERROR_UNREF(error);
@@ -1427,7 +1427,7 @@ bool XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
 }
 
 void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDone(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error_handle error) {
   Reporter* self = static_cast<Reporter*>(arg);
   bool done;
   {
@@ -1438,7 +1438,7 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDone(
 }
 
 bool XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
-    grpc_error* error) {
+    grpc_error_handle error) {
   grpc_byte_buffer_destroy(parent_->send_message_payload_);
   parent_->send_message_payload_ = nullptr;
   // If there are no more registered stats to report, cancel the call.
@@ -1608,7 +1608,7 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
 }
 
 void XdsClient::ChannelState::LrsCallState::OnInitialRequestSent(
-    void* arg, grpc_error* /*error*/) {
+    void* arg, grpc_error_handle /*error*/) {
   LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
   {
     MutexLock lock(&lrs_calld->xds_client()->mu_);
@@ -1625,7 +1625,7 @@ void XdsClient::ChannelState::LrsCallState::OnInitialRequestSentLocked() {
 }
 
 void XdsClient::ChannelState::LrsCallState::OnResponseReceived(
-    void* arg, grpc_error* /*error*/) {
+    void* arg, grpc_error_handle /*error*/) {
   LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
   bool done;
   {
@@ -1653,7 +1653,7 @@ bool XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
     bool send_all_clusters = false;
     std::set<std::string> new_cluster_names;
     grpc_millis new_load_reporting_interval;
-    grpc_error* parse_error = xds_client()->api_.ParseLrsResponse(
+    grpc_error_handle parse_error = xds_client()->api_.ParseLrsResponse(
         response_slice, &send_all_clusters, &new_cluster_names,
         &new_load_reporting_interval);
     if (parse_error != GRPC_ERROR_NONE) {
@@ -1728,7 +1728,7 @@ bool XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
 }
 
 void XdsClient::ChannelState::LrsCallState::OnStatusReceived(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error_handle error) {
   LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
   {
     MutexLock lock(&lrs_calld->xds_client()->mu_);
@@ -1738,7 +1738,7 @@ void XdsClient::ChannelState::LrsCallState::OnStatusReceived(
 }
 
 void XdsClient::ChannelState::LrsCallState::OnStatusReceivedLocked(
-    grpc_error* error) {
+    grpc_error_handle error) {
   GPR_ASSERT(call_ != nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     char* status_details = grpc_slice_to_c_string(status_details_);
@@ -2142,7 +2142,7 @@ void XdsClient::ResetBackoff() {
   }
 }
 
-void XdsClient::NotifyOnErrorLocked(grpc_error* error) {
+void XdsClient::NotifyOnErrorLocked(grpc_error_handle error) {
   for (const auto& p : listener_map_) {
     const ListenerState& listener_state = p.second;
     for (const auto& p : listener_state.watchers) {
@@ -2347,7 +2347,7 @@ void XdsClientGlobalShutdown() ABSL_NO_THREAD_SAFETY_ANALYSIS {
 namespace {
 
 std::string GetBootstrapContents(const char* fallback_config,
-                                 grpc_error** error) {
+                                 grpc_error_handle* error) {
   // First, try GRPC_XDS_BOOTSTRAP env var.
   grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
   if (path != nullptr) {
@@ -2393,7 +2393,7 @@ std::string GetBootstrapContents(const char* fallback_config,
 }  // namespace
 
 RefCountedPtr<XdsClient> XdsClient::GetOrCreate(const grpc_channel_args* args,
-                                                grpc_error** error) {
+                                                grpc_error_handle* error) {
   RefCountedPtr<XdsClient> xds_client;
   // If getting bootstrap from channel args, create a local XdsClient
   // instance for the channel or server instead of using the global instance.
@@ -2504,7 +2504,7 @@ RefCountedPtr<XdsClient> XdsClient::GetFromChannelArgs(
 grpc_slice grpc_dump_xds_configs() {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   auto xds_client = grpc_core::XdsClient::GetOrCreate(nullptr, &error);
   if (error != GRPC_ERROR_NONE) {
     // If we isn't using xDS, just return an empty string.

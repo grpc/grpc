@@ -27,7 +27,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/profiling/timers.h"
 
-static void exec_ctx_run(grpc_closure* closure, grpc_error* error) {
+static void exec_ctx_run(grpc_closure* closure, grpc_error_handle error) {
 #ifndef NDEBUG
   closure->scheduled = false;
   if (grpc_trace_closure.enabled()) {
@@ -46,7 +46,7 @@ static void exec_ctx_run(grpc_closure* closure, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-static void exec_ctx_sched(grpc_closure* closure, grpc_error* error) {
+static void exec_ctx_sched(grpc_closure* closure, grpc_error_handle error) {
   grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(), closure,
                            error);
 }
@@ -152,7 +152,7 @@ bool ExecCtx::Flush() {
       closure_list_.head = closure_list_.tail = nullptr;
       while (c != nullptr) {
         grpc_closure* next = c->next_data.next;
-        grpc_error* error = c->error_data.error;
+        grpc_error_handle error = c->error_data.error;
         did_something = true;
         exec_ctx_run(c, error);
         c = next;
@@ -174,7 +174,7 @@ grpc_millis ExecCtx::Now() {
 }
 
 void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
-                  grpc_error* error) {
+                  grpc_error_handle error) {
   (void)location;
   if (closure == nullptr) {
     GRPC_ERROR_UNREF(error);

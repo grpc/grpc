@@ -39,7 +39,7 @@ CallCombiner::CallCombiner() {
 }
 
 #ifdef GRPC_TSAN_ENABLED
-void CallCombiner::TsanClosure(void* arg, grpc_error* error) {
+void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
   CallCombiner* self = static_cast<CallCombiner*>(arg);
   // We ref-count the lock, and check if it's already taken.
   // If it was taken, we should do nothing. Otherwise, we will mark it as
@@ -70,7 +70,8 @@ void CallCombiner::TsanClosure(void* arg, grpc_error* error) {
 }
 #endif
 
-void CallCombiner::ScheduleClosure(grpc_closure* closure, grpc_error* error) {
+void CallCombiner::ScheduleClosure(grpc_closure* closure,
+                                   grpc_error_handle error) {
 #ifdef GRPC_TSAN_ENABLED
   original_closure_ = closure;
   ExecCtx::Run(DEBUG_LOCATION, &tsan_closure_, error);
@@ -89,7 +90,7 @@ void CallCombiner::ScheduleClosure(grpc_closure* closure, grpc_error* error) {
 #define DEBUG_FMT_ARGS
 #endif
 
-void CallCombiner::Start(grpc_closure* closure, grpc_error* error,
+void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
                          DEBUG_ARGS const char* reason) {
   GPR_TIMER_SCOPE("CallCombiner::Start", 0);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {

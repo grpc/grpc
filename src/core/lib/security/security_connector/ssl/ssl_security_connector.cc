@@ -45,10 +45,10 @@
 #include "src/core/tsi/transport_security.h"
 
 namespace {
-grpc_error* ssl_check_peer(
+grpc_error_handle ssl_check_peer(
     const char* peer_name, const tsi_peer* peer,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context) {
-  grpc_error* error = grpc_ssl_check_alpn(peer);
+  grpc_error_handle error = grpc_ssl_check_alpn(peer);
   if (error != GRPC_ERROR_NONE) {
     return error;
   }
@@ -145,7 +145,7 @@ class grpc_ssl_channel_security_connector final
     const char* target_name = overridden_target_name_.empty()
                                   ? target_name_.c_str()
                                   : overridden_target_name_.c_str();
-    grpc_error* error = ssl_check_peer(target_name, &peer, auth_context);
+    grpc_error_handle error = ssl_check_peer(target_name, &peer, auth_context);
     if (error == GRPC_ERROR_NONE &&
         verify_options_->verify_peer_callback != nullptr) {
       const tsi_peer_property* p =
@@ -174,7 +174,7 @@ class grpc_ssl_channel_security_connector final
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error* error) override {
+                         grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
@@ -190,14 +190,14 @@ class grpc_ssl_channel_security_connector final
 
   bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
                        grpc_closure* /*on_call_host_checked*/,
-                       grpc_error** error) override {
+                       grpc_error_handle* error) override {
     return grpc_ssl_check_call_host(host, target_name_.c_str(),
                                     overridden_target_name_.c_str(),
                                     auth_context, error);
   }
 
   void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
-                              grpc_error* error) override {
+                              grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
@@ -293,13 +293,13 @@ class grpc_ssl_server_security_connector
   void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
-    grpc_error* error = ssl_check_peer(nullptr, &peer, auth_context);
+    grpc_error_handle error = ssl_check_peer(nullptr, &peer, auth_context);
     tsi_peer_destruct(&peer);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   }
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error* error) override {
+                         grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 

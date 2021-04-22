@@ -99,7 +99,7 @@ class StateWatcher {
     grpc_closure* closure() { return &closure_; }
 
    private:
-    static void WatcherTimerInit(void* arg, grpc_error* /*error*/) {
+    static void WatcherTimerInit(void* arg, grpc_error_handle /*error*/) {
       auto* self = static_cast<WatcherTimerInitState*>(arg);
       grpc_timer_init(&self->state_watcher_->timer_, self->deadline_,
                       &self->state_watcher_->on_timeout_);
@@ -130,10 +130,10 @@ class StateWatcher {
     if (should_delete) delete self;
   }
 
-  void PartlyDone(bool due_to_completion, grpc_error* error) {
+  void PartlyDone(bool due_to_completion, grpc_error_handle error) {
     bool end_op = false;
     void* end_op_tag = nullptr;
-    grpc_error* end_op_error = nullptr;
+    grpc_error_handle end_op_error = GRPC_ERROR_NONE;
     grpc_completion_queue* end_op_cq = nullptr;
     grpc_cq_completion* end_op_completion_storage = nullptr;
     if (due_to_completion) {
@@ -191,12 +191,12 @@ class StateWatcher {
     GRPC_ERROR_UNREF(error);
   }
 
-  static void WatchComplete(void* arg, grpc_error* error) {
+  static void WatchComplete(void* arg, grpc_error_handle error) {
     auto* self = static_cast<StateWatcher*>(arg);
     self->PartlyDone(/*due_to_completion=*/true, GRPC_ERROR_REF(error));
   }
 
-  static void TimeoutComplete(void* arg, grpc_error* error) {
+  static void TimeoutComplete(void* arg, grpc_error_handle error) {
     auto* self = static_cast<StateWatcher*>(arg);
     self->PartlyDone(/*due_to_completion=*/false, GRPC_ERROR_REF(error));
   }
@@ -215,7 +215,7 @@ class StateWatcher {
 
   Mutex mu_;
   CallbackPhase phase_ ABSL_GUARDED_BY(mu_) = kWaiting;
-  grpc_error* error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
+  grpc_error_handle error_ ABSL_GUARDED_BY(mu_) = GRPC_ERROR_NONE;
 };
 
 }  // namespace

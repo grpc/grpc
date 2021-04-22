@@ -210,7 +210,7 @@ void ArgsInit(ArgsStruct* args) {
   args->channel_args = nullptr;
 }
 
-void DoNothing(void* /*arg*/, grpc_error* /*error*/) {}
+void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, TestDeadline()));
@@ -260,7 +260,7 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
 }
 
 void CheckServiceConfigResultLocked(const char* service_config_json,
-                                    grpc_error* service_config_error,
+                                    grpc_error_handle service_config_error,
                                     ArgsStruct* args) {
   if (!args->expected_service_config_string.empty()) {
     GPR_ASSERT(service_config_json != nullptr);
@@ -435,7 +435,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     gpr_mu_unlock(args_->mu);
   }
 
-  void ReturnError(grpc_error* error) override {
+  void ReturnError(grpc_error_handle error) override {
     gpr_log(GPR_ERROR, "resolver returned error: %s", grpc_error_string(error));
     GPR_ASSERT(false);
   }

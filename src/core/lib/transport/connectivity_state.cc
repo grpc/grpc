@@ -73,7 +73,7 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
   }
 
  private:
-  static void SendNotification(void* arg, grpc_error* /*ignored*/) {
+  static void SendNotification(void* arg, grpc_error_handle /*ignored*/) {
     Notifier* self = static_cast<Notifier*>(arg);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_connectivity_state_trace)) {
       gpr_log(GPR_INFO, "watcher %p: delivering async notification for %s (%s)",

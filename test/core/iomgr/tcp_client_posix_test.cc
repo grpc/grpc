@@ -60,7 +60,7 @@ static void finish_connection() {
   gpr_mu_unlock(g_mu);
 }
 
-static void must_succeed(void* /*arg*/, grpc_error* error) {
+static void must_succeed(void* /*arg*/, grpc_error_handle error) {
   GPR_ASSERT(g_connecting != nullptr);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   grpc_endpoint_shutdown(g_connecting, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -70,7 +70,7 @@ static void must_succeed(void* /*arg*/, grpc_error* error) {
   finish_connection();
 }
 
-static void must_fail(void* /*arg*/, grpc_error* error) {
+static void must_fail(void* /*arg*/, grpc_error_handle error) {
   GPR_ASSERT(g_connecting == nullptr);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   finish_connection();
@@ -185,7 +185,7 @@ void test_fails(void) {
   gpr_mu_unlock(g_mu);
 }
 
-static void destroy_pollset(void* p, grpc_error* /*error*/) {
+static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

@@ -83,10 +83,10 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
                             grpc_auth_metadata_context context,
                             grpc_credentials_mdelem_array* md_array,
                             grpc_closure* on_request_metadata,
-                            grpc_error** error) override;
+                            grpc_error_handle* error) override;
 
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
-                                   grpc_error* error) override;
+                                   grpc_error_handle error) override;
 
   grpc_security_level min_security_level() const override {
     return min_security_level_;

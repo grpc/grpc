@@ -51,7 +51,7 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
   grpc_transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false /* is_client */);
 
-  grpc_error* error =
+  grpc_error_handle error =
       core_server->SetupTransport(transport, nullptr, server_args, nullptr);
   if (error == GRPC_ERROR_NONE) {
     for (grpc_pollset* pollset : core_server->pollsets()) {

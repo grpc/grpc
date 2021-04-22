@@ -109,7 +109,9 @@ def loadtest_template(
     })
 
     if inject_big_query_table:
-        spec['big_query_table'] = '${big_query_table}'
+        if 'results' not in spec:
+            spec['results'] = dict()
+        spec['results']['bigQueryTable'] = '${big_query_table}'
     if inject_timeout_seconds:
         spec['timeoutSeconds'] = '${timeout_seconds}'
     if inject_ttl_seconds:
@@ -156,9 +158,10 @@ def main() -> None:
         '--inject_server_pool',
         action='store_true',
         help='Set spec.server(s).pool values to \'${server_pool}\'.')
-    argp.add_argument('--inject_big_query_table',
-                      action='store_true',
-                      help='Set spec.bigQueryTable to \'${big_query_table}\'.')
+    argp.add_argument(
+        '--inject_big_query_table',
+        action='store_true',
+        help='Set spec.results.bigQueryTable to \'${big_query_table}\'.')
     argp.add_argument('--inject_timeout_seconds',
                       action='store_true',
                       help='Set spec.timeoutSeconds to \'${timeout_seconds}\'.')
