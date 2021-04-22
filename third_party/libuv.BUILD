@@ -1,5 +1,92 @@
+config_setting(
+    name = "darwin",
+    values = {"cpu": "darwin"},
+)
+
+config_setting(
+    name = "darwin_x86_64",
+    values = {"cpu": "darwin_x86_64"},
+)
+
+config_setting(
+    name = "darwin_arm64",
+    values = {"cpu": "darwin_arm64"},
+)
+
+config_setting(
+    name = "darwin_arm64e",
+    values = {"cpu": "darwin_arm64e"},
+)
+
+config_setting(
+    name = "windows",
+    values = {"cpu": "x64_windows"},
+)
+
+# Android is not officially supported through C++.
+# This just helps with the build for now.
+config_setting(
+    name = "android",
+    values = {
+        "crosstool_top": "//external:android/crosstool",
+    },
+)
+
+# iOS is not officially supported through C++.
+# This just helps with the build for now.
+config_setting(
+    name = "ios_x86_64",
+    values = {"cpu": "ios_x86_64"},
+)
+
+config_setting(
+    name = "ios_armv7",
+    values = {"cpu": "ios_armv7"},
+)
+
+config_setting(
+    name = "ios_armv7s",
+    values = {"cpu": "ios_armv7s"},
+)
+
+config_setting(
+    name = "ios_arm64",
+    values = {"cpu": "ios_arm64"},
+)
+
+# The following architectures are found in 
+# https://github.com/bazelbuild/bazel/blob/master/src/main/java/com/google/devtools/build/lib/rules/apple/ApplePlatform.java
+config_setting(
+    name = "tvos_x86_64",
+    values = {"cpu": "tvos_x86_64"},
+)
+
+config_setting(
+    name = "tvos_arm64",
+    values = {"cpu": "tvos_arm64"}
+)
+
+config_setting(
+    name = "watchos_i386",
+    values = {"cpu": "watchos_i386"},
+)
+
+config_setting(
+    name = "watchos_x86_64",
+    values = {"cpu": "watchos_x86_64"}
+)
+
+config_setting(
+    name = "watchos_armv7k",
+    values = {"cpu": "watchos_armv7k"},
+)
+
+config_setting(
+    name = "watchos_arm64_32",
+    values = {"cpu": "watchos_arm64_32"}
+)
+
 COMMON_LIBUV_HEADERS = [
-    "include/uv.h",
     "include/uv/errno.h",
     "include/uv/threadpool.h",
     "include/uv/version.h",
@@ -85,7 +172,6 @@ LINUX_LIBUV_SOURCES = [
     "src/unix/procfs-exepath.c",
     "src/unix/proctitle.c",
     "src/unix/sysinfo-loadavg.c",
-    "src/unix/sysinfo-memory.c",
 ]
 
 ANDROID_LIBUV_SOURCES = [
@@ -139,17 +225,21 @@ WINDOWS_LIBUV_SOURCES = [
 cc_library(
     name = "libuv",
     srcs = select({
-        "//tools/cc_target_os:android": COMMON_LIBUV_SOURCES + UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + ANDROID_LIBUV_SOURCES,
-        "//tools/cc_target_os:apple": COMMON_LIBUV_SOURCES + UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
-        "//tools/cc_target_os:windows": COMMON_LIBUV_SOURCES + WINDOWS_LIBUV_SOURCES,
+        ":android": COMMON_LIBUV_SOURCES + UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES + ANDROID_LIBUV_SOURCES,
+        ":darwin_x86_64": COMMON_LIBUV_SOURCES + UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
+        ":darwin_arm64": COMMON_LIBUV_SOURCES + UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
+        ":darwin_arm64e": COMMON_LIBUV_SOURCES + UNIX_LIBUV_SOURCES + DARWIN_LIBUV_SOURCES,
+        ":windows": COMMON_LIBUV_SOURCES + WINDOWS_LIBUV_SOURCES,
         "//conditions:default": COMMON_LIBUV_SOURCES + UNIX_LIBUV_SOURCES + LINUX_LIBUV_SOURCES,
     }),
     hdrs = [
         "include/uv.h",
     ] + select({
-        "//tools/cc_target_os:android": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS + ANDROID_LIBUV_HEADERS,
-        "//tools/cc_target_os:apple": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
-        "//tools/cc_target_os:windows": COMMON_LIBUV_HEADERS + WINDOWS_LIBUV_HEADERS,
+        ":android": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS + ANDROID_LIBUV_HEADERS,
+        ":darwin_x86_64": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
+        ":darwin_arm64": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
+        ":darwin_arm64e": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + DARWIN_LIBUV_HEADERS,
+        ":windows": COMMON_LIBUV_HEADERS + WINDOWS_LIBUV_HEADERS,
         "//conditions:default": COMMON_LIBUV_HEADERS + UNIX_LIBUV_HEADERS + LINUX_LIBUV_HEADERS,
     }),
     copts = [
@@ -167,8 +257,10 @@ cc_library(
         "-Wno-unused-function",
         "-Wno-unused-variable",
     ] + select({
-        "//tools/cc_target_os:apple": [],
-        "//tools/cc_target_os:windows": [
+        ":darwin_x86_64": [],
+        ":darwin_arm64": [],
+        ":darwin_arm64e": [],
+        ":windows": [
             "-DWIN32_LEAN_AND_MEAN",
             "-D_WIN32_WINNT=0x0600",
         ],
@@ -184,14 +276,19 @@ cc_library(
         "src",
     ],
     linkopts = select({
-        "//tools/cc_target_os:windows": [
+        ":darwin_x86_64": [],
+        ":darwin_arm64": [],
+        ":darwin_arm64e": [],
+        ":windows": [
             "-Xcrosstool-compilation-mode=$(COMPILATION_MODE)",
             "-Wl,Iphlpapi.lib",
             "-Wl,Psapi.lib",
             "-Wl,User32.lib",
             "-Wl,Userenv.lib",
         ],
-        "//conditions:default": [],
+        "//conditions:default": [
+          "-ldl",
+        ],
     }),
     visibility = [
         "//visibility:public",
