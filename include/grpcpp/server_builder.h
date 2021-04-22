@@ -357,6 +357,9 @@ class ServerBuilder {
     server_config_fetcher_ = server_config_fetcher;
   }
 
+  /// Experimental API, subject to change.
+  virtual ChannelArguments BuildChannelArgs();
+
  private:
   friend class ::grpc::testing::ServerBuilderPluginTest;
 

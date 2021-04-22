@@ -247,7 +247,7 @@ static grpc_millis saturating_add(grpc_millis a, grpc_millis b) {
 
 static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
                                                        grpc_millis* next,
-                                                       grpc_error* error);
+                                                       grpc_error_handle error);
 
 static grpc_millis compute_min_deadline(timer_shard* shard) {
   return grpc_timer_heap_is_empty(&shard->heap)
@@ -561,7 +561,8 @@ static grpc_timer* pop_one(timer_shard* shard, grpc_millis now) {
 
 /* REQUIRES: shard->mu unlocked */
 static size_t pop_timers(timer_shard* shard, grpc_millis now,
-                         grpc_millis* new_min_deadline, grpc_error* error) {
+                         grpc_millis* new_min_deadline,
+                         grpc_error_handle error) {
   size_t n = 0;
   grpc_timer* timer;
   gpr_mu_lock(&shard->mu);
@@ -580,9 +581,8 @@ static size_t pop_timers(timer_shard* shard, grpc_millis now,
   return n;
 }
 
-static grpc_timer_check_result run_some_expired_timers(grpc_millis now,
-                                                       grpc_millis* next,
-                                                       grpc_error* error) {
+static grpc_timer_check_result run_some_expired_timers(
+    grpc_millis now, grpc_millis* next, grpc_error_handle error) {
   grpc_timer_check_result result = GRPC_TIMERS_NOT_CHECKED;
 
 #if GPR_ARCH_64
@@ -702,7 +702,7 @@ static grpc_timer_check_result timer_check(grpc_millis* next) {
     return GRPC_TIMERS_CHECKED_AND_EMPTY;
   }
 
-  grpc_error* shutdown_error =
+  grpc_error_handle shutdown_error =
       now != GRPC_MILLIS_INF_FUTURE
           ? GRPC_ERROR_NONE
           : GRPC_ERROR_CREATE_FROM_STATIC_STRING("Shutting down timer system");

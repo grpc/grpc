@@ -83,11 +83,11 @@ class GrpcUdpListener {
 
   /* Called when data is available to read from the socket.
    * Return true if there is more data to read from fd. */
-  void OnRead(grpc_error* error, void* do_read_arg);
+  void OnRead(grpc_error_handle error, void* do_read_arg);
 
   /* Called when the socket is writeable. The given closure should be scheduled
    * when the socket becomes blocked next time. */
-  void OnCanWrite(grpc_error* error, void* do_write_arg);
+  void OnCanWrite(grpc_error_handle error, void* do_write_arg);
 
   /* Called when the grpc_fd is about to be orphaned (and the FD closed). */
   void OnFdAboutToOrphan();
@@ -107,16 +107,16 @@ class GrpcUdpListener {
 
  private:
   /* event manager callback when reads are ready */
-  static void on_read(void* arg, grpc_error* error);
-  static void on_write(void* arg, grpc_error* error);
+  static void on_read(void* arg, grpc_error_handle error);
+  static void on_write(void* arg, grpc_error_handle error);
 
-  static void do_read(void* arg, grpc_error* error);
-  static void do_write(void* arg, grpc_error* error);
+  static void do_read(void* arg, grpc_error_handle error);
+  static void do_write(void* arg, grpc_error_handle error);
   // Wrapper of grpc_fd_notify_on_write() with a grpc_closure callback
   // interface.
-  static void fd_notify_on_write_wrapper(void* arg, grpc_error* error);
+  static void fd_notify_on_write_wrapper(void* arg, grpc_error_handle error);
 
-  static void shutdown_fd(void* args, grpc_error* error);
+  static void shutdown_fd(void* args, grpc_error_handle error);
 
   int fd_;
   grpc_fd* emfd_;
@@ -222,7 +222,7 @@ grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args) {
 }
 
 // static
-void GrpcUdpListener::shutdown_fd(void* args, grpc_error* error) {
+void GrpcUdpListener::shutdown_fd(void* args, grpc_error_handle error) {
   if (args == nullptr) {
     // No-op if shutdown args are null.
     return;
@@ -261,7 +261,7 @@ static void finish_shutdown(grpc_udp_server* s) {
   delete s;
 }
 
-static void destroyed_port(void* server, grpc_error* /*error*/) {
+static void destroyed_port(void* server, grpc_error_handle /*error*/) {
   grpc_udp_server* s = static_cast<grpc_udp_server*>(server);
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
@@ -436,7 +436,7 @@ error:
 }
 
 // static
-void GrpcUdpListener::do_read(void* arg, grpc_error* error) {
+void GrpcUdpListener::do_read(void* arg, grpc_error_handle error) {
   GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   /* TODO: the reason we hold server->mu here is merely to prevent fd
@@ -460,12 +460,12 @@ void GrpcUdpListener::do_read(void* arg, grpc_error* error) {
 }
 
 // static
-void GrpcUdpListener::on_read(void* arg, grpc_error* error) {
+void GrpcUdpListener::on_read(void* arg, grpc_error_handle error) {
   GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
   sp->OnRead(error, arg);
 }
 
-void GrpcUdpListener::OnRead(grpc_error* error, void* do_read_arg) {
+void GrpcUdpListener::OnRead(grpc_error_handle error, void* do_read_arg) {
   if (error != GRPC_ERROR_NONE) {
     gpr_mu_lock(&server_->mu);
     if (0 == --server_->active_ports && server_->shutdown) {
@@ -497,7 +497,7 @@ void GrpcUdpListener::OnRead(grpc_error* error, void* do_read_arg) {
 // static
 // Wrapper of grpc_fd_notify_on_write() with a grpc_closure callback interface.
 void GrpcUdpListener::fd_notify_on_write_wrapper(void* arg,
-                                                 grpc_error* /*error*/) {
+                                                 grpc_error_handle /*error*/) {
   GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
   gpr_mu_lock(sp->mutex());
   if (!sp->notify_on_write_armed_) {
@@ -508,7 +508,7 @@ void GrpcUdpListener::fd_notify_on_write_wrapper(void* arg,
 }
 
 // static
-void GrpcUdpListener::do_write(void* arg, grpc_error* error) {
+void GrpcUdpListener::do_write(void* arg, grpc_error_handle error) {
   GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
   gpr_mu_lock(sp->mutex());
   if (sp->already_shutdown_) {
@@ -527,12 +527,12 @@ void GrpcUdpListener::do_write(void* arg, grpc_error* error) {
 }
 
 // static
-void GrpcUdpListener::on_write(void* arg, grpc_error* error) {
+void GrpcUdpListener::on_write(void* arg, grpc_error_handle error) {
   GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
   sp->OnCanWrite(error, arg);
 }
 
-void GrpcUdpListener::OnCanWrite(grpc_error* error, void* do_write_arg) {
+void GrpcUdpListener::OnCanWrite(grpc_error_handle error, void* do_write_arg) {
   if (error != GRPC_ERROR_NONE) {
     gpr_mu_lock(&server_->mu);
     if (0 == --server_->active_ports && server_->shutdown) {
@@ -630,7 +630,7 @@ int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
 
       /* Try listening on IPv6 first. */
       addr = &wild6;
-      // TODO(rjshade): Test and propagate the returned grpc_error*:
+      // TODO(rjshade): Test and propagate the returned grpc_error_handle:
       GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(
           s->socket_factory, addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd));
       allocated_port1 =
@@ -666,7 +666,7 @@ int grpc_udp_server_add_port(grpc_udp_server* s, grpc_resolved_address* addr,
       addr = &wild4;
     }
 
-    // TODO(rjshade): Test and propagate the returned grpc_error*:
+    // TODO(rjshade): Test and propagate the returned grpc_error_handle:
     GRPC_ERROR_UNREF(grpc_create_dualstack_socket_using_factory(
         s->socket_factory, addr, SOCK_DGRAM, IPPROTO_UDP, &dsmode, &fd));
     if (fd < 0) {

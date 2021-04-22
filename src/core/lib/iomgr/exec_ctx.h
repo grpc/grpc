@@ -228,7 +228,7 @@ class ExecCtx {
   }
 
   static void Run(const DebugLocation& location, grpc_closure* closure,
-                  grpc_error* error);
+                  grpc_error_handle error);
 
   static void RunList(const DebugLocation& location, grpc_closure_list* list);
 

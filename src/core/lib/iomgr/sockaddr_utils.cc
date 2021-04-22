@@ -198,8 +198,8 @@ std::string grpc_sockaddr_to_string(const grpc_resolved_address* resolved_addr,
   return out;
 }
 
-grpc_error* grpc_string_to_sockaddr(grpc_resolved_address* out,
-                                    const char* addr, int port) {
+grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address* out,
+                                          const char* addr, int port) {
   memset(out, 0, sizeof(grpc_resolved_address));
   grpc_sockaddr_in6* addr6 = reinterpret_cast<grpc_sockaddr_in6*>(out->addr);
   grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(out->addr);

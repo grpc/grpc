@@ -439,7 +439,7 @@ static tsi_result make_grpc_call(alts_handshaker_client* c, bool is_start) {
   }
 }
 
-static void on_status_received(void* arg, grpc_error* error) {
+static void on_status_received(void* arg, grpc_error_handle error) {
   alts_grpc_handshaker_client* client =
       static_cast<alts_grpc_handshaker_client*>(arg);
   if (client->handshake_status_code != GRPC_STATUS_OK) {
@@ -642,7 +642,7 @@ static void handshaker_client_shutdown(alts_handshaker_client* c) {
   }
 }
 
-static void handshaker_call_unref(void* arg, grpc_error* /* error */) {
+static void handshaker_call_unref(void* arg, grpc_error_handle /* error */) {
   grpc_call* call = static_cast<grpc_call*>(arg);
   grpc_call_unref(call);
 }
@@ -838,7 +838,8 @@ void alts_handshaker_client_ref_for_testing(alts_handshaker_client* c) {
 }
 
 void alts_handshaker_client_on_status_received_for_testing(
-    alts_handshaker_client* c, grpc_status_code status, grpc_error* error) {
+    alts_handshaker_client* c, grpc_status_code status,
+    grpc_error_handle error) {
   // We first make sure that the handshake queue has been initialized
   // here because there are tests that use this API that mock out
   // other parts of the alts_handshaker_client in such a way that the

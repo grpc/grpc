@@ -137,7 +137,7 @@ void bad_server_thread(void* vargs) {
   grpc_sockaddr* addr = reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr);
   int port;
   grpc_tcp_server* s;
-  grpc_error* error = grpc_tcp_server_create(nullptr, nullptr, &s);
+  grpc_error_handle error = grpc_tcp_server_create(nullptr, nullptr, &s);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   memset(&resolved_addr, 0, sizeof(resolved_addr));
   addr->sa_family = GRPC_AF_INET;
@@ -168,7 +168,7 @@ void bad_server_thread(void* vargs) {
   grpc_tcp_server_unref(s);
 }
 
-static void done_pollset_shutdown(void* pollset, grpc_error* /*error*/) {
+static void done_pollset_shutdown(void* pollset, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(pollset));
   gpr_free(pollset);
 }

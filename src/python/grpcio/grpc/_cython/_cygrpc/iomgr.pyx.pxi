@@ -17,10 +17,10 @@ from libc cimport string
 from libc.stdlib cimport malloc
 from libcpp.string cimport string as cppstring
 
-cdef grpc_error* grpc_error_none():
-  return <grpc_error*>0
+cdef grpc_error_handle grpc_error_none():
+  return <grpc_error_handle>0
 
-cdef grpc_error* socket_error(str syscall, str err):
+cdef grpc_error_handle socket_error(str syscall, str err):
   error_str = "{} failed: {}".format(syscall, err)
   error_bytes = str_to_bytes(error_str)
   return grpc_socket_error(error_bytes)

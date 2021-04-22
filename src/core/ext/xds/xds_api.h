@@ -609,7 +609,7 @@ class XdsApi {
   // Otherwise, one of the *_update_map fields will be populated, based
   // on the type_url field.
   struct AdsParseResult {
-    grpc_error* parse_error = GRPC_ERROR_NONE;
+    grpc_error_handle parse_error = GRPC_ERROR_NONE;
     std::string version;
     std::string nonce;
     std::string type_url;
@@ -628,7 +628,7 @@ class XdsApi {
                               const std::string& type_url,
                               const std::set<absl::string_view>& resource_names,
                               const std::string& version,
-                              const std::string& nonce, grpc_error* error,
+                              const std::string& nonce, grpc_error_handle error,
                               bool populate_node);
 
   // Parses an ADS response.
@@ -648,10 +648,10 @@ class XdsApi {
   // Parses the LRS response and returns \a
   // load_reporting_interval for client-side load reporting. If there is any
   // error, the output config is invalid.
-  grpc_error* ParseLrsResponse(const grpc_slice& encoded_response,
-                               bool* send_all_clusters,
-                               std::set<std::string>* cluster_names,
-                               grpc_millis* load_reporting_interval);
+  grpc_error_handle ParseLrsResponse(const grpc_slice& encoded_response,
+                                     bool* send_all_clusters,
+                                     std::set<std::string>* cluster_names,
+                                     grpc_millis* load_reporting_interval);
 
   // Assemble the client config proto message and return the serialized result.
   std::string AssembleClientConfig(

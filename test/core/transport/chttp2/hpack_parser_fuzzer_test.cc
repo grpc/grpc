@@ -30,7 +30,7 @@
 bool squelch = true;
 bool leak_check = true;
 
-static grpc_error* onhdr(void* /*ud*/, grpc_mdelem md) {
+static grpc_error_handle onhdr(void* /*ud*/, grpc_mdelem md) {
   GRPC_MDELEM_UNREF(md);
   return GRPC_ERROR_NONE;
 }

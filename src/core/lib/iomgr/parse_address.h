@@ -64,13 +64,13 @@ uint16_t grpc_strhtons(const char* port);
 namespace grpc_core {
 
 /** Populate \a resolved_addr to be a unix socket at |path| */
-grpc_error* UnixSockaddrPopulate(absl::string_view path,
-                                 grpc_resolved_address* resolved_addr);
+grpc_error_handle UnixSockaddrPopulate(absl::string_view path,
+                                       grpc_resolved_address* resolved_addr);
 
 /** Populate \a resolved_addr to be a unix socket in the abstract namespace
  * at |path| */
-grpc_error* UnixAbstractSockaddrPopulate(absl::string_view path,
-                                         grpc_resolved_address* resolved_addr);
+grpc_error_handle UnixAbstractSockaddrPopulate(
+    absl::string_view path, grpc_resolved_address* resolved_addr);
 
 }  // namespace grpc_core
 

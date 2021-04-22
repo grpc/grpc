@@ -75,7 +75,7 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
     return false;
   }
 
-  void ShutdownInternalLocked(grpc_error* error) {
+  void ShutdownInternalLocked(grpc_error_handle error) {
     uv_poll_stop(handle_);
     uv_close(reinterpret_cast<uv_handle_t*>(handle_), ares_uv_poll_close_cb);
     if (read_closure_ != nullptr) {
@@ -88,7 +88,7 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
     }
   }
 
-  void ShutdownLocked(grpc_error* error) override {
+  void ShutdownLocked(grpc_error_handle error) override {
     if (grpc_core::ExecCtx::Get() == nullptr) {
       grpc_core::ExecCtx exec_ctx;
       ShutdownInternalLocked(error);
@@ -127,7 +127,7 @@ static void ares_uv_poll_cb_locked(AresUvPollCbArg* arg) {
   int events = arg_struct->events;
   GrpcPolledFdLibuv* polled_fd =
       reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (status < 0) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("cares polling error");
     error =

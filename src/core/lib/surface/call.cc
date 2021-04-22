@@ -290,14 +290,15 @@ static void execute_batch(grpc_call* call,
 
 static void cancel_with_status(grpc_call* c, grpc_status_code status,
                                const char* description);
-static void cancel_with_error(grpc_call* c, grpc_error* error);
-static void destroy_call(void* call_stack, grpc_error* error);
-static void receiving_slice_ready(void* bctlp, grpc_error* error);
-static void set_final_status(grpc_call* call, grpc_error* error);
+static void cancel_with_error(grpc_call* c, grpc_error_handle error);
+static void destroy_call(void* call_stack, grpc_error_handle error);
+static void receiving_slice_ready(void* bctlp, grpc_error_handle error);
+static void set_final_status(grpc_call* call, grpc_error_handle error);
 static void process_data_after_md(batch_control* bctl);
 static void post_batch_completion(batch_control* bctl);
 
-static void add_init_error(grpc_error** composite, grpc_error* new_err) {
+static void add_init_error(grpc_error_handle* composite,
+                           grpc_error_handle new_err) {
   if (new_err == GRPC_ERROR_NONE) return;
   if (*composite == GRPC_ERROR_NONE) {
     *composite = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Call creation failed");
@@ -335,15 +336,15 @@ size_t grpc_call_get_initial_size_estimate() {
          sizeof(grpc_linked_mdelem) * ESTIMATED_MDELEM_COUNT;
 }
 
-grpc_error* grpc_call_create(const grpc_call_create_args* args,
-                             grpc_call** out_call) {
+grpc_error_handle grpc_call_create(const grpc_call_create_args* args,
+                                   grpc_call** out_call) {
   GPR_TIMER_SCOPE("grpc_call_create", 0);
 
   GRPC_CHANNEL_INTERNAL_REF(args->channel, "call");
 
   grpc_core::Arena* arena;
   grpc_call* call;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_channel_stack* channel_stack =
       grpc_channel_get_channel_stack(args->channel);
   size_t initial_size = grpc_channel_get_call_size_estimate(args->channel);
@@ -524,7 +525,7 @@ void grpc_call_internal_unref(grpc_call* c REF_ARG) {
   GRPC_CALL_STACK_UNREF(CALL_STACK_FROM_CALL(c), REF_REASON);
 }
 
-static void release_call(void* call, grpc_error* /*error*/) {
+static void release_call(void* call, grpc_error_handle /*error*/) {
   grpc_call* c = static_cast<grpc_call*>(call);
   grpc_channel* channel = c->channel;
   grpc_core::Arena* arena = c->arena;
@@ -533,7 +534,7 @@ static void release_call(void* call, grpc_error* /*error*/) {
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");
 }
 
-static void destroy_call(void* call, grpc_error* /*error*/) {
+static void destroy_call(void* call, grpc_error_handle /*error*/) {
   GPR_TIMER_SCOPE("destroy_call", 0);
   size_t i;
   int ii;
@@ -559,8 +560,8 @@ static void destroy_call(void* call, grpc_error* /*error*/) {
     GRPC_CQ_INTERNAL_UNREF(c->cq, "bind");
   }
 
-  grpc_error* status_error =
-      reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&c->status_error));
+  grpc_error_handle status_error =
+      reinterpret_cast<grpc_error_handle>(gpr_atm_acq_load(&c->status_error));
   grpc_error_get_status(status_error, c->send_deadline,
                         &c->final_info.final_status, nullptr, nullptr,
                         &(c->final_info.error_string));
@@ -627,7 +628,8 @@ grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
 
 // This is called via the call combiner to start sending a batch down
 // the filter stack.
-static void execute_batch_in_call_combiner(void* arg, grpc_error* /*ignored*/) {
+static void execute_batch_in_call_combiner(void* arg,
+                                           grpc_error_handle /*ignored*/) {
   GPR_TIMER_SCOPE("execute_batch_in_call_combiner", 0);
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
@@ -688,7 +690,7 @@ struct cancel_state {
 };
 // The on_complete callback used when sending a cancel_stream batch down
 // the filter stack.  Yields the call combiner when the batch is done.
-static void done_termination(void* arg, grpc_error* /*error*/) {
+static void done_termination(void* arg, grpc_error_handle /*error*/) {
   cancel_state* state = static_cast<cancel_state*>(arg);
   GRPC_CALL_COMBINER_STOP(&state->call->call_combiner,
                           "on_complete for cancel_stream op");
@@ -696,7 +698,7 @@ static void done_termination(void* arg, grpc_error* /*error*/) {
   gpr_free(state);
 }
 
-static void cancel_with_error(grpc_call* c, grpc_error* error) {
+static void cancel_with_error(grpc_call* c, grpc_error_handle error) {
   if (!gpr_atm_rel_cas(&c->cancelled_with_error, 0, 1)) {
     GRPC_ERROR_UNREF(error);
     return;
@@ -722,8 +724,8 @@ void grpc_call_cancel_internal(grpc_call* call) {
   cancel_with_error(call, GRPC_ERROR_CANCELLED);
 }
 
-static grpc_error* error_from_status(grpc_status_code status,
-                                     const char* description) {
+static grpc_error_handle error_from_status(grpc_status_code status,
+                                           const char* description) {
   // copying 'description' is needed to ensure the grpc_call_cancel_with_status
   // guarantee that can be short-lived.
   return grpc_error_set_int(
@@ -738,7 +740,7 @@ static void cancel_with_status(grpc_call* c, grpc_status_code status,
   cancel_with_error(c, error_from_status(status, description));
 }
 
-static void set_final_status(grpc_call* call, grpc_error* error) {
+static void set_final_status(grpc_call* call, grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
     gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
@@ -767,7 +769,7 @@ static void set_final_status(grpc_call* call, grpc_error* error) {
         call->final_op.server.core_server->channelz_node();
     if (channelz_node != nullptr) {
       if (*call->final_op.server.cancelled ||
-          reinterpret_cast<grpc_error*>(
+          reinterpret_cast<grpc_error_handle>(
               gpr_atm_acq_load(&call->status_error)) != GRPC_ERROR_NONE) {
         channelz_node->RecordCallFailed();
       } else {
@@ -949,7 +951,7 @@ static int prepare_application_metadata(grpc_call* call, int count,
   for (i = 0; i < total_count; i++) {
     grpc_metadata* md = get_md_elem(metadata, additional_metadata, i, count);
     grpc_linked_mdelem* l = linked_from_md(md);
-    grpc_error* error = grpc_metadata_batch_link_tail(batch, l);
+    grpc_error_handle error = grpc_metadata_batch_link_tail(batch, l);
     if (error != GRPC_ERROR_NONE) {
       GRPC_MDELEM_UNREF(l->md);
     }
@@ -1050,14 +1052,14 @@ static void recv_initial_filter(grpc_call* call, grpc_metadata_batch* b) {
 }
 
 static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
-                                 grpc_error* batch_error) {
+                                 grpc_error_handle batch_error) {
   grpc_call* call = static_cast<grpc_call*>(args);
   if (batch_error != GRPC_ERROR_NONE) {
     set_final_status(call, batch_error);
   } else if (b->idx.named.grpc_status != nullptr) {
     grpc_status_code status_code =
         grpc_get_status_code_from_metadata(b->idx.named.grpc_status->md);
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
     if (status_code != GRPC_STATUS_OK) {
       char* peer = grpc_call_get_peer(call);
       error = grpc_error_set_int(
@@ -1168,8 +1170,8 @@ static void finish_batch_completion(void* user_data,
 }
 
 static void reset_batch_errors(batch_control* bctl) {
-  GRPC_ERROR_UNREF(
-      reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&bctl->batch_error)));
+  GRPC_ERROR_UNREF(reinterpret_cast<grpc_error_handle>(
+      gpr_atm_acq_load(&bctl->batch_error)));
   gpr_atm_rel_store(&bctl->batch_error,
                     reinterpret_cast<gpr_atm>(GRPC_ERROR_NONE));
 }
@@ -1177,8 +1179,8 @@ static void reset_batch_errors(batch_control* bctl) {
 static void post_batch_completion(batch_control* bctl) {
   grpc_call* next_child_call;
   grpc_call* call = bctl->call;
-  grpc_error* error = GRPC_ERROR_REF(
-      reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&bctl->batch_error)));
+  grpc_error_handle error = GRPC_ERROR_REF(reinterpret_cast<grpc_error_handle>(
+      gpr_atm_acq_load(&bctl->batch_error)));
 
   if (bctl->op.send_initial_metadata) {
     grpc_metadata_batch_destroy(
@@ -1251,7 +1253,7 @@ static void finish_batch_step(batch_control* bctl) {
 }
 
 static void continue_receiving_slices(batch_control* bctl) {
-  grpc_error* error;
+  grpc_error_handle error;
   grpc_call* call = bctl->call;
   for (;;) {
     size_t remaining = call->receiving_stream->length() -
@@ -1282,7 +1284,7 @@ static void continue_receiving_slices(batch_control* bctl) {
   }
 }
 
-static void receiving_slice_ready(void* bctlp, grpc_error* error) {
+static void receiving_slice_ready(void* bctlp, grpc_error_handle error) {
   batch_control* bctl = static_cast<batch_control*>(bctlp);
   grpc_call* call = bctl->call;
   bool release_error = false;
@@ -1342,13 +1344,13 @@ static void process_data_after_md(batch_control* bctl) {
   }
 }
 
-static void receiving_stream_ready(void* bctlp, grpc_error* error) {
+static void receiving_stream_ready(void* bctlp, grpc_error_handle error) {
   batch_control* bctl = static_cast<batch_control*>(bctlp);
   grpc_call* call = bctl->call;
   if (error != GRPC_ERROR_NONE) {
     call->receiving_stream.reset();
-    if (reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&bctl->batch_error)) ==
-        GRPC_ERROR_NONE) {
+    if (reinterpret_cast<grpc_error_handle>(
+            gpr_atm_acq_load(&bctl->batch_error)) == GRPC_ERROR_NONE) {
       gpr_atm_rel_store(&bctl->batch_error,
                         reinterpret_cast<gpr_atm>(GRPC_ERROR_REF(error)));
     }
@@ -1368,7 +1370,7 @@ static void receiving_stream_ready(void* bctlp, grpc_error* error) {
 // a recv_message op down the filter stack.  Yields the call combiner
 // before processing the received message.
 static void receiving_stream_ready_in_call_combiner(void* bctlp,
-                                                    grpc_error* error) {
+                                                    grpc_error_handle error) {
   batch_control* bctl = static_cast<batch_control*>(bctlp);
   grpc_call* call = bctl->call;
   GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_message_ready");
@@ -1461,7 +1463,8 @@ static void validate_filtered_metadata(batch_control* bctl) {
   }
 }
 
-static void receiving_initial_metadata_ready(void* bctlp, grpc_error* error) {
+static void receiving_initial_metadata_ready(void* bctlp,
+                                             grpc_error_handle error) {
   batch_control* bctl = static_cast<batch_control*>(bctlp);
   grpc_call* call = bctl->call;
 
@@ -1480,8 +1483,8 @@ static void receiving_initial_metadata_ready(void* bctlp, grpc_error* error) {
       call->send_deadline = md->deadline;
     }
   } else {
-    if (reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&bctl->batch_error)) ==
-        GRPC_ERROR_NONE) {
+    if (reinterpret_cast<grpc_error_handle>(
+            gpr_atm_acq_load(&bctl->batch_error)) == GRPC_ERROR_NONE) {
       gpr_atm_rel_store(&bctl->batch_error,
                         reinterpret_cast<gpr_atm>(GRPC_ERROR_REF(error)));
     }
@@ -1520,7 +1523,8 @@ static void receiving_initial_metadata_ready(void* bctlp, grpc_error* error) {
   finish_batch_step(bctl);
 }
 
-static void receiving_trailing_metadata_ready(void* bctlp, grpc_error* error) {
+static void receiving_trailing_metadata_ready(void* bctlp,
+                                              grpc_error_handle error) {
   batch_control* bctl = static_cast<batch_control*>(bctlp);
   grpc_call* call = bctl->call;
   GRPC_CALL_COMBINER_STOP(&call->call_combiner, "recv_trailing_metadata_ready");
@@ -1530,12 +1534,12 @@ static void receiving_trailing_metadata_ready(void* bctlp, grpc_error* error) {
   finish_batch_step(bctl);
 }
 
-static void finish_batch(void* bctlp, grpc_error* error) {
+static void finish_batch(void* bctlp, grpc_error_handle error) {
   batch_control* bctl = static_cast<batch_control*>(bctlp);
   grpc_call* call = bctl->call;
   GRPC_CALL_COMBINER_STOP(&call->call_combiner, "on_complete");
-  if (reinterpret_cast<grpc_error*>(gpr_atm_acq_load(&bctl->batch_error)) ==
-      GRPC_ERROR_NONE) {
+  if (reinterpret_cast<grpc_error_handle>(
+          gpr_atm_acq_load(&bctl->batch_error)) == GRPC_ERROR_NONE) {
     gpr_atm_rel_store(&bctl->batch_error,
                       reinterpret_cast<gpr_atm>(GRPC_ERROR_REF(error)));
   }
@@ -1752,7 +1756,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->send_extra_metadata_count = 1;
         call->send_extra_metadata[0].md = grpc_get_reffed_status_elem(
             op->data.send_status_from_server.status);
-        grpc_error* status_error =
+        grpc_error_handle status_error =
             op->data.send_status_from_server.status == GRPC_STATUS_OK
                 ? GRPC_ERROR_NONE
                 : grpc_error_set_int(

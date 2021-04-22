@@ -68,10 +68,10 @@ class NativeDnsResolver : public Resolver {
   void MaybeStartResolvingLocked();
   void StartResolvingLocked();
 
-  static void OnNextResolution(void* arg, grpc_error* error);
-  void OnNextResolutionLocked(grpc_error* error);
-  static void OnResolved(void* arg, grpc_error* error);
-  void OnResolvedLocked(grpc_error* error);
+  static void OnNextResolution(void* arg, grpc_error_handle error);
+  void OnNextResolutionLocked(grpc_error_handle error);
+  static void OnResolved(void* arg, grpc_error_handle error);
+  void OnResolvedLocked(grpc_error_handle error);
 
   /// name to resolve
   std::string name_to_resolve_;
@@ -148,14 +148,14 @@ void NativeDnsResolver::ShutdownLocked() {
   }
 }
 
-void NativeDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
+void NativeDnsResolver::OnNextResolution(void* arg, grpc_error_handle error) {
   NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnNextResolutionLocked(error); },
                            DEBUG_LOCATION);
 }
 
-void NativeDnsResolver::OnNextResolutionLocked(grpc_error* error) {
+void NativeDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
   have_next_resolution_timer_ = false;
   if (error == GRPC_ERROR_NONE && !resolving_) {
     StartResolvingLocked();
@@ -164,14 +164,14 @@ void NativeDnsResolver::OnNextResolutionLocked(grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-void NativeDnsResolver::OnResolved(void* arg, grpc_error* error) {
+void NativeDnsResolver::OnResolved(void* arg, grpc_error_handle error) {
   NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
   GRPC_ERROR_REF(error);  // owned by lambda
   r->work_serializer_->Run([r, error]() { r->OnResolvedLocked(error); },
                            DEBUG_LOCATION);
 }
 
-void NativeDnsResolver::OnResolvedLocked(grpc_error* error) {
+void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
   GPR_ASSERT(resolving_);
   resolving_ = false;
   if (shutdown_) {

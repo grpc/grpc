@@ -63,7 +63,8 @@ std::string UrlEncode(const absl::string_view& s) {
 }  // namespace
 
 RefCountedPtr<ExternalAccountCredentials> ExternalAccountCredentials::Create(
-    const Json& json, std::vector<std::string> scopes, grpc_error** error) {
+    const Json& json, std::vector<std::string> scopes,
+    grpc_error_handle* error) {
   GPR_ASSERT(*error == GRPC_ERROR_NONE);
   Options options;
   options.type = GRPC_AUTH_JSON_TYPE_INVALID;
@@ -213,14 +214,14 @@ void ExternalAccountCredentials::fetch_oauth2(
   ctx_ = new HTTPRequestContext(httpcli_context, pollent, deadline);
   metadata_req_ = metadata_req;
   response_cb_ = response_cb;
-  auto cb = [this](std::string token, grpc_error* error) {
+  auto cb = [this](std::string token, grpc_error_handle error) {
     OnRetrieveSubjectTokenInternal(token, error);
   };
   RetrieveSubjectToken(ctx_, options_, cb);
 }
 
 void ExternalAccountCredentials::OnRetrieveSubjectTokenInternal(
-    absl::string_view subject_token, grpc_error* error) {
+    absl::string_view subject_token, grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
   } else {
@@ -300,13 +301,15 @@ void ExternalAccountCredentials::ExchangeToken(
   grpc_http_request_destroy(&request.http);
 }
 
-void ExternalAccountCredentials::OnExchangeToken(void* arg, grpc_error* error) {
+void ExternalAccountCredentials::OnExchangeToken(void* arg,
+                                                 grpc_error_handle error) {
   ExternalAccountCredentials* self =
       static_cast<ExternalAccountCredentials*>(arg);
   self->OnExchangeTokenInternal(GRPC_ERROR_REF(error));
 }
 
-void ExternalAccountCredentials::OnExchangeTokenInternal(grpc_error* error) {
+void ExternalAccountCredentials::OnExchangeTokenInternal(
+    grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
   } else {
@@ -330,7 +333,7 @@ void ExternalAccountCredentials::OnExchangeTokenInternal(grpc_error* error) {
 }
 
 void ExternalAccountCredentials::ImpersenateServiceAccount() {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   absl::string_view response_body(ctx_->response.body,
                                   ctx_->response.body_length);
   Json json = Json::Parse(response_body, &error);
@@ -389,14 +392,14 @@ void ExternalAccountCredentials::ImpersenateServiceAccount() {
 }
 
 void ExternalAccountCredentials::OnImpersenateServiceAccount(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error_handle error) {
   ExternalAccountCredentials* self =
       static_cast<ExternalAccountCredentials*>(arg);
   self->OnImpersenateServiceAccountInternal(GRPC_ERROR_REF(error));
 }
 
 void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
-    grpc_error* error) {
+    grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     FinishTokenFetch(error);
     return;
@@ -452,7 +455,7 @@ void ExternalAccountCredentials::OnImpersenateServiceAccountInternal(
   FinishTokenFetch(GRPC_ERROR_NONE);
 }
 
-void ExternalAccountCredentials::FinishTokenFetch(grpc_error* error) {
+void ExternalAccountCredentials::FinishTokenFetch(grpc_error_handle error) {
   GRPC_LOG_IF_ERROR("Fetch external account credentials access token",
                     GRPC_ERROR_REF(error));
   // Move object state into local variables.
@@ -473,7 +476,7 @@ void ExternalAccountCredentials::FinishTokenFetch(grpc_error* error) {
 
 grpc_call_credentials* grpc_external_account_credentials_create(
     const char* json_string, const char* scopes_string) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::Json json = grpc_core::Json::Parse(json_string, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
