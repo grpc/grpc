@@ -208,8 +208,8 @@ cdef void asyncio_kick_loop() with gil:
     pass
 
 
-cdef void asyncio_run_loop(size_t timeout_ms) with gil:
-    pass
+cdef grpc_error* asyncio_run_loop(size_t timeout_ms) with gil:
+    return grpc_error_none()
 
 
 def _auth_plugin_callback_wrapper(object cb,
