@@ -11,10 +11,12 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#include <grpc/support/port_platform.h>
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
+
 #ifdef GRPC_EVENT_ENGINE_TEST
+
+#include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/event_engine.h>
 
