@@ -133,6 +133,15 @@ def _run(port: int, maintenance_port: int, secure_mode: bool,
         maintenance_server.wait_for_termination()
 
 
+def bool_arg(arg: str) -> bool:
+    if arg.lower() in ("true", "yes", "y"):
+        return True
+    elif arg.lower() in ("false", "no", "n"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError(f"Could not parse '{arg}' as a bool.")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Run Python xDS interop server.")
@@ -146,7 +155,7 @@ if __name__ == "__main__":
                         help="Port for servers besides test server.")
     parser.add_argument(
         "--secure_mode",
-        type=str,
+        type=bool_arg,
         default="False",
         help="If specified, uses xDS to retrieve server credentials.")
     parser.add_argument("--server_id",
@@ -162,9 +171,8 @@ if __name__ == "__main__":
         logger.setLevel(logging.DEBUG)
     else:
         logger.setLevel(logging.INFO)
-    secure_mode = (args.secure_mode == "True")
-    if secure_mode and args.port == args.maintenance_port:
+    if args.secure_mode and args.port == args.maintenance_port:
         raise ValueError(
             "--port and --maintenance_port must not be the same when --secure_mode is set."
         )
-    _run(args.port, args.maintenance_port, secure_mode, args.server_id)
+    _run(args.port, args.maintenance_port, args.secure_mode, args.server_id)
