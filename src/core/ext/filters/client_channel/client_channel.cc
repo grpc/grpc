@@ -1239,26 +1239,27 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
   // (d) Address resolution that causes a new LB policy to be created.
   //
   // We track a list of strings to eventually be concatenated and traced.
-  absl::InlinedVector<std::string, 3> trace_strings;
+  absl::InlinedVector<const char*, 3> trace_strings;
   if (result.addresses.empty() && previous_resolution_contained_addresses_) {
-    trace_strings.emplace_back("Address list became empty");
+    trace_strings.push_back("Address list became empty");
   } else if (!result.addresses.empty() &&
              !previous_resolution_contained_addresses_) {
-    trace_strings.emplace_back("Address list became non-empty");
+    trace_strings.push_back("Address list became non-empty");
   }
   previous_resolution_contained_addresses_ = !result.addresses.empty();
-  grpc_error_handle service_config_error =
-      GRPC_ERROR_REF(result.service_config_error);
-  if (service_config_error != GRPC_ERROR_NONE) {
-    trace_strings.push_back(grpc_error_std_string(service_config_error));
+  std::string service_config_error_string_storage;
+  if (result.service_config_error != GRPC_ERROR_NONE) {
+    service_config_error_string_storage =
+        grpc_error_std_string(result.service_config_error);
+    trace_strings.push_back(service_config_error_string_storage.c_str());
   }
   // Choose the service config.
   RefCountedPtr<ServiceConfig> service_config;
   RefCountedPtr<ConfigSelector> config_selector;
-  if (service_config_error != GRPC_ERROR_NONE) {
+  if (result.service_config_error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO, "chand=%p: resolver returned service config error: %s",
-              this, grpc_error_std_string(service_config_error).c_str());
+              this, grpc_error_std_string(result.service_config_error).c_str());
     }
     // If the service config was invalid, then fallback to the
     // previously returned service config.
@@ -1275,7 +1276,7 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
       // We received an invalid service config and we don't have a
       // previous service config to fall back to.  Put the channel into
       // TRANSIENT_FAILURE.
-      OnResolverErrorLocked(GRPC_ERROR_REF(service_config_error));
+      OnResolverErrorLocked(GRPC_ERROR_REF(result.service_config_error));
       trace_strings.push_back("no valid service config");
     }
   } else if (result.service_config == nullptr) {
@@ -1340,7 +1341,6 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
                                     grpc_slice_from_cpp_string(message));
     }
   }
-  GRPC_ERROR_UNREF(service_config_error);
 }
 
 void ClientChannel::OnResolverErrorLocked(grpc_error_handle error) {

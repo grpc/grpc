@@ -466,10 +466,10 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(
   const bool healthy = DecodeResponse(&recv_message_buffer_, &error);
   const grpc_connectivity_state state =
       healthy ? GRPC_CHANNEL_READY : GRPC_CHANNEL_TRANSIENT_FAILURE;
-  std::string reason = error == GRPC_ERROR_NONE && !healthy
-                           ? "backend unhealthy"
-                           : grpc_error_std_string(error);
-  health_check_client_->SetHealthStatus(state, reason.c_str());
+  health_check_client_->SetHealthStatus(
+      state, error == GRPC_ERROR_NONE && !healthy
+                 ? "backend unhealthy"
+                 : grpc_error_std_string(error).c_str());
   seen_response_.Store(true, MemoryOrder::RELEASE);
   grpc_slice_buffer_destroy_internal(&recv_message_buffer_);
   // Start another recv_message batch.
