@@ -53,9 +53,11 @@ namespace {
 // EventEngine directly, closures will be replaced with EE callback types.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
-  return [&](absl::Status status, EventEngine::Endpoint* endpoint) {
-    grpc_endpoint_out->endpoint = endpoint;
-    const EventEngine::ResolvedAddress* addr = endpoint->GetLocalAddress();
+  return [&](absl::Status status,
+             std::unique_ptr<EventEngine::Endpoint> endpoint) {
+    grpc_endpoint_out->endpoint = std::move(endpoint);
+    const EventEngine::ResolvedAddress* addr =
+        grpc_endpoint_out->endpoint->GetLocalAddress();
     GPR_ASSERT(addr != nullptr);
     grpc_endpoint_out->local_address = ResolvedAddressToURI(*addr);
     // TODO(hork): Do we need to add grpc_error to closure's error data?
@@ -67,7 +69,9 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
 EventEngine::Listener::AcceptCallback GrpcClosureToAcceptCallback(
     grpc_closure* closure) {
   (void)closure;
-  return [](absl::Status, EventEngine::Endpoint*) {};
+  return [](absl::Status, std::unique_ptr<EventEngine::Endpoint>) {
+    // TODO(hork): implement
+  };
 }
 
 /// Argument ownership stories:

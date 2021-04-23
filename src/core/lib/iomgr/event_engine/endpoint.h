@@ -26,7 +26,8 @@
 
 struct grpc_event_engine_endpoint {
   grpc_endpoint base;
-  grpc_event_engine::experimental::EventEngine::Endpoint* endpoint;
+  std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+      endpoint;
   std::string peer_string;
   std::string local_address;
   grpc_resource_user* ru = nullptr;

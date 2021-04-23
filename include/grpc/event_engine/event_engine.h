@@ -152,18 +152,18 @@ class EventEngine {
     virtual const ResolvedAddress* GetLocalAddress() const = 0;
   };
 
-  /// Called when a new connection is established. This callback takes ownership
-  /// of the Endpoint and is responsible for its destruction.
-  using OnConnectCallback = std::function<void(absl::Status, Endpoint*)>;
+  /// Called when a new connection is established.
+  using OnConnectCallback =
+      std::function<void(absl::Status, std::unique_ptr<Endpoint>)>;
 
   /// An EventEngine Listener listens for incoming connection requests from gRPC
   /// clients and initiates request processing once connections are established.
   class Listener {
    public:
     /// A callback handle, used to cancel a callback. Called when the listener
-    /// has accepted a new client connection. This callback takes ownership of
-    /// the Endpoint and is responsible its destruction.
-    using AcceptCallback = std::function<void(absl::Status, Endpoint*)>;
+    /// has accepted a new client connection.
+    using AcceptCallback =
+        std::function<void(absl::Status, std::unique_ptr<Endpoint>)>;
     virtual ~Listener() = default;
     // TODO(hork): define return status codes
     /// Bind an address/port to this Listener. It is expected that multiple
