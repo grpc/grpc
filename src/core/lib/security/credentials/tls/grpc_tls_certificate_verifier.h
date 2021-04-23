@@ -31,35 +31,6 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
 
-namespace grpc_core {
-
-// The abstract class of a pending request.
-class PendingVerifierRequest {
- public:
-  PendingVerifierRequest(grpc_closure* on_peer_checked, tsi_peer peer);
-
-  ~PendingVerifierRequest();
-
-  // Starts the synchronous or asynchronous verification.
-  virtual void Start() = 0;
-
-  // The following functions will be invoked directly in ctor and dtor. They are
-  // exposed to be used in some unit tests.
-  static void PendingVerifierRequestInit(
-      grpc_tls_custom_verification_check_request* request);
-  static void PendingVerifierRequestDestroy(
-      grpc_tls_custom_verification_check_request* request);
-
- protected:
-  grpc_tls_custom_verification_check_request request_;
-  grpc_closure* on_peer_checked_;
-
- private:
-  tsi_peer peer_;
-};
-
-}  // namespace grpc_core
-
 // An abstraction of the verifier that all verifier subclasses should extend.
 struct grpc_tls_certificate_verifier
     : public grpc_core::RefCounted<grpc_tls_certificate_verifier> {
