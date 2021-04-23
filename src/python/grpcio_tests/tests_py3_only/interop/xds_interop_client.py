@@ -27,6 +27,7 @@ import collections
 from concurrent import futures
 
 import grpc
+from grpc_channelz.v1 import channelz
 
 from src.proto.grpc.testing import test_pb2
 from src.proto.grpc.testing import test_pb2_grpc
@@ -257,9 +258,9 @@ class _ChannelConfiguration:
     When accessing any of its members, the lock member should be held.
     """
 
-    def __init__(self, method: str, metadata: Sequence[Tuple[str,
-                                                             str]], qps: int,
-                 server: str, rpc_timeout_sec: int, print_response: bool):
+    def __init__(self, method: str, metadata: Sequence[Tuple[str, str]],
+                 qps: int, server: str, rpc_timeout_sec: int,
+                 print_response: bool, secure_mode: bool):
         # condition is signalled when a change is made to the config.
         self.condition = threading.Condition()
 
@@ -269,13 +270,21 @@ class _ChannelConfiguration:
         self.server = server
         self.rpc_timeout_sec = rpc_timeout_sec
         self.print_response = print_response
+        self.secure_mode = secure_mode
 
 
 def _run_single_channel(config: _ChannelConfiguration) -> None:
     global _global_rpc_id  # pylint: disable=global-statement
     with config.condition:
         server = config.server
-    with grpc.insecure_channel(server) as channel:
+    channel = None
+    if config.secure_mode:
+        fallback_creds = grpc.experimental.insecure_channel_credentials()
+        channel_creds = grpc.xds_channel_credentials(fallback_creds)
+        channel = grpc.secure_channel(server, channel_creds)
+    else:
+        channel = grpc.insecure_channel(server)
+    with channel:
         stub = test_pb2_grpc.TestServiceStub(channel)
         futures: Dict[int, Tuple[grpc.Future, str]] = {}
         while not _stop_event.is_set():
@@ -382,7 +391,7 @@ def _run(args: argparse.Namespace, methods: Sequence[str],
             qps = 0
         channel_config = _ChannelConfiguration(
             method, per_method_metadata.get(method, []), qps, args.server,
-            args.rpc_timeout_sec, args.print_response)
+            args.rpc_timeout_sec, args.print_response, args.secure_mode)
         channel_configs[method] = channel_config
         method_handles.append(_MethodHandle(args.num_channels, channel_config))
     _global_server = grpc.server(futures.ThreadPoolExecutor())
@@ -392,6 +401,7 @@ def _run(args: argparse.Namespace, methods: Sequence[str],
     test_pb2_grpc.add_XdsUpdateClientConfigureServiceServicer_to_server(
         _XdsUpdateClientConfigureServicer(channel_configs, args.qps),
         _global_server)
+    channelz.add_channelz_servicer(_global_server)
     _global_server.start()
     _global_server.wait_for_termination()
     for method_handle in method_handles:
@@ -420,6 +430,15 @@ def parse_rpc_arg(rpc_arg: str) -> Sequence[str]:
     return methods
 
 
+def bool_arg(arg: str) -> bool:
+    if arg.lower() in ("true", "yes", "y"):
+        return True
+    elif arg.lower() in ("false", "no", "n"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError(f"Could not parse '{arg}' as a bool.")
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description='Run Python XDS interop client.')
@@ -429,8 +448,8 @@ if __name__ == "__main__":
         type=int,
         help="The number of channels from which to send requests.")
     parser.add_argument("--print_response",
-                        default=False,
-                        action="store_true",
+                        default="False",
+                        type=bool_arg,
                         help="Write RPC response to STDOUT.")
     parser.add_argument(
         "--qps",
@@ -449,6 +468,11 @@ if __name__ == "__main__":
         default=50052,
         type=int,
         help="The port on which to expose the peer distribution stats service.")
+    parser.add_argument(
+        "--secure_mode",
+        default="False",
+        type=bool_arg,
+        help="If specified, uses xDS credentials to connect to the server.")
     parser.add_argument('--verbose',
                         help='verbose log output',
                         default=False,
