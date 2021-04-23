@@ -383,7 +383,7 @@ static void on_handshaker_service_resp_recv(void* arg,
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "ALTS handshaker on_handshaker_service_resp_recv error: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     success = false;
   }
   alts_handshaker_client_handle_response(client, success);

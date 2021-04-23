@@ -44,7 +44,8 @@ typedef struct {
 static void on_metadata_response(void* arg, grpc_error_handle error) {
   synchronizer* sync = static_cast<synchronizer*>(arg);
   if (error != GRPC_ERROR_NONE) {
-    fprintf(stderr, "Fetching token failed: %s\n", grpc_error_string(error));
+    fprintf(stderr, "Fetching token failed: %s\n",
+            grpc_error_std_string(error).c_str());
     fflush(stderr);
   } else {
     char* token;

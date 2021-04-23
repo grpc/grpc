@@ -261,7 +261,8 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
       grpc_load_file(root_cert_full_path.c_str(), 0, &root_slice);
   if (root_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Reading file %s failed: %s",
-            root_cert_full_path.c_str(), grpc_error_string(root_error));
+            root_cert_full_path.c_str(),
+            grpc_error_std_string(root_error).c_str());
     GRPC_ERROR_UNREF(root_error);
     return absl::nullopt;
   }
@@ -319,7 +320,8 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
         grpc_load_file(private_key_path.c_str(), 0, &key_slice.slice);
     if (key_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
-              private_key_path.c_str(), grpc_error_string(key_error));
+              private_key_path.c_str(),
+              grpc_error_std_string(key_error).c_str());
       GRPC_ERROR_UNREF(key_error);
       continue;
     }
@@ -327,7 +329,8 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
         grpc_load_file(identity_certificate_path.c_str(), 0, &cert_slice.slice);
     if (cert_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
-              identity_certificate_path.c_str(), grpc_error_string(cert_error));
+              identity_certificate_path.c_str(),
+              grpc_error_std_string(cert_error).c_str());
       GRPC_ERROR_UNREF(cert_error);
       continue;
     }

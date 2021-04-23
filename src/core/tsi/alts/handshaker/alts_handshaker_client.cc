@@ -451,7 +451,7 @@ static void on_status_received(void* arg, grpc_error_handle error) {
             "alts_grpc_handshaker_client:%p on_status_received "
             "status:%d details:|%s| error:|%s|",
             client, client->handshake_status_code, status_details,
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     gpr_free(status_details);
   }
   maybe_complete_tsi_next(client, true /* receive_status_finished */,

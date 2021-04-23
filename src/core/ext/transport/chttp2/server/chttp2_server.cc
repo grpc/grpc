@@ -264,7 +264,7 @@ void Chttp2ServerListener::ConfigFetcherWatcher::UpdateConnectionManager(
   if (error != GRPC_ERROR_NONE) {
     GRPC_ERROR_UNREF(error);
     gpr_log(GPR_ERROR, "Error adding port to server: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     // TODO(yashykt): We wouldn't need to assert here if we bound to the
     // port earlier during AddPort.
     GPR_ASSERT(0);
@@ -385,8 +385,8 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
   {
     MutexLock connection_lock(&self->connection_->mu_);
     if (error != GRPC_ERROR_NONE || self->connection_->shutdown_) {
-      const char* error_str = grpc_error_string(error);
-      gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str);
+      std::string error_str = grpc_error_std_string(error);
+      gpr_log(GPR_DEBUG, "Handshaking failed: %s", error_str.c_str());
       cleanup_connection = true;
       free_resource_quota = true;
       if (error == GRPC_ERROR_NONE && args->endpoint != nullptr) {
@@ -455,7 +455,7 @@ void Chttp2ServerListener::ActiveConnection::HandshakingState::OnHandshakeDone(
         } else {
           // Failed to create channel from transport. Clean up.
           gpr_log(GPR_ERROR, "Failed to create channel: %s",
-                  grpc_error_string(channel_init_err));
+                  grpc_error_std_string(channel_init_err).c_str());
           GRPC_ERROR_UNREF(channel_init_err);
           grpc_transport_destroy(transport);
           grpc_slice_buffer_destroy_internal(args->read_buffer);
@@ -735,7 +735,8 @@ void Chttp2ServerListener::OnAccept(void* arg, grpc_endpoint* tcp,
     grpc_error_handle error = GRPC_ERROR_NONE;
     args = self->args_modifier_(*args_result, &error);
     if (error != GRPC_ERROR_NONE) {
-      gpr_log(GPR_DEBUG, "Closing connection: %s", grpc_error_string(error));
+      gpr_log(GPR_DEBUG, "Closing connection: %s",
+              grpc_error_std_string(error).c_str());
       endpoint_cleanup(error);
       grpc_channel_args_destroy(args);
       return;
@@ -877,7 +878,7 @@ grpc_error_handle Chttp2ServerAddPort(Server* server, const char* addr,
           resolved->naddrs - error_list.size(), resolved->naddrs);
       error = GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(
           msg.c_str(), error_list.data(), error_list.size());
-      gpr_log(GPR_INFO, "WARNING: %s", grpc_error_string(error));
+      gpr_log(GPR_INFO, "WARNING: %s", grpc_error_std_string(error).c_str());
       GRPC_ERROR_UNREF(error);
       // we managed to bind some addresses: continue without error
     }

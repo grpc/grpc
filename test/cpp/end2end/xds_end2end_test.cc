@@ -2046,7 +2046,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             : kDefaultServiceConfigWithoutLoadReporting;
     result.service_config =
         grpc_core::ServiceConfig::Create(nullptr, service_config_json, &error);
-    ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+    ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
     ASSERT_NE(result.service_config.get(), nullptr);
     if (response_generator == nullptr) {
       response_generator = response_generator_.get();
@@ -2078,7 +2078,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       result.service_config = grpc_core::ServiceConfig::Create(
           nullptr, service_config_json, &error);
       ASSERT_NE(result.service_config.get(), nullptr);
-      ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+      ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
     }
     if (expected_targets != nullptr) {
       grpc_arg expected_targets_arg = grpc_channel_arg_string_create(
