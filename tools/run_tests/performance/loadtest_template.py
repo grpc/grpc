@@ -125,7 +125,7 @@ def loadtest_template(
 def template_dumper(header_comment: str) -> Type[yaml.Dumper]:
     """Returns a custom dumper to dump templates in the expected format."""
 
-    class TemplateDumper(yaml.Dumper):
+    class TemplateDumper(yaml.SafeDumper):
 
         def expect_stream_start(self):
             super().expect_stream_start()
@@ -199,7 +199,8 @@ def main() -> None:
     with open(args.output, 'w') if args.output else sys.stdout as f:
         yaml.dump(template,
                   stream=f,
-                  Dumper=template_dumper(TEMPLATE_FILE_HEADER_COMMENT.strip()))
+                  Dumper=template_dumper(TEMPLATE_FILE_HEADER_COMMENT.strip()),
+                  default_flow_style=False)
 
 
 if __name__ == '__main__':
