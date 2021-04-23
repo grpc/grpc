@@ -71,6 +71,7 @@ void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
     gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->endpoint, str);
   }
   grpc_resource_user_shutdown(eeep->ru);
+  eeep->endpoint->Shutdown();
 }
 
 void endpoint_destroy(grpc_endpoint* ep) {
@@ -90,9 +91,10 @@ absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
 }
 
 absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
-  // TODO(hork): need to convert ResolvedAddress <-> String
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
-  return ResolvedAddressToURI(eeep->endpoint->GetLocalAddress());
+  const EventEngine::ResolvedAddress* addr = eeep->endpoint->GetLocalAddress();
+  GPR_ASSERT(addr != nullptr);
+  return ResolvedAddressToURI(*addr);
 }
 
 int endpoint_get_fd(grpc_endpoint* /* ep */) { return -1; }

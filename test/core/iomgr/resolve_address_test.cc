@@ -17,7 +17,6 @@
  */
 
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/event_engine/sockaddr.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -29,6 +28,7 @@
 #include <string.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
+#include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/executor.h"

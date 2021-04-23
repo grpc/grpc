@@ -55,8 +55,9 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
   return [&](absl::Status status, EventEngine::Endpoint* endpoint) {
     grpc_endpoint_out->endpoint = endpoint;
-    grpc_endpoint_out->local_address =
-        ResolvedAddressToURI(endpoint->GetLocalAddress());
+    const EventEngine::ResolvedAddress* addr = endpoint->GetLocalAddress();
+    GPR_ASSERT(addr != nullptr);
+    grpc_endpoint_out->local_address = ResolvedAddressToURI(*addr);
     // TODO(hork): Do we need to add grpc_error to closure's error data?
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));

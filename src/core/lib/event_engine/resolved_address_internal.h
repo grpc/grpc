@@ -20,18 +20,10 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/iomgr/resolve_address.h"
-
 namespace grpc_event_engine {
 namespace experimental {
 
-std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress* addr);
-
-EventEngine::ResolvedAddress CreateResolvedAddress(
-    const grpc_resolved_address* addr);
-
-grpc_resolved_address CreateGRPCResolvedAddress(
-    const EventEngine::ResolvedAddress* ra);
+std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

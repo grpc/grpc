@@ -14,8 +14,6 @@
 #ifndef GRPC_EVENT_ENGINE_PORT_H
 #define GRPC_EVENT_ENGINE_PORT_H
 
-#ifdef GRPC_EVENT_ENGINE_TEST
-
 #include <grpc/support/port_platform.h>
 
 // Platform-specific sockaddr includes
@@ -40,5 +38,4 @@
 #error UNKNOWN PLATFORM
 #endif
 
-#endif
 #endif  // GRPC_EVENT_ENGINE_PORT_H

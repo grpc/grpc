@@ -22,8 +22,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "test/cpp/naming/dns_test_util.h"
 #include "src/core/lib/event_engine/sockaddr.h"
+#include "test/cpp/naming/dns_test_util.h"
 
 #ifdef GPR_WINDOWS
 #include "src/core/lib/iomgr/sockaddr_windows.h"

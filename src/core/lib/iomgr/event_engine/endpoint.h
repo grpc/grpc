@@ -30,7 +30,6 @@ struct grpc_event_engine_endpoint {
   std::string peer_string;
   std::string local_address;
   grpc_resource_user* ru = nullptr;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine;
 };
 
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
