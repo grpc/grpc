@@ -26,6 +26,11 @@ GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
   }
 }
 
+void GrpcAuthorizationEngine::SetPoliciesForTesting(
+    std::map<std::string, std::unique_ptr<AuthorizationMatcher>> policies) {
+  policies_ = std::move(policies);
+}
+
 AuthorizationEngine::Decision GrpcAuthorizationEngine::Evaluate(
     const EvaluateArgs& args) const {
   Decision decision;
@@ -37,13 +42,9 @@ AuthorizationEngine::Decision GrpcAuthorizationEngine::Evaluate(
       break;
     }
   }
-  if (action_ == Rbac::Action::kDeny) {
-    decision.type = matches ? Decision::DecisionType::kDeny
-                            : Decision::DecisionType::kAllow;
-  } else {
-    decision.type = matches ? Decision::DecisionType::kAllow
-                            : Decision::DecisionType::kDeny;
-  }
+  decision.type = (matches == (action_ == Rbac::Action::kAllow))
+                      ? Decision::DecisionType::kAllow
+                      : Decision::DecisionType::kDeny;
   return decision;
 }
 
