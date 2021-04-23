@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 
@@ -29,6 +30,7 @@ void grpc_set_timer_impl(grpc_timer_vtable* vtable) {
 
 void grpc_timer_init(grpc_timer* timer, grpc_millis deadline,
                      grpc_closure* closure) {
+  grpc_core::ExecCtx::Get()->InvalidateNow();
   grpc_timer_impl->init(timer, deadline, closure);
 }
 
