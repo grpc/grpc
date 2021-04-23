@@ -41,6 +41,114 @@ grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
                                                         "error_refcount");
 grpc_core::DebugOnlyTraceFlag grpc_trace_closure(false, "closure");
 
+static gpr_atm g_error_creation_allowed = true;
+
+void grpc_disable_error_creation() {
+  gpr_atm_no_barrier_store(&g_error_creation_allowed, false);
+}
+
+void grpc_enable_error_creation() {
+  gpr_atm_no_barrier_store(&g_error_creation_allowed, true);
+}
+
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+
+absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
+                                const grpc_core::DebugLocation& location,
+                                size_t children_count, absl::Status* children) {
+  absl::Status s = StatusCreate(code, msg, location, {});
+  for (size_t i = 0; i < children_count; ++i) {
+    if (!children[i].ok()) {
+      StatusAddChild(&s, children[i]);
+    }
+  }
+  return s;
+}
+
+std::string grpc_error_std_string(const absl::Status& error) {
+  return grpc_core::StatusToString(error);
+}
+
+absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
+                           const char* call_name) {
+  absl::Status s =
+      StatusCreate(absl::StatusCode::kUnknown, "OS Error", location, {});
+  grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::ERRNO, err);
+  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::OS_ERROR,
+                          strerror(err));
+  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::SYSCALL, call_name);
+  return s;
+}
+
+#ifdef GPR_WINDOWS
+absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
+                            const char* call_name) {
+  char* utf8_message = gpr_format_message(err);
+  absl::Status s =
+      StatusCreate(absl::StatusCode::kUnknown, "WSA Error", location, {});
+  StatusSetInt(&s, StatusIntProperty::WSA_ERROR, err);
+  StatusSetStr(&s, StatusStrProperty::OS_ERROR, utf8_message);
+  StatusSetStr(&s, StatusStrProperty::SYSCALL, call_name);
+}
+#endif
+
+grpc_error_handle grpc_error_set_int(grpc_error_handle src,
+                                     grpc_error_ints which, intptr_t value) {
+  grpc_core::StatusSetInt(
+      &src, static_cast<grpc_core::StatusIntProperty>(which), value);
+  return src;
+}
+
+bool grpc_error_get_int(grpc_error_handle error, grpc_error_ints which,
+                        intptr_t* p) {
+  absl::optional<intptr_t> value = grpc_core::StatusGetInt(
+      error, static_cast<grpc_core::StatusIntProperty>(which));
+  if (value.has_value()) {
+    *p = *value;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+grpc_error_handle grpc_error_set_str(grpc_error_handle src,
+                                     grpc_error_strs which,
+                                     const grpc_slice& str) {
+  grpc_core::StatusSetStr(
+      &src, static_cast<grpc_core::StatusStrProperty>(which),
+      std::string(reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(str)),
+                  GRPC_SLICE_LENGTH(str)));
+  return src;
+}
+
+bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
+                        grpc_slice* s) {
+  absl::optional<std::string> value = grpc_core::StatusGetStr(
+      error, static_cast<grpc_core::StatusStrProperty>(which));
+  if (value.has_value()) {
+    *s = grpc_slice_from_copied_buffer(value->c_str(), value->size());
+    return true;
+  } else {
+    return false;
+  }
+}
+
+grpc_error_handle grpc_error_add_child(grpc_error_handle src,
+                                       grpc_error_handle child) {
+  grpc_core::StatusAddChild(&src, child);
+  return src;
+}
+
+bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
+                    int line) {
+  GPR_DEBUG_ASSERT(error != GRPC_ERROR_NONE);
+  gpr_log(file, line, GPR_LOG_SEVERITY_ERROR, "%s: %s", what,
+          grpc_core::StatusToString(error).c_str());
+  return false;
+}
+
+#else  // GRPC_ERROR_IS_ABSEIL_STATUS
+
 static const char* error_int_name(grpc_error_ints key) {
   switch (key) {
     case GRPC_ERROR_INT_ERRNO:
@@ -303,16 +411,6 @@ static void internal_add_error(grpc_error_handle* err,
 
 // It is very common to include and extra int and string in an error
 #define SURPLUS_CAPACITY (2 * SLOTS_PER_INT + SLOTS_PER_TIME)
-
-static gpr_atm g_error_creation_allowed = true;
-
-void grpc_disable_error_creation() {
-  gpr_atm_no_barrier_store(&g_error_creation_allowed, false);
-}
-
-void grpc_enable_error_creation() {
-  gpr_atm_no_barrier_store(&g_error_creation_allowed, true);
-}
 
 grpc_error_handle grpc_error_create(const char* file, int line,
                                     const grpc_slice& desc,
@@ -821,3 +919,5 @@ bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
   GRPC_ERROR_UNREF(error);
   return false;
 }
+
+#endif  // GRPC_ERROR_IS_ABSEIL_STATUS

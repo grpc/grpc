@@ -30,15 +30,24 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/status_helper.h"
+
+#include "absl/status/status.h"
 
 /// Opaque representation of an error.
 /// See https://github.com/grpc/grpc/blob/master/doc/core/grpc-error.md for a
 /// full write up of this object.
 
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+
+typedef absl::Status grpc_error_handle;
+
+#else  // GRPC_ERROR_IS_ABSEIL_STATUS
+
 typedef struct grpc_error grpc_error;
 typedef grpc_error* grpc_error_handle;
 
-extern grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount;
+#endif  // GRPC_ERROR_IS_ABSEIL_STATUS
 
 typedef enum {
   /// 'errno' from the operating system
@@ -114,6 +123,84 @@ typedef enum {
   GRPC_ERROR_TIME_MAX,
 } grpc_error_times;
 
+// DEPRECATED: Use grpc_error_std_string instead
+const char* grpc_error_string(grpc_error_handle error);
+std::string grpc_error_std_string(grpc_error_handle error);
+
+// debug only toggles that allow for a sanity to check that ensures we will
+// never create any errors in the per-RPC hotpath.
+void grpc_disable_error_creation();
+void grpc_enable_error_creation();
+
+#ifdef GRPC_ERROR_IS_ABSEIL_STATUS
+
+#define GRPC_ERROR_NONE absl::OkStatus()
+#define GRPC_ERROR_OOM absl::Status(absl::ResourceExhaustedError)
+#define GRPC_ERROR_CANCELLED absl::CancelledError()
+
+#define GRPC_ERROR_REF(err) (err)
+#define GRPC_ERROR_UNREF(err)
+
+#define GRPC_ERROR_CREATE_FROM_STATIC_STRING(desc) \
+  StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
+#define GRPC_ERROR_CREATE_FROM_COPIED_STRING(desc) \
+  StatusCreate(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
+#define GRPC_ERROR_CREATE_FROM_STRING_VIEW(desc) \
+  StatusCreate(ababsl::StatusCode::kUnknown, desc, DEBUG_LOCATION, {})
+
+absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
+                                const grpc_core::DebugLocation& location,
+                                size_t children_count,
+                                absl::Status* children) GRPC_MUST_USE_RESULT;
+
+// Create an error that references some other errors. This function adds a
+// reference to each error in errs - it does not consume an existing reference
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(desc, errs, count)   \
+  grpc_status_create(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, count, \
+                     errs)
+#define GRPC_ERROR_CREATE_REFERENCING_FROM_COPIED_STRING(desc, errs, count)   \
+  grpc_status_create(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION, count, \
+                     errs)
+
+// Consumes all the errors in the vector and forms a referencing error from
+// them. If the vector is empty, return GRPC_ERROR_NONE.
+template <typename VectorType>
+static absl::Status grpc_status_create_from_vector(
+    const grpc_core::DebugLocation& location, const char* desc,
+    VectorType* error_list) {
+  absl::Status error = GRPC_ERROR_NONE;
+  if (error_list->size() != 0) {
+    error = grpc_status_create(absl::StatusCode::kUnknown, desc, DEBUG_LOCATION,
+                               error_list->size(), error_list->data());
+    error_list->clear();
+  }
+  return error;
+}
+
+#define GRPC_ERROR_CREATE_FROM_VECTOR(desc, error_list) \
+  grpc_status_create_from_vector(DEBUG_LOCATION, desc, error_list)
+
+absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
+                           const char* call_name) GRPC_MUST_USE_RESULT;
+
+inline absl::Status grpc_assert_never_ok(absl::Status error) {
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  return error;
+}
+
+/// create an error associated with errno!=0 (an 'operating system' error)
+#define GRPC_OS_ERROR(err, call_name) \
+  grpc_assert_never_ok(grpc_os_error(DEBUG_LOCATION, err, call_name))
+
+absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
+                            const char* call_name) GRPC_MUST_USE_RESULT;
+
+/// windows only: create an error associated with WSAGetLastError()!=0
+#define GRPC_WSA_ERROR(err, call_name) \
+  grpc_wsa_error(DEBUG_LOCATION, err, call_name)
+
+#else  // GRPC_ERROR_IS_ABSEIL_STATUS
+
 /// The following "special" errors can be propagated without allocating memory.
 /// They are always even so that other code (particularly combiner locks,
 /// polling engines) can safely use the lower bit for themselves.
@@ -129,14 +216,36 @@ inline bool grpc_error_is_special(grpc_error_handle err) {
   return err <= GRPC_ERROR_SPECIAL_MAX;
 }
 
-// debug only toggles that allow for a sanity to check that ensures we will
-// never create any errors in the per-RPC hotpath.
-void grpc_disable_error_creation();
-void grpc_enable_error_creation();
-
-// DEPRECATED: Use grpc_error_std_string instead
-const char* grpc_error_string(grpc_error_handle error);
-std::string grpc_error_std_string(grpc_error_handle error);
+#ifndef NDEBUG
+grpc_error_handle grpc_error_do_ref(grpc_error_handle err, const char* file,
+                                    int line);
+void grpc_error_do_unref(grpc_error_handle err, const char* file, int line);
+inline grpc_error_handle grpc_error_ref(grpc_error_handle err, const char* file,
+                                        int line) {
+  if (grpc_error_is_special(err)) return err;
+  return grpc_error_do_ref(err, file, line);
+}
+inline void grpc_error_unref(grpc_error_handle err, const char* file,
+                             int line) {
+  if (grpc_error_is_special(err)) return;
+  grpc_error_do_unref(err, file, line);
+}
+#define GRPC_ERROR_REF(err) grpc_error_ref(err, __FILE__, __LINE__)
+#define GRPC_ERROR_UNREF(err) grpc_error_unref(err, __FILE__, __LINE__)
+#else
+grpc_error_handle grpc_error_do_ref(grpc_error_handle err);
+void grpc_error_do_unref(grpc_error_handle err);
+inline grpc_error_handle grpc_error_ref(grpc_error_handle err) {
+  if (grpc_error_is_special(err)) return err;
+  return grpc_error_do_ref(err);
+}
+inline void grpc_error_unref(grpc_error_handle err) {
+  if (grpc_error_is_special(err)) return;
+  grpc_error_do_unref(err);
+}
+#define GRPC_ERROR_REF(err) grpc_error_ref(err)
+#define GRPC_ERROR_UNREF(err) grpc_error_unref(err)
+#endif
 
 /// Create an error - but use GRPC_ERROR_CREATE instead
 grpc_error_handle grpc_error_create(const char* file, int line,
@@ -174,37 +283,6 @@ grpc_error_handle grpc_error_create(const char* file, int line,
 #define GRPC_ERROR_CREATE_FROM_VECTOR(desc, error_list) \
   grpc_error_create_from_vector(__FILE__, __LINE__, desc, error_list)
 
-#ifndef NDEBUG
-grpc_error_handle grpc_error_do_ref(grpc_error_handle err, const char* file,
-                                    int line);
-void grpc_error_do_unref(grpc_error_handle err, const char* file, int line);
-inline grpc_error_handle grpc_error_ref(grpc_error_handle err, const char* file,
-                                        int line) {
-  if (grpc_error_is_special(err)) return err;
-  return grpc_error_do_ref(err, file, line);
-}
-inline void grpc_error_unref(grpc_error_handle err, const char* file,
-                             int line) {
-  if (grpc_error_is_special(err)) return;
-  grpc_error_do_unref(err, file, line);
-}
-#define GRPC_ERROR_REF(err) grpc_error_ref(err, __FILE__, __LINE__)
-#define GRPC_ERROR_UNREF(err) grpc_error_unref(err, __FILE__, __LINE__)
-#else
-grpc_error_handle grpc_error_do_ref(grpc_error_handle err);
-void grpc_error_do_unref(grpc_error_handle err);
-inline grpc_error_handle grpc_error_ref(grpc_error_handle err) {
-  if (grpc_error_is_special(err)) return err;
-  return grpc_error_do_ref(err);
-}
-inline void grpc_error_unref(grpc_error_handle err) {
-  if (grpc_error_is_special(err)) return;
-  grpc_error_do_unref(err);
-}
-#define GRPC_ERROR_REF(err) grpc_error_ref(err)
-#define GRPC_ERROR_UNREF(err) grpc_error_unref(err)
-#endif
-
 // Consumes all the errors in the vector and forms a referencing error from
 // them. If the vector is empty, return GRPC_ERROR_NONE.
 template <typename VectorType>
@@ -224,6 +302,25 @@ static grpc_error_handle grpc_error_create_from_vector(const char* file,
   }
   return error;
 }
+
+grpc_error_handle grpc_os_error(const char* file, int line, int err,
+                                const char* call_name) GRPC_MUST_USE_RESULT;
+
+inline grpc_error_handle grpc_assert_never_ok(grpc_error_handle error) {
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  return error;
+}
+
+/// create an error associated with errno!=0 (an 'operating system' error)
+#define GRPC_OS_ERROR(err, call_name) \
+  grpc_assert_never_ok(grpc_os_error(__FILE__, __LINE__, err, call_name))
+grpc_error_handle grpc_wsa_error(const char* file, int line, int err,
+                                 const char* call_name) GRPC_MUST_USE_RESULT;
+/// windows only: create an error associated with WSAGetLastError()!=0
+#define GRPC_WSA_ERROR(err, call_name) \
+  grpc_wsa_error(__FILE__, __LINE__, err, call_name)
+
+#endif  // GRPC_ERROR_IS_ABSEIL_STATUS
 
 grpc_error_handle grpc_error_set_int(grpc_error_handle src,
                                      grpc_error_ints which,
@@ -255,23 +352,6 @@ bool grpc_error_get_str(grpc_error_handle error, grpc_error_strs which,
 /// received to the error in this case.)
 grpc_error_handle grpc_error_add_child(
     grpc_error_handle src, grpc_error_handle child) GRPC_MUST_USE_RESULT;
-
-grpc_error_handle grpc_os_error(const char* file, int line, int err,
-                                const char* call_name) GRPC_MUST_USE_RESULT;
-
-inline grpc_error_handle grpc_assert_never_ok(grpc_error_handle error) {
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
-  return error;
-}
-
-/// create an error associated with errno!=0 (an 'operating system' error)
-#define GRPC_OS_ERROR(err, call_name) \
-  grpc_assert_never_ok(grpc_os_error(__FILE__, __LINE__, err, call_name))
-grpc_error_handle grpc_wsa_error(const char* file, int line, int err,
-                                 const char* call_name) GRPC_MUST_USE_RESULT;
-/// windows only: create an error associated with WSAGetLastError()!=0
-#define GRPC_WSA_ERROR(err, call_name) \
-  grpc_wsa_error(__FILE__, __LINE__, err, call_name)
 
 bool grpc_log_error(const char* what, grpc_error_handle error, const char* file,
                     int line);
