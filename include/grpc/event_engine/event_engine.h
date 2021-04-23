@@ -145,6 +145,7 @@ class EventEngine {
                        absl::Time deadline) = 0;
     // TODO(hork): define status codes for the callback
     // TODO(hork): define cleanup operations, lifetimes, responsibilities.
+    /// Shut down
     virtual void Close(Callback on_close) = 0;
     /// These methods return an address in the format described in DNSResolver.
     /// The returned values are owned by the Endpoint and are expected to remain
@@ -288,12 +289,6 @@ class EventEngine {
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
 absl::Status SetDefaultEventEngine(std::shared_ptr<EventEngine> engine);
-
-// Compulsory virtual destructor definitions.
-EventEngine::~EventEngine(){};
-EventEngine::DNSResolver::~DNSResolver(){};
-EventEngine::Endpoint::~Endpoint(){};
-EventEngine::Listener::~Listener(){};
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

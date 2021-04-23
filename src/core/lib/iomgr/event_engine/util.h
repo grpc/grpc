@@ -26,7 +26,6 @@
 
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
-#include "src/core/lib/iomgr/resolve_address.h"
 
 namespace grpc_event_engine {
 namespace experimental {

@@ -15,7 +15,6 @@
 
 #if defined(GRPC_EVENT_ENGINE_TEST)
 
-#include <arpa/inet.h>
 #include <functional>
 
 #include <grpc/event_engine/event_engine.h>
@@ -30,23 +29,6 @@
 
 grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
     false, "polling"); /* Disabled by default */
-
-uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
-
-uint16_t grpc_ntohs(uint16_t netshort) { return ntohs(netshort); }
-
-uint32_t grpc_htonl(uint32_t hostlong) { return htonl(hostlong); }
-
-uint32_t grpc_ntohl(uint32_t netlong) { return ntohl(netlong); }
-
-int grpc_inet_pton(int af, const char* src, void* dst) {
-  return inet_pton(af, src, dst);
-}
-
-const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
-  inet_ntop(af, src, dst, size);
-  return dst;
-}
 
 namespace grpc_event_engine {
 namespace experimental {

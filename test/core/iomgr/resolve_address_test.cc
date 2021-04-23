@@ -17,6 +17,7 @@
  */
 
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/event_engine/sockaddr.h"
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

@@ -68,7 +68,7 @@ void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     const char* str = grpc_error_string(why);
-    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", tcp->socket, str);
+    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->endpoint, str);
   }
   grpc_resource_user_shutdown(eeep->ru);
 }

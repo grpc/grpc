@@ -15,36 +15,16 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/event_engine/resolved_address_internal.h"
-
 #include <grpc/event_engine/event_engine.h>
-
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress* addr) {
-  auto gra = CreateGRPCResolvedAddress(addr);
-  return grpc_sockaddr_to_uri(&gra);
-}
-
-EventEngine::ResolvedAddress CreateResolvedAddress(
-    const grpc_resolved_address* addr) {
-  GPR_ASSERT(addr != nullptr);
-  return EventEngine::ResolvedAddress(
-      reinterpret_cast<const sockaddr*>(addr->addr), addr->len);
-}
-
-grpc_resolved_address CreateGRPCResolvedAddress(
-    const EventEngine::ResolvedAddress* ra) {
-  GPR_ASSERT(ra != nullptr);
-  grpc_resolved_address grpc_addr;
-  memcpy(grpc_addr.addr, ra->address(), ra->size());
-  grpc_addr.len = ra->size();
-  return grpc_addr;
-}
+// Compulsory virtual destructor definitions.
+EventEngine::~EventEngine(){};
+EventEngine::DNSResolver::~DNSResolver(){};
+EventEngine::Endpoint::~Endpoint(){};
+EventEngine::Listener::~Listener(){};
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

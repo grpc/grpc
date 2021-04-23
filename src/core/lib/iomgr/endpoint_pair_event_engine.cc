@@ -23,8 +23,8 @@
 
 #include "src/core/lib/iomgr/endpoint_pair.h"
 
-grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(const char* name,
-                                                   grpc_channel_args* args) {
+grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
+    const char* /* name */, grpc_channel_args* /* args */) {
   // TODO(hork): determine what's needed here in the long run
   GPR_ASSERT(
       false &&

@@ -228,12 +228,14 @@ struct grpc_fd {
   int fd;
 };
 
-grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
+grpc_fd* grpc_fd_create(int /* fd */, const char* /* name */,
+                        bool /* track_err */) {
   return nullptr;
 }
 
 grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str) {
+    grpc_fd* /* fd */, const grpc_channel_args* /* channel_args */,
+    const char* /* addr_str */) {
   return nullptr;
 }
 
