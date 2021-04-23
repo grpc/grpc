@@ -31,7 +31,6 @@ namespace {
 using ::grpc_event_engine::experimental::ChannelArgs;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 }  // namespace
@@ -60,7 +59,6 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
         grpc_endpoint_out->endpoint->GetLocalAddress();
     GPR_ASSERT(addr != nullptr);
     grpc_endpoint_out->local_address = ResolvedAddressToURI(*addr);
-    // TODO(hork): Do we need to add grpc_error to closure's error data?
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));
   };
@@ -74,13 +72,7 @@ EventEngine::Listener::AcceptCallback GrpcClosureToAcceptCallback(
   };
 }
 
-/// Argument ownership stories:
-/// * closure: ?
-/// * endpoint: owned by caller
-/// * interested_parties: owned by caller
-/// * channel_args: owned by caller
-/// * addr: owned by caller
-/// * deadline: copied
+/// Note: this method does not take ownership of any pointer arguments.
 void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                  grpc_pollset_set* /* interested_parties */,
                  const grpc_channel_args* channel_args,
@@ -96,7 +88,6 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                                   addr->len);
   absl::Time ee_deadline = grpc_core::ToAbslTime(
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
-  // TODO(hork): retrieve EventEngine from Endpoint or from channel_args
   std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
   // TODO(hork): Convert channel_args to ChannelArgs
   ChannelArgs ca;
@@ -108,7 +99,6 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
 grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                               const grpc_channel_args* args,
                               grpc_tcp_server** server) {
-  // TODO(hork): retrieve EventEngine from Endpoint or from channel_args
   std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
   // TODO(hork): Convert channel_args to ChannelArgs
   ChannelArgs ca;

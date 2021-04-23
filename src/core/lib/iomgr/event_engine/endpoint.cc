@@ -23,6 +23,7 @@
 #include <grpc/support/time.h>
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -123,16 +124,11 @@ grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
   endpoint->peer_string = std::string(peer_string);
   endpoint->local_address = "";
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create(nullptr);
-  if (channel_args != nullptr) {
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        grpc_resource_quota_unref_internal(resource_quota);
-        resource_quota =
-            grpc_resource_quota_ref_internal(static_cast<grpc_resource_quota*>(
-                channel_args->args[i].value.pointer.p));
-      }
-    }
+  grpc_resource_quota* resource_quota =
+      grpc_channel_args_find_pointer<grpc_resource_quota>(
+          channel_args, GRPC_ARG_RESOURCE_QUOTA);
+  if (resource_quota == nullptr) {
+    resource_quota = grpc_resource_quota_create(nullptr);
   }
   endpoint->ru =
       grpc_resource_user_create(resource_quota, endpoint->peer_string.c_str());

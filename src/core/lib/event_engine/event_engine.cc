@@ -11,19 +11,33 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
-#define GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
-
 #include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/event_engine.h>
+#include <grpc/event_engine/port.h>
+#include <grpc/support/log.h>
+
+#include "src/core/lib/event_engine/sockaddr.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr);
+std::shared_ptr<EventEngine> GetDefaultEventEngine() {
+  // TODO(nnoble): instantiate a singleton LibuvEventEngine
+  return nullptr;
+}
+
+EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
+                                              socklen_t size) {
+  GPR_ASSERT(size <= sizeof(address_));
+  memcpy(&address_, address, size);
+}
+
+const struct sockaddr* EventEngine::ResolvedAddress::address() const {
+  return reinterpret_cast<const struct sockaddr*>(address_);
+}
+
+socklen_t EventEngine::ResolvedAddress::size() const { return size_; }
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-
-#endif  // GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H

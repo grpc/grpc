@@ -24,18 +24,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
-                                              socklen_t size) {
-  GPR_ASSERT(size <= sizeof(address_));
-  memcpy(&address_, address, size);
-}
-
-const struct sockaddr* EventEngine::ResolvedAddress::address() const {
-  return reinterpret_cast<const struct sockaddr*>(address_);
-}
-
-socklen_t EventEngine::ResolvedAddress::size() const { return size_; }
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 

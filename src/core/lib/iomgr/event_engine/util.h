@@ -27,13 +27,8 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
 
-namespace grpc_event_engine {
-namespace experimental {
-
-EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure);
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
+grpc_event_engine::experimental::EventEngine::Callback GrpcClosureToCallback(
+    grpc_closure* closure);
 
 #endif
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_UTIL_H

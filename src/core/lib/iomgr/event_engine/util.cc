@@ -13,8 +13,6 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
 #include <functional>
 
 #include <grpc/event_engine/event_engine.h>
@@ -30,16 +28,9 @@
 grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
     false, "polling"); /* Disabled by default */
 
-namespace grpc_event_engine {
-namespace experimental {
-
-std::shared_ptr<EventEngine> GetDefaultEventEngine() {
-  // TODO(nnoble): instantiate a singleton LibuvEventEngine
-  return nullptr;
-}
-
 // grpc_closure to std::function conversions for an EventEngine-based iomgr
-EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure) {
+grpc_event_engine::experimental::EventEngine::Callback GrpcClosureToCallback(
+    grpc_closure* closure) {
   return [&](absl::Status status) {
     // TODO(hork): Do we need to add grpc_error to closure's error data?
     // if (!status.ok()) {
@@ -51,8 +42,3 @@ EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure) {
                             absl_status_to_grpc_error(status));
   };
 }
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
-
-#endif  // GRPC_EVENT_ENGINE_TEST
