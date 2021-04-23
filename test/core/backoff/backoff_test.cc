@@ -45,6 +45,7 @@ TEST(BackOffTest, ConstantBackOff) {
       .set_max_backoff(max_backoff);
   BackOff backoff(options);
 
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(2000);
   grpc_millis next_attempt_start_time = backoff.NextAttemptTime();
   EXPECT_EQ(next_attempt_start_time - grpc_core::ExecCtx::Get()->Now(),
             initial_backoff);
@@ -67,6 +68,7 @@ TEST(BackOffTest, MinConnect) {
       .set_jitter(jitter)
       .set_max_backoff(max_backoff);
   BackOff backoff(options);
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(2000);
   grpc_millis next = backoff.NextAttemptTime();
   EXPECT_EQ(next - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
 }
@@ -141,6 +143,7 @@ TEST(BackOffTest, JitterBackOff) {
   backoff.SetRandomSeed(0);  // force consistent PRNG
 
   grpc_core::ExecCtx exec_ctx;
+  grpc_core::ExecCtx::Get()->TestOnlySetNow(2000);
   grpc_millis next = backoff.NextAttemptTime();
   EXPECT_EQ(next - grpc_core::ExecCtx::Get()->Now(), initial_backoff);
 
