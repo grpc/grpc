@@ -23,11 +23,12 @@ cdef extern from "grpc/impl/codegen/slice.h":
 cdef extern from "src/core/lib/iomgr/error.h":
   struct grpc_error:
     pass
+  ctypedef grpc_error* grpc_error_handle
 
 # TODO(https://github.com/grpc/grpc/issues/20135) Change the filename
 # for something more meaningful.
 cdef extern from "src/core/lib/iomgr/python_util.h":
-  grpc_error* grpc_socket_error(char* error) 
+  grpc_error_handle grpc_socket_error(char* error) 
   char* grpc_slice_buffer_start(grpc_slice_buffer* buffer, int i)
   int grpc_slice_buffer_length(grpc_slice_buffer* buffer, int i)
 
@@ -49,12 +50,12 @@ cdef extern from "src/core/lib/iomgr/resolve_address_custom.h":
     pass
 
   struct grpc_custom_resolver_vtable:
-    grpc_error* (*resolve)(const char* host, const char* port, grpc_resolved_addresses** res);
+    grpc_error_handle (*resolve)(const char* host, const char* port, grpc_resolved_addresses** res);
     void (*resolve_async)(grpc_custom_resolver* resolver, const char* host, const char* port);
 
   void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                     grpc_resolved_addresses* result,
-                                    grpc_error* error);
+                                    grpc_error_handle error);
 
 cdef extern from "src/core/lib/iomgr/tcp_custom.h":
   cdef int GRPC_CUSTOM_SOCKET_OPT_SO_REUSEPORT
@@ -63,18 +64,18 @@ cdef extern from "src/core/lib/iomgr/tcp_custom.h":
     void* impl
     # We don't care about the rest of the fields
   ctypedef void (*grpc_custom_connect_callback)(grpc_custom_socket* socket,
-                                             grpc_error* error)
+                                             grpc_error_handle error)
   ctypedef void (*grpc_custom_write_callback)(grpc_custom_socket* socket,
-                                           grpc_error* error)
+                                           grpc_error_handle error)
   ctypedef void (*grpc_custom_read_callback)(grpc_custom_socket* socket,
-                                          size_t nread, grpc_error* error)
+                                          size_t nread, grpc_error_handle error)
   ctypedef void (*grpc_custom_accept_callback)(grpc_custom_socket* socket,
                                             grpc_custom_socket* client,
-                                            grpc_error* error)
+                                            grpc_error_handle error)
   ctypedef void (*grpc_custom_close_callback)(grpc_custom_socket* socket)
 
   struct grpc_socket_vtable:
-      grpc_error* (*init)(grpc_custom_socket* socket, int domain);
+      grpc_error_handle (*init)(grpc_custom_socket* socket, int domain);
       void (*connect)(grpc_custom_socket* socket, const grpc_sockaddr* addr,
                       size_t len, grpc_custom_connect_callback cb);
       void (*destroy)(grpc_custom_socket* socket);
@@ -84,13 +85,13 @@ cdef extern from "src/core/lib/iomgr/tcp_custom.h":
                     grpc_custom_write_callback cb);
       void (*read)(grpc_custom_socket* socket, char* buffer, size_t length,
                    grpc_custom_read_callback cb);
-      grpc_error* (*getpeername)(grpc_custom_socket* socket,
+      grpc_error_handle (*getpeername)(grpc_custom_socket* socket,
                                  const grpc_sockaddr* addr, int* len);
-      grpc_error* (*getsockname)(grpc_custom_socket* socket,
+      grpc_error_handle (*getsockname)(grpc_custom_socket* socket,
                              const grpc_sockaddr* addr, int* len);
-      grpc_error* (*bind)(grpc_custom_socket* socket, const grpc_sockaddr* addr,
+      grpc_error_handle (*bind)(grpc_custom_socket* socket, const grpc_sockaddr* addr,
                           size_t len, int flags);
-      grpc_error* (*listen)(grpc_custom_socket* socket);
+      grpc_error_handle (*listen)(grpc_custom_socket* socket);
       void (*accept)(grpc_custom_socket* socket, grpc_custom_socket* client,
                      grpc_custom_accept_callback cb);
 
@@ -104,7 +105,7 @@ cdef extern from "src/core/lib/iomgr/timer_custom.h":
     void (*start)(grpc_custom_timer* t);
     void (*stop)(grpc_custom_timer* t);
 
-  void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error* error);
+  void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error_handle error);
 
 cdef extern from "src/core/lib/iomgr/pollset_custom.h":
   struct grpc_custom_poller_vtable:
@@ -123,7 +124,7 @@ cdef extern from "src/core/lib/iomgr/sockaddr_utils.h":
   int grpc_sockaddr_get_port(const grpc_resolved_address *addr);
   cppstring grpc_sockaddr_to_string(const grpc_resolved_address *addr,
                                     bool_t normalize);
-  grpc_error* grpc_string_to_sockaddr(grpc_resolved_address *out, char* addr, int port);
+  grpc_error_handle grpc_string_to_sockaddr(grpc_resolved_address *out, char* addr, int port);
   int grpc_sockaddr_set_port(const grpc_resolved_address *resolved_addr,
                              int port)
   const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* resolved_addr)

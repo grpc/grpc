@@ -98,26 +98,27 @@ struct grpc_tcp_server {
 
 /* If successful, add a listener to \a s for \a addr, set \a dsmode for the
    socket, and return the \a listener. */
-grpc_error* grpc_tcp_server_add_addr(grpc_tcp_server* s,
-                                     const grpc_resolved_address* addr,
-                                     unsigned port_index, unsigned fd_index,
-                                     grpc_dualstack_mode* dsmode,
-                                     grpc_tcp_listener** listener);
+grpc_error_handle grpc_tcp_server_add_addr(grpc_tcp_server* s,
+                                           const grpc_resolved_address* addr,
+                                           unsigned port_index,
+                                           unsigned fd_index,
+                                           grpc_dualstack_mode* dsmode,
+                                           grpc_tcp_listener** listener);
 
 /* Get all addresses assigned to network interfaces on the machine and create a
    listener for each. requested_port is the port to use for every listener, or 0
    to select one random port that will be used for every listener. Set *out_port
    to the port selected. Return GRPC_ERROR_NONE only if all listeners were
    added. */
-grpc_error* grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
-                                                unsigned port_index,
-                                                int requested_port,
-                                                int* out_port);
+grpc_error_handle grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
+                                                      unsigned port_index,
+                                                      int requested_port,
+                                                      int* out_port);
 
 /* Prepare a recently-created socket for listening. */
-grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server*, int fd,
-                                           const grpc_resolved_address* addr,
-                                           bool so_reuseport, int* port);
+grpc_error_handle grpc_tcp_server_prepare_socket(
+    grpc_tcp_server*, int fd, const grpc_resolved_address* addr,
+    bool so_reuseport, int* port);
 /* Ruturn true if the platform supports ifaddrs */
 bool grpc_tcp_server_have_ifaddrs(void);
 

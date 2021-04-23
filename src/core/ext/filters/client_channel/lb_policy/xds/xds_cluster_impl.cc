@@ -331,7 +331,7 @@ LoadBalancingPolicy::PickResult XdsClusterImplLb::Picker::Pick(
         // Note: This callback does not run in either the control plane
         // work serializer or in the data plane mutex.
         [locality_stats, original_recv_trailing_metadata_ready, call_counter](
-            grpc_error* error, MetadataInterface* metadata,
+            grpc_error_handle error, MetadataInterface* metadata,
             CallState* call_state) {
           // Record call completion for load reporting.
           if (locality_stats != nullptr) {
@@ -596,14 +596,12 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    grpc_error* error = GRPC_ERROR_NONE;
-    RefCountedPtr<XdsClient> xds_client = XdsClient::GetOrCreate(&error);
-    if (error != GRPC_ERROR_NONE) {
-      gpr_log(
-          GPR_ERROR,
-          "cannot get XdsClient to instantiate xds_cluster_impl LB policy: %s",
-          grpc_error_string(error));
-      GRPC_ERROR_UNREF(error);
+    RefCountedPtr<XdsClient> xds_client =
+        XdsClient::GetFromChannelArgs(*args.args);
+    if (xds_client == nullptr) {
+      gpr_log(GPR_ERROR,
+              "XdsClient not present in channel args -- cannot instantiate "
+              "xds_cluster_impl LB policy");
       return nullptr;
     }
     return MakeOrphanable<XdsClusterImplLb>(std::move(xds_client),
@@ -613,7 +611,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kXdsClusterImpl; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error** error) const override {
+      const Json& json, grpc_error_handle* error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json.type() == Json::Type::JSON_NULL) {
       // This policy was configured in the deprecated loadBalancingPolicy
@@ -624,7 +622,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
           "config instead.");
       return nullptr;
     }
-    std::vector<grpc_error*> error_list;
+    std::vector<grpc_error_handle> error_list;
     // Child policy.
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
     auto it = json.object_value().find("childPolicy");
@@ -632,12 +630,12 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:childPolicy error:required field missing"));
     } else {
-      grpc_error* parse_error = GRPC_ERROR_NONE;
+      grpc_error_handle parse_error = GRPC_ERROR_NONE;
       child_policy = LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
           it->second, &parse_error);
       if (child_policy == nullptr) {
         GPR_DEBUG_ASSERT(parse_error != GRPC_ERROR_NONE);
-        std::vector<grpc_error*> child_errors;
+        std::vector<grpc_error_handle> child_errors;
         child_errors.push_back(parse_error);
         error_list.push_back(
             GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));
@@ -696,7 +694,7 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "field:dropCategories error:required field missing"));
     } else {
-      std::vector<grpc_error*> child_errors =
+      std::vector<grpc_error_handle> child_errors =
           ParseDropCategories(it->second, drop_config.get());
       if (!child_errors.empty()) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_VECTOR(
@@ -715,9 +713,9 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
   }
 
  private:
-  static std::vector<grpc_error*> ParseDropCategories(
+  static std::vector<grpc_error_handle> ParseDropCategories(
       const Json& json, XdsApi::EdsUpdate::DropConfig* drop_config) {
-    std::vector<grpc_error*> error_list;
+    std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::ARRAY) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "dropCategories field is not an array"));
@@ -725,10 +723,10 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
     }
     for (size_t i = 0; i < json.array_value().size(); ++i) {
       const Json& entry = json.array_value()[i];
-      std::vector<grpc_error*> child_errors =
+      std::vector<grpc_error_handle> child_errors =
           ParseDropCategory(entry, drop_config);
       if (!child_errors.empty()) {
-        grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+        grpc_error_handle error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrCat("errors parsing index ", i).c_str());
         for (size_t i = 0; i < child_errors.size(); ++i) {
           error = grpc_error_add_child(error, child_errors[i]);
@@ -739,9 +737,9 @@ class XdsClusterImplLbFactory : public LoadBalancingPolicyFactory {
     return error_list;
   }
 
-  static std::vector<grpc_error*> ParseDropCategory(
+  static std::vector<grpc_error_handle> ParseDropCategory(
       const Json& json, XdsApi::EdsUpdate::DropConfig* drop_config) {
-    std::vector<grpc_error*> error_list;
+    std::vector<grpc_error_handle> error_list;
     if (json.type() != Json::Type::OBJECT) {
       error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "dropCategories entry is not an object"));

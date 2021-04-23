@@ -30,29 +30,29 @@ namespace testing {
 namespace {
 
 StringMatcher ExactMatcher(const char* string) {
-  return StringMatcher::Create(StringMatcher::Type::EXACT, string).value();
+  return StringMatcher::Create(StringMatcher::Type::kExact, string).value();
 }
 
 StringMatcher PrefixMatcher(const char* string, bool case_sensitive = true) {
-  return StringMatcher::Create(StringMatcher::Type::PREFIX, string,
+  return StringMatcher::Create(StringMatcher::Type::kPrefix, string,
                                case_sensitive)
       .value();
 }
 
 StringMatcher SuffixMatcher(const char* string, bool case_sensitive = true) {
-  return StringMatcher::Create(StringMatcher::Type::SUFFIX, string,
+  return StringMatcher::Create(StringMatcher::Type::kSuffix, string,
                                case_sensitive)
       .value();
 }
 
 StringMatcher ContainsMatcher(const char* string, bool case_sensitive = true) {
-  return StringMatcher::Create(StringMatcher::Type::CONTAINS, string,
+  return StringMatcher::Create(StringMatcher::Type::kContains, string,
                                case_sensitive)
       .value();
 }
 
 StringMatcher SafeRegexMatcher(const char* string) {
-  return StringMatcher::Create(StringMatcher::Type::SAFE_REGEX, string).value();
+  return StringMatcher::Create(StringMatcher::Type::kSafeRegex, string).value();
 }
 
 TEST(XdsSanMatchingTest, EmptySansList) {

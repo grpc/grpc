@@ -34,7 +34,7 @@ typedef struct {
   va_list args;
 } test_checker;
 
-static grpc_error* onhdr(void* ud, grpc_mdelem md) {
+static grpc_error_handle onhdr(void* ud, grpc_mdelem md) {
   const char *ekey, *evalue;
   test_checker* chk = static_cast<test_checker*>(ud);
   ekey = va_arg(chk->args, char*);

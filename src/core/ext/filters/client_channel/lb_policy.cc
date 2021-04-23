@@ -113,7 +113,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
     auto* parent = parent_->Ref().release();  // ref held by lambda.
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_CREATE(
-                     [](void* arg, grpc_error* /*error*/) {
+                     [](void* arg, grpc_error_handle /*error*/) {
                        auto* parent = static_cast<LoadBalancingPolicy*>(arg);
                        parent->work_serializer()->Run(
                            [parent]() {

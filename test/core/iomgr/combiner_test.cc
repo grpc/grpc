@@ -32,7 +32,7 @@ static void test_no_op(void) {
   GRPC_COMBINER_UNREF(grpc_combiner_create(), "test_no_op");
 }
 
-static void set_event_to_true(void* value, grpc_error* /*error*/) {
+static void set_event_to_true(void* value, grpc_error_handle /*error*/) {
   gpr_event_set(static_cast<gpr_event*>(value), reinterpret_cast<void*>(1));
 }
 
@@ -62,7 +62,7 @@ typedef struct {
   size_t value;
 } ex_args;
 
-static void check_one(void* a, grpc_error* /*error*/) {
+static void check_one(void* a, grpc_error_handle /*error*/) {
   ex_args* args = static_cast<ex_args*>(a);
   GPR_ASSERT(*args->ctr == args->value - 1);
   *args->ctr = args->value;
@@ -114,11 +114,11 @@ static void test_execute_many(void) {
 
 static gpr_event got_in_finally;
 
-static void in_finally(void* /*arg*/, grpc_error* /*error*/) {
+static void in_finally(void* /*arg*/, grpc_error_handle /*error*/) {
   gpr_event_set(&got_in_finally, reinterpret_cast<void*>(1));
 }
 
-static void add_finally(void* arg, grpc_error* /*error*/) {
+static void add_finally(void* arg, grpc_error_handle /*error*/) {
   static_cast<grpc_core::Combiner*>(arg)->Run(
       GRPC_CLOSURE_CREATE(in_finally, arg, nullptr), GRPC_ERROR_NONE);
 }

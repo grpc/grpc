@@ -137,7 +137,7 @@ class GcpApiManager:
         if version == 'v1':
             return secretmanager_v1.SecretManagerServiceClient()
 
-        raise NotImplementedError(f'Secrets Manager {version} not supported')
+        raise NotImplementedError(f'Secret Manager {version} not supported')
 
     def _build_from_discovery_v1(self, api_name, version):
         api = discovery.build(api_name,

@@ -30,7 +30,7 @@
 
 const char* grpc_json_get_string_property(const grpc_core::Json& json,
                                           const char* prop_name,
-                                          grpc_error** error) {
+                                          grpc_error_handle* error) {
   if (json.type() != grpc_core::Json::Type::OBJECT) {
     if (error != nullptr) {
       *error =
@@ -62,7 +62,7 @@ const char* grpc_json_get_string_property(const grpc_core::Json& json,
 bool grpc_copy_json_string_property(const grpc_core::Json& json,
                                     const char* prop_name,
                                     char** copied_value) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   const char* prop_value =
       grpc_json_get_string_property(json, prop_name, &error);
   GRPC_LOG_IF_ERROR("Could not copy JSON property", error);

@@ -40,7 +40,7 @@ static void* tag(intptr_t t) { return reinterpret_cast<void*>(t); }
 
 static grpc_closure transport_op_cb;
 
-static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
+static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void test_transport_op(grpc_channel* channel) {
   grpc_core::ExecCtx exec_ctx;

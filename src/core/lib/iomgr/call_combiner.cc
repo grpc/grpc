@@ -32,15 +32,15 @@ DebugOnlyTraceFlag grpc_call_combiner_trace(false, "call_combiner");
 
 namespace {
 
-grpc_error* DecodeCancelStateError(gpr_atm cancel_state) {
+grpc_error_handle DecodeCancelStateError(gpr_atm cancel_state) {
   if (cancel_state & 1) {
-    return reinterpret_cast<grpc_error*>(cancel_state &
-                                         ~static_cast<gpr_atm>(1));
+    return reinterpret_cast<grpc_error_handle>(cancel_state &
+                                               ~static_cast<gpr_atm>(1));
   }
   return GRPC_ERROR_NONE;
 }
 
-gpr_atm EncodeCancelStateError(grpc_error* error) {
+gpr_atm EncodeCancelStateError(grpc_error_handle error) {
   return static_cast<gpr_atm>(1) | reinterpret_cast<gpr_atm>(error);
 }
 
@@ -60,7 +60,7 @@ CallCombiner::~CallCombiner() {
 }
 
 #ifdef GRPC_TSAN_ENABLED
-void CallCombiner::TsanClosure(void* arg, grpc_error* error) {
+void CallCombiner::TsanClosure(void* arg, grpc_error_handle error) {
   CallCombiner* self = static_cast<CallCombiner*>(arg);
   // We ref-count the lock, and check if it's already taken.
   // If it was taken, we should do nothing. Otherwise, we will mark it as
@@ -91,7 +91,8 @@ void CallCombiner::TsanClosure(void* arg, grpc_error* error) {
 }
 #endif
 
-void CallCombiner::ScheduleClosure(grpc_closure* closure, grpc_error* error) {
+void CallCombiner::ScheduleClosure(grpc_closure* closure,
+                                   grpc_error_handle error) {
 #ifdef GRPC_TSAN_ENABLED
   original_closure_ = closure;
   ExecCtx::Run(DEBUG_LOCATION, &tsan_closure_, error);
@@ -110,7 +111,7 @@ void CallCombiner::ScheduleClosure(grpc_closure* closure, grpc_error* error) {
 #define DEBUG_FMT_ARGS
 #endif
 
-void CallCombiner::Start(grpc_closure* closure, grpc_error* error,
+void CallCombiner::Start(grpc_closure* closure, grpc_error_handle error,
                          DEBUG_ARGS const char* reason) {
   GPR_TIMER_SCOPE("CallCombiner::Start", 0);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
@@ -191,7 +192,7 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
   while (true) {
     // Decode original state.
     gpr_atm original_state = gpr_atm_acq_load(&cancel_state_);
-    grpc_error* original_error = DecodeCancelStateError(original_state);
+    grpc_error_handle original_error = DecodeCancelStateError(original_state);
     // If error is set, invoke the cancellation closure immediately.
     // Otherwise, store the new closure.
     if (original_error != GRPC_ERROR_NONE) {
@@ -229,11 +230,11 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
   }
 }
 
-void CallCombiner::Cancel(grpc_error* error) {
+void CallCombiner::Cancel(grpc_error_handle error) {
   GRPC_STATS_INC_CALL_COMBINER_CANCELLED();
   while (true) {
     gpr_atm original_state = gpr_atm_acq_load(&cancel_state_);
-    grpc_error* original_error = DecodeCancelStateError(original_state);
+    grpc_error_handle original_error = DecodeCancelStateError(original_state);
     if (original_error != GRPC_ERROR_NONE) {
       GRPC_ERROR_UNREF(error);
       break;

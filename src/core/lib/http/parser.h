@@ -100,10 +100,10 @@ void grpc_http_parser_init(grpc_http_parser* parser, grpc_http_type type,
 void grpc_http_parser_destroy(grpc_http_parser* parser);
 
 /* Sets \a start_of_body to the offset in \a slice of the start of the body. */
-grpc_error* grpc_http_parser_parse(grpc_http_parser* parser,
-                                   const grpc_slice& slice,
-                                   size_t* start_of_body);
-grpc_error* grpc_http_parser_eof(grpc_http_parser* parser);
+grpc_error_handle grpc_http_parser_parse(grpc_http_parser* parser,
+                                         const grpc_slice& slice,
+                                         size_t* start_of_body);
+grpc_error_handle grpc_http_parser_eof(grpc_http_parser* parser);
 
 void grpc_http_request_destroy(grpc_http_request* request);
 void grpc_http_response_destroy(grpc_http_response* response);

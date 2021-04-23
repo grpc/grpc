@@ -80,7 +80,7 @@ static const grpc_socket_mutator_vtable mutator_vtable = {
 
 int main(int argc, char** argv) {
   int sock;
-  grpc_error* err;
+  grpc_error_handle err;
   grpc::testing::TestEnvironment env(argc, argv);
 
   sock = socket(PF_INET, SOCK_STREAM, 0);

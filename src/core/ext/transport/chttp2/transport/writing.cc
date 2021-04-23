@@ -39,7 +39,7 @@ static void add_to_write_list(grpc_chttp2_write_cb** list,
 }
 
 static void finish_write_cb(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
-                            grpc_chttp2_write_cb* cb, grpc_error* error) {
+                            grpc_chttp2_write_cb* cb, grpc_error_handle error) {
   grpc_chttp2_complete_closure_step(t, s, &cb->closure, error,
                                     "finish_write_cb");
   cb->next = t->write_cb_pool;
@@ -134,7 +134,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
 
 static bool update_list(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                         int64_t send_bytes, grpc_chttp2_write_cb** list,
-                        int64_t* ctr, grpc_error* error) {
+                        int64_t* ctr, grpc_error_handle error) {
   bool sched_any = false;
   grpc_chttp2_write_cb* cb = *list;
   *list = nullptr;
@@ -678,7 +678,7 @@ grpc_chttp2_begin_write_result grpc_chttp2_begin_write(
   return ctx.Result();
 }
 
-void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error* error) {
+void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error_handle error) {
   GPR_TIMER_SCOPE("grpc_chttp2_end_write", 0);
   grpc_chttp2_stream* s;
 
