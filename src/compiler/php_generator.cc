@@ -224,10 +224,10 @@ void PrintServerMethodDescriptors(const ServiceDescriptor* service,
   out->Print(
       "/**\n"
       " * Get the method descriptors of the service for server registration\n"
-      " * \n"
-      " * @return array of \\Grpc\\MethodDescriptor for the service methods \n"
+      " *\n"
+      " * @return array of \\Grpc\\MethodDescriptor for the service methods\n"
       " */\n"
-      "public final function getMethodDescriptors(): array \n{\n");
+      "public final function getMethodDescriptors(): array\n{\n");
   out->Indent();
   out->Indent();
   out->Print("return [\n");

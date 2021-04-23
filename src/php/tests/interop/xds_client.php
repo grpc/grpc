@@ -28,7 +28,10 @@ require_once $autoload_path;
 class XdsUpdateClientConfigureService
         extends \Grpc\Testing\XdsUpdateClientConfigureServiceStub
 {
-    function configure(\Grpc\Testing\ClientConfigureRequest $request) {
+    function configure(
+        \Grpc\Testing\ClientConfigureRequest $request,
+        \Grpc\ServerContext $context
+    ): ?\Grpc\Testing\ClientConfigureResponse {
         $rpc_types = $request->getTypes();
         $all_metadata = $request->getMetadata();
         $rpcs_to_send = [];
@@ -75,7 +78,10 @@ class XdsUpdateClientConfigureService
 class LoadBalancerStatsService
     extends \Grpc\Testing\LoadBalancerStatsServiceStub
 {
-    function getClientStats(\Grpc\Testing\LoadBalancerStatsRequest $request) {
+    function getClientStats(
+        \Grpc\Testing\LoadBalancerStatsRequest $request,
+        \Grpc\ServerContext $context
+    ): ?\Grpc\Testing\LoadBalancerStatsResponse {
         $num_rpcs = $request->getNumRpcs();
         $timeout_sec = $request->getTimeoutSec();
         $rpcs_by_method = [];
@@ -155,8 +161,10 @@ class LoadBalancerStatsService
         return $response;
     }
 
-    function getClientAccumulatedStats(
-        \Grpc\Testing\LoadBalancerAccumulatedStatsRequest $request) {
+    function GetClientAccumulatedStats(
+        \Grpc\Testing\LoadBalancerAccumulatedStatsRequest $request,
+        \Grpc\ServerContext $context
+    ): ?\Grpc\Testing\LoadBalancerAccumulatedStatsResponse {
         global $client_thread;
         $response = new Grpc\Testing\LoadBalancerAccumulatedStatsResponse();
         $response->setNumRpcsStartedByMethod(

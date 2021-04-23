@@ -30,7 +30,7 @@ inline std::string GetPHPServiceClassname(
     const grpc::protobuf::ServiceDescriptor* service,
     const std::string& class_suffix, bool is_server) {
   return service->name() +
-         (class_suffix == "" ? (is_server ? "Service" : "Client")
+         (class_suffix == "" ? (is_server ? "" : "Client")
                              : class_suffix) +
          (is_server ? "Stub" : "");
 }

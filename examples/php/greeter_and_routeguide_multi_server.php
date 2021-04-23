@@ -26,7 +26,7 @@ require dirname(__FILE__) . '/../../src/php/lib/Grpc/RpcServer.php';
 require dirname(__FILE__) . '/vendor/autoload.php';
 require dirname(__FILE__) . '/route_guide/RouteGuideService.php';
 
-class Greeter extends \Helloworld\GreeterServiceStub
+class Greeter extends \Helloworld\GreeterStub
 {
     public function SayHello(
         \Helloworld\HelloRequest $request,

@@ -18,7 +18,7 @@
  */
 
 
-class RouteGuideService extends \Routeguide\RouteGuideServiceStub
+class RouteGuideService extends \Routeguide\RouteGuideStub
 {
     public function __construct($dbFilePath)
     {
