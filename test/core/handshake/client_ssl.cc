@@ -44,8 +44,8 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
-#define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
+#define SSL_CERT_PATH "src/core/tsi/test_creds/server0.pem"
+#define SSL_KEY_PATH "src/core/tsi/test_creds/server0.key"
 #define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
 
 class SslLibraryInfo {
