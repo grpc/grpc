@@ -194,7 +194,7 @@ void NativeDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     backoff_.Reset();
   } else {
     gpr_log(GPR_INFO, "dns resolution failed (will retry): %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     // Return transient error.
     std::string error_message =
         absl::StrCat("DNS resolution failed for service: ", name_to_resolve_);

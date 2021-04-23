@@ -169,9 +169,8 @@ static void on_handshake_done(void* arg, grpc_error_handle error) {
   auto* args = static_cast<grpc_core::HandshakerArgs*>(arg);
   on_done_closure* c = static_cast<on_done_closure*>(args->user_data);
   if (error != GRPC_ERROR_NONE) {
-    const char* msg = grpc_error_string(error);
-    gpr_log(GPR_ERROR, "Secure transport setup failed: %s", msg);
-
+    gpr_log(GPR_ERROR, "Secure transport setup failed: %s",
+            grpc_error_std_string(error).c_str());
     c->func(c->arg, nullptr);
   } else {
     grpc_channel_args_destroy(args->args);

@@ -136,9 +136,8 @@ static void got_port_from_server(void* arg, grpc_error_handle error) {
 
   if (error != GRPC_ERROR_NONE) {
     failed = 1;
-    const char* msg = grpc_error_string(error);
-    gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]", msg);
-
+    gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]",
+            grpc_error_std_string(error).c_str());
   } else if (response->status != 200) {
     failed = 1;
     gpr_log(GPR_DEBUG, "failed port pick from server: status=%d",

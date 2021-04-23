@@ -64,9 +64,8 @@ static void on_alarm(void* acp, grpc_error_handle error) {
   grpc_custom_socket* socket = static_cast<grpc_custom_socket*>(acp);
   grpc_custom_tcp_connect* connect = socket->connector;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    const char* str = grpc_error_string(error);
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
-            connect->addr_name.c_str(), str);
+            connect->addr_name.c_str(), grpc_error_std_string(error).c_str());
   }
   if (error == GRPC_ERROR_NONE) {
     /* error == NONE implies that the timer ran out, and wasn't cancelled. If

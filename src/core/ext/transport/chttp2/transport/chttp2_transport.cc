@@ -1104,7 +1104,7 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   // received a GOAWAY with a non NO_ERROR code.
   if (goaway_error != GRPC_HTTP2_NO_ERROR) {
     gpr_log(GPR_INFO, "%s: Got goaway [%d] err=%s", t->peer_string.c_str(),
-            goaway_error, grpc_error_string(t->goaway_error));
+            goaway_error, grpc_error_std_string(t->goaway_error).c_str());
   }
   absl::Status status = grpc_error_to_absl_status(t->goaway_error);
   // When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
@@ -1220,7 +1220,6 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
   }
   closure->next_data.scratch -= CLOSURE_BARRIER_FIRST_REF_BIT;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    const char* errstr = grpc_error_string(error);
     gpr_log(
         GPR_INFO,
         "complete_closure_step: t=%p %p refs=%d flags=0x%04x desc=%s err=%s "
@@ -1230,7 +1229,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
                          CLOSURE_BARRIER_FIRST_REF_BIT),
         static_cast<int>(closure->next_data.scratch %
                          CLOSURE_BARRIER_FIRST_REF_BIT),
-        desc, errstr, write_state_name(t->write_state));
+        desc, grpc_error_std_string(error).c_str(),
+        write_state_name(t->write_state));
   }
   if (error != GRPC_ERROR_NONE) {
     if (closure->error_data.error == GRPC_ERROR_NONE) {
@@ -1752,7 +1752,7 @@ void grpc_chttp2_ack_ping(grpc_chttp2_transport* t, uint64_t id) {
 static void send_goaway(grpc_chttp2_transport* t, grpc_error_handle error) {
   // We want to log this irrespective of whether http tracing is enabled
   gpr_log(GPR_INFO, "%s: Sending goaway err=%s", t->peer_string.c_str(),
-          grpc_error_string(error));
+          grpc_error_std_string(error).c_str());
   t->sent_goaway_state = GRPC_CHTTP2_GOAWAY_SEND_SCHEDULED;
   grpc_http2_error_code http_error;
   grpc_slice slice;
@@ -2627,7 +2627,7 @@ static void start_bdp_ping_locked(void* tp, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "%s: Start BDP ping err=%s", t->peer_string.c_str(),
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
   }
   if (error != GRPC_ERROR_NONE || t->closed_with_error != GRPC_ERROR_NONE) {
     return;
@@ -2651,7 +2651,7 @@ static void finish_bdp_ping_locked(void* tp, grpc_error_handle error) {
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "%s: Complete BDP ping err=%s", t->peer_string.c_str(),
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
   }
   if (error != GRPC_ERROR_NONE || t->closed_with_error != GRPC_ERROR_NONE) {
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
