@@ -32,7 +32,8 @@ TEST(GrpcAuthorizationEngineTest, AllowEngineWithMatchingPolicy) {
   policies["policy2"] = std::move(policy2);
   Rbac rbac(Rbac::Action::kAllow, std::move(policies));
   GrpcAuthorizationEngine engine(std::move(rbac));
-  AuthorizationEngine::Decision decision = engine.Evaluate(EvaluateArgs{});
+  AuthorizationEngine::Decision decision =
+      engine.Evaluate(EvaluateArgs(nullptr, nullptr));
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
   EXPECT_EQ(decision.matching_policy_name, "policy2");
 }
@@ -45,14 +46,16 @@ TEST(GrpcAuthorizationEngineTest, AllowEngineWithNoMatchingPolicy) {
   policies["policy1"] = std::move(policy1);
   Rbac rbac(Rbac::Action::kAllow, std::move(policies));
   GrpcAuthorizationEngine engine(std::move(rbac));
-  AuthorizationEngine::Decision decision = engine.Evaluate(EvaluateArgs{});
+  AuthorizationEngine::Decision decision =
+      engine.Evaluate(EvaluateArgs(nullptr, nullptr));
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
   EXPECT_TRUE(decision.matching_policy_name.empty());
 }
 
 TEST(GrpcAuthorizationEngineTest, AllowEngineWithEmptyPolicies) {
   GrpcAuthorizationEngine engine(Rbac::Action::kAllow);
-  AuthorizationEngine::Decision decision = engine.Evaluate(EvaluateArgs{});
+  AuthorizationEngine::Decision decision =
+      engine.Evaluate(EvaluateArgs(nullptr, nullptr));
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
   EXPECT_TRUE(decision.matching_policy_name.empty());
 }
@@ -68,7 +71,8 @@ TEST(GrpcAuthorizationEngineTest, DenyEngineWithMatchingPolicy) {
   policies["policy2"] = std::move(policy2);
   Rbac rbac(Rbac::Action::kDeny, std::move(policies));
   GrpcAuthorizationEngine engine(std::move(rbac));
-  AuthorizationEngine::Decision decision = engine.Evaluate(EvaluateArgs{});
+  AuthorizationEngine::Decision decision =
+      engine.Evaluate(EvaluateArgs(nullptr, nullptr));
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kDeny);
   EXPECT_EQ(decision.matching_policy_name, "policy2");
 }
@@ -81,14 +85,16 @@ TEST(GrpcAuthorizationEngineTest, DenyEngineWithNoMatchingPolicy) {
   policies["policy1"] = std::move(policy1);
   Rbac rbac(Rbac::Action::kDeny, std::move(policies));
   GrpcAuthorizationEngine engine(std::move(rbac));
-  AuthorizationEngine::Decision decision = engine.Evaluate(EvaluateArgs{});
+  AuthorizationEngine::Decision decision =
+      engine.Evaluate(EvaluateArgs(nullptr, nullptr));
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
   EXPECT_TRUE(decision.matching_policy_name.empty());
 }
 
 TEST(GrpcAuthorizationEngineTest, DenyEngineWithEmptyPolicies) {
   GrpcAuthorizationEngine engine(Rbac::Action::kDeny);
-  AuthorizationEngine::Decision decision = engine.Evaluate(EvaluateArgs{});
+  AuthorizationEngine::Decision decision =
+      engine.Evaluate(EvaluateArgs(nullptr, nullptr));
   EXPECT_EQ(decision.type, AuthorizationEngine::Decision::Type::kAllow);
   EXPECT_TRUE(decision.matching_policy_name.empty());
 }
