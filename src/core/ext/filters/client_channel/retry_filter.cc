@@ -476,8 +476,8 @@ class RetryFilter::CallData {
   // Mutex guarding LB call creation and destruction.
   //
   // Note that call_attempt_ and committed_call_ themselves are not guarded by
-  // this mutex, because we only need to guard the *creation* of the LB call.
-  // If PreCancel() runs before either of those fields are set, then
+  // this mutex, because we only need to guard the creation or deletion of the
+  // LB call.  If PreCancel() runs before either of those fields are set, then
   // lb_call_pre_cancelled_ will be true, in which case the LB call will not
   // be created; if PreCancel() runs after either field is set, it will
   // propagate the pre-cancellation down to the appropriate LB call(s).
@@ -1708,12 +1708,21 @@ void RetryFilter::CallData::PreCancel(grpc_call_element* elem,
     }
   }
   // Retry timer not pending, so propagate pre-cancellation down to LB call.
-  MutexLock lock(&calld->lb_call_pre_cancellation_mu_);
-  calld->lb_call_pre_cancelled_ = true;
-  if (calld->committed_call_ != nullptr) {
-    calld->committed_call_->PreCancel(error);
-  } else if (calld->call_attempt_ != nullptr) {
-    calld->call_attempt_->lb_call()->PreCancel(error);
+  RefCountedPtr<ClientChannel::LoadBalancedCall> lb_call;
+  {
+    MutexLock lock(&calld->lb_call_pre_cancellation_mu_);
+    calld->lb_call_pre_cancelled_ = true;
+    if (calld->committed_call_ != nullptr) {
+      lb_call = calld->committed_call_;
+      GPR_DEBUG_ASSERT(calld->call_attempt_ == nullptr);
+    } else if (calld->call_attempt_ != nullptr) {
+      lb_call = calld->call_attempt_->lb_call()->Ref();
+    }
+  }
+  if (lb_call != nullptr) {
+    lb_call->PreCancel(error);
+  } else {
+    GRPC_ERROR_UNREF(error);
   }
 }
 
@@ -2139,7 +2148,10 @@ void RetryFilter::CallData::RetryCommit(CallAttempt* call_attempt) {
 
 void RetryFilter::CallData::DoRetry(grpc_millis server_pushback_ms) {
   // Reset call attempt.
-  call_attempt_.reset();
+  {
+    MutexLock lock(&lb_call_pre_cancellation_mu_);
+    call_attempt_.reset();
+  }
   // Compute backoff delay.
   grpc_millis next_attempt_time;
   if (server_pushback_ms >= 0) {

@@ -1953,11 +1953,15 @@ void ClientChannel::CallData::PreCancel(grpc_call_element* elem,
     }
   }
   // Not pending resolver result, so check if we have a dynamic call.
-  MutexLock lock(&calld->dynamic_call_creation_mu_);
-  if (calld->dynamic_call_ != nullptr) {
+  bool dynamic_call_exists = false;
+  {
+    MutexLock lock(&calld->dynamic_call_creation_mu_);
+    calld->dynamic_call_pre_cancelled_ = true;
+    if (calld->dynamic_call_ != nullptr) dynamic_call_exists = true;
+  }
+  if (dynamic_call_exists) {
     calld->dynamic_call_->PreCancel(error);
   } else {
-    calld->dynamic_call_pre_cancelled_ = true;
     GRPC_ERROR_UNREF(error);
   }
 }
@@ -2788,11 +2792,15 @@ void ClientChannel::LoadBalancedCall::PreCancel(grpc_error_handle error) {
     }
   }
   // Check if we have a subchannel call.
-  MutexLock lock(&subchannel_call_creation_mu_);
-  if (subchannel_call_ != nullptr) {
+  bool subchannel_call_exists = false;
+  {
+    MutexLock lock(&subchannel_call_creation_mu_);
+    subchannel_call_pre_cancelled_ = true;
+    if (subchannel_call_ != nullptr) subchannel_call_exists = true;
+  }
+  if (subchannel_call_exists) {
     subchannel_call_->PreCancel(error);
   } else {
-    subchannel_call_pre_cancelled_ = true;
     GRPC_ERROR_UNREF(error);
   }
 }
