@@ -27,11 +27,11 @@ namespace grpc_core {
 class AuthorizationEngine {
  public:
   struct Decision {
-    enum class DecisionType {
+    enum class Type {
       kAllow,
       kDeny,
     };
-    DecisionType type;
+    Type type;
     std::string matching_policy_name;
   };
 

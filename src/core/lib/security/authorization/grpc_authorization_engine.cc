@@ -26,11 +26,6 @@ GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
   }
 }
 
-void GrpcAuthorizationEngine::SetPoliciesForTesting(
-    std::map<std::string, std::unique_ptr<AuthorizationMatcher>> policies) {
-  policies_ = std::move(policies);
-}
-
 AuthorizationEngine::Decision GrpcAuthorizationEngine::Evaluate(
     const EvaluateArgs& args) const {
   Decision decision;
@@ -43,8 +38,8 @@ AuthorizationEngine::Decision GrpcAuthorizationEngine::Evaluate(
     }
   }
   decision.type = (matches == (action_ == Rbac::Action::kAllow))
-                      ? Decision::DecisionType::kAllow
-                      : Decision::DecisionType::kDeny;
+                      ? Decision::Type::kAllow
+                      : Decision::Type::kDeny;
   return decision;
 }
 

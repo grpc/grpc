@@ -35,9 +35,6 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
   explicit GrpcAuthorizationEngine(Rbac::Action action) : action_(action) {}
   // Builds GrpcAuthorizationEngine with allow/deny RBAC policy.
   explicit GrpcAuthorizationEngine(Rbac policy);
-  // Used only for testing purposes.
-  void SetPoliciesForTesting(
-      std::map<std::string, std::unique_ptr<AuthorizationMatcher>> policies);
 
   // Evaluates incoming request against RBAC policy and makes a decision to
   // whether allow/deny this request.
