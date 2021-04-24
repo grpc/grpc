@@ -113,6 +113,8 @@ class EventEngine {
   /// allocation being handled by the quota system.
   class Endpoint {
    public:
+    /// The Endpoint descructor is responsible for shutting down all connections
+    /// and invoking all pending read or write callbacks with an error status.
     virtual ~Endpoint() = default;
     /// Read data from the Endpoint.
     ///
@@ -141,10 +143,6 @@ class EventEngine {
     /// on endpoint shutdown.
     virtual void Write(Callback on_writable, SliceBuffer* data,
                        absl::Time deadline) = 0;
-    // TODO(hork): define status codes for the callback
-    // TODO(hork): define cleanup operations, lifetimes, responsibilities.
-    /// Shut down
-    virtual void Close(Callback on_close) = 0;
     /// These methods return an address in the format described in DNSResolver.
     /// The returned values are owned by the Endpoint and are expected to remain
     /// valid for the life of the Endpoint.
@@ -269,7 +267,8 @@ class EventEngine {
   virtual void TryCancel(TaskHandle handle) = 0;
   /// Immediately run all callbacks with status indicating the shutdown. Every
   /// EventEngine is expected to shut down exactly once. No new callbacks/tasks
-  /// should be scheduled after shutdown has begun.
+  /// should be scheduled after shutdown has begun, no new connections should be
+  /// created.
   ///
   /// If the \a on_shutdown_complete callback is given a non-OK status, errors
   /// are expected to be unrecoverable. For example, an implementation could
