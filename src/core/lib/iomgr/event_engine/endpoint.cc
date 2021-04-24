@@ -91,14 +91,23 @@ grpc_resource_user* endpoint_get_resource_user(grpc_endpoint* ep) {
 
 absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+  if (eeep->peer_address.empty()) {
+    const EventEngine::ResolvedAddress* addr = eeep->endpoint->GetPeerAddress();
+    GPR_ASSERT(addr != nullptr);
+    eeep->peer_address = ResolvedAddressToURI(*addr);
+  }
   return eeep->peer_address;
 }
 
 absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
-  const EventEngine::ResolvedAddress* addr = eeep->endpoint->GetLocalAddress();
-  GPR_ASSERT(addr != nullptr);
-  return ResolvedAddressToURI(*addr);
+  if (eeep->local_address.empty()) {
+    const EventEngine::ResolvedAddress* addr =
+        eeep->endpoint->GetLocalAddress();
+    GPR_ASSERT(addr != nullptr);
+    eeep->local_address = ResolvedAddressToURI(*addr);
+  }
+  return eeep->local_address;
 }
 
 int endpoint_get_fd(grpc_endpoint* /* ep */) { return -1; }
@@ -130,11 +139,14 @@ grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
   grpc_resource_quota* resource_quota =
       grpc_channel_args_find_pointer<grpc_resource_quota>(
           channel_args, GRPC_ARG_RESOURCE_QUOTA);
-  if (resource_quota == nullptr) {
+  if (resource_quota != nullptr) {
+    grpc_resource_quota_ref_internal(resource_quota);
+  } else {
     resource_quota = grpc_resource_quota_create(nullptr);
   }
   endpoint->ru =
       grpc_resource_user_create(resource_quota, endpoint->peer_address.c_str());
+  grpc_resource_quota_unref_internal(resource_quota);
   return &endpoint->base;
 }
 

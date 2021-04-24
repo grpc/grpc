@@ -55,10 +55,6 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
   return [&](absl::Status status,
              std::unique_ptr<EventEngine::Endpoint> endpoint) {
     grpc_endpoint_out->endpoint = std::move(endpoint);
-    const EventEngine::ResolvedAddress* addr =
-        grpc_endpoint_out->endpoint->GetLocalAddress();
-    GPR_ASSERT(addr != nullptr);
-    grpc_endpoint_out->local_address = ResolvedAddressToURI(*addr);
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));
   };

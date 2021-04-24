@@ -43,7 +43,6 @@ void iomgr_platform_flush(void) {
 }
 
 void iomgr_platform_shutdown(void) {
-  // TODO(hork): only do this is the default has been instantiated
   GetDefaultEventEngine()->Shutdown([](absl::Status result) {
     if (!result.ok()) {
       gpr_log(GPR_ERROR, "Failed to shut down EventEngine iomgr. Reason: %s",
