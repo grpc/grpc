@@ -42,7 +42,11 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
 
  private:
   Rbac::Action action_;
-  std::map<std::string, std::unique_ptr<AuthorizationMatcher>> policies_;
+  struct Policy {
+    std::string name;
+    std::unique_ptr<AuthorizationMatcher> matcher;
+  };
+  std::vector<Policy> policies_;
 };
 
 }  // namespace grpc_core

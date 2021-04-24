@@ -21,8 +21,11 @@ namespace grpc_core {
 GrpcAuthorizationEngine::GrpcAuthorizationEngine(Rbac policy)
     : action_(policy.action) {
   for (auto& sub_policy : policy.policies) {
-    policies_[sub_policy.first] = absl::make_unique<PolicyAuthorizationMatcher>(
+    Policy policy;
+    policy.name = sub_policy.first;
+    policy.matcher = absl::make_unique<PolicyAuthorizationMatcher>(
         std::move(sub_policy.second));
+    policies_.push_back(std::move(policy));
   }
 }
 
@@ -31,9 +34,9 @@ AuthorizationEngine::Decision GrpcAuthorizationEngine::Evaluate(
   Decision decision;
   bool matches = false;
   for (const auto& policy : policies_) {
-    if (policy.second->Matches(args)) {
+    if (policy.matcher->Matches(args)) {
       matches = true;
-      decision.matching_policy_name = policy.first;
+      decision.matching_policy_name = policy.name;
       break;
     }
   }
