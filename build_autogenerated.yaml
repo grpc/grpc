@@ -6425,6 +6425,15 @@ targets:
   deps:
   - grpc_test_util
   uses_polling: false
+- name: timer_init_busy_loop_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/iomgr/timer_init_busy_loop_test.cc
+  deps:
+  - grpc_test_util
 - name: timer_test
   gtest: true
   build: test

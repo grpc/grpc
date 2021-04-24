@@ -417,10 +417,10 @@ grpc_cc_test(
 grpc_cc_test(
     name = "timer_init_busy_loop_test",
     srcs = ["timer_init_busy_loop_test.cc"],
-    language = "C++",
     external_deps = [
         "gtest",
     ],
+    language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
