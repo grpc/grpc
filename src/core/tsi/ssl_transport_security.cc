@@ -1908,7 +1908,9 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
+  gpr_log(GPR_INFO, "using TLS_method in client handshaker factory...");
 #else
+  gpr_log(GPR_INFO, "using TLSv1_2_method in client handshaker factory...");
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
   if (ssl_context == nullptr) {
@@ -2076,8 +2078,10 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   for (i = 0; i < options->num_key_cert_pairs; i++) {
     do {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
+      gpr_log(GPR_INFO, "using TLS_method in server handshaker factory...");
       impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
 #else
+      gpr_log(GPR_INFO, "using TLSv1_2_method in server handshaker factory...");
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif
       if (impl->ssl_contexts[i] == nullptr) {
