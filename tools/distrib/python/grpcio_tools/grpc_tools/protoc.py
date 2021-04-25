@@ -42,6 +42,7 @@ def main(command_arguments):
 if sys.version_info >= (3, 5, 0):
     import contextlib
     import importlib
+    import importlib.abc
     import importlib.machinery
     import threading
 
