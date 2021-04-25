@@ -185,9 +185,14 @@ static void server_thread(void* arg) {
     ERR_print_errors_fp(stderr);
     abort();
   }
+  if (SSL_CTX_check_private_key(ctx) != 1) {
+    ERR_print_errors_fp(stderr);
+    abort();
+  }
+
 
   // Set the cipher list to match the one expressed in
-  // src/core/tsi/ssl_transport_security.c.
+  // src/core/tsi/ssl_transport_security.cc.
   const char* cipher_list =
       "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
       "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
