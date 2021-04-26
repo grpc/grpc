@@ -8824,8 +8824,6 @@ TEST_P(EdsTest, RingHashChannelIdHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  cluster.mutable_ring_hash_lb_config()->set_hash_function(
-      Cluster::RingHashLbConfig::XX_HASH);
   cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
       1);
   cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
@@ -8837,8 +8835,6 @@ TEST_P(EdsTest, RingHashChannelIdHashing) {
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0",
        GetBackendPorts(0, 4),
@@ -8849,6 +8845,7 @@ TEST_P(EdsTest, RingHashChannelIdHashing) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
   for (size_t i = 0; i < 100; ++i) {
     (void)SendRpc();
   }
@@ -8872,8 +8869,6 @@ TEST_P(EdsTest, RingHashHeaderHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  cluster.mutable_ring_hash_lb_config()->set_hash_function(
-      Cluster::RingHashLbConfig::XX_HASH);
   cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
       1);
   cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
@@ -8885,8 +8880,6 @@ TEST_P(EdsTest, RingHashHeaderHashing) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0",
        GetBackendPorts(0, 4),
@@ -8897,6 +8890,7 @@ TEST_P(EdsTest, RingHashHeaderHashing) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
                                     backends_[0]->port(), "_0")},
@@ -8913,22 +8907,10 @@ TEST_P(EdsTest, RingHashHeaderHashing) {
       {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
                                     backends_[3]->port(), "_0")},
   };
-  const auto rpc_options = RpcOptions()
-                               .set_rpc_service(SERVICE_ECHO)
-                               .set_rpc_method(METHOD_ECHO)
-                               .set_metadata(std::move(metadata));
-  const auto rpc_options1 = RpcOptions()
-                                .set_rpc_service(SERVICE_ECHO)
-                                .set_rpc_method(METHOD_ECHO)
-                                .set_metadata(std::move(metadata1));
-  const auto rpc_options2 = RpcOptions()
-                                .set_rpc_service(SERVICE_ECHO)
-                                .set_rpc_method(METHOD_ECHO)
-                                .set_metadata(std::move(metadata2));
-  const auto rpc_options3 = RpcOptions()
-                                .set_rpc_service(SERVICE_ECHO)
-                                .set_rpc_method(METHOD_ECHO)
-                                .set_metadata(std::move(metadata3));
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
+  const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
   WaitForAllBackends(0, 1, true, rpc_options);
   WaitForAllBackends(1, 2, true, rpc_options1);
   WaitForAllBackends(2, 3, true, rpc_options2);
@@ -8951,8 +8933,6 @@ TEST_P(EdsTest, RingHashIdleToReady) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  cluster.mutable_ring_hash_lb_config()->set_hash_function(
-      Cluster::RingHashLbConfig::XX_HASH);
   cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
       1);
   cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
@@ -8964,8 +8944,6 @@ TEST_P(EdsTest, RingHashIdleToReady) {
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
   hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0",
        GetBackendPorts(0, 4),
@@ -8976,6 +8954,7 @@ TEST_P(EdsTest, RingHashIdleToReady) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   (void)SendRpc();
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
@@ -8993,8 +8972,6 @@ TEST_P(EdsTest, RingHashTransientFailureCheckNextOne) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  cluster.mutable_ring_hash_lb_config()->set_hash_function(
-      Cluster::RingHashLbConfig::XX_HASH);
   cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
       1);
   cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
@@ -9006,8 +8983,6 @@ TEST_P(EdsTest, RingHashTransientFailureCheckNextOne) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0",
        GetBackendPorts(0, 2),
@@ -9018,14 +8993,12 @@ TEST_P(EdsTest, RingHashTransientFailureCheckNextOne) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
                                     backends_[0]->port(), "_0")},
   };
-  const auto rpc_options = RpcOptions()
-                               .set_rpc_service(SERVICE_ECHO)
-                               .set_rpc_method(METHOD_ECHO)
-                               .set_metadata(std::move(metadata));
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   ShutdownBackend(0);
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
@@ -9044,8 +9017,6 @@ TEST_P(EdsTest, RingHashAllFailReattempt) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  cluster.mutable_ring_hash_lb_config()->set_hash_function(
-      Cluster::RingHashLbConfig::XX_HASH);
   cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
       1);
   cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
@@ -9057,8 +9028,6 @@ TEST_P(EdsTest, RingHashAllFailReattempt) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
-  SetNextResolution({});
-  SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0",
        GetBackendPorts(0, 2),
@@ -9069,14 +9038,12 @@ TEST_P(EdsTest, RingHashAllFailReattempt) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
                                     backends_[0]->port(), "_0")},
   };
-  const auto rpc_options = RpcOptions()
-                               .set_rpc_service(SERVICE_ECHO)
-                               .set_rpc_method(METHOD_ECHO)
-                               .set_metadata(std::move(metadata));
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   ShutdownBackend(0);
   ShutdownBackend(1);
