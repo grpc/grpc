@@ -45,27 +45,27 @@ bool AuthenticatedMatchesHelper(const EvaluateArgs& args,
 std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
     Rbac::Permission permission) {
   switch (permission.type) {
-    case Rbac::Permission::RuleType::AND:
+    case Rbac::Permission::RuleType::kAnd:
       return absl::make_unique<AndAuthorizationMatcher>(
           std::move(permission.permissions), permission.not_rule);
-    case Rbac::Permission::RuleType::OR:
+    case Rbac::Permission::RuleType::kOr:
       return absl::make_unique<OrAuthorizationMatcher>(
           std::move(permission.permissions), permission.not_rule);
-    case Rbac::Permission::RuleType::ANY:
+    case Rbac::Permission::RuleType::kAny:
       return absl::make_unique<AlwaysAuthorizationMatcher>(permission.not_rule);
-    case Rbac::Permission::RuleType::HEADER:
+    case Rbac::Permission::RuleType::kHeader:
       return absl::make_unique<HeaderAuthorizationMatcher>(
           std::move(permission.header_matcher), permission.not_rule);
-    case Rbac::Permission::RuleType::PATH:
+    case Rbac::Permission::RuleType::kPath:
       return absl::make_unique<PathAuthorizationMatcher>(
           std::move(permission.string_matcher), permission.not_rule);
-    case Rbac::Permission::RuleType::DEST_IP:
+    case Rbac::Permission::RuleType::kDestIp:
       return absl::make_unique<IpAuthorizationMatcher>(std::move(permission.ip),
                                                        permission.not_rule);
-    case Rbac::Permission::RuleType::DEST_PORT:
+    case Rbac::Permission::RuleType::kDestPort:
       return absl::make_unique<PortAuthorizationMatcher>(permission.port,
                                                          permission.not_rule);
-    case Rbac::Permission::RuleType::REQ_SERVER_NAME:
+    case Rbac::Permission::RuleType::kReqServerName:
       return absl::make_unique<ReqServerNameAuthorizationMatcher>(
           std::move(permission.string_matcher), permission.not_rule);
   }
@@ -75,26 +75,26 @@ std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
 std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
     Rbac::Principal principal) {
   switch (principal.type) {
-    case Rbac::Principal::RuleType::AND:
+    case Rbac::Principal::RuleType::kAnd:
       return absl::make_unique<AndAuthorizationMatcher>(
           std::move(principal.principals), principal.not_rule);
-    case Rbac::Principal::RuleType::OR:
+    case Rbac::Principal::RuleType::kOr:
       return absl::make_unique<OrAuthorizationMatcher>(
           std::move(principal.principals), principal.not_rule);
-    case Rbac::Principal::RuleType::ANY:
+    case Rbac::Principal::RuleType::kAny:
       return absl::make_unique<AlwaysAuthorizationMatcher>(principal.not_rule);
-    case Rbac::Principal::RuleType::PRINCIPAL_NAME:
+    case Rbac::Principal::RuleType::kPrincipalName:
       return absl::make_unique<AuthenticatedAuthorizationMatcher>(
           std::move(principal.string_matcher), principal.not_rule);
-    case Rbac::Principal::RuleType::SOURCE_IP:
-    case Rbac::Principal::RuleType::DIRECT_REMOTE_IP:
-    case Rbac::Principal::RuleType::REMOTE_IP:
+    case Rbac::Principal::RuleType::kSourceIp:
+    case Rbac::Principal::RuleType::kDirectRemoteIp:
+    case Rbac::Principal::RuleType::kRemoteIp:
       return absl::make_unique<IpAuthorizationMatcher>(std::move(principal.ip),
                                                        principal.not_rule);
-    case Rbac::Principal::RuleType::HEADER:
+    case Rbac::Principal::RuleType::kHeader:
       return absl::make_unique<HeaderAuthorizationMatcher>(
           std::move(principal.header_matcher), principal.not_rule);
-    case Rbac::Principal::RuleType::PATH:
+    case Rbac::Principal::RuleType::kPath:
       return absl::make_unique<PathAuthorizationMatcher>(
           std::move(principal.string_matcher), principal.not_rule);
   }

@@ -13,9 +13,6 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
-#include <arpa/inet.h>
 #include <functional>
 
 #include <grpc/event_engine/event_engine.h>
@@ -31,33 +28,9 @@
 grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
     false, "polling"); /* Disabled by default */
 
-uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
-
-uint16_t grpc_ntohs(uint16_t netshort) { return ntohs(netshort); }
-
-uint32_t grpc_htonl(uint32_t hostlong) { return htonl(hostlong); }
-
-uint32_t grpc_ntohl(uint32_t netlong) { return ntohl(netlong); }
-
-int grpc_inet_pton(int af, const char* src, void* dst) {
-  return inet_pton(af, src, dst);
-}
-
-const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
-  inet_ntop(af, src, dst, size);
-  return dst;
-}
-
-namespace grpc_event_engine {
-namespace experimental {
-
-std::shared_ptr<EventEngine> GetDefaultEventEngine() {
-  // TODO(nnoble): instantiate a singleton LibuvEventEngine
-  return nullptr;
-}
-
 // grpc_closure to std::function conversions for an EventEngine-based iomgr
-EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure) {
+grpc_event_engine::experimental::EventEngine::Callback GrpcClosureToCallback(
+    grpc_closure* closure) {
   return [&](absl::Status status) {
     // TODO(hork): Do we need to add grpc_error to closure's error data?
     // if (!status.ok()) {
@@ -69,8 +42,3 @@ EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure) {
                             absl_status_to_grpc_error(status));
   };
 }
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
-
-#endif  // GRPC_EVENT_ENGINE_TEST

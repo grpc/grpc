@@ -22,7 +22,7 @@
 namespace grpc_core {
 
 std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
-    std::shared_ptr<WorkSerializer> work_serializer) {
+    std::shared_ptr<WorkSerializer> /* work_serializer */) {
   return nullptr;
 }
 

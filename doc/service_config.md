@@ -96,7 +96,7 @@ Here is the same example service config in JSON form:
         { "service": "foo", "method": "bar" },
         { "service": "baz" }
       ],
-      "timeout": "1.0000000001s"
+      "timeout": "1.000000001s"
     }
   ]
 }

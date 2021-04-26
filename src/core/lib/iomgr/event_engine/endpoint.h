@@ -26,15 +26,15 @@
 
 struct grpc_event_engine_endpoint {
   grpc_endpoint base;
-  grpc_event_engine::experimental::EventEngine::Endpoint* endpoint;
-  std::string peer_string;
+  std::unique_ptr<grpc_event_engine::experimental::EventEngine::Endpoint>
+      endpoint;
+  std::string peer_address;
   std::string local_address;
   grpc_resource_user* ru = nullptr;
-  std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine;
 };
 
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
-                               absl::string_view peer_string);
+                               absl::string_view peer_address);
 
 #endif
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H

@@ -812,6 +812,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/stat_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/status_helper.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/status_helper.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/sync.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_posix.cc" role="src" />
@@ -866,6 +868,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/iomgr.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/pollset.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolved_address_internal.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolved_address_internal.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/tcp.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/timer.cc" role="src" />

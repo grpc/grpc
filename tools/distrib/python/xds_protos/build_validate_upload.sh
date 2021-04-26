@@ -21,6 +21,7 @@ cd ${WORK_DIR}
 # Generate the package content then build the source wheel
 python3 build.py
 python3 setup.py sdist
+python3 setup.py bdist_wheel
 
 # Run the tests to ensure all protos are importable, also avoid confusing normal
 # imports with relative imports

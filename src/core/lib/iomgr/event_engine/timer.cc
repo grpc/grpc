@@ -23,7 +23,6 @@
 namespace {
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 
 struct grpc_event_engine_timer_data {
   EventEngine::TaskHandle handle;
@@ -53,7 +52,7 @@ void timer_cancel(grpc_timer* timer) {
 }
 
 /* Internal API */
-grpc_timer_check_result timer_check(grpc_millis* next) {
+grpc_timer_check_result timer_check(grpc_millis* /* next */) {
   return GRPC_TIMERS_NOT_CHECKED;
 }
 void timer_list_init() {}

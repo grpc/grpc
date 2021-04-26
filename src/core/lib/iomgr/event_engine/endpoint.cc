@@ -23,6 +23,7 @@
 #include <grpc/support/time.h>
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
@@ -64,13 +65,17 @@ void endpoint_add_to_pollset_set(grpc_endpoint* /* ep */,
                                  grpc_pollset_set* /* pollset */) {}
 void endpoint_delete_from_pollset_set(grpc_endpoint* /* ep */,
                                       grpc_pollset_set* /* pollset */) {}
+// Note: all other endpoint operations (except destroy) have undefined behavior
+// after shutdown. Do not shut down lightly.
 void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     const char* str = grpc_error_string(why);
-    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", tcp->socket, str);
+    gpr_log(GPR_INFO, "TCP Endpoint %p shutdown why=%s", eeep->endpoint.get(),
+            str);
   }
   grpc_resource_user_shutdown(eeep->ru);
+  eeep->endpoint.reset();
 }
 
 void endpoint_destroy(grpc_endpoint* ep) {
@@ -86,13 +91,23 @@ grpc_resource_user* endpoint_get_resource_user(grpc_endpoint* ep) {
 
 absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
-  return eeep->peer_string;
+  if (eeep->peer_address.empty()) {
+    const EventEngine::ResolvedAddress* addr = eeep->endpoint->GetPeerAddress();
+    GPR_ASSERT(addr != nullptr);
+    eeep->peer_address = ResolvedAddressToURI(*addr);
+  }
+  return eeep->peer_address;
 }
 
 absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
-  // TODO(hork): need to convert ResolvedAddress <-> String
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
-  return ResolvedAddressToURI(eeep->endpoint->GetLocalAddress());
+  if (eeep->local_address.empty()) {
+    const EventEngine::ResolvedAddress* addr =
+        eeep->endpoint->GetLocalAddress();
+    GPR_ASSERT(addr != nullptr);
+    eeep->local_address = ResolvedAddressToURI(*addr);
+  }
+  return eeep->local_address;
 }
 
 int endpoint_get_fd(grpc_endpoint* /* ep */) { return -1; }
@@ -116,24 +131,22 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
 }  // namespace
 
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
-                               absl::string_view peer_string) {
+                               absl::string_view peer_address) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
-  endpoint->peer_string = std::string(peer_string);
+  endpoint->peer_address = std::string(peer_address);
   endpoint->local_address = "";
-  grpc_resource_quota* resource_quota = grpc_resource_quota_create(nullptr);
-  if (channel_args != nullptr) {
-    for (size_t i = 0; i < channel_args->num_args; i++) {
-      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_RESOURCE_QUOTA)) {
-        grpc_resource_quota_unref_internal(resource_quota);
-        resource_quota =
-            grpc_resource_quota_ref_internal(static_cast<grpc_resource_quota*>(
-                channel_args->args[i].value.pointer.p));
-      }
-    }
+  grpc_resource_quota* resource_quota =
+      grpc_channel_args_find_pointer<grpc_resource_quota>(
+          channel_args, GRPC_ARG_RESOURCE_QUOTA);
+  if (resource_quota != nullptr) {
+    grpc_resource_quota_ref_internal(resource_quota);
+  } else {
+    resource_quota = grpc_resource_quota_create(nullptr);
   }
   endpoint->ru =
-      grpc_resource_user_create(resource_quota, endpoint->peer_string.c_str());
+      grpc_resource_user_create(resource_quota, endpoint->peer_address.c_str());
+  grpc_resource_quota_unref_internal(resource_quota);
   return &endpoint->base;
 }
 

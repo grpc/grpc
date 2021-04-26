@@ -47,15 +47,17 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
     notifier_ = notifier;
   }
 
-  std::unique_ptr<Server> BuildAndStart() override {
+ private:
+  // Called at the beginning of BuildAndStart().
+  ChannelArguments BuildChannelArgs() override {
+    ChannelArguments args = ServerBuilder::BuildChannelArgs();
+    grpc_channel_args c_channel_args = args.c_channel_args();
     grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(
-        {OnServingStatusChange, notifier_});
-    if (fetcher == nullptr) return nullptr;
-    set_fetcher(fetcher);
-    return ServerBuilder::BuildAndStart();
+        {OnServingStatusChange, notifier_}, &c_channel_args);
+    if (fetcher != nullptr) set_fetcher(fetcher);
+    return args;
   }
 
- private:
   static void OnServingStatusChange(void* user_data, const char* uri,
                                     grpc_status_code code,
                                     const char* error_message) {

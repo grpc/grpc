@@ -27,8 +27,8 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "test/core/util/test_config.h"
 
-static grpc_error* channel_init_func(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error_handle channel_init_func(grpc_channel_element* elem,
+                                           grpc_channel_element_args* args) {
   GPR_ASSERT(args->channel_args->num_args == 1);
   GPR_ASSERT(args->channel_args->args[0].type == GRPC_ARG_INTEGER);
   GPR_ASSERT(0 == strcmp(args->channel_args->args[0].key, "test_key"));
@@ -39,8 +39,8 @@ static grpc_error* channel_init_func(grpc_channel_element* elem,
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* call_init_func(grpc_call_element* elem,
-                                  const grpc_call_element_args* /*args*/) {
+static grpc_error_handle call_init_func(
+    grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
   ++*static_cast<int*>(elem->channel_data);
   *static_cast<int*>(elem->call_data) = 0;
   return GRPC_ERROR_NONE;
@@ -64,12 +64,12 @@ static void channel_func(grpc_channel_element* elem,
   ++*static_cast<int*>(elem->channel_data);
 }
 
-static void free_channel(void* arg, grpc_error* /*error*/) {
+static void free_channel(void* arg, grpc_error_handle /*error*/) {
   grpc_channel_stack_destroy(static_cast<grpc_channel_stack*>(arg));
   gpr_free(arg);
 }
 
-static void free_call(void* arg, grpc_error* /*error*/) {
+static void free_call(void* arg, grpc_error_handle /*error*/) {
   grpc_call_stack_destroy(static_cast<grpc_call_stack*>(arg), nullptr, nullptr);
   gpr_free(arg);
 }
@@ -127,7 +127,7 @@ static void test_create_channel_stack(void) {
       nullptr,                 /* arena */
       nullptr,                 /* call_combiner */
   };
-  grpc_error* error =
+  grpc_error_handle error =
       grpc_call_stack_init(channel_stack, 1, free_call, call_stack, &args);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(call_stack->count == 1);

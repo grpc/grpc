@@ -14,27 +14,16 @@
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
 
-#ifdef GRPC_EVENT_ENGINE_TEST
-
 #include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/iomgr/resolve_address.h"
-
 namespace grpc_event_engine {
 namespace experimental {
 
-std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress* addr);
-
-EventEngine::ResolvedAddress CreateResolvedAddress(
-    const grpc_resolved_address* addr);
-
-grpc_resolved_address CreateGRPCResolvedAddress(
-    const EventEngine::ResolvedAddress* ra);
+std::string ResolvedAddressToURI(const EventEngine::ResolvedAddress& addr);
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif
 #endif  // GRPC_CORE_LIB_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H

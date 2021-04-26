@@ -43,9 +43,12 @@ void iomgr_platform_flush(void) {
 }
 
 void iomgr_platform_shutdown(void) {
-  // TODO(hork): only do this is the default has been instantiated
-  // TODO(hork): log trace if shutdown failed. Is the status necessary?
-  GetDefaultEventEngine()->Shutdown();
+  GetDefaultEventEngine()->Shutdown([](absl::Status result) {
+    if (!result.ok()) {
+      gpr_log(GPR_ERROR, "Failed to shut down EventEngine iomgr. Reason: %s",
+              result.ToString().c_str());
+    }
+  });
 }
 
 void iomgr_platform_shutdown_background_closure(void) {}

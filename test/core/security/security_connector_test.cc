@@ -717,7 +717,7 @@ static void test_peer_alpn_check(void) {
   GPR_ASSERT(tsi_construct_string_peer_property("wrong peer property name",
                                                 alpn, strlen(alpn),
                                                 &peer.properties[0]) == TSI_OK);
-  grpc_error* error = grpc_ssl_check_alpn(&peer);
+  grpc_error_handle error = grpc_ssl_check_alpn(&peer);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   tsi_peer_destruct(&peer);
   GRPC_ERROR_UNREF(error);

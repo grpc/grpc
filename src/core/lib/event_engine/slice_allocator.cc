@@ -13,8 +13,6 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#ifdef GRPC_EVENT_ENGINE_TEST
-
 #include "grpc/event_engine/slice_allocator.h"
 
 #include <functional>
@@ -59,5 +57,3 @@ SliceAllocator SliceAllocatorFactory::CreateSliceAllocator(
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-
-#endif  // GRPC_EVENT_ENGINE_TEST

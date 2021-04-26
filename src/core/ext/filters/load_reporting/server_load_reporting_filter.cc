@@ -50,7 +50,7 @@ constexpr char kEncodedIpv6AddressLengthString[] = "32";
 constexpr char kEmptyAddressLengthString[] = "00";
 constexpr size_t kLengthPrefixSize = 2;
 
-grpc_error* ServerLoadReportingChannelData::Init(
+grpc_error_handle ServerLoadReportingChannelData::Init(
     grpc_channel_element* /* elem */, grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   // Find and record the peer_identity.
@@ -232,8 +232,8 @@ grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
   return GRPC_FILTERED_MDELEM(md);
 }
 
-void ServerLoadReportingCallData::RecvInitialMetadataReady(void* arg,
-                                                           grpc_error* err) {
+void ServerLoadReportingCallData::RecvInitialMetadataReady(
+    void* arg, grpc_error_handle err) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(arg);
   ServerLoadReportingCallData* calld =
       reinterpret_cast<ServerLoadReportingCallData*>(elem->call_data);
@@ -264,7 +264,7 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(void* arg,
                           GRPC_ERROR_REF(err));
 }
 
-grpc_error* ServerLoadReportingCallData::Init(
+grpc_error_handle ServerLoadReportingCallData::Init(
     grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
   service_method_ = grpc_empty_slice();
   GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_, RecvInitialMetadataReady,

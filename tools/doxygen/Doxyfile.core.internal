@@ -1603,6 +1603,8 @@ src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/stat.h \
 src/core/lib/gprpp/stat_posix.cc \
 src/core/lib/gprpp/stat_windows.cc \
+src/core/lib/gprpp/status_helper.cc \
+src/core/lib/gprpp/status_helper.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
@@ -1658,6 +1660,8 @@ src/core/lib/iomgr/event_engine/endpoint.cc \
 src/core/lib/iomgr/event_engine/endpoint.h \
 src/core/lib/iomgr/event_engine/iomgr.cc \
 src/core/lib/iomgr/event_engine/pollset.cc \
+src/core/lib/iomgr/event_engine/resolved_address_internal.cc \
+src/core/lib/iomgr/event_engine/resolved_address_internal.h \
 src/core/lib/iomgr/event_engine/resolver.cc \
 src/core/lib/iomgr/event_engine/tcp.cc \
 src/core/lib/iomgr/event_engine/timer.cc \

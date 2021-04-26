@@ -435,12 +435,12 @@ static void ZerocopyDisableAndWaitForRemaining(grpc_tcp* tcp);
 static gpr_atm g_uncovered_notifications_pending;
 static gpr_atm g_backup_poller; /* backup_poller* */
 
-static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error* error);
-static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error);
+static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
+static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error_handle error);
 static void tcp_drop_uncovered_then_handle_write(void* arg /* grpc_tcp */,
-                                                 grpc_error* error);
+                                                 grpc_error_handle error);
 
-static void done_poller(void* bp, grpc_error* /*error_ignored*/) {
+static void done_poller(void* bp, grpc_error_handle /*error_ignored*/) {
   backup_poller* p = static_cast<backup_poller*>(bp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p destroy", p);
@@ -449,7 +449,7 @@ static void done_poller(void* bp, grpc_error* /*error_ignored*/) {
   gpr_free(p);
 }
 
-static void run_poller(void* bp, grpc_error* /*error_ignored*/) {
+static void run_poller(void* bp, grpc_error_handle /*error_ignored*/) {
   backup_poller* p = static_cast<backup_poller*>(bp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p run", p);
@@ -560,7 +560,8 @@ static void notify_on_write(grpc_tcp* tcp) {
   grpc_fd_notify_on_write(tcp->em_fd, &tcp->write_done_closure);
 }
 
-static void tcp_drop_uncovered_then_handle_write(void* arg, grpc_error* error) {
+static void tcp_drop_uncovered_then_handle_write(void* arg,
+                                                 grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_write: %s", arg, grpc_error_string(error));
   }
@@ -604,7 +605,8 @@ static size_t get_target_read_size(grpc_tcp* tcp) {
   return sz;
 }
 
-static grpc_error* tcp_annotate_error(grpc_error* src_error, grpc_tcp* tcp) {
+static grpc_error_handle tcp_annotate_error(grpc_error_handle src_error,
+                                            grpc_tcp* tcp) {
   return grpc_error_set_str(
       grpc_error_set_int(
           grpc_error_set_int(src_error, GRPC_ERROR_INT_FD, tcp->fd),
@@ -615,10 +617,10 @@ static grpc_error* tcp_annotate_error(grpc_error* src_error, grpc_tcp* tcp) {
       grpc_slice_from_copied_string(tcp->peer_string.c_str()));
 }
 
-static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error* error);
-static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error);
+static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error);
+static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error_handle error);
 
-static void tcp_shutdown(grpc_endpoint* ep, grpc_error* why) {
+static void tcp_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   ZerocopyDisableAndWaitForRemaining(tcp);
   grpc_fd_shutdown(tcp->em_fd, why);
@@ -678,7 +680,7 @@ static void tcp_destroy(grpc_endpoint* ep) {
   TCP_UNREF(tcp, "destroy");
 }
 
-static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
+static void call_read_cb(grpc_tcp* tcp, grpc_error_handle error) {
   grpc_closure* cb = tcp->read_cb;
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -850,7 +852,7 @@ static void tcp_do_read(grpc_tcp* tcp) {
   TCP_UNREF(tcp, "read");
 }
 
-static void tcp_read_allocation_done(void* tcpp, grpc_error* error) {
+static void tcp_read_allocation_done(void* tcpp, grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(tcpp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p read_allocation_done: %s", tcp,
@@ -887,7 +889,7 @@ static void tcp_continue_read(grpc_tcp* tcp) {
   tcp_do_read(tcp);
 }
 
-static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error* error) {
+static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp, grpc_error_string(error));
@@ -958,7 +960,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
                                       int additional_flags = 0);
 
 /** The callback function to be invoked when we get an error on the socket. */
-static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error);
+static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error_handle error);
 
 static TcpZerocopySendRecord* tcp_get_send_zerocopy_record(
     grpc_tcp* tcp, grpc_slice_buffer* buf);
@@ -1213,7 +1215,8 @@ static bool process_errors(grpc_tcp* tcp) {
   }
 }
 
-static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
+static void tcp_handle_error(void* arg /* grpc_tcp */,
+                             grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_error: %s", tcp, grpc_error_string(error));
@@ -1257,7 +1260,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* /*tcp*/, struct msghdr* /*msg*/,
 }
 
 static void tcp_handle_error(void* /*arg*/ /* grpc_tcp */,
-                             grpc_error* /*error*/) {
+                             grpc_error_handle /*error*/) {
   gpr_log(GPR_ERROR, "Error handling is not supported for this platform");
   GPR_ASSERT(0);
 }
@@ -1323,7 +1326,7 @@ void TcpZerocopySendRecord::UpdateOffsetForBytesSent(size_t sending_length,
 
 // returns true if done, false if pending; if returning true, *error is set
 static bool do_tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
-                                  grpc_error** error) {
+                                  grpc_error_handle* error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
@@ -1399,7 +1402,7 @@ static void UnrefMaybePutZerocopySendRecord(grpc_tcp* tcp,
 }
 
 static bool tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
-                               grpc_error** error) {
+                               grpc_error_handle* error) {
   bool done = do_tcp_flush_zerocopy(tcp, record, error);
   if (done) {
     // Either we encountered an error, or we successfully sent all the bytes.
@@ -1409,7 +1412,7 @@ static bool tcp_flush_zerocopy(grpc_tcp* tcp, TcpZerocopySendRecord* record,
   return done;
 }
 
-static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
+static bool tcp_flush(grpc_tcp* tcp, grpc_error_handle* error) {
   struct msghdr msg;
   struct iovec iov[MAX_WRITE_IOVEC];
   msg_iovlen_type iov_size;
@@ -1516,7 +1519,8 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
   }
 }
 
-static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
+static void tcp_handle_write(void* arg /* grpc_tcp */,
+                             grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   grpc_closure* cb;
 
@@ -1562,7 +1566,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
                       grpc_closure* cb, void* arg) {
   GPR_TIMER_SCOPE("tcp_write", 0);
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   TcpZerocopySendRecord* zerocopy_send_record = nullptr;
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {

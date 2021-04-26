@@ -186,17 +186,17 @@ class GrpcLb : public LoadBalancingPolicy {
     void ScheduleNextClientLoadReportLocked();
     void SendClientLoadReportLocked();
 
-    static void MaybeSendClientLoadReport(void* arg, grpc_error* error);
-    static void ClientLoadReportDone(void* arg, grpc_error* error);
-    static void OnInitialRequestSent(void* arg, grpc_error* error);
-    static void OnBalancerMessageReceived(void* arg, grpc_error* error);
-    static void OnBalancerStatusReceived(void* arg, grpc_error* error);
+    static void MaybeSendClientLoadReport(void* arg, grpc_error_handle error);
+    static void ClientLoadReportDone(void* arg, grpc_error_handle error);
+    static void OnInitialRequestSent(void* arg, grpc_error_handle error);
+    static void OnBalancerMessageReceived(void* arg, grpc_error_handle error);
+    static void OnBalancerStatusReceived(void* arg, grpc_error_handle error);
 
-    void MaybeSendClientLoadReportLocked(grpc_error* error);
-    void ClientLoadReportDoneLocked(grpc_error* error);
+    void MaybeSendClientLoadReportLocked(grpc_error_handle error);
+    void ClientLoadReportDoneLocked(grpc_error_handle error);
     void OnInitialRequestSentLocked();
     void OnBalancerMessageReceivedLocked();
-    void OnBalancerStatusReceivedLocked(grpc_error* error);
+    void OnBalancerStatusReceivedLocked(grpc_error_handle error);
 
     // The owning LB policy.
     RefCountedPtr<LoadBalancingPolicy> grpclb_policy_;
@@ -410,14 +410,14 @@ class GrpcLb : public LoadBalancingPolicy {
 
   // Methods for dealing with fallback state.
   void MaybeEnterFallbackModeAfterStartup();
-  static void OnFallbackTimer(void* arg, grpc_error* error);
-  void OnFallbackTimerLocked(grpc_error* error);
+  static void OnFallbackTimer(void* arg, grpc_error_handle error);
+  void OnFallbackTimerLocked(grpc_error_handle error);
 
   // Methods for dealing with the balancer call.
   void StartBalancerCallLocked();
   void StartBalancerCallRetryTimerLocked();
-  static void OnBalancerCallRetryTimer(void* arg, grpc_error* error);
-  void OnBalancerCallRetryTimerLocked(grpc_error* error);
+  static void OnBalancerCallRetryTimer(void* arg, grpc_error_handle error);
+  void OnBalancerCallRetryTimerLocked(grpc_error_handle error);
 
   // Methods for dealing with the child policy.
   grpc_channel_args* CreateChildPolicyArgsLocked(
@@ -902,8 +902,8 @@ void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
   client_load_report_timer_callback_pending_ = true;
 }
 
-void GrpcLb::BalancerCallState::MaybeSendClientLoadReport(void* arg,
-                                                          grpc_error* error) {
+void GrpcLb::BalancerCallState::MaybeSendClientLoadReport(
+    void* arg, grpc_error_handle error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   lb_calld->grpclb_policy()->work_serializer()->Run(
@@ -912,7 +912,7 @@ void GrpcLb::BalancerCallState::MaybeSendClientLoadReport(void* arg,
 }
 
 void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked(
-    grpc_error* error) {
+    grpc_error_handle error) {
   client_load_report_timer_callback_pending_ = false;
   if (error != GRPC_ERROR_NONE || this != grpclb_policy()->lb_calld_.get()) {
     Unref(DEBUG_LOCATION, "client_load_report");
@@ -982,7 +982,7 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
 }
 
 void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
-                                                     grpc_error* error) {
+                                                     grpc_error_handle error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   lb_calld->grpclb_policy()->work_serializer()->Run(
@@ -990,7 +990,8 @@ void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
       DEBUG_LOCATION);
 }
 
-void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(grpc_error* error) {
+void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(
+    grpc_error_handle error) {
   grpc_byte_buffer_destroy(send_message_payload_);
   send_message_payload_ = nullptr;
   if (error != GRPC_ERROR_NONE || this != grpclb_policy()->lb_calld_.get()) {
@@ -1001,8 +1002,8 @@ void GrpcLb::BalancerCallState::ClientLoadReportDoneLocked(grpc_error* error) {
   ScheduleNextClientLoadReportLocked();
 }
 
-void GrpcLb::BalancerCallState::OnInitialRequestSent(void* arg,
-                                                     grpc_error* /*error*/) {
+void GrpcLb::BalancerCallState::OnInitialRequestSent(
+    void* arg, grpc_error_handle /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld]() { lb_calld->OnInitialRequestSentLocked(); }, DEBUG_LOCATION);
@@ -1021,7 +1022,7 @@ void GrpcLb::BalancerCallState::OnInitialRequestSentLocked() {
 }
 
 void GrpcLb::BalancerCallState::OnBalancerMessageReceived(
-    void* arg, grpc_error* /*error*/) {
+    void* arg, grpc_error_handle /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->work_serializer()->Run(
       [lb_calld]() { lb_calld->OnBalancerMessageReceivedLocked(); },
@@ -1183,8 +1184,8 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked() {
   }
 }
 
-void GrpcLb::BalancerCallState::OnBalancerStatusReceived(void* arg,
-                                                         grpc_error* error) {
+void GrpcLb::BalancerCallState::OnBalancerStatusReceived(
+    void* arg, grpc_error_handle error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   GRPC_ERROR_REF(error);  // owned by lambda
   lb_calld->grpclb_policy()->work_serializer()->Run(
@@ -1193,7 +1194,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceived(void* arg,
 }
 
 void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
-    grpc_error* error) {
+    grpc_error_handle error) {
   GPR_ASSERT(lb_call_ != nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     char* status_details = grpc_slice_to_c_string(lb_call_status_details_);
@@ -1534,7 +1535,7 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
   grpc_timer_init(&lb_call_retry_timer_, next_try, &lb_on_call_retry_);
 }
 
-void GrpcLb::OnBalancerCallRetryTimer(void* arg, grpc_error* error) {
+void GrpcLb::OnBalancerCallRetryTimer(void* arg, grpc_error_handle error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   grpclb_policy->work_serializer()->Run(
@@ -1544,7 +1545,7 @@ void GrpcLb::OnBalancerCallRetryTimer(void* arg, grpc_error* error) {
       DEBUG_LOCATION);
 }
 
-void GrpcLb::OnBalancerCallRetryTimerLocked(grpc_error* error) {
+void GrpcLb::OnBalancerCallRetryTimerLocked(grpc_error_handle error) {
   retry_timer_callback_pending_ = false;
   if (!shutting_down_ && error == GRPC_ERROR_NONE && lb_calld_ == nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
@@ -1578,7 +1579,7 @@ void GrpcLb::MaybeEnterFallbackModeAfterStartup() {
   }
 }
 
-void GrpcLb::OnFallbackTimer(void* arg, grpc_error* error) {
+void GrpcLb::OnFallbackTimer(void* arg, grpc_error_handle error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
   GRPC_ERROR_REF(error);  // ref owned by lambda
   grpclb_policy->work_serializer()->Run(
@@ -1586,7 +1587,7 @@ void GrpcLb::OnFallbackTimer(void* arg, grpc_error* error) {
       DEBUG_LOCATION);
 }
 
-void GrpcLb::OnFallbackTimerLocked(grpc_error* error) {
+void GrpcLb::OnFallbackTimerLocked(grpc_error_handle error) {
   // If we receive a serverlist after the timer fires but before this callback
   // actually runs, don't fall back.
   if (fallback_at_startup_checks_pending_ && !shutting_down_ &&
@@ -1690,12 +1691,12 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kGrpclb; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& json, grpc_error** error) const override {
+      const Json& json, grpc_error_handle* error) const override {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json.type() == Json::Type::JSON_NULL) {
       return MakeRefCounted<GrpcLbConfig>(nullptr, "");
     }
-    std::vector<grpc_error*> error_list;
+    std::vector<grpc_error_handle> error_list;
     Json child_policy_config_json_tmp;
     const Json* child_policy_config_json;
     std::string service_name;
@@ -1718,12 +1719,12 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     } else {
       child_policy_config_json = &it->second;
     }
-    grpc_error* parse_error = GRPC_ERROR_NONE;
+    grpc_error_handle parse_error = GRPC_ERROR_NONE;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy_config =
         LoadBalancingPolicyRegistry::ParseLoadBalancingConfig(
             *child_policy_config_json, &parse_error);
     if (parse_error != GRPC_ERROR_NONE) {
-      std::vector<grpc_error*> child_errors;
+      std::vector<grpc_error_handle> child_errors;
       child_errors.push_back(parse_error);
       error_list.push_back(
           GRPC_ERROR_CREATE_FROM_VECTOR("field:childPolicy", &child_errors));

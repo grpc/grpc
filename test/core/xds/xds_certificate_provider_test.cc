@@ -73,8 +73,8 @@ class TestCertificatesWatcher
     }
   }
 
-  void OnError(grpc_error* root_cert_error,
-               grpc_error* identity_cert_error) override {
+  void OnError(grpc_error_handle root_cert_error,
+               grpc_error_handle identity_cert_error) override {
     GRPC_ERROR_UNREF(root_cert_error_);
     root_cert_error_ = root_cert_error;
     GRPC_ERROR_UNREF(identity_cert_error_);
@@ -87,15 +87,15 @@ class TestCertificatesWatcher
     return key_cert_pairs_;
   }
 
-  grpc_error* root_cert_error() const { return root_cert_error_; }
+  grpc_error_handle root_cert_error() const { return root_cert_error_; }
 
-  grpc_error* identity_cert_error() const { return identity_cert_error_; }
+  grpc_error_handle identity_cert_error() const { return identity_cert_error_; }
 
  private:
   absl::optional<std::string> root_certs_;
   absl::optional<PemKeyCertPairList> key_cert_pairs_;
-  grpc_error* root_cert_error_ = GRPC_ERROR_NONE;
-  grpc_error* identity_cert_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle root_cert_error_ = GRPC_ERROR_NONE;
+  grpc_error_handle identity_cert_error_ = GRPC_ERROR_NONE;
 };
 
 TEST(

@@ -54,7 +54,7 @@ struct request {
   grpc_closure* on_done;
   grpc_resolved_addresses** addresses;
 };
-static grpc_error* windows_blocking_resolve_address(
+static grpc_error_handle windows_blocking_resolve_address(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
   grpc_core::ExecCtx exec_ctx;
@@ -62,7 +62,7 @@ static grpc_error* windows_blocking_resolve_address(
   struct addrinfo *result = NULL, *resp;
   int s;
   size_t i;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
 
   /* parse name, splitting it into host and port parts */
   std::string host;
@@ -121,7 +121,7 @@ done:
 
 /* Callback to be passed to grpc_executor to asynch-ify
  * grpc_blocking_resolve_address */
-static void do_request_thread(void* rp, grpc_error* error) {
+static void do_request_thread(void* rp, grpc_error_handle error) {
   request* r = (request*)rp;
   if (error == GRPC_ERROR_NONE) {
     error =

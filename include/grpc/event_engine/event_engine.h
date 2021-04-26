@@ -14,8 +14,6 @@
 #ifndef GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 #define GRPC_EVENT_ENGINE_EVENT_ENGINE_H
 
-#ifdef GRPC_EVENT_ENGINE_TEST
-
 #include <grpc/support/port_platform.h>
 
 #include <functional>
@@ -115,7 +113,9 @@ class EventEngine {
   /// allocation being handled by the quota system.
   class Endpoint {
    public:
-    virtual ~Endpoint() = 0;
+    /// The Endpoint descructor is responsible for shutting down all connections
+    /// and invoking all pending read or write callbacks with an error status.
+    virtual ~Endpoint() = default;
     /// Read data from the Endpoint.
     ///
     /// When data is available on the connection, that data is moved into the
@@ -143,9 +143,6 @@ class EventEngine {
     /// on endpoint shutdown.
     virtual void Write(Callback on_writable, SliceBuffer* data,
                        absl::Time deadline) = 0;
-    // TODO(hork): define status codes for the callback
-    // TODO(hork): define cleanup operations, lifetimes, responsibilities.
-    virtual void Close(Callback on_close) = 0;
     /// These methods return an address in the format described in DNSResolver.
     /// The returned values are owned by the Endpoint and are expected to remain
     /// valid for the life of the Endpoint.
@@ -153,19 +150,19 @@ class EventEngine {
     virtual const ResolvedAddress* GetLocalAddress() const = 0;
   };
 
-  /// Called when a new connection is established. This callback takes ownership
-  /// of the Endpoint and is responsible for its destruction.
-  using OnConnectCallback = std::function<void(absl::Status, Endpoint*)>;
+  /// Called when a new connection is established.
+  using OnConnectCallback =
+      std::function<void(absl::Status, std::unique_ptr<Endpoint>)>;
 
   /// An EventEngine Listener listens for incoming connection requests from gRPC
   /// clients and initiates request processing once connections are established.
   class Listener {
    public:
     /// A callback handle, used to cancel a callback. Called when the listener
-    /// has accepted a new client connection. This callback takes ownership of
-    /// the Endpoint and is responsible its destruction.
-    using AcceptCallback = std::function<void(absl::Status, Endpoint*)>;
-    virtual ~Listener() = 0;
+    /// has accepted a new client connection.
+    using AcceptCallback =
+        std::function<void(absl::Status, std::unique_ptr<Endpoint>)>;
+    virtual ~Listener() = default;
     // TODO(hork): define return status codes
     /// Bind an address/port to this Listener. It is expected that multiple
     /// addresses/ports can be bound to this Listener before Listener::Start has
@@ -215,7 +212,7 @@ class EventEngine {
     /// Called with the result of a TXT record lookup
     using LookupTXTCallback = std::function<void(absl::Status, std::string)>;
 
-    virtual ~DNSResolver() = 0;
+    virtual ~DNSResolver() = default;
 
     // TODO(hork): define status codes for the callback
     /// Asynchronously resolve an address. \a default_port may be a non-numeric
@@ -237,7 +234,7 @@ class EventEngine {
     virtual void TryCancelLookup(LookupTaskHandle handle) = 0;
   };
 
-  virtual ~EventEngine() = 0;
+  virtual ~EventEngine() = default;
 
   // TODO(hork): define return status codes
   /// Retrieves an instance of a DNSResolver.
@@ -268,17 +265,16 @@ class EventEngine {
   /// callback will be run exactly once from either cancellation or from its
   /// activation.
   virtual void TryCancel(TaskHandle handle) = 0;
-  // TODO(hork): Carefully evaluate shutdown requirements, determine if we need
-  // a callback parameter to be added to this method.
   /// Immediately run all callbacks with status indicating the shutdown. Every
   /// EventEngine is expected to shut down exactly once. No new callbacks/tasks
-  /// should be scheduled after shutdown has begun.
+  /// should be scheduled after shutdown has begun, no new connections should be
+  /// created.
   ///
-  /// If this method returns a non-OK status, errors are expected to be
-  /// unrecoverable. For example, gRPC's previous I/O implementation could have
-  /// warned callers about leaked memory if memory could not be freed within a
-  /// certain timeframe.
-  virtual absl::Status Shutdown() = 0;
+  /// If the \a on_shutdown_complete callback is given a non-OK status, errors
+  /// are expected to be unrecoverable. For example, an implementation could
+  /// warn callers about leaks if memory cannot be freed within a certain
+  /// timeframe.
+  virtual void Shutdown(Callback on_shutdown_complete) = 0;
 };
 
 /// Lazily instantiate and return a default global EventEngine instance if no
@@ -287,16 +283,7 @@ class EventEngine {
 /// default instance will never be instantiated.
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
-absl::Status SetDefaultEventEngine(std::shared_ptr<EventEngine> engine);
-
-// Compulsory virtual destructor definitions.
-EventEngine::~EventEngine(){};
-EventEngine::DNSResolver::~DNSResolver(){};
-EventEngine::Endpoint::~Endpoint(){};
-EventEngine::Listener::~Listener(){};
-
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif
 #endif  // GRPC_EVENT_ENGINE_EVENT_ENGINE_H

@@ -1096,7 +1096,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
   options.flowControlEnabled = YES;
-  __block BOOL canWriteData = NO;
+  __block int writeMessageCount = 0;
 
   __block GRPCStreamingProtoCall *call = [_service
       fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
@@ -1112,8 +1112,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 id request = [RMTStreamingOutputCallRequest
                                                     messageWithPayloadSize:requests[index]
                                                      requestedResponseSize:responses[index]];
-                                                XCTAssertTrue(canWriteData);
-                                                canWriteData = NO;
+                                                XCTAssertLessThanOrEqual(
+                                                    index, writeMessageCount,
+                                                    @"Message received before writing message.");
                                                 [call writeMessage:request];
                                                 [call receiveNextMessage];
                                               } else {
@@ -1131,7 +1132,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                               [expectation fulfill];
                                             }
                                             writeMessageCallback:^{
-                                              canWriteData = YES;
+                                              writeMessageCount++;
                                             }]
                             callOptions:options];
   [call start];
@@ -1527,10 +1528,10 @@ static dispatch_once_t initGlobalInterceptorFactory;
   NSArray *requests = @[ @1, @2, @3, @4 ];
   NSArray *responses = @[ @1, @2, @3, @4 ];
 
-  __block int index = 0;
+  __block int messageIndex = 0;
 
-  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
-                                               requestedResponseSize:responses[index]];
+  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[messageIndex]
+                                               requestedResponseSize:responses[messageIndex]];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   // For backwards compatibility
   options.transportType = [[self class] transportType];
@@ -1539,24 +1540,26 @@ static dispatch_once_t initGlobalInterceptorFactory;
   options.hostNameOverride = [[self class] hostNameOverride];
   options.flowControlEnabled = YES;
   options.interceptorFactories = @[ factory ];
-  __block BOOL canWriteData = NO;
+
+  __block int writeMessageCount = 0;
 
   __block GRPCStreamingProtoCall *call = [_service
       fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                             initWithInitialMetadataCallback:nil
                                             messageCallback:^(id message) {
-                                              XCTAssertLessThan(index, 4,
+                                              XCTAssertLessThan(messageIndex, 4,
                                                                 @"More than 4 responses received.");
                                               id expected = [RMTStreamingOutputCallResponse
-                                                  messageWithPayloadSize:responses[index]];
+                                                  messageWithPayloadSize:responses[messageIndex]];
                                               XCTAssertEqualObjects(message, expected);
-                                              index += 1;
-                                              if (index < 4) {
+                                              messageIndex += 1;
+                                              if (messageIndex < 4) {
                                                 id request = [RMTStreamingOutputCallRequest
-                                                    messageWithPayloadSize:requests[index]
-                                                     requestedResponseSize:responses[index]];
-                                                XCTAssertTrue(canWriteData);
-                                                canWriteData = NO;
+                                                    messageWithPayloadSize:requests[messageIndex]
+                                                     requestedResponseSize:responses[messageIndex]];
+                                                XCTAssertLessThanOrEqual(
+                                                    messageIndex, writeMessageCount,
+                                                    @"Message received before writing message.");
                                                 [call writeMessage:request];
                                                 [call receiveNextMessage];
                                               } else {
@@ -1568,13 +1571,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                               XCTAssertNil(error,
                                                            @"Finished with unexpected error: %@",
                                                            error);
-                                              XCTAssertEqual(index, 4,
+                                              XCTAssertEqual(messageIndex, 4,
                                                              @"Received %i responses instead of 4.",
-                                                             index);
+                                                             messageIndex);
                                               [expectation fulfill];
                                             }
                                             writeMessageCallback:^{
-                                              canWriteData = YES;
+                                              writeMessageCount++;
                                             }]
                             callOptions:options];
   [call start];
@@ -1582,6 +1585,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [call writeMessage:request];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  XCTAssertEqual(writeMessageCount, 4);
   XCTAssertEqual(startCount, 1);
   XCTAssertEqual(writeDataCount, 4);
   XCTAssertEqual(finishCount, 1);
@@ -1783,7 +1787,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   options.flowControlEnabled = YES;
   globalInterceptorFactory.enabled = YES;
 
-  __block BOOL canWriteData = NO;
+  __block int writeMessageCount = 0;
   __block GRPCStreamingProtoCall *call = [_service
       fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                             initWithInitialMetadataCallback:nil
@@ -1795,8 +1799,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 id request = [RMTStreamingOutputCallRequest
                                                     messageWithPayloadSize:requests[index]
                                                      requestedResponseSize:responses[index]];
-                                                XCTAssertTrue(canWriteData);
-                                                canWriteData = NO;
+                                                XCTAssertLessThanOrEqual(
+                                                    index, writeMessageCount,
+                                                    @"Message received before writing message.");
                                                 [call writeMessage:request];
                                                 [call receiveNextMessage];
                                               } else {
@@ -1811,7 +1816,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                               [expectation fulfill];
                                             }
                                             writeMessageCallback:^{
-                                              canWriteData = YES;
+                                              writeMessageCount++;
                                             }]
                             callOptions:options];
   [call start];
@@ -1970,7 +1975,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   options.interceptorFactories = @[ factory ];
   globalInterceptorFactory.enabled = YES;
 
-  __block BOOL canWriteData = NO;
+  __block int writeMessageCount = 0;
   __block GRPCStreamingProtoCall *call = [_service
       fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
                                             initWithInitialMetadataCallback:nil
@@ -1980,7 +1985,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                                 id request = [RMTStreamingOutputCallRequest
                                                     messageWithPayloadSize:requests[index]
                                                      requestedResponseSize:responses[index]];
-                                                canWriteData = NO;
+                                                XCTAssertLessThanOrEqual(
+                                                    index, writeMessageCount,
+                                                    @"Message received before writing message.");
                                                 [call writeMessage:request];
                                                 [call receiveNextMessage];
                                               } else {
@@ -1992,7 +1999,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
                                               [expectation fulfill];
                                             }
                                             writeMessageCallback:^{
-                                              canWriteData = YES;
+                                              writeMessageCount++;
                                             }]
                             callOptions:options];
   [call start];

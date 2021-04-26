@@ -53,7 +53,7 @@ class CFStreamHandle : public GrpcLibraryInitHolder {
   void NotifyOnOpen(grpc_closure* closure);
   void NotifyOnRead(grpc_closure* closure);
   void NotifyOnWrite(grpc_closure* closure);
-  void Shutdown(grpc_error* error);
+  void Shutdown(grpc_error_handle error);
 
   void Ref(const char* file = "", int line = 0, const char* reason = nullptr);
   void Unref(const char* file = "", int line = 0, const char* reason = nullptr);

@@ -31,7 +31,6 @@ namespace {
 using ::grpc_event_engine::experimental::ChannelArgs;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 }  // namespace
@@ -53,11 +52,9 @@ namespace {
 // EventEngine directly, closures will be replaced with EE callback types.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
-  return [&](absl::Status status, EventEngine::Endpoint* endpoint) {
-    grpc_endpoint_out->endpoint = endpoint;
-    grpc_endpoint_out->local_address =
-        ResolvedAddressToURI(endpoint->GetLocalAddress());
-    // TODO(hork): Do we need to add grpc_error to closure's error data?
+  return [&](absl::Status status,
+             std::unique_ptr<EventEngine::Endpoint> endpoint) {
+    grpc_endpoint_out->endpoint = std::move(endpoint);
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));
   };
@@ -66,16 +63,12 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
 EventEngine::Listener::AcceptCallback GrpcClosureToAcceptCallback(
     grpc_closure* closure) {
   (void)closure;
-  return [](absl::Status, EventEngine::Endpoint*) {};
+  return [](absl::Status, std::unique_ptr<EventEngine::Endpoint>) {
+    // TODO(hork): implement
+  };
 }
 
-/// Argument ownership stories:
-/// * closure: ?
-/// * endpoint: owned by caller
-/// * interested_parties: owned by caller
-/// * channel_args: owned by caller
-/// * addr: owned by caller
-/// * deadline: copied
+/// Note: this method does not take ownership of any pointer arguments.
 void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                  grpc_pollset_set* /* interested_parties */,
                  const grpc_channel_args* channel_args,
@@ -91,7 +84,6 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                                   addr->len);
   absl::Time ee_deadline = grpc_core::ToAbslTime(
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
-  // TODO(hork): retrieve EventEngine from Endpoint or from channel_args
   std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
   // TODO(hork): Convert channel_args to ChannelArgs
   ChannelArgs ca;
@@ -103,7 +95,6 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
 grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                               const grpc_channel_args* args,
                               grpc_tcp_server** server) {
-  // TODO(hork): retrieve EventEngine from Endpoint or from channel_args
   std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
   // TODO(hork): Convert channel_args to ChannelArgs
   ChannelArgs ca;
@@ -228,12 +219,14 @@ struct grpc_fd {
   int fd;
 };
 
-grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
+grpc_fd* grpc_fd_create(int /* fd */, const char* /* name */,
+                        bool /* track_err */) {
   return nullptr;
 }
 
 grpc_endpoint* grpc_tcp_client_create_from_fd(
-    grpc_fd* fd, const grpc_channel_args* channel_args, const char* addr_str) {
+    grpc_fd* /* fd */, const grpc_channel_args* /* channel_args */,
+    const char* /* addr_str */) {
   return nullptr;
 }
 
