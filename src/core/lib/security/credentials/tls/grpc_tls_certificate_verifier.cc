@@ -32,7 +32,7 @@ namespace grpc_core {
 
 bool ExternalCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
-    std::function<void()> callback) {
+    std::function<void(absl::Status)> callback, absl::Status* sync_status) {
   {
     MutexLock lock(&mu_);
     request_map_.emplace(request, std::move(callback));
@@ -42,6 +42,10 @@ bool ExternalCertificateVerifier::Verify(
   bool is_done = external_verifier_->verify(external_verifier_->user_data,
                                             request, &OnVerifyDone, this);
   if (is_done) {
+    if (request->status != GRPC_STATUS_OK) {
+      *sync_status = absl::Status(absl::StatusCode::kUnauthenticated,
+                                  request->error_details);
+    }
     MutexLock lock(&mu_);
     request_map_.erase(request);
   }
@@ -49,10 +53,11 @@ bool ExternalCertificateVerifier::Verify(
 }
 
 void ExternalCertificateVerifier::OnVerifyDone(
-    grpc_tls_custom_verification_check_request* request, void* user_data) {
+    grpc_tls_custom_verification_check_request* request, void* callback_arg,
+    grpc_status_code status, const char* error_details) {
   ExecCtx exec_ctx;
-  auto* self = static_cast<ExternalCertificateVerifier*>(user_data);
-  std::function<void()> callback;
+  auto* self = static_cast<ExternalCertificateVerifier*>(callback_arg);
+  std::function<void(absl::Status)> callback;
   {
     MutexLock lock(&self->mu_);
     auto it = self->request_map_.find(request);
@@ -61,26 +66,33 @@ void ExternalCertificateVerifier::OnVerifyDone(
       self->request_map_.erase(it);
     }
   }
-  if (callback != nullptr) callback();
+  if (callback != nullptr) {
+    absl::Status return_status = absl::OkStatus();
+    if (status != GRPC_STATUS_OK) {
+      return_status =
+          absl::Status(absl::StatusCode::kUnauthenticated, error_details);
+    }
+    callback(return_status);
+  }
 }
 
 bool HostNameCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
-    std::function<void()> callback) {
+    std::function<void(absl::Status)> callback, absl::Status* sync_status) {
   GPR_ASSERT(request != nullptr);
   // Extract the target name, and remove its port.
   const char* target_name = request->target_name;
   if (target_name == nullptr) {
-    request->status = GRPC_STATUS_UNAUTHENTICATED;
-    request->error_details = gpr_strdup("Target name is not specified.");
+    *sync_status = absl::Status(absl::StatusCode::kUnauthenticated,
+                                "Target name is not specified.");
     return true;  // synchronous check
   }
   absl::string_view allocated_name;
   absl::string_view ignored_port;
   SplitHostPort(target_name, &allocated_name, &ignored_port);
   if (allocated_name.empty()) {
-    request->status = GRPC_STATUS_UNAUTHENTICATED;
-    request->error_details = gpr_strdup("Failed to split hostname and port.");
+    *sync_status = absl::Status(absl::StatusCode::kUnauthenticated,
+                                "Failed to split hostname and port.");
     return true;  // synchronous check
   }
   // IPv6 zone-id should not be included in comparisons.
@@ -98,7 +110,6 @@ bool HostNameCertificateVerifier::Verify(
       // We are using the target name sent from the client as a matcher to match
       // against identity name on the peer cert.
       if (VerifySubjectAlternativeName(dns_name, std::string(allocated_name))) {
-        request->status = GRPC_STATUS_OK;
         return true;  // synchronous check
       }
     }
@@ -110,7 +121,6 @@ bool HostNameCertificateVerifier::Verify(
     for (int i = 0; i < ip_names_size; ++i) {
       const char* ip_name = ip_names[i];
       if (allocated_name == ip_name) {
-        request->status = GRPC_STATUS_OK;
         return true;  // synchronous check
       }
     }
@@ -122,12 +132,11 @@ bool HostNameCertificateVerifier::Verify(
     // against identity name on the peer cert.
     if (VerifySubjectAlternativeName(common_name,
                                      std::string(allocated_name))) {
-      request->status = GRPC_STATUS_OK;
       return true;  // synchronous check
     }
   }
-  request->status = GRPC_STATUS_UNAUTHENTICATED;
-  request->error_details = gpr_strdup("Hostname Verification Check failed.");
+  *sync_status = absl::Status(absl::StatusCode::kUnauthenticated,
+                              "Hostname Verification Check failed.");
   return true;  // synchronous check
 }
 
@@ -143,10 +152,24 @@ int grpc_tls_certificate_verifier_verify(
     grpc_tls_on_custom_verification_check_done_cb callback,
     void* callback_arg) {
   grpc_core::ExecCtx exec_ctx;
-  std::function<void()> async_cb = [callback, request, callback_arg] {
-    callback(request, callback_arg);
-  };
-  return verifier->Verify(request, async_cb);
+  std::function<void(absl::Status)> async_cb =
+      [callback, request, callback_arg](absl::Status async_status) {
+        if (async_status.ok()) {
+          callback(request, callback_arg, GRPC_STATUS_OK, "");
+        } else {
+          callback(request, callback_arg, GRPC_STATUS_UNAUTHENTICATED,
+                   async_status.ToString().c_str());
+        }
+      };
+  absl::Status sync_status;
+  bool is_done = verifier->Verify(request, async_cb, &sync_status);
+  if (is_done) {
+    if (!sync_status.ok()) {
+      request->status = GRPC_STATUS_UNAUTHENTICATED;
+      request->error_details = gpr_strdup(sync_status.ToString().c_str());
+    }
+  }
+  return is_done;
 }
 
 void grpc_tls_certificate_verifier_cancel(

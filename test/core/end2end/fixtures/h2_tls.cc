@@ -164,8 +164,7 @@ class AsyncExternalVerifier {
     grpc_tls_on_custom_verification_check_done_cb callback =
         thread_args->callback;
     void* callback_arg = thread_args->callback_arg;
-    request->status = GRPC_STATUS_OK;
-    callback(request, callback_arg);
+    callback(request, callback_arg, GRPC_STATUS_OK, "");
     delete thread_args;
   }
 

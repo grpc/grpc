@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.h"
@@ -147,15 +149,20 @@ class TlsChannelSecurityConnector final
     ~ChannelPendingVerifierRequest() {}
 
     void Start() {
+      absl::Status sync_status;
       grpc_tls_certificate_verifier* verifier =
           security_connector_->options_->certificate_verifier();
-      bool is_done =
-          verifier->Verify(&request_, [this]() { OnVerifyDone(true); });
-      if (is_done) OnVerifyDone(false);
+      bool is_done = verifier->Verify(
+          &request_,
+          [this](absl::Status status) { OnVerifyDone(true, status); },
+          &sync_status);
+      if (is_done) {
+        OnVerifyDone(false, sync_status);
+      }
     }
 
    private:
-    void OnVerifyDone(bool run_callback_inline);
+    void OnVerifyDone(bool run_callback_inline, absl::Status status);
     // The request will keep a reference of the security connector to make sure
     // it won't be destroyed while the request is still ongoing.
     RefCountedPtr<TlsChannelSecurityConnector> security_connector_;
@@ -255,15 +262,20 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
     ~ServerPendingVerifierRequest() {}
 
     void Start() {
+      absl::Status sync_status;
       grpc_tls_certificate_verifier* verifier =
           security_connector_->options_->certificate_verifier();
-      bool is_done =
-          verifier->Verify(&request_, [this]() { OnVerifyDone(true); });
-      if (is_done) OnVerifyDone(false);
+      bool is_done = verifier->Verify(
+          &request_,
+          [this](absl::Status status) { OnVerifyDone(true, status); },
+          &sync_status);
+      if (is_done) {
+        OnVerifyDone(false, sync_status);
+      }
     }
 
    private:
-    void OnVerifyDone(bool run_callback_inline);
+    void OnVerifyDone(bool run_callback_inline, absl::Status status);
     // The request will keep a reference of the security connector to make sure
     // it won't be destroyed while the request is still ongoing.
     RefCountedPtr<TlsServerSecurityConnector> security_connector_;

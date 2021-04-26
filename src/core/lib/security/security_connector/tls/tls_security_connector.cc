@@ -427,16 +427,16 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::OnError(
 }
 
 void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::OnVerifyDone(
-    bool run_callback_inline) {
+    bool run_callback_inline, absl::Status status) {
   {
     MutexLock lock(&security_connector_->verifier_request_map_mu_);
     security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
   }
   grpc_error* error = GRPC_ERROR_NONE;
-  if (request_.status != GRPC_STATUS_OK) {
+  if (!status.ok()) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Custom verification check failed with error: ",
-                     request_.error_details)
+                     status.ToString())
             .c_str());
   }
   if (run_callback_inline) {
@@ -648,16 +648,16 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::OnError(
 }
 
 void TlsServerSecurityConnector::ServerPendingVerifierRequest::OnVerifyDone(
-    bool run_callback_inline) {
+    bool run_callback_inline, absl::Status status) {
   {
     MutexLock lock(&security_connector_->verifier_request_map_mu_);
     security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
   }
   grpc_error* error = GRPC_ERROR_NONE;
-  if (request_.status != GRPC_STATUS_OK) {
+  if (!status.ok()) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Custom verification check failed with error: ",
-                     request_.error_details)
+                     status.ToString())
             .c_str());
   }
   if (run_callback_inline) {

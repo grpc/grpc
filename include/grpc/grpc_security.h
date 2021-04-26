@@ -984,10 +984,12 @@ struct grpc_tls_custom_verification_check_request {
  * A callback function provided by gRPC as a parameter of the |verify| function
  * in grpc_tls_certificate_verifier_external. If |verify| is expected to be run
  * asynchronously, the implementer of |verify| will need to invoke this callback
- * at the end to bring the control back to gRPC C core.
+ * with |callback_arg| and proper verification status at the end to bring the
+ * control back to gRPC C core.
  */
 typedef void (*grpc_tls_on_custom_verification_check_done_cb)(
-    grpc_tls_custom_verification_check_request* request, void* callback_arg);
+    grpc_tls_custom_verification_check_request* request, void* callback_arg,
+    grpc_status_code status, const char* error_details);
 
 /**
  * EXPERIMENTAL API - Subject to change
@@ -1006,9 +1008,15 @@ struct grpc_tls_certificate_verifier_external {
   void* user_data;
   /**
    * A function pointer containing the verification logic that will be
-   * performed after the TLS handshake is done.  The implementation of this
-   * method MUST NOT invoke the async |callback| before |verify| returns,
-   * otherwise it can lead to deadlocks.
+   * performed after the TLS handshake is done. It could be processed
+   * synchronously or asynchronously.
+   * - If expected to be processed synchronously, the implementer should
+   * populate the verification result through request->status and
+   * request->error_details, and then return true.
+   * - If expected to be processed asynchronously, the implementer should return
+   * false immediately, and then in the asynchronous thread invoke |callback|
+   * with the verification result. The implementer MUST NOT invoke the async
+   * |callback| before |verify| returns, otherwise it can lead to deadlocks.
    *
    * user_data: any argument that is passed in the user_data of
    * grpc_tls_certificate_verifier_external during construction time can be
@@ -1109,6 +1117,9 @@ void grpc_tls_credentials_options_set_certificate_verifier(
  * Performs the verification logic of an internal verifier.
  * This is typically used when composing the internal verifiers as part of the
  * custom verification.
+ * If |grpc_tls_certificate_verifier_verify| returns true, inspect the
+ * verification result through request->status and request->error_details.
+ * Otherwise, inspect through the parameter of |callback|.
  */
 int grpc_tls_certificate_verifier_verify(
     grpc_tls_certificate_verifier* verifier,

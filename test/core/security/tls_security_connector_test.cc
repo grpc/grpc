@@ -433,7 +433,7 @@ TEST_F(TlsSecurityConnectorTest,
                  &peer.properties[1]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   const char* expected_error_msg =
-      "Custom verification check failed with error: "
+      "Custom verification check failed with error: UNAUTHENTICATED: "
       "SyncExternalVerifierBadVerify failed";
   grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
@@ -515,7 +515,7 @@ TEST_F(TlsSecurityConnectorTest,
                  &peer.properties[1]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   const char* expected_error_msg =
-      "Custom verification check failed with error: "
+      "Custom verification check failed with error: UNAUTHENTICATED: "
       "AsyncExternalVerifierBadVerify failed";
   grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
@@ -621,7 +621,8 @@ TEST_F(TlsSecurityConnectorTest,
                  &peer.properties[6]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   const char* expected_error_msg =
-      "Custom verification check failed with error: Hostname Verification "
+      "Custom verification check failed with error: UNAUTHENTICATED: Hostname "
+      "Verification "
       "Check failed.";
   grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
@@ -862,7 +863,7 @@ TEST_F(TlsSecurityConnectorTest,
                  &peer.properties[1]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   const char* expected_error_msg =
-      "Custom verification check failed with error: "
+      "Custom verification check failed with error: UNAUTHENTICATED: "
       "SyncExternalVerifierBadVerify failed";
   grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(
@@ -937,7 +938,7 @@ TEST_F(TlsSecurityConnectorTest,
                  &peer.properties[1]) == TSI_OK);
   grpc_core::RefCountedPtr<grpc_auth_context> auth_context;
   const char* expected_error_msg =
-      "Custom verification check failed with error: "
+      "Custom verification check failed with error: UNAUTHENTICATED: "
       "AsyncExternalVerifierBadVerify failed";
   grpc_core::ExecCtx exec_ctx;
   grpc_closure* on_peer_checked = GRPC_CLOSURE_CREATE(

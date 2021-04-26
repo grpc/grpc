@@ -23,6 +23,8 @@
 
 #include <grpc/grpc_security.h>
 
+#include "absl/status/status.h"
+
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -39,12 +41,14 @@ struct grpc_tls_certificate_verifier
 
   virtual ~grpc_tls_certificate_verifier() = default;
   // Verifies the specific request. It can be processed in sync or async mode.
-  // If the caller want it to be processed asynchronously, return false and
-  // invoke the callback after the final verification results are populated.
-  // Otherwise, populate the results synchronously and return true.
-  // The caller is expected to populate verification results by setting request.
+  // If the caller want it to be processed asynchronously, return false
+  // immediately, and at the end of the async operation, invoke the callback
+  // with the verification results stored in absl::Status. Otherwise, populate
+  // the verification results in |sync_status| and return true. The caller is
+  // expected to populate verification results by setting request.
   virtual bool Verify(grpc_tls_custom_verification_check_request* request,
-                      std::function<void()> callback) = 0;
+                      std::function<void(absl::Status)> callback,
+                      absl::Status* sync_status) = 0;
   // Operations that will be performed when a request is cancelled.
   // This is only needed when in async mode.
   // TODO(ZhenLian): find out the place to invoke this...
@@ -68,7 +72,8 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
   }
 
   bool Verify(grpc_tls_custom_verification_check_request* request,
-              std::function<void()> callback) override;
+              std::function<void(absl::Status)> callback,
+              absl::Status* sync_status) override;
 
   void Cancel(grpc_tls_custom_verification_check_request* request) override {
     external_verifier_->cancel(external_verifier_->user_data, request);
@@ -78,11 +83,13 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
   grpc_tls_certificate_verifier_external* external_verifier_;
 
   static void OnVerifyDone(grpc_tls_custom_verification_check_request* request,
-                           void* user_data);
+                           void* callback_arg, grpc_status_code status,
+                           const char* error_details);
   // Guards members below.
   Mutex mu_;
   // stores each check request and its corresponding callback function.
-  std::map<grpc_tls_custom_verification_check_request*, std::function<void()>>
+  std::map<grpc_tls_custom_verification_check_request*,
+           std::function<void(absl::Status)>>
       request_map_;
 };
 
@@ -90,7 +97,8 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
 class HostNameCertificateVerifier : public grpc_tls_certificate_verifier {
  public:
   bool Verify(grpc_tls_custom_verification_check_request* request,
-              std::function<void()> callback) override;
+              std::function<void(absl::Status)> callback,
+              absl::Status* sync_status) override;
   void Cancel(grpc_tls_custom_verification_check_request* request) override {}
 };
 
