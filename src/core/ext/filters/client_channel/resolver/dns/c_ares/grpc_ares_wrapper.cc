@@ -330,6 +330,7 @@ static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
       fdn = fdn->next;
     }
     if (!driver->shutting_down) {
+      grpc_core::ExecCtx::Get()->InvalidateNow();
       grpc_millis next_ares_backup_poll_alarm =
           calculate_next_ares_backup_poll_alarm_ms(driver);
       grpc_ares_ev_driver_ref(driver);
@@ -487,6 +488,7 @@ static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver) {
 void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver) {
   grpc_ares_notify_on_event_locked(ev_driver);
   // Initialize overall DNS resolution timeout alarm
+  grpc_core::ExecCtx::Get()->InvalidateNow();
   grpc_millis timeout =
       ev_driver->query_timeout_ms == 0
           ? GRPC_MILLIS_INF_FUTURE

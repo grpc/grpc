@@ -362,6 +362,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
                                                          &error, 1),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
     // Set retry timer.
+    ExecCtx::Get()->InvalidateNow();
     grpc_millis next_try = backoff_.NextAttemptTime();
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed (will retry): %s",
@@ -389,6 +390,7 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
   // can start the next resolution.
   if (have_next_resolution_timer_) return;
   if (last_resolution_timestamp_ >= 0) {
+    ExecCtx::Get()->InvalidateNow();
     const grpc_millis earliest_next_resolution =
         last_resolution_timestamp_ + min_time_between_resolutions_;
     const grpc_millis ms_until_next_resolution =

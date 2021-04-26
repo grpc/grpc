@@ -75,6 +75,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
     }
     return;
   }
+  grpc_core::ExecCtx::Get()->InvalidateNow();
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
 
   grpc_millis next_allowed_ping_interval =

@@ -505,6 +505,7 @@ void XdsClusterManagerLb::ClusterChild::DeactivateLocked() {
   // Set the child weight to 0 so that future picker won't contain this child.
   // Start a timer to delete the child.
   Ref(DEBUG_LOCATION, "ClusterChild+timer").release();
+  ExecCtx::Get()->InvalidateNow();
   grpc_timer_init(&delayed_removal_timer_,
                   ExecCtx::Get()->Now() +
                       GRPC_XDS_CLUSTER_MANAGER_CHILD_RETENTION_INTERVAL_MS,

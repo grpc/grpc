@@ -636,6 +636,7 @@ void PriorityLb::ChildPriority::StartFailoverTimerLocked() {
             priority_policy_->child_failover_timeout_ms_);
   }
   Ref(DEBUG_LOCATION, "ChildPriority+OnFailoverTimerLocked").release();
+  ExecCtx::Get()->InvalidateNow();
   grpc_timer_init(
       &failover_timer_,
       ExecCtx::Get()->Now() + priority_policy_->child_failover_timeout_ms_,

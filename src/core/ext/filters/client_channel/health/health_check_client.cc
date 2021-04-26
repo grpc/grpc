@@ -138,6 +138,7 @@ void HealthCheckClient::StartCallLocked() {
 void HealthCheckClient::StartRetryTimerLocked() {
   SetHealthStatusLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                         "health check call failed; will retry after backoff");
+  ExecCtx::Get()->InvalidateNow();
   grpc_millis next_try = retry_backoff_.NextAttemptTime();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO, "HealthCheckClient %p: health check call lost...", this);

@@ -2129,6 +2129,7 @@ void RetryFilter::CallData::DoRetry(grpc_millis server_pushback_ms) {
   // Reset call attempt.
   call_attempt_.reset();
   // Compute backoff delay.
+  ExecCtx::Get()->InvalidateNow();
   grpc_millis next_attempt_time;
   if (server_pushback_ms >= 0) {
     next_attempt_time = ExecCtx::Get()->Now() + server_pushback_ms;

@@ -559,6 +559,7 @@ void WeightedTargetLb::WeightedChild::DeactivateLocked() {
   // Start a timer to delete the child.
   Ref(DEBUG_LOCATION, "WeightedChild+timer").release();
   delayed_removal_timer_callback_pending_ = true;
+  ExecCtx::Get()->InvalidateNow();
   grpc_timer_init(&delayed_removal_timer_,
                   ExecCtx::Get()->Now() + kChildRetentionIntervalMs,
                   &on_delayed_removal_timer_);

@@ -893,6 +893,7 @@ void GrpcLb::BalancerCallState::StartQuery() {
 }
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
+  ExecCtx::Get()->InvalidateNow();
   const grpc_millis next_client_load_report_time =
       ExecCtx::Get()->Now() + client_stats_report_interval_;
   GRPC_CLOSURE_INIT(&client_load_report_closure_, MaybeSendClientLoadReport,
