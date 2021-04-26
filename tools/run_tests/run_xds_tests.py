@@ -1649,7 +1649,6 @@ def test_timeout(gcp, original_backend_service, instance_group):
                         return
                     logger.info('%s attempt %d failed', testcase_name,
                                 attempt_counter)
-                    before_stats = after_stats
                     raise RpcDistributionError(
                         '%s: timeout waiting for expected results: %s; got %s' %
                         (testcase_name, expected_results,
@@ -1838,7 +1837,6 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
                         logger.info('success')
                         break
                     logger.info('%s attempt %d failed', testcase_name, i)
-                    before_stats = after_stats
                     raise RpcDistributionError(
                         '%s: timeout waiting for expected results: %s; got %s' %
                         (testcase_name, expected_results,
@@ -1861,7 +1859,6 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
     logger.info('waiting for original backends to become healthy')
     wait_for_healthy_backends(gcp, original_backend_service, instance_group)
 
-    # Test case timeout: 5 minutes
     deadline = time.time() + _WAIT_FOR_URL_MAP_PATCH_SEC
     cnt = 0
     while time.time() < deadline:
