@@ -2,20 +2,20 @@
 
 #install ubuntu pre-requisites
 sudo apt update
-sudo apt install -y build-essential autoconf libtool pkg-config cmake python python-pip
+sudo apt install -y build-essential autoconf libtool pkg-config cmake python python-pip clang
 sudo pip install six
 
-# clone and built repo
-# rm -rf grpc
-# git clone https://github.com/grpc/grpc # 1m
-cd grpc
-git submodule update --init # 1m
-# build with cmake
-mkdir -p cmake/build
-cd cmake/build
-cmake ../..
-make
+# setup bazel
+BAZEL=bazel-4.0.0-linux-arm64
+wget https://github.com/bazelbuild/bazel/releases/download/4.0.0/$BAZEL
+wget https://github.com/bazelbuild/bazel/releases/download/4.0.0/${BAZEL}.sha256
+chmod +x ${BAZEL}
+sha256sum -c ${BAZEL}.sha256
 
-# run tests
-cd ../../
-python tools/run_tests/run_tests.py -l c++
+# clone and built repo
+cd grpc
+# build with bazel
+export CXX=clang++
+export CC=clang
+../${BAZEL} test --config=dbg //test/...
+
