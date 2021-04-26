@@ -116,7 +116,7 @@ class WorkSerializedTimerLoop {
               GPR_INFO,
               "thread calling grpc_timer_init just woke up from 1 ms sleep");
           GRPC_ERROR_UNREF(error);
-          self_deleter.release();
+          self_deleter.release(); // owned by timer callback
         },
         DEBUG_LOCATION);
     gpr_log(GPR_INFO,
