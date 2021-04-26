@@ -480,22 +480,30 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
   };
 
   struct EdsResourceArgs {
+    struct Endpoint {
+      Endpoint(int port, HealthStatus health_status = HealthStatus::UNKNOWN,
+               int lb_weight = 1)
+          : port(port), health_status(health_status), lb_weight(lb_weight) {}
+
+      int port;
+      HealthStatus health_status;
+      int lb_weight;
+    };
+
     struct Locality {
-      Locality(std::string sub_zone, std::vector<int> ports,
+      Locality(std::string sub_zone, std::vector<Endpoint> endpoints,
                int lb_weight = kDefaultLocalityWeight,
                int priority = kDefaultLocalityPriority,
                std::vector<HealthStatus> health_statuses = {})
           : sub_zone(std::move(sub_zone)),
-            ports(std::move(ports)),
+            endpoints(std::move(endpoints)),
             lb_weight(lb_weight),
-            priority(priority),
-            health_statuses(std::move(health_statuses)) {}
+            priority(priority) {}
 
       const std::string sub_zone;
-      std::vector<int> ports;
+      std::vector<Endpoint> endpoints;
       int lb_weight;
       int priority;
-      std::vector<HealthStatus> health_statuses;
     };
 
     EdsResourceArgs() = default;
@@ -2032,6 +2040,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return addresses;
   }
 
+  std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint>
+  CreateEndpointsForBackends(size_t start_index = 0, size_t stop_index = 0,
+                             HealthStatus health_status = HealthStatus::UNKNOWN,
+                             int lb_weight = 1) {
+    if (stop_index == 0) stop_index = backends_.size();
+    std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
+    for (size_t i = start_index; i < stop_index; ++i) {
+      endpoints.emplace_back(backends_[i]->port(), health_status, lb_weight);
+    }
+    return endpoints;
+  }
+
   void SetNextResolution(
       const std::vector<int>& ports,
       grpc_core::FakeResolverResponseGenerator* response_generator = nullptr) {
@@ -2185,12 +2205,12 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       endpoints->mutable_locality()->set_region(kDefaultLocalityRegion);
       endpoints->mutable_locality()->set_zone(kDefaultLocalityZone);
       endpoints->mutable_locality()->set_sub_zone(locality.sub_zone);
-      for (size_t i = 0; i < locality.ports.size(); ++i) {
-        const int& port = locality.ports[i];
+      for (size_t i = 0; i < locality.endpoints.size(); ++i) {
+        const int& port = locality.endpoints[i].port;
         auto* lb_endpoints = endpoints->add_lb_endpoints();
-        if (locality.health_statuses.size() > i &&
-            locality.health_statuses[i] != HealthStatus::UNKNOWN) {
-          lb_endpoints->set_health_status(locality.health_statuses[i]);
+        if (locality.endpoints.size() > i &&
+            locality.endpoints[i].health_status != HealthStatus::UNKNOWN) {
+          lb_endpoints->set_health_status(locality.endpoints[i].health_status);
         }
         auto* endpoint = lb_endpoints->mutable_endpoint();
         auto* address = endpoint->mutable_address();
@@ -2596,7 +2616,7 @@ TEST_P(BasicTest, Vanilla) {
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -2622,12 +2642,14 @@ TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
+  std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints = {
+      {backends_[0]->port(), HealthStatus::DRAINING, 1},
+      {backends_[1]->port(), HealthStatus::UNKNOWN, 1},
+      {backends_[2]->port(), HealthStatus::UNKNOWN, 1},
+      {backends_[3]->port(), HealthStatus::UNKNOWN, 1}};
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0",
-       GetBackendPorts(),
-       kDefaultLocalityWeight,
-       kDefaultLocalityPriority,
-       {HealthStatus::DRAINING}},
+      {"locality0", std::move(endpoints), kDefaultLocalityWeight,
+       kDefaultLocalityPriority},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -2650,9 +2672,14 @@ TEST_P(BasicTest, SameBackendListedMultipleTimes) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Same backend listed twice.
-  std::vector<int> ports(2, backends_[0]->port());
+  std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints = {
+      {backends_[0]->port(), HealthStatus::UNKNOWN, 1},
+      {backends_[0]->port(), HealthStatus::UNKNOWN, 1}};
+  // std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
+  // endpoints.emplace_back(backends_[0]->port(), HealthStatus::UNKNOWN, 1 );
+  // endpoints.emplace_back(backends_[0]->port(), HealthStatus::UNKNOWN, 1 );
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", ports},
+      {"locality0", endpoints},
   });
   const size_t kNumRpcsPerAddress = 10;
   balancers_[0]->ads_service()->SetEdsResource(
@@ -2660,9 +2687,9 @@ TEST_P(BasicTest, SameBackendListedMultipleTimes) {
   // We need to wait for the backend to come online.
   WaitForBackend(0);
   // Send kNumRpcsPerAddress RPCs per server.
-  CheckRpcSendOk(kNumRpcsPerAddress * ports.size());
+  CheckRpcSendOk(kNumRpcsPerAddress * endpoints.size());
   // Backend should have gotten 20 requests.
-  EXPECT_EQ(kNumRpcsPerAddress * ports.size(),
+  EXPECT_EQ(kNumRpcsPerAddress * endpoints.size(),
             backends_[0]->backend_service()->request_count());
   // And they should have come from a single client port, because of
   // subchannel sharing.
@@ -2684,7 +2711,7 @@ TEST_P(BasicTest, InitiallyEmptyServerlist) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Send non-empty serverlist only after kServerlistDelayMs.
   args = AdsServiceImpl::EdsResourceArgs({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   std::thread delayed_resource_setter(std::bind(
       &BasicTest::SetEdsResourceWithDelay, this, 0,
@@ -2713,12 +2740,13 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumUnreachableServers = 5;
-  std::vector<int> ports;
+  std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
   for (size_t i = 0; i < kNumUnreachableServers; ++i) {
-    ports.push_back(grpc_pick_unused_port_or_die());
+    endpoints.emplace_back(grpc_pick_unused_port_or_die(),
+                           HealthStatus::UNKNOWN, 1);
   }
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", ports},
+      {"locality0", endpoints},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -2735,7 +2763,7 @@ TEST_P(BasicTest, BackendsRestart) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -2762,7 +2790,7 @@ TEST_P(BasicTest, IgnoresDuplicateUpdates) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -2791,7 +2819,7 @@ TEST_P(XdsResolverOnlyTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Wait for backends to come online.
@@ -2806,7 +2834,7 @@ TEST_P(XdsResolverOnlyTest, ResourceTypeVersionPersistsAcrossStreamRestarts) {
   // Update backend, just so we can be sure that the client has
   // reconnected to the balancer.
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args2));
   // Restart balancer.
@@ -2822,14 +2850,14 @@ TEST_P(XdsResolverOnlyTest, ChangeClusters) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 2)},
+      {"locality0", CreateEndpointsForBackends(0, 2)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
   WaitForAllBackends(0, 2);
   // Populate new EDS resource.
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 4)},
+      {"locality0", CreateEndpointsForBackends(2, 4)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args2, kNewEdsServiceName));
@@ -2857,7 +2885,7 @@ TEST_P(XdsResolverOnlyTest, ClusterRemoved) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
@@ -2893,7 +2921,7 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 2)},
+      {"locality0", CreateEndpointsForBackends(0, 2)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
@@ -2907,7 +2935,7 @@ TEST_P(XdsResolverOnlyTest, RestartsRequestsUponReconnection) {
   CheckRpcSendOk(100);
   // Populate new EDS resource.
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 4)},
+      {"locality0", CreateEndpointsForBackends(2, 4)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args2, kNewEdsServiceName));
@@ -2940,7 +2968,7 @@ TEST_P(XdsResolverOnlyTest, DefaultRouteSpecifiesSlashPrefix) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
@@ -2953,7 +2981,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreaking) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Update CDS resource to set max concurrent request.
@@ -2995,7 +3023,7 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
   constexpr size_t kMaxConcurrentRequests = 10;
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // Update CDS resource to set max concurrent request.
@@ -3062,7 +3090,7 @@ TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   WaitForAllBackends();
@@ -3122,12 +3150,12 @@ TEST_P(XdsResolverLoadReportingOnlyTest, ChangeClusters) {
   SetNextResolutionForLbChannelAllBalancers();
   // cluster kDefaultClusterName -> locality0 -> backends 0 and 1
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 2)},
+      {"locality0", CreateEndpointsForBackends(0, 2)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // cluster kNewClusterName -> locality1 -> backends 2 and 3
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality1", GetBackendPorts(2, 4)},
+      {"locality1", CreateEndpointsForBackends(2, 4)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args2, kNewEdsServiceName));
@@ -3247,7 +3275,7 @@ TEST_P(SecureNamingTest, TargetNameIsExpected) {
   SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()}, nullptr, "xds_server");
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -3261,7 +3289,7 @@ TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
   SetNextResolutionForLbChannel({balancers_[0]->port()}, nullptr,
                                 "incorrect_server_name");
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -3375,7 +3403,7 @@ TEST_P(LdsTest, IgnoresHttpFiltersAfterRouterFilter) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -3394,7 +3422,7 @@ TEST_P(LdsTest, FailRpcsIfNoHttpRouterFilter) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -3502,7 +3530,7 @@ TEST_P(LdsTest, IgnoresOptionalUnknownHttpFilterType) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -3551,7 +3579,7 @@ TEST_P(LdsTest, IgnoresOptionalHttpFilterWithoutConfig) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -3636,7 +3664,7 @@ TEST_P(LdsTest, IgnoresOptionalHttpFiltersNotSupportedOnClients) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -3665,7 +3693,7 @@ TEST_P(LdsV2Test, IgnoresHttpFilters) {
       http_connection_manager);
   SetListenerAndRouteConfiguration(0, listener, default_route_config_);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -3695,7 +3723,7 @@ TEST_P(LdsRdsTest, ListenerRemoved) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   // We need to wait for all backends to come online.
@@ -4159,13 +4187,13 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatching) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 2)},
+      {"locality0", CreateEndpointsForBackends(0, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(3, 4)},
+      {"locality0", CreateEndpointsForBackends(3, 4)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -4234,13 +4262,13 @@ TEST_P(LdsRdsTest, XdsRoutingPathMatchingCaseInsensitive) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -4299,13 +4327,13 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatching) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 2)},
+      {"locality0", CreateEndpointsForBackends(0, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(3, 4)},
+      {"locality0", CreateEndpointsForBackends(3, 4)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -4369,13 +4397,13 @@ TEST_P(LdsRdsTest, XdsRoutingPrefixMatchingCaseInsensitive) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -4434,13 +4462,13 @@ TEST_P(LdsRdsTest, XdsRoutingPathRegexMatching) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 2)},
+      {"locality0", CreateEndpointsForBackends(0, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(3, 4)},
+      {"locality0", CreateEndpointsForBackends(3, 4)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -4506,13 +4534,13 @@ TEST_P(LdsRdsTest, XdsRoutingPathRegexMatchingCaseInsensitive) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -4575,13 +4603,13 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -4669,13 +4697,13 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetDefaultRoute) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -4754,16 +4782,16 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   AdsServiceImpl::EdsResourceArgs args3({
-      {"locality0", GetBackendPorts(3, 4)},
+      {"locality0", CreateEndpointsForBackends(3, 4)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -4894,16 +4922,16 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   AdsServiceImpl::EdsResourceArgs args3({
-      {"locality0", GetBackendPorts(3, 4)},
+      {"locality0", CreateEndpointsForBackends(3, 4)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -5057,10 +5085,10 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClusters) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -5096,10 +5124,10 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -5451,10 +5479,10 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -5535,10 +5563,10 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialHeaderContentType) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -5582,10 +5610,10 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingSpecialCasesToIgnore) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -5630,10 +5658,10 @@ TEST_P(LdsRdsTest, XdsRoutingRuntimeFractionMatching) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -5692,16 +5720,16 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatchingUnmatchCases) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   AdsServiceImpl::EdsResourceArgs args3({
-      {"locality0", GetBackendPorts(3, 4)},
+      {"locality0", CreateEndpointsForBackends(3, 4)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -5785,10 +5813,10 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   balancers_[0]->ads_service()->SetEdsResource(
@@ -5875,7 +5903,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInVirtualHost) {
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -5942,7 +5970,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInVirtualHost) {
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -6012,7 +6040,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInRoute) {
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -6082,7 +6110,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInRoute) {
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -6163,7 +6191,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalUnknownHttpFilterTypeInClusterWeight) {
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -6249,7 +6277,7 @@ TEST_P(LdsRdsTest, IgnoresOptionalHttpFilterWithoutConfigInClusterWeight) {
   (*per_filter_config)["unknown"].PackFrom(filter_config);
   SetListenerAndRouteConfiguration(0, default_listener_, route_config);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -6334,10 +6362,10 @@ TEST_P(CdsTest, AggregateClusterType) {
   SetNextResolutionForLbChannelAllBalancers();
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
@@ -6387,7 +6415,7 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   const char* kLogicalDNSClusterName = "logical_dns_cluster";
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args1({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args1, kNewEdsService1Name));
@@ -6443,7 +6471,7 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   const char* kLogicalDNSClusterName = "logical_dns_cluster";
   // Populate new EDS resources.
   AdsServiceImpl::EdsResourceArgs args2({
-      {"locality0", GetBackendPorts(2, 3)},
+      {"locality0", CreateEndpointsForBackends(2, 3)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args2, kNewEdsService2Name));
@@ -6659,7 +6687,7 @@ class XdsSecurityTest : public BasicTest {
                                         "waterzooi.test.google.be",
                                         "*.test.youtube.com", "192.168.1.3"};
     AdsServiceImpl::EdsResourceArgs args({
-        {"locality0", GetBackendPorts(0, 1)},
+        {"locality0", CreateEndpointsForBackends(0, 1)},
     });
     balancers_[0]->ads_service()->SetEdsResource(
         BuildEdsResource(args, DefaultEdsServiceName()));
@@ -7251,7 +7279,7 @@ class XdsEnabledServerTest : public XdsEnd2endTest {
   void SetUp() override {
     XdsEnd2endTest::SetUp();
     AdsServiceImpl::EdsResourceArgs args({
-        {"locality0", GetBackendPorts(0, 1)},
+        {"locality0", CreateEndpointsForBackends(0, 1)},
     });
     balancers_[0]->ads_service()->SetEdsResource(
         BuildEdsResource(args, DefaultEdsServiceName()));
@@ -7521,7 +7549,7 @@ class XdsServerSecurityTest : public XdsEnd2endTest {
                                       "waterzooi.test.google.be",
                                       "*.test.youtube.com", "192.168.1.3"};
     AdsServiceImpl::EdsResourceArgs args({
-        {"locality0", GetBackendPorts(0, 1)},
+        {"locality0", CreateEndpointsForBackends(0, 1)},
     });
     balancers_[0]->ads_service()->SetEdsResource(
         BuildEdsResource(args, DefaultEdsServiceName()));
@@ -8779,7 +8807,7 @@ TEST_P(EdsTest, NacksSparsePriorityList) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(), kDefaultLocalityWeight, 1},
+      {"locality0", CreateEndpointsForBackends(), kDefaultLocalityWeight, 1},
   });
   balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
   CheckRpcSendFailure();
@@ -8797,7 +8825,7 @@ TEST_P(EdsTest, NacksSparsePriorityList) {
 // cluster name if not specified in the CDS resource.
 TEST_P(EdsTest, EdsServiceNameDefaultsToClusterName) {
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, kDefaultClusterName));
@@ -8864,8 +8892,8 @@ TEST_P(LocalityMapTest, WeightedRoundRobin) {
       static_cast<double>(kLocalityWeight1) / kTotalLocalityWeight;
   // ADS response contains 2 localities, each of which contains 1 backend.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1), kLocalityWeight0},
-      {"locality1", GetBackendPorts(1, 2), kLocalityWeight1},
+      {"locality0", CreateEndpointsForBackends(0, 1), kLocalityWeight0},
+      {"locality1", CreateEndpointsForBackends(1, 2), kLocalityWeight1},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -8898,7 +8926,7 @@ TEST_P(LocalityMapTest, LocalityContainingNoEndpoints) {
   const size_t kNumRpcs = 5000;
   // EDS response contains 2 localities, one with no endpoints.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
       {"locality1", {}},
   });
   balancers_[0]->ads_service()->SetEdsResource(
@@ -8948,7 +8976,7 @@ TEST_P(LocalityMapTest, StressTest) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   // The second ADS response contains 1 locality, which contains backend 1.
   args = AdsServiceImpl::EdsResourceArgs({
-      {"locality0", GetBackendPorts(1, 2)},
+      {"locality0", CreateEndpointsForBackends(1, 2)},
   });
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, 0,
@@ -8989,9 +9017,9 @@ TEST_P(LocalityMapTest, UpdateMap) {
     locality_weight_rate_1.push_back(weight / kTotalLocalityWeight1);
   }
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1), 2},
-      {"locality1", GetBackendPorts(1, 2), 3},
-      {"locality2", GetBackendPorts(2, 3), 4},
+      {"locality0", CreateEndpointsForBackends(0, 1), 2},
+      {"locality1", CreateEndpointsForBackends(1, 2), 3},
+      {"locality2", CreateEndpointsForBackends(2, 3), 4},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -9020,9 +9048,9 @@ TEST_P(LocalityMapTest, UpdateMap) {
             ::testing::Le(locality_weight_rate_0[i] * (1 + kErrorTolerance))));
   }
   args = AdsServiceImpl::EdsResourceArgs({
-      {"locality1", GetBackendPorts(1, 2), 3},
-      {"locality2", GetBackendPorts(2, 3), 2},
-      {"locality3", GetBackendPorts(3, 4), 6},
+      {"locality1", CreateEndpointsForBackends(1, 2), 3},
+      {"locality2", CreateEndpointsForBackends(2, 3), 2},
+      {"locality3", CreateEndpointsForBackends(3, 4), 6},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -9062,12 +9090,12 @@ TEST_P(LocalityMapTest, ReplaceAllLocalitiesInPriority) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1)},
+      {"locality0", CreateEndpointsForBackends(0, 1)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   args = AdsServiceImpl::EdsResourceArgs({
-      {"locality1", GetBackendPorts(1, 2)},
+      {"locality1", CreateEndpointsForBackends(1, 2)},
   });
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, 0,
@@ -9094,10 +9122,14 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
-      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
-      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
-      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       1},
+      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       2},
+      {"locality2", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
+       3},
+      {"locality3", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
+       0},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -9112,9 +9144,12 @@ TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
-      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
-      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       1},
+      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       2},
+      {"locality2", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
+       3},
       {"locality3", {}, kDefaultLocalityWeight, 0},
   });
   balancers_[0]->ads_service()->SetEdsResource(
@@ -9131,7 +9166,7 @@ TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", {}, kDefaultLocalityWeight, 0},
-      {"locality1", GetBackendPorts(), kDefaultLocalityWeight, 0},
+      {"locality1", CreateEndpointsForBackends(), kDefaultLocalityWeight, 0},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -9147,10 +9182,14 @@ TEST_P(FailoverTest, Failover) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
-      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
-      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
-      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       1},
+      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       2},
+      {"locality2", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
+       3},
+      {"locality3", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
+       0},
   });
   ShutdownBackend(3);
   ShutdownBackend(0);
@@ -9170,10 +9209,14 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 100;
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
-      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
-      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
-      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       1},
+      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       2},
+      {"locality2", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
+       3},
+      {"locality3", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
+       0},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -9197,16 +9240,22 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
-      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 1},
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       0},
+      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       1},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   args = AdsServiceImpl::EdsResourceArgs({
-      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
-      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 1},
-      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 2},
-      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 3},
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       0},
+      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       1},
+      {"locality2", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
+       2},
+      {"locality3", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
+       3},
   });
   ShutdownBackend(0);
   ShutdownBackend(1);
@@ -9234,18 +9283,26 @@ TEST_P(FailoverTest, UpdatePriority) {
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 100;
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
-      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
-      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
-      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       1},
+      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       2},
+      {"locality2", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
+       3},
+      {"locality3", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
+       0},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   args = AdsServiceImpl::EdsResourceArgs({
-      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 2},
-      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 0},
-      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 1},
-      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 3},
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       2},
+      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       0},
+      {"locality2", CreateEndpointsForBackends(2, 3), kDefaultLocalityWeight,
+       1},
+      {"locality3", CreateEndpointsForBackends(3, 4), kDefaultLocalityWeight,
+       3},
   });
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, 0,
@@ -9269,8 +9326,10 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // - Priority 1 is locality 1, containing backends 1 and 2, which are up.
   ShutdownBackend(0);
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
-      {"locality1", GetBackendPorts(1, 3), kDefaultLocalityWeight, 1},
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       0},
+      {"locality1", CreateEndpointsForBackends(1, 3), kDefaultLocalityWeight,
+       1},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -9280,8 +9339,10 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // - We add backend 3 to locality 1, just so we have a way to know
   //   when the update has been seen by the client.
   args = AdsServiceImpl::EdsResourceArgs({
-      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
-      {"locality1", GetBackendPorts(1, 4), kDefaultLocalityWeight, 0},
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       0},
+      {"locality1", CreateEndpointsForBackends(1, 4), kDefaultLocalityWeight,
+       0},
   });
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, 0,
@@ -9314,7 +9375,7 @@ TEST_P(DropTest, Vanilla) {
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   // The ADS response contains two drop categories.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
@@ -9354,7 +9415,7 @@ TEST_P(DropTest, DropPerHundred) {
   const double kDropRateForLb = kDropPerHundredForLb / 100.0;
   // The ADS response contains one drop category.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   args.drop_categories = {{kLbDropType, kDropPerHundredForLb}};
   args.drop_denominator = FractionalPercent::HUNDRED;
@@ -9393,7 +9454,7 @@ TEST_P(DropTest, DropPerTenThousand) {
   const double kDropRateForLb = kDropPerTenThousandForLb / 10000.0;
   // The ADS response contains one drop category.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   args.drop_categories = {{kLbDropType, kDropPerTenThousandForLb}};
   args.drop_denominator = FractionalPercent::TEN_THOUSAND;
@@ -9436,7 +9497,7 @@ TEST_P(DropTest, Update) {
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   // The first ADS response contains one drop category.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb}};
   balancers_[0]->ads_service()->SetEdsResource(
@@ -9778,7 +9839,7 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
   // TODO(juanlishen): Partition the backends after multiple localities is
   // tested.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -9825,7 +9886,7 @@ TEST_P(ClientLoadReportingTest, SendAllClusters) {
   // TODO(juanlishen): Partition the backends after multiple localities is
   // tested.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -9870,7 +9931,7 @@ TEST_P(ClientLoadReportingTest, HonorsClustersRequestedByLrsServer) {
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   const size_t kNumRpcsPerAddress = 100;
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -9907,7 +9968,7 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   const size_t kNumBackendsSecondPass =
       backends_.size() - kNumBackendsFirstPass;
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts(0, kNumBackendsFirstPass)},
+      {"locality0", CreateEndpointsForBackends(0, kNumBackendsFirstPass)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -9945,7 +10006,7 @@ TEST_P(ClientLoadReportingTest, BalancerRestart) {
   // Now restart the balancer, this time pointing to the new backends.
   balancers_[0]->Start();
   args = AdsServiceImpl::EdsResourceArgs({
-      {"locality0", GetBackendPorts(kNumBackendsFirstPass)},
+      {"locality0", CreateEndpointsForBackends(kNumBackendsFirstPass)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -9988,7 +10049,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   // The ADS response contains two drop categories.
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
@@ -10127,7 +10188,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionWithoutListenerFilter) {
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -10155,7 +10216,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbort) {
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -10193,7 +10254,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -10237,7 +10298,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -10279,7 +10340,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -10321,7 +10382,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -10371,7 +10432,7 @@ TEST_P(FaultInjectionTest,
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -10417,7 +10478,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   SetNextResolutionForLbChannelAllBalancers();
   // Create an EDS resource
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -10464,7 +10525,7 @@ TEST_P(BootstrapSourceTest, Vanilla) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", GetBackendPorts()},
+      {"locality0", CreateEndpointsForBackends()},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
