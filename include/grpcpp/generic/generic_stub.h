@@ -68,7 +68,8 @@ class TemplatedGenericStub final {
     return std::unique_ptr<ClientAsyncResponseReader<ResponseType>>(
         internal::ClientAsyncResponseReaderHelper::Create<ResponseType>(
             channel_.get(), cq,
-            grpc::internal::RpcMethod(method.c_str(), /*options=*/{},
+            grpc::internal::RpcMethod(method.c_str(),
+                                      /*suffix_for_stats=*/nullptr,
                                       grpc::internal::RpcMethod::NORMAL_RPC),
             context, request));
   }
@@ -130,8 +131,8 @@ class TemplatedGenericStub final {
                    StubOptions options, const RequestType* request,
                    ResponseType* response,
                    std::function<void(grpc::Status)> on_completion) {
-      stub_->UnaryCallInternal(context, method, std::move(options), request,
-                               response, std::move(on_completion));
+      stub_->UnaryCallInternal(context, method, options, request, response,
+                               std::move(on_completion));
     }
 
     /// Setup a unary call to a named method \a method using
@@ -141,8 +142,8 @@ class TemplatedGenericStub final {
     void PrepareUnaryCall(ClientContext* context, const std::string& method,
                           StubOptions options, const RequestType* request,
                           ResponseType* response, ClientUnaryReactor* reactor) {
-      stub_->PrepareUnaryCallInternal(context, method, std::move(options),
-                                      request, response, reactor);
+      stub_->PrepareUnaryCallInternal(context, method, options, request,
+                                      response, reactor);
     }
 
     /// Setup a call to a named method \a method using \a context and tied to
@@ -151,8 +152,8 @@ class TemplatedGenericStub final {
     void PrepareBidiStreamingCall(
         ClientContext* context, const std::string& method, StubOptions options,
         ClientBidiReactor<RequestType, ResponseType>* reactor) {
-      stub_->PrepareBidiStreamingCallInternal(context, method,
-                                              std::move(options), reactor);
+      stub_->PrepareBidiStreamingCallInternal(context, method, options,
+                                              reactor);
     }
 
    private:
