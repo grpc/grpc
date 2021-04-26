@@ -8846,9 +8846,7 @@ TEST_P(EdsTest, RingHashChannelIdHashing) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  for (size_t i = 0; i < 100; ++i) {
-    (void)SendRpc();
-  }
+  CheckRpcSendOk(100);
   size_t received = 0;
   size_t empty = 0;
   for (size_t i = 0; i <= 3; ++i) {
@@ -8915,12 +8913,10 @@ TEST_P(EdsTest, RingHashHeaderHashing) {
   WaitForAllBackends(1, 2, true, rpc_options1);
   WaitForAllBackends(2, 3, true, rpc_options2);
   WaitForAllBackends(3, 4, true, rpc_options3);
-  for (size_t i = 0; i < 100; ++i) {
-    (void)SendRpc(rpc_options);
-    (void)SendRpc(rpc_options1);
-    (void)SendRpc(rpc_options2);
-    (void)SendRpc(rpc_options3);
-  }
+  CheckRpcSendOk(100, rpc_options);
+  CheckRpcSendOk(100, rpc_options1);
+  CheckRpcSendOk(100, rpc_options2);
+  CheckRpcSendOk(100, rpc_options3);
   for (size_t i = 0; i <= 3; ++i) {
     EXPECT_EQ(100, backends_[i]->backend_service()->request_count());
   }
@@ -9004,9 +9000,7 @@ TEST_P(EdsTest, RingHashTransientFailureCheckNextOne) {
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   WaitForAllBackends(1, 2, true, rpc_options, true);
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
-  for (size_t i = 0; i < 100; ++i) {
-    (void)SendRpc(rpc_options);
-  }
+  CheckRpcSendOk(100, rpc_options);
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
@@ -9051,9 +9045,7 @@ TEST_P(EdsTest, RingHashAllFailReattempt) {
   StartBackend(1);
   WaitForAllBackends(1, 2, true, rpc_options, true);
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
-  for (size_t i = 0; i < 100; ++i) {
-    (void)SendRpc(rpc_options);
-  }
+  CheckRpcSendOk(100, rpc_options);
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
