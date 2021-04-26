@@ -55,8 +55,8 @@ typedef struct grpc_call_create_args {
 /* Create a new call based on \a args.
    Regardless of success or failure, always returns a valid new call into *call
    */
-grpc_error* grpc_call_create(const grpc_call_create_args* args,
-                             grpc_call** call);
+grpc_error_handle grpc_call_create(const grpc_call_create_args* args,
+                                   grpc_call** call);
 
 void grpc_call_set_completion_queue(grpc_call* call, grpc_completion_queue* cq);
 

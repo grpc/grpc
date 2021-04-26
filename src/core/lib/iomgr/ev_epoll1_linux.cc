@@ -241,7 +241,7 @@ struct grpc_pollset_set {
  * Common helpers
  */
 
-static bool append_error(grpc_error** composite, grpc_error* error,
+static bool append_error(grpc_error_handle* composite, grpc_error_handle error,
                          const char* desc) {
   if (error == GRPC_ERROR_NONE) return true;
   if (*composite == GRPC_ERROR_NONE) {
@@ -382,7 +382,7 @@ static int fd_wrapped_fd(grpc_fd* fd) { return fd->fd; }
 /* if 'releasing_fd' is true, it means that we are going to detach the internal
  * fd from grpc_fd structure (i.e which means we should not be calling
  * shutdown() syscall on that fd) */
-static void fd_shutdown_internal(grpc_fd* fd, grpc_error* why,
+static void fd_shutdown_internal(grpc_fd* fd, grpc_error_handle why,
                                  bool releasing_fd) {
   if (fd->read_closure->SetShutdown(GRPC_ERROR_REF(why))) {
     if (!releasing_fd) {
@@ -402,13 +402,13 @@ static void fd_shutdown_internal(grpc_fd* fd, grpc_error* why,
 }
 
 /* Might be called multiple times */
-static void fd_shutdown(grpc_fd* fd, grpc_error* why) {
+static void fd_shutdown(grpc_fd* fd, grpc_error_handle why) {
   fd_shutdown_internal(fd, why, false);
 }
 
 static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
                       const char* reason) {
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   bool is_release_fd = (release_fd != nullptr);
 
   if (!fd->read_closure->IsShutdown()) {
@@ -514,12 +514,12 @@ static size_t choose_neighborhood(void) {
   return static_cast<size_t>(gpr_cpu_current_cpu()) % g_num_neighborhoods;
 }
 
-static grpc_error* pollset_global_init(void) {
+static grpc_error_handle pollset_global_init(void) {
   gpr_tls_init(&g_current_thread_pollset);
   gpr_tls_init(&g_current_thread_worker);
   gpr_atm_no_barrier_store(&g_active_poller, 0);
   global_wakeup_fd.read_fd = -1;
-  grpc_error* err = grpc_wakeup_fd_init(&global_wakeup_fd);
+  grpc_error_handle err = grpc_wakeup_fd_init(&global_wakeup_fd);
   if (err != GRPC_ERROR_NONE) return err;
   struct epoll_event ev;
   ev.events = static_cast<uint32_t>(EPOLLIN | EPOLLET);
@@ -589,9 +589,9 @@ static void pollset_destroy(grpc_pollset* pollset) {
   gpr_mu_destroy(&pollset->mu);
 }
 
-static grpc_error* pollset_kick_all(grpc_pollset* pollset) {
+static grpc_error_handle pollset_kick_all(grpc_pollset* pollset) {
   GPR_TIMER_SCOPE("pollset_kick_all", 0);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (pollset->root_worker != nullptr) {
     grpc_pollset_worker* worker = pollset->root_worker;
     do {
@@ -663,11 +663,11 @@ static int poll_deadline_to_millis_timeout(grpc_millis millis) {
    NOTE ON SYNCRHONIZATION: Similar to do_epoll_wait(), this function is only
    called by g_active_poller thread. So there is no need for synchronization
    when accessing fields in g_epoll_set */
-static grpc_error* process_epoll_events(grpc_pollset* /*pollset*/) {
+static grpc_error_handle process_epoll_events(grpc_pollset* /*pollset*/) {
   GPR_TIMER_SCOPE("process_epoll_events", 0);
 
   static const char* err_desc = "process_events";
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   long num_events = gpr_atm_acq_load(&g_epoll_set.num_events);
   long cursor = gpr_atm_acq_load(&g_epoll_set.cursor);
   for (int idx = 0;
@@ -715,7 +715,7 @@ static grpc_error* process_epoll_events(grpc_pollset* /*pollset*/) {
    NOTE ON SYNCHRONIZATION: At any point of time, only the g_active_poller
    (i.e the designated poller thread) will be calling this function. So there is
    no need for any synchronization when accesing fields in g_epoll_set */
-static grpc_error* do_epoll_wait(grpc_pollset* ps, grpc_millis deadline) {
+static grpc_error_handle do_epoll_wait(grpc_pollset* ps, grpc_millis deadline) {
   GPR_TIMER_SCOPE("do_epoll_wait", 0);
 
   int r;
@@ -1014,12 +1014,12 @@ static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
    The function pollset_work() may temporarily release the lock (pollset->po.mu)
    during the course of its execution but it will always re-acquire the lock and
    ensure that it is held by the time the function returns */
-static grpc_error* pollset_work(grpc_pollset* ps,
-                                grpc_pollset_worker** worker_hdl,
-                                grpc_millis deadline) {
+static grpc_error_handle pollset_work(grpc_pollset* ps,
+                                      grpc_pollset_worker** worker_hdl,
+                                      grpc_millis deadline) {
   GPR_TIMER_SCOPE("pollset_work", 0);
   grpc_pollset_worker worker;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   static const char* err_desc = "pollset_work";
   if (ps->kicked_without_poller) {
     ps->kicked_without_poller = false;
@@ -1065,11 +1065,11 @@ static grpc_error* pollset_work(grpc_pollset* ps,
   return error;
 }
 
-static grpc_error* pollset_kick(grpc_pollset* pollset,
-                                grpc_pollset_worker* specific_worker) {
+static grpc_error_handle pollset_kick(grpc_pollset* pollset,
+                                      grpc_pollset_worker* specific_worker) {
   GPR_TIMER_SCOPE("pollset_kick", 0);
   GRPC_STATS_INC_POLLSET_KICK();
-  grpc_error* ret_err = GRPC_ERROR_NONE;
+  grpc_error_handle ret_err = GRPC_ERROR_NONE;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     std::vector<std::string> log;
     log.push_back(absl::StrFormat(
@@ -1260,7 +1260,7 @@ static bool is_any_background_poller_thread(void) { return false; }
 static void shutdown_background_closure(void) {}
 
 static bool add_closure_to_background_poller(grpc_closure* /*closure*/,
-                                             grpc_error* /*error*/) {
+                                             grpc_error_handle /*error*/) {
   return false;
 }
 

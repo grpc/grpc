@@ -67,7 +67,7 @@ TEST(GoogleMeshCaConfigTest, Basic) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
@@ -120,7 +120,7 @@ TEST(GoogleMeshCaConfigTest, Defaults) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
@@ -172,7 +172,7 @@ TEST(GoogleMeshCaConfigTest, WrongExpectedValues) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
@@ -215,7 +215,7 @@ TEST(GoogleMeshCaConfigTest, WrongTypes) {
       "  \"key_size\": \"1024\","
       "  \"location\": 123"
       "}";
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
@@ -259,7 +259,7 @@ TEST(GoogleMeshCaConfigTest, GrpcServicesNotAnArray) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
@@ -284,7 +284,7 @@ TEST(GoogleMeshCaConfigTest, GoogleGrpcNotAnObject) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
@@ -311,7 +311,7 @@ TEST(GoogleMeshCaConfigTest, CallCredentialsNotAnArray) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =
@@ -340,7 +340,7 @@ TEST(GoogleMeshCaConfigTest, StsServiceNotAnObject) {
       "\"https://container.googleapis.com/v1/project/test-project1/locations/"
       "test-zone2/clusters/test-cluster3\""
       "}";
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
   ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
   auto config =

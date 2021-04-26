@@ -59,7 +59,7 @@ bool SliceBufferByteStream::Next(size_t /*max_size_hint*/,
   return true;
 }
 
-grpc_error* SliceBufferByteStream::Pull(grpc_slice* slice) {
+grpc_error_handle SliceBufferByteStream::Pull(grpc_slice* slice) {
   if (GPR_UNLIKELY(shutdown_error_ != GRPC_ERROR_NONE)) {
     return GRPC_ERROR_REF(shutdown_error_);
   }
@@ -67,7 +67,7 @@ grpc_error* SliceBufferByteStream::Pull(grpc_slice* slice) {
   return GRPC_ERROR_NONE;
 }
 
-void SliceBufferByteStream::Shutdown(grpc_error* error) {
+void SliceBufferByteStream::Shutdown(grpc_error_handle error) {
   GRPC_ERROR_UNREF(shutdown_error_);
   shutdown_error_ = error;
 }
@@ -117,7 +117,7 @@ bool ByteStreamCache::CachingByteStream::Next(size_t max_size_hint,
   return cache_->underlying_stream_->Next(max_size_hint, on_complete);
 }
 
-grpc_error* ByteStreamCache::CachingByteStream::Pull(grpc_slice* slice) {
+grpc_error_handle ByteStreamCache::CachingByteStream::Pull(grpc_slice* slice) {
   if (shutdown_error_ != GRPC_ERROR_NONE) {
     return GRPC_ERROR_REF(shutdown_error_);
   }
@@ -128,7 +128,7 @@ grpc_error* ByteStreamCache::CachingByteStream::Pull(grpc_slice* slice) {
     return GRPC_ERROR_NONE;
   }
   GPR_ASSERT(cache_->underlying_stream_ != nullptr);
-  grpc_error* error = cache_->underlying_stream_->Pull(slice);
+  grpc_error_handle error = cache_->underlying_stream_->Pull(slice);
   if (error == GRPC_ERROR_NONE) {
     grpc_slice_buffer_add(&cache_->cache_buffer_,
                           grpc_slice_ref_internal(*slice));
@@ -142,7 +142,7 @@ grpc_error* ByteStreamCache::CachingByteStream::Pull(grpc_slice* slice) {
   return error;
 }
 
-void ByteStreamCache::CachingByteStream::Shutdown(grpc_error* error) {
+void ByteStreamCache::CachingByteStream::Shutdown(grpc_error_handle error) {
   GRPC_ERROR_UNREF(shutdown_error_);
   shutdown_error_ = GRPC_ERROR_REF(error);
   if (cache_->underlying_stream_ != nullptr) {

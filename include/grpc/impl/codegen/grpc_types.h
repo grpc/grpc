@@ -353,6 +353,17 @@ typedef struct {
 /* Timeout in milliseconds to use for calls to the grpclb load balancer.
    If 0 or unset, the balancer calls will have no deadline. */
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_call_timeout_ms"
+/* Specifies the xDS bootstrap config as a JSON string.
+   FOR TESTING PURPOSES ONLY -- DO NOT USE IN PRODUCTION.
+   This option allows controlling the bootstrap configuration on a
+   per-channel basis, which is useful in tests.  However, this results
+   in having a separate xDS client instance per channel rather than
+   using the global instance, which is not the intended way to use xDS.
+   Currently, this will (a) add unnecessary load on the xDS server and
+   (b) break use of CSDS, and there may be additional side effects in
+   the future. */
+#define GRPC_ARG_TEST_ONLY_DO_NOT_USE_IN_PROD_XDS_BOOTSTRAP_CONFIG \
+  "grpc.TEST_ONLY_DO_NOT_USE_IN_PROD.xds_bootstrap_config"
 /* Timeout in milliseconds to wait for the serverlist from the grpclb load
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */

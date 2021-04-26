@@ -131,12 +131,12 @@ class GrpcPolledFdWindows {
     grpc_winsocket_destroy(winsocket_);
   }
 
-  void ScheduleAndNullReadClosure(grpc_error* error) {
+  void ScheduleAndNullReadClosure(grpc_error_handle error) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_closure_, error);
     read_closure_ = nullptr;
   }
 
-  void ScheduleAndNullWriteClosure(grpc_error* error) {
+  void ScheduleAndNullWriteClosure(grpc_error_handle error) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, write_closure_, error);
     write_closure_ = nullptr;
   }
@@ -253,7 +253,7 @@ class GrpcPolledFdWindows {
 
   bool IsFdStillReadableLocked() { return read_buf_has_data_; }
 
-  void ShutdownLocked(grpc_error* error) {
+  void ShutdownLocked(grpc_error_handle error) {
     grpc_winsocket_shutdown(winsocket_);
   }
 
@@ -420,7 +420,7 @@ class GrpcPolledFdWindows {
     abort();
   }
 
-  static void OnTcpConnect(void* arg, grpc_error* error) {
+  static void OnTcpConnect(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* grpc_polled_fd =
         static_cast<GrpcPolledFdWindows*>(arg);
     GRPC_ERROR_REF(error);  // ref owned by lambda
@@ -431,7 +431,7 @@ class GrpcPolledFdWindows {
         DEBUG_LOCATION);
   }
 
-  void OnTcpConnectLocked(grpc_error* error) {
+  void OnTcpConnectLocked(grpc_error_handle error) {
     GRPC_CARES_TRACE_LOG(
         "fd:%s InnerOnTcpConnectLocked error:|%s| "
         "pending_register_for_readable:%d"
@@ -576,7 +576,7 @@ class GrpcPolledFdWindows {
     return out;
   }
 
-  static void OnIocpReadable(void* arg, grpc_error* error) {
+  static void OnIocpReadable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
     GRPC_ERROR_REF(error);  // ref owned by lambda
     polled_fd->work_serializer_->Run(
@@ -589,7 +589,7 @@ class GrpcPolledFdWindows {
   // c-ares reads from this socket later, but it shouldn't necessarily cancel
   // the entire resolution attempt. Doing so will allow the "inject broken
   // nameserver list" test to pass on Windows.
-  void OnIocpReadableLocked(grpc_error* error) {
+  void OnIocpReadableLocked(grpc_error_handle error) {
     if (error == GRPC_ERROR_NONE) {
       if (winsocket_->read_info.wsa_error != 0) {
         /* WSAEMSGSIZE would be due to receiving more data
@@ -621,7 +621,7 @@ class GrpcPolledFdWindows {
     ScheduleAndNullReadClosure(error);
   }
 
-  static void OnIocpWriteable(void* arg, grpc_error* error) {
+  static void OnIocpWriteable(void* arg, grpc_error_handle error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
     GRPC_ERROR_REF(error);  // error owned by lambda
     polled_fd->work_serializer_->Run(
@@ -629,7 +629,7 @@ class GrpcPolledFdWindows {
         DEBUG_LOCATION);
   }
 
-  void OnIocpWriteableLocked(grpc_error* error) {
+  void OnIocpWriteableLocked(grpc_error_handle error) {
     GRPC_CARES_TRACE_LOG("OnIocpWriteableInner. fd:|%s|", GetName());
     GPR_ASSERT(socket_type_ == SOCK_STREAM);
     if (error == GRPC_ERROR_NONE) {
@@ -851,7 +851,7 @@ class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
     return wrapped_->IsFdStillReadableLocked();
   }
 
-  void ShutdownLocked(grpc_error* error) override {
+  void ShutdownLocked(grpc_error_handle error) override {
     wrapped_->ShutdownLocked(error);
   }
 

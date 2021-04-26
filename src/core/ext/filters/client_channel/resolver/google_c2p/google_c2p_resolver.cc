@@ -48,15 +48,15 @@ class GoogleCloud2ProdResolver : public Resolver {
     void Orphan() override;
 
    private:
-    static void OnHttpRequestDone(void* arg, grpc_error* error);
+    static void OnHttpRequestDone(void* arg, grpc_error_handle error);
 
     // Calls OnDone() if not already called.  Releases a ref.
-    void MaybeCallOnDone(grpc_error* error);
+    void MaybeCallOnDone(grpc_error_handle error);
 
     // If error is not GRPC_ERROR_NONE, then it's not safe to look at response.
     virtual void OnDone(GoogleCloud2ProdResolver* resolver,
                         const grpc_http_response* response,
-                        grpc_error* error) = 0;
+                        grpc_error_handle error) = 0;
 
     RefCountedPtr<GoogleCloud2ProdResolver> resolver_;
     grpc_httpcli_context context_;
@@ -73,7 +73,8 @@ class GoogleCloud2ProdResolver : public Resolver {
 
    private:
     void OnDone(GoogleCloud2ProdResolver* resolver,
-                const grpc_http_response* response, grpc_error* error) override;
+                const grpc_http_response* response,
+                grpc_error_handle error) override;
   };
 
   // A metadata server query to get the IPv6 address.
@@ -84,7 +85,8 @@ class GoogleCloud2ProdResolver : public Resolver {
 
    private:
     void OnDone(GoogleCloud2ProdResolver* resolver,
-                const grpc_http_response* response, grpc_error* error) override;
+                const grpc_http_response* response,
+                grpc_error_handle error) override;
   };
 
   void ZoneQueryDone(std::string zone);
@@ -143,13 +145,13 @@ void GoogleCloud2ProdResolver::MetadataQuery::Orphan() {
 }
 
 void GoogleCloud2ProdResolver::MetadataQuery::OnHttpRequestDone(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error_handle error) {
   auto* self = static_cast<MetadataQuery*>(arg);
   self->MaybeCallOnDone(GRPC_ERROR_REF(error));
 }
 
 void GoogleCloud2ProdResolver::MetadataQuery::MaybeCallOnDone(
-    grpc_error* error) {
+    grpc_error_handle error) {
   bool expected = false;
   if (!on_done_called_.CompareExchangeStrong(
           &expected, true, MemoryOrder::RELAXED, MemoryOrder::RELAXED)) {
@@ -180,7 +182,7 @@ GoogleCloud2ProdResolver::ZoneQuery::ZoneQuery(
 
 void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
     GoogleCloud2ProdResolver* resolver, const grpc_http_response* response,
-    grpc_error* error) {
+    grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "error fetching zone from metadata server: %s",
             grpc_error_string(error));
@@ -213,7 +215,7 @@ GoogleCloud2ProdResolver::IPv6Query::IPv6Query(
 
 void GoogleCloud2ProdResolver::IPv6Query::OnDone(
     GoogleCloud2ProdResolver* resolver, const grpc_http_response* response,
-    grpc_error* error) {
+    grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "error fetching IPv6 address from metadata server: %s",
             grpc_error_string(error));

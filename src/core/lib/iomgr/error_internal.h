@@ -30,7 +30,7 @@
 typedef struct grpc_linked_error grpc_linked_error;
 
 struct grpc_linked_error {
-  grpc_error* err;
+  grpc_error_handle err;
   uint8_t next;
 };
 

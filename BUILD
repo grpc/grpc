@@ -591,6 +591,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/mpscq.cc",
         "src/core/lib/gprpp/stat_posix.cc",
         "src/core/lib/gprpp/stat_windows.cc",
+        "src/core/lib/gprpp/status_helper.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
         "src/core/lib/gprpp/time_util.cc",
@@ -626,6 +627,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
         "src/core/lib/gprpp/stat.h",
+        "src/core/lib/gprpp/status_helper.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/gprpp/time_util.h",
@@ -644,6 +646,8 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
+        "debug_location",
+        "google_api_upb",
         "gpr_codegen",
         "grpc_codegen",
     ],
@@ -2061,10 +2065,12 @@ grpc_cc_library(
     name = "grpc_rbac_engine",
     srcs = [
         "src/core/lib/security/authorization/evaluate_args.cc",
+        "src/core/lib/security/authorization/matchers.cc",
         "src/core/lib/security/authorization/rbac_policy.cc",
     ],
     hdrs = [
         "src/core/lib/security/authorization/evaluate_args.h",
+        "src/core/lib/security/authorization/matchers.h",
         "src/core/lib/security/authorization/rbac_policy.h",
     ],
     language = "c++",
@@ -2095,10 +2101,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_cel_engine",
     srcs = [
-        "src/core/lib/security/authorization/authorization_engine.cc",
+        "src/core/lib/security/authorization/cel_authorization_engine.cc",
     ],
     hdrs = [
-        "src/core/lib/security/authorization/authorization_engine.h",
+        "src/core/lib/security/authorization/cel_authorization_engine.h",
     ],
     external_deps = [
         "absl/container:flat_hash_set",

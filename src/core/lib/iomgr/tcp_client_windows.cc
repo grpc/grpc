@@ -66,7 +66,7 @@ static void async_connect_unlock_and_cleanup(async_connect* ac,
   if (socket != NULL) grpc_winsocket_destroy(socket);
 }
 
-static void on_alarm(void* acp, grpc_error* error) {
+static void on_alarm(void* acp, grpc_error_handle error) {
   async_connect* ac = (async_connect*)acp;
   gpr_mu_lock(&ac->mu);
   grpc_winsocket* socket = ac->socket;
@@ -77,7 +77,7 @@ static void on_alarm(void* acp, grpc_error* error) {
   async_connect_unlock_and_cleanup(ac, socket);
 }
 
-static void on_connect(void* acp, grpc_error* error) {
+static void on_connect(void* acp, grpc_error_handle error) {
   async_connect* ac = (async_connect*)acp;
   grpc_endpoint** ep = ac->endpoint;
   GPR_ASSERT(*ep == NULL);
@@ -137,7 +137,7 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   GUID guid = WSAID_CONNECTEX;
   DWORD ioctl_num_bytes;
   grpc_winsocket_callback_info* info;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   async_connect* ac = NULL;
 
   *endpoint = NULL;
@@ -213,7 +213,7 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   std::string target_uri = grpc_sockaddr_to_uri(addr);
-  grpc_error* final_error =
+  grpc_error_handle final_error =
       grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failed to connect", &error, 1),
                          GRPC_ERROR_STR_TARGET_ADDRESS,

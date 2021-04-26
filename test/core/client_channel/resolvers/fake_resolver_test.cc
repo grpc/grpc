@@ -58,7 +58,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     ev_ = nullptr;
   }
 
-  void ReturnError(grpc_error* /*error*/) override {}
+  void ReturnError(grpc_error_handle /*error*/) override {}
 
  private:
   grpc_core::Resolver::Result expected_;

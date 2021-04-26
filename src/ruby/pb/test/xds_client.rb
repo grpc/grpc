@@ -283,9 +283,7 @@ def run_test_loop(stub, target_seconds_between_rpcs, fail_on_failed_rpcs)
         raise "Unsupported rpc #{rpc}"
       end
       rpc_stats_key = rpc.to_s
-      if metadata.key?('rpc-behavior') and
-        ((metadata['rpc-behavior'] == 'keep-open') or
-         (metadata['rpc-behavior'].start_with?('sleep')))
+      if metadata.key?('rpc-behavior') or metadata.key?('fi_testcase')
         keep_open_threads << execute_rpc_in_thread(op, rpc_stats_key)
       else
         results[rpc] = execute_rpc(op, fail_on_failed_rpcs, rpc_stats_key)

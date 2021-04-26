@@ -177,7 +177,7 @@ grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport) {
 // though it lives in lib, it handles transport stream ops sure
 // it's grpc_transport_stream_op_batch_finish_with_failure
 void grpc_transport_stream_op_batch_finish_with_failure(
-    grpc_transport_stream_op_batch* batch, grpc_error* error,
+    grpc_transport_stream_op_batch* batch, grpc_error_handle error,
     grpc_core::CallCombiner* call_combiner) {
   if (batch->send_message) {
     batch->payload->send_message.send_message.reset();
@@ -219,7 +219,7 @@ struct made_transport_op {
   }
 };
 
-static void destroy_made_transport_op(void* arg, grpc_error* error) {
+static void destroy_made_transport_op(void* arg, grpc_error_handle error) {
   made_transport_op* op = static_cast<made_transport_op*>(arg);
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->inner_on_complete,
                           GRPC_ERROR_REF(error));
@@ -241,7 +241,8 @@ struct made_transport_stream_op {
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload payload;
 };
-static void destroy_made_transport_stream_op(void* arg, grpc_error* error) {
+static void destroy_made_transport_stream_op(void* arg,
+                                             grpc_error_handle error) {
   made_transport_stream_op* op = static_cast<made_transport_stream_op*>(arg);
   grpc_closure* c = op->inner_on_complete;
   gpr_free(op);
