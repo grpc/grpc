@@ -1090,6 +1090,39 @@ def test_metadata_filter(gcp, original_backend_service, instance_group,
             ],
             'service': alternate_backend_service.url
           },
+        ],
+        # test match multiple route rules
+        [
+          {
+            'priority': 0,
+            'matchRules': [
+                {
+                    'prefixMatch': '/',
+                    'metadataFilters': [
+                        {
+                            'filterMatchCriteria': 'MATCH_ANY',
+                            'filterLabels': match_labels
+                        }
+                    ]
+                }
+            ],
+            'service': alternate_backend_service.url
+          },
+          {
+            'priority': 1,
+            'matchRules': [
+                {
+                    'prefixMatch': '/',
+                    'metadataFilters': [
+                        {
+                            'filterMatchCriteria': 'MATCH_ALL',
+                            'filterLabels': match_labels
+                        }
+                    ]
+                }
+            ],
+            'service': original_backend_service.url
+          },
         ]
         ]
 
