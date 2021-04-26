@@ -620,6 +620,15 @@ typedef unsigned __int64 uint64_t;
 #endif
 #endif
 
+/* GRPC_MSAN_ENABLED will be defined, when compiled with address sanitizer. */
+#ifndef GRPC_MSAN_SUPPRESSED
+#if defined(__SANITIZE_ADDRESS__)
+#define GRPC_MSAN_ENABLED
+#elif GPR_HAS_FEATURE(memory_sanitizer)
+#define GRPC_MSAN_ENABLED
+#endif
+#endif
+
 /* GRPC_ALLOW_EXCEPTIONS should be 0 or 1 if exceptions are allowed or not */
 #ifndef GRPC_ALLOW_EXCEPTIONS
 #ifdef GPR_WINDOWS

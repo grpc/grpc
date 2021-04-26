@@ -10233,7 +10233,11 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
   const uint32_t kFixedDelaySeconds = 100;
-  const uint32_t kRpcTimeoutMilliseconds = 4000;  // 4s
+#ifdef GRPC_MSAN_ENABLED
+  const uint32_t kRpcTimeoutMilliseconds = 8000;  // 8s
+#else
+  const uint32_t kRpcTimeoutMilliseconds = 1000;  // 1s
+#endif
   const uint32_t kDelayPercentagePerHundred = 50;
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.05;
@@ -10274,8 +10278,12 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
-  const uint32_t kFixedDelayMilliseconds = 100000;  // 100 seconds
-  const uint32_t kRpcTimeoutMilliseconds = 4000;    // 4s
+  const uint32_t kFixedDelayMilliseconds = 100000;
+#ifdef GRPC_MSAN_ENABLED                          // 100 seconds
+  const uint32_t kRpcTimeoutMilliseconds = 8000;  // 8s
+#else
+  const uint32_t kRpcTimeoutMilliseconds = 1000;  // 1s
+#endif
   const uint32_t kDelayPercentageCap = 100;
   const uint32_t kDelayPercentage = 50;
   const double kDelayRate = kDelayPercentage / 100.0;
