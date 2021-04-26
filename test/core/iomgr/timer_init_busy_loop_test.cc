@@ -68,6 +68,7 @@ class WorkSerializedTimerLoop {
     GRPC_ERROR_REF(error);
     self->work_serializer_->Run(
         [self, error] {
+          std::unique_ptr<WorkSerializedTimerLoop> self_deleter(self);
           grpc_core::MutexLock lock(&self->mu_);
           // abort if this timer loop has been spinning for 5 minutes
           if (gpr_time_cmp(
@@ -84,7 +85,6 @@ class WorkSerializedTimerLoop {
             gpr_log(GPR_INFO,
                     "test timer loop quitting, shutdown_:%d, error: %s",
                     self->shutdown_, grpc_error_string(error));
-            delete self;
             return;
           }
           // Schedule a timer to go off in 500 milliseconds. Note that this is
@@ -116,6 +116,7 @@ class WorkSerializedTimerLoop {
               GPR_INFO,
               "thread calling grpc_timer_init just woke up from 1 ms sleep");
           GRPC_ERROR_UNREF(error);
+          self_deleter.release();
         },
         DEBUG_LOCATION);
     gpr_log(GPR_INFO,
