@@ -3,7 +3,6 @@
 #include <future>
 
 #include "grpc/event_engine/event_engine.h"
-#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -25,14 +24,22 @@ class uvTCP final {
         on_shutdown_(on_shutdown),
         slice_allocator_factory_(std::move(slice_allocator_factory)) {
     tcp_.data = this;
+    gpr_ref_init(&ref_, 1);
   }
+
   uvEngine* engine_;
+
   grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
       on_accept_;
+
   grpc_event_engine::experimental::EventEngine::Callback on_shutdown_;
+
   grpc_event_engine::experimental::SliceAllocatorFactory
       slice_allocator_factory_;
+
   uv_tcp_t tcp_;
+
+  gpr_refcount ref_;
 };
 
 class uvListener final
@@ -43,31 +50,43 @@ class uvListener final
              const grpc_event_engine::experimental::ChannelArgs& args,
              grpc_event_engine::experimental::SliceAllocatorFactory
                  slice_allocator_factory);
+
   virtual ~uvListener();
+
   virtual absl::StatusOr<int> Bind(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr)
       override final;
+
   virtual absl::Status Start() override final;
+
   uvEngine* engine_;
+
   uvTCP* uvTCP_ = nullptr;
+  int init_result_ = 0;
 };
 
 class uvDNSResolver final
     : public grpc_event_engine::experimental::EventEngine::DNSResolver {
  public:
   virtual ~uvDNSResolver() override final {}
+
   uvDNSResolver(uvEngine* engine) : engine_(engine) {}
+
   virtual LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                           absl::string_view address,
                                           absl::string_view default_port,
                                           absl::Time deadline) override final {}
+
   virtual LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
                                      absl::string_view name,
                                      absl::Time deadline) override final {}
+
   virtual LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
                                      absl::string_view name,
                                      absl::Time deadline) override final {}
+
   virtual void TryCancelLookup(LookupTaskHandle handle) override final {}
+
   uvEngine* engine_;
 };
 
@@ -75,19 +94,23 @@ class uvEndpoint final
     : public grpc_event_engine::experimental::EventEngine::Endpoint {
  public:
   virtual ~uvEndpoint() override final {}
+
   virtual void Read(
       grpc_event_engine::experimental::EventEngine::Callback on_read,
       grpc_event_engine::experimental::SliceBuffer* buffer,
       absl::Time deadline) override final {}
+
   virtual void Write(
       grpc_event_engine::experimental::EventEngine::Callback on_writable,
       grpc_event_engine::experimental::SliceBuffer* data,
       absl::Time deadline) override final {}
-  virtual void Close(grpc_event_engine::experimental::EventEngine::Callback
-                         on_close) override final {}
+
   virtual const grpc_event_engine::experimental::EventEngine::ResolvedAddress*
+
   GetPeerAddress() const override final{};
+
   virtual const grpc_event_engine::experimental::EventEngine::ResolvedAddress*
+
   GetLocalAddress() const override final{};
 };
 
@@ -104,14 +127,17 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     queue_.Push(request);
     uv_async_send(&kicker_);
   }
+
   static void threadBodyTrampoline(void* arg) {
     uvEngine* engine = reinterpret_cast<uvEngine*>(arg);
     engine->threadBody();
   }
+
   static void kickerTrampoline(uv_async_t* async) {
     uvEngine* engine = reinterpret_cast<uvEngine*>(async->loop->data);
     engine->kicker();
   }
+
   void kicker() {
     bool empty = false;
     while (!empty) {
@@ -121,26 +147,38 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
       delete node;
     }
   }
+
   static void closeCallback(uv_handle_t* handle) {
     uvTCP* tcp = reinterpret_cast<uvTCP*>(handle->data);
-    delete tcp;
+    if (gpr_unref(&tcp->ref_)) {
+      delete tcp;
+    }
   }
+
   void threadBody() {
-    uv_loop_init(&loop_);
+    if (uv_loop_init(&loop_) != 0) {
+      ready_.set_value(false);
+      return;
+    }
     loop_.data = this;
-    uv_async_init(&loop_, &kicker_, kickerTrampoline);
-    running_.Store(true, grpc_core::MemoryOrder::RELAXED);
+    if (uv_async_init(&loop_, &kicker_, kickerTrampoline) != 0) {
+      ready_.set_value(false);
+      return;
+    }
+    ready_.set_value(true);
     while (uv_run(&loop_, UV_RUN_DEFAULT) != 0)
       ;
   }
+
   uvEngine() {
     bool success = false;
     thread_ =
         grpc_core::Thread("uv loop", threadBodyTrampoline, this, &success);
     GPR_ASSERT(success);
-    while (!running_.Load(grpc_core::MemoryOrder::RELAXED))
-      ;
+    success = ready_.get_future().get();
+    GPR_ASSERT(success);
   }
+
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept, Callback on_shutdown,
       const grpc_event_engine::experimental::ChannelArgs& args,
@@ -167,18 +205,20 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
   }
 
   virtual TaskHandle Run(Callback fn, RunOptions opts) override final {}
+
   virtual TaskHandle RunAt(absl::Time when, Callback fn,
                            RunOptions opts) override final {}
+
   virtual void TryCancel(TaskHandle handle) override final {}
-  virtual absl::Status Shutdown() override final {
+
+  virtual void Shutdown(Callback on_shutdown_complete) override final {
     thread_.Join();
-    return absl::OkStatus();
   }
 
   uv_loop_t loop_;
   uv_async_t kicker_;
+  std::promise<bool> ready_;
   grpc_core::Thread thread_;
-  grpc_core::Atomic<bool> running_;
   grpc_core::MultiProducerSingleConsumerQueue queue_;
 };
 
@@ -191,15 +231,24 @@ uvListener::uvListener(
     : engine_(engine),
       uvTCP_(new uvTCP(engine, on_accept, on_shutdown, args,
                        std::move(slice_allocator_factory))) {
-  engine->schedule(
-      [this](uvEngine* engine) { uv_tcp_init(&engine->loop_, &uvTCP_->tcp_); });
+  std::promise<int> p;
+  engine->schedule([this, &p](uvEngine* engine) {
+    int r = uv_tcp_init(&engine->loop_, &uvTCP_->tcp_);
+
+    p.set_value(r);
+  });
+  init_result_ = p.get_future().get();
 }
 
 uvListener::~uvListener() {
-  engine_->schedule([this](uvEngine* engine) {
-    uv_close(reinterpret_cast<uv_handle_t*>(&uvTCP_->tcp_),
-             uvEngine::closeCallback);
-  });
+  if (gpr_unref(&uvTCP_->ref_)) {
+    delete uvTCP_;
+  } else {
+    engine_->schedule([this](uvEngine* engine) {
+      uv_close(reinterpret_cast<uv_handle_t*>(&uvTCP_->tcp_),
+               uvEngine::closeCallback);
+    });
+  }
 }
 
 absl::StatusOr<int> uvListener::Bind(
@@ -209,15 +258,13 @@ absl::StatusOr<int> uvListener::Bind(
     int r = uv_tcp_bind(&uvTCP_->tcp_, addr.address(), 0 /* flags */);
     switch (r) {
       case UV_EINVAL:
-        p.set_value(absl::Status(
-            absl::StatusCode::kInvalidArgument,
+        p.set_value(absl::InvalidArgumentError(
             "uv_tcp_bind said we passed an invalid argument to it"));
         return;
       case 0:
         break;
       default:
-        p.set_value(absl::Status(
-            absl::StatusCode::kUnknown,
+        p.set_value(absl::InvalidArgumentError(
             "uv_tcp_bind returned an error code we don't know about"));
         return;
     }
@@ -227,15 +274,13 @@ absl::StatusOr<int> uvListener::Bind(
                            reinterpret_cast<sockaddr*>(&boundAddr), &addrLen);
     switch (r) {
       case UV_EINVAL:
-        p.set_value(absl::Status(
-            absl::StatusCode::kInvalidArgument,
+        p.set_value(absl::InvalidArgumentError(
             "uv_tcp_getsockname said we passed an invalid argument to it"));
         return;
       case 0:
         break;
       default:
-        p.set_value(absl::Status(
-            absl::StatusCode::kUnknown,
+        p.set_value(absl::UnknownError(
             "uv_tcp_getsockname returned an error code we don't know about"));
         return;
     }
@@ -251,8 +296,7 @@ absl::StatusOr<int> uvListener::Bind(
         break;
       }
       default:
-        p.set_value(absl::Status(
-            absl::StatusCode::kInvalidArgument,
+        p.set_value(absl::InvalidArgumentError(
             "returned socket address in :Bind is neither IPv4 nor IPv6"));
         break;
     }
@@ -265,7 +309,10 @@ absl::Status uvListener::Start() {
   return absl::OkStatus();
 }
 
-absl::Status uvEngineRegister() {
-  return grpc_event_engine::experimental::SetDefaultEventEngine(
-      std::make_shared<uvEngine>());
+std::shared_ptr<grpc_event_engine::experimental::EventEngine>
+grpc_event_engine::experimental::GetDefaultEventEngine() {
+  // hmmm...
+  static std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine =
+      std::make_shared<uvEngine>();
+  return engine;
 }

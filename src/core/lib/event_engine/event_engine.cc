@@ -22,11 +22,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-std::shared_ptr<EventEngine> GetDefaultEventEngine() {
-  // TODO(nnoble): instantiate a singleton LibuvEventEngine
-  return nullptr;
-}
-
 EventEngine::ResolvedAddress::ResolvedAddress(const sockaddr* address,
                                               socklen_t size) {
   GPR_ASSERT(size <= sizeof(address_));
