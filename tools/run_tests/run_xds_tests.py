@@ -493,7 +493,7 @@ def wait_until_no_rpcs_go_to_given_backends(backends, timeout_sec):
                 error_msg = 'Unexpect backend %s receives load' % backend
                 break
         if not error_msg:
-           return
+            return
     raise Exception('Unexpected RPCs going to given backends')
 
 
@@ -984,157 +984,132 @@ def test_metadata_filter(gcp, original_backend_service, instance_group,
         with open(bootstrap_path) as f:
             md = json.load(f)['node']['metadata']
             match_labels = []
-            for k,v in md.items():
-                match_labels.append({'name': k,
-                                     'value': v})
+            for k, v in md.items():
+                match_labels.append({'name': k, 'value': v})
 
-        not_match_labels = [{'name': 'fake',
-                             'value': 'fail'}]
+        not_match_labels = [{'name': 'fake', 'value': 'fail'}]
         test_route_rules = [
-        # test MATCH_ALL
-        [
-          {
-            'priority': 0,
-            'matchRules': [
+            # test MATCH_ALL
+            [
                 {
-                    'prefixMatch': '/',
-                    'metadataFilters': [
-                        {
+                    'priority': 0,
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'metadataFilters': [{
                             'filterMatchCriteria': 'MATCH_ALL',
                             'filterLabels': not_match_labels
-                        }
-                    ]
-                }
-            ],
-            'service': original_backend_service.url
-          },
-          {
-            'priority': 1,
-            'matchRules': [
+                        }]
+                    }],
+                    'service': original_backend_service.url
+                },
                 {
-                    'prefixMatch': '/',
-                    'metadataFilters': [
-                        {
+                    'priority': 1,
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'metadataFilters': [{
                             'filterMatchCriteria': 'MATCH_ALL',
                             'filterLabels': match_labels
-                        }
-                    ]
-                }
+                        }]
+                    }],
+                    'service': alternate_backend_service.url
+                },
             ],
-            'service': alternate_backend_service.url
-          },
-        ],
-        # test mixing MATCH_ALL and MATCH_ANY
-        # test MATCH_ALL: super set labels won't match
-        [
-          {
-            'priority': 0,
-            'matchRules': [
+            # test mixing MATCH_ALL and MATCH_ANY
+            # test MATCH_ALL: super set labels won't match
+            [
                 {
-                    'prefixMatch': '/',
-                    'metadataFilters': [
-                        {
+                    'priority': 0,
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'metadataFilters': [{
                             'filterMatchCriteria': 'MATCH_ALL',
                             'filterLabels': not_match_labels + match_labels
-                        }
-                    ]
-                }
-            ],
-            'service': original_backend_service.url
-          },
-          {
-            'priority': 1,
-            'matchRules': [
+                        }]
+                    }],
+                    'service': original_backend_service.url
+                },
                 {
-                    'prefixMatch': '/',
-                    'metadataFilters': [
-                        {
+                    'priority': 1,
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'metadataFilters': [{
                             'filterMatchCriteria': 'MATCH_ANY',
                             'filterLabels': not_match_labels + match_labels
-                        }
-                    ]
-                }
+                        }]
+                    }],
+                    'service': alternate_backend_service.url
+                },
             ],
-            'service': alternate_backend_service.url
-          },
-        ],
-        # test MATCH_ANY
-        [
-          {
-            'priority': 0,
-            'matchRules': [
+            # test MATCH_ANY
+            [
                 {
-                    'prefixMatch': '/',
-                    'metadataFilters': [
-                        {
+                    'priority': 0,
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'metadataFilters': [{
                             'filterMatchCriteria': 'MATCH_ANY',
                             'filterLabels': not_match_labels
-                        }
-                    ]
-                }
-            ],
-            'service': original_backend_service.url
-          },
-          {
-            'priority': 1,
-            'matchRules': [
+                        }]
+                    }],
+                    'service': original_backend_service.url
+                },
                 {
-                    'prefixMatch': '/',
-                    'metadataFilters': [
-                        {
+                    'priority': 1,
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'metadataFilters': [{
                             'filterMatchCriteria': 'MATCH_ANY',
                             'filterLabels': not_match_labels + match_labels
-                        }
-                    ]
-                }
+                        }]
+                    }],
+                    'service': alternate_backend_service.url
+                },
             ],
-            'service': alternate_backend_service.url
-          },
-        ],
-        # test match multiple route rules
-        [
-          {
-            'priority': 0,
-            'matchRules': [
+            # test match multiple route rules
+            [
                 {
-                    'prefixMatch': '/',
-                    'metadataFilters': [
-                        {
+                    'priority': 0,
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'metadataFilters': [{
                             'filterMatchCriteria': 'MATCH_ANY',
                             'filterLabels': match_labels
-                        }
-                    ]
-                }
-            ],
-            'service': alternate_backend_service.url
-          },
-          {
-            'priority': 1,
-            'matchRules': [
+                        }]
+                    }],
+                    'service': alternate_backend_service.url
+                },
                 {
-                    'prefixMatch': '/',
-                    'metadataFilters': [
-                        {
+                    'priority': 1,
+                    'matchRules': [{
+                        'prefixMatch':
+                            '/',
+                        'metadataFilters': [{
                             'filterMatchCriteria': 'MATCH_ALL',
                             'filterLabels': match_labels
-                        }
-                    ]
-                }
-            ],
-            'service': original_backend_service.url
-          },
-        ]
+                        }]
+                    }],
+                    'service': original_backend_service.url
+                },
+            ]
         ]
 
         for route_rules in test_route_rules:
             wait_until_all_rpcs_go_to_given_backends(original_backend_instances,
                                                      _WAIT_FOR_STATS_SEC)
-            patch_url_map_backend_service(gcp, original_backend_service,
+            patch_url_map_backend_service(gcp,
+                                          original_backend_service,
                                           route_rules=route_rules)
             wait_until_no_rpcs_go_to_given_backends(original_backend_instances,
                                                     _WAIT_FOR_STATS_SEC)
-            wait_until_all_rpcs_go_to_given_backends(alternate_backend_instances,
-                                                     _WAIT_FOR_STATS_SEC)
+            wait_until_all_rpcs_go_to_given_backends(
+                alternate_backend_instances, _WAIT_FOR_STATS_SEC)
             patch_url_map_backend_service(gcp, original_backend_service)
     finally:
         patch_backend_service(gcp, alternate_backend_service, [])
@@ -1157,18 +1132,20 @@ def test_api_listener(gcp, backend_service, instance_group,
                        service_host_name)
         create_target_proxy(gcp, target_proxy_name + new_config_suffix, False)
         if not gcp.service_port:
-            raise Exception('Faied to find a valid port for the forwarding rule')
+            raise Exception(
+                'Faied to find a valid port for the forwarding rule')
         potential_ip_addresses = []
         max_attempts = 10
         for i in range(max_attempts):
-            potential_ip_addresses.append(
-              '10.10.10.%d' % (random.randint(0, 255)))
-        create_global_forwarding_rule(gcp, forwarding_rule_name +
-                                      new_config_suffix, [gcp.service_port],
+            potential_ip_addresses.append('10.10.10.%d' %
+                                          (random.randint(0, 255)))
+        create_global_forwarding_rule(gcp,
+                                      forwarding_rule_name + new_config_suffix,
+                                      [gcp.service_port],
                                       potential_ip_addresses)
         if gcp.service_port != _DEFAULT_SERVICE_PORT:
-            patch_url_map_host_rule_with_port(gcp, url_map_name +
-                                              new_config_suffix,
+            patch_url_map_host_rule_with_port(gcp,
+                                              url_map_name + new_config_suffix,
                                               backend_service,
                                               service_host_name)
         wait_until_all_rpcs_go_to_given_backends(backend_instances,
@@ -1177,7 +1154,8 @@ def test_api_listener(gcp, backend_service, instance_group,
         delete_global_forwarding_rule(gcp, forwarding_rule_name)
         delete_target_proxy(gcp, target_proxy_name)
         delete_url_map(gcp, url_map_name)
-        verify_attempts = int(_WAIT_FOR_URL_MAP_PATCH_SEC / _NUM_TEST_RPCS * args.qps)
+        verify_attempts = int(_WAIT_FOR_URL_MAP_PATCH_SEC / _NUM_TEST_RPCS *
+                              args.qps)
         for i in range(verify_attempts):
             wait_until_all_rpcs_go_to_given_backends(backend_instances,
                                                      _WAIT_FOR_STATS_SEC)
@@ -1187,8 +1165,8 @@ def test_api_listener(gcp, backend_service, instance_group,
                                                 _WAIT_FOR_STATS_SEC)
 
     finally:
-        delete_global_forwarding_rule(gcp, forwarding_rule_name +
-                                      new_config_suffix)
+        delete_global_forwarding_rule(gcp,
+                                      forwarding_rule_name + new_config_suffix)
         delete_target_proxy(gcp, target_proxy_name + new_config_suffix)
         delete_url_map(gcp, url_map_name + new_config_suffix)
         create_url_map(gcp, url_map_name, backend_service, service_host_name)
@@ -1205,8 +1183,8 @@ def test_api_listener(gcp, backend_service, instance_group,
         new_client_process = None
         if client_process:
             client_process.terminate()
-            client_cmd = shlex.split(client_cmd_formatted_no_uri.format(
-                                     server_uri=server_uri))
+            client_cmd = shlex.split(
+                client_cmd_formatted_no_uri.format(server_uri=server_uri))
             new_client_process = subprocess.Popen(client_cmd,
                                                   env=client_env,
                                                   stderr=subprocess.STDOUT,
@@ -1222,9 +1200,10 @@ def test_forwarding_rule_port_match(gcp, backend_service, instance_group,
         wait_until_all_rpcs_go_to_given_backends(backend_instances,
                                                  _WAIT_FOR_STATS_SEC)
         delete_global_forwarding_rule(gcp)
-        create_global_forwarding_rule(gcp, forwarding_rule_name,
-                                      [x for x in parse_port_range(_DEFAULT_PORT_RANGE)
-                                       if x != gcp.service_port])
+        create_global_forwarding_rule(gcp, forwarding_rule_name, [
+            x for x in parse_port_range(_DEFAULT_PORT_RANGE)
+            if x != gcp.service_port
+        ])
         wait_until_no_rpcs_go_to_given_backends(backend_instances,
                                                 _WAIT_FOR_STATS_SEC)
 
@@ -1232,7 +1211,7 @@ def test_forwarding_rule_port_match(gcp, backend_service, instance_group,
         if client_process:
             client_process.terminate()
         client_cmd_formatted = client_cmd_formatted_no_uri.format(
-                server_uri=service_host_name)
+            server_uri=service_host_name)
         client_cmd = shlex.split(client_cmd_formatted)
         local_client_process = subprocess.Popen(client_cmd,
                                                 env=client_env,
@@ -1246,15 +1225,16 @@ def test_forwarding_rule_port_match(gcp, backend_service, instance_group,
         potential_ip_addresses = []
         max_attempts = 10
         for i in range(max_attempts):
-            potential_ip_addresses.append('10.10.10.%d' % (random.randint(0, 255)))
-        create_global_forwarding_rule(gcp, forwarding_rule_name,
-                                      [80], potential_ip_addresses)
+            potential_ip_addresses.append('10.10.10.%d' %
+                                          (random.randint(0, 255)))
+        create_global_forwarding_rule(gcp, forwarding_rule_name, [80],
+                                      potential_ip_addresses)
         wait_until_all_rpcs_go_to_given_backends(backend_instances,
                                                  _WAIT_FOR_STATS_SEC)
 
         # omit port in client request uri, specify port in url-map
-        patch_url_map_host_rule_with_port(gcp, url_map_name,
-                                          backend_service, service_host_name)
+        patch_url_map_host_rule_with_port(gcp, url_map_name, backend_service,
+                                          service_host_name)
         wait_until_no_rpcs_go_to_given_backends(backend_instances,
                                                 _WAIT_FOR_STATS_SEC)
     finally:
@@ -1275,7 +1255,7 @@ def test_forwarding_rule_port_match(gcp, backend_service, instance_group,
         else:
             server_uri = service_host_name
         client_cmd_formatted = client_cmd_formatted_no_uri.format(
-                server_uri=server_uri)
+            server_uri=server_uri)
         client_cmd = shlex.split(client_cmd_formatted)
         if client_process:
             client_process = subprocess.Popen(client_cmd,
@@ -2513,7 +2493,9 @@ def create_target_proxy(gcp, name, validate_for_proxyless=True):
     gcp.target_proxy = GcpResource(config['name'], result['targetLink'])
 
 
-def create_global_forwarding_rule(gcp, name, potential_ports,
+def create_global_forwarding_rule(gcp,
+                                  name,
+                                  potential_ports,
                                   potential_ip_addresses=['0.0.0.0']):
     if gcp.alpha_compute:
         compute_to_use = gcp.alpha_compute
@@ -2532,17 +2514,18 @@ def create_global_forwarding_rule(gcp, name, potential_ports,
                 }
                 logger.debug('Sending GCP request with body=%s', config)
                 result = compute_to_use.globalForwardingRules().insert(
-                        project=gcp.project,
-                        body=config).execute(num_retries=_GCP_API_RETRIES)
+                    project=gcp.project,
+                    body=config).execute(num_retries=_GCP_API_RETRIES)
                 wait_for_global_operation(gcp, result['name'])
-                gcp.global_forwarding_rule = GcpResource(config['name'],
-                                                     result['targetLink'])
+                gcp.global_forwarding_rule = GcpResource(
+                    config['name'], result['targetLink'])
                 gcp.service_port = port
                 return
             except googleapiclient.errors.HttpError as http_error:
                 logger.warning(
                     'Got error %s when attempting to create forwarding rule to '
-                    '%s:%d. Retrying with another port.' % (http_error, ip_address, port))
+                    '%s:%d. Retrying with another port.' %
+                    (http_error, ip_address, port))
 
 
 def get_health_check(gcp, health_check_name):
@@ -2606,11 +2589,11 @@ def get_instance_group(gcp, zone, instance_group_name):
     return instance_group
 
 
-def delete_global_forwarding_rule(gcp,name=None):
+def delete_global_forwarding_rule(gcp, name=None):
     if name:
-       forwarding_rule_to_delete = name
+        forwarding_rule_to_delete = name
     else:
-       forwarding_rule_to_delete = gcp.global_forwarding_rule.name
+        forwarding_rule_to_delete = gcp.global_forwarding_rule.name
     try:
         result = gcp.compute.globalForwardingRules().delete(
             project=gcp.project,
@@ -2621,7 +2604,7 @@ def delete_global_forwarding_rule(gcp,name=None):
         logger.info('Delete failed: %s', http_error)
 
 
-def delete_target_proxy(gcp,name=None):
+def delete_target_proxy(gcp, name=None):
     if name:
         proxy_to_delete = name
     else:
@@ -2629,20 +2612,18 @@ def delete_target_proxy(gcp,name=None):
     try:
         if gcp.alpha_compute:
             result = gcp.alpha_compute.targetGrpcProxies().delete(
-                project=gcp.project,
-                targetGrpcProxy=proxy_to_delete).execute(
+                project=gcp.project, targetGrpcProxy=proxy_to_delete).execute(
                     num_retries=_GCP_API_RETRIES)
         else:
             result = gcp.compute.targetHttpProxies().delete(
-                project=gcp.project,
-                targetHttpProxy=proxy_to_delete).execute(
+                project=gcp.project, targetHttpProxy=proxy_to_delete).execute(
                     num_retries=_GCP_API_RETRIES)
         wait_for_global_operation(gcp, result['name'])
     except googleapiclient.errors.HttpError as http_error:
         logger.info('Delete failed: %s', http_error)
 
 
-def delete_url_map(gcp,name=None):
+def delete_url_map(gcp, name=None):
     if name:
         url_map_to_delete = name
     else:
@@ -3223,16 +3204,18 @@ try:
                                     'client processes on existing client hosts '
                                     'are out of test scope.')
                         continue
-                    client_process = test_api_listener(gcp, backend_service, instance_group,
-                                                       alternate_backend_service, client_process)
+                    client_process = test_api_listener(
+                        gcp, backend_service, instance_group,
+                        alternate_backend_service, client_process)
                 elif test_case == 'forwarding_rule_port_match':
                     if CLIENT_HOSTS:
-                        logger.info('skipping forwarding_rule_port_match test case '
-                                    'because client processes on existing client hosts '
-                                    'are out of test scope.')
+                        logger.info(
+                            'skipping forwarding_rule_port_match test case '
+                            'because client processes on existing client hosts '
+                            'are out of test scope.')
                         continue
-                    client_process = test_forwarding_rule_port_match(gcp, backend_service,
-                                                                     instance_group, client_process)
+                    client_process = test_forwarding_rule_port_match(
+                        gcp, backend_service, instance_group, client_process)
                 elif test_case == 'metadata_filter':
                     test_metadata_filter(gcp, backend_service, instance_group,
                                          alternate_backend_service,
