@@ -2595,9 +2595,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   std::vector<ConcurrentRpc> SendConcurrentRpcs(
       grpc::testing::EchoTestService::Stub* stub, size_t num_rpcs,
       const RpcOptions& rpc_options) {
-    // Variables for RPC.
-    // Using unique_ptr here, because we can't copy ClientContext. We allocate
-    // it on heap and let C++ handle its life cycle.
+    // Variables for RPCs.
     std::vector<ConcurrentRpc> rpcs(num_rpcs);
     EchoRequest request;
     // Variables for synchronization
@@ -9332,11 +9330,11 @@ TEST_P(DropTest, Vanilla) {
   const uint32_t kDropPerMillionForThrottle = 200000;
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
-  const double KDropRateForLbAndThrottle =
+  const double kDropRateForLbAndThrottle =
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs =
-      ComputeIdealNumRpcs(KDropRateForLbAndThrottle, kErrorTolerance);
+      ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
   // The ADS response contains two drop categories.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts()},
@@ -9362,7 +9360,7 @@ TEST_P(DropTest, Vanilla) {
   }
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(KDropRateForLbAndThrottle,
+  EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(kDropRateForLbAndThrottle,
                                                     kErrorTolerance));
 }
 
@@ -9449,12 +9447,12 @@ TEST_P(DropTest, Update) {
   const double kErrorTolerance = 0.05;
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
-  const double KDropRateForLbAndThrottle =
+  const double kDropRateForLbAndThrottle =
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   const size_t kNumRpcsLbOnly =
       ComputeIdealNumRpcs(kDropRateForLb, kErrorTolerance);
   const size_t kNumRpcsBoth =
-      ComputeIdealNumRpcs(KDropRateForLbAndThrottle, kErrorTolerance);
+      ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
   // The first ADS response contains one drop category.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts()},
@@ -9493,7 +9491,7 @@ TEST_P(DropTest, Update) {
   // Wait until the drop rate increases to the middle of the two configs, which
   // implies that the update has been in effect.
   const double kDropRateThreshold =
-      (kDropRateForLb + KDropRateForLbAndThrottle) / 2;
+      (kDropRateForLb + kDropRateForLbAndThrottle) / 2;
   size_t num_rpcs = kNumRpcsBoth;
   while (seen_drop_rate < kDropRateThreshold) {
     EchoResponse response;
@@ -9528,7 +9526,7 @@ TEST_P(DropTest, Update) {
   // The new drop rate should be roughly equal to the expectation.
   seen_drop_rate = static_cast<double>(num_drops) / kNumRpcsBoth;
   gpr_log(GPR_INFO, "Second batch drop rate %f", seen_drop_rate);
-  EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(KDropRateForLbAndThrottle,
+  EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(kDropRateForLbAndThrottle,
                                                     kErrorTolerance));
 }
 
@@ -9999,10 +9997,10 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   const double kErrorTolerance = 0.05;
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
-  const double KDropRateForLbAndThrottle =
+  const double kDropRateForLbAndThrottle =
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   const size_t kNumRpcs =
-      ComputeIdealNumRpcs(KDropRateForLbAndThrottle, kErrorTolerance);
+      ComputeIdealNumRpcs(kDropRateForLbAndThrottle, kErrorTolerance);
   // The ADS response contains two drop categories.
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", GetBackendPorts()},
@@ -10031,7 +10029,7 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   }
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(KDropRateForLbAndThrottle,
+  EXPECT_THAT(seen_drop_rate, ::testing::DoubleNear(kDropRateForLbAndThrottle,
                                                     kErrorTolerance));
   // Check client stats.
   const size_t total_rpc = num_warmup + kNumRpcs;
@@ -10232,12 +10230,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
+  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 2000;
   const uint32_t kFixedDelaySeconds = 100;
-#ifdef GRPC_MSAN_ENABLED
-  const uint32_t kRpcTimeoutMilliseconds = 8000;  // 8s
-#else
-  const uint32_t kRpcTimeoutMilliseconds = 1000;  // 1s
-#endif
   const uint32_t kDelayPercentagePerHundred = 50;
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
   const double kErrorTolerance = 0.05;
@@ -10279,11 +10273,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   const uint32_t kFixedDelayMilliseconds = 100000;
-#ifdef GRPC_MSAN_ENABLED                          // 100 seconds
-  const uint32_t kRpcTimeoutMilliseconds = 8000;  // 8s
-#else
-  const uint32_t kRpcTimeoutMilliseconds = 1000;  // 1s
-#endif
+  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 2000;
   const uint32_t kDelayPercentageCap = 100;
   const uint32_t kDelayPercentage = 50;
   const double kDelayRate = kDelayPercentage / 100.0;
@@ -10331,7 +10321,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
-  const uint32_t kFixedDelaySeconds = 1;                // 1s
+  const uint32_t kFixedDelaySeconds = 1 * grpc_test_slowdown_factor();
   const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
