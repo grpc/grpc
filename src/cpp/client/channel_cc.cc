@@ -248,6 +248,8 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
   if (callback_cq != nullptr) {
     return callback_cq;
   }
+  // The callback_cq_ wasn't already set, so grab a lock and set it up exactly
+  // once for this channel.
   grpc::internal::MutexLock l(&mu_);
   callback_cq = callback_cq_.load(std::memory_order_relaxed);
   if (callback_cq == nullptr) {
