@@ -1971,6 +1971,28 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return true;
   }
 
+  bool SeenBackend(size_t backend_idx,
+                   const RpcOptions& rpc_options = RpcOptions()) {
+    switch (rpc_options.service) {
+      case SERVICE_ECHO:
+        if (backends_[backend_idx]->backend_service()->request_count() == 0) {
+          return false;
+        }
+        break;
+      case SERVICE_ECHO1:
+        if (backends_[backend_idx]->backend_service1()->request_count() == 0) {
+          return false;
+        }
+        break;
+      case SERVICE_ECHO2:
+        if (backends_[backend_idx]->backend_service2()->request_count() == 0) {
+          return false;
+        }
+        break;
+    }
+    return true;
+  }
+
   void SendRpcAndCount(int* num_total, int* num_ok, int* num_failure,
                        int* num_drops,
                        const RpcOptions& rpc_options = RpcOptions(),
@@ -2011,16 +2033,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   void WaitForBackend(size_t backend_idx, bool reset_counters = true,
-                      bool require_success = false) {
+                      bool require_success = false,
+                      const RpcOptions& rpc_options = RpcOptions()) {
     gpr_log(GPR_INFO, "========= WAITING FOR BACKEND %lu ==========",
             static_cast<unsigned long>(backend_idx));
     do {
-      Status status = SendRpc();
+      Status status = SendRpc(rpc_options);
       if (require_success) {
         EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                  << " message=" << status.error_message();
       }
-    } while (backends_[backend_idx]->backend_service()->request_count() == 0);
+    } while (!SeenBackend(backend_idx, rpc_options));
     if (reset_counters) ResetBackendCounters();
     gpr_log(GPR_INFO, "========= BACKEND %lu READY ==========",
             static_cast<unsigned long>(backend_idx));
@@ -4976,8 +4999,9 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   default_route->mutable_match()->set_prefix("");
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
-  WaitForAllBackends(0, 1);
-  WaitForAllBackends(1, 2, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForBackend(0, /*reset_counters=*/true, /*require_success=*/true);
+  WaitForBackend(1, /*reset_counters=*/true, /*require_success=*/true,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
@@ -5015,7 +5039,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
   SetRouteConfiguration(0, new_route_config);
   ResetBackendCounters();
-  WaitForAllBackends(2, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForBackend(2, /*reset_counters=*/true, /*require_success=*/true,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
@@ -5047,7 +5072,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
   SetRouteConfiguration(0, new_route_config);
   ResetBackendCounters();
-  WaitForAllBackends(3, 4, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForBackend(3, /*reset_counters=*/true, /*require_success=*/true,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
@@ -5161,7 +5187,7 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   SetRouteConfiguration(0, new_route_config);
   // Wait for RPCs to go to the new backend: 1, this ensures that the client has
   // processed the update.
-  WaitForAllBackends(1, 2, false, RpcOptions(), true);
+  WaitForBackend(1, /*reset_counters=*/false);
   // Bring up the previous backend: 0, this will allow the delayed RPC to
   // finally call on_call_committed upon completion.
   StartBackend(0);
@@ -5540,8 +5566,9 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
                                             .set_rpc_method(METHOD_ECHO1)
                                             .set_metadata(std::move(metadata));
   // Make sure all backends are up.
-  WaitForAllBackends(0, 1);
-  WaitForAllBackends(1, 2, true, header_match_rpc_options);
+  WaitForBackend(0, /*reset_counters=*/true, /*require_success=*/true);
+  WaitForBackend(1, /*reset_counters=*/true, /*require_success=*/true,
+                 header_match_rpc_options);
   // Send RPCs.
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, header_match_rpc_options);
@@ -5838,9 +5865,11 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   SetRouteConfiguration(0, route_config);
   // Make sure all backends are up and that requests for each RPC
   // service go to the right backends.
-  WaitForAllBackends(0, 1, false);
-  WaitForAllBackends(1, 2, false, RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  WaitForAllBackends(0, 1, false, RpcOptions().set_rpc_service(SERVICE_ECHO2));
+  WaitForBackend(0, /*reset_counters=*/false, /*require_success=*/true);
+  WaitForBackend(1, /*reset_counters=*/false, /*require_success=*/true,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForBackend(0, /*reset_counters=*/false, /*require_success=*/true,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Requests for services Echo and Echo2 should have gone to backend 0.
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0, backends_[0]->backend_service1()->request_count());
@@ -5853,12 +5882,15 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   // different RPC service, and wait for the client to make the change.
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service/");
   SetRouteConfiguration(0, route_config);
-  WaitForAllBackends(1, 2, true, RpcOptions().set_rpc_service(SERVICE_ECHO2));
+  WaitForBackend(1, /*reset_counters=*/true, /*require_success=*/true,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Now repeat the earlier test, making sure all traffic goes to the
   // right place.
-  WaitForAllBackends(0, 1, false);
-  WaitForAllBackends(0, 1, false, RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  WaitForAllBackends(1, 2, false, RpcOptions().set_rpc_service(SERVICE_ECHO2));
+  WaitForBackend(0, /*reset_counters=*/false, /*require_success=*/true);
+  WaitForBackend(0, /*reset_counters=*/false, /*require_success=*/true,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForBackend(1, /*reset_counters=*/false, /*require_success=*/true,
+                 RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Requests for services Echo and Echo1 should have gone to backend 0.
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(1, backends_[0]->backend_service1()->request_count());
