@@ -16,10 +16,10 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
-#include <grpc/support/alloc.h>
 #include "src/core/lib/iomgr/resolve_address.h"
+#include <grpc/event_engine/event_engine.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/port_platform.h>
 
 grpc_address_resolver_vtable* grpc_resolve_address_impl;
 
@@ -31,8 +31,36 @@ void grpc_resolve_address(const char* addr, const char* default_port,
                           grpc_pollset_set* interested_parties,
                           grpc_closure* on_done,
                           grpc_resolved_addresses** addresses) {
+#if 0
   grpc_resolve_address_impl->resolve_address(
       addr, default_port, interested_parties, on_done, addresses);
+#else
+  std::unique_ptr<grpc_event_engine::experimental::EventEngine::DNSResolver>
+      resolver = grpc_event_engine::experimental::GetDefaultEventEngine()
+                     ->GetDNSResolver()
+                     .value();
+  resolver->LookupHostname(
+      [addresses, on_done](
+          absl::Status status,
+          std::vector<
+              grpc_event_engine::experimental::EventEngine::ResolvedAddress>
+              vaddresses) {
+        if (!status.ok()) abort();
+        grpc_resolved_addresses* a = *addresses =
+            (grpc_resolved_addresses*)gpr_malloc(
+                sizeof(grpc_resolved_addresses));
+        a->addrs = (grpc_resolved_address*)gpr_malloc(
+            sizeof(grpc_resolved_address) * vaddresses.size());
+        for (size_t i = 0; i < vaddresses.size(); i++) {
+          auto& r = vaddresses[i];
+          memcpy(&a->addrs[i].addr, r.address(), r.size());
+          a->addrs[i].len = r.size();
+          break;
+        }
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+      },
+      addr, default_port, absl::InfiniteFuture());
+#endif
 }
 
 void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
