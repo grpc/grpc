@@ -232,7 +232,7 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   error = grpc_load_file(sts_creds_path, 1, &json_string);
   if (error != GRPC_ERROR_NONE) {
     status =
-        grpc::Status(grpc::StatusCode::NOT_FOUND, grpc_error_string(error));
+        grpc::Status(grpc::StatusCode::NOT_FOUND, grpc_error_std_string(error));
     return cleanup();
   }
   status = StsCredentialsOptionsFromJson(

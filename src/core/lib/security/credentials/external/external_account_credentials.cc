@@ -481,7 +481,7 @@ grpc_call_credentials* grpc_external_account_credentials_create(
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "External account credentials creation failed. Error: %s.",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     return nullptr;
   }
@@ -492,7 +492,7 @@ grpc_call_credentials* grpc_external_account_credentials_create(
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "External account credentials creation failed. Error: %s.",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     return nullptr;
   }

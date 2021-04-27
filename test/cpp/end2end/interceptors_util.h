@@ -82,6 +82,42 @@ class PhonyInterceptorFactory
   }
 };
 
+/* This interceptor can be used to test the interception mechanism. */
+class TestInterceptor : public experimental::Interceptor {
+ public:
+  TestInterceptor(const std::string& method, const char* suffix_for_stats,
+                  experimental::ClientRpcInfo* info) {
+    EXPECT_EQ(info->method(), method);
+
+    if (suffix_for_stats == nullptr || info->suffix_for_stats() == nullptr) {
+      EXPECT_EQ(info->suffix_for_stats(), suffix_for_stats);
+    } else {
+      EXPECT_EQ(strcmp(info->suffix_for_stats(), suffix_for_stats), 0);
+    }
+  }
+
+  void Intercept(experimental::InterceptorBatchMethods* methods) override {
+    methods->Proceed();
+  }
+};
+
+class TestInterceptorFactory
+    : public experimental::ClientInterceptorFactoryInterface {
+ public:
+  TestInterceptorFactory(const std::string& method,
+                         const char* suffix_for_stats)
+      : method_(method), suffix_for_stats_(suffix_for_stats) {}
+
+  experimental::Interceptor* CreateClientInterceptor(
+      experimental::ClientRpcInfo* info) override {
+    return new TestInterceptor(method_, suffix_for_stats_, info);
+  }
+
+ private:
+  std::string method_;
+  const char* suffix_for_stats_;
+};
+
 /* This interceptor factory returns nullptr on interceptor creation */
 class NullInterceptorFactory
     : public experimental::ClientInterceptorFactoryInterface,
@@ -164,7 +200,8 @@ class EchoTestServiceStreamingImpl : public EchoTestService::Service {
 
 constexpr int kNumStreamingMessages = 10;
 
-void MakeCall(const std::shared_ptr<Channel>& channel);
+void MakeCall(const std::shared_ptr<Channel>& channel,
+              const StubOptions& options = StubOptions());
 
 void MakeClientStreamingCall(const std::shared_ptr<Channel>& channel);
 

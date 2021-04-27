@@ -145,7 +145,7 @@ static void print_error_string() {
   error = grpc_error_set_int(error, GRPC_ERROR_INT_SIZE, 666);
   error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
                              grpc_slice_from_static_string("message"));
-  // gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
+  // gpr_log(GPR_DEBUG, "%s", grpc_error_std_string(error).c_str());
   GRPC_ERROR_UNREF(error);
 }
 

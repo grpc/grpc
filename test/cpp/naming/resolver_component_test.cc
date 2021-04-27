@@ -269,7 +269,7 @@ void CheckServiceConfigResultLocked(const char* service_config_json,
   if (args->expected_service_config_error.empty()) {
     EXPECT_EQ(service_config_error, GRPC_ERROR_NONE);
   } else {
-    EXPECT_THAT(grpc_error_string(service_config_error),
+    EXPECT_THAT(grpc_error_std_string(service_config_error),
                 testing::HasSubstr(args->expected_service_config_error));
   }
   GRPC_ERROR_UNREF(service_config_error);
@@ -436,7 +436,8 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
   }
 
   void ReturnError(grpc_error_handle error) override {
-    gpr_log(GPR_ERROR, "resolver returned error: %s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "resolver returned error: %s",
+            grpc_error_std_string(error).c_str());
     GPR_ASSERT(false);
   }
 

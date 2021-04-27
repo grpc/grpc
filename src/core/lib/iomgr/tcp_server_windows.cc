@@ -318,8 +318,8 @@ static void on_accept(void* arg, grpc_error_handle error) {
      this is necessary in the read/write case, it's useless for the accept
      case. We only need to adjust the pending callback count */
   if (error != GRPC_ERROR_NONE) {
-    const char* msg = grpc_error_string(error);
-    gpr_log(GPR_INFO, "Skipping on_accept due to error: %s", msg);
+    gpr_log(GPR_INFO, "Skipping on_accept due to error: %s",
+            grpc_error_std_string(error).c_str());
 
     gpr_mu_unlock(&sp->server->mu);
     return;

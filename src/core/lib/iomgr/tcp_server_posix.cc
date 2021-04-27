@@ -325,14 +325,14 @@ static grpc_error_handle add_wildcard_addrs_to_server(grpc_tcp_server* s,
       gpr_log(GPR_INFO,
               "Failed to add :: listener, "
               "the environment may not support IPv6: %s",
-              grpc_error_string(v6_err));
+              grpc_error_std_string(v6_err).c_str());
       GRPC_ERROR_UNREF(v6_err);
     }
     if (v4_err != GRPC_ERROR_NONE) {
       gpr_log(GPR_INFO,
               "Failed to add 0.0.0.0 listener, "
               "the environment may not support IPv4: %s",
-              grpc_error_string(v4_err));
+              grpc_error_std_string(v4_err).c_str());
       GRPC_ERROR_UNREF(v4_err);
     }
     return GRPC_ERROR_NONE;

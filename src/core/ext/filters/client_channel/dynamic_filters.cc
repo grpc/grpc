@@ -53,8 +53,7 @@ DynamicFilters::Call::Call(Args args, grpc_error_handle* error)
   *error = grpc_call_stack_init(channel_stack_->channel_stack_, 1, Destroy,
                                 this, &call_args);
   if (GPR_UNLIKELY(*error != GRPC_ERROR_NONE)) {
-    const char* error_string = grpc_error_string(*error);
-    gpr_log(GPR_ERROR, "error: %s", error_string);
+    gpr_log(GPR_ERROR, "error: %s", grpc_error_std_string(*error).c_str());
     return;
   }
   grpc_call_stack_set_pollset_or_pollset_set(call_stack, args.pollent);
@@ -145,7 +144,7 @@ std::pair<grpc_channel_stack*, grpc_error_handle> CreateChannelStack(
       channel_stack);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "error initializing client internal stack: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     grpc_channel_stack_destroy(channel_stack);
     gpr_free(channel_stack);
     return {nullptr, error};

@@ -202,7 +202,7 @@ class XdsClient::ChannelState::AdsCallState
             watcher_error, GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
           gpr_log(GPR_INFO, "[xds_client %p] %s", ads_calld_->xds_client(),
-                  grpc_error_string(watcher_error));
+                  grpc_error_std_string(watcher_error).c_str());
         }
         if (type_url_ == XdsApi::kLdsTypeUrl) {
           ListenerState& state = ads_calld_->xds_client()->listener_map_[name_];
@@ -829,7 +829,7 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
             "error=%s resources=%s",
             xds_client(), type_url.c_str(),
             xds_client()->resource_version_map_[type_url].c_str(),
-            state.nonce.c_str(), grpc_error_string(state.error),
+            state.nonce.c_str(), grpc_error_std_string(state.error).c_str(),
             absl::StrJoin(resource_names, " ").c_str());
   }
   GRPC_ERROR_UNREF(state.error);
@@ -1214,7 +1214,7 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
     // Ignore unparsable response.
     gpr_log(GPR_ERROR,
             "[xds_client %p] Error parsing ADS response (%s) -- ignoring",
-            xds_client(), grpc_error_string(result.parse_error));
+            xds_client(), grpc_error_std_string(result.parse_error).c_str());
     GRPC_ERROR_UNREF(result.parse_error);
   } else {
     grpc_millis update_time = grpc_core::ExecCtx::Get()->Now();
@@ -1232,7 +1232,8 @@ bool XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked() {
               "[xds_client %p] ADS response invalid for resource type %s "
               "version %s, will NACK: nonce=%s error=%s",
               xds_client(), result.type_url.c_str(), result.version.c_str(),
-              state.nonce.c_str(), grpc_error_string(result.parse_error));
+              state.nonce.c_str(),
+              grpc_error_std_string(result.parse_error).c_str());
       SendMessageLocked(result.type_url);
     } else {
       seen_response_ = true;
@@ -1296,7 +1297,7 @@ void XdsClient::ChannelState::AdsCallState::OnStatusReceivedLocked(
             "[xds_client %p] ADS call status received. Status = %d, details "
             "= '%s', (chand: %p, ads_calld: %p, call: %p), error '%s'",
             xds_client(), status_code_, status_details, chand(), this, call_,
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     gpr_free(status_details);
   }
   // Ignore status from a stale call.
@@ -1659,7 +1660,7 @@ bool XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked() {
     if (parse_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR,
               "[xds_client %p] LRS response parsing failed. error=%s",
-              xds_client(), grpc_error_string(parse_error));
+              xds_client(), grpc_error_std_string(parse_error).c_str());
       GRPC_ERROR_UNREF(parse_error);
       return;
     }
@@ -1746,7 +1747,7 @@ void XdsClient::ChannelState::LrsCallState::OnStatusReceivedLocked(
             "[xds_client %p] LRS call status received. Status = %d, details "
             "= '%s', (chand: %p, calld: %p, call: %p), error '%s'",
             xds_client(), status_code_, status_details, chand(), this, call_,
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     gpr_free(status_details);
   }
   // Ignore status from a stale call.
@@ -2255,7 +2256,7 @@ void XdsClient::UpdateResourceMetadataWithFailedParseResultLocked(
     grpc_millis update_time, const XdsApi::AdsParseResult& result) {
   // ADS update is rejected and the resource names in the failed update is
   // available.
-  absl::string_view details = grpc_error_string(result.parse_error);
+  std::string details = grpc_error_std_string(result.parse_error);
   for (auto& name : result.resource_names_failed) {
     XdsApi::ResourceMetadata* resource_metadata = nullptr;
     if (result.type_url == XdsApi::kLdsTypeUrl) {
@@ -2284,7 +2285,7 @@ void XdsClient::UpdateResourceMetadataWithFailedParseResultLocked(
     }
     resource_metadata->client_status = XdsApi::ResourceMetadata::NACKED;
     resource_metadata->failed_version = result.version;
-    resource_metadata->failed_details = std::string(details);
+    resource_metadata->failed_details = details;
     resource_metadata->failed_update_time = update_time;
   }
 }

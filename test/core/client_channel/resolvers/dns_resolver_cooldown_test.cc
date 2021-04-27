@@ -213,7 +213,8 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
   }
 
   void ReturnError(grpc_error_handle error) override {
-    gpr_log(GPR_ERROR, "resolver returned error: %s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "resolver returned error: %s",
+            grpc_error_std_string(error).c_str());
     GPR_ASSERT(false);
   }
 

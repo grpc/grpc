@@ -436,7 +436,7 @@ class GrpcPolledFdWindows {
         "fd:%s InnerOnTcpConnectLocked error:|%s| "
         "pending_register_for_readable:%d"
         " pending_register_for_writeable:%d",
-        GetName(), grpc_error_string(error),
+        GetName(), grpc_error_std_string(error).c_str(),
         pending_continue_register_for_on_readable_locked_,
         pending_continue_register_for_on_writeable_locked_);
     GPR_ASSERT(!connect_done_);
@@ -603,7 +603,7 @@ class GrpcPolledFdWindows {
               "fd:|%s| OnIocpReadableInner winsocket_->read_info.wsa_error "
               "code:|%d| msg:|%s|",
               GetName(), winsocket_->read_info.wsa_error,
-              grpc_error_string(error));
+              grpc_error_std_string(error).c_str());
         }
       }
     }
@@ -640,7 +640,7 @@ class GrpcPolledFdWindows {
             "fd:|%s| OnIocpWriteableInner. winsocket_->write_info.wsa_error "
             "code:|%d| msg:|%s|",
             GetName(), winsocket_->write_info.wsa_error,
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
       }
     }
     GPR_ASSERT(tcp_write_state_ == WRITE_PENDING);

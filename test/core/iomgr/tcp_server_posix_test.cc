@@ -373,7 +373,7 @@ static void test_connect(size_t num_connects,
           continue;
         }
         gpr_log(GPR_ERROR, "Failed to connect to %s: %s", dst.str,
-                grpc_error_string(err));
+                grpc_error_std_string(err).c_str());
         GPR_ASSERT(test_dst_addrs);
         dst_addrs->addrs[dst_idx].addr.len = 0;
         GRPC_ERROR_UNREF(err);

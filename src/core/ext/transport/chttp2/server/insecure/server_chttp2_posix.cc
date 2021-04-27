@@ -60,7 +60,7 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
     gpr_log(GPR_ERROR, "Failed to create channel: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     grpc_transport_destroy(transport);
   }

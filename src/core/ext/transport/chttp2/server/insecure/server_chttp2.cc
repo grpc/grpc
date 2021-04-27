@@ -46,8 +46,7 @@ int grpc_server_add_insecure_http2_port(grpc_server* server, const char* addr) {
       grpc_channel_args_copy(server->core_server->channel_args()),
       ModifyArgsForConnection, &port_num);
   if (err != GRPC_ERROR_NONE) {
-    const char* msg = grpc_error_string(err);
-    gpr_log(GPR_ERROR, "%s", msg);
+    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
 
     GRPC_ERROR_UNREF(err);
   }

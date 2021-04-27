@@ -156,8 +156,7 @@ SubchannelCall::SubchannelCall(Args args, grpc_error_handle* error)
   *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
                                 SubchannelCall::Destroy, this, &call_args);
   if (GPR_UNLIKELY(*error != GRPC_ERROR_NONE)) {
-    const char* error_string = grpc_error_string(*error);
-    gpr_log(GPR_ERROR, "error: %s", error_string);
+    gpr_log(GPR_ERROR, "error: %s", grpc_error_std_string(*error).c_str());
     return;
   }
   grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
@@ -1010,7 +1009,8 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error_handle error) {
         c->PublishTransportLocked()) {
       // Do nothing, transport was published.
     } else if (!c->disconnected_) {
-      gpr_log(GPR_INFO, "Connect failed: %s", grpc_error_string(error));
+      gpr_log(GPR_INFO, "Connect failed: %s",
+              grpc_error_std_string(error).c_str());
       c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
                                     grpc_error_to_absl_status(error));
     }
@@ -1047,7 +1047,7 @@ bool Subchannel::PublishTransportLocked() {
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_destroy(connecting_result_.transport);
     gpr_log(GPR_ERROR, "error initializing subchannel stack: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     return false;
   }

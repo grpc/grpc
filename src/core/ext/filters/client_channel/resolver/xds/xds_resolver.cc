@@ -723,7 +723,7 @@ void XdsResolver::StartLocked() {
     gpr_log(GPR_ERROR,
             "Failed to create xds client -- channel will remain in "
             "TRANSIENT_FAILURE: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     result_handler_->ReturnError(error);
     return;
   }
@@ -822,7 +822,7 @@ void XdsResolver::OnRouteConfigUpdate(XdsApi::RdsUpdate rds_update) {
 
 void XdsResolver::OnError(grpc_error_handle error) {
   gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s",
-          this, grpc_error_string(error));
+          this, grpc_error_std_string(error).c_str());
   Result result;
   result.args = grpc_channel_args_copy(args_);
   result.service_config_error = error;
