@@ -308,7 +308,8 @@ kokoro_setup_test_driver() {
   # Kokoro clones repo to ${KOKORO_ARTIFACTS_DIR}/github/${GITHUB_REPOSITORY}
   local github_root="${KOKORO_ARTIFACTS_DIR}/github"
   readonly SRC_DIR="${github_root}/${src_repository_name}"
-  local test_driver_repo_dir="${github_root}/${TEST_DRIVER_REPO_NAME}"
+  local test_driver_repo_dir
+  test_driver_repo_dir="${TEST_DRIVER_REPO_DIR:-$(mktemp -d)/${TEST_DRIVER_REPO_NAME}}"
   parse_src_repo_git_info SRC_DIR
   kokoro_write_sponge_properties
   kokoro_setup_python_virtual_environment
