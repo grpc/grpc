@@ -185,6 +185,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     bool success = false;
     thread_ =
         grpc_core::Thread("uv loop", threadBodyTrampoline, this, &success);
+    thread_.Start();
     GPR_ASSERT(success);
     success = ready_.get_future().get();
     GPR_ASSERT(success);
