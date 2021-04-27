@@ -141,7 +141,7 @@ google_rpc_Status* StatusToProto(absl::Status status,
 absl::Status StatusFromProto(google_rpc_Status* msg) GRPC_MUST_USE_RESULT;
 
 /// The same value of grpc_core::internal::StatusAllocPtr(absl::OkStatus())
-static constexpr uintptr_t OK_STATUS_PTR = 0;
+static constexpr uintptr_t kOkStatusPtr = 0;
 
 /// Returns ptr where the given status is copied into.
 /// This ptr can be used to get Status later and should be freed by

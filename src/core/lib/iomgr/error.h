@@ -51,37 +51,49 @@ typedef grpc_error* grpc_error_handle;
 
 typedef enum {
   /// 'errno' from the operating system
-  GRPC_ERROR_INT_ERRNO,
+  GRPC_ERROR_INT_ERRNO =
+      static_cast<int>(grpc_core::StatusIntProperty::kErrorNo),
   /// __LINE__ from the call site creating the error
-  GRPC_ERROR_INT_FILE_LINE,
+  GRPC_ERROR_INT_FILE_LINE =
+      static_cast<int>(grpc_core::StatusIntProperty::kFileLine),
   /// stream identifier: for errors that are associated with an individual
   /// wire stream
-  GRPC_ERROR_INT_STREAM_ID,
+  GRPC_ERROR_INT_STREAM_ID =
+      static_cast<int>(grpc_core::StatusIntProperty::kStreamId),
   /// grpc status code representing this error
-  GRPC_ERROR_INT_GRPC_STATUS,
+  GRPC_ERROR_INT_GRPC_STATUS =
+      static_cast<int>(grpc_core::StatusIntProperty::kRpcStatus),
   /// offset into some binary blob (usually represented by
   /// GRPC_ERROR_STR_RAW_BYTES) where the error occurred
-  GRPC_ERROR_INT_OFFSET,
+  GRPC_ERROR_INT_OFFSET =
+      static_cast<int>(grpc_core::StatusIntProperty::kOffset),
   /// context sensitive index associated with the error
-  GRPC_ERROR_INT_INDEX,
+  GRPC_ERROR_INT_INDEX = static_cast<int>(grpc_core::StatusIntProperty::kIndex),
   /// context sensitive size associated with the error
-  GRPC_ERROR_INT_SIZE,
+  GRPC_ERROR_INT_SIZE = static_cast<int>(grpc_core::StatusIntProperty::kSize),
   /// http2 error code associated with the error (see the HTTP2 RFC)
-  GRPC_ERROR_INT_HTTP2_ERROR,
+  GRPC_ERROR_INT_HTTP2_ERROR =
+      static_cast<int>(grpc_core::StatusIntProperty::kHttp2Error),
   /// TSI status code associated with the error
-  GRPC_ERROR_INT_TSI_CODE,
+  GRPC_ERROR_INT_TSI_CODE =
+      static_cast<int>(grpc_core::StatusIntProperty::kTsiCode),
   /// WSAGetLastError() reported when this error occurred
-  GRPC_ERROR_INT_WSA_ERROR,
+  GRPC_ERROR_INT_WSA_ERROR =
+      static_cast<int>(grpc_core::StatusIntProperty::kWsaError),
   /// File descriptor associated with this error
-  GRPC_ERROR_INT_FD,
+  GRPC_ERROR_INT_FD = static_cast<int>(grpc_core::StatusIntProperty::kFd),
   /// HTTP status (i.e. 404)
-  GRPC_ERROR_INT_HTTP_STATUS,
+  GRPC_ERROR_INT_HTTP_STATUS =
+      static_cast<int>(grpc_core::StatusIntProperty::kHttpStatus),
   /// chttp2: did the error occur while a write was in progress
-  GRPC_ERROR_INT_OCCURRED_DURING_WRITE,
+  GRPC_ERROR_INT_OCCURRED_DURING_WRITE =
+      static_cast<int>(grpc_core::StatusIntProperty::kOccurredDuringWrite),
   /// channel connectivity state associated with the error
-  GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE,
+  GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE =
+      static_cast<int>(grpc_core::StatusIntProperty::ChannelConnectivityState),
   /// LB policy drop
-  GRPC_ERROR_INT_LB_POLICY_DROP,
+  GRPC_ERROR_INT_LB_POLICY_DROP =
+      static_cast<int>(grpc_core::StatusIntProperty::kLbPolicyDrop),
 
   /// Must always be last
   GRPC_ERROR_INT_MAX,
@@ -89,27 +101,35 @@ typedef enum {
 
 typedef enum {
   /// top-level textual description of this error
-  GRPC_ERROR_STR_DESCRIPTION,
+  GRPC_ERROR_STR_DESCRIPTION =
+      static_cast<int>(grpc_core::StatusIntProperty::kDescription),
   /// source file in which this error occurred
-  GRPC_ERROR_STR_FILE,
+  GRPC_ERROR_STR_FILE = static_cast<int>(grpc_core::StatusIntProperty::kFile),
   /// operating system description of this error
-  GRPC_ERROR_STR_OS_ERROR,
+  GRPC_ERROR_STR_OS_ERROR =
+      static_cast<int>(grpc_core::StatusIntProperty::kOsError),
   /// syscall that generated this error
-  GRPC_ERROR_STR_SYSCALL,
+  GRPC_ERROR_STR_SYSCALL =
+      static_cast<int>(grpc_core::StatusIntProperty::kSyscall),
   /// peer that we were trying to communicate when this error occurred
-  GRPC_ERROR_STR_TARGET_ADDRESS,
+  GRPC_ERROR_STR_TARGET_ADDRESS =
+      static_cast<int>(grpc_core::StatusIntProperty::kTargetAddress),
   /// grpc status message associated with this error
-  GRPC_ERROR_STR_GRPC_MESSAGE,
+  GRPC_ERROR_STR_GRPC_MESSAGE =
+      static_cast<int>(grpc_core::StatusIntProperty::kGrpcMessage),
   /// hex dump (or similar) with the data that generated this error
-  GRPC_ERROR_STR_RAW_BYTES,
+  GRPC_ERROR_STR_RAW_BYTES =
+      static_cast<int>(grpc_core::StatusIntProperty::kRawBytes),
   /// tsi error string associated with this error
-  GRPC_ERROR_STR_TSI_ERROR,
+  GRPC_ERROR_STR_TSI_ERROR =
+      static_cast<int>(grpc_core::StatusIntProperty::kTsiError),
   /// filename that we were trying to read/write when this error occurred
-  GRPC_ERROR_STR_FILENAME,
+  GRPC_ERROR_STR_FILENAME =
+      static_cast<int>(grpc_core::StatusIntProperty::kFilename),
   /// key associated with the error
-  GRPC_ERROR_STR_KEY,
+  GRPC_ERROR_STR_KEY = static_cast<int>(grpc_core::StatusIntProperty::kKey),
   /// value associated with the error
-  GRPC_ERROR_STR_VALUE,
+  GRPC_ERROR_STR_VALUE = static_cast<int>(grpc_core::StatusIntProperty::kValue),
 
   /// Must always be last
   GRPC_ERROR_STR_MAX,
