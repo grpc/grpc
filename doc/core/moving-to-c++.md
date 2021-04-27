@@ -44,7 +44,7 @@ C++ compatible with
   - `<ratio>`
   - `<system_error>`
   - `<filesystem>`
-- `grpc_core::Atomic` is prefered over `std::atomic` in gRPC library because it provides
+- `grpc_core::Atomic` is preferred over `std::atomic` in gRPC library because it provides
   additional debugging information.
 
 ## Roadmap
