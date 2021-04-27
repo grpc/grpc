@@ -893,6 +893,9 @@ void GrpcLb::BalancerCallState::StartQuery() {
 }
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
+  // InvalidateNow to avoid getting stuck re-initializing this timer
+  // in a loop while draining the currently-held WorkSerializer.
+  // Also see https://github.com/grpc/grpc/issues/26079.
   ExecCtx::Get()->InvalidateNow();
   const grpc_millis next_client_load_report_time =
       ExecCtx::Get()->Now() + client_stats_report_interval_;

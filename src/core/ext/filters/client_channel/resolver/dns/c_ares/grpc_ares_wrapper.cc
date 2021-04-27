@@ -330,6 +330,9 @@ static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
       fdn = fdn->next;
     }
     if (!driver->shutting_down) {
+      // InvalidateNow to avoid getting stuck re-initializing this timer
+      // in a loop while draining the currently-held WorkSerializer.
+      // Also see https://github.com/grpc/grpc/issues/26079.
       grpc_core::ExecCtx::Get()->InvalidateNow();
       grpc_millis next_ares_backup_poll_alarm =
           calculate_next_ares_backup_poll_alarm_ms(driver);
@@ -502,7 +505,6 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver) {
   grpc_timer_init(&ev_driver->query_timeout, timeout,
                   &ev_driver->on_timeout_locked);
   // Initialize the backup poll alarm
-  grpc_core::ExecCtx::Get()->InvalidateNow();
   grpc_millis next_ares_backup_poll_alarm =
       calculate_next_ares_backup_poll_alarm_ms(ev_driver);
   grpc_ares_ev_driver_ref(ev_driver);
