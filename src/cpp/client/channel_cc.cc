@@ -57,12 +57,13 @@ Channel::Channel(const std::string& host, grpc_channel* channel,
 
 Channel::~Channel() {
   grpc_channel_destroy(c_channel_);
-  if (callback_cq_ != nullptr) {
+  CompletionQueue* callback_cq = callback_cq_.load(std::memory_order_relaxed);
+  if (callback_cq != nullptr) {
     if (grpc_iomgr_run_in_background()) {
       // gRPC-core provides the backing needed for the preferred CQ type
-      callback_cq_->Shutdown();
+      callback_cq->Shutdown();
     } else {
-      CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq_);
+      CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq);
     }
   }
 }
@@ -243,25 +244,33 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
 ::grpc::CompletionQueue* Channel::CallbackCQ() {
   // TODO(vjpai): Consider using a single global CQ for the default CQ
   // if there is no explicit per-channel CQ registered
+  CompletionQueue* callback_cq = callback_cq_.load(std::memory_order_acquire);
+  if (callback_cq != nullptr) {
+    return callback_cq;
+  }
+  // The callback_cq_ wasn't already set, so grab a lock and set it up exactly
+  // once for this channel.
   grpc::internal::MutexLock l(&mu_);
-  if (callback_cq_ == nullptr) {
+  callback_cq = callback_cq_.load(std::memory_order_relaxed);
+  if (callback_cq == nullptr) {
     if (grpc_iomgr_run_in_background()) {
       // gRPC-core provides the backing needed for the preferred CQ type
 
       auto* shutdown_callback = new ShutdownCallback;
-      callback_cq_ =
+      callback_cq =
           new ::grpc::CompletionQueue(grpc_completion_queue_attributes{
               GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK,
               GRPC_CQ_DEFAULT_POLLING, shutdown_callback});
 
       // Transfer ownership of the new cq to its own shutdown callback
-      shutdown_callback->TakeCQ(callback_cq_);
+      shutdown_callback->TakeCQ(callback_cq);
     } else {
       // Otherwise we need to use the alternative CQ variant
-      callback_cq_ = CompletionQueue::CallbackAlternativeCQ();
+      callback_cq = CompletionQueue::CallbackAlternativeCQ();
     }
+    callback_cq_.store(callback_cq, std::memory_order_release);
   }
-  return callback_cq_;
+  return callback_cq;
 }
 
 }  // namespace grpc
