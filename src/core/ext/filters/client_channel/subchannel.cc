@@ -950,7 +950,6 @@ void Subchannel::MaybeStartConnectingLocked() {
   } else {
     GPR_ASSERT(!have_retry_alarm_);
     have_retry_alarm_ = true;
-    ExecCtx::Get()->InvalidateNow();
     const grpc_millis time_til_next =
         next_attempt_deadline_ - ExecCtx::Get()->Now();
     if (time_til_next <= 0) {
