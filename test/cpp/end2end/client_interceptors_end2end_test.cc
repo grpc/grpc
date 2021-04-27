@@ -76,6 +76,7 @@ class HijackingInterceptor : public experimental::Interceptor {
     info_ = info;
     // Make sure it is the right method
     EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
+    EXPECT_EQ(info->suffix_for_stats(), nullptr);
     EXPECT_EQ(info->type(), experimental::ClientRpcInfo::Type::UNARY);
   }
 
@@ -183,6 +184,7 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
     info_ = info;
     // Make sure it is the right method
     EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
+    EXPECT_EQ(strcmp("TestSuffixForStats", info->suffix_for_stats()), 0);
   }
 
   void Intercept(experimental::InterceptorBatchMethods* methods) override {
@@ -304,6 +306,7 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
   explicit BidiStreamingRpcHijackingInterceptor(
       experimental::ClientRpcInfo* info) {
     info_ = info;
+    EXPECT_EQ(info->suffix_for_stats(), nullptr);
   }
 
   void Intercept(experimental::InterceptorBatchMethods* methods) override {
@@ -375,6 +378,10 @@ class ClientStreamingRpcHijackingInterceptor
   explicit ClientStreamingRpcHijackingInterceptor(
       experimental::ClientRpcInfo* info) {
     info_ = info;
+    EXPECT_EQ(
+        strcmp("/grpc.testing.EchoTestService/RequestStream", info->method()),
+        0);
+    EXPECT_EQ(strcmp("TestSuffixForStats", info->suffix_for_stats()), 0);
   }
   void Intercept(experimental::InterceptorBatchMethods* methods) override {
     bool hijack = false;
@@ -431,6 +438,7 @@ class ServerStreamingRpcHijackingInterceptor
       experimental::ClientRpcInfo* info) {
     info_ = info;
     got_failed_message_ = false;
+    EXPECT_EQ(info->suffix_for_stats(), nullptr);
   }
 
   void Intercept(experimental::InterceptorBatchMethods* methods) override {
@@ -931,7 +939,7 @@ TEST_F(ClientInterceptorsEnd2endTest,
   auto channel = server_->experimental().InProcessChannelWithInterceptors(
       args, std::move(creators));
 
-  MakeCall(channel);
+  MakeCall(channel, StubOptions("TestSuffixForStats"));
   // Make sure all interceptors were run once, since the hijacking interceptor
   // makes an RPC on the intercepted channel
   EXPECT_EQ(PhonyInterceptor::GetNumTimesRun(), 12);
@@ -1059,7 +1067,8 @@ TEST_F(ClientInterceptorsStreamingEnd2endTest, ClientStreamingHijackingTest) {
   auto channel = experimental::CreateCustomChannelWithInterceptors(
       server_address_, InsecureChannelCredentials(), args, std::move(creators));
 
-  auto stub = grpc::testing::EchoTestService::NewStub(channel);
+  auto stub = grpc::testing::EchoTestService::NewStub(
+      channel, StubOptions("TestSuffixForStats"));
   ClientContext ctx;
   EchoRequest req;
   EchoResponse resp;

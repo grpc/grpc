@@ -266,7 +266,7 @@ void CallData::PreCancel(grpc_call_element* elem, grpc_error_handle error) {
     if (calld->delay_timer_pending_) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
         gpr_log(GPR_INFO, "chand=%p calld=%p: cancelling delay timer: %s",
-                chand, calld, grpc_error_string(error));
+                chand, calld, grpc_error_std_string(error).c_str());
       }
       calld->delay_timer_pending_ = false;
       // Cancel the delayed pick.

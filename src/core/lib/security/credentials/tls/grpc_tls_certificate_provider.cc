@@ -261,7 +261,8 @@ FileWatcherCertificateProvider::ReadRootCertificatesFromFile(
       grpc_load_file(root_cert_full_path.c_str(), 0, &root_slice);
   if (root_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Reading file %s failed: %s",
-            root_cert_full_path.c_str(), grpc_error_string(root_error));
+            root_cert_full_path.c_str(),
+            grpc_error_std_string(root_error).c_str());
     GRPC_ERROR_UNREF(root_error);
     return absl::nullopt;
   }
@@ -319,7 +320,8 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
         grpc_load_file(private_key_path.c_str(), 0, &key_slice.slice);
     if (key_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
-              private_key_path.c_str(), grpc_error_string(key_error));
+              private_key_path.c_str(),
+              grpc_error_std_string(key_error).c_str());
       GRPC_ERROR_UNREF(key_error);
       continue;
     }
@@ -327,7 +329,8 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
         grpc_load_file(identity_certificate_path.c_str(), 0, &cert_slice.slice);
     if (cert_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Reading file %s failed: %s. Start retrying...",
-              identity_certificate_path.c_str(), grpc_error_string(cert_error));
+              identity_certificate_path.c_str(),
+              grpc_error_std_string(cert_error).c_str());
       GRPC_ERROR_UNREF(cert_error);
       continue;
     }
@@ -368,6 +371,7 @@ FileWatcherCertificateProvider::ReadIdentityKeyCertPairFromFiles(
 grpc_tls_certificate_provider* grpc_tls_certificate_provider_static_data_create(
     const char* root_certificate, grpc_tls_identity_pairs* pem_key_cert_pairs) {
   GPR_ASSERT(root_certificate != nullptr || pem_key_cert_pairs != nullptr);
+  grpc_core::ExecCtx exec_ctx;
   grpc_core::PemKeyCertPairList identity_pairs_core;
   if (pem_key_cert_pairs != nullptr) {
     identity_pairs_core = std::move(pem_key_cert_pairs->pem_key_cert_pairs);
@@ -385,6 +389,7 @@ grpc_tls_certificate_provider*
 grpc_tls_certificate_provider_file_watcher_create(
     const char* private_key_path, const char* identity_certificate_path,
     const char* root_cert_path, unsigned int refresh_interval_sec) {
+  grpc_core::ExecCtx exec_ctx;
   return new grpc_core::FileWatcherCertificateProvider(
       private_key_path == nullptr ? "" : private_key_path,
       identity_certificate_path == nullptr ? "" : identity_certificate_path,

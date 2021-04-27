@@ -32,9 +32,12 @@ class XdsServerServingStatusNotifierInterface {
 
   // \a uri contains the listening target associated with the notification. Note
   // that a single target provided to XdsServerBuilder can get resolved to
-  // multiple listening addresses. Status::OK signifies that the server is
-  // serving, while a non-OK status signifies that the server is not serving.
-  virtual void OnServingStatusChange(std::string uri, grpc::Status status) = 0;
+  // multiple listening addresses.
+  // The callback is invoked each time there is an update to the serving status.
+  // The API does not provide any guarantees around duplicate updates.
+  // Status::OK signifies that the server is serving, while a non-OK status
+  // signifies that the server is not serving.
+  virtual void OnServingStatusUpdate(std::string uri, grpc::Status status) = 0;
 };
 
 class XdsServerBuilder : public ::grpc::ServerBuilder {
@@ -53,18 +56,18 @@ class XdsServerBuilder : public ::grpc::ServerBuilder {
     ChannelArguments args = ServerBuilder::BuildChannelArgs();
     grpc_channel_args c_channel_args = args.c_channel_args();
     grpc_server_config_fetcher* fetcher = grpc_server_config_fetcher_xds_create(
-        {OnServingStatusChange, notifier_}, &c_channel_args);
+        {OnServingStatusUpdate, notifier_}, &c_channel_args);
     if (fetcher != nullptr) set_fetcher(fetcher);
     return args;
   }
 
-  static void OnServingStatusChange(void* user_data, const char* uri,
+  static void OnServingStatusUpdate(void* user_data, const char* uri,
                                     grpc_status_code code,
                                     const char* error_message) {
     if (user_data == nullptr) return;
     XdsServerServingStatusNotifierInterface* notifier =
         static_cast<XdsServerServingStatusNotifierInterface*>(user_data);
-    notifier->OnServingStatusChange(
+    notifier->OnServingStatusUpdate(
         uri, grpc::Status(static_cast<StatusCode>(code), error_message));
   }
 

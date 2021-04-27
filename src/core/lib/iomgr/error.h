@@ -134,7 +134,9 @@ inline bool grpc_error_is_special(grpc_error_handle err) {
 void grpc_disable_error_creation();
 void grpc_enable_error_creation();
 
+// DEPRECATED: Use grpc_error_std_string instead
 const char* grpc_error_string(grpc_error_handle error);
+std::string grpc_error_std_string(grpc_error_handle error);
 
 /// Create an error - but use GRPC_ERROR_CREATE instead
 grpc_error_handle grpc_error_create(const char* file, int line,

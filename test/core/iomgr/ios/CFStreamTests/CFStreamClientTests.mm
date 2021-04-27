@@ -55,8 +55,7 @@ static void must_succeed(void* arg, grpc_error_handle error) {
 static void must_fail(void* arg, grpc_error_handle error) {
   GPR_ASSERT(g_connecting == nullptr);
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  const char* error_str = grpc_error_string(error);
-  NSLog(@"%s", error_str);
+  NSLog(@"%s", grpc_error_std_string(error).c_str());
   finish_connection();
 }
 

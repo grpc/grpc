@@ -42,7 +42,8 @@ class ServiceConfigChannelArgChannelData {
       if (service_config_error == GRPC_ERROR_NONE) {
         service_config_ = std::move(service_config);
       } else {
-        gpr_log(GPR_ERROR, "%s", grpc_error_string(service_config_error));
+        gpr_log(GPR_ERROR, "%s",
+                grpc_error_std_string(service_config_error).c_str());
       }
       GRPC_ERROR_UNREF(service_config_error);
     }

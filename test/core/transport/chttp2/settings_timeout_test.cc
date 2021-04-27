@@ -106,7 +106,7 @@ class Client {
     grpc_resolved_addresses* server_addresses = nullptr;
     grpc_error_handle error =
         grpc_blocking_resolve_address(server_address_, "80", &server_addresses);
-    ASSERT_EQ(GRPC_ERROR_NONE, error) << grpc_error_string(error);
+    ASSERT_EQ(GRPC_ERROR_NONE, error) << grpc_error_std_string(error);
     ASSERT_GE(server_addresses->naddrs, 1UL);
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset_, &mu_);
@@ -181,7 +181,8 @@ class Client {
 
    private:
     static void OnEventDone(void* arg, grpc_error_handle error) {
-      gpr_log(GPR_INFO, "OnEventDone(): %s", grpc_error_string(error));
+      gpr_log(GPR_INFO, "OnEventDone(): %s",
+              grpc_error_std_string(error).c_str());
       EventState* state = static_cast<EventState*>(arg);
       state->error_ = GRPC_ERROR_REF(error);
       gpr_atm_rel_store(&state->done_atm_, 1);

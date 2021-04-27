@@ -296,7 +296,8 @@ void HealthCheckClient::CallState::StartCall() {
     gpr_log(GPR_ERROR,
             "HealthCheckClient %p CallState %p: error creating health "
             "checking call on subchannel (%s); will retry",
-            health_check_client_.get(), this, grpc_error_string(error));
+            health_check_client_.get(), this,
+            grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     CallEndedLocked(/*retry=*/true);
     return;
@@ -460,10 +461,10 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(
   const bool healthy = DecodeResponse(&recv_message_buffer_, &error);
   const grpc_connectivity_state state =
       healthy ? GRPC_CHANNEL_READY : GRPC_CHANNEL_TRANSIENT_FAILURE;
-  const char* reason = error == GRPC_ERROR_NONE && !healthy
-                           ? "backend unhealthy"
-                           : grpc_error_string(error);
-  health_check_client_->SetHealthStatus(state, reason);
+  health_check_client_->SetHealthStatus(
+      state, error == GRPC_ERROR_NONE && !healthy
+                 ? "backend unhealthy"
+                 : grpc_error_std_string(error).c_str());
   seen_response_.Store(true, MemoryOrder::RELEASE);
   grpc_slice_buffer_destroy_internal(&recv_message_buffer_);
   // Start another recv_message batch.
