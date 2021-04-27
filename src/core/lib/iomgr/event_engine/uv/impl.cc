@@ -24,7 +24,6 @@ class uvTCP final {
         on_shutdown_(on_shutdown),
         slice_allocator_factory_(std::move(slice_allocator_factory)) {
     tcp_.data = this;
-    gpr_ref_init(&ref_, 1);
   }
 
   uvEngine* engine_;
@@ -38,8 +37,6 @@ class uvTCP final {
       slice_allocator_factory_;
 
   uv_tcp_t tcp_;
-
-  gpr_refcount ref_;
 };
 
 class uvListener final
@@ -68,24 +65,32 @@ class uvListener final
 class uvDNSResolver final
     : public grpc_event_engine::experimental::EventEngine::DNSResolver {
  public:
-  virtual ~uvDNSResolver() override final {}
+  virtual ~uvDNSResolver() override final { abort(); }
 
-  uvDNSResolver(uvEngine* engine) : engine_(engine) {}
+  uvDNSResolver(uvEngine* engine) : engine_(engine) { abort(); }
 
   virtual LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                           absl::string_view address,
                                           absl::string_view default_port,
-                                          absl::Time deadline) override final {}
+                                          absl::Time deadline) override final {
+    abort();
+  }
 
   virtual LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
                                      absl::string_view name,
-                                     absl::Time deadline) override final {}
+                                     absl::Time deadline) override final {
+    abort();
+  }
 
   virtual LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
                                      absl::string_view name,
-                                     absl::Time deadline) override final {}
+                                     absl::Time deadline) override final {
+    abort();
+  }
 
-  virtual void TryCancelLookup(LookupTaskHandle handle) override final {}
+  virtual void TryCancelLookup(LookupTaskHandle handle) override final {
+    abort();
+  }
 
   uvEngine* engine_;
 };
@@ -93,25 +98,33 @@ class uvDNSResolver final
 class uvEndpoint final
     : public grpc_event_engine::experimental::EventEngine::Endpoint {
  public:
-  virtual ~uvEndpoint() override final {}
+  virtual ~uvEndpoint() override final { abort(); }
 
   virtual void Read(
       grpc_event_engine::experimental::EventEngine::Callback on_read,
       grpc_event_engine::experimental::SliceBuffer* buffer,
-      absl::Time deadline) override final {}
+      absl::Time deadline) override final {
+    abort();
+  }
 
   virtual void Write(
       grpc_event_engine::experimental::EventEngine::Callback on_writable,
       grpc_event_engine::experimental::SliceBuffer* data,
-      absl::Time deadline) override final {}
+      absl::Time deadline) override final {
+    abort();
+  }
 
   virtual const grpc_event_engine::experimental::EventEngine::ResolvedAddress*
 
-  GetPeerAddress() const override final{};
+  GetPeerAddress() const override final {
+    abort();
+  };
 
   virtual const grpc_event_engine::experimental::EventEngine::ResolvedAddress*
 
-  GetLocalAddress() const override final{};
+  GetLocalAddress() const override final {
+    abort();
+  };
 };
 
 struct schedulingRequest : grpc_core::MultiProducerSingleConsumerQueue::Node {
@@ -150,9 +163,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
 
   static void closeCallback(uv_handle_t* handle) {
     uvTCP* tcp = reinterpret_cast<uvTCP*>(handle->data);
-    if (gpr_unref(&tcp->ref_)) {
-      delete tcp;
-    }
+    delete tcp;
   }
 
   void threadBody() {
@@ -196,7 +207,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     return absl::OkStatus();
   }
 
-  virtual ~uvEngine() override final {}
+  virtual ~uvEngine() override final { abort(); }
 
   virtual absl::StatusOr<std::unique_ptr<
       grpc_event_engine::experimental::EventEngine::DNSResolver>>
@@ -204,15 +215,19 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     return absl::make_unique<uvDNSResolver>(this);
   }
 
-  virtual TaskHandle Run(Callback fn, RunOptions opts) override final {}
+  virtual TaskHandle Run(Callback fn, RunOptions opts) override final {
+    abort();
+  }
 
   virtual TaskHandle RunAt(absl::Time when, Callback fn,
-                           RunOptions opts) override final {}
+                           RunOptions opts) override final {
+    abort();
+  }
 
-  virtual void TryCancel(TaskHandle handle) override final {}
+  virtual void TryCancel(TaskHandle handle) override final { abort(); }
 
   virtual void Shutdown(Callback on_shutdown_complete) override final {
-    thread_.Join();
+    abort();
   }
 
   uv_loop_t loop_;
@@ -241,14 +256,10 @@ uvListener::uvListener(
 }
 
 uvListener::~uvListener() {
-  if (gpr_unref(&uvTCP_->ref_)) {
-    delete uvTCP_;
-  } else {
-    engine_->schedule([this](uvEngine* engine) {
-      uv_close(reinterpret_cast<uv_handle_t*>(&uvTCP_->tcp_),
-               uvEngine::closeCallback);
-    });
-  }
+  engine_->schedule([this](uvEngine* engine) {
+    uv_close(reinterpret_cast<uv_handle_t*>(&uvTCP_->tcp_),
+             uvEngine::closeCallback);
+  });
 }
 
 absl::StatusOr<int> uvListener::Bind(
