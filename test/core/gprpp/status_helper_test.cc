@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/status/status.h"
+#include "absl/time/clock.h"
 #include "google/rpc/status.upb.h"
 #include "upb/upb.hpp"
 
@@ -36,7 +37,7 @@ TEST(StatusUtilTest, CreateStatus) {
   EXPECT_EQ(true, StatusGetStr(s, StatusStrProperty::kFile).has_value());
   EXPECT_EQ(true, StatusGetInt(s, StatusIntProperty::kFileLine).has_value());
 #endif
-  EXPECT_EQ(true, StatusGetStr(s, StatusStrProperty::kCreatedTime).has_value());
+  EXPECT_EQ(true, StatusGetTime(s, StatusTimeProperty::kCreated).has_value());
   EXPECT_THAT(StatusGetChildren(s),
               ::testing::ElementsAre(absl::CancelledError()));
 }
@@ -63,6 +64,19 @@ TEST(StatusUtilTest, GetStrNotExistent) {
   absl::Status s = absl::CancelledError();
   EXPECT_EQ(absl::optional<std::string>(),
             StatusGetStr(s, StatusStrProperty::kOsError));
+}
+
+TEST(StatusUtilTest, SetAndGetTime) {
+  absl::Status s = absl::CancelledError();
+  absl::Time t = absl::Now();
+  StatusSetTime(&s, StatusTimeProperty::kCreated, t);
+  EXPECT_EQ(t, StatusGetTime(s, StatusTimeProperty::kCreated));
+}
+
+TEST(StatusUtilTest, GetTimeNotExistent) {
+  absl::Status s = absl::CancelledError();
+  EXPECT_EQ(absl::optional<absl::Time>(),
+            StatusGetTime(s, StatusTimeProperty::kCreated));
 }
 
 TEST(StatusUtilTest, AddAndGetChildren) {
@@ -100,7 +114,7 @@ TEST(StatusUtilTest, ComplexErrorToString) {
   absl::Status s = absl::CancelledError("Message");
   StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
   std::string t = StatusToString(s);
-  EXPECT_EQ("CANCELLED:Message {errno:\"2021\"}", t);
+  EXPECT_EQ("CANCELLED:Message {errno:2021}", t);
 }
 
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
@@ -111,10 +125,15 @@ TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   absl::Status s2 = absl::AlreadyExistsError("Message2");
   StatusSetStr(&s2, StatusStrProperty::kOsError, "value");
   StatusAddChild(&s, s2);
+  absl::Status s3 = absl::DeadlineExceededError("Message3");
+  StatusSetTime(&s3, StatusTimeProperty::kCreated, absl::FromUnixSeconds(0));
+  StatusAddChild(&s, s3);
   std::string t = StatusToString(s);
   EXPECT_EQ(
-      "CANCELLED:Message {errno:\"2021\", children:["
-      "ABORTED:Message1, ALREADY_EXISTS:Message2 {os_error:\"value\"}]}",
+      "CANCELLED:Message {errno:2021, children:["
+      "ABORTED:Message1, ALREADY_EXISTS:Message2 {os_error:\"value\"}, "
+      "DEADLINE_EXCEEDED:Message3 {created_time:\"1970-01-01T00:00:00+00:00\"}"
+      "]}",
       t);
 }
 
