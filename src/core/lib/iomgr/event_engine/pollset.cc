@@ -52,7 +52,7 @@ grpc_error* pollset_kick(grpc_pollset* pollset,
   (void)specific_worker;
   return GRPC_ERROR_NONE;
 }
-size_t pollset_size(void) { return 0; }
+size_t pollset_size(void) { return sizeof(grpc_pollset); }
 
 // --- pollset_set vtable API ---
 grpc_pollset_set* pollset_set_create(void) {
