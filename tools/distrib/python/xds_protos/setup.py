@@ -35,13 +35,11 @@ CLASSIFIERS = [
     'License :: OSI Approved :: Apache Software License',
 ]
 INSTALL_REQUIRES = [
-    'grpcio',
     'protobuf',
 ]
-SETUP_REQUIRES = INSTALL_REQUIRES + ['grpcio-tools']
 setuptools.setup(
     name='xds-protos',
-    version='0.0.5',
+    version='0.0.6',
     packages=PACKAGES,
     description='Generated Python code from envoyproxy/data-plane-api',
     long_description_content_type='text/x-rst',
@@ -51,5 +49,4 @@ setuptools.setup(
     url='https://grpc.io',
     license='Apache License 2.0',
     install_requires=INSTALL_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
     classifiers=CLASSIFIERS)

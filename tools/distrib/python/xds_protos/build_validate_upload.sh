@@ -28,6 +28,7 @@ python3 setup.py bdist_wheel
 pushd $(mktemp -d '/tmp/test_xds_protos.XXXXXX')
 python3 -m virtualenv env
 env/bin/python3 -m pip install ${WORK_DIR}/dist/xds-protos-*.tar.gz
+env/bin/python3 -m pip install grpcio
 cp ${WORK_DIR}/generated_file_import_test.py generated_file_import_test.py
 env/bin/python3 generated_file_import_test.py
 popd
