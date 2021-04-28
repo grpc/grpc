@@ -36,6 +36,19 @@ using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 }  // namespace
 
 struct grpc_tcp_server {
+  grpc_tcp_server(std::unique_ptr<EventEngine::Listener> listener,
+                  std::shared_ptr<EventEngine> ee, grpc_resource_quota* rq)
+      : listener(std::move(listener)), engine(ee), resource_quota(rq) {
+    gpr_ref_init(&refs, 1);
+    shutdown_starting.head = nullptr;
+    shutdown_starting.tail = nullptr;
+    gpr_mu_init(&mu);
+  };
+  ~grpc_tcp_server() {
+    gpr_mu_destroy(&mu);
+    // TODO(nnoble): see if we can handle this in ~SliceAllocatorFactory
+    grpc_resource_quota_unref_internal(resource_quota);
+  }
   gpr_refcount refs;
   gpr_mu mu;
   std::unique_ptr<EventEngine::Listener> listener;
@@ -114,16 +127,7 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());
   }
-  grpc_tcp_server* s =
-      static_cast<grpc_tcp_server*>(gpr_zalloc(sizeof(grpc_tcp_server)));
-  gpr_ref_init(&s->refs, 1);
-  s->listener = std::move(*listener);
-  s->engine = ee;
-  s->shutdown_starting.head = nullptr;
-  s->shutdown_starting.tail = nullptr;
-  gpr_mu_init(&s->mu);
-  s->resource_quota = rq;
-  *server = s;
+  *server = new grpc_tcp_server(std::move(*listener), ee, rq);
   return GRPC_ERROR_NONE;
 }
 
@@ -181,14 +185,7 @@ void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
   gpr_mu_unlock(&s->mu);
 }
 
-void tcp_server_destroy(grpc_tcp_server* s) {
-  gpr_mu_destroy(&s->mu);
-  s->listener = nullptr;
-  s->engine = nullptr;
-  // TODO(nnoble): see if we can handle this in ~SliceAllocatorFactory
-  grpc_resource_quota_unref_internal(s->resource_quota);
-  gpr_free(s);
-}
+void tcp_server_destroy(grpc_tcp_server* s) { delete s; }
 
 void tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
