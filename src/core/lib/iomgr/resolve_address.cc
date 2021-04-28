@@ -57,6 +57,11 @@ void grpc_resolve_address(const char* addr, const char* default_port,
           a->addrs[i].len = r.size();
           break;
         }
+        // This won't work. This is going to be run on the event engine's
+        // own thread, which doesn't have an exec context of any kind,
+        // as they are owned by the thread that called grpc_init. Should
+        // event engines create their own TLS exec contextes? How is
+        // thread safety going to be guaranteed for those callbacks?
         grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
       },
       addr, default_port, absl::InfiniteFuture());

@@ -65,16 +65,14 @@ class uvListener final
 class uvDNSResolver final
     : public grpc_event_engine::experimental::EventEngine::DNSResolver {
  public:
-  virtual ~uvDNSResolver() override final { abort(); }
+  virtual ~uvDNSResolver() override final {}
 
-  uvDNSResolver(uvEngine* engine) : engine_(engine) { abort(); }
+  uvDNSResolver(uvEngine* engine) : engine_(engine) {}
 
   virtual LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                           absl::string_view address,
                                           absl::string_view default_port,
-                                          absl::Time deadline) override final {
-    abort();
-  }
+                                          absl::Time deadline) override final;
 
   virtual LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
                                      absl::string_view name,
@@ -125,6 +123,9 @@ class uvEndpoint final
   GetLocalAddress() const override final {
     abort();
   };
+
+  static void uvGetaddrInfoCB(uv_getaddrinfo_t* req, int status,
+                              struct addrinfo* res);
 };
 
 struct schedulingRequest : grpc_core::MultiProducerSingleConsumerQueue::Node {
@@ -317,7 +318,7 @@ absl::StatusOr<int> uvListener::Bind(
 }
 
 absl::Status uvListener::Start() {
-  engine_->schedule([](uvEngine* engine) {});
+  engine_->schedule([](uvEngine* engine) { abort(); });
   return absl::OkStatus();
 }
 
@@ -327,4 +328,38 @@ grpc_event_engine::experimental::GetDefaultEventEngine() {
   static std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine =
       std::make_shared<uvEngine>();
   return engine;
+}
+
+grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
+uvDNSResolver::LookupHostname(LookupHostnameCallback on_resolve,
+                              absl::string_view address,
+                              absl::string_view default_port,
+                              absl::Time deadline) {
+  engine_->schedule([this, on_resolve, address, default_port,
+                     deadline](uvEngine* engine) {
+    // just a dumb wrapper to avoid doing the whole of c-ares for now
+    // also won't be asynchronous this way, tho still will happen on the
+    // uv loop thread, which can be terrible obviously, so don't let this
+    // be the final code at all
+    uv_getaddrinfo_t req;
+    std::string ntaddress(address);
+    std::string ntdefault_port(default_port);
+    uv_getaddrinfo(&engine->loop_, &req, nullptr, ntaddress.c_str(),
+                   ntdefault_port.c_str(), nullptr);
+
+    size_t count = 0;
+    struct addrinfo* p;
+    std::vector<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
+        res;
+
+    count = 0;
+    for (p = req.addrinfo; p != nullptr; p = p->ai_next) {
+      res.emplace_back(p->ai_addr, p->ai_addrlen);
+    }
+
+    uv_freeaddrinfo(req.addrinfo);
+    on_resolve(absl::OkStatus(), std::move(res));
+  });
+
+  return {0};
 }
