@@ -1996,10 +1996,27 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     ++*num_total;
   }
 
+  struct WaitForBackendOptions {
+    bool reset_counters = true;
+    bool allow_failures = false;
+
+    WaitForBackendOptions() {}
+
+    WaitForBackendOptions& set_reset_counters(bool enable) {
+      reset_counters = enable;
+      return *this;
+    }
+
+    WaitForBackendOptions& set_allow_failures(bool enable) {
+      allow_failures = enable;
+      return *this;
+    }
+  };
+
   std::tuple<int, int, int> WaitForAllBackends(
-      size_t start_index = 0, size_t stop_index = 0, bool reset_counters = true,
-      const RpcOptions& rpc_options = RpcOptions(),
-      bool allow_failures = false) {
+      size_t start_index = 0, size_t stop_index = 0,
+      const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
+      const RpcOptions& rpc_options = RpcOptions()) {
     int num_ok = 0;
     int num_failure = 0;
     int num_drops = 0;
@@ -2008,28 +2025,29 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops,
                       rpc_options);
     }
-    if (reset_counters) ResetBackendCounters();
+    if (wait_options.reset_counters) ResetBackendCounters();
     gpr_log(GPR_INFO,
             "Performed %d warm up requests against the backends. "
             "%d succeeded, %d failed, %d dropped.",
             num_total, num_ok, num_failure, num_drops);
-    if (!allow_failures) EXPECT_EQ(num_failure, 0);
+    if (!wait_options.allow_failures) EXPECT_EQ(num_failure, 0);
     return std::make_tuple(num_ok, num_failure, num_drops);
   }
 
-  void WaitForBackend(size_t backend_idx, bool reset_counters = true,
-                      bool allow_failures = false,
-                      const RpcOptions& rpc_options = RpcOptions()) {
+  void WaitForBackend(
+      size_t backend_idx,
+      const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
+      const RpcOptions& rpc_options = RpcOptions()) {
     gpr_log(GPR_INFO, "========= WAITING FOR BACKEND %lu ==========",
             static_cast<unsigned long>(backend_idx));
     do {
       Status status = SendRpc(rpc_options);
-      if (!allow_failures) {
+      if (!wait_options.allow_failures) {
         EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                  << " message=" << status.error_message();
       }
     } while (!SeenBackend(backend_idx, rpc_options.service));
-    if (reset_counters) ResetBackendCounters();
+    if (wait_options.reset_counters) ResetBackendCounters();
     gpr_log(GPR_INFO, "========= BACKEND %lu READY ==========",
             static_cast<unsigned long>(backend_idx));
   }
@@ -4657,7 +4675,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedCluster) {
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
   WaitForAllBackends(0, 1);
-  WaitForAllBackends(1, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(1, 3, WaitForBackendOptions(),
+                     RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
@@ -4841,7 +4860,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
   WaitForAllBackends(0, 1);
-  WaitForAllBackends(1, 3, true, RpcOptions().set_rpc_service(SERVICE_ECHO1));
+  WaitForAllBackends(1, 3, WaitForBackendOptions(),
+                     RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
   // Make sure RPCs all go to the correct backend.
@@ -4981,7 +5001,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   default_route->mutable_route()->set_cluster(kDefaultClusterName);
   SetRouteConfiguration(0, new_route_config);
   WaitForBackend(0);
-  WaitForBackend(1, /*reset_counters=*/true, /*allow_failures=*/false,
+  WaitForBackend(1, WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
@@ -5020,7 +5040,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
   SetRouteConfiguration(0, new_route_config);
   ResetBackendCounters();
-  WaitForBackend(2, /*reset_counters=*/true, /*allow_failures=*/false,
+  WaitForBackend(2, WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
@@ -5053,7 +5073,7 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateClusters) {
   weighted_cluster2->mutable_weight()->set_value(kWeight25);
   SetRouteConfiguration(0, new_route_config);
   ResetBackendCounters();
-  WaitForBackend(3, /*reset_counters=*/true, /*allow_failures=*/false,
+  WaitForBackend(3, WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, RpcOptions().set_rpc_service(SERVICE_ECHO1));
@@ -5168,7 +5188,9 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
   SetRouteConfiguration(0, new_route_config);
   // Wait for RPCs to go to the new backend: 1, this ensures that the client has
   // processed the update.
-  WaitForBackend(1, /*reset_counters=*/false, /*allow_failures=*/true);
+  WaitForBackend(
+      1, WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
+             true));
   // Bring up the previous backend: 0, this will allow the delayed RPC to
   // finally call on_call_committed upon completion.
   StartBackend(0);
@@ -5548,8 +5570,7 @@ TEST_P(LdsRdsTest, XdsRoutingHeadersMatching) {
                                             .set_metadata(std::move(metadata));
   // Make sure all backends are up.
   WaitForBackend(0);
-  WaitForBackend(1, /*reset_counters=*/true, /*allow_failures=*/false,
-                 header_match_rpc_options);
+  WaitForBackend(1, WaitForBackendOptions(), header_match_rpc_options);
   // Send RPCs.
   CheckRpcSendOk(kNumEchoRpcs);
   CheckRpcSendOk(kNumEcho1Rpcs, header_match_rpc_options);
@@ -5846,10 +5867,10 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   SetRouteConfiguration(0, route_config);
   // Make sure all backends are up and that requests for each RPC
   // service go to the right backends.
-  WaitForBackend(0, /*reset_counters=*/false);
-  WaitForBackend(1, /*reset_counters=*/false, /*allow_failures=*/false,
+  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false));
+  WaitForBackend(1, WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  WaitForBackend(0, /*reset_counters=*/false, /*allow_failures=*/false,
+  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Requests for services Echo and Echo2 should have gone to backend 0.
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
@@ -5863,14 +5884,14 @@ TEST_P(LdsRdsTest, XdsRoutingChangeRoutesWithoutChangingClusters) {
   // different RPC service, and wait for the client to make the change.
   route1->mutable_match()->set_prefix("/grpc.testing.EchoTest2Service/");
   SetRouteConfiguration(0, route_config);
-  WaitForBackend(1, /*reset_counters=*/true, /*allow_failures=*/false,
+  WaitForBackend(1, WaitForBackendOptions(),
                  RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Now repeat the earlier test, making sure all traffic goes to the
   // right place.
-  WaitForBackend(0, /*reset_counters=*/false);
-  WaitForBackend(0, /*reset_counters=*/false, /*allow_failures=*/false,
+  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false));
+  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO1));
-  WaitForBackend(1, /*reset_counters=*/false, /*allow_failures=*/false,
+  WaitForBackend(1, WaitForBackendOptions().set_reset_counters(false),
                  RpcOptions().set_rpc_service(SERVICE_ECHO2));
   // Requests for services Echo and Echo1 should have gone to backend 0.
   EXPECT_EQ(1, backends_[0]->backend_service()->request_count());
@@ -6408,12 +6429,12 @@ TEST_P(CdsTest, AggregateClusterType) {
   WaitForBackend(1);
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
-  WaitForBackend(2, /*reset_counters=*/true, /*allow_failures=*/true);
+  WaitForBackend(2, WaitForBackendOptions().set_allow_failures(true));
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 1 back and ensure all traffic go back to it.
   StartBackend(1);
-  WaitForBackend(1, /*reset_counters=*/true, /*allow_failures=*/true);
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
@@ -6464,12 +6485,12 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   WaitForBackend(1);
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
-  WaitForBackend(2, /*reset_counters=*/true, /*allow_failures=*/true);
+  WaitForBackend(2, WaitForBackendOptions().set_allow_failures(true));
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 1 back and ensure all traffic go back to it.
   StartBackend(1);
-  WaitForBackend(1, /*reset_counters=*/true, /*allow_failures=*/true);
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
@@ -6517,15 +6538,15 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
         std::move(result));
   }
   // Wait for traffic to go to backend 1.
-  WaitForBackend(1, /*reset_counters=*/true, /*allow_failures=*/true);
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
-  WaitForBackend(2, /*reset_counters=*/true, /*allow_failures=*/true);
+  WaitForBackend(2, WaitForBackendOptions().set_allow_failures(true));
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 1 back and ensure all traffic go back to it.
   StartBackend(1);
-  WaitForBackend(1, /*reset_counters=*/true, /*allow_failures=*/true);
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
@@ -8996,7 +9017,7 @@ TEST_P(LocalityMapTest, StressTest) {
                 BuildEdsResource(args, DefaultEdsServiceName()), 60 * 1000));
   // Wait until backend 0 is ready, before which kNumLocalities localities are
   // received and handled by the xds policy.
-  WaitForBackend(0, /*reset_counters=*/false);
+  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false));
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // Wait until backend 1 is ready, before which kNumLocalities localities are
   // removed by the xds policy.
@@ -9118,7 +9139,7 @@ TEST_P(LocalityMapTest, ReplaceAllLocalitiesInPriority) {
   // Keep sending RPCs until we switch over to backend 1, which tells us
   // that we received the update.  No RPCs should fail during this
   // transition.
-  WaitForBackend(1, /*reset_counters=*/true, /*require_success=*/true);
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
   delayed_resource_setter.join();
 }
 
@@ -9146,7 +9167,7 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(3, false);
+  WaitForBackend(3, WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
@@ -9167,7 +9188,7 @@ TEST_P(FailoverTest, DoesNotUsePriorityWithNoEndpoints) {
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(0, false);
+  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 1; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
@@ -9208,7 +9229,7 @@ TEST_P(FailoverTest, Failover) {
   ShutdownBackend(0);
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
-  WaitForBackend(1, false);
+  WaitForBackend(1, WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 0; i < 4; ++i) {
     if (i == 1) continue;
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
@@ -9236,13 +9257,15 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
   WaitForBackend(3);
   ShutdownBackend(3);
   ShutdownBackend(0);
-  WaitForBackend(1, /*reset_conters=*/false, /*allow_failures=*/true);
+  WaitForBackend(
+      1, WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
+             true));
   for (size_t i = 0; i < 4; ++i) {
     if (i == 1) continue;
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
   StartBackend(0);
-  WaitForBackend(0, /*reset_counters=*/true, /*allow_failures=*/true);
+  WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true));
   CheckRpcSendOk(kNumRpcs);
   EXPECT_EQ(kNumRpcs, backends_[0]->backend_service()->request_count());
 }
@@ -9281,7 +9304,9 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   do {
     CheckRpcSendFailure();
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
-  WaitForBackend(2, /*reset_counters=*/false, /*allow_failures=*/true);
+  WaitForBackend(
+      2, WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
+             true));
   for (size_t i = 0; i < 4; ++i) {
     if (i == 2) continue;
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
@@ -9320,7 +9345,7 @@ TEST_P(FailoverTest, UpdatePriority) {
   std::thread delayed_resource_setter(
       std::bind(&BasicTest::SetEdsResourceWithDelay, this, 0,
                 BuildEdsResource(args, DefaultEdsServiceName()), 1000));
-  WaitForBackend(3, false);
+  WaitForBackend(3, WaitForBackendOptions().set_reset_counters(false));
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
@@ -9363,7 +9388,7 @@ TEST_P(FailoverTest, MoveAllLocalitiesInCurrentPriorityToHigherPriority) {
   // When we get the first update, all backends in priority 0 are down,
   // so we will create priority 1.  Backends 1 and 2 should have traffic,
   // but backend 3 should not.
-  WaitForAllBackends(1, 3, false);
+  WaitForAllBackends(1, 3, WaitForBackendOptions().set_reset_counters(false));
   EXPECT_EQ(0UL, backends_[3]->backend_service()->request_count());
   // When backend 3 gets traffic, we know the second update has been seen.
   WaitForBackend(3);
