@@ -83,10 +83,11 @@ void endpoint_add_to_pollset_set(grpc_endpoint* /* ep */,
                                  grpc_pollset_set* /* pollset */) {}
 void endpoint_delete_from_pollset_set(grpc_endpoint* /* ep */,
                                       grpc_pollset_set* /* pollset */) {}
-// Note: all other endpoint operations (except destroy) have undefined behavior
-// after shutdown. Do not shut down lightly.
+// Note: After shutdown, all other endpoint operations (except destroy) are
+// no-op, and will return some kind of sane default (empty strings, nullptrs,
+// etc). It is the caller's responsibility to ensure that calls to
+// endpoint_shutdown are synchronized (should not be a problem in practice).
 void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
-  // TODO(hork): add a mutex to the endpoint struct
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     const char* str = grpc_error_string(why);
@@ -98,7 +99,6 @@ void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
 }
 
 void endpoint_destroy(grpc_endpoint* ep) {
-  // TODO(hork): add a mutex to the endpoint struct
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
   grpc_resource_user_unref(eeep->ru);
   delete ep;
