@@ -51,19 +51,18 @@ INSTALL_REQUIRES = (
     'xds-protos>=0.0.7',
     'grpcio>={version}'.format(version=grpc_version.VERSION),
 )
+SETUP_REQUIRES = INSTALL_REQUIRES
 
-setuptools.setup(
-    name='grpcio-csds',
-    version=grpc_version.VERSION,
-    license='Apache License 2.0',
-    description='Channel Level Live Debug Information Service for gRPC',
-    long_description=open(_README_PATH, 'r').read(),
-    author='The gRPC Authors',
-    author_email='grpc-io@googlegroups.com',
-    classifiers=CLASSIFIERS,
-    url='https://grpc.io',
-    package_dir=PACKAGE_DIRECTORIES,
-    packages=setuptools.find_packages('.'),
-    install_requires=INSTALL_REQUIRES,
-    setup_requires=SETUP_REQUIRES,
-    cmdclass=COMMAND_CLASS)
+setuptools.setup(name='grpcio-csds',
+                 version=grpc_version.VERSION,
+                 license='Apache License 2.0',
+                 description='xDS configuration dump library',
+                 long_description=open(_README_PATH, 'r').read(),
+                 author='The gRPC Authors',
+                 author_email='grpc-io@googlegroups.com',
+                 classifiers=CLASSIFIERS,
+                 url='https://grpc.io',
+                 package_dir=PACKAGE_DIRECTORIES,
+                 packages=setuptools.find_packages('.'),
+                 install_requires=INSTALL_REQUIRES,
+                 setup_requires=SETUP_REQUIRES)

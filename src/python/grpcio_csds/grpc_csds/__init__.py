@@ -13,10 +13,35 @@
 # limitations under the License.
 """Channelz debug service implementation in gRPC Python."""
 
+from grpc._cython import cygrpc
+
+from envoy.service.status.v3 import csds_pb2
 from envoy.service.status.v3 import csds_pb2_grpc
-from grpc_csds._servicer import ClientStatusDiscoveryServiceServicer
+from google.protobuf import json_format
+
+
+class ClientStatusDiscoveryServiceServicer(
+        csds_pb2_grpc.ClientStatusDiscoveryServiceServicer):
+    """CSDS Servicer works for both the sync API and asyncio API."""
+
+    @staticmethod
+    def FetchClientStatus(request, unused_context):
+        client_config = csds_pb2.ClientConfig.FromString(
+            cygrpc.dump_xds_configs())
+        response = csds_pb2.ClientStatusResponse()
+        response.config.append(client_config)
+        return response
+
+    @staticmethod
+    def StreamClientStatus(request_iterator, context):
+        for request in request_iterator:
+            yield ClientStatusDiscoveryServiceServicer.FetchClientStatus(
+                request, context)
 
 
 def add_csds_servicer(server):
     csds_pb2_grpc.add_ClientStatusDiscoveryServiceServicer_to_server(
         ClientStatusDiscoveryServiceServicer(), server)
+
+
+__all__ = ['ClientStatusDiscoveryServiceServicer', 'add_csds_servicer']
