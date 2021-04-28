@@ -493,8 +493,7 @@ class AdsServiceImpl : public std::enable_shared_from_this<AdsServiceImpl> {
     struct Locality {
       Locality(std::string sub_zone, std::vector<Endpoint> endpoints,
                int lb_weight = kDefaultLocalityWeight,
-               int priority = kDefaultLocalityPriority,
-               std::vector<HealthStatus> health_statuses = {})
+               int priority = kDefaultLocalityPriority)
           : sub_zone(std::move(sub_zone)),
             endpoints(std::move(endpoints)),
             lb_weight(lb_weight),
@@ -1947,8 +1946,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   bool SeenBackend(size_t backend_idx,
-                   const RpcOptions& rpc_options = RpcOptions()) {
-    switch (rpc_options.service) {
+                   const RpcService rpc_service = SERVICE_ECHO) {
+    switch (rpc_service) {
       case SERVICE_ECHO:
         if (backends_[backend_idx]->backend_service()->request_count() == 0) {
           return false;
@@ -1969,10 +1968,10 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   bool SeenAllBackends(size_t start_index = 0, size_t stop_index = 0,
-                       const RpcOptions& rpc_options = RpcOptions()) {
+                       const RpcService rpc_service = SERVICE_ECHO) {
     if (stop_index == 0) stop_index = backends_.size();
     for (size_t i = start_index; i < stop_index; ++i) {
-      if (!SeenBackend(i, rpc_options)) {
+      if (!SeenBackend(i, rpc_service)) {
         return false;
       }
     }
@@ -2005,7 +2004,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     int num_failure = 0;
     int num_drops = 0;
     int num_total = 0;
-    while (!SeenAllBackends(start_index, stop_index, rpc_options)) {
+    while (!SeenAllBackends(start_index, stop_index, rpc_options.service)) {
       SendRpcAndCount(&num_total, &num_ok, &num_failure, &num_drops,
                       rpc_options);
     }
@@ -2029,7 +2028,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
         EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                  << " message=" << status.error_message();
       }
-    } while (!SeenBackend(backend_idx, rpc_options));
+    } while (!SeenBackend(backend_idx, rpc_options.service));
     if (reset_counters) ResetBackendCounters();
     gpr_log(GPR_INFO, "========= BACKEND %lu READY ==========",
             static_cast<unsigned long>(backend_idx));
@@ -2047,18 +2046,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       addresses.emplace_back(address.addr, address.len, nullptr);
     }
     return addresses;
-  }
-
-  std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint>
-  CreateEndpointsForBackends(size_t start_index = 0, size_t stop_index = 0,
-                             HealthStatus health_status = HealthStatus::UNKNOWN,
-                             int lb_weight = 1) {
-    if (stop_index == 0) stop_index = backends_.size();
-    std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
-    for (size_t i = start_index; i < stop_index; ++i) {
-      endpoints.emplace_back(backends_[i]->port(), health_status, lb_weight);
-    }
-    return endpoints;
   }
 
   void SetNextResolution(
@@ -2200,6 +2187,18 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     listener.mutable_api_listener()->mutable_api_listener()->PackFrom(
         http_connection_manager);
     return listener;
+  }
+
+  std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint>
+  CreateEndpointsForBackends(size_t start_index = 0, size_t stop_index = 0,
+                             HealthStatus health_status = HealthStatus::UNKNOWN,
+                             int lb_weight = 1) {
+    if (stop_index == 0) stop_index = backends_.size();
+    std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
+    for (size_t i = start_index; i < stop_index; ++i) {
+      endpoints.emplace_back(backends_[i]->port(), health_status, lb_weight);
+    }
+    return endpoints;
   }
 
   ClusterLoadAssignment BuildEdsResource(
@@ -2684,9 +2683,6 @@ TEST_P(BasicTest, SameBackendListedMultipleTimes) {
   std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints = {
       {backends_[0]->port(), HealthStatus::UNKNOWN, 1},
       {backends_[0]->port(), HealthStatus::UNKNOWN, 1}};
-  // std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
-  // endpoints.emplace_back(backends_[0]->port(), HealthStatus::UNKNOWN, 1 );
-  // endpoints.emplace_back(backends_[0]->port(), HealthStatus::UNKNOWN, 1 );
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", endpoints},
   });
@@ -2751,8 +2747,7 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
   const size_t kNumUnreachableServers = 5;
   std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
   for (size_t i = 0; i < kNumUnreachableServers; ++i) {
-    endpoints.emplace_back(grpc_pick_unused_port_or_die(),
-                           HealthStatus::UNKNOWN, 1);
+    endpoints.emplace_back(grpc_pick_unused_port_or_die());
   }
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", endpoints},
