@@ -438,3 +438,16 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "grpc_authorization_engine_test",
+    srcs = ["grpc_authorization_engine_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_rbac_engine",
+        "//test/core/util:grpc_test_util",
+    ],
+)
