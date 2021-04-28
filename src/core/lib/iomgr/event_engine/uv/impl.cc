@@ -158,6 +158,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     while (!empty) {
       schedulingRequest* node =
           reinterpret_cast<schedulingRequest*>(queue_.PopAndCheckEnd(&empty));
+      if (!node) break;
       node->f_(this);
       delete node;
     }
