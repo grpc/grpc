@@ -933,13 +933,12 @@ GRPCAPI void grpc_tls_credentials_options_set_verify_server_cert(
 /**
  * EXPERIMENTAL API - Subject to change
  *
- * The request information exposed in a verification call.
+ * The read-only request information exposed in a verification call.
  * Callers should not directly manage the ownership of it. We will make sure it
  * is always available inside schedule() or cancel() call, and will destroy the
  * object at the end of custom verification.
  */
 struct grpc_tls_custom_verification_check_request {
-  /* -- The following fields are read-only. -- */
   /* The target name of the server when the client initiates the connection. */
   /* This field will be nullptr if on the server side. */
   const char* target_name;
@@ -967,15 +966,6 @@ struct grpc_tls_custom_verification_check_request {
      * TODO(ZhenLian): Consider fixing this in the future. */
     const char* peer_cert_full_chain;
   } peer_info;
-  /* -- The following fields can be modified. -- */
-  /* Indicates if a connection should be allowed. This should be properly
-  populated to indicate the success/failure of a connection. */
-  grpc_status_code status;
-  /* Error details. This should be properly populated if |status| is not
-   * GRPC_STATUS_OK. When setting, the callers need to use gpr_malloc(),
-   * gpr_strdup() or gpr_asprintf() and pass the ownership; gRPC will free
-   * it when it is not needed. */
-  char* error_details;
 };
 
 /**
@@ -1011,12 +1001,13 @@ struct grpc_tls_certificate_verifier_external {
    * performed after the TLS handshake is done. It could be processed
    * synchronously or asynchronously.
    * - If expected to be processed synchronously, the implementer should
-   * populate the verification result through request->status and
-   * request->error_details, and then return true.
+   * populate the verification result through |sync_status| and
+   * |sync_error_details|, and then return true.
    * - If expected to be processed asynchronously, the implementer should return
    * false immediately, and then in the asynchronous thread invoke |callback|
    * with the verification result. The implementer MUST NOT invoke the async
-   * |callback| before |verify| returns, otherwise it can lead to deadlocks.
+   * |callback| in the same thread before |verify| returns, otherwise it can
+   * lead to deadlocks.
    *
    * user_data: any argument that is passed in the user_data of
    * grpc_tls_certificate_verifier_external during construction time can be
@@ -1028,13 +1019,18 @@ struct grpc_tls_certificate_verifier_external {
    * callback_arg: A pointer to the internal ExternalVerifier instance. This is
    * mainly used as an argument in |callback|, if want to invoke |callback| in
    * async mode.
-   * return: return 0 if |verify| is expected to be executed asynchronously,
-   *         otherwise return a non-zero value.
+   * status: indicates if a connection should be allowed. This should only be
+   * used if the verification check is done synchronously. error_details: the
+   * error generated while verifying a connection. This should only be used if
+   * the verification check is done synchronously. return: return 0 if |verify|
+   * is expected to be executed asynchronously, otherwise return a non-zero
+   * value.
    */
   int (*verify)(void* user_data,
                 grpc_tls_custom_verification_check_request* request,
                 grpc_tls_on_custom_verification_check_done_cb callback,
-                void* callback_arg);
+                void* callback_arg, grpc_status_code* sync_status,
+                char** sync_error_details);
   /**
    * A function pointer that cleans up the caller-specified resources when the
    * verifier is still running but the whole connection got cancelled. This
@@ -1124,7 +1120,8 @@ void grpc_tls_credentials_options_set_certificate_verifier(
 int grpc_tls_certificate_verifier_verify(
     grpc_tls_certificate_verifier* verifier,
     grpc_tls_custom_verification_check_request* request,
-    grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg);
+    grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg,
+    grpc_status_code* sync_status, char** sync_error_details);
 
 /**
  * EXPERIMENTAL API - Subject to change

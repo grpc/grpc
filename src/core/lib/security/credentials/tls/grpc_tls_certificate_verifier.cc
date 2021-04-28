@@ -39,16 +39,25 @@ bool ExternalCertificateVerifier::Verify(
   }
   // Invoke the caller-specified verification logic embedded in
   // external_verifier_.
+  grpc_status_code sync_status_c = GRPC_STATUS_OK;
+  // Question: this probably is a dumb question, but is there any way to
+  // allocate a char* on stack, so that we can pass its address to verify()?
+  // Right now it is on heap, and we will need to free the old value every time
+  // we change its value. It would be better if we can create it on the stack,
+  // like |sync_status_c|.
+  char* error_details = gpr_strdup("");
   bool is_done = external_verifier_->verify(external_verifier_->user_data,
-                                            request, &OnVerifyDone, this);
+                                            request, &OnVerifyDone, this,
+                                            &sync_status_c, &error_details);
   if (is_done) {
-    if (request->status != GRPC_STATUS_OK) {
-      *sync_status = absl::Status(absl::StatusCode::kUnauthenticated,
-                                  request->error_details);
+    if (sync_status_c != GRPC_STATUS_OK) {
+      *sync_status =
+          absl::Status(absl::StatusCode::kUnauthenticated, error_details);
     }
     MutexLock lock(&mu_);
     request_map_.erase(request);
   }
+  gpr_free(error_details);
   return is_done;
 }
 
@@ -130,8 +139,7 @@ bool HostNameCertificateVerifier::Verify(
     const char* common_name = request->peer_info.common_name;
     // We are using the target name sent from the client as a matcher to match
     // against identity name on the peer cert.
-    if (VerifySubjectAlternativeName(common_name,
-                                     std::string(target_host))) {
+    if (VerifySubjectAlternativeName(common_name, std::string(target_host))) {
       return true;  // synchronous check
     }
   }
@@ -149,8 +157,8 @@ bool HostNameCertificateVerifier::Verify(
 int grpc_tls_certificate_verifier_verify(
     grpc_tls_certificate_verifier* verifier,
     grpc_tls_custom_verification_check_request* request,
-    grpc_tls_on_custom_verification_check_done_cb callback,
-    void* callback_arg) {
+    grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg,
+    grpc_status_code* sync_status, char** sync_error_details) {
   grpc_core::ExecCtx exec_ctx;
   std::function<void(absl::Status)> async_cb =
       [callback, request, callback_arg](absl::Status async_status) {
@@ -161,12 +169,13 @@ int grpc_tls_certificate_verifier_verify(
                    async_status.ToString().c_str());
         }
       };
-  absl::Status sync_status;
-  bool is_done = verifier->Verify(request, async_cb, &sync_status);
+  absl::Status sync_status_cpp;
+  bool is_done = verifier->Verify(request, async_cb, &sync_status_cpp);
   if (is_done) {
-    if (!sync_status.ok()) {
-      request->status = GRPC_STATUS_UNAUTHENTICATED;
-      request->error_details = gpr_strdup(sync_status.ToString().c_str());
+    if (!sync_status_cpp.ok()) {
+      *sync_status = GRPC_STATUS_UNAUTHENTICATED;
+      gpr_free(*sync_error_details);
+      *sync_error_details = gpr_strdup(sync_status_cpp.ToString().c_str());
     }
   }
   return is_done;
