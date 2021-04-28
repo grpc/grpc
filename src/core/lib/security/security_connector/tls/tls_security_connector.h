@@ -30,7 +30,7 @@
 
 namespace grpc_core {
 
-// The abstract class of a pending request.
+/*// The abstract class of a pending request.
 class PendingVerifierRequest {
  public:
   PendingVerifierRequest(grpc_closure* on_peer_checked, tsi_peer peer);
@@ -55,7 +55,7 @@ class PendingVerifierRequest {
 
  private:
   tsi_peer peer_;
-};
+};*/
 
 // Channel security connector using TLS as transport security protocol.
 class TlsChannelSecurityConnector final
@@ -136,39 +136,25 @@ class TlsChannelSecurityConnector final
 
   // Use "new" to create a new instance, and no need to delete it later, since
   // it will be self-destroyed in |OnVerifyDone|.
-  class ChannelPendingVerifierRequest final : public PendingVerifierRequest {
+  class ChannelPendingVerifierRequest {
    public:
     ChannelPendingVerifierRequest(
         RefCountedPtr<TlsChannelSecurityConnector> security_connector,
-        grpc_closure* on_peer_checked, tsi_peer peer, const char* target_name)
-        : PendingVerifierRequest(on_peer_checked, std::move(peer)),
-          security_connector_(std::move(security_connector)) {
-      // We can pass the existing string cached in security connector because
-      // the verifier holds a ref to the security connector until this
-      // verification request is completed.
-      this->request_.target_name = target_name;
-    }
+        grpc_closure* on_peer_checked, tsi_peer peer, const char* target_name);
 
-    ~ChannelPendingVerifierRequest() {}
+    ~ChannelPendingVerifierRequest();
 
-    void Start() {
-      absl::Status sync_status;
-      grpc_tls_certificate_verifier* verifier =
-          security_connector_->options_->certificate_verifier();
-      bool is_done = verifier->Verify(
-          &request_,
-          [this](absl::Status status) { OnVerifyDone(true, status); },
-          &sync_status);
-      if (is_done) {
-        OnVerifyDone(false, sync_status);
-      }
-    }
+    void Start();
+
+    grpc_tls_custom_verification_check_request* request() { return &request_; }
 
    private:
     void OnVerifyDone(bool run_callback_inline, absl::Status status);
     // The request will keep a reference of the security connector to make sure
     // it won't be destroyed while the request is still ongoing.
     RefCountedPtr<TlsChannelSecurityConnector> security_connector_;
+    grpc_tls_custom_verification_check_request request_;
+    grpc_closure* on_peer_checked_;
   };
 
   // Updates |client_handshaker_factory_| when the certificates that
@@ -191,7 +177,7 @@ class TlsChannelSecurityConnector final
   absl::optional<absl::string_view> pem_root_certs_ ABSL_GUARDED_BY(mu_);
   absl::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
-  std::map<grpc_closure* /*on_peer_checked*/, PendingVerifierRequest*>
+  std::map<grpc_closure* /*on_peer_checked*/, ChannelPendingVerifierRequest*>
       pending_verifier_requests_ ABSL_GUARDED_BY(verifier_request_map_mu_);
 };
 
@@ -260,34 +246,25 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
 
   // Use "new" to create a new instance, and no need to delete it later, since
   // it will be self-destroyed in |OnVerifyDone|.
-  class ServerPendingVerifierRequest final : public PendingVerifierRequest {
+  class ServerPendingVerifierRequest {
    public:
     ServerPendingVerifierRequest(
         RefCountedPtr<TlsServerSecurityConnector> security_connector,
-        grpc_closure* on_peer_checked, tsi_peer peer)
-        : PendingVerifierRequest(on_peer_checked, std::move(peer)),
-          security_connector_(std::move(security_connector)) {}
+        grpc_closure* on_peer_checked, tsi_peer peer);
 
-    ~ServerPendingVerifierRequest() {}
+    ~ServerPendingVerifierRequest();
 
-    void Start() {
-      absl::Status sync_status;
-      grpc_tls_certificate_verifier* verifier =
-          security_connector_->options_->certificate_verifier();
-      bool is_done = verifier->Verify(
-          &request_,
-          [this](absl::Status status) { OnVerifyDone(true, status); },
-          &sync_status);
-      if (is_done) {
-        OnVerifyDone(false, sync_status);
-      }
-    }
+    void Start();
+
+    grpc_tls_custom_verification_check_request* request() { return &request_; }
 
    private:
     void OnVerifyDone(bool run_callback_inline, absl::Status status);
     // The request will keep a reference of the security connector to make sure
     // it won't be destroyed while the request is still ongoing.
     RefCountedPtr<TlsServerSecurityConnector> security_connector_;
+    grpc_tls_custom_verification_check_request request_;
+    grpc_closure* on_peer_checked_;
   };
 
   // Updates |server_handshaker_factory_| when the certificates that
@@ -307,7 +284,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   absl::optional<absl::string_view> pem_root_certs_ ABSL_GUARDED_BY(mu_);
   absl::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
-  std::map<grpc_closure* /*on_peer_checked*/, PendingVerifierRequest*>
+  std::map<grpc_closure* /*on_peer_checked*/, ServerPendingVerifierRequest*>
       pending_verifier_requests_ ABSL_GUARDED_BY(verifier_request_map_mu_);
 };
 
