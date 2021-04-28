@@ -88,7 +88,8 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   // TODO(hork): Convert channel_args to ChannelArgs
   ChannelArgs ca;
   if (!ee->Connect(ee_on_connect, ra, ca, std::move(sa), ee_deadline).ok()) {
-    // Do nothing. The callback will be executed once with an error
+    // EventEngine failed to start an asynchronous connect.
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect, GRPC_ERROR_CANCELLED);
   }
 }
 

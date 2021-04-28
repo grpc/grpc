@@ -155,8 +155,6 @@ grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
                                absl::string_view peer_address) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
-  endpoint->peer_address = std::string(peer_address);
-  endpoint->local_address = "";
   grpc_resource_quota* resource_quota =
       grpc_channel_args_find_pointer<grpc_resource_quota>(
           channel_args, GRPC_ARG_RESOURCE_QUOTA);
