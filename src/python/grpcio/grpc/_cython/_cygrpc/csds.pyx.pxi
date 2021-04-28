@@ -11,12 +11,11 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Channelz debug service implementation in gRPC Python."""
-
-from envoy.service.status.v3 import csds_pb2_grpc
-from grpc_csds._servicer import ClientStatusDiscoveryServiceServicer
 
 
-def add_csds_servicer(server):
-    csds_pb2_grpc.add_ClientStatusDiscoveryServiceServicer_to_server(
-        ClientStatusDiscoveryServiceServicer(), server)
+def dump_xds_configs():
+    cdef grpc_slice client_config_in_slice
+    with nogil:
+        client_config_in_slice = grpc_dump_xds_configs()
+    cdef bytes result = _slice_bytes(client_config_in_slice)
+    return result

@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2018 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,12 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Channelz debug service implementation in gRPC Python."""
 
-from envoy.service.status.v3 import csds_pb2_grpc
-from grpc_csds._servicer import ClientStatusDiscoveryServiceServicer
+# AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_channelz/grpc_version.py.template`!!!
 
-
-def add_csds_servicer(server):
-    csds_pb2_grpc.add_ClientStatusDiscoveryServiceServicer_to_server(
-        ClientStatusDiscoveryServiceServicer(), server)
+VERSION = '1.38.0.dev0'
