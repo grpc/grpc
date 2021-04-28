@@ -34,6 +34,11 @@
 #define GPR_ABSEIL_SYNC 1
 #endif  // GPR_ABSEIL_SYNC
 
+/*
+ * Defines GRPC_ERROR_IS_ABSEIL_STATUS to use absl::Status for grpc_error_handle
+ */
+// #define GRPC_ERROR_IS_ABSEIL_STATUS 1
+
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN

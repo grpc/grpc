@@ -32,67 +32,67 @@ namespace grpc_core {
 // TODO(veblush): Use camel-case names once migration to absl::Status is done.
 enum class StatusIntProperty {
   /// 'errno' from the operating system
-  ERRNO,
+  kErrorNo,
   /// __LINE__ from the call site creating the error
-  FILE_LINE,
+  kFileLine,
   /// stream identifier: for errors that are associated with an individual
   /// wire stream
-  STREAM_ID,
+  kStreamId,
   /// grpc status code representing this error
   // TODO(veblush): Remove this after grpc_error is replaced with absl::Status
-  GRPC_STATUS,
+  kRpcStatus,
   /// offset into some binary blob (usually represented by
   /// RAW_BYTES) where the error occurred
-  OFFSET,
+  kOffset,
   /// context sensitive index associated with the error
-  INDEX,
+  kIndex,
   /// context sensitive size associated with the error
-  SIZE,
+  kSize,
   /// http2 error code associated with the error (see the HTTP2 RFC)
-  HTTP2_ERROR,
+  kHttp2Error,
   /// TSI status code associated with the error
-  TSI_CODE,
+  kTsiCode,
   /// WSAGetLastError() reported when this error occurred
-  WSA_ERROR,
+  kWsaError,
   /// File descriptor associated with this error
-  FD,
+  kFd,
   /// HTTP status (i.e. 404)
-  HTTP_STATUS,
+  kHttpStatus,
   /// chttp2: did the error occur while a write was in progress
-  OCCURRED_DURING_WRITE,
+  kOccurredDuringWrite,
   /// channel connectivity state associated with the error
-  CHANNEL_CONNECTIVITY_STATE,
+  ChannelConnectivityState,
   /// LB policy drop
-  LB_POLICY_DROP,
+  kLbPolicyDrop,
 };
 
 /// This enum should have the same value of grpc_error_strs
 // TODO(veblush): Use camel-case names once migration to absl::Status is done.
 enum class StatusStrProperty {
   /// top-level textual description of this error
-  DESCRIPTION,
+  kDescription,
   /// source file in which this error occurred
-  FILE,
+  kFile,
   /// operating system description of this error
-  OS_ERROR,
+  kOsError,
   /// syscall that generated this error
-  SYSCALL,
+  kSyscall,
   /// peer that we were trying to communicate when this error occurred
-  TARGET_ADDRESS,
+  kTargetAddress,
   /// grpc status message associated with this error
-  GRPC_MESSAGE,
+  kGrpcMessage,
   /// hex dump (or similar) with the data that generated this error
-  RAW_BYTES,
+  kRawBytes,
   /// tsi error string associated with this error
-  TSI_ERROR,
+  kTsiError,
   /// filename that we were trying to read/write when this error occurred
-  FILENAME,
+  kFilename,
   /// key associated with the error
-  KEY,
+  kKey,
   /// value associated with the error
-  VALUE,
+  kValue,
   /// time string to create the error
-  CREATED_TIME,
+  kCreatedTime,
 };
 
 /// Creates a status with given additional information
@@ -136,9 +136,25 @@ namespace internal {
 google_rpc_Status* StatusToProto(absl::Status status,
                                  upb_arena* arena) GRPC_MUST_USE_RESULT;
 
-/// Build a status from a upb message, google_rpc_Status
+/// Builds a status from a upb message, google_rpc_Status
 /// This is for internal implementation & test only
 absl::Status StatusFromProto(google_rpc_Status* msg) GRPC_MUST_USE_RESULT;
+
+/// The same value of grpc_core::internal::StatusAllocPtr(absl::OkStatus())
+static constexpr uintptr_t kOkStatusPtr = 0;
+
+/// Returns ptr where the given status is copied into.
+/// This ptr can be used to get Status later and should be freed by
+/// StatusFreePtr. This shouldn't be used except migration purpose.
+uintptr_t StatusAllocPtr(absl::Status s);
+
+/// Frees the allocated status at ptr.
+/// This shouldn't be used except migration purpose.
+void StatusFreePtr(uintptr_t ptr);
+
+/// Get the status from ptr.
+/// This shouldn't be used except migration purpose.
+absl::Status StatusGetFromPtr(uintptr_t ptr);
 
 }  // namespace internal
 
