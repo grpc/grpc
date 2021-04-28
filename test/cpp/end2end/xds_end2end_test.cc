@@ -10230,7 +10230,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageAbortViaHeaders) {
 }
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
-  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 2000;
+  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 3000;
   const uint32_t kFixedDelaySeconds = 100;
   const uint32_t kDelayPercentagePerHundred = 50;
   const double kDelayRate = kDelayPercentagePerHundred / 100.0;
@@ -10273,7 +10273,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
 
 TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
   const uint32_t kFixedDelayMilliseconds = 100000;
-  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 2000;
+  const uint32_t kRpcTimeoutMilliseconds = grpc_test_slowdown_factor() * 3000;
   const uint32_t kDelayPercentageCap = 100;
   const uint32_t kDelayPercentage = 50;
   const double kDelayRate = kDelayPercentage / 100.0;
@@ -10321,7 +10321,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
 TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   const uint32_t kAbortPercentagePerHundred = 50;
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
-  const uint32_t kFixedDelaySeconds = 1 * grpc_test_slowdown_factor();
+  const uint32_t kFixedDelaySeconds = 1;
   const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
@@ -10347,6 +10347,10 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   fixed_delay->set_seconds(kFixedDelaySeconds);
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
+  // Allow the channel to connect to one backends, so the herd of queued RPCs
+  // won't be executed on the same thread causing millisecond level delay error.
+  channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
   // Send kNumRpcs RPCs and count the aborts.
   int num_aborted = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
@@ -10397,6 +10401,10 @@ TEST_P(FaultInjectionTest,
   fixed_delay->set_seconds(kFixedDelaySeconds);
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
+  // Allow the channel to connect to one backends, so the herd of queued RPCs
+  // won't be executed on the same thread causing millisecond level delay error.
+  channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
   // Send kNumRpcs RPCs and count the aborts.
   int num_aborted = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
