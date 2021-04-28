@@ -193,7 +193,6 @@ void tcp_server_destroy(grpc_tcp_server* s) { delete s; }
 void tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
     gpr_mu_lock(&s->mu);
-    grpc_core::ExecCtx exec_ctx;
     grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_unlock(&s->mu);
