@@ -97,7 +97,8 @@ grpc_auth_refresh_token grpc_auth_refresh_token_create_from_string(
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_string, &error);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "JSON parsing failed: %s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "JSON parsing failed: %s",
+            grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
   }
   return grpc_auth_refresh_token_create_from_json(json);
@@ -168,7 +169,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     json = Json::Parse(null_terminated_body, &error);
     if (error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "Could not parse JSON from %s: %s",
-              null_terminated_body, grpc_error_string(error));
+              null_terminated_body, grpc_error_std_string(error).c_str());
       GRPC_ERROR_UNREF(error);
       status = GRPC_CREDENTIALS_ERROR;
       goto end;
@@ -685,7 +686,8 @@ absl::StatusOr<URI> ValidateStsCredentialsOptions(
   }
   auto grpc_error_vec = GRPC_ERROR_CREATE_FROM_VECTOR(
       "Invalid STS Credentials Options", &error_list);
-  auto retval = absl::InvalidArgumentError(grpc_error_string(grpc_error_vec));
+  auto retval =
+      absl::InvalidArgumentError(grpc_error_std_string(grpc_error_vec));
   GRPC_ERROR_UNREF(grpc_error_vec);
   return retval;
 }

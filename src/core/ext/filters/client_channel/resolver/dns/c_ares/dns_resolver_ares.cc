@@ -204,7 +204,7 @@ void AresDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
   GRPC_CARES_TRACE_LOG(
       "resolver:%p re-resolution timer fired. error: %s. shutdown_initiated_: "
       "%d",
-      this, grpc_error_string(error), shutdown_initiated_);
+      this, grpc_error_std_string(error).c_str(), shutdown_initiated_);
   have_next_resolution_timer_ = false;
   if (error == GRPC_ERROR_NONE && !shutdown_initiated_) {
     if (!resolving_) {
@@ -354,7 +354,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     backoff_.Reset();
   } else {
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
-                         grpc_error_string(error));
+                         grpc_error_std_string(error).c_str());
     std::string error_message =
         absl::StrCat("DNS resolution failed for service: ", name_to_resolve_);
     result_handler_->ReturnError(grpc_error_set_int(
@@ -365,7 +365,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     grpc_millis next_try = backoff_.NextAttemptTime();
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed (will retry): %s",
-                         this, grpc_error_string(error));
+                         this, grpc_error_std_string(error).c_str());
     GPR_ASSERT(!have_next_resolution_timer_);
     have_next_resolution_timer_ = true;
     // TODO(roth): We currently deal with this ref manually.  Once the

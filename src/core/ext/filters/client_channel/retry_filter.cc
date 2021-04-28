@@ -604,7 +604,8 @@ class RetryFilter::CallData::Canceller {
         gpr_log(GPR_INFO,
                 "calld=%p: cancelling retry timer: error=%s self=%p "
                 "calld->canceller_=%p",
-                calld, grpc_error_string(error), self, calld->canceller_);
+                calld, grpc_error_std_string(error).c_str(), self,
+                calld->canceller_);
       }
       if (calld->canceller_ == self && error != GRPC_ERROR_NONE) {
         calld->canceller_ = nullptr;  // Checked by OnRetryTimer().
@@ -1107,7 +1108,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvInitialMetadataReady(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: got recv_initial_metadata_ready, error=%s",
-            calld->chand_, calld, grpc_error_string(error));
+            calld->chand_, calld, grpc_error_std_string(error).c_str());
   }
   call_attempt->completed_recv_initial_metadata_ = true;
   // If a retry was already dispatched, then we're not going to use the
@@ -1194,7 +1195,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvMessageReady(
   CallData* calld = call_attempt->calld_;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: got recv_message_ready, error=%s",
-            calld->chand_, calld, grpc_error_string(error));
+            calld->chand_, calld, grpc_error_std_string(error).c_str());
   }
   ++call_attempt->completed_recv_message_count_;
   // If a retry was already dispatched, then we're not going to use the
@@ -1383,7 +1384,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::RecvTrailingMetadataReady(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: got recv_trailing_metadata_ready, error=%s",
-            calld->chand_, calld, grpc_error_string(error));
+            calld->chand_, calld, grpc_error_std_string(error).c_str());
   }
   call_attempt->completed_recv_trailing_metadata_ = true;
   // Get the call's status and check for server pushback metadata.
@@ -1491,7 +1492,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::OnComplete(
   CallData* calld = call_attempt->calld_;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: got on_complete, error=%s, batch=%s",
-            calld->chand_, calld, grpc_error_string(error),
+            calld->chand_, calld, grpc_error_std_string(error).c_str(),
             grpc_transport_stream_op_batch_string(&batch_data->batch_).c_str());
   }
   // Update bookkeeping in call_attempt.
@@ -1580,7 +1581,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
         retry_md, GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
     if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
       gpr_log(GPR_ERROR, "error adding retry metadata: %s",
-              grpc_error_string(error));
+              grpc_error_std_string(error).c_str());
       GPR_ASSERT(false);
     }
   }
@@ -1780,7 +1781,7 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
     grpc_error_handle cancel_error = batch->payload->cancel_stream.cancel_error;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
       gpr_log(GPR_INFO, "chand=%p calld=%p: cancelled from surface: %s", chand_,
-              this, grpc_error_string(cancel_error));
+              this, grpc_error_std_string(cancel_error).c_str());
     }
     // If we have a current call attempt, commit the call, then send
     // the cancellation down to that attempt.  When the call fails, it
@@ -2072,7 +2073,7 @@ void RetryFilter::CallData::PendingBatchesFail(grpc_error_handle error) {
     }
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: failing %" PRIuPTR " pending batches: %s",
-            chand_, this, num_batches, grpc_error_string(error));
+            chand_, this, num_batches, grpc_error_std_string(error).c_str());
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {

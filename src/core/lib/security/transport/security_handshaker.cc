@@ -180,9 +180,8 @@ void SecurityHandshaker::HandshakeFailedLocked(grpc_error_handle error) {
     // endpoint callback was invoked, we need to generate our own error.
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("Handshaker shutdown");
   }
-  const char* msg = grpc_error_string(error);
-  gpr_log(GPR_DEBUG, "Security handshake failed: %s", msg);
-
+  gpr_log(GPR_DEBUG, "Security handshake failed: %s",
+          grpc_error_std_string(error).c_str());
   if (!is_shutdown_) {
     tsi_handshaker_shutdown(handshaker_);
     // TODO(ctiller): It is currently necessary to shutdown endpoints
