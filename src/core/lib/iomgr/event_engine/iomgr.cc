@@ -43,12 +43,18 @@ void iomgr_platform_flush(void) {
 }
 
 void iomgr_platform_shutdown(void) {
-  GetDefaultEventEngine()->Shutdown([](absl::Status result) {
+  grpc_core::CondVar shutdown_evt;
+  grpc_core::Mutex mu;
+  GetDefaultEventEngine()->Shutdown([&shutdown_evt, &mu](absl::Status result) {
+    grpc_core::MutexLock lock(&mu);
     if (!result.ok()) {
       gpr_log(GPR_ERROR, "Failed to shut down EventEngine iomgr. Reason: %s",
               result.ToString().c_str());
     }
+    shutdown_evt.Signal();
   });
+  grpc_core::MutexLock lock(&mu);
+  shutdown_evt.Wait(&mu);
 }
 
 void iomgr_platform_shutdown_background_closure(void) {}
