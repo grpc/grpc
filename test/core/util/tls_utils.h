@@ -59,7 +59,7 @@ class SyncExternalVerifier {
   static int Verify(void* user_data,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg);
+                    void* callback_arg, grpc_status_code* sync_status, char** sync_error_details);
 
   static void Cancel(void* user_data,
                      grpc_tls_custom_verification_check_request* request) {}
@@ -104,7 +104,7 @@ class AsyncExternalVerifier {
   static int Verify(void* user_data,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg);
+                    void* callback_arg, grpc_status_code* sync_status, char** sync_error_details);
 
   static void Cancel(void* user_data,
                      grpc_tls_custom_verification_check_request* request) {}

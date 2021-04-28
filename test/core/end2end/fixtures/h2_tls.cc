@@ -83,8 +83,8 @@ class SyncExternalVerifier {
   static int Verify(void* user_data,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg) {
-    request->status = GRPC_STATUS_OK;
+                    void* callback_arg, grpc_status_code* sync_status,
+                    char** sync_error_details) {
     return true;  // Synchronous call
   }
 
@@ -134,7 +134,8 @@ class AsyncExternalVerifier {
   static int Verify(void* user_data,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg) {
+                    void* callback_arg, grpc_status_code* sync_status,
+                    char** sync_error_details) {
     auto* data = static_cast<UserData*>(user_data);
     fullstack_secure_fixture_data* ffd = data->ffd;
     // Creates the thread args we use when creating the thread.
