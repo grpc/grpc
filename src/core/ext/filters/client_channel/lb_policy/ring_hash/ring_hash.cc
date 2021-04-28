@@ -383,25 +383,25 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   // lowp, midp, and highp. Do not change them!
   int64_t lowp = 0;
   int64_t highp = ring_.size();
-  int64_t midp = 0;
+  int64_t first_index = 0;
   while (true) {
-    midp = (lowp + highp) / 2;
-    if (midp == static_cast<int64_t>(ring_.size())) {
-      midp = 0;
+    first_index = (lowp + highp) / 2;
+    if (first_index == static_cast<int64_t>(ring_.size())) {
+      first_index = 0;
       break;
     }
-    uint64_t midval = ring_[midp].hash;
-    uint64_t midval1 = midp == 0 ? 0 : ring_[midp - 1].hash;
+    uint64_t midval = ring_[first_index].hash;
+    uint64_t midval1 = first_index == 0 ? 0 : ring_[first_index - 1].hash;
     if (h <= midval && h > midval1) {
       break;
     }
     if (midval < h) {
-      lowp = midp + 1;
+      lowp = first_index + 1;
     } else {
-      highp = midp - 1;
+      highp = first_index - 1;
     }
     if (lowp > highp) {
-      midp = 0;
+      first_index = 0;
       break;
     }
   }
@@ -414,42 +414,38 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         }
         subchannel_connection_attempter->AddSubchannel(std::move(subchannel));
       };
-  bool attempt_to_connect = ConnectAndPickHelper(ring_[midp], &result);
+  bool attempt_to_connect = ConnectAndPickHelper(ring_[first_index], &result);
   if (attempt_to_connect) {
     gpr_log(GPR_INFO, "donna needing to reattempt");
-    ScheduleSubchannelConnectionAttempt(ring_[midp].subchannel);
+    ScheduleSubchannelConnectionAttempt(ring_[first_index].subchannel);
   }
   if (result.type != PickResult::PICK_FAILED) {
     return result;
   }
-  // Subchannel is in TRANSIENT_FAILURE.
-  // Check the next one.
-  midp = (midp + 1) % ring_.size();
-  attempt_to_connect = ConnectAndPickHelper(ring_[midp], &result);
-  if (attempt_to_connect) {
-    gpr_log(GPR_INFO,
-            "donna attempt and picker moving on first time with "
-            "ConnectAndPickHelper");
-    ScheduleSubchannelConnectionAttempt(ring_[midp].subchannel);
-  }
-  if (result.type != PickResult::PICK_FAILED) {
-    return result;
-  }
-  // Second subchannel was in TRANSIENT_FAILURE.
   // Loop through remaining subchannels to find one in READY.
   // On the way, we make sure the right set of connection attempts
   // will happen.
-  midp = (midp + 1) % ring_.size();
+  auto first_channel = ring_[first_index].subchannel;
+  bool found_second_subchannel = false;
   bool found_first_non_failed = false;
-  for (size_t i = 0; i < ring_.size() - 2; ++i) {
-    const RingEntry& entry = ring_[(midp + i) % ring_.size()];
+  for (size_t i = 1; i < ring_.size(); ++i) {
+    const RingEntry& entry = ring_[(first_index + i) % ring_.size()];
+    if (entry.subchannel == first_channel) continue;
     if (entry.connectivity_state == GRPC_CHANNEL_READY) {
       result.type = PickResult::PICK_COMPLETE;
       result.subchannel = entry.subchannel;
-      gpr_log(GPR_INFO, "donna picker moving on second time with subchannel=%p",
-              result.subchannel.get());
+      gpr_log(GPR_INFO,
+              "donna picker in first or second attempt found ready channel "
+              "%" PRIuPTR "subchannel=%p",
+              i, result.subchannel.get());
       return result;
     }
+    if (entry.connectivity_state == GRPC_CHANNEL_CONNECTING &&
+        !found_second_subchannel) {
+      result.type = PickResult::PICK_QUEUE;
+      return result;
+    }
+    found_second_subchannel = true;
     if (!found_first_non_failed) {
       if (entry.connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         ScheduleSubchannelConnectionAttempt(entry.subchannel);
