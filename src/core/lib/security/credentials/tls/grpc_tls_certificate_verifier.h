@@ -51,7 +51,6 @@ struct grpc_tls_certificate_verifier
                       absl::Status* sync_status) = 0;
   // Operations that will be performed when a request is cancelled.
   // This is only needed when in async mode.
-  // TODO(ZhenLian): find out the place to invoke this...
   virtual void Cancel(grpc_tls_custom_verification_check_request* request) = 0;
 };
 
