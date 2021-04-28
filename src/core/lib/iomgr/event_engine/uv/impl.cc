@@ -180,8 +180,9 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     }
     ready_.set_value(true);
     grpc_core::ExecCtx exec_ctx;
-    while (uv_run(&loop_, UV_RUN_DEFAULT) != 0)
-      ;
+    while (uv_run(&loop_, UV_RUN_ONCE) != 0) {
+      exec_ctx.Flush();
+    }
   }
 
   uvEngine() {
