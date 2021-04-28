@@ -53,74 +53,7 @@ char* CopyCoreString(char* src, size_t length) {
   return target;
 }
 
-}  // namespace
-
-PendingVerifierRequest::PendingVerifierRequest(grpc_closure* on_peer_checked,
-                                               tsi_peer peer)
-    : on_peer_checked_(on_peer_checked), peer_(peer) {
-  PendingVerifierRequestInit(&request_);
-  // Parse tsi_peer and feed in the values in the check request.
-  // We will make a copy of each field and destroy them when request_ is
-  // destroyed.
-  // TODO(ZhenLian): avoid the copy when the underlying core implementation used
-  // the null-terminating string.
-  std::vector<char*> uri_names;
-  std::vector<char*> dns_names;
-  for (size_t i = 0; i < peer.property_count; ++i) {
-    const tsi_peer_property* prop = &peer.properties[i];
-    if (prop->name == nullptr) continue;
-    if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
-      request_.peer_info.common_name =
-          CopyCoreString(prop->value.data, prop->value.length);
-    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_PROPERTY) == 0) {
-      request_.peer_info.peer_cert =
-          CopyCoreString(prop->value.data, prop->value.length);
-    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_CHAIN_PROPERTY) == 0) {
-      request_.peer_info.peer_cert_full_chain =
-          CopyCoreString(prop->value.data, prop->value.length);
-    } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
-      char* uri = CopyCoreString(prop->value.data, prop->value.length);
-      uri_names.emplace_back(uri);
-    } else if (strcmp(prop->name,
-                      TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
-      // TODO(ZhenLian): The logic here is wrong.
-      // We are passing all SAN names as DNS names, because the DNS names are
-      // not plumbed. Once it is plumbed, this should be changed.
-      char* dns = CopyCoreString(prop->value.data, prop->value.length);
-      dns_names.emplace_back(dns);
-    } else {
-      // Not supported fields.
-      // TODO(ZhenLian): populate IP Address and other fields here as well.
-    }
-  }
-  request_.peer_info.san_names.uri_names_size = uri_names.size();
-  if (!uri_names.empty()) {
-    request_.peer_info.san_names.uri_names =
-        new char*[request_.peer_info.san_names.uri_names_size];
-    for (size_t i = 0; i < request_.peer_info.san_names.uri_names_size; ++i) {
-      // We directly point the char* string stored in vector to the |request|.
-      // That string will be released when the |request| is destroyed.
-      request_.peer_info.san_names.uri_names[i] = uri_names[i];
-    }
-  }
-  request_.peer_info.san_names.dns_names_size = dns_names.size();
-  if (!dns_names.empty()) {
-    request_.peer_info.san_names.dns_names =
-        new char*[request_.peer_info.san_names.dns_names_size];
-    for (size_t i = 0; i < request_.peer_info.san_names.dns_names_size; ++i) {
-      // We directly point the char* string stored in vector to the |request|.
-      // That string will be released when the |request| is destroyed.
-      request_.peer_info.san_names.dns_names[i] = dns_names[i];
-    }
-  }
-}
-
-PendingVerifierRequest::~PendingVerifierRequest() {
-  tsi_peer_destruct(&peer_);
-  PendingVerifierRequestDestroy(&request_);
-}
-
-void PendingVerifierRequest::PendingVerifierRequestInit(
+void PendingVerifierRequestInit(
     grpc_tls_custom_verification_check_request* request) {
   GPR_ASSERT(request != nullptr);
   request->target_name = nullptr;
@@ -133,11 +66,9 @@ void PendingVerifierRequest::PendingVerifierRequestInit(
   request->peer_info.san_names.dns_names_size = 0;
   request->peer_info.peer_cert = nullptr;
   request->peer_info.peer_cert_full_chain = nullptr;
-  request->status = GRPC_STATUS_CANCELLED;
-  request->error_details = nullptr;
 }
 
-void PendingVerifierRequest::PendingVerifierRequestDestroy(
+void PendingVerifierRequestDestroy(
     grpc_tls_custom_verification_check_request* request) {
   GPR_ASSERT(request != nullptr);
   if (request->peer_info.common_name != nullptr) {
@@ -167,10 +98,82 @@ void PendingVerifierRequest::PendingVerifierRequestDestroy(
   if (request->peer_info.peer_cert_full_chain != nullptr) {
     gpr_free(const_cast<char*>(request->peer_info.peer_cert_full_chain));
   }
-  if (request->error_details != nullptr) {
-    gpr_free(const_cast<char*>(request->error_details));
+}
+
+// Parse tsi_peer and feed in the values in the check request.
+// We will make a copy of each field.
+void ParseTsiPeer(tsi_peer peer,
+                  grpc_tls_custom_verification_check_request* request) {
+  GPR_ASSERT(request != nullptr);
+  // TODO(ZhenLian): avoid the copy when the underlying core implementation used
+  // the null-terminating string.
+  std::vector<char*> uri_names;
+  std::vector<char*> dns_names;
+  for (size_t i = 0; i < peer.property_count; ++i) {
+    const tsi_peer_property* prop = &peer.properties[i];
+    if (prop->name == nullptr) continue;
+    if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
+      request->peer_info.common_name =
+          CopyCoreString(prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_PROPERTY) == 0) {
+      request->peer_info.peer_cert =
+          CopyCoreString(prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_CHAIN_PROPERTY) == 0) {
+      request->peer_info.peer_cert_full_chain =
+          CopyCoreString(prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
+      char* uri = CopyCoreString(prop->value.data, prop->value.length);
+      uri_names.emplace_back(uri);
+    } else if (strcmp(prop->name,
+                      TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
+      // TODO(ZhenLian): The logic here is wrong.
+      // We are passing all SAN names as DNS names, because the DNS names are
+      // not plumbed. Once it is plumbed, this should be changed.
+      char* dns = CopyCoreString(prop->value.data, prop->value.length);
+      dns_names.emplace_back(dns);
+    } else {
+      // Not supported fields.
+      // TODO(ZhenLian): populate IP Address and other fields here as well.
+    }
+  }
+  request->peer_info.san_names.uri_names_size = uri_names.size();
+  if (!uri_names.empty()) {
+    request->peer_info.san_names.uri_names =
+        new char*[request->peer_info.san_names.uri_names_size];
+    for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
+      request->peer_info.san_names.uri_names[i] = uri_names[i];
+    }
+  }
+  request->peer_info.san_names.dns_names_size = dns_names.size();
+  if (!dns_names.empty()) {
+    request->peer_info.san_names.dns_names =
+        new char*[request->peer_info.san_names.dns_names_size];
+    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
+      request->peer_info.san_names.dns_names[i] = dns_names[i];
+    }
   }
 }
+
+}  // namespace
+
+/*void PendingVerifierRequest::PendingVerifierRequestInit(
+    grpc_tls_custom_verification_check_request* request) {
+  GPR_ASSERT(request != nullptr);
+  request->target_name = nullptr;
+  request->peer_info.common_name = nullptr;
+  request->peer_info.san_names.uri_names = nullptr;
+  request->peer_info.san_names.uri_names_size = 0;
+  request->peer_info.san_names.ip_names = nullptr;
+  request->peer_info.san_names.ip_names_size = 0;
+  request->peer_info.san_names.dns_names = nullptr;
+  request->peer_info.san_names.dns_names_size = 0;
+  request->peer_info.peer_cert = nullptr;
+  request->peer_info.peer_cert_full_chain = nullptr;
+}*/
 
 namespace {
 
@@ -350,7 +353,7 @@ void TlsChannelSecurityConnector::cancel_check_peer(
   }
   auto* verifier = options_->certificate_verifier();
   if (verifier != nullptr) {
-    PendingVerifierRequest* pending_verifier_request = nullptr;
+    ChannelPendingVerifierRequest* pending_verifier_request = nullptr;
     {
       MutexLock lock(&verifier_request_map_mu_);
       auto it = pending_verifier_requests_.find(on_peer_checked);
@@ -441,6 +444,38 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::OnError(
   }
   GRPC_ERROR_UNREF(root_cert_error);
   GRPC_ERROR_UNREF(identity_cert_error);
+}
+
+TlsChannelSecurityConnector::ChannelPendingVerifierRequest::
+    ChannelPendingVerifierRequest(
+        RefCountedPtr<TlsChannelSecurityConnector> security_connector,
+        grpc_closure* on_peer_checked, tsi_peer peer, const char* target_name)
+    : security_connector_(std::move(security_connector)),
+      on_peer_checked_(on_peer_checked) {
+  PendingVerifierRequestInit(&request_);
+  // We can pass a pointer of the string cached in security connector directly
+  // because the verifier holds a ref to the security connector until this
+  // verification request is completed.
+  request_.target_name = target_name;
+  ParseTsiPeer(std::move(peer), &request_);
+  tsi_peer_destruct(&peer);
+}
+
+TlsChannelSecurityConnector::ChannelPendingVerifierRequest::
+    ~ChannelPendingVerifierRequest() {
+  PendingVerifierRequestDestroy(&request_);
+}
+
+void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::Start() {
+  absl::Status sync_status;
+  grpc_tls_certificate_verifier* verifier =
+      security_connector_->options_->certificate_verifier();
+  bool is_done = verifier->Verify(
+      &request_, [this](absl::Status status) { OnVerifyDone(true, status); },
+      &sync_status);
+  if (is_done) {
+    OnVerifyDone(false, sync_status);
+  }
 }
 
 void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::OnVerifyDone(
@@ -606,7 +641,7 @@ void TlsServerSecurityConnector::cancel_check_peer(
   }
   auto* verifier = options_->certificate_verifier();
   if (verifier != nullptr) {
-    PendingVerifierRequest* pending_verifier_request = nullptr;
+    ServerPendingVerifierRequest* pending_verifier_request = nullptr;
     {
       MutexLock lock(&verifier_request_map_mu_);
       auto it = pending_verifier_requests_.find(on_peer_checked);
@@ -682,6 +717,34 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::OnError(
   }
   GRPC_ERROR_UNREF(root_cert_error);
   GRPC_ERROR_UNREF(identity_cert_error);
+}
+
+TlsServerSecurityConnector::ServerPendingVerifierRequest::
+    ServerPendingVerifierRequest(
+        RefCountedPtr<TlsServerSecurityConnector> security_connector,
+        grpc_closure* on_peer_checked, tsi_peer peer)
+    : security_connector_(std::move(security_connector)),
+      on_peer_checked_(on_peer_checked) {
+  PendingVerifierRequestInit(&request_);
+  ParseTsiPeer(std::move(peer), &request_);
+  tsi_peer_destruct(&peer);
+}
+
+TlsServerSecurityConnector::ServerPendingVerifierRequest::
+    ~ServerPendingVerifierRequest() {
+  PendingVerifierRequestDestroy(&request_);
+}
+
+void TlsServerSecurityConnector::ServerPendingVerifierRequest::Start() {
+  absl::Status sync_status;
+  grpc_tls_certificate_verifier* verifier =
+      security_connector_->options_->certificate_verifier();
+  bool is_done = verifier->Verify(
+      &request_, [this](absl::Status status) { OnVerifyDone(true, status); },
+      &sync_status);
+  if (is_done) {
+    OnVerifyDone(false, sync_status);
+  }
 }
 
 void TlsServerSecurityConnector::ServerPendingVerifierRequest::OnVerifyDone(
