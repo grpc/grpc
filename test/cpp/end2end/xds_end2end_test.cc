@@ -1946,31 +1946,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   }
 
-  bool SeenAllBackends(size_t start_index = 0, size_t stop_index = 0,
-                       const RpcOptions& rpc_options = RpcOptions()) {
-    if (stop_index == 0) stop_index = backends_.size();
-    for (size_t i = start_index; i < stop_index; ++i) {
-      switch (rpc_options.service) {
-        case SERVICE_ECHO:
-          if (backends_[i]->backend_service()->request_count() == 0) {
-            return false;
-          }
-          break;
-        case SERVICE_ECHO1:
-          if (backends_[i]->backend_service1()->request_count() == 0) {
-            return false;
-          }
-          break;
-        case SERVICE_ECHO2:
-          if (backends_[i]->backend_service2()->request_count() == 0) {
-            return false;
-          }
-          break;
-      }
-    }
-    return true;
-  }
-
   bool SeenBackend(size_t backend_idx,
                    const RpcOptions& rpc_options = RpcOptions()) {
     switch (rpc_options.service) {
@@ -1989,6 +1964,17 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
           return false;
         }
         break;
+    }
+    return true;
+  }
+
+  bool SeenAllBackends(size_t start_index = 0, size_t stop_index = 0,
+                       const RpcOptions& rpc_options = RpcOptions()) {
+    if (stop_index == 0) stop_index = backends_.size();
+    for (size_t i = start_index; i < stop_index; ++i) {
+      if (!SeenBackend(i, rpc_options)) {
+        return false;
+      }
     }
     return true;
   }
@@ -6536,15 +6522,15 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
         std::move(result));
   }
   // Wait for traffic to go to backend 1.
-  WaitForBackend(1);
+  WaitForBackend(1, /*reset_counters=*/true, /*allow_failures=*/true);
   // Shutdown backend 1 and wait for all traffic to go to backend 2.
   ShutdownBackend(1);
-  WaitForBackend(2);
+  WaitForBackend(2, /*reset_counters=*/true, /*allow_failures=*/true);
   EXPECT_EQ(balancers_[0]->ads_service()->cds_response_state().state,
             AdsServiceImpl::ResponseState::ACKED);
   // Bring backend 1 back and ensure all traffic go back to it.
   StartBackend(1);
-  WaitForBackend(1);
+  WaitForBackend(1, /*reset_counters=*/true, /*allow_failures=*/true);
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
