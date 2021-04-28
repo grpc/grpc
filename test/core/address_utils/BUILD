@@ -12,9 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])
+
+grpc_package(
+    name = "test/core/address_utils",
+    visibility = "private",
+)
 
 grpc_cc_test(
     name = "sockaddr_utils_test",
