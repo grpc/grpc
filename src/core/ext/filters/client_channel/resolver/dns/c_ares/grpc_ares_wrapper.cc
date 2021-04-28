@@ -332,6 +332,10 @@ static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
       fdn = fdn->next;
     }
     if (!driver->shutting_down) {
+      // InvalidateNow to avoid getting stuck re-initializing this timer
+      // in a loop while draining the currently-held WorkSerializer.
+      // Also see https://github.com/grpc/grpc/issues/26079.
+      grpc_core::ExecCtx::Get()->InvalidateNow();
       grpc_millis next_ares_backup_poll_alarm =
           calculate_next_ares_backup_poll_alarm_ms(driver);
       grpc_ares_ev_driver_ref(driver);
