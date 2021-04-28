@@ -1247,21 +1247,19 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
     trace_strings.push_back("Address list became non-empty");
   }
   previous_resolution_contained_addresses_ = !result.addresses.empty();
-  // The result of grpc_error_string() is owned by the error itself.
-  // We're storing that string in trace_strings, so we need to make sure
-  // that the error lives until we're done with the string.
-  grpc_error_handle service_config_error =
-      GRPC_ERROR_REF(result.service_config_error);
-  if (service_config_error != GRPC_ERROR_NONE) {
-    trace_strings.push_back(grpc_error_string(service_config_error));
+  std::string service_config_error_string_storage;
+  if (result.service_config_error != GRPC_ERROR_NONE) {
+    service_config_error_string_storage =
+        grpc_error_std_string(result.service_config_error);
+    trace_strings.push_back(service_config_error_string_storage.c_str());
   }
   // Choose the service config.
   RefCountedPtr<ServiceConfig> service_config;
   RefCountedPtr<ConfigSelector> config_selector;
-  if (service_config_error != GRPC_ERROR_NONE) {
+  if (result.service_config_error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO, "chand=%p: resolver returned service config error: %s",
-              this, grpc_error_string(service_config_error));
+              this, grpc_error_std_string(result.service_config_error).c_str());
     }
     // If the service config was invalid, then fallback to the
     // previously returned service config.
@@ -1278,7 +1276,7 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
       // We received an invalid service config and we don't have a
       // previous service config to fall back to.  Put the channel into
       // TRANSIENT_FAILURE.
-      OnResolverErrorLocked(GRPC_ERROR_REF(service_config_error));
+      OnResolverErrorLocked(GRPC_ERROR_REF(result.service_config_error));
       trace_strings.push_back("no valid service config");
     }
   } else if (result.service_config == nullptr) {
@@ -1343,7 +1341,6 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
                                     grpc_slice_from_cpp_string(message));
     }
   }
-  GRPC_ERROR_UNREF(service_config_error);
 }
 
 void ClientChannel::OnResolverErrorLocked(grpc_error_handle error) {
@@ -1353,7 +1350,7 @@ void ClientChannel::OnResolverErrorLocked(grpc_error_handle error) {
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p: resolver transient failure: %s", this,
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
   }
   // If we already have an LB policy from a previous resolution
   // result, then we continue to let it set the connectivity state.
@@ -1731,7 +1728,7 @@ void ClientChannel::StartTransportOpLocked(grpc_transport_op* op) {
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
       gpr_log(GPR_INFO, "chand=%p: disconnect_with_error: %s", this,
-              grpc_error_string(op->disconnect_with_error));
+              grpc_error_std_string(op->disconnect_with_error).c_str());
     }
     DestroyResolverAndLbPolicyLocked();
     intptr_t value;
@@ -1930,7 +1927,8 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
   if (GPR_UNLIKELY(calld->cancel_error_ != GRPC_ERROR_NONE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
       gpr_log(GPR_INFO, "chand=%p calld=%p: failing batch with error: %s",
-              chand, calld, grpc_error_string(calld->cancel_error_));
+              chand, calld,
+              grpc_error_std_string(calld->cancel_error_).c_str());
     }
     // Note: This will release the call combiner.
     grpc_transport_stream_op_batch_finish_with_failure(
@@ -1949,7 +1947,7 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
         GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
       gpr_log(GPR_INFO, "chand=%p calld=%p: recording cancel_error=%s", chand,
-              calld, grpc_error_string(calld->cancel_error_));
+              calld, grpc_error_std_string(calld->cancel_error_).c_str());
     }
     // If we do not have a dynamic call (i.e., name resolution has not
     // yet completed), fail all pending batches.  Otherwise, send the
@@ -2065,7 +2063,8 @@ void ClientChannel::CallData::PendingBatchesFail(
     }
     gpr_log(GPR_INFO,
             "chand=%p calld=%p: failing %" PRIuPTR " pending batches: %s",
-            elem->channel_data, this, num_batches, grpc_error_string(error));
+            elem->channel_data, this, num_batches,
+            grpc_error_std_string(error).c_str());
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2157,7 +2156,7 @@ class ClientChannel::CallData::ResolverQueuedCallCanceller {
         gpr_log(GPR_INFO,
                 "chand=%p calld=%p: cancelling resolver queued pick: "
                 "error=%s self=%p calld->resolver_pick_canceller=%p",
-                chand, calld, grpc_error_string(error), self,
+                chand, calld, grpc_error_std_string(error).c_str(), self,
                 calld->resolver_call_canceller_);
       }
       if (calld->resolver_call_canceller_ == self && error != GRPC_ERROR_NONE) {
@@ -2307,7 +2306,7 @@ void ClientChannel::CallData::ResolutionDone(void* arg,
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: error applying config to call: error=%s",
-              chand, calld, grpc_error_string(error));
+              chand, calld, grpc_error_std_string(error).c_str());
     }
     calld->PendingBatchesFail(elem, GRPC_ERROR_REF(error), YieldCallCombiner);
     return;
@@ -2416,7 +2415,7 @@ void ClientChannel::CallData::CreateDynamicCall(grpc_call_element* elem) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: failed to create dynamic call: error=%s",
-              chand, this, grpc_error_string(error));
+              chand, this, grpc_error_std_string(error).c_str());
     }
     PendingBatchesFail(elem, error, YieldCallCombiner);
     return;
@@ -2617,7 +2616,7 @@ void ClientChannel::LoadBalancedCall::PendingBatchesFail(
     }
     gpr_log(GPR_INFO,
             "chand=%p lb_call=%p: failing %" PRIuPTR " pending batches: %s",
-            chand_, this, num_batches, grpc_error_string(error));
+            chand_, this, num_batches, grpc_error_std_string(error).c_str());
   }
   CallCombinerClosureList closures;
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -2689,7 +2688,7 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
   if (GPR_UNLIKELY(cancel_error_ != GRPC_ERROR_NONE)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
       gpr_log(GPR_INFO, "chand=%p lb_call=%p: failing batch with error: %s",
-              chand_, this, grpc_error_string(cancel_error_));
+              chand_, this, grpc_error_std_string(cancel_error_).c_str());
     }
     // Note: This will release the call combiner.
     grpc_transport_stream_op_batch_finish_with_failure(
@@ -2707,7 +2706,7 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
     cancel_error_ = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
       gpr_log(GPR_INFO, "chand=%p lb_call=%p: recording cancel_error=%s",
-              chand_, this, grpc_error_string(cancel_error_));
+              chand_, this, grpc_error_std_string(cancel_error_).c_str());
     }
     // If we do not have a subchannel call (i.e., a pick has not yet
     // been started), fail all pending batches.  Otherwise, send the
@@ -2830,7 +2829,7 @@ void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p lb_call=%p: create subchannel_call=%p: error=%s", chand_,
-            this, subchannel_call_.get(), grpc_error_string(error));
+            this, subchannel_call_.get(), grpc_error_std_string(error).c_str());
   }
   if (on_call_destruction_complete_ != nullptr) {
     subchannel_call_->SetAfterCallStackDestroy(on_call_destruction_complete_);
@@ -2870,7 +2869,7 @@ class ClientChannel::LoadBalancedCall::LbQueuedCallCanceller {
         gpr_log(GPR_INFO,
                 "chand=%p lb_call=%p: cancelling queued pick: "
                 "error=%s self=%p calld->pick_canceller=%p",
-                chand, lb_call, grpc_error_string(error), self,
+                chand, lb_call, grpc_error_std_string(error).c_str(), self,
                 lb_call->lb_call_canceller_);
       }
       if (lb_call->lb_call_canceller_ == self && error != GRPC_ERROR_NONE) {
@@ -2926,7 +2925,7 @@ void ClientChannel::LoadBalancedCall::PickDone(void* arg,
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p lb_call=%p: failed to pick subchannel: error=%s",
-              self->chand_, self, grpc_error_string(error));
+              self->chand_, self, grpc_error_std_string(error).c_str());
     }
     self->PendingBatchesFail(GRPC_ERROR_REF(error), YieldCallCombiner);
     return;
@@ -2989,7 +2988,7 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
         GPR_INFO,
         "chand=%p lb_call=%p: LB pick returned %s (subchannel=%p, error=%s)",
         chand_, this, PickResultTypeName(result.type), result.subchannel.get(),
-        grpc_error_string(result.error));
+        grpc_error_std_string(result.error).c_str());
   }
   switch (result.type) {
     case LoadBalancingPolicy::PickResult::PICK_FAILED: {

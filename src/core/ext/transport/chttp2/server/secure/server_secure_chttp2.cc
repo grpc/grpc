@@ -121,8 +121,7 @@ int grpc_server_add_secure_http2_port(grpc_server* server, const char* addr,
 done:
   sc.reset(DEBUG_LOCATION, "server");
   if (err != GRPC_ERROR_NONE) {
-    const char* msg = grpc_error_string(err);
-    gpr_log(GPR_ERROR, "%s", msg);
+    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
 
     GRPC_ERROR_UNREF(err);
   }

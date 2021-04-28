@@ -446,8 +446,8 @@ static void check_metadata(const expected_md* expected,
 static void check_request_metadata(void* arg, grpc_error_handle error) {
   request_metadata_state* state = static_cast<request_metadata_state*>(arg);
   gpr_log(GPR_INFO, "expected_error: %s",
-          grpc_error_string(state->expected_error));
-  gpr_log(GPR_INFO, "actual_error: %s", grpc_error_string(error));
+          grpc_error_std_string(state->expected_error).c_str());
+  gpr_log(GPR_INFO, "actual_error: %s", grpc_error_std_string(error).c_str());
   if (state->expected_error == GRPC_ERROR_NONE) {
     GPR_ASSERT(error == GRPC_ERROR_NONE);
   } else {

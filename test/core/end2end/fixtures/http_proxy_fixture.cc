@@ -172,7 +172,7 @@ static void on_read_request_done_locked(void* arg, grpc_error_handle error);
 static void proxy_connection_failed(proxy_connection* conn,
                                     failure_type failure, const char* prefix,
                                     grpc_error_handle error) {
-  gpr_log(GPR_INFO, "%s: %s", prefix, grpc_error_string(error));
+  gpr_log(GPR_INFO, "%s: %s", prefix, grpc_error_std_string(error).c_str());
   // Decide whether we should shut down the client and server.
   bool shutdown_client = false;
   bool shutdown_server = false;
@@ -459,7 +459,7 @@ static bool proxy_auth_header_matches(char* proxy_auth_header_val,
 static void on_read_request_done_locked(void* arg, grpc_error_handle error) {
   proxy_connection* conn = static_cast<proxy_connection*>(arg);
   gpr_log(GPR_DEBUG, "on_read_request_done: %p %s", conn,
-          grpc_error_string(error));
+          grpc_error_std_string(error).c_str());
   if (error != GRPC_ERROR_NONE) {
     proxy_connection_failed(conn, SETUP_FAILED, "HTTP proxy read request",
                             GRPC_ERROR_REF(error));

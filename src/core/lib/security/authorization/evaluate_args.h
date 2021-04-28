@@ -69,8 +69,8 @@ class EvaluateArgs {
   absl::string_view GetCommonName() const;
 
  private:
-  grpc_metadata_batch* metadata_ = nullptr;
-  PerChannelArgs* channel_args_ = nullptr;
+  grpc_metadata_batch* metadata_;
+  PerChannelArgs* channel_args_;
 };
 
 }  // namespace grpc_core

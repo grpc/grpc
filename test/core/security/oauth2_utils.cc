@@ -45,7 +45,8 @@ static void on_oauth2_response(void* arg, grpc_error_handle error) {
   char* token = nullptr;
   grpc_slice token_slice;
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "Fetching token failed: %s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "Fetching token failed: %s",
+            grpc_error_std_string(error).c_str());
   } else {
     GPR_ASSERT(request->md_array.size == 1);
     token_slice = GRPC_MDVALUE(request->md_array.md[0]);

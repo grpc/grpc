@@ -204,7 +204,7 @@ void AresDnsResolver::OnNextResolutionLocked(grpc_error_handle error) {
   GRPC_CARES_TRACE_LOG(
       "resolver:%p re-resolution timer fired. error: %s. shutdown_initiated_: "
       "%d",
-      this, grpc_error_string(error), shutdown_initiated_);
+      this, grpc_error_std_string(error).c_str(), shutdown_initiated_);
   have_next_resolution_timer_ = false;
   if (error == GRPC_ERROR_NONE && !shutdown_initiated_) {
     if (!resolving_) {
@@ -354,7 +354,7 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
     backoff_.Reset();
   } else {
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed: %s", this,
-                         grpc_error_string(error));
+                         grpc_error_std_string(error).c_str());
     std::string error_message =
         absl::StrCat("DNS resolution failed for service: ", name_to_resolve_);
     result_handler_->ReturnError(grpc_error_set_int(
@@ -362,10 +362,14 @@ void AresDnsResolver::OnResolvedLocked(grpc_error_handle error) {
                                                          &error, 1),
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
     // Set retry timer.
+    // InvalidateNow to avoid getting stuck re-initializing this timer
+    // in a loop while draining the currently-held WorkSerializer.
+    // Also see https://github.com/grpc/grpc/issues/26079.
+    ExecCtx::Get()->InvalidateNow();
     grpc_millis next_try = backoff_.NextAttemptTime();
     grpc_millis timeout = next_try - ExecCtx::Get()->Now();
     GRPC_CARES_TRACE_LOG("resolver:%p dns resolution failed (will retry): %s",
-                         this, grpc_error_string(error));
+                         this, grpc_error_std_string(error).c_str());
     GPR_ASSERT(!have_next_resolution_timer_);
     have_next_resolution_timer_ = true;
     // TODO(roth): We currently deal with this ref manually.  Once the
@@ -389,6 +393,10 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
   // can start the next resolution.
   if (have_next_resolution_timer_) return;
   if (last_resolution_timestamp_ >= 0) {
+    // InvalidateNow to avoid getting stuck re-initializing this timer
+    // in a loop while draining the currently-held WorkSerializer.
+    // Also see https://github.com/grpc/grpc/issues/26079.
+    ExecCtx::Get()->InvalidateNow();
     const grpc_millis earliest_next_resolution =
         last_resolution_timestamp_ + min_time_between_resolutions_;
     const grpc_millis ms_until_next_resolution =

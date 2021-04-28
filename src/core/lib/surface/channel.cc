@@ -75,7 +75,7 @@ grpc_channel* grpc_channel_create_with_builder(
       reinterpret_cast<void**>(&channel));
   if (builder_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "channel stack builder failed: %s",
-            grpc_error_string(builder_error));
+            grpc_error_std_string(builder_error).c_str());
     GPR_ASSERT(channel == nullptr);
     if (error != nullptr) {
       *error = builder_error;

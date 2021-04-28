@@ -77,7 +77,7 @@ void RunSuccessTest(const char* input, const Json& expected,
   gpr_log(GPR_INFO, "parsing string \"%s\" - should succeed", input);
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(input, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ValidateValue(json, expected);
   std::string output = json.Dump();
   EXPECT_EQ(output, expected_output);
@@ -167,7 +167,7 @@ void RunParseFailureTest(const char* input) {
   gpr_log(GPR_INFO, "parsing string \"%s\" - should fail", input);
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(input, &error);
-  gpr_log(GPR_INFO, "error: %s", grpc_error_string(error));
+  gpr_log(GPR_INFO, "error: %s", grpc_error_std_string(error).c_str());
   EXPECT_NE(error, GRPC_ERROR_NONE);
   GRPC_ERROR_UNREF(error);
 }

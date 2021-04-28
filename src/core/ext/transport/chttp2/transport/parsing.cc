@@ -772,8 +772,7 @@ static grpc_error_handle parse_frame_slice(grpc_chttp2_transport* t,
     return err;
   } else if (grpc_error_get_int(err, GRPC_ERROR_INT_STREAM_ID, &unused)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-      const char* msg = grpc_error_string(err);
-      gpr_log(GPR_ERROR, "%s", msg);
+      gpr_log(GPR_ERROR, "%s", grpc_error_std_string(err).c_str());
     }
     grpc_chttp2_parsing_become_skip_parser(t);
     if (s) {

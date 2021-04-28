@@ -893,6 +893,10 @@ void GrpcLb::BalancerCallState::StartQuery() {
 }
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
+  // InvalidateNow to avoid getting stuck re-initializing this timer
+  // in a loop while draining the currently-held WorkSerializer.
+  // Also see https://github.com/grpc/grpc/issues/26079.
+  ExecCtx::Get()->InvalidateNow();
   const grpc_millis next_client_load_report_time =
       ExecCtx::Get()->Now() + client_stats_report_interval_;
   GRPC_CLOSURE_INIT(&client_load_report_closure_, MaybeSendClientLoadReport,
@@ -1202,7 +1206,7 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
             "[grpclb %p] lb_calld=%p: Status from LB server received. "
             "Status = %d, details = '%s', (lb_call: %p), error '%s'",
             grpclb_policy(), this, lb_call_status_, status_details, lb_call_,
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     gpr_free(status_details);
   }
   GRPC_ERROR_UNREF(error);

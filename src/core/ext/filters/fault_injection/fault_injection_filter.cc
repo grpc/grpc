@@ -214,7 +214,7 @@ class CallData::ResumeBatchCanceller {
         gpr_log(GPR_INFO,
                 "chand=%p calld=%p: cancelling schdueled pick: "
                 "error=%s self=%p calld->resume_batch_canceller_=%p",
-                chand, calld, grpc_error_string(error), self,
+                chand, calld, grpc_error_std_string(error).c_str(), self,
                 calld->resume_batch_canceller_);
       }
       if (error != GRPC_ERROR_NONE && calld->resume_batch_canceller_ == self) {

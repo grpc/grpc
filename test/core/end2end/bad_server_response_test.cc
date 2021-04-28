@@ -118,7 +118,8 @@ static void handle_write() {
 
 static void handle_read(void* /*arg*/, grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "handle_read error: %s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "handle_read error: %s",
+            grpc_error_std_string(error).c_str());
     return;
   }
   state.incoming_data_length += state.temp_incoming_buffer.length;

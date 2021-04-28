@@ -302,7 +302,7 @@ absl::StatusOr<RbacPolicies> GenerateRbacPolicies(
   if (error != GRPC_ERROR_NONE) {
     absl::Status status = absl::InvalidArgumentError(
         absl::StrCat("Failed to parse SDK authorization policy. Error: ",
-                     grpc_error_string(error)));
+                     grpc_error_std_string(error)));
     GRPC_ERROR_UNREF(error);
     return status;
   }
