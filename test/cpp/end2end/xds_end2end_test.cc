@@ -10323,6 +10323,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   const double kAbortRate = kAbortPercentagePerHundred / 100.0;
   const uint32_t kFixedDelaySeconds = 1;
   const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
+  const uint32_t kConnectionTimeoutMilliseconds =
+      10 * 1000;  // 10s should not reach
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   SetNextResolution({});
@@ -10348,9 +10350,10 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Allow the channel to connect to one backends, so the herd of queued RPCs
-  // won't be executed on the same thread causing millisecond level delay error.
+  // won't be executed on the same ExecCtx object and using the cached Now()
+  // value, which causes millisecond level delay error.
   channel_->WaitForConnected(
-      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
+      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds));
   // Send kNumRpcs RPCs and count the aborts.
   int num_aborted = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
@@ -10377,6 +10380,8 @@ TEST_P(FaultInjectionTest,
   const double kAbortRate = kAbortPercentagePerMillion / 1000000.0;
   const uint32_t kFixedDelaySeconds = 1;                // 1s
   const uint32_t kRpcTimeoutMilliseconds = 100 * 1000;  // 100s should not reach
+  const uint32_t kConnectionTimeoutMilliseconds =
+      10 * 1000;  // 10s should not reach
   const double kErrorTolerance = 0.05;
   const size_t kNumRpcs = ComputeIdealNumRpcs(kAbortRate, kErrorTolerance);
   SetNextResolution({});
@@ -10402,9 +10407,10 @@ TEST_P(FaultInjectionTest,
   // Config fault injection via different setup
   SetFilterConfig(http_fault);
   // Allow the channel to connect to one backends, so the herd of queued RPCs
-  // won't be executed on the same thread causing millisecond level delay error.
+  // won't be executed on the same ExecCtx object and using the cached Now()
+  // value, which causes millisecond level delay error.
   channel_->WaitForConnected(
-      grpc_timeout_milliseconds_to_deadline(kRpcTimeoutMilliseconds));
+      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds));
   // Send kNumRpcs RPCs and count the aborts.
   int num_aborted = 0;
   RpcOptions rpc_options = RpcOptions().set_timeout_ms(kRpcTimeoutMilliseconds);
