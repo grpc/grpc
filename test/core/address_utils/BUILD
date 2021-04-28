@@ -14,7 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 grpc_cc_test(
     name = "sockaddr_utils_test",
