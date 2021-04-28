@@ -20,7 +20,6 @@
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
-#include "src/core/lib/iomgr/event_engine/util.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -121,9 +120,13 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   // Listener::Start(on_accept) method in a custom EE impl. This should not be
   // needed once iomgr goes away.
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
-      ee->CreateListener(GrpcClosureToAcceptCallback(nullptr),
-                         GrpcClosureToCallback(shutdown_complete), ca,
-                         SliceAllocatorFactory(rq));
+      ee->CreateListener(
+          GrpcClosureToAcceptCallback(nullptr),
+          [&shutdown_complete](absl::Status status) {
+            grpc_core::Closure::Run(DEBUG_LOCATION, shutdown_complete,
+                                    absl_status_to_grpc_error(status));
+          },
+          ca, SliceAllocatorFactory(rq));
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());
   }

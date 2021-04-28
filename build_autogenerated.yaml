@@ -740,7 +740,6 @@ libs:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine/endpoint.h
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
-  - src/core/lib/iomgr/event_engine/util.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/executor/mpmcqueue.h
@@ -1229,6 +1228,7 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/resolved_address_internal.cc
   - src/core/lib/event_engine/slice_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
@@ -1262,7 +1262,6 @@ libs:
   - src/core/lib/iomgr/event_engine/resolver.cc
   - src/core/lib/iomgr/event_engine/tcp.cc
   - src/core/lib/iomgr/event_engine/timer.cc
-  - src/core/lib/iomgr/event_engine/util.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/executor/mpmcqueue.cc
@@ -1755,7 +1754,6 @@ libs:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/event_engine/endpoint.h
   - src/core/lib/iomgr/event_engine/resolved_address_internal.h
-  - src/core/lib/iomgr/event_engine/util.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/executor/mpmcqueue.h
@@ -1980,6 +1978,7 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/resolved_address_internal.cc
   - src/core/lib/event_engine/slice_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
@@ -2012,7 +2011,6 @@ libs:
   - src/core/lib/iomgr/event_engine/resolver.cc
   - src/core/lib/iomgr/event_engine/tcp.cc
   - src/core/lib/iomgr/event_engine/timer.cc
-  - src/core/lib/iomgr/event_engine/util.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/executor/mpmcqueue.cc
