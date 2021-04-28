@@ -6,6 +6,7 @@
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 
 class uvEngine;
@@ -178,6 +179,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
       return;
     }
     ready_.set_value(true);
+    grpc_core::ExecCtx exec_ctx;
     while (uv_run(&loop_, UV_RUN_DEFAULT) != 0)
       ;
   }
@@ -344,15 +346,15 @@ uvDNSResolver::LookupHostname(LookupHostnameCallback on_resolve,
     uv_getaddrinfo_t req;
     std::string ntaddress(address);
     std::string ntdefault_port(default_port);
-    uv_getaddrinfo(&engine->loop_, &req, nullptr, ntaddress.c_str(),
-                   ntdefault_port.c_str(), nullptr);
+    const char* ccaddress = ntaddress.c_str();
+    const char* ccdefault_port = ntdefault_port.c_str();
+    uv_getaddrinfo(&engine->loop_, &req, nullptr, ccaddress, ccdefault_port,
+                   nullptr);
 
-    size_t count = 0;
     struct addrinfo* p;
     std::vector<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
         res;
 
-    count = 0;
     for (p = req.addrinfo; p != nullptr; p = p->ai_next) {
       res.emplace_back(p->ai_addr, p->ai_addrlen);
     }
