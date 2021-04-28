@@ -40,6 +40,8 @@ class PendingVerifierRequest {
   // Starts the synchronous or asynchronous verification.
   virtual void Start() = 0;
 
+  grpc_tls_custom_verification_check_request* request() { return &request_; }
+
   // The following functions will be invoked directly in ctor and dtor. They are
   // exposed to be used in some unit tests.
   static void PendingVerifierRequestInit(
@@ -85,11 +87,8 @@ class TlsChannelSecurityConnector final
                   RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
 
-  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    // TODO(ZhenLian): call verifier->cancel() once the verifier is ready.
-    GRPC_ERROR_UNREF(error);
-  }
+  void cancel_check_peer(grpc_closure* on_peer_checked,
+                         grpc_error_handle error) override;
 
   int cmp(const grpc_security_connector* other_sc) const override;
 
@@ -193,7 +192,7 @@ class TlsChannelSecurityConnector final
   absl::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
   std::map<grpc_closure* /*on_peer_checked*/, PendingVerifierRequest*>
-      pending_verifier_requests_;
+      pending_verifier_requests_ ABSL_GUARDED_BY(verifier_request_map_mu_);
 };
 
 // Server security connector using TLS as transport security protocol.
@@ -219,10 +218,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
                   grpc_closure* on_peer_checked) override;
 
   void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
-                         grpc_error_handle error) override {
-    // TODO(ZhenLian): call verifier->cancel() once the verifier is ready.
-    GRPC_ERROR_UNREF(error);
-  }
+                         grpc_error_handle error) override;
 
   int cmp(const grpc_security_connector* other) const override;
 
@@ -312,7 +308,7 @@ class TlsServerSecurityConnector final : public grpc_server_security_connector {
   absl::optional<PemKeyCertPairList> pem_key_cert_pair_list_
       ABSL_GUARDED_BY(mu_);
   std::map<grpc_closure* /*on_peer_checked*/, PendingVerifierRequest*>
-      pending_verifier_requests_;
+      pending_verifier_requests_ ABSL_GUARDED_BY(verifier_request_map_mu_);
 };
 
 }  // namespace grpc_core
