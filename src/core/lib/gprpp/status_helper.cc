@@ -25,6 +25,7 @@
 
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/time/clock.h"
@@ -276,7 +277,7 @@ std::string StatusToString(const absl::Status& status) {
   absl::optional<absl::Cord> children;
   status.ForEachPayload([&](absl::string_view type_url,
                             const absl::Cord& payload) {
-    if (type_url.substr(0, kTypeUrlPrefix.size()) == kTypeUrlPrefix) {
+    if (absl::StartsWith(type_url, kTypeUrlPrefix)) {
       type_url.remove_prefix(kTypeUrlPrefix.size());
       if (type_url == kTypeChildrenTag) {
         children = payload;
@@ -290,14 +291,14 @@ std::string StatusToString(const absl::Status& status) {
         payload_storage = std::string(payload);
         payload_view = payload_storage;
       }
-      if (type_url.substr(0, kTypeIntTag.size()) == kTypeIntTag) {
+      if (absl::StartsWith(type_url, kTypeIntTag)) {
         type_url.remove_prefix(kTypeIntTag.size());
         kvs.push_back(absl::StrCat(type_url, ":", payload_view));
-      } else if (type_url.substr(0, kTypeStrTag.size()) == kTypeStrTag) {
+      } else if (absl::StartsWith(type_url, kTypeStrTag)) {
         type_url.remove_prefix(kTypeStrTag.size());
         kvs.push_back(absl::StrCat(type_url, ":\"",
                                    absl::CHexEscape(payload_view), "\""));
-      } else if (type_url.substr(0, kTypeTimeTag.size()) == kTypeTimeTag) {
+      } else if (absl::StartsWith(type_url, kTypeTimeTag)) {
         type_url.remove_prefix(kTypeTimeTag.size());
         absl::Time t =
             *reinterpret_cast<const absl::Time*>(payload_view.data());

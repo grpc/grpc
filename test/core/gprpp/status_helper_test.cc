@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 
 #include "absl/status/status.h"
+#include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 #include "google/rpc/status.upb.h"
 #include "upb/upb.hpp"
@@ -110,11 +111,28 @@ TEST(StatusUtilTest, CancelledErrorToString) {
   EXPECT_EQ("CANCELLED", t);
 }
 
-TEST(StatusUtilTest, ComplexErrorToString) {
+TEST(StatusUtilTest, ErrorWithIntPropertyToString) {
   absl::Status s = absl::CancelledError("Message");
   StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
   std::string t = StatusToString(s);
   EXPECT_EQ("CANCELLED:Message {errno:2021}", t);
+}
+
+TEST(StatusUtilTest, ErrorWithStrPropertyToString) {
+  absl::Status s = absl::CancelledError("Message");
+  StatusSetStr(&s, StatusStrProperty::kDescription, "Hey");
+  std::string t = StatusToString(s);
+  EXPECT_EQ("CANCELLED:Message {description:\"Hey\"}", t);
+}
+
+TEST(StatusUtilTest, ErrorWithTimePropertyToString) {
+  absl::Status s = absl::CancelledError("Message");
+  absl::Time t = absl::FromCivil(absl::CivilSecond(2021, 4, 29, 8, 56, 30),
+                                 absl::LocalTimeZone());
+  StatusSetTime(&s, StatusTimeProperty::kCreated, t);
+  EXPECT_EQ(StatusToString(s),
+            absl::StrCat("CANCELLED:Message {created_time:\"",
+                         absl::FormatTime(t), "\"}"));
 }
 
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
@@ -125,15 +143,10 @@ TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   absl::Status s2 = absl::AlreadyExistsError("Message2");
   StatusSetStr(&s2, StatusStrProperty::kOsError, "value");
   StatusAddChild(&s, s2);
-  absl::Status s3 = absl::DeadlineExceededError("Message3");
-  StatusSetTime(&s3, StatusTimeProperty::kCreated, absl::FromUnixSeconds(0));
-  StatusAddChild(&s, s3);
   std::string t = StatusToString(s);
   EXPECT_EQ(
       "CANCELLED:Message {errno:2021, children:["
-      "ABORTED:Message1, ALREADY_EXISTS:Message2 {os_error:\"value\"}, "
-      "DEADLINE_EXCEEDED:Message3 {created_time:\"1970-01-01T00:00:00+00:00\"}"
-      "]}",
+      "ABORTED:Message1, ALREADY_EXISTS:Message2 {os_error:\"value\"}]}",
       t);
 }
 
