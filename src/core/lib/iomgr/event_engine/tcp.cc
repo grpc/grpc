@@ -37,7 +37,9 @@ using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 struct grpc_tcp_server {
   grpc_tcp_server(std::unique_ptr<EventEngine::Listener> listener,
                   std::shared_ptr<EventEngine> ee, grpc_resource_quota* rq)
-      : listener(std::move(listener)), engine(ee), resource_quota(rq) {
+      : listener(std::move(listener)),
+        engine(std::move(ee)),
+        resource_quota(rq) {
     gpr_ref_init(&refs, 1);
     shutdown_starting.head = nullptr;
     shutdown_starting.tail = nullptr;
@@ -130,7 +132,7 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());
   }
-  *server = new grpc_tcp_server(std::move(*listener), ee, rq);
+  *server = new grpc_tcp_server(std::move(*listener), std::move(ee), rq);
   return GRPC_ERROR_NONE;
 }
 
