@@ -339,6 +339,35 @@ void TlsChannelSecurityConnector::check_peer(
   pending_request->Start();
 }
 
+void TlsChannelSecurityConnector::cancel_check_peer(
+    grpc_closure* on_peer_checked, grpc_error_handle error) {
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR,
+            "TlsChannelSecurityConnector::cancel_check_peer error: %s",
+            grpc_error_std_string(error).c_str());
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
+  auto* verifier = options_->certificate_verifier();
+  if (verifier != nullptr) {
+    PendingVerifierRequest* pending_verifier_request = nullptr;
+    {
+      MutexLock lock(&verifier_request_map_mu_);
+      auto it = pending_verifier_requests_.find(on_peer_checked);
+      if (it != pending_verifier_requests_.end()) {
+        pending_verifier_request = it->second;
+      } else {
+        gpr_log(GPR_INFO,
+                "TlsChannelSecurityConnector::cancel_check_peer: no "
+                "corresponding pending request found");
+      }
+    }
+    if (pending_verifier_request != nullptr) {
+      verifier->Cancel(pending_verifier_request->request());
+    }
+  }
+}
+
 int TlsChannelSecurityConnector::cmp(
     const grpc_security_connector* other_sc) const {
   auto* other = reinterpret_cast<const TlsChannelSecurityConnector*>(other_sc);
@@ -348,13 +377,13 @@ int TlsChannelSecurityConnector::cmp(
       target_name_.c_str(), other->target_name_.c_str(),
       overridden_target_name_.c_str(), other->overridden_target_name_.c_str());
   if (c != 0) return c;
-  if (pem_root_certs_ != other->pem_root_certs_ ||
+  /*if (pem_root_certs_ != other->pem_root_certs_ ||
       pem_key_cert_pair_list_ != other->pem_key_cert_pair_list_)
     return 1;
   if (certificate_watcher_ != other->certificate_watcher_ ||
       client_handshaker_factory_ != other->client_handshaker_factory_ ||
       ssl_session_cache_ != other->ssl_session_cache_)
-    return 1;
+    return 1;*/
   return 0;
 }
 
@@ -420,7 +449,7 @@ void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::OnVerifyDone(
     MutexLock lock(&security_connector_->verifier_request_map_mu_);
     security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
   }
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (!status.ok()) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Custom verification check failed with error: ",
@@ -566,17 +595,46 @@ void TlsServerSecurityConnector::check_peer(
   pending_request->Start();
 }
 
+void TlsServerSecurityConnector::cancel_check_peer(
+    grpc_closure* on_peer_checked, grpc_error_handle error) {
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR,
+            "TlsServerSecurityConnector::cancel_check_peer error: %s",
+            grpc_error_std_string(error).c_str());
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
+  auto* verifier = options_->certificate_verifier();
+  if (verifier != nullptr) {
+    PendingVerifierRequest* pending_verifier_request = nullptr;
+    {
+      MutexLock lock(&verifier_request_map_mu_);
+      auto it = pending_verifier_requests_.find(on_peer_checked);
+      if (it != pending_verifier_requests_.end()) {
+        pending_verifier_request = it->second;
+      } else {
+        gpr_log(GPR_INFO,
+                "TlsServerSecurityConnector::cancel_check_peer: no "
+                "corresponding pending request found");
+      }
+    }
+    if (pending_verifier_request != nullptr) {
+      verifier->Cancel(pending_verifier_request->request());
+    }
+  }
+}
+
 int TlsServerSecurityConnector::cmp(
     const grpc_security_connector* other_sc) const {
   auto* other = reinterpret_cast<const TlsServerSecurityConnector*>(other_sc);
   int c = server_security_connector_cmp(other);
   if (c != 0) return c;
-  if (pem_root_certs_ != other->pem_root_certs_ ||
+  /*if (pem_root_certs_ != other->pem_root_certs_ ||
       pem_key_cert_pair_list_ != other->pem_key_cert_pair_list_)
     return 1;
   if (certificate_watcher_ != other->certificate_watcher_ ||
       server_handshaker_factory_ != other->server_handshaker_factory_)
-    return 1;
+    return 1;*/
   return 0;
 }
 
@@ -632,7 +690,7 @@ void TlsServerSecurityConnector::ServerPendingVerifierRequest::OnVerifyDone(
     MutexLock lock(&security_connector_->verifier_request_map_mu_);
     security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
   }
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (!status.ok()) {
     error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(
         absl::StrCat("Custom verification check failed with error: ",
