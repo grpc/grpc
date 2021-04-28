@@ -113,7 +113,7 @@ class EventEngine {
   /// allocation being handled by the quota system.
   class Endpoint {
    public:
-    /// The Endpoint descructor is responsible for shutting down all connections
+    /// The Endpoint destructor is responsible for shutting down all connections
     /// and invoking all pending read or write callbacks with an error status.
     virtual ~Endpoint() = default;
     /// Read data from the Endpoint.
