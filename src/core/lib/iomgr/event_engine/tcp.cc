@@ -101,9 +101,12 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
   // TODO(hork): Convert channel_args to ChannelArgs
   ChannelArgs ca;
-  if (!ee->Connect(ee_on_connect, ra, ca, std::move(sa), ee_deadline).ok()) {
+  absl::Status connected =
+      ee->Connect(ee_on_connect, ra, ca, std::move(sa), ee_deadline);
+  if (!connected.ok()) {
     // EventEngine failed to start an asynchronous connect.
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect, GRPC_ERROR_CANCELLED);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect,
+                            absl_status_to_grpc_error(connected));
   }
 }
 
