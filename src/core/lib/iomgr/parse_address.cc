@@ -55,7 +55,7 @@ bool grpc_parse_unix(const grpc_core::URI& uri,
   grpc_error_handle error =
       grpc_core::UnixSockaddrPopulate(uri.path(), resolved_addr);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     return false;
   }
@@ -72,7 +72,7 @@ bool grpc_parse_unix_abstract(const grpc_core::URI& uri,
   grpc_error_handle error =
       grpc_core::UnixAbstractSockaddrPopulate(uri.path(), resolved_addr);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
+    gpr_log(GPR_ERROR, "%s", grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     return false;
   }

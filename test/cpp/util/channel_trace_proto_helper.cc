@@ -61,7 +61,7 @@ void VaidateProtoJsonTranslation(const std::string& json_str) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_core::Json parsed_json =
       grpc_core::Json::Parse(proto_json_str.c_str(), &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), grpc_core::Json::Type::OBJECT);
   proto_json_str = parsed_json.Dump();
   // uncomment these to compare the json strings.

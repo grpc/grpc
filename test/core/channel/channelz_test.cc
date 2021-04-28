@@ -107,7 +107,7 @@ void ValidateGetTopChannels(size_t expected_channels) {
       json_str.c_str());
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
   // This check will naturally have to change when we support pagination.
   // tracked: https://github.com/grpc/grpc/issues/16019.
@@ -127,7 +127,7 @@ void ValidateGetServers(size_t expected_servers) {
       json_str.c_str());
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
   // This check will naturally have to change when we support pagination.
   // tracked: https://github.com/grpc/grpc/issues/16019.
@@ -209,7 +209,7 @@ void ValidateCounters(const std::string& json_str,
                       const ValidateChannelDataArgs& args) {
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(json.type(), Json::Type::OBJECT);
   Json::Object* object = json.mutable_object();
   Json& data = (*object)["data"];
@@ -367,7 +367,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsPagination) {
       json_str.c_str());
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
   // 100 is the pagination limit.
   ValidateJsonArraySize((*parsed_json.mutable_object())["channel"], 100);
@@ -378,7 +378,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsPagination) {
       json_str.c_str());
   error = GRPC_ERROR_NONE;
   parsed_json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
   ValidateJsonArraySize((*parsed_json.mutable_object())["channel"], 50);
   ValidateJsonEnd(parsed_json, true);
@@ -392,7 +392,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidCheck) {
   std::string json_str = ChannelzRegistry::GetTopChannels(0);
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
   Json& array = (*parsed_json.mutable_object())["channel"];
   ValidateJsonArraySize(array, kNumChannels);
@@ -412,7 +412,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMiddleUuidCheck) {
   std::string json_str = ChannelzRegistry::GetTopChannels(kMidQuery);
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
   Json& array = (*parsed_json.mutable_object())["channel"];
   ValidateJsonArraySize(array, kNumChannels - kMidQuery + 1);
@@ -434,7 +434,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsNoHitUuid) {
   std::string json_str = ChannelzRegistry::GetTopChannels(45);
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
   Json& array = (*parsed_json.mutable_object())["channel"];
   ValidateJsonArraySize(array, 10);
@@ -455,7 +455,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
   std::string json_str = ChannelzRegistry::GetTopChannels(2);
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
   Json array = (*parsed_json.mutable_object())["channel"];
   ValidateJsonArraySize(array, 2);
@@ -465,7 +465,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsMoreGaps) {
   json_str = ChannelzRegistry::GetTopChannels(4);
   error = GRPC_ERROR_NONE;
   parsed_json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
   array = (*parsed_json.mutable_object())["channel"];
   ValidateJsonArraySize(array, 1);
@@ -488,7 +488,7 @@ TEST_F(ChannelzRegistryBasedTest, GetTopChannelsUuidAfterCompaction) {
   std::string json_str = ChannelzRegistry::GetTopChannels(0);
   grpc_error_handle error = GRPC_ERROR_NONE;
   Json parsed_json = Json::Parse(json_str, &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   ASSERT_EQ(parsed_json.type(), Json::Type::OBJECT);
   Json& array = (*parsed_json.mutable_object())["channel"];
   ValidateJsonArraySize(array, kLoopIterations);

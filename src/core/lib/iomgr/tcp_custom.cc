@@ -128,9 +128,7 @@ static void call_read_cb(custom_tcp_endpoint* tcp, grpc_error_handle error) {
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp->socket, cb, cb->cb,
             cb->cb_arg);
     size_t i;
-    const char* str = grpc_error_string(error);
-    gpr_log(GPR_INFO, "read: error=%s", str);
-
+    gpr_log(GPR_INFO, "read: error=%s", grpc_error_std_string(error).c_str());
     for (i = 0; i < tcp->read_slices->count; i++) {
       char* dump = grpc_dump_slice(tcp->read_slices->slices[i],
                                    GPR_DUMP_HEX | GPR_DUMP_ASCII);
@@ -175,7 +173,7 @@ static void tcp_read_allocation_done(void* tcpp, grpc_error_handle error) {
   custom_tcp_endpoint* tcp = static_cast<custom_tcp_endpoint*>(tcpp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p read_allocation_done: %s", tcp->socket,
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
   }
   if (error == GRPC_ERROR_NONE) {
     /* Before calling read, we allocate a buffer with exactly one slice
@@ -191,8 +189,8 @@ static void tcp_read_allocation_done(void* tcpp, grpc_error_handle error) {
     call_read_cb(tcp, GRPC_ERROR_REF(error));
   }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    const char* str = grpc_error_string(error);
-    gpr_log(GPR_INFO, "Initiating read on %p: error=%s", tcp->socket, str);
+    gpr_log(GPR_INFO, "Initiating read on %p: error=%s", tcp->socket,
+            grpc_error_std_string(error).c_str());
   }
 }
 
@@ -221,8 +219,8 @@ static void custom_write_callback(grpc_custom_socket* socket,
   grpc_closure* cb = tcp->write_cb;
   tcp->write_cb = nullptr;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    const char* str = grpc_error_string(error);
-    gpr_log(GPR_INFO, "write complete on %p: error=%s", tcp->socket, str);
+    gpr_log(GPR_INFO, "write complete on %p: error=%s", tcp->socket,
+            grpc_error_std_string(error).c_str());
   }
   TCP_UNREF(tcp, "write");
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, error);
@@ -291,8 +289,8 @@ static void endpoint_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   custom_tcp_endpoint* tcp = reinterpret_cast<custom_tcp_endpoint*>(ep);
   if (!tcp->shutting_down) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      const char* str = grpc_error_string(why);
-      gpr_log(GPR_INFO, "TCP %p shutdown why=%s", tcp->socket, str);
+      gpr_log(GPR_INFO, "TCP %p shutdown why=%s", tcp->socket,
+              grpc_error_std_string(why).c_str());
     }
     tcp->shutting_down = true;
     // grpc_core::ExecCtx::Run(DEBUG_LOCATION,tcp->read_cb,

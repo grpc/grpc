@@ -21,16 +21,6 @@ require_once(dirname(__FILE__) . '/../../lib/Grpc/ServerCallReader.php');
 require_once(dirname(__FILE__) . '/../../lib/Grpc/ServerCallWriter.php');
 require_once(dirname(__FILE__) . '/../../lib/Grpc/Status.php');
 
-// load protobuf from third_party
-set_include_path(get_include_path() . PATH_SEPARATOR . dirname(__FILE__) . '/../../../../third_party/protobuf/php/src/');
-
-spl_autoload_register(function ($className) {
-$classPath = str_replace('\\', DIRECTORY_SEPARATOR, $className);
-if (strpos($classPath, 'Google/Protobuf') === 0 || strpos($classPath, 'GPBMetadata/Google/Protobuf') === 0) {
-require_once($classPath . '.php');
-}
-});
-
 class StartBatchEvent
 {
     public function __construct(string $message)
@@ -38,6 +28,31 @@ class StartBatchEvent
         $this->message = $message;
     }
     public $message;
+}
+
+class StringValue
+{
+    public function setValue(string $value)
+    {
+        $this->value = $value;
+    }
+
+    public function getValue(): string
+    {
+        return $this->value;
+    }
+
+    public function serializeToString(): string
+    {
+        return $this->value;
+    }
+
+    public function mergeFromString(string $value)
+    {
+        $this->value = $value;
+    }
+
+    private $value = '';
 }
 
 class ServerCallTest extends \PHPUnit\Framework\TestCase
@@ -51,7 +66,7 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
 
     public function newStringMessage(string $value = 'a string')
     {
-        $message = new \Google\Protobuf\StringValue();
+        $message = new StringValue();
         $message->setValue($value);
         return $message;
     }
@@ -68,7 +83,7 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
 
         $serverCallReader = new \Grpc\ServerCallReader(
             $this->mockCall,
-            '\Google\Protobuf\StringValue'
+            '\StringValue'
         );
         $return = $serverCallReader->read();
         $this->assertEquals($message, $return);

@@ -1092,6 +1092,7 @@ grpc_slice XdsApi::CreateAdsRequest(
         request, StdStringToUpbString(nonce));
   }
   // Set error_detail if it's a NACK.
+  std::string error_string_storage;
   if (error != GRPC_ERROR_NONE) {
     google_rpc_Status* error_detail =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_error_detail(
@@ -1102,8 +1103,8 @@ grpc_slice XdsApi::CreateAdsRequest(
     // generate them in the parsing code, and then use that here.
     google_rpc_Status_set_code(error_detail, GRPC_STATUS_INVALID_ARGUMENT);
     // Error description comes from the error that was passed in.
-    upb_strview error_description =
-        StdStringToUpbString(absl::string_view(grpc_error_string(error)));
+    error_string_storage = grpc_error_std_string(error);
+    upb_strview error_description = StdStringToUpbString(error_string_storage);
     google_rpc_Status_set_message(error_detail, error_description);
     GRPC_ERROR_UNREF(error);
   }

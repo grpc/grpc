@@ -363,12 +363,12 @@ void TlsChannelSecurityConnector::TlsChannelCertificateWatcher::OnError(
   if (root_cert_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "TlsChannelCertificateWatcher getting root_cert_error: %s",
-            grpc_error_string(root_cert_error));
+            grpc_error_std_string(root_cert_error).c_str());
   }
   if (identity_cert_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "TlsChannelCertificateWatcher getting identity_cert_error: %s",
-            grpc_error_string(identity_cert_error));
+            grpc_error_std_string(identity_cert_error).c_str());
   }
   GRPC_ERROR_UNREF(root_cert_error);
   GRPC_ERROR_UNREF(identity_cert_error);
@@ -621,12 +621,12 @@ void TlsServerSecurityConnector::TlsServerCertificateWatcher::OnError(
   if (root_cert_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "TlsServerCertificateWatcher getting root_cert_error: %s",
-            grpc_error_string(root_cert_error));
+            grpc_error_std_string(root_cert_error).c_str());
   }
   if (identity_cert_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR,
             "TlsServerCertificateWatcher getting identity_cert_error: %s",
-            grpc_error_string(identity_cert_error));
+            grpc_error_std_string(identity_cert_error).c_str());
   }
   GRPC_ERROR_UNREF(root_cert_error);
   GRPC_ERROR_UNREF(identity_cert_error);

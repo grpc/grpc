@@ -51,7 +51,7 @@ static void on_finish(void* arg, grpc_error_handle error) {
   grpc_http_response* response = static_cast<grpc_http_response*>(arg);
   GPR_ASSERT(response);
   gpr_log(GPR_INFO, "response status=%d error=%s", response->status,
-          grpc_error_string(error));
+          grpc_error_std_string(error).c_str());
   GPR_ASSERT(response->status == 200);
   GPR_ASSERT(response->body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response->body, response->body_length));

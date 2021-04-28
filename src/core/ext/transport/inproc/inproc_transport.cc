@@ -889,7 +889,8 @@ done:
 
 bool cancel_stream_locked(inproc_stream* s, grpc_error_handle error) {
   bool ret = false;  // was the cancel accepted
-  INPROC_LOG(GPR_INFO, "cancel_stream %p with %s", s, grpc_error_string(error));
+  INPROC_LOG(GPR_INFO, "cancel_stream %p with %s", s,
+             grpc_error_std_string(error).c_str());
   if (s->cancel_self_error == GRPC_ERROR_NONE) {
     ret = true;
     s->cancel_self_error = GRPC_ERROR_REF(error);
@@ -1303,7 +1304,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
     if (error != GRPC_ERROR_NONE) {
       GPR_ASSERT(!channel);
       gpr_log(GPR_ERROR, "Failed to create client channel: %s",
-              grpc_error_string(error));
+              grpc_error_std_string(error).c_str());
       intptr_t integer;
       grpc_status_code status = GRPC_STATUS_INTERNAL;
       if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {
@@ -1318,7 +1319,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
   } else {
     GPR_ASSERT(!channel);
     gpr_log(GPR_ERROR, "Failed to create server channel: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     intptr_t integer;
     grpc_status_code status = GRPC_STATUS_INTERNAL;
     if (grpc_error_get_int(error, GRPC_ERROR_INT_GRPC_STATUS, &integer)) {

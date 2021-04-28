@@ -209,7 +209,7 @@ def parse_key_value_args(args: Optional[Iterable[str]]) -> Dict[str, str]:
 def config_dumper(header_comment: str) -> Type[yaml.Dumper]:
     """Returns a custom dumper to dump configurations in the expected format."""
 
-    class ConfigDumper(yaml.Dumper):
+    class ConfigDumper(yaml.SafeDumper):
 
         def expect_stream_start(self):
             super().expect_stream_start()
@@ -351,7 +351,8 @@ def main() -> None:
         yaml.dump_all(configs,
                       stream=f,
                       Dumper=config_dumper(
-                          CONFIGURATION_FILE_HEADER_COMMENT.strip()))
+                          CONFIGURATION_FILE_HEADER_COMMENT.strip()),
+                      default_flow_style=False)
 
 
 if __name__ == '__main__':

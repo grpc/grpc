@@ -256,7 +256,8 @@ static void custom_accept_callback(grpc_custom_socket* socket,
   grpc_tcp_listener* sp = socket->listener;
   if (error != GRPC_ERROR_NONE) {
     if (!sp->closed) {
-      gpr_log(GPR_ERROR, "Accept failed: %s", grpc_error_string(error));
+      gpr_log(GPR_ERROR, "Accept failed: %s",
+              grpc_error_std_string(error).c_str());
     }
     gpr_free(client);
     GRPC_ERROR_UNREF(error);
@@ -392,7 +393,7 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "SERVER %p add_port %s error=%s", s,
             grpc_sockaddr_to_string(addr, false).c_str(),
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
   }
 
   family = grpc_sockaddr_get_family(addr);

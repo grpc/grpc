@@ -97,7 +97,7 @@ void grpc_error_get_status(grpc_error_handle error, grpc_millis deadline,
   if (code != nullptr) *code = status;
 
   if (error_string != nullptr && status != GRPC_STATUS_OK) {
-    *error_string = gpr_strdup(grpc_error_string(error));
+    *error_string = gpr_strdup(grpc_error_std_string(error).c_str());
   }
 
   if (http_error != nullptr) {
