@@ -15,9 +15,11 @@
 
 from grpc._cython import cygrpc
 
-from envoy.service.status.v3 import csds_pb2
-from envoy.service.status.v3 import csds_pb2_grpc
 from google.protobuf import json_format
+try:
+    from envoy.service.status.v3 import csds_pb2, csds_pb2_grpc
+except ImportError:
+    from src.proto.grpc.testing.xds.v3 import csds_pb2, csds_pb2_grpc
 
 
 class ClientStatusDiscoveryServiceServicer(

@@ -1,4 +1,4 @@
-# Copyright 2020 The gRPC Authors
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -24,7 +24,10 @@ import grpc
 import grpc_csds
 
 from google.protobuf import json_format
-from envoy.service.status.v3 import csds_pb2, csds_pb2_grpc
+try:
+    from envoy.service.status.v3 import csds_pb2, csds_pb2_grpc
+except ImportError:
+    from src.proto.grpc.testing.xds.v3 import csds_pb2, csds_pb2_grpc
 
 _DUMMY_XDS_ADDRESS = 'xds:///foo.bar'
 _DUMMY_BOOTSTRAP_FILE = """
