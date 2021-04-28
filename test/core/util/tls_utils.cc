@@ -86,14 +86,14 @@ SyncExternalVerifier::SyncExternalVerifier(bool is_good) {
 int SyncExternalVerifier::Verify(
     void* user_data, grpc_tls_custom_verification_check_request* request,
     grpc_tls_on_custom_verification_check_done_cb callback,
-    void* callback_arg) {
+    void* callback_arg, grpc_status_code* sync_status, char** sync_error_details) {
   auto* data = static_cast<UserData*>(user_data);
   if (data->is_good) {
-    request->status = GRPC_STATUS_OK;
     return true;  // Synchronous call
   }
-  request->status = GRPC_STATUS_UNAUTHENTICATED;
-  request->error_details = gpr_strdup("SyncExternalVerifierBadVerify failed");
+  *sync_status = GRPC_STATUS_UNAUTHENTICATED;
+  gpr_free(*sync_error_details);
+  *sync_error_details = gpr_strdup("SyncExternalVerifierBadVerify failed");
   return true;  // Synchronous call
 }
 
@@ -118,7 +118,7 @@ AsyncExternalVerifier::AsyncExternalVerifier(bool is_good,
 int AsyncExternalVerifier::Verify(
     void* user_data, grpc_tls_custom_verification_check_request* request,
     grpc_tls_on_custom_verification_check_done_cb callback,
-    void* callback_arg) {
+    void* callback_arg, grpc_status_code* sync_status, char** sync_error_details) {
   auto* data = static_cast<UserData*>(user_data);
   // Creates the thread args we use when creating the thread.
   ThreadArgs* thread_args = new ThreadArgs();
