@@ -58,21 +58,21 @@ struct Rbac {
     };
 
     Permission() = default;
-    // For AND/OR RuleType.
+    // For kAnd/kOr RuleType.
     Permission(Permission::RuleType type,
                std::vector<std::unique_ptr<Permission>> permissions,
                bool not_rule = false);
-    // For ANY RuleType.
+    // For kAny RuleType.
     explicit Permission(Permission::RuleType type, bool not_rule = false);
-    // For HEADER RuleType.
+    // For kHeader RuleType.
     Permission(Permission::RuleType type, HeaderMatcher header_matcher,
                bool not_rule = false);
-    // For PATH/REQ_SERVER_NAME RuleType.
+    // For kPath/kReqServerName RuleType.
     Permission(Permission::RuleType type, StringMatcher string_matcher,
                bool not_rule = false);
-    // For DEST_IP RuleType.
+    // For kDestIp RuleType.
     Permission(Permission::RuleType type, CidrRange ip, bool not_rule = false);
-    // For DEST_PORT RuleType.
+    // For kDestPort RuleType.
     Permission(Permission::RuleType type, int port, bool not_rule = false);
 
     Permission(Permission&& other) noexcept;
@@ -85,7 +85,7 @@ struct Rbac {
     StringMatcher string_matcher;
     CidrRange ip;
     int port;
-    // For type AND/OR.
+    // For type kAnd/kOr.
     std::vector<std::unique_ptr<Permission>> permissions;
     bool not_rule = false;
   };
@@ -104,18 +104,18 @@ struct Rbac {
     };
 
     Principal() = default;
-    // For AND/OR RuleType.
+    // For kAnd/kOr RuleType.
     Principal(Principal::RuleType type,
               std::vector<std::unique_ptr<Principal>> principals,
               bool not_rule = false);
-    // For ANY RuleType.
+    // For kAny RuleType.
     explicit Principal(Principal::RuleType type, bool not_rule = false);
-    // For PRINCIPAL_NAME/PATH RuleType.
+    // For kPrincipalName/kPath RuleType.
     Principal(Principal::RuleType type, StringMatcher string_matcher,
               bool not_rule = false);
-    // For SOURCE_IP/DIRECT_REMOTE_IP/REMOTE_IP RuleType.
+    // For kSourceIp/kDirectRemoteIp/kRemoteIp RuleType.
     Principal(Principal::RuleType type, CidrRange ip, bool not_rule = false);
-    // For HEADER RuleType.
+    // For kHeader RuleType.
     Principal(Principal::RuleType type, HeaderMatcher header_matcher,
               bool not_rule = false);
 
@@ -128,7 +128,7 @@ struct Rbac {
     HeaderMatcher header_matcher;
     StringMatcher string_matcher;
     CidrRange ip;
-    // For type AND/OR.
+    // For type kAnd/kOr.
     std::vector<std::unique_ptr<Principal>> principals;
     bool not_rule = false;
   };
