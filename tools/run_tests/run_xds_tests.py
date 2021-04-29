@@ -86,6 +86,7 @@ _TEST_CASES = [
     'header_matching',
     'api_listener',
     'forwarding_rule_port_match',
+    'forwarding_rule_default_port',
     'metadata_filter',
 ]
 
@@ -490,7 +491,7 @@ def wait_until_no_rpcs_go_to_given_backends(backends, timeout_sec):
         rpcs_by_peer = stats.rpcs_by_peer
         for backend in backends:
             if backend in rpcs_by_peer:
-                error_msg = 'Unexpect backend %s receives load' % backend
+                error_msg = 'Unexpected backend %s receives load' % backend
                 break
         if not error_msg:
             return
@@ -1116,7 +1117,7 @@ def test_metadata_filter(gcp, original_backend_service, instance_group,
 
 
 def test_api_listener(gcp, backend_service, instance_group,
-                      alternate_backend_service, client_process):
+                      alternate_backend_service):
     logger.info("Running api_listener")
     try:
         wait_for_healthy_backends(gcp, backend_service, instance_group)
@@ -1126,7 +1127,7 @@ def test_api_listener(gcp, backend_service, instance_group,
         # create a second suite of map+tp+fr with the same host name in host rule
         # and we have to disable proxyless validation because it needs `0.0.0.0`
         # ip address in fr for proxyless and also we violate ip:port uniqueness
-        # for test purpose, grpc-java/issues/8009
+        # for test purpose. See https://github.com/grpc/grpc-java/issues/8009
         new_config_suffix = '2'
         create_url_map(gcp, url_map_name + new_config_suffix, backend_service,
                        service_host_name)
@@ -1180,22 +1181,13 @@ def test_api_listener(gcp, backend_service, instance_group,
             server_uri = service_host_name + ':' + str(gcp.service_port)
         else:
             server_uri = service_host_name
-        new_client_process = None
-        if client_process:
-            client_process.terminate()
-            client_cmd = shlex.split(
-                client_cmd_formatted_no_uri.format(server_uri=server_uri))
-            new_client_process = subprocess.Popen(client_cmd,
-                                                  env=client_env,
-                                                  stderr=subprocess.STDOUT,
-                                                  stdout=test_log_file)
-        return new_client_process
+        return server_uri
 
 
-def test_forwarding_rule_port_match(gcp, backend_service, instance_group,
-                                    client_process):
+def test_forwarding_rule_port_match(gcp, backend_service, instance_group):
     logger.info("Running test_forwarding_rule_port_match")
     try:
+        wait_for_healthy_backends(gcp, backend_service, instance_group)
         backend_instances = get_instance_names(gcp, instance_group)
         wait_until_all_rpcs_go_to_given_backends(backend_instances,
                                                  _WAIT_FOR_STATS_SEC)
@@ -1206,17 +1198,37 @@ def test_forwarding_rule_port_match(gcp, backend_service, instance_group,
         ])
         wait_until_no_rpcs_go_to_given_backends(backend_instances,
                                                 _WAIT_FOR_STATS_SEC)
+    finally:
+        delete_global_forwarding_rule(gcp)
+        create_global_forwarding_rule(gcp, forwarding_rule_name,
+                                      potential_service_ports)
+        if gcp.service_port != _DEFAULT_SERVICE_PORT:
+            patch_url_map_host_rule_with_port(gcp, url_map_name,
+                                              backend_service,
+                                              service_host_name)
+            server_uri = service_host_name + ':' + str(gcp.service_port)
+        else:
+            server_uri = service_host_name
+        return server_uri
 
-        # test fr default port: omit port in client request service uri, no port in url-map
-        if client_process:
-            client_process.terminate()
-        client_cmd_formatted = client_cmd_formatted_no_uri.format(
-            server_uri=service_host_name)
-        client_cmd = shlex.split(client_cmd_formatted)
-        local_client_process = subprocess.Popen(client_cmd,
-                                                env=client_env,
-                                                stderr=subprocess.STDOUT,
-                                                stdout=test_log_file)
+
+def test_forwarding_rule_default_port(gcp, backend_service, instance_group):
+    logger.info("Running test_forwarding_rule_default_port")
+    try:
+        wait_for_healthy_backends(gcp, backend_service, instance_group)
+        backend_instances = get_instance_names(gcp, instance_group)
+        if gcp.service_port == _DEFAULT_SERVICE_PORT:
+            wait_until_all_rpcs_go_to_given_backends(backend_instances,
+                                                     _WAIT_FOR_STATS_SEC)
+            delete_global_forwarding_rule(gcp)
+            create_global_forwarding_rule(gcp, forwarding_rule_name,
+                                          parse_port_range(_DEFAULT_PORT_RANGE))
+            patch_url_map_host_rule_with_port(gcp, url_map_name,
+                                              backend_service,
+                                              service_host_name)
+        wait_until_no_rpcs_go_to_given_backends(backend_instances,
+                                                _WAIT_FOR_STATS_SEC)
+        # expect success when no port in client request service uri, and no port in url-map
         delete_global_forwarding_rule(gcp)
         delete_target_proxy(gcp)
         delete_url_map(gcp)
@@ -1232,14 +1244,12 @@ def test_forwarding_rule_port_match(gcp, backend_service, instance_group,
         wait_until_all_rpcs_go_to_given_backends(backend_instances,
                                                  _WAIT_FOR_STATS_SEC)
 
-        # omit port in client request uri, specify port in url-map
+        # expect failure when no port in client request uri, but specify port in url-map
         patch_url_map_host_rule_with_port(gcp, url_map_name, backend_service,
                                           service_host_name)
         wait_until_no_rpcs_go_to_given_backends(backend_instances,
                                                 _WAIT_FOR_STATS_SEC)
     finally:
-        if local_client_process:
-            local_client_process.terminate()
         delete_global_forwarding_rule(gcp)
         delete_target_proxy(gcp)
         delete_url_map(gcp)
@@ -1254,15 +1264,7 @@ def test_forwarding_rule_port_match(gcp, backend_service, instance_group,
             server_uri = service_host_name + ':' + str(gcp.service_port)
         else:
             server_uri = service_host_name
-        client_cmd_formatted = client_cmd_formatted_no_uri.format(
-            server_uri=server_uri)
-        client_cmd = shlex.split(client_cmd_formatted)
-        if client_process:
-            client_process = subprocess.Popen(client_cmd,
-                                              env=client_env,
-                                              stderr=subprocess.STDOUT,
-                                              stdout=test_log_file)
-        return client_process
+        return server_uri
 
 
 def test_traffic_splitting(gcp, original_backend_service, instance_group,
@@ -3054,6 +3056,7 @@ try:
         if original_grpc_verbosity:
             client_env['GRPC_VERBOSITY'] = original_grpc_verbosity
         bootstrap_server_features = []
+
         if gcp.service_port == _DEFAULT_SERVICE_PORT:
             server_uri = service_host_name
         else:
@@ -3088,6 +3091,17 @@ try:
                 logger.info('skipping test %s due to missing alpha support',
                             test_case)
                 continue
+            if test_case in [
+                    'api_listener', 'forwarding_rule_port_match',
+                    'forwarding_rule_default_port'
+            ] and CLIENT_HOSTS:
+                logger.info(
+                    'skipping test %s because test configuration is'
+                    'not compatible with client processes on existing'
+                    'client hosts', test_case)
+                continue
+            if test_case == 'forwarding_rule_default_port':
+                server_uri = service_host_name
             result = jobset.JobResult()
             log_dir = os.path.join(_TEST_LOG_BASE_DIR, test_case)
             if not os.path.exists(log_dir):
@@ -3134,15 +3148,13 @@ try:
 
             try:
                 if not CLIENT_HOSTS:
-                    client_cmd_formatted_no_uri = args.client_cmd.format(
-                        server_uri='{server_uri}',
+                    client_cmd_formatted = args.client_cmd.format(
+                        server_uri=server_uri,
                         stats_port=args.stats_port,
                         qps=args.qps,
                         fail_on_failed_rpc=fail_on_failed_rpc,
                         rpcs_to_send=rpcs_to_send,
                         metadata_to_send=metadata_to_send)
-                    client_cmd_formatted = client_cmd_formatted_no_uri.format(
-                        server_uri=server_uri)
                     logger.debug('running client: %s', client_cmd_formatted)
                     client_cmd = shlex.split(client_cmd_formatted)
                     client_process = subprocess.Popen(client_cmd,
@@ -3199,23 +3211,15 @@ try:
                 elif test_case == 'fault_injection':
                     test_fault_injection(gcp, backend_service, instance_group)
                 elif test_case == 'api_listener':
-                    if CLIENT_HOSTS:
-                        logger.info('skipping api_listener test case because '
-                                    'client processes on existing client hosts '
-                                    'are out of test scope.')
-                        continue
-                    client_process = test_api_listener(
-                        gcp, backend_service, instance_group,
-                        alternate_backend_service, client_process)
+                    server_uri = test_api_listener(gcp, backend_service,
+                                                   instance_group,
+                                                   alternate_backend_service)
                 elif test_case == 'forwarding_rule_port_match':
-                    if CLIENT_HOSTS:
-                        logger.info(
-                            'skipping forwarding_rule_port_match test case '
-                            'because client processes on existing client hosts '
-                            'are out of test scope.')
-                        continue
-                    client_process = test_forwarding_rule_port_match(
-                        gcp, backend_service, instance_group, client_process)
+                    server_uri = test_forwarding_rule_port_match(
+                        gcp, backend_service, instance_group)
+                elif test_case == 'forwarding_rule_default_port':
+                    server_uri = test_forwarding_rule_default_port(
+                        gcp, backend_service, instance_group)
                 elif test_case == 'metadata_filter':
                     test_metadata_filter(gcp, backend_service, instance_group,
                                          alternate_backend_service,
