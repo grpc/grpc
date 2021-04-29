@@ -337,8 +337,6 @@ void XdsClusterManagerLb::UpdateStateLocked() {
     gpr_log(GPR_INFO, "[xds_cluster_manager_lb %p] connectivity changed to %s",
             this, ConnectivityStateName(connectivity_state));
   }
-  std::unique_ptr<SubchannelPicker> picker;
-  absl::Status status;
   ClusterPicker::ClusterMap cluster_map;
   for (const auto& p : config_->cluster_map()) {
     const std::string& cluster_name = p.first;
@@ -356,7 +354,9 @@ void XdsClusterManagerLb::UpdateStateLocked() {
           absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
     }
   }
-  picker = absl::make_unique<ClusterPicker>(std::move(cluster_map));
+  std::unique_ptr<SubchannelPicker> picker =
+      absl::make_unique<ClusterPicker>(std::move(cluster_map));
+  absl::Status status;
   if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     status = absl::Status(absl::StatusCode::kUnavailable,
                           "TRANSIENT_FAILURE from XdsClusterManagerLb");
