@@ -57,6 +57,8 @@ void grpc_resolve_address(const char* addr, const char* default_port,
           a->addrs[i].len = r.size();
           break;
         }
+        a->naddrs = vaddresses.size();
+        grpc_core::ExecCtx ctx;
         grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
       },
       addr, default_port, absl::InfiniteFuture());
