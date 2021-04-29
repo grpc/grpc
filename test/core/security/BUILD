@@ -451,3 +451,16 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "grpc_authorization_policy_provider_test",
+    srcs = ["grpc_authorization_policy_provider_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_authorization_provider",
+        "//test/core/util:grpc_test_util",
+    ],
+)

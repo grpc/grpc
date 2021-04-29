@@ -264,6 +264,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/credentials.h",
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/tls_certificate_provider.h",
+    "include/grpcpp/security/authorization_policy_provider.h",
     "include/grpcpp/security/tls_credentials_options.h",
     "include/grpcpp/server.h",
     "include/grpcpp/server_builder.h",
@@ -2089,15 +2090,29 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_authorization_provider",
     srcs = [
+        "src/core/lib/security/authorization/grpc_authorization_policy_provider.cc",
         "src/core/lib/security/authorization/rbac_translator.cc",
     ],
     hdrs = [
+        "src/core/lib/security/authorization/grpc_authorization_policy_provider.h",
         "src/core/lib/security/authorization/rbac_translator.h",
     ],
     language = "c++",
     deps = [
-        "grpc_matchers",
         "grpc_rbac_engine",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc++_authorization_provider",
+    srcs = [
+        "src/cpp/server/authorization_policy_provider.cc",
+    ],
+    language = "c++",
+    public_hdrs = GRPCXX_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
+    deps = [
+        "grpc++_codegen_base",
+        "grpc_authorization_provider",
     ],
 )
 
