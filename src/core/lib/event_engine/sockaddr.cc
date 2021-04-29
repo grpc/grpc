@@ -21,12 +21,6 @@
 #include "grpc/event_engine/port.h"
 #include "grpc/support/log.h"
 
-namespace grpc_event_engine {
-namespace experimental {
-
-}  // namespace experimental
-}  // namespace grpc_event_engine
-
 uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
 
 uint16_t grpc_ntohs(uint16_t netshort) { return ntohs(netshort); }
