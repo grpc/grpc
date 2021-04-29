@@ -545,7 +545,7 @@ void CdsLb::OnClusterChanged(const std::string& name,
 
 void CdsLb::OnError(const std::string& name, grpc_error_handle error) {
   gpr_log(GPR_ERROR, "[cdslb %p] xds error obtaining data for cluster %s: %s",
-          this, name.c_str(), grpc_error_string(error));
+          this, name.c_str(), grpc_error_std_string(error).c_str());
   // Go into TRANSIENT_FAILURE if we have not yet created the child
   // policy (i.e., we have not yet received data from xds).  Otherwise,
   // we keep running with the data we had previously.

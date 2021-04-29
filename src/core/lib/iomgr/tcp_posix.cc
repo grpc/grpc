@@ -563,7 +563,8 @@ static void notify_on_write(grpc_tcp* tcp) {
 static void tcp_drop_uncovered_then_handle_write(void* arg,
                                                  grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "TCP:%p got_write: %s", arg, grpc_error_string(error));
+    gpr_log(GPR_INFO, "TCP:%p got_write: %s", arg,
+            grpc_error_std_string(error).c_str());
   }
   drop_uncovered(static_cast<grpc_tcp*>(arg));
   tcp_handle_write(arg, error);
@@ -686,10 +687,8 @@ static void call_read_cb(grpc_tcp* tcp, grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
     size_t i;
-    const char* str = grpc_error_string(error);
     gpr_log(GPR_INFO, "READ %p (peer=%s) error=%s", tcp,
-            tcp->peer_string.c_str(), str);
-
+            tcp->peer_string.c_str(), grpc_error_std_string(error).c_str());
     if (gpr_should_log(GPR_LOG_SEVERITY_DEBUG)) {
       for (i = 0; i < tcp->incoming_buffer->count; i++) {
         char* dump = grpc_dump_slice(tcp->incoming_buffer->slices[i],
@@ -856,7 +855,7 @@ static void tcp_read_allocation_done(void* tcpp, grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(tcpp);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p read_allocation_done: %s", tcp,
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
   }
   if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
@@ -892,7 +891,8 @@ static void tcp_continue_read(grpc_tcp* tcp) {
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp, grpc_error_string(error));
+    gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp,
+            grpc_error_std_string(error).c_str());
   }
 
   if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
@@ -1219,7 +1219,8 @@ static void tcp_handle_error(void* arg /* grpc_tcp */,
                              grpc_error_handle error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_log(GPR_INFO, "TCP:%p got_error: %s", tcp, grpc_error_string(error));
+    gpr_log(GPR_INFO, "TCP:%p got_error: %s", tcp,
+            grpc_error_std_string(error).c_str());
   }
 
   if (error != GRPC_ERROR_NONE ||
@@ -1553,8 +1554,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */,
     tcp->write_cb = nullptr;
     tcp->current_zerocopy_send = nullptr;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      const char* str = grpc_error_string(error);
-      gpr_log(GPR_INFO, "write: %s", str);
+      gpr_log(GPR_INFO, "write: %s", grpc_error_std_string(error).c_str());
     }
     // No need to take a ref on error since tcp_flush provides a ref.
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
@@ -1622,8 +1622,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
     notify_on_write(tcp);
   } else {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      const char* str = grpc_error_string(error);
-      gpr_log(GPR_INFO, "write: %s", str);
+      gpr_log(GPR_INFO, "write: %s", grpc_error_std_string(error).c_str());
     }
     grpc_core::Closure::Run(DEBUG_LOCATION, cb, error);
   }

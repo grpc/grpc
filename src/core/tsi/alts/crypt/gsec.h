@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/event_engine/port.h>
+
 #include <assert.h>
 #include <stdint.h>
 #include <stdlib.h>

@@ -777,6 +777,10 @@ const char* grpc_error_string(grpc_error_handle err) {
   return out;
 }
 
+std::string grpc_error_std_string(grpc_error_handle error) {
+  return std::string(grpc_error_string(error));
+}
+
 grpc_error_handle grpc_os_error(const char* file, int line, int err,
                                 const char* call_name) {
   return grpc_error_set_str(

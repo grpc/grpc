@@ -425,8 +425,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         return;
       }
       if (filter_chain_match_manager_ == nullptr) {
-        if (serving_status_notifier_.on_serving_status_change != nullptr) {
-          serving_status_notifier_.on_serving_status_change(
+        if (serving_status_notifier_.on_serving_status_update != nullptr) {
+          serving_status_notifier_.on_serving_status_update(
               serving_status_notifier_.user_data, listening_address_.c_str(),
               GRPC_STATUS_OK, "");
         } else {
@@ -453,18 +453,20 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         gpr_log(GPR_ERROR,
                 "ListenerWatcher:%p XdsClient reports error: %s for %s; "
                 "ignoring in favor of existing resource",
-                this, grpc_error_string(error), listening_address_.c_str());
+                this, grpc_error_std_string(error).c_str(),
+                listening_address_.c_str());
       } else {
-        if (serving_status_notifier_.on_serving_status_change != nullptr) {
-          serving_status_notifier_.on_serving_status_change(
+        if (serving_status_notifier_.on_serving_status_update != nullptr) {
+          serving_status_notifier_.on_serving_status_update(
               serving_status_notifier_.user_data, listening_address_.c_str(),
-              GRPC_STATUS_UNAVAILABLE, grpc_error_string(error));
+              GRPC_STATUS_UNAVAILABLE, grpc_error_std_string(error).c_str());
         } else {
           gpr_log(
               GPR_ERROR,
               "ListenerWatcher:%p error obtaining xDS Listener resource: %s; "
               "not serving on %s",
-              this, grpc_error_string(error), listening_address_.c_str());
+              this, grpc_error_std_string(error).c_str(),
+              listening_address_.c_str());
         }
       }
       GRPC_ERROR_UNREF(error);
@@ -481,8 +483,8 @@ class XdsServerConfigFetcher : public grpc_server_config_fetcher {
         server_config_watcher_->StopServing();
         filter_chain_match_manager_.reset();
       }
-      if (serving_status_notifier_.on_serving_status_change != nullptr) {
-        serving_status_notifier_.on_serving_status_change(
+      if (serving_status_notifier_.on_serving_status_update != nullptr) {
+        serving_status_notifier_.on_serving_status_update(
             serving_status_notifier_.user_data, listening_address_.c_str(),
             static_cast<grpc_status_code>(status.raw_code()),
             std::string(status.message()).c_str());
@@ -528,7 +530,7 @@ grpc_server_config_fetcher* grpc_server_config_fetcher_xds_create(
       grpc_core::XdsClient::GetOrCreate(args, &error);
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "Failed to create xds client: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     return nullptr;
   }

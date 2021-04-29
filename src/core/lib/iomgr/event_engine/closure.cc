@@ -13,32 +13,21 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
-#include <functional>
-
 #include <grpc/event_engine/event_engine.h>
-#include "absl/status/status.h"
 
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/event_engine/endpoint.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/error_utils.h"
 
-grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
-    false, "polling"); /* Disabled by default */
+namespace grpc_event_engine {
+namespace experimental {
 
-// grpc_closure to std::function conversions for an EventEngine-based iomgr
-grpc_event_engine::experimental::EventEngine::Callback GrpcClosureToCallback(
-    grpc_closure* closure) {
-  return [&](absl::Status status) {
-    // TODO(hork): Do we need to add grpc_error to closure's error data?
-    // if (!status.ok()) {
-    //   closure->error_data.error = grpc_error_add_child(
-    //       closure->error_data.error,
-    //       GRPC_ERROR_CREATE_FROM_COPIED_STRING(status.ToString().c_str()));
-    // }
+EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure) {
+  return [&closure](absl::Status status) {
+    grpc_core::ExecCtx exec_ctx;
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));
   };
 }
+
+}  // namespace experimental
+}  // namespace grpc_event_engine

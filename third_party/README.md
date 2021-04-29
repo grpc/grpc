@@ -81,9 +81,9 @@ git commit -m "update submodule boringssl-with-bazel with origin/master-with-baz
 
 - Run `tools/buildgen/generate_projects.sh` to regenerate the generated files
     - Because `sha256` in `bazel/grpc_deps.bzl` was left empty, you will get a DEBUG msg like this one:
-```
-Rule 'boringssl' indicated that a canonical reproducible form can be obtained by modifying arguments sha256 = "SHA value"
-```
+      ```
+      Rule 'boringssl' indicated that a canonical reproducible form can be obtained by modifying arguments sha256 = "SHA value"
+      ```
     - Commit the regenrated files `git commit -m "regenerate files"`
     - Update `bazel/grpc_deps.bzl` with the SHA value shown in the above debug msg. Commit again `git commit -m "Updated sha256"`
 

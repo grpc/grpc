@@ -273,7 +273,8 @@ static void on_timeout_locked(grpc_ares_ev_driver* driver,
   GRPC_CARES_TRACE_LOG(
       "request:%p ev_driver=%p on_timeout_locked. driver->shutting_down=%d. "
       "err=%s",
-      driver->request, driver, driver->shutting_down, grpc_error_string(error));
+      driver->request, driver, driver->shutting_down,
+      grpc_error_std_string(error).c_str());
   if (!driver->shutting_down && error == GRPC_ERROR_NONE) {
     grpc_ares_ev_driver_shutdown_locked(driver);
   }
@@ -315,7 +316,8 @@ static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
       "request:%p ev_driver=%p on_ares_backup_poll_alarm_locked. "
       "driver->shutting_down=%d. "
       "err=%s",
-      driver->request, driver, driver->shutting_down, grpc_error_string(error));
+      driver->request, driver, driver->shutting_down,
+      grpc_error_std_string(error).c_str());
   if (!driver->shutting_down && error == GRPC_ERROR_NONE) {
     fd_node* fdn = driver->fds;
     while (fdn != nullptr) {

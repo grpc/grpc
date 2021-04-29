@@ -71,7 +71,7 @@ void TryConnectAndDestroy() {
   grpc_error_handle error = GRPC_ERROR_NONE;
   lb_address_result.service_config = grpc_core::ServiceConfig::Create(
       nullptr, "{\"loadBalancingConfig\":[{\"grpclb\":{}}]}", &error);
-  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_string(error);
+  ASSERT_EQ(error, GRPC_ERROR_NONE) << grpc_error_std_string(error);
   grpc_arg arg = grpc_core::CreateGrpclbBalancerAddressesArg(&addresses);
   lb_address_result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
   response_generator->SetResponse(lb_address_result);

@@ -374,6 +374,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/debug/stats.cc \
     src/core/lib/debug/stats_data.cc \
     src/core/lib/debug/trace.cc \
+    src/core/lib/event_engine/event_engine.cc \
     src/core/lib/event_engine/resolved_address_internal.cc \
     src/core/lib/event_engine/slice_allocator.cc \
     src/core/lib/event_engine/sockaddr.cc \
@@ -444,6 +445,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/ev_poll_posix.cc \
     src/core/lib/iomgr/ev_posix.cc \
     src/core/lib/iomgr/ev_windows.cc \
+    src/core/lib/iomgr/event_engine/closure.cc \
     src/core/lib/iomgr/event_engine/endpoint.cc \
     src/core/lib/iomgr/event_engine/iomgr.cc \
     src/core/lib/iomgr/event_engine/pollset.cc \
@@ -451,7 +453,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/event_engine/resolver.cc \
     src/core/lib/iomgr/event_engine/tcp.cc \
     src/core/lib/iomgr/event_engine/timer.cc \
-    src/core/lib/iomgr/event_engine/util.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \

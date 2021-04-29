@@ -734,7 +734,7 @@ void XdsClusterResolverLb::OnError(size_t index, grpc_error_handle error) {
   gpr_log(GPR_ERROR,
           "[xds_cluster_resolver_lb %p] discovery mechanism %" PRIuPTR
           " xds watcher reported error: %s",
-          this, index, grpc_error_string(error));
+          this, index, grpc_error_std_string(error).c_str());
   GRPC_ERROR_UNREF(error);
   if (shutting_down_) return;
   if (!discovery_mechanisms_[index].first_update_received) {
@@ -1012,7 +1012,7 @@ XdsClusterResolverLb::CreateChildPolicyConfigLocked() {
             "[xds_cluster_resolver_lb %p] error parsing generated child policy "
             "config -- "
             "will put channel in TRANSIENT_FAILURE: %s",
-            this, grpc_error_string(error));
+            this, grpc_error_std_string(error).c_str());
     error = grpc_error_set_int(
         grpc_error_add_child(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                  "xds_cluster_resolver LB policy: error "
@@ -1112,7 +1112,7 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           gpr_log(GPR_ERROR,
                   "cannot get or create XdsClient to instantiate "
                   "xds_cluster_resolver LB policy: %s",
-                  grpc_error_string(error));
+                  grpc_error_std_string(error).c_str());
           GRPC_ERROR_UNREF(error);
           return nullptr;
         }

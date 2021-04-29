@@ -19,8 +19,8 @@
 
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/sockaddr.h"
+#include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
-#include "src/core/lib/iomgr/event_engine/util.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
@@ -31,11 +31,27 @@ namespace {
 using ::grpc_event_engine::experimental::ChannelArgs;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 }  // namespace
 
 struct grpc_tcp_server {
+  grpc_tcp_server(std::unique_ptr<EventEngine::Listener> listener,
+                  std::shared_ptr<EventEngine> ee, grpc_resource_quota* rq)
+      : listener(std::move(listener)),
+        engine(std::move(ee)),
+        resource_quota(rq) {
+    gpr_ref_init(&refs, 1);
+    shutdown_starting.head = nullptr;
+    shutdown_starting.tail = nullptr;
+    gpr_mu_init(&mu);
+  };
+  ~grpc_tcp_server() {
+    gpr_mu_destroy(&mu);
+    // TODO(nnoble): see if we can handle this in ~SliceAllocatorFactory
+    grpc_resource_quota_unref_internal(resource_quota);
+  }
   gpr_refcount refs;
   gpr_mu mu;
   std::unique_ptr<EventEngine::Listener> listener;
@@ -54,6 +70,7 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
   return [&](absl::Status status,
              std::unique_ptr<EventEngine::Endpoint> endpoint) {
+    grpc_core::ExecCtx exec_ctx;
     grpc_endpoint_out->endpoint = std::move(endpoint);
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));
@@ -87,8 +104,12 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
   std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
   // TODO(hork): Convert channel_args to ChannelArgs
   ChannelArgs ca;
-  if (!ee->Connect(ee_on_connect, ra, ca, std::move(sa), ee_deadline).ok()) {
-    // Do nothing. The callback will be executed once with an error
+  absl::Status connected =
+      ee->Connect(ee_on_connect, ra, ca, std::move(sa), ee_deadline);
+  if (!connected.ok()) {
+    // EventEngine failed to start an asynchronous connect.
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect,
+                            absl_status_to_grpc_error(connected));
   }
 }
 
@@ -113,16 +134,7 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());
   }
-  grpc_tcp_server* s =
-      static_cast<grpc_tcp_server*>(gpr_zalloc(sizeof(grpc_tcp_server)));
-  gpr_ref_init(&s->refs, 1);
-  s->listener = std::move(*listener);
-  s->engine = ee;
-  s->shutdown_starting.head = nullptr;
-  s->shutdown_starting.tail = nullptr;
-  gpr_mu_init(&s->mu);
-  s->resource_quota = rq;
-  *server = s;
+  *server = new grpc_tcp_server(std::move(*listener), std::move(ee), rq);
   return GRPC_ERROR_NONE;
 }
 
@@ -180,19 +192,11 @@ void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
   gpr_mu_unlock(&s->mu);
 }
 
-void tcp_server_destroy(grpc_tcp_server* s) {
-  gpr_mu_destroy(&s->mu);
-  s->listener = nullptr;
-  s->engine = nullptr;
-  // TODO(nnoble): see if we can handle this in ~SliceAllocatorFactory
-  grpc_resource_quota_unref_internal(s->resource_quota);
-  gpr_free(s);
-}
+void tcp_server_destroy(grpc_tcp_server* s) { delete s; }
 
 void tcp_server_unref(grpc_tcp_server* s) {
   if (gpr_unref(&s->refs)) {
     gpr_mu_lock(&s->mu);
-    grpc_core::ExecCtx exec_ctx;
     grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
     grpc_core::ExecCtx::Get()->Flush();
     gpr_mu_unlock(&s->mu);

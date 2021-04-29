@@ -380,7 +380,7 @@ class Server : public ServerInterface, private GrpcLibraryCodegen {
   // with this server (if any). It is set on the first call to CallbackCQ().
   // It is _not owned_ by the server; ownership belongs with its internal
   // shutdown callback tag (invoked when the CQ is fully shutdown).
-  CompletionQueue* callback_cq_ ABSL_GUARDED_BY(mu_) = nullptr;
+  std::atomic<CompletionQueue*> callback_cq_{nullptr};
 
   // List of CQs passed in by user that must be Shutdown only after Server is
   // Shutdown.  Even though this is only used with NDEBUG, instantiate it in all

@@ -185,7 +185,7 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
     grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "error fetching zone from metadata server: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
   }
   std::string zone;
   if (error == GRPC_ERROR_NONE && response->status == 200) {
@@ -218,7 +218,7 @@ void GoogleCloud2ProdResolver::IPv6Query::OnDone(
     grpc_error_handle error) {
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "error fetching IPv6 address from metadata server: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
   }
   resolver->IPv6QueryDone(error == GRPC_ERROR_NONE && response->status == 200);
   GRPC_ERROR_UNREF(error);

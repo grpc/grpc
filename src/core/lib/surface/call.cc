@@ -743,7 +743,7 @@ static void cancel_with_status(grpc_call* c, grpc_status_code status,
 static void set_final_status(grpc_call* call, grpc_error_handle error) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_call_error_trace)) {
     gpr_log(GPR_DEBUG, "set_final_status %s", call->is_client ? "CLI" : "SVR");
-    gpr_log(GPR_DEBUG, "%s", grpc_error_string(error));
+    gpr_log(GPR_DEBUG, "%s", grpc_error_std_string(error).c_str());
   }
   if (call->is_client) {
     grpc_error_get_status(error, call->send_deadline,

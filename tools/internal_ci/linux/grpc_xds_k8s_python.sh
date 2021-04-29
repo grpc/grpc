@@ -22,10 +22,11 @@ readonly GKE_CLUSTER_NAME="interop-test-psm-sec-testing-api"
 readonly GKE_CLUSTER_ZONE="us-west1-b"
 export CLOUDSDK_API_ENDPOINT_OVERRIDES_CONTAINER="https://test-container.sandbox.googleapis.com/"
 ## xDS test server/client Docker images
-readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-server"
-readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/cpp-client"
+readonly SERVER_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/python-server"
+readonly CLIENT_IMAGE_NAME="gcr.io/grpc-testing/xds-interop/python-client"
 readonly FORCE_IMAGE_BUILD="${FORCE_IMAGE_BUILD:-0}"
 readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
+readonly LANGUAGE_NAME="Python"
 
 #######################################
 # Builds test app Docker images and pushes them to GCR
@@ -40,10 +41,23 @@ readonly BUILD_APP_PATH="interop-testing/build/install/grpc-interop-testing"
 #   Writes the output of `gcloud builds submit` to stdout, stderr
 #######################################
 build_test_app_docker_images() {
-  echo "Building C++ xDS interop test app Docker images"
-  docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_client" -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" "${SRC_DIR}"
-  docker build -f "${SRC_DIR}/tools/dockerfile/interoptest/grpc_interop_cxx_xds/Dockerfile.xds_server" -t "${SERVER_IMAGE_NAME}:${GIT_COMMIT}" "${SRC_DIR}"
+  echo "Building ${LANGUAGE_NAME} xDS interop test app Docker images"
+
+  pushd "${SRC_DIR}"
+  docker build \
+    -f src/python/grpcio_tests/tests_py3_only/interop/Dockerfile.client \
+    -t "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
+    .
+
+  docker build \
+    -f src/python/grpcio_tests/tests_py3_only/interop/Dockerfile.server \
+    -t "${SERVER_IMAGE_NAME}:${GIT_COMMIT}" \
+    .
+
+  popd
+
   gcloud -q auth configure-docker
+
   docker push "${CLIENT_IMAGE_NAME}:${GIT_COMMIT}"
   docker push "${SERVER_IMAGE_NAME}:${GIT_COMMIT}"
 }
@@ -74,7 +88,7 @@ build_docker_images_if_needed() {
   if [[ "${FORCE_IMAGE_BUILD}" == "1" || -z "${server_tags}" || -z "${client_tags}" ]]; then
     build_test_app_docker_images
   else
-    echo "Skipping C++ test app build"
+    echo "Skipping ${LANGUAGE_NAME} test app build"
   fi
 }
 

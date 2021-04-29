@@ -113,7 +113,7 @@ class EventEngine {
   /// allocation being handled by the quota system.
   class Endpoint {
    public:
-    /// The Endpoint descructor is responsible for shutting down all connections
+    /// The Endpoint destructor is responsible for shutting down all connections
     /// and invoking all pending read or write callbacks with an error status.
     virtual ~Endpoint() = default;
     /// Read data from the Endpoint.
@@ -182,6 +182,12 @@ class EventEngine {
   // TODO(hork): define status codes for the callback
   // TODO(hork): define return status codes
   /// Creates a network connection to a remote network listener.
+  ///
+  /// \a Connect can return an error status immediately if there was a failure
+  /// in the synchronous piece of establishing a connection. In that event, the
+  /// \a on_connect callback *will not* have been executed. Otherwise, it is
+  /// expected that the \a on_connect callback will be asynchronously executed
+  /// by the EventEngine with an appropriate status at some point.
   virtual absl::Status Connect(OnConnectCallback on_connect,
                                const ResolvedAddress& addr,
                                const ChannelArgs& args,

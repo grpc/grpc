@@ -17,12 +17,14 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/iomgr/event_engine/util.h"
+#include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/transport/error_utils.h"
 
 namespace {
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 
 struct grpc_event_engine_timer_data {
   EventEngine::TaskHandle handle;

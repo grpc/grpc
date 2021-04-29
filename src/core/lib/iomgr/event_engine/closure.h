@@ -11,24 +11,21 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-/// grpc_closure to std::function conversions for an EventEngine-based iomgr
-#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_UTIL_H
-#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_UTIL_H
-#ifdef GRPC_EVENT_ENGINE_TEST
+#ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_CLOSURE_H
+#define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_CLOSURE_H
 
 #include <grpc/support/port_platform.h>
 
-#include <functional>
-
 #include <grpc/event_engine/event_engine.h>
-#include "absl/status/status.h"
 
 #include "src/core/lib/iomgr/closure.h"
-#include "src/core/lib/iomgr/event_engine/endpoint.h"
 
-grpc_event_engine::experimental::EventEngine::Callback GrpcClosureToCallback(
-    grpc_closure* closure);
+namespace grpc_event_engine {
+namespace experimental {
 
-#endif
-#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_UTIL_H
+EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure);
+
+}  // namespace experimental
+}  // namespace grpc_event_engine
+
+#endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_CLOSURE_H

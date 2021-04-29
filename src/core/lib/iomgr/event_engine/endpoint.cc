@@ -27,7 +27,7 @@
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/iomgr/event_engine/util.h"
+#include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resource_quota.h"
@@ -41,23 +41,36 @@ using ::grpc_event_engine::experimental::ResolvedAddressToURI;
 
 void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
                    grpc_closure* cb, bool /* urgent */) {
+  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+  if (eeep->endpoint == nullptr) {
+    // The endpoint is shut down, so we must call the cb with an erro
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_CANCELLED);
+    return;
+  }
   // TODO(nnoble): provide way to convert slices to SliceBuffer.
-  // auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
-  // eeep->endpoint->Read(event_engine_closure_to_on_connect_callback(cb),
-  // slices);
   (void)slices;
-  (void)cb;
-  (void)ep;
+  // SliceBuffer buffer(slices);
+  // eeep->endpoint->Read(
+  //     GrpcClosureToCallback(cb),
+  //     buffer, absl::InfiniteFuture());
 }
+
 void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
                     grpc_closure* cb, void* arg) {
-  // TODO(nnoble): provide way to convert slices to SliceBuffer.
-  // auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
-  // eeep->endpoint->Write(event_engine_closure_to_callback(cb, arg), slices);
-  (void)ep;
-  (void)slices;
-  (void)cb;
+  // TODO(hork): adapt arg to some metrics collection mechanism.
   (void)arg;
+  auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+  if (eeep->endpoint == nullptr) {
+    // The endpoint is shut down, so we must call the cb with an error
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_CANCELLED);
+    return;
+  }
+  // TODO(nnoble): provide way to convert slices to SliceBuffer.
+  (void)slices;
+  // SliceBuffer buffer(slices);
+  // eeep->endpoint->Write(
+  //     GrpcClosureToCallback(cb),
+  //     buffer, absl::InfiniteFuture());
 }
 void endpoint_add_to_pollset(grpc_endpoint* /* ep */,
                              grpc_pollset* /* pollset */) {}
@@ -65,8 +78,10 @@ void endpoint_add_to_pollset_set(grpc_endpoint* /* ep */,
                                  grpc_pollset_set* /* pollset */) {}
 void endpoint_delete_from_pollset_set(grpc_endpoint* /* ep */,
                                       grpc_pollset_set* /* pollset */) {}
-// Note: all other endpoint operations (except destroy) have undefined behavior
-// after shutdown. Do not shut down lightly.
+// Note: After shutdown, all other endpoint operations (except destroy) are
+// no-op, and will return some kind of sane default (empty strings, nullptrs,
+// etc). It is the caller's responsibility to ensure that calls to
+// endpoint_shutdown are synchronized (should not be a problem in practice).
 void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
@@ -91,6 +106,10 @@ grpc_resource_user* endpoint_get_resource_user(grpc_endpoint* ep) {
 
 absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+  if (eeep->endpoint == nullptr) {
+    // The endpoint is already shutdown
+    return "";
+  }
   if (eeep->peer_address.empty()) {
     const EventEngine::ResolvedAddress* addr = eeep->endpoint->GetPeerAddress();
     GPR_ASSERT(addr != nullptr);
@@ -101,6 +120,10 @@ absl::string_view endpoint_get_peer(grpc_endpoint* ep) {
 
 absl::string_view endpoint_get_local_address(grpc_endpoint* ep) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
+  if (eeep->endpoint == nullptr) {
+    // The endpoint is already shutdown
+    return "";
+  }
   if (eeep->local_address.empty()) {
     const EventEngine::ResolvedAddress* addr =
         eeep->endpoint->GetLocalAddress();
@@ -134,8 +157,6 @@ grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
                                absl::string_view peer_address) {
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
-  endpoint->peer_address = std::string(peer_address);
-  endpoint->local_address = "";
   grpc_resource_quota* resource_quota =
       grpc_channel_args_find_pointer<grpc_resource_quota>(
           channel_args, GRPC_ARG_RESOURCE_QUOTA);
