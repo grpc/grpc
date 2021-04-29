@@ -60,10 +60,12 @@ void PendingVerifierRequestInit(
   request->peer_info.common_name = nullptr;
   request->peer_info.san_names.uri_names = nullptr;
   request->peer_info.san_names.uri_names_size = 0;
-  request->peer_info.san_names.ip_names = nullptr;
-  request->peer_info.san_names.ip_names_size = 0;
   request->peer_info.san_names.dns_names = nullptr;
   request->peer_info.san_names.dns_names_size = 0;
+  request->peer_info.san_names.email_names = nullptr;
+  request->peer_info.san_names.email_names_size = 0;
+  request->peer_info.san_names.ip_names = nullptr;
+  request->peer_info.san_names.ip_names_size = 0;
   request->peer_info.peer_cert = nullptr;
   request->peer_info.peer_cert_full_chain = nullptr;
 }
@@ -80,17 +82,23 @@ void PendingVerifierRequestDestroy(
     }
     delete[] request->peer_info.san_names.uri_names;
   }
-  if (request->peer_info.san_names.ip_names_size > 0) {
-    for (size_t i = 0; i < request->peer_info.san_names.ip_names_size; ++i) {
-      gpr_free(request->peer_info.san_names.ip_names[i]);
-    }
-    delete[] request->peer_info.san_names.ip_names;
-  }
   if (request->peer_info.san_names.dns_names_size > 0) {
     for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
       gpr_free(request->peer_info.san_names.dns_names[i]);
     }
     delete[] request->peer_info.san_names.dns_names;
+  }
+  if (request->peer_info.san_names.email_names_size > 0) {
+    for (size_t i = 0; i < request->peer_info.san_names.email_names_size; ++i) {
+      gpr_free(request->peer_info.san_names.email_names[i]);
+    }
+    delete[] request->peer_info.san_names.email_names;
+  }
+  if (request->peer_info.san_names.ip_names_size > 0) {
+    for (size_t i = 0; i < request->peer_info.san_names.ip_names_size; ++i) {
+      gpr_free(request->peer_info.san_names.ip_names[i]);
+    }
+    delete[] request->peer_info.san_names.ip_names;
   }
   if (request->peer_info.peer_cert != nullptr) {
     gpr_free(const_cast<char*>(request->peer_info.peer_cert));
@@ -109,6 +117,8 @@ void ParseTsiPeer(tsi_peer peer,
   // the null-terminating string.
   std::vector<char*> uri_names;
   std::vector<char*> dns_names;
+  std::vector<char*> email_names;
+  std::vector<char*> ip_names;
   for (size_t i = 0; i < peer.property_count; ++i) {
     const tsi_peer_property* prop = &peer.properties[i];
     if (prop->name == nullptr) continue;
@@ -124,16 +134,15 @@ void ParseTsiPeer(tsi_peer peer,
     } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
       char* uri = CopyCoreString(prop->value.data, prop->value.length);
       uri_names.emplace_back(uri);
-    } else if (strcmp(prop->name,
-                      TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
-      // TODO(ZhenLian): The logic here is wrong.
-      // We are passing all SAN names as DNS names, because the DNS names are
-      // not plumbed. Once it is plumbed, this should be changed.
+    } else if (strcmp(prop->name, TSI_X509_DNS_PEER_PROPERTY) == 0) {
       char* dns = CopyCoreString(prop->value.data, prop->value.length);
       dns_names.emplace_back(dns);
-    } else {
-      // Not supported fields.
-      // TODO(ZhenLian): populate IP Address and other fields here as well.
+    } else if (strcmp(prop->name, TSI_X509_EMAIL_PEER_PROPERTY) == 0) {
+      char* email = CopyCoreString(prop->value.data, prop->value.length);
+      email_names.emplace_back(email);
+    } else if (strcmp(prop->name, TSI_X509_IP_PEER_PROPERTY) == 0) {
+      char* ip = CopyCoreString(prop->value.data, prop->value.length);
+      ip_names.emplace_back(ip);
     }
   }
   request->peer_info.san_names.uri_names_size = uri_names.size();
@@ -154,6 +163,26 @@ void ParseTsiPeer(tsi_peer peer,
       // We directly point the char* string stored in vector to the |request|.
       // That string will be released when the |request| is destroyed.
       request->peer_info.san_names.dns_names[i] = dns_names[i];
+    }
+  }
+  request->peer_info.san_names.email_names_size = email_names.size();
+  if (!email_names.empty()) {
+    request->peer_info.san_names.email_names =
+        new char*[request->peer_info.san_names.email_names_size];
+    for (size_t i = 0; i < request->peer_info.san_names.email_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
+      request->peer_info.san_names.email_names[i] = email_names[i];
+    }
+  }
+  request->peer_info.san_names.ip_names_size = ip_names.size();
+  if (!ip_names.empty()) {
+    request->peer_info.san_names.ip_names =
+        new char*[request->peer_info.san_names.ip_names_size];
+    for (size_t i = 0; i < request->peer_info.san_names.ip_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
+      request->peer_info.san_names.ip_names[i] = ip_names[i];
     }
   }
 }
