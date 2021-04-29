@@ -17,12 +17,14 @@
 
 #include <grpc/event_engine/event_engine.h>
 
+#include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace {
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 
 struct grpc_event_engine_timer_data {
   EventEngine::TaskHandle handle;
@@ -36,14 +38,10 @@ void timer_init(grpc_timer* timer, grpc_millis deadline,
   timer->custom_timer = metadata;
   // TODO(hork): EventEngine and gRPC need to use the same clock type for
   // deadlines.
-  metadata->handle = engine->RunAt(
-      grpc_core::ToAbslTime(
-          grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
-      [&closure](absl::Status status) {
-        grpc_core::Closure::Run(DEBUG_LOCATION, closure,
-                                absl_status_to_grpc_error(status));
-      },
-      {});
+  metadata->handle =
+      engine->RunAt(grpc_core::ToAbslTime(
+                        grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
+                    GrpcClosureToCallback(closure), {});
 }
 
 void timer_cancel(grpc_timer* timer) {

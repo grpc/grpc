@@ -885,6 +885,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/ev_posix.cc )
   s.files += %w( src/core/lib/iomgr/ev_posix.h )
   s.files += %w( src/core/lib/iomgr/ev_windows.cc )
+  s.files += %w( src/core/lib/iomgr/event_engine/closure.cc )
+  s.files += %w( src/core/lib/iomgr/event_engine/closure.h )
   s.files += %w( src/core/lib/iomgr/event_engine/endpoint.cc )
   s.files += %w( src/core/lib/iomgr/event_engine/endpoint.h )
   s.files += %w( src/core/lib/iomgr/event_engine/iomgr.cc )

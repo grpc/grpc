@@ -27,6 +27,7 @@
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resource_quota.h"
@@ -50,10 +51,7 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
   (void)slices;
   // SliceBuffer buffer(slices);
   // eeep->endpoint->Read(
-  //     [&cb](absl::Status status) {
-  //       grpc_core::Closure::Run(DEBUG_LOCATION, cb,
-  //                               absl_status_to_grpc_error(status));
-  //     },
+  //     GrpcClosureToEventEngineCallback(cb),
   //     buffer, absl::InfiniteFuture());
 }
 
@@ -71,10 +69,7 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   (void)slices;
   // SliceBuffer buffer(slices);
   // eeep->endpoint->Write(
-  //     [&cb](absl::Status status) {
-  //       grpc_core::Closure::Run(DEBUG_LOCATION, cb,
-  //                               absl_status_to_grpc_error(status));
-  //     },
+  //     GrpcClosureToEventEngineCallback(cb),
   //     buffer, absl::InfiniteFuture());
 }
 void endpoint_add_to_pollset(grpc_endpoint* /* ep */,

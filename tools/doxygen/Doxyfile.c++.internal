@@ -1817,6 +1817,8 @@ src/core/lib/iomgr/ev_poll_posix.h \
 src/core/lib/iomgr/ev_posix.cc \
 src/core/lib/iomgr/ev_posix.h \
 src/core/lib/iomgr/ev_windows.cc \
+src/core/lib/iomgr/event_engine/closure.cc \
+src/core/lib/iomgr/event_engine/closure.h \
 src/core/lib/iomgr/event_engine/endpoint.cc \
 src/core/lib/iomgr/event_engine/endpoint.h \
 src/core/lib/iomgr/event_engine/iomgr.cc \

@@ -420,6 +420,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/iomgr/ev_poll_posix.cc',
     'src/core/lib/iomgr/ev_posix.cc',
     'src/core/lib/iomgr/ev_windows.cc',
+    'src/core/lib/iomgr/event_engine/closure.cc',
     'src/core/lib/iomgr/event_engine/endpoint.cc',
     'src/core/lib/iomgr/event_engine/iomgr.cc',
     'src/core/lib/iomgr/event_engine/pollset.cc',

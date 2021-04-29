@@ -19,6 +19,7 @@
 
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/sockaddr.h"
+#include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -30,6 +31,7 @@ namespace {
 using ::grpc_event_engine::experimental::ChannelArgs;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
+using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 }  // namespace
@@ -68,6 +70,7 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
   return [&](absl::Status status,
              std::unique_ptr<EventEngine::Endpoint> endpoint) {
+    grpc_core::ExecCtx exec_ctx;
     grpc_endpoint_out->endpoint = std::move(endpoint);
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));
@@ -125,13 +128,9 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   // Listener::Start(on_accept) method in a custom EE impl. This should not be
   // needed once iomgr goes away.
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
-      ee->CreateListener(
-          GrpcClosureToAcceptCallback(nullptr),
-          [&shutdown_complete](absl::Status status) {
-            grpc_core::Closure::Run(DEBUG_LOCATION, shutdown_complete,
-                                    absl_status_to_grpc_error(status));
-          },
-          ca, SliceAllocatorFactory(rq));
+      ee->CreateListener(GrpcClosureToAcceptCallback(nullptr),
+                         GrpcClosureToCallback(shutdown_complete), ca,
+                         SliceAllocatorFactory(rq));
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());
   }

@@ -25,7 +25,7 @@ namespace {
 using ::grpc_event_engine::experimental::EventEngine;
 
 EventEngine::DNSResolver::LookupHostnameCallback
-event_engine_closure_to_lookup_hostname_callback(grpc_closure* closure) {
+GrpcClosureToLookupHostnameCallback(grpc_closure* closure) {
   (void)closure;
   return [](absl::Status, std::vector<EventEngine::ResolvedAddress>) {};
 }

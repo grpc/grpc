@@ -865,6 +865,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_windows.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/closure.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/closure.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/endpoint.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/endpoint.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/event_engine/iomgr.cc" role="src" />
