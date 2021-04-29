@@ -3,6 +3,7 @@
 #include <future>
 
 #include "grpc/event_engine/event_engine.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/gprpp/thd.h"
@@ -11,33 +12,49 @@
 
 class uvEngine;
 
-class uvTCP final {
+class uvTCPbase {
  public:
-  uvTCP(uvEngine* engine,
-        grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
-            on_accept,
-        grpc_event_engine::experimental::EventEngine::Callback on_shutdown,
-        const grpc_event_engine::experimental::ChannelArgs& args,
-        grpc_event_engine::experimental::SliceAllocatorFactory
-            slice_allocator_factory)
-      : engine_(engine),
-        on_accept_(on_accept),
-        on_shutdown_(on_shutdown),
-        slice_allocator_factory_(std::move(slice_allocator_factory)) {
-    tcp_.data = this;
-  }
+  uvTCPbase() {}
+  uvTCPbase(
+      grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
+          on_accept,
+      grpc_event_engine::experimental::EventEngine::Callback on_shutdown)
+      : on_accept_(on_accept), on_shutdown_(on_shutdown) {}
+  virtual ~uvTCPbase() = default;
 
-  uvEngine* engine_;
+  int init(uvEngine* engine);
 
   grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
       on_accept_;
 
   grpc_event_engine::experimental::EventEngine::Callback on_shutdown_;
 
+  uv_tcp_t tcp_;
+};
+
+class uvTCPlistener final : public uvTCPbase {
+ public:
+  uvTCPlistener(
+      grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
+          on_accept,
+      grpc_event_engine::experimental::EventEngine::Callback on_shutdown,
+      const grpc_event_engine::experimental::ChannelArgs& args,
+      grpc_event_engine::experimental::SliceAllocatorFactory
+          slice_allocator_factory)
+      : uvTCPbase(on_accept, on_shutdown),
+        slice_allocator_factory_(std::move(slice_allocator_factory)) {}
+  virtual ~uvTCPlistener() = default;
   grpc_event_engine::experimental::SliceAllocatorFactory
       slice_allocator_factory_;
+};
 
-  uv_tcp_t tcp_;
+class uvTCP final : public uvTCPbase {
+ public:
+  uvTCP(const grpc_event_engine::experimental::ChannelArgs& args,
+        grpc_event_engine::experimental::SliceAllocator slice_allocator) {}
+  virtual ~uvTCP() = default;
+
+  uv_connect_t connect_;
 };
 
 class uvListener final
@@ -59,7 +76,7 @@ class uvListener final
 
   uvEngine* engine_;
 
-  uvTCP* uvTCP_ = nullptr;
+  uvTCPlistener* uvTCP_ = nullptr;
   int init_result_ = 0;
 };
 
@@ -97,6 +114,11 @@ class uvDNSResolver final
 class uvEndpoint final
     : public grpc_event_engine::experimental::EventEngine::Endpoint {
  public:
+  uvEndpoint(const grpc_event_engine::experimental::ChannelArgs& args,
+             grpc_event_engine::experimental::SliceAllocator slice_allocator)
+      : uvTCP_(new uvTCP(args, std::move(slice_allocator))) {
+    uvTCP_->tcp_.data = this;
+  }
   virtual ~uvEndpoint() override final { abort(); }
 
   virtual void Read(
@@ -127,6 +149,16 @@ class uvEndpoint final
 
   static void uvGetaddrInfoCB(uv_getaddrinfo_t* req, int status,
                               struct addrinfo* res);
+  static void uvConnectCB(uv_connect_t* req, int status) {
+    uvEndpoint* epRaw = reinterpret_cast<uvEndpoint*>(req->handle->data);
+    std::unique_ptr<uvEndpoint> ep(epRaw);
+    ep->on_connect_(status == 0 ? absl::OkStatus() : absl::UnknownError("blah"),
+                    std::move(ep));
+  }
+
+  uvTCP* uvTCP_ = nullptr;
+  grpc_event_engine::experimental::EventEngine::OnConnectCallback on_connect_ =
+      nullptr;
 };
 
 struct schedulingRequest : grpc_core::MultiProducerSingleConsumerQueue::Node {
@@ -180,10 +212,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
       return;
     }
     ready_.set_value(true);
-    grpc_core::ExecCtx exec_ctx;
-    while (uv_run(&loop_, UV_RUN_ONCE) != 0) {
-      exec_ctx.Flush();
-    }
+    uv_run(&loop_, UV_RUN_DEFAULT);
   }
 
   uvEngine() {
@@ -210,6 +239,14 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
       const grpc_event_engine::experimental::ChannelArgs& args,
       grpc_event_engine::experimental::SliceAllocator slice_allocator,
       absl::Time deadline) override final {
+    uvEndpoint* e = new uvEndpoint(args, std::move(slice_allocator));
+    e->on_connect_ = on_connect;
+    schedule([addr, e](uvEngine* engine) {
+      int r;
+      r = e->uvTCP_->init(engine);
+      uv_tcp_connect(&e->uvTCP_->connect_, &e->uvTCP_->tcp_, addr.address(),
+                     uvEndpoint::uvConnectCB);
+    });
     return absl::OkStatus();
   }
 
@@ -243,6 +280,10 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
   grpc_core::MultiProducerSingleConsumerQueue queue_;
 };
 
+int uvTCPbase::init(uvEngine* engine) {
+  return uv_tcp_init(&engine->loop_, &tcp_);
+}
+
 uvListener::uvListener(
     uvEngine* engine, Listener::AcceptCallback on_accept,
     grpc_event_engine::experimental::EventEngine::Callback on_shutdown,
@@ -250,8 +291,8 @@ uvListener::uvListener(
     grpc_event_engine::experimental::SliceAllocatorFactory
         slice_allocator_factory)
     : engine_(engine),
-      uvTCP_(new uvTCP(engine, on_accept, on_shutdown, args,
-                       std::move(slice_allocator_factory))) {
+      uvTCP_(new uvTCPlistener(on_accept, on_shutdown, args,
+                               std::move(slice_allocator_factory))) {
   std::promise<int> p;
   engine->schedule([this, &p](uvEngine* engine) {
     int r = uv_tcp_init(&engine->loop_, &uvTCP_->tcp_);
@@ -262,9 +303,8 @@ uvListener::uvListener(
 }
 
 uvListener::~uvListener() {
-  engine_->schedule([this](uvEngine* engine) {
-    uv_close(reinterpret_cast<uv_handle_t*>(&uvTCP_->tcp_),
-             uvEngine::closeCallback);
+  engine_->schedule([tcp{&uvTCP_->tcp_}](uvEngine* engine) {
+    uv_close(reinterpret_cast<uv_handle_t*>(tcp), uvEngine::closeCallback);
   });
 }
 
@@ -339,15 +379,20 @@ uvDNSResolver::LookupHostname(LookupHostnameCallback on_resolve,
                               absl::string_view address,
                               absl::string_view default_port,
                               absl::Time deadline) {
-  engine_->schedule([this, on_resolve, address, default_port,
+  engine_->schedule([on_resolve, address, default_port,
                      deadline](uvEngine* engine) {
     // just a dumb wrapper to avoid doing the whole of c-ares for now
     // also won't be asynchronous this way, tho still will happen on the
     // uv loop thread, which can be terrible obviously, so don't let this
-    // be the final code at all
+    // be the final code at all; also doesn't care about deadlines nor
+    // error situations
     uv_getaddrinfo_t req;
-    std::string ntaddress(address);
-    std::string ntdefault_port(default_port);
+    std::string ntaddress;
+    std::string ntdefault_port;
+    if (!grpc_core::SplitHostPort(address, &ntaddress, &ntdefault_port)) {
+      ntaddress = std::string(address);
+      ntdefault_port = std::string(default_port);
+    }
     const char* ccaddress = ntaddress.c_str();
     const char* ccdefault_port = ntdefault_port.c_str();
     uv_getaddrinfo(&engine->loop_, &req, nullptr, ccaddress, ccdefault_port,
@@ -367,3 +412,5 @@ uvDNSResolver::LookupHostname(LookupHostnameCallback on_resolve,
 
   return {0};
 }
+
+grpc_core::DebugOnlyTraceFlag grpc_polling_trace(false, "polling");
