@@ -1684,9 +1684,9 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/ec/wnaf.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/ecdh/ecdh.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/ecdsa/ecdsa.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/ecdsa/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/hmac/hmac.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/is_fips.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/md4/md4.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/md5/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/md5/md5.c" role="src" />
@@ -1710,6 +1710,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/rsa/padding.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/rsa/rsa.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/rsa/rsa_impl.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/self_check/fips.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/self_check/self_check.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/sha/internal.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/fipsmodule/sha/sha1-altivec.c" role="src" />
@@ -1796,7 +1797,6 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x509_ext.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x509_lu.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x509_obj.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x509_r2x.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x509_req.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x509_set.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/crypto/x509/x509_trs.c" role="src" />
@@ -1893,6 +1893,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/engine.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/err.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/evp.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/evp_errors.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/ex_data.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/hkdf.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/include/openssl/hmac.h" role="src" />
@@ -1941,6 +1942,7 @@
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/d1_srtp.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/dtls_method.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/dtls_record.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/encrypted_client_hello.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/handoff.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/handshake.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl-with-bazel/src/ssl/handshake_client.cc" role="src" />
