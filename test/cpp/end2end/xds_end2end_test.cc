@@ -10261,8 +10261,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   size_t num_delayed = 0;
   for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == grpc::OK) continue;
-    EXPECT_EQ(grpc::DEADLINE_EXCEEDED, rpc.status.error_code());
+    if (rpc.status.error_code() == Status::OK) continue;
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
     ++num_delayed;
   }
   // The delay rate should be roughly equal to the expectation.
@@ -10308,8 +10308,8 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   size_t num_delayed = 0;
   for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == grpc::OK) continue;
-    EXPECT_EQ(grpc::DEADLINE_EXCEEDED, rpc.status.error_code());
+    if (rpc.status.error_code() == Status::OK) continue;
+    EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
     ++num_delayed;
   }
   // The delay rate should be roughly equal to the expectation.
@@ -10361,7 +10361,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
     EXPECT_GE(rpc.elapsed_time, kFixedDelaySeconds * 1000);
-    if (rpc.status.error_code() == grpc::OK) continue;
+    if (rpc.status.error_code() == Status::OK) continue;
     EXPECT_EQ("Fault injected", rpc.status.error_message());
     ++num_aborted;
   }
@@ -10418,7 +10418,7 @@ TEST_P(FaultInjectionTest,
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
     EXPECT_GE(rpc.elapsed_time, kFixedDelaySeconds * 1000);
-    if (rpc.status.error_code() == grpc::OK) continue;
+    if (rpc.status.error_code() == Status::OK) continue;
     EXPECT_EQ("Fault injected", rpc.status.error_message());
     ++num_aborted;
   }
@@ -10460,7 +10460,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   std::vector<ConcurrentRpc> rpcs =
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == grpc::OK) continue;
+    if (rpc.status.error_code() == Status::OK) continue;
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
     ++num_delayed;
   }
@@ -11116,7 +11116,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpListenerRequested) {
   int kTimeoutMillisecond = 1000;
   balancers_[0]->ads_service()->UnsetResource(kLdsTypeUrl, kServerName);
   CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      grpc::DEADLINE_EXCEEDED);
+                      StatusCode::DEADLINE_EXCEEDED);
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).xds_config(),
               ::testing::Contains(::testing::Property(
@@ -11150,7 +11150,7 @@ TEST_P(ClientStatusDiscoveryServiceTest, XdsConfigDumpClusterRequested) {
   SetRouteConfiguration(0, route_config);
   // Try to get the configs plumb through
   CheckRpcSendFailure(1, RpcOptions().set_timeout_ms(kTimeoutMillisecond),
-                      grpc::DEADLINE_EXCEEDED);
+                      StatusCode::DEADLINE_EXCEEDED);
   auto csds_response = FetchCsdsResponse();
   EXPECT_THAT(csds_response.config(0).xds_config(),
               ::testing::Contains(::testing::Property(
