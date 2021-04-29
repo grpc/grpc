@@ -29,7 +29,20 @@ SliceAllocator::SliceAllocator(grpc_resource_user* user)
   grpc_resource_user_ref(resource_user_);
 };
 
-SliceAllocator::~SliceAllocator() { grpc_resource_user_unref(resource_user_); };
+SliceAllocator::~SliceAllocator() {
+  if (resource_user_) grpc_resource_user_unref(resource_user_);
+};
+
+SliceAllocator::SliceAllocator(SliceAllocator&& other)
+    : resource_user_(other.resource_user_) {
+  other.resource_user_ = nullptr;
+}
+
+SliceAllocator& SliceAllocator::operator=(SliceAllocator&& other) {
+  resource_user_ = other.resource_user_;
+  other.resource_user_ = nullptr;
+  return *this;
+}
 
 absl::Status SliceAllocator::Allocate(size_t size, SliceBuffer* dest,
                                       SliceAllocator::AllocateCallback cb) {
@@ -46,7 +59,18 @@ SliceAllocatorFactory::SliceAllocatorFactory(grpc_resource_quota* quota)
 };
 
 SliceAllocatorFactory::~SliceAllocatorFactory() {
-  grpc_resource_quota_unref_internal(resource_quota_);
+  if (resource_quota_) grpc_resource_quota_unref_internal(resource_quota_);
+}
+
+SliceAllocatorFactory::SliceAllocatorFactory(SliceAllocatorFactory&& other)
+    : resource_quota_(other.resource_quota_) {
+  other.resource_quota_ = nullptr;
+}
+
+SliceAllocatorFactory& SliceAllocatorFactory::operator=(SliceAllocatorFactory&& other) {
+  resource_quota_ = other.resource_quota_;
+  other.resource_quota_ = nullptr;
+  return *this;
 }
 
 SliceAllocator SliceAllocatorFactory::CreateSliceAllocator(
