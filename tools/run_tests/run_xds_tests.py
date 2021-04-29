@@ -802,27 +802,34 @@ def test_round_robin(gcp, backend_service, instance_group):
                                              _WAIT_FOR_STATS_SEC)
     # TODO(ericgribkoff) Delayed config propagation from earlier tests
     # may result in briefly receiving an empty EDS update, resulting in failed
-    # RPCs. Retry distribution validation if this occurs; long-term fix is
+    # RPCs or all RPCs sent to the first back-to-ready instance. Retry
+    # distribution validation if this occurs; long-term fix is
     # creating new backend resources for each individual test case.
     # Each attempt takes 10 seconds. Config propagation can take several
     # minutes.
     max_attempts = 40
+    error_msg = None
     for i in range(max_attempts):
+        if error_msg:
+            logger.info('Attempt %d, previous unexpected RPC behavior %s',
+                        i, error_msg)
         stats = get_client_stats(_NUM_TEST_RPCS, _WAIT_FOR_STATS_SEC)
         requests_received = [stats.rpcs_by_peer[x] for x in stats.rpcs_by_peer]
         total_requests_received = sum(requests_received)
         if total_requests_received != _NUM_TEST_RPCS:
-            logger.info('Unexpected RPC failures, retrying: %s', stats)
+            error_msg = ('Unexpected RPC failures, retrying: %s', stats)
             continue
         expected_requests = total_requests_received / len(instance_names)
         for instance in instance_names:
             if abs(stats.rpcs_by_peer[instance] -
                    expected_requests) > threshold:
-                raise Exception(
-                    'RPC peer distribution differs from expected by more than %d '
-                    'for instance %s (%s)' % (threshold, instance, stats))
-        return
-    raise Exception('RPC failures persisted through %d retries' % max_attempts)
+                error_msg = ('RPC peer distribution differs from expected by '
+                             'more than %d for instance %s (%s)' %
+                             (threshold, instance, stats))
+                break
+    if error_msg:
+        raise Exception(
+            'Unexpected RPC behavior persisted through %d retries' % max_attempts)
 
 
 def test_secondary_locality_gets_no_requests_on_partial_primary_failure(
