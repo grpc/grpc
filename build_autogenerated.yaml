@@ -799,6 +799,9 @@ libs:
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
   - src/core/lib/matchers/matchers.h
+  - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/authorization_policy_provider.h
+  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -1329,6 +1332,8 @@ libs:
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/matchers/matchers.cc
+  - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -2064,6 +2069,7 @@ libs:
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
+  - src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -2291,6 +2297,7 @@ libs:
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/auth_context.h
   - include/grpcpp/security/auth_metadata_processor.h
+  - include/grpcpp/security/authorization_policy_provider.h
   - include/grpcpp/security/credentials.h
   - include/grpcpp/security/server_credentials.h
   - include/grpcpp/security/tls_certificate_provider.h
@@ -2636,6 +2643,7 @@ libs:
   - include/grpcpp/resource_quota.h
   - include/grpcpp/security/auth_context.h
   - include/grpcpp/security/auth_metadata_processor.h
+  - include/grpcpp/security/authorization_policy_provider.h
   - include/grpcpp/security/credentials.h
   - include/grpcpp/security/server_credentials.h
   - include/grpcpp/security/tls_certificate_provider.h
@@ -3684,8 +3692,18 @@ targets:
 - name: public_headers_must_be_c89
   build: test
   language: c
-  headers: []
+  headers:
+  - src/core/lib/security/authorization/grpc_authorization_engine.h
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
+  - src/core/lib/security/authorization/matchers.h
+  - src/core/lib/security/authorization/rbac_policy.h
+  - src/core/lib/security/authorization/rbac_translator.h
   src:
+  - src/core/lib/security/authorization/grpc_authorization_engine.cc
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  - src/core/lib/security/authorization/matchers.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
+  - src/core/lib/security/authorization/rbac_translator.cc
   - test/core/surface/public_headers_must_be_c89.c
   deps:
   - grpc_test_util
@@ -4235,18 +4253,36 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   src:
-  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/authorization_matchers_test.cc
   deps:
+  - grpc_test_util
+- name: authorization_policy_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/authorization/grpc_authorization_engine.h
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
+  - src/core/lib/security/authorization/matchers.h
+  - src/core/lib/security/authorization/rbac_policy.h
+  - src/core/lib/security/authorization/rbac_translator.h
+  src:
+  - src/core/lib/security/authorization/grpc_authorization_engine.cc
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  - src/core/lib/security/authorization/matchers.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
+  - src/core/lib/security/authorization/rbac_translator.cc
+  - src/cpp/server/authorization_policy_provider.cc
+  - test/cpp/server/authorization_policy_provider_test.cc
+  deps:
+  - grpc++
   - grpc_test_util
 - name: aws_request_signer_test
   gtest: true
@@ -4657,9 +4693,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/cel_authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/mock_cel/activation.h
@@ -4671,7 +4705,6 @@ targets:
   - src/core/lib/security/authorization/rbac_policy.h
   src:
   - src/core/lib/security/authorization/cel_authorization_engine.cc
-  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
@@ -5070,17 +5103,8 @@ targets:
   gtest: true
   build: test
   language: c++
-  headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
-  - src/core/lib/security/authorization/grpc_authorization_engine.h
-  - src/core/lib/security/authorization/matchers.h
-  - src/core/lib/security/authorization/rbac_policy.h
+  headers: []
   src:
-  - src/core/lib/security/authorization/evaluate_args.cc
-  - src/core/lib/security/authorization/grpc_authorization_engine.cc
-  - src/core/lib/security/authorization/matchers.cc
-  - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/evaluate_args_test.cc
   deps:
   - grpc_test_util
@@ -5200,17 +5224,33 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   src:
-  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/grpc_authorization_engine_test.cc
+  deps:
+  - grpc_test_util
+- name: grpc_authorization_policy_provider_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/security/authorization/grpc_authorization_engine.h
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
+  - src/core/lib/security/authorization/matchers.h
+  - src/core/lib/security/authorization/rbac_policy.h
+  - src/core/lib/security/authorization/rbac_translator.h
+  src:
+  - src/core/lib/security/authorization/grpc_authorization_engine.cc
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  - src/core/lib/security/authorization/matchers.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
+  - src/core/lib/security/authorization/rbac_translator.cc
+  - test/core/security/grpc_authorization_policy_provider_test.cc
   deps:
   - grpc_test_util
 - name: grpc_cli
@@ -5974,15 +6014,14 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   src:
-  - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
