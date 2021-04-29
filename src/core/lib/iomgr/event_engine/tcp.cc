@@ -68,7 +68,8 @@ namespace {
 // EventEngine directly, closures will be replaced with EE callback types.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
-  return [&](absl::Status status,
+  return [closure, grpc_endpoint_out](
+             absl::Status status,
              std::unique_ptr<EventEngine::Endpoint> endpoint) {
     grpc_core::ExecCtx exec_ctx;
     grpc_endpoint_out->endpoint = std::move(endpoint);
