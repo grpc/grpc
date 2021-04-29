@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang:1.11
+FROM golang:1.16
 
 # Using login shell removes Go from path, so we add it.
 RUN ln -s /usr/local/go/bin/go /usr/local/bin
