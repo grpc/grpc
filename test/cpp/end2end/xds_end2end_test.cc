@@ -10261,7 +10261,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelay) {
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   size_t num_delayed = 0;
   for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == Status::OK) continue;
+    if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
     ++num_delayed;
   }
@@ -10308,7 +10308,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionPercentageDelayViaHeaders) {
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   size_t num_delayed = 0;
   for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == Status::OK) continue;
+    if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
     ++num_delayed;
   }
@@ -10361,7 +10361,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
     EXPECT_GE(rpc.elapsed_time, kFixedDelaySeconds * 1000);
-    if (rpc.status.error_code() == Status::OK) continue;
+    if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ("Fault injected", rpc.status.error_message());
     ++num_aborted;
   }
@@ -10418,7 +10418,7 @@ TEST_P(FaultInjectionTest,
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
     EXPECT_GE(rpc.elapsed_time, kFixedDelaySeconds * 1000);
-    if (rpc.status.error_code() == Status::OK) continue;
+    if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ("Fault injected", rpc.status.error_message());
     ++num_aborted;
   }
@@ -10460,7 +10460,7 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionMaxFault) {
   std::vector<ConcurrentRpc> rpcs =
       SendConcurrentRpcs(stub_.get(), kNumRpcs, rpc_options);
   for (auto& rpc : rpcs) {
-    if (rpc.status.error_code() == Status::OK) continue;
+    if (rpc.status.error_code() == StatusCode::OK) continue;
     EXPECT_EQ(StatusCode::DEADLINE_EXCEEDED, rpc.status.error_code());
     ++num_delayed;
   }
