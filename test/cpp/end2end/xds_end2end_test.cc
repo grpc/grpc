@@ -8990,6 +8990,7 @@ TEST_P(LocalityMapTest, StressTest) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumLocalities = 100;
+  const uint32_t kRpcTimeoutMs = 5000;
   // The first ADS response contains kNumLocalities localities, each of which
   // contains backend 0.
   AdsServiceImpl::EdsResourceArgs args;
@@ -9010,9 +9011,8 @@ TEST_P(LocalityMapTest, StressTest) {
                 BuildEdsResource(args, DefaultEdsServiceName()), 60 * 1000));
   // Wait until backend 0 is ready, before which kNumLocalities localities are
   // received and handled by the xds policy.
-  WaitForBackend(
-      0, WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
-             true));
+  WaitForBackend(0, WaitForBackendOptions().set_reset_counters(false),
+                 RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
   // Wait until backend 1 is ready, before which kNumLocalities localities are
   // removed by the xds policy.
