@@ -38,8 +38,8 @@ class SliceAllocator {
   SliceAllocator(SliceAllocator& other) = delete;
   SliceAllocator& operator=(const SliceAllocator& other) = delete;
   // Moveable
-  SliceAllocator(SliceAllocator&& other) = default;
-  SliceAllocator& operator=(SliceAllocator&& other) = default;
+  SliceAllocator(SliceAllocator&& other);
+  SliceAllocator& operator=(SliceAllocator&& other);
   ~SliceAllocator();
 
   using AllocateCallback =
@@ -62,8 +62,8 @@ class SliceAllocatorFactory {
   SliceAllocatorFactory(SliceAllocatorFactory& other) = delete;
   SliceAllocatorFactory& operator=(const SliceAllocatorFactory& other) = delete;
   // Moveable
-  SliceAllocatorFactory(SliceAllocatorFactory&& other) = default;
-  SliceAllocatorFactory& operator=(SliceAllocatorFactory&& other) = default;
+  SliceAllocatorFactory(SliceAllocatorFactory&& other);
+  SliceAllocatorFactory& operator=(SliceAllocatorFactory&& other);
   ~SliceAllocatorFactory();
 
   /// On Endpoint creation, call \a CreateSliceAllocator with the name of the
