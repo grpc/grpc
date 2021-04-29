@@ -29,24 +29,6 @@ using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
-EventEngine::DNSResolver::LookupHostnameCallback
-event_engine_closure_to_lookup_hostname_callback(grpc_closure* closure) {
-  (void)closure;
-  return [](absl::Status, std::vector<EventEngine::ResolvedAddress>) {};
-}
-
-EventEngine::DNSResolver::LookupSRVCallback
-event_engine_closure_to_lookup_srv_callback(grpc_closure* closure) {
-  (void)closure;
-  return [](absl::Status, std::vector<EventEngine::DNSResolver::SRVRecord>) {};
-}
-
-EventEngine::DNSResolver::LookupTXTCallback
-event_engine_closure_to_lookup_txt_callback(grpc_closure* closure) {
-  (void)closure;
-  return [](absl::Status, std::string) {};
-}
-
 /// A fire-and-forget class representing an individual DNS request.
 ///
 /// This provides a place to store the ownership of the DNSResolver object until
@@ -104,12 +86,22 @@ void resolve_address(const char* addr, const char* default_port,
                  addresses);
 }
 
+static void blocking_handle_async_resolve_done(void* arg,
+                                               grpc_error_handle error) {
+  gpr_event_set(static_cast<gpr_event*>(arg), error);
+}
+
 grpc_error* blocking_resolve_address(const char* name, const char* default_port,
                                      grpc_resolved_addresses** addresses) {
-  (void)name;
-  (void)default_port;
-  (void)addresses;
-  return GRPC_ERROR_NONE;
+  grpc_closure on_done;
+  gpr_event evt;
+  gpr_event_init(&evt);
+  GRPC_CLOSURE_INIT(&on_done, blocking_handle_async_resolve_done, &evt,
+                    grpc_schedule_on_exec_ctx);
+  resolve_address(name, default_port, nullptr, &on_done, addresses);
+  // TODO(hork): decide on an appropriate timeout value.
+  gpr_event_wait(&evt, gpr_inf_future(GPR_CLOCK_REALTIME));
+  return static_cast<grpc_error*>(gpr_event_get(&evt));
 }
 
 }  // namespace
