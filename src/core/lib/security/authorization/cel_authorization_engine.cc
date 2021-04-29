@@ -16,6 +16,7 @@
 
 #include "absl/memory/memory.h"
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/security/authorization/cel_authorization_engine.h"
 
 namespace grpc_core {
@@ -132,7 +133,9 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
       activation->InsertValue(kHeaders,
                               mock_cel::CelValue::CreateMap(headers_.get()));
     } else if (elem == kSourceAddress) {
-      absl::string_view source_address(args.GetPeerAddress());
+      grpc_resolved_address address = args.GetPeerAddress();
+      absl::string_view source_address(
+          grpc_sockaddr_to_string(&address, false));
       if (!source_address.empty()) {
         activation->InsertValue(
             kSourceAddress,
@@ -142,7 +145,9 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
       activation->InsertValue(
           kSourcePort, mock_cel::CelValue::CreateInt64(args.GetPeerPort()));
     } else if (elem == kDestinationAddress) {
-      absl::string_view destination_address(args.GetLocalAddress());
+      grpc_resolved_address address = args.GetLocalAddress();
+      absl::string_view destination_address(
+          grpc_sockaddr_to_string(&address, false));
       if (!destination_address.empty()) {
         activation->InsertValue(
             kDestinationAddress,

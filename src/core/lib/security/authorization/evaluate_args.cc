@@ -17,6 +17,7 @@
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
 #include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/slice/slice_utils.h"
 
@@ -40,8 +41,24 @@ absl::string_view GetAuthPropertyValue(grpc_auth_context* context,
   return absl::string_view(prop->value, prop->value_length);
 }
 
-void ParseEndpointUri(absl::string_view uri_text, std::string* address,
-                      int* port) {
+std::vector<absl::string_view> GetAuthPropertyArray(grpc_auth_context* context,
+                                                    const char* property_name) {
+  std::vector<absl::string_view> values;
+  grpc_auth_property_iterator it =
+      grpc_auth_context_find_properties_by_name(context, property_name);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  while (prop != nullptr) {
+    values.push_back(absl::string_view(prop->value, prop->value_length));
+    prop = grpc_auth_property_iterator_next(&it);
+  }
+  if (values.empty()) {
+    gpr_log(GPR_DEBUG, "No value found for %s property.", property_name);
+  }
+  return values;
+}
+
+void ParseEndpointUri(absl::string_view uri_text,
+                      grpc_resolved_address* address, int* port) {
   absl::StatusOr<URI> uri = URI::Parse(uri_text);
   if (!uri.ok()) {
     gpr_log(GPR_DEBUG, "Failed to parse uri.");
@@ -54,7 +71,13 @@ void ParseEndpointUri(absl::string_view uri_text, std::string* address,
             uri->path().c_str());
     return;
   }
-  *address = std::string(host_view);
+  grpc_error_handle error =
+      grpc_string_to_sockaddr(address, std::string(host_view).c_str(), 0);
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_DEBUG, "Address %s is not IPv4/IPv6.",
+            std::string(host_view).c_str());
+  }
+  GRPC_ERROR_UNREF(error);
   if (!absl::SimpleAtoi(port_view, port)) {
     gpr_log(GPR_DEBUG, "Port %s is out of range or null.",
             std::string(port_view).c_str());
@@ -70,6 +93,7 @@ EvaluateArgs::PerChannelArgs::PerChannelArgs(grpc_auth_context* auth_context,
         auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME);
     spiffe_id =
         GetAuthPropertyValue(auth_context, GRPC_PEER_SPIFFE_ID_PROPERTY_NAME);
+    dns_sans = GetAuthPropertyArray(auth_context, GRPC_PEER_DNS_PROPERTY_NAME);
     common_name =
         GetAuthPropertyValue(auth_context, GRPC_X509_CN_PROPERTY_NAME);
   }
@@ -134,9 +158,9 @@ absl::optional<absl::string_view> EvaluateArgs::GetHeaderValue(
   return grpc_metadata_batch_get_value(metadata_, key, concatenated_value);
 }
 
-absl::string_view EvaluateArgs::GetLocalAddress() const {
+grpc_resolved_address EvaluateArgs::GetLocalAddress() const {
   if (channel_args_ == nullptr) {
-    return "";
+    return {};
   }
   return channel_args_->local_address;
 }
@@ -148,9 +172,9 @@ int EvaluateArgs::GetLocalPort() const {
   return channel_args_->local_port;
 }
 
-absl::string_view EvaluateArgs::GetPeerAddress() const {
+grpc_resolved_address EvaluateArgs::GetPeerAddress() const {
   if (channel_args_ == nullptr) {
-    return "";
+    return {};
   }
   return channel_args_->peer_address;
 }
@@ -174,6 +198,13 @@ absl::string_view EvaluateArgs::GetSpiffeId() const {
     return "";
   }
   return channel_args_->spiffe_id;
+}
+
+std::vector<absl::string_view> EvaluateArgs::GetDnsSans() const {
+  if (channel_args_ == nullptr) {
+    return {};
+  }
+  return channel_args_->dns_sans;
 }
 
 absl::string_view EvaluateArgs::GetCommonName() const {
