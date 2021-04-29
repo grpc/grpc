@@ -950,12 +950,12 @@ struct grpc_tls_custom_verification_check_request {
     struct san_names {
       char** uri_names;
       size_t uri_names_size;
-      char** ip_names;
-      size_t ip_names_size;
       char** dns_names;
       size_t dns_names_size;
-      /*TODO(ZhenLian): Other SAN name fields go here. This will likely require
-       * changes in TSI, which might go into  another PR... */
+      char** email_names;
+      size_t email_names_size;
+      char** ip_names;
+      size_t ip_names_size;
     } san_names;
     /* The raw peer leaf certificate. */
     const char* peer_cert;

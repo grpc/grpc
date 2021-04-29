@@ -44,10 +44,12 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
     request_.peer_info.common_name = nullptr;
     request_.peer_info.san_names.uri_names = nullptr;
     request_.peer_info.san_names.uri_names_size = 0;
-    request_.peer_info.san_names.ip_names = nullptr;
-    request_.peer_info.san_names.ip_names_size = 0;
     request_.peer_info.san_names.dns_names = nullptr;
     request_.peer_info.san_names.dns_names_size = 0;
+    request_.peer_info.san_names.email_names = nullptr;
+    request_.peer_info.san_names.email_names_size = 0;
+    request_.peer_info.san_names.ip_names = nullptr;
+    request_.peer_info.san_names.ip_names_size = 0;
     request_.peer_info.peer_cert = nullptr;
     request_.peer_info.peer_cert_full_chain = nullptr;
   }
@@ -62,17 +64,24 @@ class GrpcTlsCertificateVerifierTest : public ::testing::Test {
       }
       delete[] request_.peer_info.san_names.uri_names;
     }
-    if (request_.peer_info.san_names.ip_names_size > 0) {
-      for (size_t i = 0; i < request_.peer_info.san_names.ip_names_size; ++i) {
-        gpr_free(request_.peer_info.san_names.ip_names[i]);
-      }
-      delete[] request_.peer_info.san_names.ip_names;
-    }
     if (request_.peer_info.san_names.dns_names_size > 0) {
       for (size_t i = 0; i < request_.peer_info.san_names.dns_names_size; ++i) {
         gpr_free(request_.peer_info.san_names.dns_names[i]);
       }
       delete[] request_.peer_info.san_names.dns_names;
+    }
+    if (request_.peer_info.san_names.email_names_size > 0) {
+      for (size_t i = 0; i < request_.peer_info.san_names.email_names_size;
+           ++i) {
+        gpr_free(request_.peer_info.san_names.email_names[i]);
+      }
+      delete[] request_.peer_info.san_names.email_names;
+    }
+    if (request_.peer_info.san_names.ip_names_size > 0) {
+      for (size_t i = 0; i < request_.peer_info.san_names.ip_names_size; ++i) {
+        gpr_free(request_.peer_info.san_names.ip_names[i]);
+      }
+      delete[] request_.peer_info.san_names.ip_names;
     }
     if (request_.peer_info.peer_cert != nullptr) {
       gpr_free(const_cast<char*>(request_.peer_info.peer_cert));
