@@ -8996,8 +8996,10 @@ TEST_P(EdsTest, RingHashTransientFailureCheckNextOne) {
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   ShutdownBackend(0);
+  gpr_log(GPR_INFO, "donna test after shutdown");
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   WaitForAllBackends(1, 2, true, rpc_options, true);
+  gpr_log(GPR_INFO, "donna backend 1 up ready to send 100");
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
   CheckRpcSendOk(100, rpc_options);
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());

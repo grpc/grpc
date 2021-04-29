@@ -346,6 +346,8 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
 
 bool RingHash::Picker::ConnectAndPickHelper(const RingEntry& entry,
                                             PickResult* result) {
+  gpr_log(GPR_INFO, "donna ConnectAndPickHelper state is %d",
+          entry.connectivity_state);
   if (entry.connectivity_state == GRPC_CHANNEL_READY) {
     result->type = PickResult::PICK_COMPLETE;
     result->subchannel = entry.subchannel;
@@ -422,6 +424,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   if (result.type != PickResult::PICK_FAILED) {
     return result;
   }
+  gpr_log(GPR_INFO, "donna look for next");
   // Loop through remaining subchannels to find one in READY.
   // On the way, we make sure the right set of connection attempts
   // will happen.
@@ -430,6 +433,8 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   bool found_first_non_failed = false;
   for (size_t i = 1; i < ring_.size(); ++i) {
     const RingEntry& entry = ring_[(first_index + i) % ring_.size()];
+    gpr_log(GPR_INFO, "donna index %d state %d and subchannel %p", i,
+            entry.connectivity_state, entry.subchannel.get());
     if (entry.subchannel == first_channel) continue;
     if (entry.connectivity_state == GRPC_CHANNEL_READY) {
       result.type = PickResult::PICK_COMPLETE;
@@ -518,7 +523,7 @@ void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
 }
 
 // Sets the RH policy's connectivity state and generates a new picker based
-// on the current subchannel list.
+// on the current subchannel list or requests an re-attempt by returning true..
 bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
   RingHash* p = static_cast<RingHash*>(policy());
   // Only set connectivity state if this is the current subchannel list.
@@ -546,14 +551,15 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
     return false;
   }
-  /* this case leads to not able to receiving new states
+
   if (num_idle_ > 0 && num_transient_failure_ < 2) {
     gpr_log(GPR_INFO, "donna report IDLE");
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_IDLE, absl::Status(),
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
-    return false;
-  }*/
+    return true;
+  }
+
   grpc_error* error =
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                              "connections to backend failing or idle"),
@@ -627,9 +633,8 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   UpdateConnectivityStateLocked(connectivity_state);
   // Update the RH policy's connectivity state, creating new picker and new
   // ring.
-  bool transient_failure =
-      subchannel_list()->UpdateRingHashConnectivityStateLocked();
-  // While the ring_hash policy is reporting TRANSIENT_FAILURE, it will
+  bool reattempt = subchannel_list()->UpdateRingHashConnectivityStateLocked();
+  // While the ring_hash policy is reporting TRANSIENT_FAILURE or IDLE, it will
   // not be getting any pick requests from the priority policy.
   // However, because the ring_hash policy does not attempt to
   // reconnect to subchannels unless it is getting pick requests,
@@ -641,10 +646,9 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   // in the ring.  It will keep doing this until one of the subchannels
   // successfully connects, at which point it will report READY and stop
   // proactively trying to connect.  The policy will remain in
-  // TRANSIENT_FAILURE until at least one subchannel becomes connected,
+  // TRANSIENT_FAILURE or IDLE until at least one subchannel becomes connected,
   // even if subchannels are in state CONNECTING during that time.
-  if (transient_failure &&
-      connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+  if (reattempt && connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
     size_t next_index = (Index() + 1) % subchannel_list()->num_subchannels();
     RingHashSubchannelData* next_sd = subchannel_list()->subchannel(next_index);
     next_sd->subchannel()->AttemptToConnect();
