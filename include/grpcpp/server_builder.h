@@ -33,6 +33,7 @@
 #include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/security/authorization_policy_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/support/config.h>
 
@@ -295,6 +296,12 @@ class ServerBuilder {
     AddExternalConnectionAcceptor(ExternalConnectionType type,
                                   std::shared_ptr<ServerCredentials> creds);
 
+    /// Sets server authorization policy provider in
+    /// GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER channel argument.
+    void SetAuthorizationPolicyProvider(
+        std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+            provider);
+
    private:
     ServerBuilder* builder_;
   };
@@ -425,6 +432,8 @@ class ServerBuilder {
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
   grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
+  std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+      authorization_provider_;
 };
 
 }  // namespace grpc
