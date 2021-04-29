@@ -8847,17 +8847,16 @@ TEST_P(EdsTest, RingHashChannelIdHashing) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
   CheckRpcSendOk(100);
-  size_t received = 0;
-  size_t empty = 0;
-  for (size_t i = 0; i <= 3; ++i) {
-    if (backends_[i]->backend_service()->request_count() == 0) {
-      ++empty;
-    } else {
-      ++received;
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->backend_service()->request_count() > 0) {
+      EXPECT_EQ(backends_[i]->backend_service()->request_count(), 100)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "backend " << i;
+      found = true;
     }
   }
-  EXPECT_EQ(1, received);
-  EXPECT_EQ(3, empty);
+  EXPECT_TRUE(found);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
@@ -8917,7 +8916,7 @@ TEST_P(EdsTest, RingHashHeaderHashing) {
   CheckRpcSendOk(100, rpc_options1);
   CheckRpcSendOk(100, rpc_options2);
   CheckRpcSendOk(100, rpc_options3);
-  for (size_t i = 0; i <= 3; ++i) {
+  for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(100, backends_[i]->backend_service()->request_count());
   }
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");

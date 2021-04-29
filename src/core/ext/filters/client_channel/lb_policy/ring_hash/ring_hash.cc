@@ -476,7 +476,7 @@ void RingHash::RingHashSubchannelList::StartWatchingLocked() {
   for (size_t i = 0; i < num_subchannels(); i++) {
     if (subchannel(i)->subchannel() != nullptr) {
       subchannel(i)->StartConnectivityWatchLocked();
-      // num_idle_++; this may not be correct
+      subchannel(i)->UpdateConnectivityStateLocked(GRPC_CHANNEL_IDLE);
     }
   }
   RingHash* p = static_cast<RingHash*>(policy());
@@ -492,8 +492,8 @@ void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
   GPR_ASSERT(old_state != GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (old_state == GRPC_CHANNEL_IDLE) {
-    // GPR_ASSERT(num_idle_ > 0);
-    if (num_idle_ > 0) {
+    if (new_state != GRPC_CHANNEL_IDLE) {
+      GPR_ASSERT(num_idle_ > 0);
       --num_idle_;
     }
   } else if (old_state == GRPC_CHANNEL_READY) {
@@ -546,13 +546,14 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
     return false;
   }
+  /* this case leads to not able to receiving new states
   if (num_idle_ > 0 && num_transient_failure_ < 2) {
     gpr_log(GPR_INFO, "donna report IDLE");
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_IDLE, absl::Status(),
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
     return false;
-  }
+  }*/
   grpc_error* error =
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                              "connections to backend failing or idle"),
