@@ -51,7 +51,7 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
   (void)slices;
   // SliceBuffer buffer(slices);
   // eeep->endpoint->Read(
-  //     GrpcClosureToEventEngineCallback(cb),
+  //     GrpcClosureToCallback(cb),
   //     buffer, absl::InfiniteFuture());
 }
 
@@ -69,7 +69,7 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   (void)slices;
   // SliceBuffer buffer(slices);
   // eeep->endpoint->Write(
-  //     GrpcClosureToEventEngineCallback(cb),
+  //     GrpcClosureToCallback(cb),
   //     buffer, absl::InfiniteFuture());
 }
 void endpoint_add_to_pollset(grpc_endpoint* /* ep */,

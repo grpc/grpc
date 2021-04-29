@@ -2732,6 +2732,7 @@ grpc_cc_library(
         "src/core/lib/transport/http2_errors.h",
     ],
     external_deps = [
+        "absl/functional:bind_front",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
