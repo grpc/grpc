@@ -22,6 +22,7 @@
 #include "absl/types/optional.h"
 
 #include "src/core/lib/iomgr/endpoint.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
@@ -36,10 +37,11 @@ class EvaluateArgs {
 
     absl::string_view transport_security_type;
     absl::string_view spiffe_id;
+    std::vector<absl::string_view> dns_sans;
     absl::string_view common_name;
-    std::string local_address;
+    grpc_resolved_address local_address;
     int local_port = 0;
-    std::string peer_address;
+    grpc_resolved_address peer_address;
     int peer_port = 0;
   };
 
@@ -60,12 +62,13 @@ class EvaluateArgs {
   absl::optional<absl::string_view> GetHeaderValue(
       absl::string_view key, std::string* concatenated_value) const;
 
-  absl::string_view GetLocalAddress() const;
+  grpc_resolved_address GetLocalAddress() const;
   int GetLocalPort() const;
-  absl::string_view GetPeerAddress() const;
+  grpc_resolved_address GetPeerAddress() const;
   int GetPeerPort() const;
   absl::string_view GetTransportSecurityType() const;
   absl::string_view GetSpiffeId() const;
+  std::vector<absl::string_view> GetDnsSans() const;
   absl::string_view GetCommonName() const;
 
  private:
