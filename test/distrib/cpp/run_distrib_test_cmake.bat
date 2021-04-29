@@ -66,7 +66,7 @@ popd
 
 @rem Just before installing gRPC, wipe out contents of all the submodules to simulate
 @rem a standalone build from an archive
-git submodule deinit --all --force
+git submodule foreach bash -c "cd $toplevel; rm -rf $name"
 
 @rem Install gRPC
 mkdir cmake\build

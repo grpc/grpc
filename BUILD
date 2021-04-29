@@ -2645,7 +2645,7 @@ grpc_cc_library(
     language = "c++",
     deps = [
         ":grpc++_internals",
-        "//src/proto/grpc/testing/xds/v3:csds_proto",
+        "@envoy_api//envoy/service/status/v3:pkg_cc_grpc",
     ],
     alwayslink = 1,
 )
