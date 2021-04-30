@@ -20,6 +20,11 @@ cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
+# some distribtests use a pre-registered binfmt_misc hook
+# to automatically execute foreign binaries (such as aarch64)
+# under qemu emulator.
+source tools/internal_ci/helper_scripts/prepare_qemu_rc
+
 set +ex
 [[ -s /etc/profile.d/rvm.sh ]] && . /etc/profile.d/rvm.sh
 set -e  # rvm commands are very verbose
