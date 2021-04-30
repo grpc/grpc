@@ -292,7 +292,16 @@ class BaseStub
             $metadata = $this->_validate_and_normalize_metadata(
                 $metadata
             );
-            $call->start($argument, $metadata, $options);
+            if (is_callable($options["async_callback"])) {
+                $call->callAsync(
+                    $argument,
+                    $options["async_callback"],
+                    $metadata,
+                    $options
+                );
+            } else {
+                $call->start($argument, $metadata, $options);
+            }
             return $call;
         };
     }
