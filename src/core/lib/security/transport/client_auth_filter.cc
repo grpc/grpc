@@ -485,7 +485,7 @@ static void client_auth_pre_cancel_call(grpc_call_element* elem,
           &calld->async_result_closure, GRPC_ERROR_REF(error));
       if (calld->get_request_metadata_started) {
         // get_request_metadata() was started.  Try cancelling it.
-        // Note that this may be  a no-op if it has already finished.
+        // Note that this may be a no-op if it has already finished.
         calld->creds->cancel_get_request_metadata(&calld->md_array,
                                                   GRPC_ERROR_REF(error));
       }
