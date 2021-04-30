@@ -22,9 +22,13 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/status.h"
-#include "google/rpc/status.upb.h"
 
 #include "src/core/lib/gprpp/debug_location.h"
+
+extern "C" {
+struct google_rpc_Status;
+struct upb_arena;
+}
 
 namespace grpc_core {
 
