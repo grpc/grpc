@@ -12,19 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-package(
-    default_testonly = True,
-)
+load("//bazel:python_rules.bzl", "py2and3_test")
 
-py_test(
+py2and3_test(
     name = "test_csds",
     size = "small",
     srcs = ["test_csds.py"],
     main = "test_csds.py",
-    python_version = "PY3",
-    srcs_version = "PY3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_csds/grpc_csds",
+        "@six",
     ],
 )
