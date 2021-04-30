@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include <gtest/gtest.h>
+#include <gmock/gmock.h>
 
 #include <grpc/support/time.h>
 
@@ -125,6 +126,13 @@ TEST(TimeUtilTest, ToAbslTimeWithInfinites) {
             grpc_core::ToAbslTime(gpr_inf_past(GPR_CLOCK_REALTIME)));
   EXPECT_EQ(absl::UnixEpoch(),
             grpc_core::ToAbslTime(gpr_time_0(GPR_CLOCK_REALTIME)));
+}
+
+TEST(TimeUtilTest, TimeZoneToString) {
+  absl::Time t = absl::FromCivil(absl::CivilSecond(2021, 4, 29, 8, 56, 30),
+                                 absl::LocalTimeZone());
+  std::string s = absl::FormatTime(t, absl::LocalTimeZone());
+  EXPECT_THAT(s, testing::StartsWith("2021-04-29T08:56:30"));
 }
 
 int main(int argc, char** argv) {
