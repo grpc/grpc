@@ -295,3 +295,13 @@ py_proto_library(
     name = "config_dump_py_pb2",
     deps = [":_config_dump_proto_only"],
 )
+
+py_proto_library(
+    name = "base_py_pb2",
+    deps = [":_base_proto_only"],
+)
+
+py_proto_library(
+    name = "percent_py_pb2",
+    deps = [":_percent_proto_only"],
+)
