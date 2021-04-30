@@ -60,7 +60,6 @@
   "unit._invocation_defects_test.InvocationDefectsTest",
   "unit._local_credentials_test.LocalCredentialsTest",
   "unit._logging_test.LoggingTest",
-  "unit._metadata_code_details_test.InspectContextTest",
   "unit._metadata_code_details_test.MetadataCodeDetailsTest",
   "unit._metadata_flags_test.MetadataFlagsTest",
   "unit._metadata_test.MetadataTest",

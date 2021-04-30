@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 
 #include <errno.h>
 #include <inttypes.h>

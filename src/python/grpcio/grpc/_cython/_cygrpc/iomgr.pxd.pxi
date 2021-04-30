@@ -120,7 +120,7 @@ cdef extern from "src/core/lib/iomgr/iomgr_custom.h":
                             grpc_custom_timer_vtable* timer,
                             grpc_custom_poller_vtable* poller);
 
-cdef extern from "src/core/lib/iomgr/sockaddr_utils.h":
+cdef extern from "src/core/lib/address_utils/sockaddr_utils.h":
   int grpc_sockaddr_get_port(const grpc_resolved_address *addr);
   cppstring grpc_sockaddr_to_string(const grpc_resolved_address *addr,
                                     bool_t normalize);
