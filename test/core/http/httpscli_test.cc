@@ -44,14 +44,14 @@ static grpc_millis n_seconds_time(int seconds) {
       grpc_timeout_seconds_to_deadline(seconds));
 }
 
-static void on_finish(void* arg, grpc_error* error) {
+static void on_finish(void* arg, grpc_error_handle error) {
   const char* expect =
       "<html><head><title>Hello world!</title></head>"
       "<body><p>This is a test</p></body></html>";
   grpc_http_response* response = static_cast<grpc_http_response*>(arg);
   GPR_ASSERT(response);
   gpr_log(GPR_INFO, "response status=%d error=%s", response->status,
-          grpc_error_string(error));
+          grpc_error_std_string(error).c_str());
   GPR_ASSERT(response->status == 200);
   GPR_ASSERT(response->body_length == strlen(expect));
   GPR_ASSERT(0 == memcmp(expect, response->body, response->body_length));
@@ -143,7 +143,7 @@ static void test_post(int port) {
   grpc_http_response_destroy(&response);
 }
 
-static void destroy_pops(void* p, grpc_error* /*error*/) {
+static void destroy_pops(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(
       grpc_polling_entity_pollset(static_cast<grpc_polling_entity*>(p)));
 }

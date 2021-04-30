@@ -129,8 +129,8 @@ class GrpcTlsCertificateDistributorTest : public ::testing::Test {
                                              std::move(updated_identity));
     }
 
-    void OnError(grpc_error* root_cert_error,
-                 grpc_error* identity_cert_error) override {
+    void OnError(grpc_error_handle root_cert_error,
+                 grpc_error_handle identity_cert_error) override {
       GPR_ASSERT(root_cert_error != GRPC_ERROR_NONE ||
                  identity_cert_error != GRPC_ERROR_NONE);
       std::string root_error_str;

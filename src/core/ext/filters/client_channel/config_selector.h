@@ -52,7 +52,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 
   struct CallConfig {
     // Can be set to indicate the call should be failed.
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
     // The per-method parsed configs that will be passed to
     // ServiceConfigCallData.
     const ServiceConfigParser::ParsedConfigVector* method_configs = nullptr;

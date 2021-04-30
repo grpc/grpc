@@ -54,9 +54,9 @@ typedef struct grpc_address_resolver_vtable {
                           grpc_pollset_set* interested_parties,
                           grpc_closure* on_done,
                           grpc_resolved_addresses** addresses);
-  grpc_error* (*blocking_resolve_address)(const char* name,
-                                          const char* default_port,
-                                          grpc_resolved_addresses** addresses);
+  grpc_error_handle (*blocking_resolve_address)(
+      const char* name, const char* default_port,
+      grpc_resolved_addresses** addresses);
 } grpc_address_resolver_vtable;
 
 void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable);
@@ -74,8 +74,8 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses);
 
 /* Resolve addr in a blocking fashion. On success,
    result must be freed with grpc_resolved_addresses_destroy. */
-grpc_error* grpc_blocking_resolve_address(const char* name,
-                                          const char* default_port,
-                                          grpc_resolved_addresses** addresses);
+grpc_error_handle grpc_blocking_resolve_address(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses);
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOLVE_ADDRESS_H */

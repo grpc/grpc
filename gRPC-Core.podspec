@@ -173,7 +173,7 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.17'
+    ss.dependency 'BoringSSL-GRPC', '0.0.18'
     ss.dependency 'abseil/base/base', abseil_version
     ss.dependency 'abseil/container/flat_hash_map', abseil_version
     ss.dependency 'abseil/container/inlined_vector', abseil_version
@@ -905,6 +905,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/stat.h',
                       'src/core/lib/gprpp/stat_posix.cc',
                       'src/core/lib/gprpp/stat_windows.cc',
+                      'src/core/lib/gprpp/status_helper.cc',
+                      'src/core/lib/gprpp/status_helper.h',
                       'src/core/lib/gprpp/sync.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/gprpp/thd_posix.cc',
@@ -1744,6 +1746,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
                               'src/core/lib/gprpp/stat.h',
+                              'src/core/lib/gprpp/status_helper.h',
                               'src/core/lib/gprpp/sync.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/gprpp/time_util.h',

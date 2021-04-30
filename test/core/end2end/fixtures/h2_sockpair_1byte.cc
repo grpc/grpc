@@ -46,7 +46,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
   grpc_core::ExecCtx exec_ctx;
   grpc_endpoint_pair* sfd = static_cast<grpc_endpoint_pair*>(f->fixture_data);
   grpc_endpoint_add_to_pollset(sfd->server, grpc_cq_pollset(f->cq));
-  grpc_error* error = f->server->core_server->SetupTransport(
+  grpc_error_handle error = f->server->core_server->SetupTransport(
       transport, nullptr, f->server->core_server->channel_args(), nullptr);
   if (error == GRPC_ERROR_NONE) {
     grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
@@ -69,7 +69,7 @@ static void client_setup_transport(void* ts, grpc_transport* transport) {
       const_cast<char*>("test-authority"));
   grpc_channel_args* args =
       grpc_channel_args_copy_and_add(cs->client_args, &authority_arg, 1);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   cs->f->client =
       grpc_channel_create("socketpair-target", args, GRPC_CLIENT_DIRECT_CHANNEL,
                           transport, nullptr, &error);

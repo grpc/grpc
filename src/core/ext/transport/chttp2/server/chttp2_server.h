@@ -34,11 +34,11 @@ namespace grpc_core {
 // added to the server. Takes ownership of the args.  Caller takes ownership of
 // returned args. On failure, the error parameter will be set.
 using Chttp2ServerArgsModifier =
-    std::function<grpc_channel_args*(grpc_channel_args*, grpc_error**)>;
+    std::function<grpc_channel_args*(grpc_channel_args*, grpc_error_handle*)>;
 
 /// Adds a port to \a server.  Sets \a port_num to the port number.
 /// Takes ownership of \a args.
-grpc_error* Chttp2ServerAddPort(
+grpc_error_handle Chttp2ServerAddPort(
     Server* server, const char* addr, grpc_channel_args* args,
     Chttp2ServerArgsModifier connection_args_modifier, int* port_num);
 

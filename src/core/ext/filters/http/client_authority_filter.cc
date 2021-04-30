@@ -57,7 +57,7 @@ void client_authority_start_transport_stream_op_batch(
   if (batch->send_initial_metadata &&
       batch->payload->send_initial_metadata.send_initial_metadata->idx.named
               .authority == nullptr) {
-    grpc_error* error = grpc_metadata_batch_add_head(
+    grpc_error_handle error = grpc_metadata_batch_add_head(
         batch->payload->send_initial_metadata.send_initial_metadata,
         &calld->authority_storage,
         GRPC_MDELEM_REF(chand->default_authority_mdelem), GRPC_BATCH_AUTHORITY);
@@ -72,7 +72,7 @@ void client_authority_start_transport_stream_op_batch(
 }
 
 /* Constructor for call_data */
-grpc_error* client_authority_init_call_elem(
+grpc_error_handle client_authority_init_call_elem(
     grpc_call_element* elem, const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
@@ -85,7 +85,7 @@ void client_authority_destroy_call_elem(
     grpc_closure* /*ignored*/) {}
 
 /* Constructor for channel_data */
-grpc_error* client_authority_init_channel_elem(
+grpc_error_handle client_authority_init_channel_elem(
     grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   const grpc_arg* default_authority_arg =

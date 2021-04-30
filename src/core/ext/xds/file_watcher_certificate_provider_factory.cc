@@ -64,14 +64,14 @@ std::string FileWatcherCertificateProviderFactory::Config::ToString() const {
 
 RefCountedPtr<FileWatcherCertificateProviderFactory::Config>
 FileWatcherCertificateProviderFactory::Config::Parse(const Json& config_json,
-                                                     grpc_error** error) {
+                                                     grpc_error_handle* error) {
   auto config = MakeRefCounted<FileWatcherCertificateProviderFactory::Config>();
   if (config_json.type() != Json::Type::OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "error:config type should be OBJECT.");
     return nullptr;
   }
-  std::vector<grpc_error*> error_list;
+  std::vector<grpc_error_handle> error_list;
   ParseJsonObjectField(config_json.object_value(), "certificate_file",
                        &config->identity_cert_file_, &error_list, false);
   ParseJsonObjectField(config_json.object_value(), "private_key_file",
@@ -112,7 +112,7 @@ const char* FileWatcherCertificateProviderFactory::name() const {
 
 RefCountedPtr<CertificateProviderFactory::Config>
 FileWatcherCertificateProviderFactory::CreateCertificateProviderConfig(
-    const Json& config_json, grpc_error** error) {
+    const Json& config_json, grpc_error_handle* error) {
   return FileWatcherCertificateProviderFactory::Config::Parse(config_json,
                                                               error);
 }

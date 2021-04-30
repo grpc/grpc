@@ -23,6 +23,7 @@ from absl.testing import absltest
 
 from framework import xds_flags
 from framework import xds_k8s_flags
+from framework.helpers import retryers
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
@@ -114,6 +115,15 @@ class XdsKubernetesTestCase(absltest.TestCase):
 
     def tearDown(self):
         logger.info('----- TestMethod %s teardown -----', self.id())
+        retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
+                                            attempts=3,
+                                            log_level=logging.INFO)
+        try:
+            retryer(self._cleanup)
+        except retryers.RetryError:
+            logger.exception('Got error during teardown')
+
+    def _cleanup(self):
         self.td.cleanup(force=self.force_cleanup)
         self.client_runner.cleanup(force=self.force_cleanup)
         self.server_runner.cleanup(force=self.force_cleanup,

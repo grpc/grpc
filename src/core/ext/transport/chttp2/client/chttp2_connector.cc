@@ -75,7 +75,7 @@ void Chttp2Connector::Connect(const Args& args, Result* result,
                           args.channel_args, &addr, args.deadline);
 }
 
-void Chttp2Connector::Shutdown(grpc_error* error) {
+void Chttp2Connector::Shutdown(grpc_error_handle error) {
   MutexLock lock(&mu_);
   shutdown_ = true;
   if (handshake_mgr_ != nullptr) {
@@ -89,7 +89,7 @@ void Chttp2Connector::Shutdown(grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
-void Chttp2Connector::Connected(void* arg, grpc_error* error) {
+void Chttp2Connector::Connected(void* arg, grpc_error_handle error) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   bool unref = false;
   {
@@ -131,14 +131,14 @@ void Chttp2Connector::StartHandshakeLocked() {
 
 namespace {
 void NullThenSchedClosure(const DebugLocation& location, grpc_closure** closure,
-                          grpc_error* error) {
+                          grpc_error_handle error) {
   grpc_closure* c = *closure;
   *closure = nullptr;
   ExecCtx::Run(location, c, error);
 }
 }  // namespace
 
-void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error* error) {
+void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error_handle error) {
   auto* args = static_cast<HandshakerArgs*>(arg);
   Chttp2Connector* self = static_cast<Chttp2Connector*>(args->user_data);
   {
@@ -194,7 +194,7 @@ void Chttp2Connector::OnHandshakeDone(void* arg, grpc_error* error) {
   self->Unref();
 }
 
-void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
+void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error_handle error) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   {
     MutexLock lock(&self->mu_);
@@ -220,7 +220,7 @@ void Chttp2Connector::OnReceiveSettings(void* arg, grpc_error* error) {
   self->Unref();
 }
 
-void Chttp2Connector::OnTimeout(void* arg, grpc_error* /*error*/) {
+void Chttp2Connector::OnTimeout(void* arg, grpc_error_handle /*error*/) {
   Chttp2Connector* self = static_cast<Chttp2Connector*>(arg);
   {
     MutexLock lock(&self->mu_);
@@ -245,7 +245,7 @@ void Chttp2Connector::OnTimeout(void* arg, grpc_error* /*error*/) {
   self->Unref();
 }
 
-void Chttp2Connector::MaybeNotify(grpc_error* error) {
+void Chttp2Connector::MaybeNotify(grpc_error_handle error) {
   if (notify_error_.has_value()) {
     GRPC_ERROR_UNREF(error);
     NullThenSchedClosure(DEBUG_LOCATION, &notify_, notify_error_.value());

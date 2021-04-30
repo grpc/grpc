@@ -41,7 +41,7 @@ cdef class SocketWrapper:
   def __dealloc__(self):
     grpc_shutdown()
 
-cdef grpc_error* socket_init(grpc_custom_socket* socket, int domain) with gil:
+cdef grpc_error_handle socket_init(grpc_custom_socket* socket, int domain) with gil:
   sw = SocketWrapper()
   sw.c_socket = socket
   sw.sockopts = []
@@ -168,7 +168,7 @@ cdef void socket_read(grpc_custom_socket* socket, char* buffer,
   sw.len = length
   _spawn_greenlet(socket_read_async, sw)
 
-cdef grpc_error* socket_getpeername(grpc_custom_socket* socket,
+cdef grpc_error_handle socket_getpeername(grpc_custom_socket* socket,
                                     const grpc_sockaddr* addr,
                                     int* length) with gil:
   cdef char* src_buf
@@ -181,7 +181,7 @@ cdef grpc_error* socket_getpeername(grpc_custom_socket* socket,
   length[0] = c_addr.len
   return grpc_error_none()  
 
-cdef grpc_error* socket_getsockname(grpc_custom_socket* socket,
+cdef grpc_error_handle socket_getsockname(grpc_custom_socket* socket,
                                     const grpc_sockaddr* addr,
                                     int* length) with gil:
   cdef char* src_buf
@@ -200,7 +200,7 @@ def applysockopts(s):
   s.setsockopt(gevent_socket.SOL_SOCKET, gevent_socket.SO_REUSEADDR, 1)
   s.setsockopt(gevent_socket.IPPROTO_TCP, gevent_socket.TCP_NODELAY, True)
 
-cdef grpc_error* socket_bind(grpc_custom_socket* socket,
+cdef grpc_error_handle socket_bind(grpc_custom_socket* socket,
                              const grpc_sockaddr* addr,
                              size_t len, int flags) with gil:
   addr_tuple = sockaddr_to_tuple(addr, len)
@@ -219,7 +219,7 @@ cdef grpc_error* socket_bind(grpc_custom_socket* socket,
   else:
     return grpc_error_none()
 
-cdef grpc_error* socket_listen(grpc_custom_socket* socket) with gil:
+cdef grpc_error_handle socket_listen(grpc_custom_socket* socket) with gil:
   (<SocketWrapper>socket.impl).socket.listen(50)
   return grpc_error_none()
 
@@ -290,7 +290,7 @@ cdef void socket_resolve_async(grpc_custom_resolver* r, const char* host, const 
   rw.c_port = port
   _spawn_greenlet(socket_resolve_async_python, rw)
 
-cdef grpc_error* socket_resolve(const char* host, const char* port,
+cdef grpc_error_handle socket_resolve(const char* host, const char* port,
                                 grpc_resolved_addresses** res) with gil:
     try:
       result = gevent_socket.getaddrinfo(host, port)

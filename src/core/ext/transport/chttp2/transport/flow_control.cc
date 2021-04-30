@@ -203,7 +203,7 @@ uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   return 0;
 }
 
-grpc_error* TransportFlowControl::ValidateRecvData(
+grpc_error_handle TransportFlowControl::ValidateRecvData(
     int64_t incoming_frame_size) {
   if (incoming_frame_size > announced_window_) {
     return GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -219,10 +219,10 @@ StreamFlowControl::StreamFlowControl(TransportFlowControl* tfc,
                                      const grpc_chttp2_stream* s)
     : tfc_(tfc), s_(s) {}
 
-grpc_error* StreamFlowControl::RecvData(int64_t incoming_frame_size) {
+grpc_error_handle StreamFlowControl::RecvData(int64_t incoming_frame_size) {
   FlowControlTrace trace("  data recv", tfc_, this);
 
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   error = tfc_->ValidateRecvData(incoming_frame_size);
   if (error != GRPC_ERROR_NONE) return error;
 
