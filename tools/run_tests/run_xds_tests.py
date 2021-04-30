@@ -289,7 +289,8 @@ _BOOTSTRAP_TEMPLATE = """
   "node": {{
     "id": "{node_id}",
     "metadata": {{
-      "TRAFFICDIRECTOR_NETWORK_NAME": "%s"
+      "TRAFFICDIRECTOR_NETWORK_NAME": "%s",
+      "com.googleapis.trafficdirector.config_time_trace": "TRUE"
     }},
     "locality": {{
       "zone": "%s"

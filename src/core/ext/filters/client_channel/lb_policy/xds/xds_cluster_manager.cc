@@ -337,44 +337,29 @@ void XdsClusterManagerLb::UpdateStateLocked() {
     gpr_log(GPR_INFO, "[xds_cluster_manager_lb %p] connectivity changed to %s",
             this, ConnectivityStateName(connectivity_state));
   }
-  std::unique_ptr<SubchannelPicker> picker;
-  absl::Status status;
-  switch (connectivity_state) {
-    case GRPC_CHANNEL_READY: {
-      ClusterPicker::ClusterMap cluster_map;
-      for (const auto& p : config_->cluster_map()) {
-        const std::string& cluster_name = p.first;
-        RefCountedPtr<ChildPickerWrapper>& child_picker =
-            cluster_map[cluster_name];
-        child_picker = children_[cluster_name]->picker_wrapper();
-        if (child_picker == nullptr) {
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
-            gpr_log(
-                GPR_INFO,
+  ClusterPicker::ClusterMap cluster_map;
+  for (const auto& p : config_->cluster_map()) {
+    const std::string& cluster_name = p.first;
+    RefCountedPtr<ChildPickerWrapper>& child_picker = cluster_map[cluster_name];
+    child_picker = children_[cluster_name]->picker_wrapper();
+    if (child_picker == nullptr) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_cluster_manager_lb_trace)) {
+        gpr_log(GPR_INFO,
                 "[xds_cluster_manager_lb %p] child %s has not yet returned a "
                 "picker; creating a QueuePicker.",
                 this, cluster_name.c_str());
-          }
-          child_picker = MakeRefCounted<ChildPickerWrapper>(
-              cluster_name, absl::make_unique<QueuePicker>(
-                                Ref(DEBUG_LOCATION, "QueuePicker")));
-        }
       }
-      picker = absl::make_unique<ClusterPicker>(std::move(cluster_map));
-      break;
+      child_picker = MakeRefCounted<ChildPickerWrapper>(
+          cluster_name,
+          absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker")));
     }
-    case GRPC_CHANNEL_CONNECTING:
-    case GRPC_CHANNEL_IDLE:
-      picker =
-          absl::make_unique<QueuePicker>(Ref(DEBUG_LOCATION, "QueuePicker"));
-      break;
-    default:
-      grpc_error_handle error = grpc_error_set_int(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "TRANSIENT_FAILURE from XdsClusterManagerLb"),
-          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-      status = grpc_error_to_absl_status(error);
-      picker = absl::make_unique<TransientFailurePicker>(error);
+  }
+  std::unique_ptr<SubchannelPicker> picker =
+      absl::make_unique<ClusterPicker>(std::move(cluster_map));
+  absl::Status status;
+  if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+    status = absl::Status(absl::StatusCode::kUnavailable,
+                          "TRANSIENT_FAILURE from XdsClusterManagerLb");
   }
   channel_control_helper()->UpdateState(connectivity_state, status,
                                         std::move(picker));

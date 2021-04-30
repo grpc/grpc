@@ -33,36 +33,36 @@ TEST(StatusUtilTest, CreateStatus) {
   EXPECT_EQ(absl::StatusCode::kUnknown, s.code());
   EXPECT_EQ("Test", s.message());
 #ifndef NDEBUG
-  EXPECT_EQ(true, StatusGetStr(s, StatusStrProperty::FILE).has_value());
-  EXPECT_EQ(true, StatusGetInt(s, StatusIntProperty::FILE_LINE).has_value());
+  EXPECT_EQ(true, StatusGetStr(s, StatusStrProperty::kFile).has_value());
+  EXPECT_EQ(true, StatusGetInt(s, StatusIntProperty::kFileLine).has_value());
 #endif
-  EXPECT_EQ(true, StatusGetStr(s, StatusStrProperty::CREATED_TIME).has_value());
+  EXPECT_EQ(true, StatusGetStr(s, StatusStrProperty::kCreatedTime).has_value());
   EXPECT_THAT(StatusGetChildren(s),
               ::testing::ElementsAre(absl::CancelledError()));
 }
 
 TEST(StatusUtilTest, SetAndGetInt) {
   absl::Status s = absl::CancelledError();
-  StatusSetInt(&s, StatusIntProperty::ERRNO, 2021);
-  EXPECT_EQ(2021, StatusGetInt(s, StatusIntProperty::ERRNO));
+  StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
+  EXPECT_EQ(2021, StatusGetInt(s, StatusIntProperty::kErrorNo));
 }
 
 TEST(StatusUtilTest, GetIntNotExistent) {
   absl::Status s = absl::CancelledError();
   EXPECT_EQ(absl::optional<intptr_t>(),
-            StatusGetInt(s, StatusIntProperty::ERRNO));
+            StatusGetInt(s, StatusIntProperty::kErrorNo));
 }
 
 TEST(StatusUtilTest, SetAndGetStr) {
   absl::Status s = absl::CancelledError();
-  StatusSetStr(&s, StatusStrProperty::OS_ERROR, "value");
-  EXPECT_EQ("value", StatusGetStr(s, StatusStrProperty::OS_ERROR));
+  StatusSetStr(&s, StatusStrProperty::kOsError, "value");
+  EXPECT_EQ("value", StatusGetStr(s, StatusStrProperty::kOsError));
 }
 
 TEST(StatusUtilTest, GetStrNotExistent) {
   absl::Status s = absl::CancelledError();
   EXPECT_EQ(absl::optional<std::string>(),
-            StatusGetStr(s, StatusStrProperty::OS_ERROR));
+            StatusGetStr(s, StatusStrProperty::kOsError));
 }
 
 TEST(StatusUtilTest, AddAndGetChildren) {
@@ -76,8 +76,8 @@ TEST(StatusUtilTest, AddAndGetChildren) {
 
 TEST(StatusUtilTest, ToAndFromProto) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetInt(&s, StatusIntProperty::ERRNO, 2021);
-  StatusSetStr(&s, StatusStrProperty::OS_ERROR, "value");
+  StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
+  StatusSetStr(&s, StatusStrProperty::kOsError, "value");
   upb::Arena arena;
   google_rpc_Status* msg = internal::StatusToProto(s, arena.ptr());
   absl::Status s2 = internal::StatusFromProto(msg);
@@ -98,24 +98,34 @@ TEST(StatusUtilTest, CancelledErrorToString) {
 
 TEST(StatusUtilTest, ComplexErrorToString) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetInt(&s, StatusIntProperty::ERRNO, 2021);
+  StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
   std::string t = StatusToString(s);
   EXPECT_EQ("CANCELLED:Message {errno:\"2021\"}", t);
 }
 
 TEST(StatusUtilTest, ComplexErrorWithChildrenToString) {
   absl::Status s = absl::CancelledError("Message");
-  StatusSetInt(&s, StatusIntProperty::ERRNO, 2021);
+  StatusSetInt(&s, StatusIntProperty::kErrorNo, 2021);
   absl::Status s1 = absl::AbortedError("Message1");
   StatusAddChild(&s, s1);
   absl::Status s2 = absl::AlreadyExistsError("Message2");
-  StatusSetStr(&s2, StatusStrProperty::OS_ERROR, "value");
+  StatusSetStr(&s2, StatusStrProperty::kOsError, "value");
   StatusAddChild(&s, s2);
   std::string t = StatusToString(s);
   EXPECT_EQ(
       "CANCELLED:Message {errno:\"2021\", children:["
       "ABORTED:Message1, ALREADY_EXISTS:Message2 {os_error:\"value\"}]}",
       t);
+}
+
+TEST(StatusUtilTest, AllocPtr) {
+  absl::Status statuses[] = {absl::OkStatus(), absl::CancelledError(),
+                             absl::AbortedError("Message")};
+  for (const auto& s : statuses) {
+    uintptr_t p = internal::StatusAllocPtr(s);
+    EXPECT_EQ(s, internal::StatusGetFromPtr(p));
+    internal::StatusFreePtr(p);
+  }
 }
 
 }  // namespace

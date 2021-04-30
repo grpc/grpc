@@ -197,23 +197,14 @@ cdef class _ServicerContext:
     def set_trailing_metadata(self, object metadata):
         self._rpc_state.trailing_metadata = tuple(metadata)
 
-    def trailing_metadata(self):
-        return self._rpc_state.trailing_metadata
-
     def invocation_metadata(self):
         return self._rpc_state.invocation_metadata()
 
     def set_code(self, object code):
         self._rpc_state.status_code = get_status_code(code)
 
-    def code(self):
-        return self._rpc_state.status_code
-
     def set_details(self, str details):
         self._rpc_state.status_details = details
-
-    def details(self):
-        return self._rpc_state.status_details
 
     def set_compression(self, object compression):
         if self._rpc_state.metadata_sent:
