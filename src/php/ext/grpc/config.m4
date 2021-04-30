@@ -84,8 +84,8 @@ if test "$PHP_GRPC" != "no"; then
 
   PHP_SUBST(GRPC_SHARED_LIBADD)
 
-  PHP_NEW_EXTENSION(grpc, byte_buffer.c call.c call_credentials.c channel.c \
-    channel_credentials.c completion_queue.c timeval.c server.c \
+  PHP_NEW_EXTENSION(grpc, batch.c byte_buffer.c call.c call_credentials.c channel.c \
+    channel_credentials.c completion_queue.c metadata_array.c timeval.c server.c \
     server_credentials.c php_grpc.c, $ext_shared, , -Wall -Werror -std=c11 -DGRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK=1)
 fi
 

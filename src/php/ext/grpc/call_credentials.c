@@ -30,6 +30,7 @@
 #include <grpc/support/string_util.h>
 
 #include "call.h"
+#include "metadata_array.h"
 
 zend_class_entry *grpc_ce_call_credentials;
 PHP_GRPC_DECLARE_OBJECT_HANDLER(call_credentials_ce_handlers)
