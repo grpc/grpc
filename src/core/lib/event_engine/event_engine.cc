@@ -18,6 +18,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/event_engine/sockaddr.h"
+#include "src/core/lib/debug/trace.h"
+
+grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
+    false, "polling"); /* Disabled by default */
 
 namespace grpc_event_engine {
 namespace experimental {
