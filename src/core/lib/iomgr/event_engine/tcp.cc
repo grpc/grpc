@@ -49,18 +49,16 @@ struct grpc_tcp_server {
         1, GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) ? "tcp" : nullptr);
     shutdown_starting.head = nullptr;
     shutdown_starting.tail = nullptr;
-    gpr_mu_init(&mu);
   };
   ~grpc_tcp_server() {
-    gpr_mu_destroy(&mu);
     // TODO(nnoble): see if we can handle this in ~SliceAllocatorFactory
     grpc_resource_quota_unref_internal(resource_quota);
   }
   grpc_core::RefCount refcount;
-  gpr_mu mu;
+  grpc_core::Mutex mu;
   std::unique_ptr<EventEngine::Listener> listener;
   std::shared_ptr<EventEngine> engine;
-  grpc_closure_list shutdown_starting;
+  grpc_closure_list shutdown_starting ABSL_GUARDED_BY(mu);
   grpc_resource_quota* resource_quota;
 };
 
@@ -215,19 +213,19 @@ grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
 
 void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
                                       grpc_closure* shutdown_starting) {
-  gpr_mu_lock(&s->mu);
+  grpc_core::MutexLock lock(&s->mu);
   grpc_closure_list_append(&s->shutdown_starting, shutdown_starting,
                            GRPC_ERROR_NONE);
-  gpr_mu_unlock(&s->mu);
 }
 
 void tcp_server_destroy(grpc_tcp_server* s) { delete s; }
 
 void tcp_free(grpc_tcp_server* s) {
-  gpr_mu_lock(&s->mu);
-  grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
-  grpc_core::ExecCtx::Get()->Flush();
-  gpr_mu_unlock(&s->mu);
+  {
+    grpc_core::MutexLock lock(&s->mu);
+    grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
+    grpc_core::ExecCtx::Get()->Flush();
+  }
   tcp_server_destroy(s);
 }
 
