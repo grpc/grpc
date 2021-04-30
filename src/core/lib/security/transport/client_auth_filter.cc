@@ -456,8 +456,8 @@ static void client_auth_start_transport_stream_op_batch(
       }
       if (cancel_error != GRPC_ERROR_NONE) {
         // We've already been cancelled, so fail the batch.
-        grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error,
-                                                           calld->call_combiner);
+        grpc_transport_stream_op_batch_finish_with_failure(
+            batch, cancel_error, calld->call_combiner);
         return;
       }
       if (is_done) {
