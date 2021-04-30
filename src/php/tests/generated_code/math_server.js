@@ -47,7 +47,7 @@ function Div(call, callback) {
         quotient: Math.floor(dividend / divisor),
         remainder: dividend % divisor
       });
-    }, 1); // 1 millisecond, to make sure 1 microsecond timeout from test
+    }, Math.random() * 1000); // 1 millisecond, to make sure 1 microsecond timeout from test
            // will hit. TODO: Consider fixing this.
   }
 }
