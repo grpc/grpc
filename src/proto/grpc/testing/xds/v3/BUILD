@@ -290,3 +290,8 @@ py_grpc_library(
     srcs = [":_csds_proto_only"],
     deps = [":csds_py_pb2"],
 )
+
+py_proto_library(
+    name = "config_dump_py_pb2",
+    deps = [":_config_dump_proto_only"],
+)

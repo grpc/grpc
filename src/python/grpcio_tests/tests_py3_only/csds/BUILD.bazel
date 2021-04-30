@@ -17,10 +17,10 @@ package(
 )
 
 py_test(
-    name = 'test_csds',
+    name = "test_csds",
     size = "small",
-    srcs = ['test_csds.py'],
-    main = 'test_csds.py',
+    srcs = ["test_csds.py"],
+    main = "test_csds.py",
     python_version = "PY3",
     srcs_version = "PY3",
     deps = [
