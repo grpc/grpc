@@ -31,6 +31,7 @@
 #include <grpc/support/log_windows.h>
 #endif
 
+#include "src/core/lib/debug/stats.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/error_internal.h"
@@ -39,6 +40,7 @@
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_error_refcount(false,
                                                         "error_refcount");
+grpc_core::DebugOnlyTraceFlag grpc_trace_error_create(true, "error_create");
 grpc_core::DebugOnlyTraceFlag grpc_trace_closure(false, "closure");
 
 static gpr_atm g_error_creation_allowed = true;
@@ -417,6 +419,12 @@ grpc_error_handle grpc_error_create(const char* file, int line,
                                     grpc_error_handle* referencing,
                                     size_t num_referencing) {
   GPR_TIMER_SCOPE("grpc_error_create", 0);
+  GRPC_STATS_INC_HTTP2_SPURIOUS_WRITES_BEGUN();
+  if (grpc_trace_error_create.enabled()) {
+    char* str = grpc_slice_to_c_string(desc);
+    gpr_log(GPR_DEBUG, "error create '%s' [%s:%d]", str, file, line);
+    gpr_free(str);
+  }
   uint8_t initial_arena_capacity = static_cast<uint8_t>(
       DEFAULT_ERROR_CAPACITY +
       static_cast<uint8_t>(num_referencing * SLOTS_PER_LINKED_ERROR) +
