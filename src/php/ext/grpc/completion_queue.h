@@ -28,12 +28,31 @@
 #endif
 
 /* The global completion queue for all operations */
-extern grpc_completion_queue *completion_queue;
+extern grpc_completion_queue* completion_queue;
 
 /* Initializes the completion queue */
 void grpc_php_init_completion_queue(TSRMLS_D);
 
 /* Shut down the completion queue */
 void grpc_php_shutdown_completion_queue(TSRMLS_D);
+
+/* The global completion queue using callbacks */
+extern grpc_completion_queue* callback_queue;
+
+/* */
+struct callback_tag_list_item {
+  grpc_experimental_completion_queue_functor functor;
+  struct callback_tag_list_item* next;
+  struct callback_tag_list_item* prev;
+};
+
+void grpc_php_callback_tag_list_push(struct callback_tag_list_item* tag);
+struct callback_tag_list_item* grpc_php_callback_tag_list_pop();
+
+/* Initializes the completion queue for callback */
+void grpc_php_init_completion_queue_for_callback(TSRMLS_D);
+
+/* Shut down the completion queue for callback */
+void grpc_php_shutdown_completion_queue_for_callback(TSRMLS_D);
 
 #endif /* GRPC_PHP_GRPC_COMPLETION_QUEUE_H_ */
