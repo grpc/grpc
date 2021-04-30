@@ -28,11 +28,11 @@
 
 #include <grpc/support/alloc.h>
 
+#include "batch.h"
 #include "call_credentials.h"
+#include "channel.h"
 #include "completion_queue.h"
 #include "timeval.h"
-#include "channel.h"
-#include "byte_buffer.h"
 
 zend_class_entry *grpc_ce_call;
 PHP_GRPC_DECLARE_OBJECT_HANDLER(call_ce_handlers)
@@ -52,129 +52,6 @@ php_grpc_zend_object create_wrapped_grpc_call(zend_class_entry *class_type
   zend_object_std_init(&intern->std, class_type TSRMLS_CC);
   object_properties_init(&intern->std, class_type);
   PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_call, call_ce_handlers);
-}
-
-/* Creates and returns a PHP array object with the data in a
- * grpc_metadata_array. Returns NULL on failure */
-zval *grpc_parse_metadata_array(grpc_metadata_array
-                                *metadata_array TSRMLS_DC) {
-  int count = metadata_array->count;
-  grpc_metadata *elements = metadata_array->metadata;
-  zval *array;
-  PHP_GRPC_MAKE_STD_ZVAL(array);
-  array_init(array);
-  int i;
-  HashTable *array_hash;
-  zval *inner_array;
-  char *str_key;
-  char *str_val;
-  size_t key_len;
-  zval *data = NULL;
-
-  array_hash = Z_ARRVAL_P(array);
-  grpc_metadata *elem;
-  for (i = 0; i < count; i++) {
-    elem = &elements[i];
-    key_len = GRPC_SLICE_LENGTH(elem->key);
-    str_key = ecalloc(key_len + 1, sizeof(char));
-    memcpy(str_key, GRPC_SLICE_START_PTR(elem->key), key_len);
-    str_val = ecalloc(GRPC_SLICE_LENGTH(elem->value) + 1, sizeof(char));
-    memcpy(str_val, GRPC_SLICE_START_PTR(elem->value),
-           GRPC_SLICE_LENGTH(elem->value));
-    if (php_grpc_zend_hash_find(array_hash, str_key, key_len, (void **)&data)
-        == SUCCESS) {
-      if (Z_TYPE_P(data) != IS_ARRAY) {
-        zend_throw_exception(zend_exception_get_default(TSRMLS_C),
-                             "Metadata hash somehow contains wrong types.",
-                             1 TSRMLS_CC);
-        efree(str_key);
-        efree(str_val);
-        PHP_GRPC_FREE_STD_ZVAL(array);
-        return NULL;
-      }
-      php_grpc_add_next_index_stringl(data, str_val,
-                                      GRPC_SLICE_LENGTH(elem->value),
-                                      false);
-    } else {
-      PHP_GRPC_MAKE_STD_ZVAL(inner_array);
-      array_init(inner_array);
-      php_grpc_add_next_index_stringl(inner_array, str_val,
-                                      GRPC_SLICE_LENGTH(elem->value), false);
-      add_assoc_zval(array, str_key, inner_array);
-      PHP_GRPC_FREE_STD_ZVAL(inner_array);
-    }
-    efree(str_key);
-    efree(str_val);
-  }
-  return array;
-}
-
-/* Populates a grpc_metadata_array with the data in a PHP array object.
-   Returns true on success and false on failure */
-bool create_metadata_array(zval *array, grpc_metadata_array *metadata) {
-  HashTable *array_hash;
-  HashTable *inner_array_hash;
-  zval *value;
-  zval *inner_array;
-  grpc_metadata_array_init(metadata);
-  metadata->count = 0;
-  metadata->metadata = NULL;
-  if (Z_TYPE_P(array) != IS_ARRAY) {
-    return false;
-  }
-  array_hash = Z_ARRVAL_P(array);
-
-  char *key;
-  int key_type;
-  PHP_GRPC_HASH_FOREACH_STR_KEY_VAL_START(array_hash, key, key_type,
-                                          inner_array)
-    if (key_type != HASH_KEY_IS_STRING || key == NULL) {
-      return false;
-    }
-    if (Z_TYPE_P(inner_array) != IS_ARRAY) {
-      return false;
-    }
-    inner_array_hash = Z_ARRVAL_P(inner_array);
-    metadata->capacity += zend_hash_num_elements(inner_array_hash);
-  PHP_GRPC_HASH_FOREACH_END()
-
-  metadata->metadata = gpr_malloc(metadata->capacity * sizeof(grpc_metadata));
-
-  char *key1 = NULL;
-  int key_type1;
-  PHP_GRPC_HASH_FOREACH_STR_KEY_VAL_START(array_hash, key1, key_type1,
-                                          inner_array)
-    if (key_type1 != HASH_KEY_IS_STRING) {
-      return false;
-    }
-    if (!grpc_header_key_is_legal(grpc_slice_from_static_string(key1))) {
-      return false;
-    }
-    inner_array_hash = Z_ARRVAL_P(inner_array);
-    PHP_GRPC_HASH_FOREACH_VAL_START(inner_array_hash, value)
-      if (Z_TYPE_P(value) != IS_STRING) {
-        return false;
-      }
-      metadata->metadata[metadata->count].key =
-        grpc_slice_from_copied_string(key1);
-      metadata->metadata[metadata->count].value =
-        grpc_slice_from_copied_buffer(Z_STRVAL_P(value), Z_STRLEN_P(value));
-      metadata->count += 1;
-    PHP_GRPC_HASH_FOREACH_END()
-  PHP_GRPC_HASH_FOREACH_END()
-  return true;
-}
-
-void grpc_php_metadata_array_destroy_including_entries(
-    grpc_metadata_array* array) {
-  size_t i;
-  if (array->metadata) {
-    for (i = 0; i < array->count; i++) {
-      grpc_slice_unref(array->metadata[i].key);
-      grpc_slice_unref(array->metadata[i].value);
-    }
-  }
-  grpc_metadata_array_destroy(array);
 }
 
 /* Wraps a grpc_call struct in a PHP object. Owned indicates whether the
@@ -259,15 +136,8 @@ PHP_METHOD(Call, __construct) {
  * @return object Object with results of all actions
  */
 PHP_METHOD(Call, startBatch) {
-  zval *result;
-  PHP_GRPC_MAKE_STD_ZVAL(result);
-  object_init(result);
-  php_grpc_ulong index;
-  zval *recv_status;
-  zval *value;
-  zval *inner_value;
-  zval *message_value;
-  zval *message_flags;
+  zval* result = NULL;
+
   wrapped_grpc_call *call = PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_call,
                                                         getThis());
   if (call->channel) {
@@ -279,39 +149,18 @@ PHP_METHOD(Call, startBatch) {
                            1 TSRMLS_CC);
     }
   }
-  
-  grpc_op ops[8];
-  size_t op_num = 0;
-  zval *array;
-  HashTable *array_hash;
-  HashTable *status_hash;
-  HashTable *message_hash;
 
-  grpc_metadata_array metadata;
-  grpc_metadata_array trailing_metadata;
-  grpc_metadata_array recv_metadata;
-  grpc_metadata_array recv_trailing_metadata;
-  grpc_status_code status;
-  grpc_slice recv_status_details = grpc_empty_slice();
-  grpc_slice send_status_details = grpc_empty_slice();
-  grpc_byte_buffer *message = NULL;
-  int cancelled;
+  zval *array;
+  struct batch batch = {0};
+
   grpc_call_error error;
 
-  zend_string* zmessage = NULL;
-
-  grpc_metadata_array_init(&metadata);
-  grpc_metadata_array_init(&trailing_metadata);
-  grpc_metadata_array_init(&recv_metadata);
-  grpc_metadata_array_init(&recv_trailing_metadata);
-  memset(ops, 0, sizeof(ops));
-  
-  /* "a" == 1 array */
+    /* "a" == 1 array */
   if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "a", &array) ==
       FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "start_batch expects an array", 1 TSRMLS_CC);
-    goto cleanup;
+    return;
   }
 
   // c-core may call rand(). If we don't call srand() here, all the
@@ -319,223 +168,29 @@ PHP_METHOD(Call, startBatch) {
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   srand(now.tv_nsec);
 
-  array_hash = Z_ARRVAL_P(array);
+  batch_init(&batch);
 
-  char *key = NULL;
-  int key_type;
-  PHP_GRPC_HASH_FOREACH_LONG_KEY_VAL_START(array_hash, key, key_type, index,
-                                           value)
-    if (key_type != HASH_KEY_IS_LONG || key != NULL) {
-      zend_throw_exception(spl_ce_InvalidArgumentException,
-                           "batch keys must be integers", 1 TSRMLS_CC);
-      goto cleanup;
-    }
+  if (!batch_populate_ops(&batch, Z_ARRVAL_P(array))) {
+    batch_destroy(&batch);
+    return;
+  }
 
-    ops[op_num].op = (grpc_op_type)index;
-    ops[op_num].flags = 0;
-    ops[op_num].reserved = NULL;
-
-    switch(index) {
-    case GRPC_OP_SEND_INITIAL_METADATA:
-      if (!create_metadata_array(value, &metadata)) {
-        zend_throw_exception(spl_ce_InvalidArgumentException,
-                             "Bad metadata value given", 1 TSRMLS_CC);
-        goto cleanup;
-      }
-      ops[op_num].data.send_initial_metadata.count = metadata.count;
-      ops[op_num].data.send_initial_metadata.metadata = metadata.metadata;
-      break;
-    case GRPC_OP_SEND_MESSAGE:
-      if (Z_TYPE_P(value) != IS_ARRAY) {
-        zend_throw_exception(spl_ce_InvalidArgumentException,
-                             "Expected an array for send message",
-                             1 TSRMLS_CC);
-        goto cleanup;
-      }
-      message_hash = Z_ARRVAL_P(value);
-      if (php_grpc_zend_hash_find(message_hash, "flags", sizeof("flags"),
-                         (void **)&message_flags) == SUCCESS) {
-        if (Z_TYPE_P(message_flags) != IS_LONG) {
-          zend_throw_exception(spl_ce_InvalidArgumentException,
-                               "Expected an int for message flags",
-                               1 TSRMLS_CC);
-        }
-        ops[op_num].flags = Z_LVAL_P(message_flags) & GRPC_WRITE_USED_MASK;
-      }
-      if (php_grpc_zend_hash_find(message_hash, "message", sizeof("message"),
-                         (void **)&message_value) != SUCCESS ||
-          Z_TYPE_P(message_value) != IS_STRING) {
-        zend_throw_exception(spl_ce_InvalidArgumentException,
-                             "Expected a string for send message",
-                             1 TSRMLS_CC);
-        goto cleanup;
-      }
-      ops[op_num].data.send_message.send_message =
-          string_to_byte_buffer(Z_STRVAL_P(message_value),
-                                Z_STRLEN_P(message_value));
-      break;
-    case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-      break;
-    case GRPC_OP_SEND_STATUS_FROM_SERVER:
-      status_hash = Z_ARRVAL_P(value);
-      if (php_grpc_zend_hash_find(status_hash, "metadata", sizeof("metadata"),
-                         (void **)&inner_value) == SUCCESS) {
-        if (!create_metadata_array(inner_value, &trailing_metadata)) {
-          zend_throw_exception(spl_ce_InvalidArgumentException,
-                               "Bad trailing metadata value given",
-                               1 TSRMLS_CC);
-          goto cleanup;
-        }
-        ops[op_num].data.send_status_from_server.trailing_metadata =
-            trailing_metadata.metadata;
-        ops[op_num].data.send_status_from_server.trailing_metadata_count =
-            trailing_metadata.count;
-      }
-      if (php_grpc_zend_hash_find(status_hash, "code", sizeof("code"),
-                         (void**)&inner_value) == SUCCESS) {
-        if (Z_TYPE_P(inner_value) != IS_LONG) {
-          zend_throw_exception(spl_ce_InvalidArgumentException,
-                               "Status code must be an integer",
-                               1 TSRMLS_CC);
-          goto cleanup;
-        }
-        ops[op_num].data.send_status_from_server.status =
-            Z_LVAL_P(inner_value);
-      } else {
-        zend_throw_exception(spl_ce_InvalidArgumentException,
-                             "Integer status code is required",
-                             1 TSRMLS_CC);
-        goto cleanup;
-      }
-      if (php_grpc_zend_hash_find(status_hash, "details", sizeof("details"),
-                         (void**)&inner_value) == SUCCESS) {
-        if (Z_TYPE_P(inner_value) != IS_STRING) {
-          zend_throw_exception(spl_ce_InvalidArgumentException,
-                               "Status details must be a string",
-                               1 TSRMLS_CC);
-          goto cleanup;
-        }
-        send_status_details = grpc_slice_from_copied_string(
-          Z_STRVAL_P(inner_value));
-        ops[op_num].data.send_status_from_server.status_details =
-          &send_status_details;
-      } else {
-        zend_throw_exception(spl_ce_InvalidArgumentException,
-                             "String status details is required",
-                             1 TSRMLS_CC);
-        goto cleanup;
-      }
-      break;
-    case GRPC_OP_RECV_INITIAL_METADATA:
-      ops[op_num].data.recv_initial_metadata.recv_initial_metadata =
-          &recv_metadata;
-      break;
-    case GRPC_OP_RECV_MESSAGE:
-      ops[op_num].data.recv_message.recv_message = &message;
-      break;
-    case GRPC_OP_RECV_STATUS_ON_CLIENT:
-      ops[op_num].data.recv_status_on_client.trailing_metadata =
-          &recv_trailing_metadata;
-      ops[op_num].data.recv_status_on_client.status = &status;
-      ops[op_num].data.recv_status_on_client.status_details =
-          &recv_status_details;
-      break;
-    case GRPC_OP_RECV_CLOSE_ON_SERVER:
-      ops[op_num].data.recv_close_on_server.cancelled = &cancelled;
-      break;
-    default:
-      zend_throw_exception(spl_ce_InvalidArgumentException,
-                           "Unrecognized key in batch", 1 TSRMLS_CC);
-      goto cleanup;
-    }
-    op_num++;
-  PHP_GRPC_HASH_FOREACH_END()
-
-  error = grpc_call_start_batch(call->wrapped, ops, op_num, call->wrapped,
+  error = grpc_call_start_batch(call->wrapped, batch.ops, batch.op_num, call->wrapped,
                                 NULL);
   if (error != GRPC_CALL_OK) {
     zend_throw_exception(spl_ce_LogicException,
                          "start_batch was called incorrectly",
                          (long)error TSRMLS_CC);
-    goto cleanup;
+    batch_destroy(&batch);
+    return;
   }
+  
   grpc_completion_queue_pluck(completion_queue, call->wrapped,
                               gpr_inf_future(GPR_CLOCK_REALTIME), NULL);
-  zval *recv_md;
-  for (int i = 0; i < op_num; i++) {
-    switch(ops[i].op) {
-    case GRPC_OP_SEND_INITIAL_METADATA:
-      add_property_bool(result, "send_metadata", true);
-      break;
-    case GRPC_OP_SEND_MESSAGE:
-      add_property_bool(result, "send_message", true);
-      break;
-    case GRPC_OP_SEND_CLOSE_FROM_CLIENT:
-      add_property_bool(result, "send_close", true);
-      break;
-    case GRPC_OP_SEND_STATUS_FROM_SERVER:
-      add_property_bool(result, "send_status", true);
-      break;
-    case GRPC_OP_RECV_INITIAL_METADATA:
-      recv_md = grpc_parse_metadata_array(&recv_metadata);
-      add_property_zval(result, "metadata", recv_md);
-      zval_ptr_dtor(recv_md);
-      PHP_GRPC_FREE_STD_ZVAL(recv_md);
-      PHP_GRPC_DELREF(array);
-      break;
-    case GRPC_OP_RECV_MESSAGE:
-      zmessage = byte_buffer_to_zend_string(message);
 
-      if (zmessage == NULL) {
-        add_property_null(result, "message");
-      } else {
-        zval zmessage_val;
-        ZVAL_NEW_STR(&zmessage_val, zmessage);
-        add_property_zval(result, "message", &zmessage_val);
-        zval_ptr_dtor(&zmessage_val);
-      }
-      break;
-    case GRPC_OP_RECV_STATUS_ON_CLIENT:
-      PHP_GRPC_MAKE_STD_ZVAL(recv_status);
-      object_init(recv_status);
-      recv_md = grpc_parse_metadata_array(&recv_trailing_metadata);
-      add_property_zval(recv_status, "metadata", recv_md);
-      zval_ptr_dtor(recv_md);
-      PHP_GRPC_FREE_STD_ZVAL(recv_md);
-      PHP_GRPC_DELREF(array);
-      add_property_long(recv_status, "code", status);
-      char *status_details_text = grpc_slice_to_c_string(recv_status_details);
-      php_grpc_add_property_string(recv_status, "details", status_details_text,
-                                   true);
-      gpr_free(status_details_text);
-      add_property_zval(result, "status", recv_status);
-      zval_ptr_dtor(recv_status);
-      PHP_GRPC_DELREF(recv_status);
-      PHP_GRPC_FREE_STD_ZVAL(recv_status);
-      break;
-    case GRPC_OP_RECV_CLOSE_ON_SERVER:
-      add_property_bool(result, "cancelled", cancelled);
-      break;
-    default:
-      break;
-    }
-  }
+  result = batch_process_ops(&batch);
 
-cleanup:
-  grpc_php_metadata_array_destroy_including_entries(&metadata);
-  grpc_php_metadata_array_destroy_including_entries(&trailing_metadata);
-  grpc_metadata_array_destroy(&recv_metadata);
-  grpc_metadata_array_destroy(&recv_trailing_metadata);
-  grpc_slice_unref(recv_status_details);
-  grpc_slice_unref(send_status_details);
-  for (int i = 0; i < op_num; i++) {
-    if (ops[i].op == GRPC_OP_SEND_MESSAGE) {
-      grpc_byte_buffer_destroy(ops[i].data.send_message.send_message);
-    }
-    if (ops[i].op == GRPC_OP_RECV_MESSAGE) {
-      grpc_byte_buffer_destroy(message);
-    }
-  }
+  batch_destroy(&batch);
   RETURN_DESTROY_ZVAL(result);
 }
 
