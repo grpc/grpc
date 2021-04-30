@@ -6637,10 +6637,6 @@ TEST_P(CdsTest, RingHashChannelIdHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
-      1);
-  cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
-      100);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -6679,10 +6675,6 @@ TEST_P(CdsTest, RingHashHeaderHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
-      1);
-  cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
-      100);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -6741,10 +6733,6 @@ TEST_P(CdsTest, RingHashIdleToReady) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
-      1);
-  cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
-      100);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -6780,10 +6768,6 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
-      1);
-  cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
-      100);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
@@ -6825,10 +6809,6 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
-  cluster.mutable_ring_hash_lb_config()->mutable_minimum_ring_size()->set_value(
-      1);
-  cluster.mutable_ring_hash_lb_config()->mutable_maximum_ring_size()->set_value(
-      100);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);

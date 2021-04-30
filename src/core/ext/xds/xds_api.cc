@@ -2811,11 +2811,6 @@ grpc_error_handle CdsResponseParse(
       auto* ring_hash_config =
           envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
       if (ring_hash_config == nullptr) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name,
-                         ": ring hash lb config required but not present.")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
         continue;
       }
       const google_protobuf_UInt64Value* max_ring_size =

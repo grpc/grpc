@@ -407,6 +407,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       break;
     }
   }
+  gpr_log(GPR_INFO, "donna first index is %d", first_index);
   OrphanablePtr<SubchannelConnectionAttempter> subchannel_connection_attempter;
   auto ScheduleSubchannelConnectionAttempt =
       [&](RefCountedPtr<SubchannelInterface> subchannel) {

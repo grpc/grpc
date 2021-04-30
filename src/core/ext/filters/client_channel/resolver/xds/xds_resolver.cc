@@ -645,19 +645,17 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     absl::optional<uint64_t> hash;
     for (const auto& hash_policy : entry.route.hash_policies) {
       absl::optional<uint64_t> new_hash;
+      std::string channel_id;
       switch (hash_policy.type) {
         case XdsApi::Route::HashPolicy::HEADER:
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
         case XdsApi::Route::HashPolicy::CHANNEL_ID:
-          new_hash =
-              (static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver))
-               << 48) |
-              (static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver))
-               << 32) |
-              (static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver))
-               << 16) |
-              static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
+          channel_id = absl::StrFormat(
+              "%" PRIu64,
+              static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver)));
+          new_hash = XXH64(channel_id.c_str(), channel_id.length(), 0);
+          gpr_log(GPR_INFO, "donna new hash is %" PRIu64, new_hash.value());
           break;
         default:
           GPR_ASSERT(0);
@@ -692,6 +690,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     memcpy(hash_value, hash_string.c_str(), hash_string.size());
     hash_value[hash_string.size()] = '\0';
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
+    gpr_log(GPR_INFO, "donna hash stored as %s",
+            call_config.call_attributes[kRequestRingHashAttribute]);
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
       ExecCtx::Run(
