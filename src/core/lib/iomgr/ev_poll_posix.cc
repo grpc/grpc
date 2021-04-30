@@ -1060,8 +1060,33 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
           work_combine_error(
               &error, grpc_wakeup_fd_consume_wakeup(&worker.wakeup_fd->fd));
         }
+        /*
+         * The Linux and BSD behaves differently. If the other end of the
+         * socket calls shutdown with SHUT_RDWR in Linux poll will return
+         * POLLHUP and POLLIN. BSD return POLLIN only. And at later point
+         * when other side closes the socket BSD return POLLHUP. This is
+         * leading to a spinlock. Due to the POLLIN and 0 byte read the
+         * the fd is marked for shutdown and the watcher gets removed.
+         * Later when poll recieves POLLHUP it is not getting processed as
+         * watcher is already removed. To fix this access pollset, match the
+         * fd and shutdown field and mark it recieved pollhup.
+         */
         for (i = 1; i < pfd_count; i++) {
           if (watchers[i].fd == nullptr) {
+            if (grpc_polling_trace.enabled()) {
+              gpr_log(GPR_INFO, "%p got_event no watcher: %d r:%d w:%d [%d]", pollset,
+                      pfds[i].fd, (pfds[i].revents & POLLIN_CHECK) != 0,
+                      (pfds[i].revents & POLLOUT_CHECK) != 0, pfds[i].revents);
+            }
+            if (pfds[i].revents & POLLHUP) {
+              gpr_mu_lock(&pollset->mu);
+              for (int k = 0; k <pollset->fd_count; k++) {
+                 if (pfds[i].fd == pollset->fds[k]->fd && pollset->fds[k]->shutdown == 1) {
+                   gpr_atm_no_barrier_store(&pollset->fds[k]->pollhup, 1);
+                 }
+              }
+              gpr_mu_unlock(&pollset->mu);
+            }
             fd_end_poll(&watchers[i], 0, 0);
           } else {
             if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
