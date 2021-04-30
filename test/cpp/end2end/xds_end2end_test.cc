@@ -6860,9 +6860,50 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
+// Test that when a backend goes down, we will move on to the next subchannel
+// (with a lower priority).  When the backend comes back up, traffic will move
+// back.
+TEST_P(CdsTest, RingHashSwitchToLowerPrioirtyAndThenBack) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  hash_policy->set_terminal(true);
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
+       0},
+      {"locality1", CreateEndpointsForBackends(1, 2), kDefaultLocalityWeight,
+       1},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
+                                    backends_[0]->port(), "_0")},
+  };
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
+  ShutdownBackend(0);
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true),
+                 rpc_options);
+  StartBackend(0);
+  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
+  CheckRpcSendOk(100, rpc_options);
+  EXPECT_EQ(100, backends_[0]->backend_service()->request_count());
+  EXPECT_EQ(0, backends_[1]->backend_service()->request_count());
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
 // Test that when all backends are down, we will keep reattempting.
 TEST_P(CdsTest, RingHashAllFailReattempt) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const uint32_t kConnectionTimeoutMilliseconds = 5000;
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -6888,11 +6929,9 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   ShutdownBackend(1);
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   StartBackend(1);
-  WaitForBackend(1, WaitForBackendOptions(), rpc_options);
-  EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
-  CheckRpcSendOk(100, rpc_options);
-  EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
-  EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
+  // Ensure we are actively connecting without any traffic.
+  channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
