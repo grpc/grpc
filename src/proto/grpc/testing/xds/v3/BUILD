@@ -86,6 +86,7 @@ grpc_proto_library(
     deps = [
         "base_proto",
         "config_source_proto",
+        "endpoint_proto",
     ],
 )
 

@@ -20,6 +20,7 @@ package envoy.config.cluster.v3;
 
 import "src/proto/grpc/testing/xds/v3/base.proto";
 import "src/proto/grpc/testing/xds/v3/config_source.proto";
+import "src/proto/grpc/testing/xds/v3/endpoint.proto";
 
 import "google/protobuf/any.proto";
 import "google/protobuf/wrappers.proto";
@@ -156,6 +157,19 @@ message Cluster {
   // The :ref:`load balancer type <arch_overview_load_balancing_types>` to use
   // when picking a host in the cluster.
   LbPolicy lb_policy = 6;
+
+  // Setting this is required for specifying members of
+  // :ref:`STATIC<envoy_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STATIC>`,
+  // :ref:`STRICT_DNS<envoy_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.STRICT_DNS>`
+  // or :ref:`LOGICAL_DNS<envoy_api_enum_value_config.cluster.v3.Cluster.DiscoveryType.LOGICAL_DNS>` clusters.
+  // This field supersedes the *hosts* field in the v2 API.
+  //
+  // .. attention::
+  //
+  //   Setting this allows non-EDS cluster types to contain embedded EDS equivalent
+  //   :ref:`endpoint assignments<envoy_api_msg_config.endpoint.v3.ClusterLoadAssignment>`.
+  //
+  endpoint.v3.ClusterLoadAssignment load_assignment = 33;
 
   CircuitBreakers circuit_breakers = 10;
 

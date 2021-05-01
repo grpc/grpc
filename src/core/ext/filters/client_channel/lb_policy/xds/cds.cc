@@ -392,25 +392,24 @@ bool CdsLb::GenerateDiscoveryMechanismForCluster(
     }
     return !missing_cluster;
   }
-  std::string type;
+  Json::Object mechanism = {
+      {"clusterName", name},
+      {"max_concurrent_requests", state.update->max_concurrent_requests},
+  };
   switch (state.update->cluster_type) {
     case XdsApi::CdsUpdate::ClusterType::EDS:
-      type = "EDS";
+      mechanism["type"] = "EDS";
+      if (!state.update->eds_service_name.empty()) {
+        mechanism["edsServiceName"] = state.update->eds_service_name;
+      }
       break;
     case XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS:
-      type = "LOGICAL_DNS";
+      mechanism["type"] = "LOGICAL_DNS";
+      mechanism["dnsHostname"] = state.update->dns_hostname;
       break;
     default:
       GPR_ASSERT(0);
       break;
-  }
-  Json::Object mechanism = {
-      {"clusterName", name},
-      {"max_concurrent_requests", state.update->max_concurrent_requests},
-      {"type", std::move(type)},
-  };
-  if (!state.update->eds_service_name.empty()) {
-    mechanism["edsServiceName"] = state.update->eds_service_name;
   }
   if (state.update->lrs_load_reporting_server_name.has_value()) {
     mechanism["lrsLoadReportingServerName"] =
