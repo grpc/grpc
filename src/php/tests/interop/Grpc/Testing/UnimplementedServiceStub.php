@@ -22,21 +22,22 @@
 namespace Grpc\Testing;
 
 /**
- * A service to dynamically update the configuration of an xDS test client.
+ * A simple service NOT implemented at servers so clients can test for
+ * that case.
  */
-class XdsUpdateClientConfigureServiceStub {
+class UnimplementedServiceStub {
 
     /**
-     * Update the tes client's configuration.
-     * @param \Grpc\Testing\ClientConfigureRequest $request client request
+     * A call that no server should implement
+     * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\ClientConfigureResponse for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
-    public function Configure(
-        \Grpc\Testing\ClientConfigureRequest $request,
+    public function UnimplementedCall(
+        \Grpc\Testing\EmptyMessage $request,
         \Grpc\ServerContext $context
-    ): ?\Grpc\Testing\ClientConfigureResponse {
+    ): ?\Grpc\Testing\EmptyMessage {
         $context->setStatus(\Grpc\Status::unimplemented());
         return null;
     }
@@ -49,10 +50,10 @@ class XdsUpdateClientConfigureServiceStub {
     public final function getMethodDescriptors(): array
     {
         return [
-            '/grpc.testing.XdsUpdateClientConfigureService/Configure' => new \Grpc\MethodDescriptor(
+            '/grpc.testing.UnimplementedService/UnimplementedCall' => new \Grpc\MethodDescriptor(
                 $this,
-                'Configure',
-                '\Grpc\Testing\ClientConfigureRequest',
+                'UnimplementedCall',
+                '\Grpc\Testing\EmptyMessage',
                 \Grpc\MethodDescriptor::UNARY_CALL
             ),
         ];

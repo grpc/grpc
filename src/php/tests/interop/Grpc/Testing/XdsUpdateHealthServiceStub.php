@@ -22,36 +22,34 @@
 namespace Grpc\Testing;
 
 /**
- * A service used to obtain stats for verifying LB behavior.
+ * A service to remotely control health status of an xDS test server.
  */
-class LoadBalancerStatsServiceStub {
+class XdsUpdateHealthServiceStub {
 
     /**
-     * Gets the backend distribution for RPCs sent by a test client.
-     * @param \Grpc\Testing\LoadBalancerStatsRequest $request client request
+     * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\LoadBalancerStatsResponse for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
-    public function GetClientStats(
-        \Grpc\Testing\LoadBalancerStatsRequest $request,
+    public function SetServing(
+        \Grpc\Testing\EmptyMessage $request,
         \Grpc\ServerContext $context
-    ): ?\Grpc\Testing\LoadBalancerStatsResponse {
+    ): ?\Grpc\Testing\EmptyMessage {
         $context->setStatus(\Grpc\Status::unimplemented());
         return null;
     }
 
     /**
-     * Gets the accumulated stats for RPCs sent by a test client.
-     * @param \Grpc\Testing\LoadBalancerAccumulatedStatsRequest $request client request
+     * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\LoadBalancerAccumulatedStatsResponse for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
-    public function GetClientAccumulatedStats(
-        \Grpc\Testing\LoadBalancerAccumulatedStatsRequest $request,
+    public function SetNotServing(
+        \Grpc\Testing\EmptyMessage $request,
         \Grpc\ServerContext $context
-    ): ?\Grpc\Testing\LoadBalancerAccumulatedStatsResponse {
+    ): ?\Grpc\Testing\EmptyMessage {
         $context->setStatus(\Grpc\Status::unimplemented());
         return null;
     }
@@ -64,16 +62,16 @@ class LoadBalancerStatsServiceStub {
     public final function getMethodDescriptors(): array
     {
         return [
-            '/grpc.testing.LoadBalancerStatsService/GetClientStats' => new \Grpc\MethodDescriptor(
+            '/grpc.testing.XdsUpdateHealthService/SetServing' => new \Grpc\MethodDescriptor(
                 $this,
-                'GetClientStats',
-                '\Grpc\Testing\LoadBalancerStatsRequest',
+                'SetServing',
+                '\Grpc\Testing\EmptyMessage',
                 \Grpc\MethodDescriptor::UNARY_CALL
             ),
-            '/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats' => new \Grpc\MethodDescriptor(
+            '/grpc.testing.XdsUpdateHealthService/SetNotServing' => new \Grpc\MethodDescriptor(
                 $this,
-                'GetClientAccumulatedStats',
-                '\Grpc\Testing\LoadBalancerAccumulatedStatsRequest',
+                'SetNotServing',
+                '\Grpc\Testing\EmptyMessage',
                 \Grpc\MethodDescriptor::UNARY_CALL
             ),
         ];

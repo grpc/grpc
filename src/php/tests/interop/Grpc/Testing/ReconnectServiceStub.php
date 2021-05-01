@@ -22,36 +22,34 @@
 namespace Grpc\Testing;
 
 /**
- * A service used to obtain stats for verifying LB behavior.
+ * A service used to control reconnect server.
  */
-class LoadBalancerStatsServiceStub {
+class ReconnectServiceStub {
 
     /**
-     * Gets the backend distribution for RPCs sent by a test client.
-     * @param \Grpc\Testing\LoadBalancerStatsRequest $request client request
+     * @param \Grpc\Testing\ReconnectParams $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\LoadBalancerStatsResponse for response data, null if if error occured
+     * @return \Grpc\Testing\EmptyMessage for response data, null if if error occured
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
-    public function GetClientStats(
-        \Grpc\Testing\LoadBalancerStatsRequest $request,
+    public function Start(
+        \Grpc\Testing\ReconnectParams $request,
         \Grpc\ServerContext $context
-    ): ?\Grpc\Testing\LoadBalancerStatsResponse {
+    ): ?\Grpc\Testing\EmptyMessage {
         $context->setStatus(\Grpc\Status::unimplemented());
         return null;
     }
 
     /**
-     * Gets the accumulated stats for RPCs sent by a test client.
-     * @param \Grpc\Testing\LoadBalancerAccumulatedStatsRequest $request client request
+     * @param \Grpc\Testing\EmptyMessage $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\LoadBalancerAccumulatedStatsResponse for response data, null if if error occured
+     * @return \Grpc\Testing\ReconnectInfo for response data, null if if error occured
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
-    public function GetClientAccumulatedStats(
-        \Grpc\Testing\LoadBalancerAccumulatedStatsRequest $request,
+    public function Stop(
+        \Grpc\Testing\EmptyMessage $request,
         \Grpc\ServerContext $context
-    ): ?\Grpc\Testing\LoadBalancerAccumulatedStatsResponse {
+    ): ?\Grpc\Testing\ReconnectInfo {
         $context->setStatus(\Grpc\Status::unimplemented());
         return null;
     }
@@ -64,16 +62,16 @@ class LoadBalancerStatsServiceStub {
     public final function getMethodDescriptors(): array
     {
         return [
-            '/grpc.testing.LoadBalancerStatsService/GetClientStats' => new \Grpc\MethodDescriptor(
+            '/grpc.testing.ReconnectService/Start' => new \Grpc\MethodDescriptor(
                 $this,
-                'GetClientStats',
-                '\Grpc\Testing\LoadBalancerStatsRequest',
+                'Start',
+                '\Grpc\Testing\ReconnectParams',
                 \Grpc\MethodDescriptor::UNARY_CALL
             ),
-            '/grpc.testing.LoadBalancerStatsService/GetClientAccumulatedStats' => new \Grpc\MethodDescriptor(
+            '/grpc.testing.ReconnectService/Stop' => new \Grpc\MethodDescriptor(
                 $this,
-                'GetClientAccumulatedStats',
-                '\Grpc\Testing\LoadBalancerAccumulatedStatsRequest',
+                'Stop',
+                '\Grpc\Testing\EmptyMessage',
                 \Grpc\MethodDescriptor::UNARY_CALL
             ),
         ];

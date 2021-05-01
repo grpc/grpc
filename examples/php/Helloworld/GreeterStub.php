@@ -2,7 +2,7 @@
 // GENERATED CODE -- DO NOT EDIT!
 
 // Original file comments:
-// Copyright 2015-2016 gRPC authors.
+// Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -16,27 +16,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 //
-// An integration test service that covers all the method signature permutations
-// of unary/streaming requests/responses.
-//
-namespace Grpc\Testing;
+namespace Helloworld;
 
 /**
- * A service to dynamically update the configuration of an xDS test client.
+ * The greeting service definition.
  */
-class XdsUpdateClientConfigureServiceStub {
+class GreeterStub {
 
     /**
-     * Update the tes client's configuration.
-     * @param \Grpc\Testing\ClientConfigureRequest $request client request
+     * Sends a greeting
+     * @param \Helloworld\HelloRequest $request client request
      * @param \Grpc\ServerContext $context server request context
-     * @return \Grpc\Testing\ClientConfigureResponse for response data, null if if error occured
+     * @return \Helloworld\HelloReply for response data, null if if error occured
      *     initial metadata (if any) and status (if not ok) should be set to $context
      */
-    public function Configure(
-        \Grpc\Testing\ClientConfigureRequest $request,
+    public function SayHello(
+        \Helloworld\HelloRequest $request,
         \Grpc\ServerContext $context
-    ): ?\Grpc\Testing\ClientConfigureResponse {
+    ): ?\Helloworld\HelloReply {
         $context->setStatus(\Grpc\Status::unimplemented());
         return null;
     }
@@ -49,10 +46,10 @@ class XdsUpdateClientConfigureServiceStub {
     public final function getMethodDescriptors(): array
     {
         return [
-            '/grpc.testing.XdsUpdateClientConfigureService/Configure' => new \Grpc\MethodDescriptor(
+            '/helloworld.Greeter/SayHello' => new \Grpc\MethodDescriptor(
                 $this,
-                'Configure',
-                '\Grpc\Testing\ClientConfigureRequest',
+                'SayHello',
+                '\Helloworld\HelloRequest',
                 \Grpc\MethodDescriptor::UNARY_CALL
             ),
         ];
