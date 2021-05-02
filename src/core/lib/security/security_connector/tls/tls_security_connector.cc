@@ -23,6 +23,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "absl/functional/bind_front.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 
@@ -186,25 +187,6 @@ void ParseTsiPeer(tsi_peer peer,
     }
   }
 }
-
-}  // namespace
-
-/*void PendingVerifierRequest::PendingVerifierRequestInit(
-    grpc_tls_custom_verification_check_request* request) {
-  GPR_ASSERT(request != nullptr);
-  request->target_name = nullptr;
-  request->peer_info.common_name = nullptr;
-  request->peer_info.san_names.uri_names = nullptr;
-  request->peer_info.san_names.uri_names_size = 0;
-  request->peer_info.san_names.ip_names = nullptr;
-  request->peer_info.san_names.ip_names_size = 0;
-  request->peer_info.san_names.dns_names = nullptr;
-  request->peer_info.san_names.dns_names_size = 0;
-  request->peer_info.peer_cert = nullptr;
-  request->peer_info.peer_cert_full_chain = nullptr;
-}*/
-
-namespace {
 
 tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
     const PemKeyCertPairList& cert_pair_list) {
@@ -500,7 +482,9 @@ void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::Start() {
   grpc_tls_certificate_verifier* verifier =
       security_connector_->options_->certificate_verifier();
   bool is_done = verifier->Verify(
-      &request_, [this](absl::Status status) { OnVerifyDone(true, status); },
+      &request_,
+      absl::bind_front(&ChannelPendingVerifierRequest::OnVerifyDone, this,
+                       true),
       &sync_status);
   if (is_done) {
     OnVerifyDone(false, sync_status);
@@ -769,7 +753,8 @@ void TlsServerSecurityConnector::ServerPendingVerifierRequest::Start() {
   grpc_tls_certificate_verifier* verifier =
       security_connector_->options_->certificate_verifier();
   bool is_done = verifier->Verify(
-      &request_, [this](absl::Status status) { OnVerifyDone(true, status); },
+      &request_,
+      absl::bind_front(&ServerPendingVerifierRequest::OnVerifyDone, this, true),
       &sync_status);
   if (is_done) {
     OnVerifyDone(false, sync_status);
