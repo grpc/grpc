@@ -548,9 +548,7 @@ TEST_F(TlsSecurityConnectorTest,
 // Tests for ServerSecurityConnector.
 TEST_F(TlsSecurityConnectorTest,
        ChannelSecurityConnectorWithAsyncExternalVerifierSucceeds) {
-  gpr_event event;
-  gpr_event_init(&event);
-  auto* async_verifier = new AsyncExternalVerifier(true, &event);
+  auto* async_verifier = new AsyncExternalVerifier(true);
   auto* core_external_verifier =
       new ExternalCertificateVerifier(async_verifier->base());
   auto options = grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
@@ -582,16 +580,11 @@ TEST_F(TlsSecurityConnectorTest,
   tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
   grpc_channel_args_destroy(new_args);
   core_external_verifier->Unref();
-  // Wait for the async callback to be completed.
-  gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
 }
 
 TEST_F(TlsSecurityConnectorTest,
        ChannelSecurityConnectorWithAsyncExternalVerifierFails) {
-  gpr_event event;
-  gpr_event_init(&event);
-  auto* async_verifier = new AsyncExternalVerifier(false, &event);
+  auto* async_verifier = new AsyncExternalVerifier(false);
   auto* core_external_verifier =
       new ExternalCertificateVerifier(async_verifier->base());
   auto options = grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
@@ -627,9 +620,6 @@ TEST_F(TlsSecurityConnectorTest,
   tls_connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
   grpc_channel_args_destroy(new_args);
   core_external_verifier->Unref();
-  // Wait for the async callback to be completed.
-  gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
 }
 
 TEST_F(TlsSecurityConnectorTest,
@@ -1025,9 +1015,7 @@ TEST_F(TlsSecurityConnectorTest,
 
 TEST_F(TlsSecurityConnectorTest,
        ServerSecurityConnectorWithAsyncExternalVerifierSucceeds) {
-  gpr_event event;
-  gpr_event_init(&event);
-  auto* async_verifier = new AsyncExternalVerifier(true, &event);
+  auto* async_verifier = new AsyncExternalVerifier(true);
   auto* core_external_verifier =
       new ExternalCertificateVerifier(async_verifier->base());
   auto options = grpc_core::MakeRefCounted<grpc_tls_credentials_options>();
@@ -1055,16 +1043,11 @@ TEST_F(TlsSecurityConnectorTest,
       VerifyExpectedErrorCallback, nullptr, grpc_schedule_on_exec_ctx);
   connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
   core_external_verifier->Unref();
-  // Wait for the async callback to be completed.
-  gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
 }
 
 TEST_F(TlsSecurityConnectorTest,
        ServerSecurityConnectorWithAsyncExternalVerifierFails) {
-  gpr_event event;
-  gpr_event_init(&event);
-  auto* async_verifier = new AsyncExternalVerifier(false, &event);
+  auto* async_verifier = new AsyncExternalVerifier(false);
   auto* core_external_verifier =
       new ExternalCertificateVerifier(async_verifier->base());
   grpc_core::RefCountedPtr<grpc_tls_credentials_options> options =
@@ -1097,9 +1080,6 @@ TEST_F(TlsSecurityConnectorTest,
       grpc_schedule_on_exec_ctx);
   connector->check_peer(peer, nullptr, &auth_context, on_peer_checked);
   core_external_verifier->Unref();
-  // Wait for the async callback to be completed.
-  gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
 }
 
 }  // namespace testing

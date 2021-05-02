@@ -39,6 +39,7 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/core/util/tls_utils.h"
 
 // For normal TLS connections.
 #define CA_CERT_PATH "src/core/tsi/test_creds/ca.pem"
@@ -70,107 +71,6 @@ struct fullstack_secure_fixture_data {
   grpc_tls_certificate_provider* server_provider = nullptr;
   grpc_tls_certificate_verifier* client_verifier = nullptr;
   grpc_tls_certificate_verifier* server_verifier = nullptr;
-  ThreadList thd_list;
-};
-
-class SyncExternalVerifier {
- public:
-  SyncExternalVerifier() : base_{this, Verify, Cancel, Destruct} {}
-
-  grpc_tls_certificate_verifier_external* base() { return &base_; }
-
- private:
-  static int Verify(void* user_data,
-                    grpc_tls_custom_verification_check_request* request,
-                    grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg, grpc_status_code* sync_status,
-                    char** sync_error_details) {
-    return true;  // Synchronous call
-  }
-
-  static void Cancel(void* user_data,
-                     grpc_tls_custom_verification_check_request* request) {}
-
-  static void Destruct(void* user_data) {
-    auto* self = static_cast<SyncExternalVerifier*>(user_data);
-    delete self;
-  }
-
-  grpc_tls_certificate_verifier_external base_;
-};
-
-class AsyncExternalVerifier {
- public:
-  AsyncExternalVerifier(fullstack_secure_fixture_data* ffd) {
-    auto* user_data = new UserData();
-    user_data->self = this;
-    user_data->ffd = ffd;
-    base_.user_data = user_data;
-    base_.verify = Verify;
-    base_.cancel = Cancel;
-    base_.destruct = Destruct;
-  }
-
-  // This arg is used to carry information more than just the verifier self
-  // pointer. The reason we don't store self in ffd and use ffd as user_data is
-  // because if we do that, we will need to access ffd to release
-  // external_verifier while in the dtor of ffd, which will cause memory leak.
-  struct UserData {
-    AsyncExternalVerifier* self = nullptr;
-    fullstack_secure_fixture_data* ffd = nullptr;
-  };
-
-  // This is the arg we will pass in when creating the thread, and retrieve it
-  // later in the thread callback.
-  struct ThreadArgs {
-    grpc_tls_custom_verification_check_request* request = nullptr;
-    grpc_tls_on_custom_verification_check_done_cb callback;
-    void* callback_arg = nullptr;
-  };
-
-  grpc_tls_certificate_verifier_external* base() { return &base_; }
-
- private:
-  static int Verify(void* user_data,
-                    grpc_tls_custom_verification_check_request* request,
-                    grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg, grpc_status_code* sync_status,
-                    char** sync_error_details) {
-    auto* data = static_cast<UserData*>(user_data);
-    fullstack_secure_fixture_data* ffd = data->ffd;
-    // Creates the thread args we use when creating the thread.
-    ThreadArgs* thread_args = new ThreadArgs();
-    thread_args->request = request;
-    thread_args->callback = callback;
-    thread_args->callback_arg = callback_arg;
-    ffd->thd_list.push_back(grpc_core::Thread(
-        "AsyncExternalVerifierVerify", &AsyncExternalVerifierVerifyCb,
-        static_cast<void*>(thread_args), nullptr,
-        grpc_core::Thread::Options().set_joinable(false)));
-    ffd->thd_list[ffd->thd_list.size() - 1].Start();
-    return false;  // Asynchronous call
-  }
-
-  static void Cancel(void* user_data,
-                     grpc_tls_custom_verification_check_request* request) {}
-
-  static void Destruct(void* user_data) {
-    auto* data = static_cast<UserData*>(user_data);
-    delete data->self;
-    delete data;
-  }
-
-  static void AsyncExternalVerifierVerifyCb(void* args) {
-    ThreadArgs* thread_args = static_cast<ThreadArgs*>(args);
-    grpc_tls_custom_verification_check_request* request = thread_args->request;
-    grpc_tls_on_custom_verification_check_done_cb callback =
-        thread_args->callback;
-    void* callback_arg = thread_args->callback_arg;
-    callback(request, callback_arg, GRPC_STATUS_OK, "");
-    delete thread_args;
-  }
-
-  grpc_tls_certificate_verifier_external base_;
 };
 
 static void SetTlsVersion(fullstack_secure_fixture_data* ffd,
@@ -235,19 +135,23 @@ static void SetCertificateVerifier(
     SecurityPrimitives::VerifierType verifier_type) {
   switch (verifier_type) {
     case SecurityPrimitives::VerifierType::EXTERNAL_SYNC_VERIFIER: {
-      auto* client_sync_verifier = new SyncExternalVerifier();
+      auto* client_sync_verifier =
+          new grpc_core::testing::SyncExternalVerifier(true);
       ffd->client_verifier = grpc_tls_certificate_verifier_external_create(
           client_sync_verifier->base());
-      auto* server_sync_verifier = new SyncExternalVerifier();
+      auto* server_sync_verifier =
+          new grpc_core::testing::SyncExternalVerifier(true);
       ffd->server_verifier = grpc_tls_certificate_verifier_external_create(
           server_sync_verifier->base());
       break;
     }
     case SecurityPrimitives::VerifierType::EXTERNAL_ASYNC_VERIFIER: {
-      auto* client_async_verifier = new AsyncExternalVerifier(ffd);
+      auto* client_async_verifier =
+          new grpc_core::testing::AsyncExternalVerifier(true);
       ffd->client_verifier = grpc_tls_certificate_verifier_external_create(
           client_async_verifier->base());
-      auto* server_async_verifier = new AsyncExternalVerifier(ffd);
+      auto* server_async_verifier =
+          new grpc_core::testing::AsyncExternalVerifier(true);
       ffd->server_verifier = grpc_tls_certificate_verifier_external_create(
           server_async_verifier->base());
       break;
@@ -256,7 +160,8 @@ static void SetCertificateVerifier(
       ffd->client_verifier = grpc_tls_certificate_verifier_host_name_create();
       // Hostname verifier couldn't be applied to the server side, so we will
       // use sync external verifier here.
-      auto* server_async_verifier = new AsyncExternalVerifier(ffd);
+      auto* server_async_verifier =
+          new grpc_core::testing::AsyncExternalVerifier(true);
       ffd->server_verifier = grpc_tls_certificate_verifier_external_create(
           server_async_verifier->base());
       break;

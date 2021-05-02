@@ -85,8 +85,8 @@ SyncExternalVerifier::SyncExternalVerifier(bool is_good) {
 
 int SyncExternalVerifier::Verify(
     void* user_data, grpc_tls_custom_verification_check_request* request,
-    grpc_tls_on_custom_verification_check_done_cb callback,
-    void* callback_arg, grpc_status_code* sync_status, char** sync_error_details) {
+    grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg,
+    grpc_status_code* sync_status, char** sync_error_details) {
   auto* data = static_cast<UserData*>(user_data);
   if (data->is_good) {
     return true;  // Synchronous call
@@ -103,66 +103,81 @@ void SyncExternalVerifier::Destruct(void* user_data) {
   delete data;
 }
 
-AsyncExternalVerifier::AsyncExternalVerifier(bool is_good,
-                                             gpr_event* event_ptr) {
-  auto* user_data = new UserData();
-  user_data->self = this;
-  user_data->is_good = is_good;
-  user_data->event_ptr = event_ptr;
-  base_.user_data = user_data;
-  base_.verify = Verify;
-  base_.cancel = Cancel;
-  base_.destruct = Destruct;
-}
-
 int AsyncExternalVerifier::Verify(
     void* user_data, grpc_tls_custom_verification_check_request* request,
-    grpc_tls_on_custom_verification_check_done_cb callback,
-    void* callback_arg, grpc_status_code* sync_status, char** sync_error_details) {
-  auto* data = static_cast<UserData*>(user_data);
-  // Creates the thread args we use when creating the thread.
-  ThreadArgs* thread_args = new ThreadArgs();
-  thread_args->request = request;
-  thread_args->callback = callback;
-  thread_args->callback_arg = callback_arg;
-  thread_args->event_ptr = data->event_ptr;
-  thread_args->is_good = data->is_good;
-  data->thread = new grpc_core::Thread("AsyncExternalVerifierVerify",
-                                       &AsyncExternalVerifierVerifyCb,
-                                       static_cast<void*>(thread_args), nullptr,
-                                       Thread::Options().set_joinable(false));
-  data->thread->Start();
+    grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg,
+    grpc_status_code* sync_status, char** sync_error_details) {
+  auto* self = static_cast<AsyncExternalVerifier*>(user_data);
+  // Add request to queue to be picked up by worker thread.
+  MutexLock lock(&self->mu_);
+  self->queue_.push_back(Request{request, callback, callback_arg, false});
+  self->alive_request_number++;
   return false;  // Asynchronous call
 }
 
 void AsyncExternalVerifier::Destruct(void* user_data) {
-  auto* data = static_cast<UserData*>(user_data);
-  if (data->thread != nullptr) {
-    delete data->thread;
+  auto* self = static_cast<AsyncExternalVerifier*>(user_data);
+  // Tell the thread to shut down.
+  {
+    MutexLock lock(&self->mu_);
+    self->queue_.push_back(Request{nullptr, nullptr, nullptr, true});
   }
-  if (data->self != nullptr) {
-    delete data->self;
+  // Make sure there are no pending request to be processed at this moment,
+  // since the callback of these requests may need to access
+  // AsyncExternalVerifier.
+  while (true) {
+    int alive_request_number = -1;
+    {
+      MutexLock lock(&self->mu_);
+      alive_request_number = self->alive_request_number;
+    }
+    if (alive_request_number != 0) {
+      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+      continue;
+    } else {
+      break;
+    }
   }
-  delete data;
+  // Wait for thread to exit.
+  self->thread_.Join();
+  delete self;
 }
 
-void AsyncExternalVerifier::AsyncExternalVerifierVerifyCb(void* args) {
-  ThreadArgs* thread_args = static_cast<ThreadArgs*>(args);
-  grpc_tls_custom_verification_check_request* request = thread_args->request;
-  grpc_tls_on_custom_verification_check_done_cb callback =
-      thread_args->callback;
-  void* callback_arg = thread_args->callback_arg;
-  if (thread_args->is_good) {
-    callback(request, callback_arg, GRPC_STATUS_OK, "");
-  } else {
-    callback(request, callback_arg, GRPC_STATUS_UNAUTHENTICATED,
-             "AsyncExternalVerifierBadVerify failed");
+void AsyncExternalVerifier::WorkerThread(void* arg) {
+  auto* self = static_cast<AsyncExternalVerifier*>(arg);
+  while (true) {
+    // Check queue for work.
+    bool got_request = false;
+    Request request;
+    {
+      MutexLock lock(&self->mu_);
+      if (!self->queue_.empty()) {
+        got_request = true;
+        request = self->queue_.front();
+        self->queue_.pop_front();
+      }
+    }
+    // If nothing found in the queue, sleep for a bit and try again.
+    if (!got_request) {
+      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+      continue;
+    }
+    // If we're being told to shut down, return.
+    if (request.shutdown) return;
+    // Process the request.
+    if (self->is_good_) {
+      request.callback(request.request, request.callback_arg, GRPC_STATUS_OK,
+                       "");
+    } else {
+      request.callback(request.request, request.callback_arg,
+                       GRPC_STATUS_UNAUTHENTICATED,
+                       "AsyncExternalVerifierBadVerify failed");
+    }
+    {
+      MutexLock lock(&self->mu_);
+      self->alive_request_number--;
+    }
   }
-  // Now we can notify the main testing thread that the thread object is set.
-  if (thread_args->event_ptr != nullptr) {
-    gpr_event_set(thread_args->event_ptr, reinterpret_cast<void*>(1));
-  }
-  delete thread_args;
 }
 
 }  // namespace testing

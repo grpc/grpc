@@ -30,33 +30,6 @@
 
 namespace grpc_core {
 
-/*// The abstract class of a pending request.
-class PendingVerifierRequest {
- public:
-  PendingVerifierRequest(grpc_closure* on_peer_checked, tsi_peer peer);
-
-  virtual ~PendingVerifierRequest();
-
-  // Starts the synchronous or asynchronous verification.
-  virtual void Start() = 0;
-
-  grpc_tls_custom_verification_check_request* request() { return &request_; }
-
-  // The following functions will be invoked directly in ctor and dtor. They are
-  // exposed to be used in some unit tests.
-  static void PendingVerifierRequestInit(
-      grpc_tls_custom_verification_check_request* request);
-  static void PendingVerifierRequestDestroy(
-      grpc_tls_custom_verification_check_request* request);
-
- protected:
-  grpc_tls_custom_verification_check_request request_;
-  grpc_closure* on_peer_checked_;
-
- private:
-  tsi_peer peer_;
-};*/
-
 // Channel security connector using TLS as transport security protocol.
 class TlsChannelSecurityConnector final
     : public grpc_channel_security_connector {

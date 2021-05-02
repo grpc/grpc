@@ -14,8 +14,11 @@
 // limitations under the License.
 //
 
+#include <deque>
+
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "test/core/util/test_config.h"
 
 namespace grpc_core {
 
@@ -44,6 +47,14 @@ PemKeyCertPairList MakeCertKeyPairs(absl::string_view private_key,
 
 std::string GetFileContents(const char* path);
 
+// A synchronous external verifier implementation that simply returns
+// verification results based on users' inputs. Note that it will delete itself
+// in Destruct(), so create it like
+// ```
+// auto* sync_verifier_ = new SyncExternalVerifier(false);
+// ```
+// and no need to delete it later. This is basically to keep consistent with the
+// semantics in AsyncExternalVerifier.
 class SyncExternalVerifier {
  public:
   SyncExternalVerifier(bool is_good);
@@ -59,7 +70,8 @@ class SyncExternalVerifier {
   static int Verify(void* user_data,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg, grpc_status_code* sync_status, char** sync_error_details);
+                    void* callback_arg, grpc_status_code* sync_status,
+                    char** sync_error_details);
 
   static void Cancel(void* user_data,
                      grpc_tls_custom_verification_check_request* request) {}
@@ -69,51 +81,57 @@ class SyncExternalVerifier {
   grpc_tls_certificate_verifier_external base_;
 };
 
+// An asynchronous external verifier implementation that runs a thread and
+// process each request received from the verifier sequentially. Note that it
+// will delete itself in Destruct(), so create it like
+// ```
+// auto* async_verifier = new AsyncExternalVerifier(true, &event);
+// auto* core_external_verifier =
+//       new ExternalCertificateVerifier(async_verifier->base());
+// ```
+// and no need to delete it later.
+// We delete AsyncExternalVerifier in Destruct() instead of its dtor because we
+// wanted AsyncExternalVerifier to outlive the underlying core
+// ExternalCertificateVerifier implementation.
 class AsyncExternalVerifier {
  public:
-  // The constructor of an async verifier that can be shared by multiple tests.
-  //
-  // is_good: if we want the check of the async verifier to return good result
-  // event_ptr: an event used to notify the main thread that the async callback
-  // is completed. Not setting this field will cause many threading problems,
-  // e.g. calling the verifier's Destruct() function while the async callback
-  // started by verifier's Verify() function is still running. For tests that
-  // don't need to be notified(e.g. in case when the check_peer() of the
-  // security connector is not invoked), pass nullptr here.
-  AsyncExternalVerifier(bool is_good, gpr_event* event_ptr);
+  AsyncExternalVerifier(bool is_good)
+      : is_good_(is_good),
+        thread_("AsyncExternalVerifierWorkerThread", WorkerThread, this),
+        base_{this, Verify, Cancel, Destruct} {
+    thread_.Start();
+  }
 
   grpc_tls_certificate_verifier_external* base() { return &base_; }
 
  private:
-  struct UserData {
-    AsyncExternalVerifier* self = nullptr;
-    grpc_core::Thread* thread = nullptr;
-    bool is_good = false;
-    gpr_event* event_ptr = nullptr;
-  };
-  // This is the arg we will pass in when creating the thread, and retrieve it
-  // later in the thread callback.
-  struct ThreadArgs {
-    grpc_tls_custom_verification_check_request* request = nullptr;
+  // A request to pass to the worker thread.
+  struct Request {
+    grpc_tls_custom_verification_check_request* request;
     grpc_tls_on_custom_verification_check_done_cb callback;
-    void* callback_arg = nullptr;
-    bool is_good = false;
-    gpr_event* event_ptr = nullptr;
+    void* callback_arg;
+    bool shutdown;  // If true, thread will exit.
   };
 
   static int Verify(void* user_data,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
-                    void* callback_arg, grpc_status_code* sync_status, char** sync_error_details);
+                    void* callback_arg, grpc_status_code* sync_status,
+                    char** sync_error_details);
 
   static void Cancel(void* user_data,
                      grpc_tls_custom_verification_check_request* request) {}
 
   static void Destruct(void* user_data);
 
-  static void AsyncExternalVerifierVerifyCb(void* args);
+  static void WorkerThread(void* arg);
 
+  bool is_good_;
+  grpc_core::Thread thread_;
   grpc_tls_certificate_verifier_external base_;
+  Mutex mu_;
+  std::deque<Request> queue_ ABSL_GUARDED_BY(mu_);
+  int alive_request_number ABSL_GUARDED_BY(mu_) = 0;
 };
 
 }  // namespace testing
