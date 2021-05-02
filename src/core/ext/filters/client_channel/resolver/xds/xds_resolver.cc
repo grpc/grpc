@@ -643,18 +643,18 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     ClusterState* cluster_state = it->second->Ref().release();
     // Generate a hash
     absl::optional<uint64_t> hash;
+    std::string seed;
     for (const auto& hash_policy : entry.route.hash_policies) {
       absl::optional<uint64_t> new_hash;
-      std::string channel_id;
       switch (hash_policy.type) {
         case XdsApi::Route::HashPolicy::HEADER:
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
         case XdsApi::Route::HashPolicy::CHANNEL_ID:
-          channel_id = absl::StrFormat(
+          seed = absl::StrFormat(
               "%" PRIu64,
               static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver)));
-          new_hash = XXH64(channel_id.c_str(), channel_id.length(), 0);
+          new_hash = XXH64(seed.c_str(), seed.length(), 0);
           gpr_log(GPR_INFO, "donna new hash is %" PRIu64, new_hash.value());
           break;
         default:
@@ -675,7 +675,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     if (!hash.has_value()) {
       // If there is no hash, we just choose a random value as a default.
-      hash = rand();
+      seed = absl::StrFormat("%" PRIu32, rand());
+      hash = XXH64(seed.c_str(), seed.length(), 0);
     }
     CallConfig call_config;
     if (method_config != nullptr) {

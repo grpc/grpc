@@ -2237,6 +2237,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     return listener;
   }
 
+  AdsServiceImpl::EdsResourceArgs::Endpoint CreateEndpoint(
+      size_t backend_idx, HealthStatus health_status = HealthStatus::UNKNOWN,
+      int lb_weight = 1) {
+    return AdsServiceImpl::EdsResourceArgs::Endpoint(
+        backends_[backend_idx]->port(), health_status, lb_weight);
+  }
+
   std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint>
   CreateEndpointsForBackends(size_t start_index = 0, size_t stop_index = 0,
                              HealthStatus health_status = HealthStatus::UNKNOWN,
@@ -2244,7 +2251,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (stop_index == 0) stop_index = backends_.size();
     std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
     for (size_t i = start_index; i < stop_index; ++i) {
-      endpoints.emplace_back(backends_[i]->port(), health_status, lb_weight);
+      endpoints.emplace_back(CreateEndpoint(i, health_status, health_status));
     }
     return endpoints;
   }
@@ -6790,6 +6797,92 @@ TEST_P(CdsTest, RingHashHeaderHashing) {
   for (size_t i = 0; i < backends_.size(); ++i) {
     EXPECT_EQ(100, backends_[i]->backend_service()->request_count());
   }
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Tests that ring hash policy that hashes using a random value can spread RPCs
+// across all the backends according to locality weight.
+TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const size_t kWeight1 = 1;
+  const size_t kWeight2 = 2;
+  const size_t kWeightTotal = kWeight1 + kWeight2;
+  const double kWeight33Percent = static_cast<double>(kWeight1) / kWeightTotal;
+  const double kWeight66Percent = static_cast<double>(kWeight2) / kWeightTotal;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kWeight33Percent, kErrorTolerance);
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
+         CreateEndpoint(1, HealthStatus::UNKNOWN, 2)}}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends(0, 2);
+  CheckRpcSendOk(kNumRpcs);
+  gpr_log(GPR_INFO, "donna sent %d", kNumRpcs);
+  for (size_t i = 0; i < 2; ++i) {
+    gpr_log(GPR_INFO, "donna backend %d got %d", i,
+            backends_[i]->backend_service()->request_count());
+  }
+  const int weight_33_request_count =
+      backends_[0]->backend_service()->request_count();
+  const int weight_66_request_count =
+      backends_[1]->backend_service()->request_count();
+  EXPECT_THAT(static_cast<double>(weight_33_request_count) / kNumRpcs,
+              ::testing::DoubleNear(kWeight33Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight_66_request_count) / kNumRpcs,
+              ::testing::DoubleNear(kWeight66Percent, kErrorTolerance));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Tests that ring hash policy that hashes using a random value can spread RPCs
+// across all the backends according to locality weight.
+TEST_P(CdsTest,
+       RingHashRandomHashingDistributionAccordingToLocalityAndEndpointWeight) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const size_t kWeight1 = 1 * 1;
+  const size_t kWeight2 = 2 * 2;
+  const size_t kWeightTotal = kWeight1 + kWeight2;
+  const double kWeight20Percent = static_cast<double>(kWeight1) / kWeightTotal;
+  const double kWeight80Percent = static_cast<double>(kWeight2) / kWeightTotal;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kWeight20Percent, kErrorTolerance);
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0", {CreateEndpoint(0, HealthStatus::UNKNOWN, 1)}, 1},
+       {"locality1", {CreateEndpoint(1, HealthStatus::UNKNOWN, 2)}, 2}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends(0, 2);
+  CheckRpcSendOk(kNumRpcs);
+  gpr_log(GPR_INFO, "donna sent %d", kNumRpcs);
+  for (size_t i = 0; i < 2; ++i) {
+    gpr_log(GPR_INFO, "donna backend %d got %d", i,
+            backends_[i]->backend_service()->request_count());
+  }
+  const int weight_20_request_count =
+      backends_[0]->backend_service()->request_count();
+  const int weight_80_request_count =
+      backends_[1]->backend_service()->request_count();
+  EXPECT_THAT(static_cast<double>(weight_20_request_count) / kNumRpcs,
+              ::testing::DoubleNear(kWeight20Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight_80_request_count) / kNumRpcs,
+              ::testing::DoubleNear(kWeight80Percent, kErrorTolerance));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
