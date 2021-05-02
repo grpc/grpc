@@ -117,9 +117,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierFails) {
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierSucceeds) {
   absl::Status sync_status;
-  gpr_event event;
-  gpr_event_init(&event);
-  auto* async_verifier = new AsyncExternalVerifier(true, &event);
+  auto* async_verifier = new AsyncExternalVerifier(true);
   auto* core_external_verifier =
       new ExternalCertificateVerifier(async_verifier->base());
   core_external_verifier->Verify(
@@ -129,17 +127,12 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierSucceeds) {
         EXPECT_TRUE(async_status.ok());
       },
       &sync_status);
-  // Wait for the async callback to be completed.
-  gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
   delete core_external_verifier;
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
   absl::Status sync_status;
-  gpr_event event;
-  gpr_event_init(&event);
-  auto* async_verifier = new AsyncExternalVerifier(false, &event);
+  auto* async_verifier = new AsyncExternalVerifier(false);
   auto* core_external_verifier =
       new ExternalCertificateVerifier(async_verifier->base());
   core_external_verifier->Verify(
@@ -151,9 +144,6 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
                   "UNAUTHENTICATED: AsyncExternalVerifierBadVerify failed");
       },
       &sync_status);
-  // Wait for the async callback to be completed.
-  gpr_event_wait(&event, gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                      gpr_time_from_seconds(5, GPR_TIMESPAN)));
   delete core_external_verifier;
 }
 
