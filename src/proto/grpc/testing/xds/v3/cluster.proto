@@ -160,6 +160,7 @@ message Cluster {
     enum HashFunction {
       // Use `xxHash <https://github.com/Cyan4973/xxHash>`_, this is the default hash function.
       XX_HASH = 0;
+      MURMUR_HASH_2 = 1;
     }
 
     reserved 2;

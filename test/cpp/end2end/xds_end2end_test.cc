@@ -7063,6 +7063,36 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
+// Test we nack when ring hash policy has invalid hash function (something other
+// than XX_HASH.
+TEST_P(CdsTest, RingHashPolicyHasInvalidHashFunction) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  cluster.mutable_ring_hash_lb_config()->set_hash_function(
+      Cluster::RingHashLbConfig::MURMUR_HASH_2);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendFailure();
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
+  EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("ring hash lb config has invalid hash function."));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
 class XdsSecurityTest : public BasicTest {
  protected:
   static void SetUpTestCase() {
