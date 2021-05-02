@@ -6725,7 +6725,6 @@ TEST_P(CdsTest, RingHashChannelIdHashing) {
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   auto* hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
-  hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -6758,7 +6757,6 @@ TEST_P(CdsTest, RingHashHeaderHashing) {
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   auto* hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("address_hash");
-  hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -6886,6 +6884,47 @@ TEST_P(CdsTest,
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
+// Tests that ring hash policy that hashes using a fixed string ensures all RPCs
+// to go 1 particular backend; and that subsequent hashing policies are ignored
+// due to the setting of terminal.
+TEST_P(CdsTest, RingHashFixedHashingTerminalPolicy) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("fixed_string");
+  hash_policy->set_terminal(true);
+  auto* hash_policy_to_be_ignored = route->mutable_route()->add_hash_policy();
+  hash_policy_to_be_ignored->mutable_header()->set_header_name("random_string");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"fixed_string", "fixed_value"},
+      {"random_string", absl::StrFormat("%" PRIu32, rand())},
+  };
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  CheckRpcSendOk(100, rpc_options);
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->backend_service()->request_count() > 0) {
+      EXPECT_EQ(backends_[i]->backend_service()->request_count(), 100)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "backend " << i;
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
 // Test that the channel will go from idle to ready via connecting;
 // (tho it is not possible to catch the connecting state before moving to ready)
 TEST_P(CdsTest, RingHashIdleToReady) {
@@ -6897,7 +6936,6 @@ TEST_P(CdsTest, RingHashIdleToReady) {
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   auto* hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
-  hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -6927,7 +6965,6 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   auto* hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("address_hash");
-  hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 2)},
@@ -6965,7 +7002,6 @@ TEST_P(CdsTest, RingHashSwitchToLowerPrioirtyAndThenBack) {
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   auto* hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("address_hash");
-  hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 1), kDefaultLocalityWeight,
@@ -7004,7 +7040,6 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   auto* hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("address_hash");
-  hash_policy->set_terminal(true);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends(0, 2)},
