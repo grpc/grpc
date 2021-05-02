@@ -1252,20 +1252,6 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
                   "and max_ring_size cannot be smaller than "
                   "min_ring_size"));
             }
-            ring_hash_it = ring_hash.find("hash_function");
-            if (ring_hash_it == ring_hash.end()) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:hash_function missing"));
-            } else if (ring_hash_it->second.type() != Json::Type::STRING) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:hash_function error: should be a "
-                  "string"));
-            } else if (ring_hash_it->second.string_value() != "XX_HASH" &&
-                       ring_hash_it->second.string_value() != "MURMUR_HASH_2") {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:hash_function error: unsupported "
-                  "hash_function"));
-            }
             break;
           }
         }

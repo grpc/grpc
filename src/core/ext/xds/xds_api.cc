@@ -2857,16 +2857,8 @@ grpc_error_handle CdsResponseParse(
         }
       }
       if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
-              ring_hash_config) ==
+              ring_hash_config) !=
           envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
-        cds_update.hash_function = XdsApi::CdsUpdate::HashFunction::XX_HASH;
-      } else if (
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
-              ring_hash_config) ==
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_MURMUR_HASH_2) {
-        cds_update.hash_function =
-            XdsApi::CdsUpdate::HashFunction::MURMUR_HASH_2;
-      } else {
         errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
             absl::StrCat(cluster_name,
                          ": ring hash lb config has invalid hash function.")
