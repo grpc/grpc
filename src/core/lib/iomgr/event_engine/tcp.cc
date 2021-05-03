@@ -94,7 +94,8 @@ static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 // EventEngine directly, closures will be replaced with EE callback types.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
-  return [&](absl::Status status,
+  return [closure, grpc_endpoint_out](
+             absl::Status status,
              std::unique_ptr<EventEngine::Endpoint> endpoint) {
     grpc_core::ExecCtx exec_ctx;
     grpc_endpoint_out->endpoint = std::move(endpoint);
@@ -108,6 +109,7 @@ EventEngine::Listener::AcceptCallback GrpcClosureToAcceptCallback(
   (void)closure;
   return [](absl::Status, std::unique_ptr<EventEngine::Endpoint>) {
     // TODO(hork): implement
+    GPR_ASSERT(false && "not implemented");
   };
 }
 

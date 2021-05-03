@@ -31,6 +31,12 @@ struct grpc_event_engine_endpoint {
   std::string peer_address;
   std::string local_address;
   grpc_resource_user* ru = nullptr;
+  std::aligned_storage<sizeof(grpc_event_engine::experimental::SliceBuffer),
+                       alignof(grpc_event_engine::experimental::SliceBuffer)>
+      read_buffer;
+  std::aligned_storage<sizeof(grpc_event_engine::experimental::SliceBuffer),
+                       alignof(grpc_event_engine::experimental::SliceBuffer)>
+      write_buffer;
 };
 
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,

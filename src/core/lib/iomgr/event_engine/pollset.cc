@@ -21,22 +21,24 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 
+struct grpc_pollset {
+  gpr_mu mu;
+};
+
 namespace {
 
 // --- pollset vtable API ---
 void pollset_global_init(void) {}
 void pollset_global_shutdown(void) {}
 void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
-  (void)pollset;
-  (void)mu;
-  // TODO(hork): do callers expect anything here, or are these arguments black
-  // boxes?
+  gpr_mu_init(&pollset->mu);
+  *mu = &pollset->mu;
 }
 void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   (void)pollset;
   (void)closure;
 }
-void pollset_destroy(grpc_pollset* pollset) { (void)pollset; }
+void pollset_destroy(grpc_pollset* pollset) { gpr_mu_destroy(&pollset->mu); }
 grpc_error* pollset_work(grpc_pollset* pollset, grpc_pollset_worker** worker,
                          grpc_millis deadline) {
   (void)pollset;
@@ -50,7 +52,7 @@ grpc_error* pollset_kick(grpc_pollset* pollset,
   (void)specific_worker;
   return GRPC_ERROR_NONE;
 }
-size_t pollset_size(void) { return 0; }
+size_t pollset_size(void) { return sizeof(grpc_pollset); }
 
 // --- pollset_set vtable API ---
 grpc_pollset_set* pollset_set_create(void) {
