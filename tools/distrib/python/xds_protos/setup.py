@@ -23,10 +23,7 @@ EXCLUDE_PYTHON_FILES = ['generated_file_import_test.py', 'build.py']
 # Use setuptools to build Python package
 with open(os.path.join(WORK_DIR, 'README.rst'), 'r') as f:
     LONG_DESCRIPTION = f.read()
-PACKAGES = setuptools.find_packages(
-    where=".",
-    exclude=EXCLUDE_PYTHON_FILES) + setuptools.find_namespace_packages(
-        include=['google.*'])
+PACKAGES = setuptools.find_packages(where=".", exclude=EXCLUDE_PYTHON_FILES)
 CLASSIFIERS = [
     'Development Status :: 3 - Alpha',
     'Programming Language :: Python',
@@ -41,7 +38,7 @@ INSTALL_REQUIRES = [
 SETUP_REQUIRES = INSTALL_REQUIRES + ['grpcio-tools']
 setuptools.setup(
     name='xds-protos',
-    version='0.0.5',
+    version='0.0.8',
     packages=PACKAGES,
     description='Generated Python code from envoyproxy/data-plane-api',
     long_description_content_type='text/x-rst',
