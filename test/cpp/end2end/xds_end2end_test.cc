@@ -7124,6 +7124,95 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
+// Test unspported hash policy types are all ignored before a supported policy.
+TEST_P(CdsTest, RingHashUnsupportedHashPolicyUntilChannelIdHashing) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy_unsupported_1 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_1->mutable_cookie()->set_name("cookie");
+  auto* hash_policy_unsupported_2 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_1->mutable_connection_properties()->set_source_ip(
+      true);
+  auto* hash_policy_unsupported_3 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_1->mutable_query_parameter()->set_name(
+      "query_parameter");
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  CheckRpcSendOk(100);
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->backend_service()->request_count() > 0) {
+      EXPECT_EQ(backends_[i]->backend_service()->request_count(), 100)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "backend " << i;
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test random has is usesd when only supported hash policies are configured.
+TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const size_t kWeight1 = 1;
+  const size_t kWeight2 = 2;
+  const size_t kWeightTotal = kWeight1 + kWeight2;
+  const double kWeight33Percent = static_cast<double>(kWeight1) / kWeightTotal;
+  const double kWeight66Percent = static_cast<double>(kWeight2) / kWeightTotal;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kWeight33Percent, kErrorTolerance);
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy_unsupported_1 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_1->mutable_cookie()->set_name("cookie");
+  auto* hash_policy_unsupported_2 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_1->mutable_connection_properties()->set_source_ip(
+      true);
+  auto* hash_policy_unsupported_3 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_1->mutable_query_parameter()->set_name(
+      "query_parameter");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
+         CreateEndpoint(1, HealthStatus::UNKNOWN, 2)}}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends(0, 2);
+  CheckRpcSendOk(kNumRpcs);
+  gpr_log(GPR_INFO, "donna sent %d", kNumRpcs);
+  for (size_t i = 0; i < 2; ++i) {
+    gpr_log(GPR_INFO, "donna backend %d got %d", i,
+            backends_[i]->backend_service()->request_count());
+  }
+  const int weight_33_request_count =
+      backends_[0]->backend_service()->request_count();
+  const int weight_66_request_count =
+      backends_[1]->backend_service()->request_count();
+  EXPECT_THAT(static_cast<double>(weight_33_request_count) / kNumRpcs,
+              ::testing::DoubleNear(kWeight33Percent, kErrorTolerance));
+  EXPECT_THAT(static_cast<double>(weight_66_request_count) / kNumRpcs,
+              ::testing::DoubleNear(kWeight66Percent, kErrorTolerance));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
 // Test we nack when ring hash policy has invalid hash function (something other
 // than XX_HASH.
 TEST_P(CdsTest, RingHashPolicyHasInvalidHashFunction) {

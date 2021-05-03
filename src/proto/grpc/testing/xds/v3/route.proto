@@ -257,6 +257,19 @@ message RouteAction {
       // to produce the hash key.
       type.matcher.v3.RegexMatchAndSubstitute regex_rewrite = 2;
     }
+    
+    message Cookie {
+      string name = 1;
+    }
+
+    message ConnectionProperties {
+      bool source_ip = 1;
+    }
+
+    message QueryParameter {
+      string name = 1;
+    }
+
     message FilterState {
       // The name of the Object in the per-request filterState, which is an
       // Envoy::Http::Hashable object. If there is no data associated with the key,
@@ -265,7 +278,19 @@ message RouteAction {
     }
 
     oneof policy_specifier {
+      // Header hash policy.
       Header header = 1;
+
+      // Cookie hash policy.
+      Cookie cookie = 2;
+
+      // Connection properties hash policy.
+      ConnectionProperties connection_properties = 3;
+
+      // Query parameter hash policy.
+      QueryParameter query_parameter = 5;
+
+      // Filter state hash policy.
       FilterState filter_state = 6;
     }
 

@@ -325,8 +325,10 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
       ++current_hashes;
       hash_key_buffer.erase(offset_start, hash_key_buffer.end());
     }
-    min_hashes_per_host = std::min(i, min_hashes_per_host);
-    max_hashes_per_host = std::max(i, max_hashes_per_host);
+    min_hashes_per_host =
+        std::min(static_cast<uint64_t>(i), min_hashes_per_host);
+    max_hashes_per_host =
+        std::max(static_cast<uint64_t>(i), max_hashes_per_host);
   }
   std::sort(ring_.begin(), ring_.end(),
             [](const RingEntry& lhs, const RingEntry& rhs) -> bool {
