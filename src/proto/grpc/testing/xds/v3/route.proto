@@ -255,6 +255,7 @@ message RouteAction {
 
       // If specified, the request header value will be rewritten and used
       // to produce the hash key.
+      type.matcher.v3.RegexMatchAndSubstitute regex_rewrite = 2;
     }
     message FilterState {
       // The name of the Object in the per-request filterState, which is an

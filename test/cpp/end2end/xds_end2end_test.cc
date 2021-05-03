@@ -6798,6 +6798,67 @@ TEST_P(CdsTest, RingHashHeaderHashing) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
+// Tests that ring hash policy that hashes using a header value and regex
+// rewrite to aggregate RPCs to 1 backend.
+TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  hash_policy->mutable_header()
+      ->mutable_regex_rewrite()
+      ->mutable_pattern()
+      ->set_regex(ipv6_only_ ? "(::1):([0-9]+)" : "(127.0.0.1):([0-9]+)");
+  hash_policy->mutable_header()->mutable_regex_rewrite()->set_substitution(
+      ipv6_only_ ? "::1" : "127.0.0.1");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends()},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
+                                    backends_[0]->port(), "_0")},
+  };
+  std::vector<std::pair<std::string, std::string>> metadata1 = {
+      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
+                                    backends_[1]->port(), "_0")},
+  };
+  std::vector<std::pair<std::string, std::string>> metadata2 = {
+      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
+                                    backends_[2]->port(), "_0")},
+  };
+  std::vector<std::pair<std::string, std::string>> metadata3 = {
+      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
+                                    backends_[3]->port(), "_0")},
+  };
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
+  const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
+  const auto rpc_options3 = RpcOptions().set_metadata(std::move(metadata3));
+  CheckRpcSendOk(100, rpc_options);
+  CheckRpcSendOk(100, rpc_options1);
+  CheckRpcSendOk(100, rpc_options2);
+  CheckRpcSendOk(100, rpc_options3);
+  bool found = false;
+  for (size_t i = 0; i < backends_.size(); ++i) {
+    if (backends_[i]->backend_service()->request_count() > 0) {
+      EXPECT_EQ(backends_[i]->backend_service()->request_count(), 400)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "backend " << i;
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
 // Tests that ring hash policy that hashes using a random value can spread RPCs
 // across all the backends according to locality weight.
 TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
