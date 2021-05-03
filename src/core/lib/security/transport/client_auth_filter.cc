@@ -229,6 +229,7 @@ static void on_credentials_metadata(void* arg, grpc_error_handle error) {
   if (cancel_error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error,
                                                        calld->call_combiner);
+    GRPC_CALL_STACK_UNREF(calld->owning_call, "get_request_metadata");
     return;
   }
   on_credentials_metadata_inner(batch, GRPC_ERROR_REF(error));
@@ -369,6 +370,7 @@ static void send_security_metadata(grpc_call_element* elem,
     // We've already seen pre-cancellation, so fail the batch.
     grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error,
                                                        calld->call_combiner);
+    GRPC_CALL_STACK_UNREF(calld->owning_call, "get_request_metadata");
     return;
   }
   if (is_done) {
@@ -414,6 +416,7 @@ static void on_host_checked(void* arg, grpc_error_handle error) {
   if (cancel_error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error,
                                                        calld->call_combiner);
+    GRPC_CALL_STACK_UNREF(calld->owning_call, "check_call_host");
     return;
   }
   on_host_checked_inner(batch, GRPC_ERROR_REF(error));
@@ -458,6 +461,7 @@ static void client_auth_start_transport_stream_op_batch(
         // We've already been cancelled, so fail the batch.
         grpc_transport_stream_op_batch_finish_with_failure(
             batch, cancel_error, calld->call_combiner);
+        GRPC_CALL_STACK_UNREF(calld->owning_call, "check_call_host");
         return;
       }
       if (is_done) {
