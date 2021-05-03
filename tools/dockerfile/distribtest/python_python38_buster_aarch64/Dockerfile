@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import grpc
+# this an aarch64 image, qemu emulator will be used to run the tests
+FROM arm64v8/python:3.8-buster
 
-# This code doesn't do much but makes sure the native extension is loaded
-# which is what we are testing here.
-channel = grpc.insecure_channel('localhost:1000')
-del channel
-print('Success!')
+RUN pip install virtualenv
