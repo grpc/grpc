@@ -150,7 +150,8 @@ def gen_loadtest_configs(
             uniq = (uniquifier_elements +
                     [run_index] if run_index else uniquifier_elements)
             name = loadtest_name(prefix, scenario['name'], uniq)
-            scenario_str = json.dumps({'scenarios': scenario}, indent='  ')
+            scenario_str = json.dumps({'scenarios': scenario},
+                                      indent='  ') + '\n'
 
             config = copy.deepcopy(base_config)
 
@@ -206,7 +207,7 @@ def parse_key_value_args(args: Optional[Iterable[str]]) -> Dict[str, str]:
     return d
 
 
-def config_dumper(header_comment: str) -> Type[yaml.Dumper]:
+def config_dumper(header_comment: str) -> Type[yaml.SafeDumper]:
     """Returns a custom dumper to dump configurations in the expected format."""
 
     class ConfigDumper(yaml.SafeDumper):
@@ -216,6 +217,15 @@ def config_dumper(header_comment: str) -> Type[yaml.Dumper]:
             if isinstance(self.event, yaml.StreamStartEvent):
                 self.write_indent()
                 self.write_indicator(header_comment, need_whitespace=False)
+
+        def expect_block_sequence(self):
+            super().expect_block_sequence()
+            self.increase_indent()
+
+        def expect_block_sequence_item(self, first=False):
+            if isinstance(self.event, yaml.SequenceEndEvent):
+                self.indent = self.indents.pop()
+            super().expect_block_sequence_item(first)
 
     def str_presenter(dumper, data):
         if '\n' in data:
@@ -266,7 +276,7 @@ def main() -> None:
     argp.add_argument(
         '-d',
         action='store_true',
-        help='Use creation date and time as an addditional uniquifier element.')
+        help='Use creation date and time as an additional uniquifier element.')
     argp.add_argument('-a',
                       '--annotation',
                       action='append',

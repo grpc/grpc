@@ -3,9 +3,12 @@
     <Authors>The gRPC Authors</Authors>
     <Copyright>Copyright 2015 The gRPC Authors</Copyright>
     <Description>Xamarin support for gRPC C#. Note that the gRPC C# support for the Xamarin platform is considered experimental.
-    This package contains the native grpc_csharp_ext libraries that are needed to run gRPC C# on mobile platforms (Android, iOS).
-    WARNING: Versions of Grpc.Core.Xamarin and Grpc.Core dependencies being used in your project must always match exactly, otherwise
-    things will be badly broken.</Description>
+
+This package contains the native grpc_csharp_ext libraries that are needed to run gRPC C# on mobile platforms (Android, iOS).
+WARNING: Versions of Grpc.Core.Xamarin and Grpc.Core dependencies being used in your project must always match exactly, otherwise things will be badly broken.
+
+Note that the Grpc.Core implementation of gRPC for C# is in maintenance mode and will be replaced by grpc-dotnet in the future.
+See https://grpc.io/blog/grpc-csharp-future/ for details.</Description>
     <PackageIconUrl>https://github.com/grpc/grpc.github.io/raw/master/img/grpc_square_reverse_4x.png</PackageIconUrl>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>

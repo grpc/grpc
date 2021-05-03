@@ -29,8 +29,8 @@ server, it might be useful to run workers manually.
 2. Connect to each worker machine and start up a benchmark worker with a
    "driver_port".
 
-- For example, to start the grpc-go benchmark worker: [grpc-go worker
-  main.go](https://github.com/grpc/grpc-go/blob/master/benchmark/worker/main.go)
+- For example, to start the grpc-go benchmark worker:
+  [grpc-go worker main.go](https://github.com/grpc/grpc-go/blob/master/benchmark/worker/main.go)
   --driver_port <driver_port>
 
 #### Commands to start workers in different languages:
@@ -347,7 +347,7 @@ $ ./tools/run_tests/performance/loadtest_template.py \
     --name basic_all_languages
 ```
 
-The script `loadest_template.py` takes the following options:
+The script `loadtest_template.py` takes the following options:
 
 - `-i`, `--inputs`<br> Space-separated list of the names of input files
   containing LoadTest configurations. May be repeated.

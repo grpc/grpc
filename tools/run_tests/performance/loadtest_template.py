@@ -122,7 +122,7 @@ def loadtest_template(
     return template
 
 
-def template_dumper(header_comment: str) -> Type[yaml.Dumper]:
+def template_dumper(header_comment: str) -> Type[yaml.SafeDumper]:
     """Returns a custom dumper to dump templates in the expected format."""
 
     class TemplateDumper(yaml.SafeDumper):
@@ -132,6 +132,15 @@ def template_dumper(header_comment: str) -> Type[yaml.Dumper]:
             if isinstance(self.event, yaml.StreamStartEvent):
                 self.write_indent()
                 self.write_indicator(header_comment, need_whitespace=False)
+
+        def expect_block_sequence(self):
+            super().expect_block_sequence()
+            self.increase_indent()
+
+        def expect_block_sequence_item(self, first=False):
+            if isinstance(self.event, yaml.SequenceEndEvent):
+                self.indent = self.indents.pop()
+            super().expect_block_sequence_item(first)
 
     return TemplateDumper
 

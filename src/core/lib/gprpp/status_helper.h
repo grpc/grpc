@@ -22,9 +22,14 @@
 #include <grpc/support/port_platform.h>
 
 #include "absl/status/status.h"
-#include "google/rpc/status.upb.h"
+#include "absl/time/time.h"
 
 #include "src/core/lib/gprpp/debug_location.h"
+
+extern "C" {
+struct google_rpc_Status;
+struct upb_arena;
+}
 
 namespace grpc_core {
 
@@ -91,8 +96,12 @@ enum class StatusStrProperty {
   kKey,
   /// value associated with the error
   kValue,
-  /// time string to create the error
-  kCreatedTime,
+};
+
+/// This enum should have the same value of grpc_error_times
+enum class StatusTimeProperty {
+  /// timestamp of error creation
+  kCreated,
 };
 
 /// Creates a status with given additional information
@@ -114,6 +123,14 @@ void StatusSetStr(absl::Status* status, StatusStrProperty key,
 /// Gets the str property from the status
 absl::optional<std::string> StatusGetStr(
     const absl::Status& status, StatusStrProperty key) GRPC_MUST_USE_RESULT;
+
+/// Sets the time property to the status
+void StatusSetTime(absl::Status* status, StatusTimeProperty key,
+                   absl::Time time);
+
+/// Gets the time property from the status
+absl::optional<absl::Time> StatusGetTime(
+    const absl::Status& status, StatusTimeProperty key) GRPC_MUST_USE_RESULT;
 
 /// Adds a child status to status
 void StatusAddChild(absl::Status* status, absl::Status child);
