@@ -19,6 +19,7 @@
 
 #include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/event_engine/sockaddr.h"
+#include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -26,6 +27,8 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/transport/error_utils.h"
+
+extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace {
 using ::grpc_event_engine::experimental::ChannelArgs;
@@ -42,25 +45,48 @@ struct grpc_tcp_server {
       : listener(std::move(listener)),
         engine(std::move(ee)),
         resource_quota(rq) {
-    gpr_ref_init(&refs, 1);
+    new (&refcount) grpc_core::RefCount(
+        1, GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) ? "tcp" : nullptr);
     shutdown_starting.head = nullptr;
     shutdown_starting.tail = nullptr;
-    gpr_mu_init(&mu);
   };
   ~grpc_tcp_server() {
-    gpr_mu_destroy(&mu);
     // TODO(nnoble): see if we can handle this in ~SliceAllocatorFactory
     grpc_resource_quota_unref_internal(resource_quota);
   }
-  gpr_refcount refs;
-  gpr_mu mu;
+  grpc_core::RefCount refcount;
+  grpc_core::Mutex mu;
   std::unique_ptr<EventEngine::Listener> listener;
   std::shared_ptr<EventEngine> engine;
-  grpc_closure_list shutdown_starting;
+  grpc_closure_list shutdown_starting ABSL_GUARDED_BY(mu);
   grpc_resource_quota* resource_quota;
 };
 
 namespace {
+
+#ifndef NDEBUG
+#define TCP_UNREF(tcp, reason) tcp_unref((tcp), (reason), DEBUG_LOCATION)
+#define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), DEBUG_LOCATION)
+static bool tcp_unref(grpc_tcp_server* tcp, const char* reason,
+                      const grpc_core::DebugLocation& debug_location) {
+  return GPR_UNLIKELY(tcp->refcount.Unref(debug_location, reason));
+}
+
+static void tcp_ref(grpc_tcp_server* tcp, const char* reason,
+                    const grpc_core::DebugLocation& debug_location) {
+  tcp->refcount.Ref(debug_location, reason);
+}
+#else
+#define TCP_UNREF(tcp, reason) tcp_unref((tcp))
+#define TCP_REF(tcp, reason) tcp_ref((tcp))
+static void tcp_unref(grpc_tcp* tcp) {
+  if (GPR_UNLIKELY(tcp->refcount.Unref())) {
+    tcp_free(tcp);
+  }
+}
+
+static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
+#endif
 
 // NOTE: the closure is already initialized, and does not take an Endpoint.
 // See Chttp2Connector::Connect. Instead, the closure arg contains a ptr to the
@@ -83,6 +109,7 @@ EventEngine::Listener::AcceptCallback GrpcClosureToAcceptCallback(
   (void)closure;
   return [](absl::Status, std::unique_ptr<EventEngine::Endpoint>) {
     // TODO(hork): implement
+    GPR_ASSERT(false && "not implemented");
   };
 }
 
@@ -182,27 +209,32 @@ int tcp_server_port_fd(grpc_tcp_server* /* s */, unsigned /* port_index */,
 }
 
 grpc_tcp_server* tcp_server_ref(grpc_tcp_server* s) {
-  gpr_ref_non_zero(&s->refs);
+  // TODO(hork): add macro helper to manage debuglocation. See tcp_posix
+  TCP_REF(s, "server ref");
   return s;
 }
 
 void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
                                       grpc_closure* shutdown_starting) {
-  gpr_mu_lock(&s->mu);
+  grpc_core::MutexLock lock(&s->mu);
   grpc_closure_list_append(&s->shutdown_starting, shutdown_starting,
                            GRPC_ERROR_NONE);
-  gpr_mu_unlock(&s->mu);
 }
 
 void tcp_server_destroy(grpc_tcp_server* s) { delete s; }
 
-void tcp_server_unref(grpc_tcp_server* s) {
-  if (gpr_unref(&s->refs)) {
-    gpr_mu_lock(&s->mu);
+void tcp_free(grpc_tcp_server* s) {
+  {
+    grpc_core::MutexLock lock(&s->mu);
     grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &s->shutdown_starting);
     grpc_core::ExecCtx::Get()->Flush();
-    gpr_mu_unlock(&s->mu);
-    tcp_server_destroy(s);
+  }
+  tcp_server_destroy(s);
+}
+
+void tcp_server_unref(grpc_tcp_server* s) {
+  if (TCP_UNREF(s, "server unref")) {
+    tcp_free(s);
   }
 }
 

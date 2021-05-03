@@ -23,12 +23,17 @@
 // forward-declaring an internal struct, not used publicly.
 struct grpc_resource_quota;
 struct grpc_resource_user;
+struct grpc_slice_buffer;
 
 namespace grpc_event_engine {
 namespace experimental {
 
 // TODO(nnoble): forward declared here, needs definition.
-class SliceBuffer;
+class SliceBuffer {
+ public:
+  SliceBuffer() { abort(); }
+  SliceBuffer(grpc_slice_buffer*) { abort(); }
+};
 
 class SliceAllocator {
  public:

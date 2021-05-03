@@ -31,6 +31,7 @@
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/resource_quota.h"
+#include "src/core/lib/transport/error_utils.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
@@ -38,6 +39,7 @@ namespace {
 
 using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::ResolvedAddressToURI;
+using ::grpc_event_engine::experimental::SliceBuffer;
 
 void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
                    grpc_closure* cb, bool /* urgent */) {
@@ -47,13 +49,17 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_CANCELLED);
     return;
   }
-  // TODO(nnoble): provide way to convert slices to SliceBuffer.
-  (void)slices;
-  abort();
-  // SliceBuffer buffer(slices);
-  // eeep->endpoint->Read(
-  //     GrpcClosureToCallback(cb),
-  //     buffer, absl::InfiniteFuture());
+  SliceBuffer* read_buffer = new (&eeep->read_buffer) SliceBuffer(slices);
+  eeep->endpoint->Read(
+      [eeep, cb](absl::Status status) {
+        // Destroy SliceBuffer wrapper.
+        auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
+        read_buffer->~SliceBuffer();
+        // Invoke original callback.
+        grpc_core::Closure::Run(DEBUG_LOCATION, cb,
+                                absl_status_to_grpc_error(status));
+      },
+      read_buffer, absl::InfiniteFuture());
 }
 
 void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
@@ -66,13 +72,18 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_CANCELLED);
     return;
   }
-  // TODO(nnoble): provide way to convert slices to SliceBuffer.
-  (void)slices;
-  abort();
-  // SliceBuffer buffer(slices);
-  // eeep->endpoint->Write(
-  //     GrpcClosureToCallback(cb),
-  //     buffer, absl::InfiniteFuture());
+  SliceBuffer* write_buffer = new (&eeep->write_buffer) SliceBuffer(slices);
+  eeep->endpoint->Read(
+      [eeep, cb](absl::Status status) {
+        // Destroy SliceBuffer wrapper.
+        auto* write_buffer =
+            reinterpret_cast<SliceBuffer*>(&eeep->write_buffer);
+        write_buffer->~SliceBuffer();
+        // Invoke original callback.
+        grpc_core::Closure::Run(DEBUG_LOCATION, cb,
+                                absl_status_to_grpc_error(status));
+      },
+      write_buffer, absl::InfiniteFuture());
 }
 void endpoint_add_to_pollset(grpc_endpoint* /* ep */,
                              grpc_pollset* /* pollset */) {}

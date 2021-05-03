@@ -86,8 +86,7 @@ void resolve_address(const char* addr, const char* default_port,
                  addresses);
 }
 
-static void blocking_handle_async_resolve_done(void* arg,
-                                               grpc_error_handle error) {
+void blocking_handle_async_resolve_done(void* arg, grpc_error_handle error) {
   gpr_event_set(static_cast<gpr_event*>(arg), error);
 }
 
@@ -99,7 +98,6 @@ grpc_error* blocking_resolve_address(const char* name, const char* default_port,
   GRPC_CLOSURE_INIT(&on_done, blocking_handle_async_resolve_done, &evt,
                     grpc_schedule_on_exec_ctx);
   resolve_address(name, default_port, nullptr, &on_done, addresses);
-  // TODO(hork): decide on an appropriate timeout value.
   gpr_event_wait(&evt, gpr_inf_future(GPR_CLOCK_REALTIME));
   return static_cast<grpc_error*>(gpr_event_get(&evt));
 }
