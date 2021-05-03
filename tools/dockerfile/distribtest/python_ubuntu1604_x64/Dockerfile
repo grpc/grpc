@@ -16,4 +16,6 @@ FROM ubuntu:16.04
 
 RUN apt-get update -y && apt-get install -y python python-pip
 
-RUN pip install virtualenv
+RUN pip install --upgrade pip==19.3.1
+
+RUN /usr/local/bin/pip install virtualenv
