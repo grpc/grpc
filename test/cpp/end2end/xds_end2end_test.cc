@@ -2769,6 +2769,7 @@ TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
 // Tests that subchannel sharing works when the same backend is listed multiple
 // times.
 TEST_P(BasicTest, SameBackendListedMultipleTimes) {
+  const uint32_t kRpcTimeoutMs = 5000;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Same backend listed twice.
@@ -2781,6 +2782,8 @@ TEST_P(BasicTest, SameBackendListedMultipleTimes) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   // We need to wait for the backend to come online.
+  WaitForBackend(0, WaitForBackendOptions(),
+                 RpcOptions().set_timeout_ms(kRpcTimeoutMs));
   WaitForBackend(0);
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * endpoints.size());
