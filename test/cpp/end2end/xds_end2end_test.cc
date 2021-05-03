@@ -6875,7 +6875,6 @@ TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
       {{"locality0",
@@ -6886,9 +6885,9 @@ TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumRpcs);
-  gpr_log(GPR_INFO, "donna sent %d", kNumRpcs);
+  gpr_log(GPR_INFO, "donna sent %" PRIuPTR, kNumRpcs);
   for (size_t i = 0; i < 2; ++i) {
-    gpr_log(GPR_INFO, "donna backend %d got %d", i,
+    gpr_log(GPR_INFO, "donna backend %" PRIuPTR " got %" PRIuPTR, i,
             backends_[i]->backend_service()->request_count());
   }
   const int weight_33_request_count =
@@ -6919,7 +6918,6 @@ TEST_P(CdsTest,
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
       {{"locality0", {CreateEndpoint(0, HealthStatus::UNKNOWN, 1)}, 1},
@@ -6929,9 +6927,9 @@ TEST_P(CdsTest,
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumRpcs);
-  gpr_log(GPR_INFO, "donna sent %d", kNumRpcs);
+  gpr_log(GPR_INFO, "donna sent %" PRIuPTR, kNumRpcs);
   for (size_t i = 0; i < 2; ++i) {
-    gpr_log(GPR_INFO, "donna backend %d got %d", i,
+    gpr_log(GPR_INFO, "donna backend %" PRIuPTR " got %" PRIuPTR, i,
             backends_[i]->backend_service()->request_count());
   }
   const int weight_20_request_count =
@@ -7135,10 +7133,10 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyUntilChannelIdHashing) {
   auto* hash_policy_unsupported_1 = route->mutable_route()->add_hash_policy();
   hash_policy_unsupported_1->mutable_cookie()->set_name("cookie");
   auto* hash_policy_unsupported_2 = route->mutable_route()->add_hash_policy();
-  hash_policy_unsupported_1->mutable_connection_properties()->set_source_ip(
+  hash_policy_unsupported_2->mutable_connection_properties()->set_source_ip(
       true);
   auto* hash_policy_unsupported_3 = route->mutable_route()->add_hash_policy();
-  hash_policy_unsupported_1->mutable_query_parameter()->set_name(
+  hash_policy_unsupported_3->mutable_query_parameter()->set_name(
       "query_parameter");
   auto* hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_filter_state()->set_key("io.grpc.channel_id");
@@ -7182,10 +7180,10 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   auto* hash_policy_unsupported_1 = route->mutable_route()->add_hash_policy();
   hash_policy_unsupported_1->mutable_cookie()->set_name("cookie");
   auto* hash_policy_unsupported_2 = route->mutable_route()->add_hash_policy();
-  hash_policy_unsupported_1->mutable_connection_properties()->set_source_ip(
+  hash_policy_unsupported_2->mutable_connection_properties()->set_source_ip(
       true);
   auto* hash_policy_unsupported_3 = route->mutable_route()->add_hash_policy();
-  hash_policy_unsupported_1->mutable_query_parameter()->set_name(
+  hash_policy_unsupported_3->mutable_query_parameter()->set_name(
       "query_parameter");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
@@ -7197,9 +7195,9 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumRpcs);
-  gpr_log(GPR_INFO, "donna sent %d", kNumRpcs);
+  gpr_log(GPR_INFO, "donna sent %" PRIuPTR, kNumRpcs);
   for (size_t i = 0; i < 2; ++i) {
-    gpr_log(GPR_INFO, "donna backend %d got %d", i,
+    gpr_log(GPR_INFO, "donna backend %" PRIuPTR " got %" PRIuPTR, i,
             backends_[i]->backend_service()->request_count());
   }
   const int weight_33_request_count =

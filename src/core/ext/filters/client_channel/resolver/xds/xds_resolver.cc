@@ -692,7 +692,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     hash_value[hash_string.size()] = '\0';
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
     gpr_log(GPR_INFO, "donna hash stored as %s",
-            call_config.call_attributes[kRequestRingHashAttribute]);
+            std::string(call_config.call_attributes[kRequestRingHashAttribute])
+                .c_str());
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
       ExecCtx::Run(
