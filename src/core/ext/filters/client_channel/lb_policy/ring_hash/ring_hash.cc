@@ -407,7 +407,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       break;
     }
   }
-  gpr_log(GPR_INFO, "donna first index is %d", first_index);
+  gpr_log(GPR_INFO, "donna first index is %" PRIu64, first_index);
   OrphanablePtr<SubchannelConnectionAttempter> subchannel_connection_attempter;
   auto ScheduleSubchannelConnectionAttempt =
       [&](RefCountedPtr<SubchannelInterface> subchannel) {
@@ -434,7 +434,7 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   bool found_first_non_failed = false;
   for (size_t i = 1; i < ring_.size(); ++i) {
     const RingEntry& entry = ring_[(first_index + i) % ring_.size()];
-    gpr_log(GPR_INFO, "donna index %d state %d and subchannel %p", i,
+    gpr_log(GPR_INFO, "donna index %d state %" PRIuPTR "and subchannel %p", i,
             entry.connectivity_state, entry.subchannel.get());
     if (entry.subchannel == first_channel) continue;
     if (entry.connectivity_state == GRPC_CHANNEL_READY) {
