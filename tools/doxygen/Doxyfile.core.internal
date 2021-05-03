@@ -1474,6 +1474,10 @@ src/core/ext/xds/xds_http_filters.cc \
 src/core/ext/xds/xds_http_filters.h \
 src/core/ext/xds/xds_server_config_fetcher.cc \
 src/core/lib/README.md \
+src/core/lib/address_utils/parse_address.cc \
+src/core/lib/address_utils/parse_address.h \
+src/core/lib/address_utils/sockaddr_utils.cc \
+src/core/lib/address_utils/sockaddr_utils.h \
 src/core/lib/avl/avl.cc \
 src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
@@ -1688,8 +1692,6 @@ src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.cc \
 src/core/lib/iomgr/lockfree_event.h \
 src/core/lib/iomgr/nameser.h \
-src/core/lib/iomgr/parse_address.cc \
-src/core/lib/iomgr/parse_address.h \
 src/core/lib/iomgr/polling_entity.cc \
 src/core/lib/iomgr/polling_entity.h \
 src/core/lib/iomgr/pollset.cc \
@@ -1719,8 +1721,6 @@ src/core/lib/iomgr/resource_quota.h \
 src/core/lib/iomgr/sockaddr.h \
 src/core/lib/iomgr/sockaddr_custom.h \
 src/core/lib/iomgr/sockaddr_posix.h \
-src/core/lib/iomgr/sockaddr_utils.cc \
-src/core/lib/iomgr/sockaddr_utils.h \
 src/core/lib/iomgr/sockaddr_windows.h \
 src/core/lib/iomgr/socket_factory_posix.cc \
 src/core/lib/iomgr/socket_factory_posix.h \
