@@ -357,9 +357,12 @@ class SplitServerStreamingHandler
 template <::grpc::StatusCode code>
 class ErrorMethodHandler : public ::grpc::internal::MethodHandler {
  public:
+  explicit ErrorMethodHandler(const std::string& message) : message_(message) {}
+
   template <class T>
-  static void FillOps(::grpc::ServerContextBase* context, T* ops) {
-    ::grpc::Status status(code, "");
+  static void FillOps(::grpc::ServerContextBase* context,
+                      const std::string& message, T* ops) {
+    ::grpc::Status status(code, message);
     if (!context->sent_initial_metadata_) {
       ops->SendInitialMetadata(&context->initial_metadata_,
                                context->initial_metadata_flags());
@@ -375,7 +378,7 @@ class ErrorMethodHandler : public ::grpc::internal::MethodHandler {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                                 ::grpc::internal::CallOpServerSendStatus>
         ops;
-    FillOps(param.server_context, &ops);
+    FillOps(param.server_context, message_, &ops);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
   }
@@ -388,6 +391,9 @@ class ErrorMethodHandler : public ::grpc::internal::MethodHandler {
     }
     return nullptr;
   }
+
+ private:
+  const std::string message_;
 };
 
 typedef ErrorMethodHandler<::grpc::StatusCode::UNIMPLEMENTED>
