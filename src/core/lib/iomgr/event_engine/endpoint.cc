@@ -49,6 +49,7 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
   }
   // TODO(nnoble): provide way to convert slices to SliceBuffer.
   (void)slices;
+  abort();
   // SliceBuffer buffer(slices);
   // eeep->endpoint->Read(
   //     GrpcClosureToCallback(cb),
@@ -67,6 +68,7 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   }
   // TODO(nnoble): provide way to convert slices to SliceBuffer.
   (void)slices;
+  abort();
   // SliceBuffer buffer(slices);
   // eeep->endpoint->Write(
   //     GrpcClosureToCallback(cb),

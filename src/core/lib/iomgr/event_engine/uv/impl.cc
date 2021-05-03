@@ -1,6 +1,9 @@
 #include <uv.h>
+
+#include <atomic>
 #include <functional>
 #include <future>
+#include <unordered_map>
 
 #include "grpc/event_engine/event_engine.h"
 #include "src/core/lib/gprpp/host_port.h"
@@ -11,6 +14,8 @@
 #include "src/core/lib/iomgr/socket_utils.h"
 
 class uvEngine;
+class uvTask;
+class uvLookupTask;
 
 class uvTCPbase {
  public:
@@ -104,9 +109,7 @@ class uvDNSResolver final
     abort();
   }
 
-  virtual void TryCancelLookup(LookupTaskHandle handle) override final {
-    abort();
-  }
+  virtual void TryCancelLookup(LookupTaskHandle handle) override final;
 
   uvEngine* engine_;
 };
@@ -273,11 +276,18 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     abort();
   }
 
+  void eraseTask(intptr_t taskKey);
+  void eraseLookupTask(intptr_t taskKey);
+
   uv_loop_t loop_;
   uv_async_t kicker_;
   std::promise<bool> ready_;
   grpc_core::Thread thread_;
   grpc_core::MultiProducerSingleConsumerQueue queue_;
+  std::atomic<intptr_t> taskKey_;
+  std::atomic<intptr_t> lookupTaskKey_;
+  std::unordered_map<intptr_t, uvTask*> taskMap_;
+  std::unordered_map<intptr_t, uvLookupTask*> lookupTaskMap_;
 };
 
 int uvTCPbase::init(uvEngine* engine) {
@@ -374,43 +384,115 @@ grpc_event_engine::experimental::GetDefaultEventEngine() {
   return engine;
 }
 
+class uvLookupTask {
+ public:
+  uvLookupTask(uvEngine* engine) : key_(engine->lookupTaskKey_.fetch_add(1)) {
+    req_.data = this;
+    timer_.data = this;
+  }
+  std::string address_;
+  std::string default_port_;
+  uv_getaddrinfo_t req_;
+  uv_timer_t timer_;
+  bool cancelled_ = false;
+  const intptr_t key_;
+  grpc_event_engine::experimental::EventEngine::DNSResolver::
+      LookupHostnameCallback on_resolve_;
+  static void uvResolverCallbackTrampoline(uv_getaddrinfo_t* req, int status,
+                                           struct addrinfo* res) {
+    uvLookupTask* task = reinterpret_cast<uvLookupTask*>(req->data);
+    task->uvResolverCallback(status, res);
+  }
+  void uvResolverCallback(int status, struct addrinfo* res) {
+    uvEngine* engine = reinterpret_cast<uvEngine*>(req_.loop->data);
+    uv_timer_stop(&timer_);
+    if (cancelled_ == 1) {
+      uv_freeaddrinfo(res);
+      engine->eraseLookupTask(key_);
+      return;
+    }
+    struct addrinfo* p;
+    std::vector<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
+        ret;
+
+    for (p = res; p != nullptr; p = p->ai_next) {
+      ret.emplace_back(p->ai_addr, p->ai_addrlen);
+    }
+
+    uv_freeaddrinfo(res);
+    engine->eraseLookupTask(key_);
+    on_resolve_(status == UV_ECANCELED ? absl::CancelledError("Cancelled")
+                                       : absl::OkStatus(),
+                std::move(ret));
+  }
+  static void uvTimerCallback(uv_timer_t* timer) {
+    uvLookupTask* task = reinterpret_cast<uvLookupTask*>(timer->data);
+    task->cancelled_ = true;
+  }
+  void cancel(uvEngine* engine) {
+    cancelled_ = true;
+    uv_timer_stop(&timer_);
+    uv_cancel(reinterpret_cast<uv_req_t*>(&req_));
+  }
+};
+
 grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
 uvDNSResolver::LookupHostname(LookupHostnameCallback on_resolve,
                               absl::string_view address,
                               absl::string_view default_port,
                               absl::Time deadline) {
-  engine_->schedule([on_resolve, address, default_port,
-                     deadline](uvEngine* engine) {
-    // just a dumb wrapper to avoid doing the whole of c-ares for now
-    // also won't be asynchronous this way, tho still will happen on the
-    // uv loop thread, which can be terrible obviously, so don't let this
-    // be the final code at all; also doesn't care about deadlines nor
-    // error situations
-    uv_getaddrinfo_t req;
-    std::string ntaddress;
-    std::string ntdefault_port;
-    if (!grpc_core::SplitHostPort(address, &ntaddress, &ntdefault_port)) {
-      ntaddress = std::string(address);
-      ntdefault_port = std::string(default_port);
+  uvLookupTask* task = new uvLookupTask(engine_);
+  task->on_resolve_ = on_resolve;
+  if (!grpc_core::SplitHostPort(address, &task->address_,
+                                &task->default_port_)) {
+    task->address_ = std::string(address);
+    task->default_port_ = std::string(default_port);
+  }
+  engine_->schedule([task, deadline](uvEngine* engine) {
+    intptr_t key = task->key_;
+    engine->lookupTaskMap_[key] = task;
+    const char* ccaddress = task->address_.c_str();
+    const char* ccdefault_port = task->default_port_.c_str();
+    int r = uv_getaddrinfo(&engine->loop_, &task->req_,
+                           uvLookupTask::uvResolverCallbackTrampoline,
+                           ccaddress, ccdefault_port, nullptr);
+    if (r != 0) {
+      auto on_resolve = std::move(task->on_resolve_);
+      engine->eraseLookupTask(key);
+      on_resolve(absl::UnknownError("blah"), {});
+      return;
     }
-    const char* ccaddress = ntaddress.c_str();
-    const char* ccdefault_port = ntdefault_port.c_str();
-    uv_getaddrinfo(&engine->loop_, &req, nullptr, ccaddress, ccdefault_port,
-                   nullptr);
-
-    struct addrinfo* p;
-    std::vector<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
-        res;
-
-    for (p = req.addrinfo; p != nullptr; p = p->ai_next) {
-      res.emplace_back(p->ai_addr, p->ai_addrlen);
-    }
-
-    uv_freeaddrinfo(req.addrinfo);
-    on_resolve(absl::OkStatus(), std::move(res));
+    uv_timer_init(&engine->loop_, &task->timer_);
+    absl::Duration timeout = deadline - absl::Now();
+    uv_timer_start(&task->timer_, uvLookupTask::uvTimerCallback,
+                   timeout / absl::Milliseconds(1), 0);
   });
 
-  return {0};
+  return {task->key_};
+}
+
+void uvDNSResolver::TryCancelLookup(
+    grpc_event_engine::experimental::EventEngine::DNSResolver::LookupTaskHandle
+        task) {
+  engine_->schedule([task](uvEngine* engine) {
+    auto it = engine->lookupTaskMap_.find(task.key);
+    if (it == engine->lookupTaskMap_.end()) return;
+    it->second->cancel(engine);
+  });
+}
+
+void uvEngine::eraseTask(intptr_t taskKey) {
+  auto it = taskMap_.find(taskKey);
+  GPR_ASSERT(it != taskMap_.end());
+  delete it->second;
+  taskMap_.erase(it);
+}
+
+void uvEngine::eraseLookupTask(intptr_t taskKey) {
+  auto it = lookupTaskMap_.find(taskKey);
+  GPR_ASSERT(it != lookupTaskMap_.end());
+  delete it->second;
+  lookupTaskMap_.erase(it);
 }
 
 grpc_core::DebugOnlyTraceFlag grpc_polling_trace(false, "polling");

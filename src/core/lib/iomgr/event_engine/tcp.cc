@@ -148,6 +148,7 @@ void tcp_server_start(grpc_tcp_server* server,
   (void)cb_arg;
   // TODO(nnoble): Needs something like:
   // LibuvEventEngine::Listener::Start(AcceptCallback)
+  abort();
 }
 
 grpc_error* tcp_server_add_port(grpc_tcp_server* s,
