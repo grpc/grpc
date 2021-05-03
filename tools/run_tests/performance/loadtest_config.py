@@ -44,6 +44,19 @@ CONFIGURATION_FILE_HEADER_COMMENT = """
 # https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md#grpc-oss-benchmarks
 """
 
+# TODO(paulosjca): Merge label_language and image_language into one function.
+# These functions are necessary because 'c++' is not allowed as a label value in
+# kubernetes, and because languages share images in the existing templates. Once
+# the templates are reorganized and most image mapping is removed, the two
+# functions can be merged into one.
+
+
+def label_language(language: str) -> str:
+    """Convert scenario language to place in a resource label."""
+    return {
+        'c++': 'cxx',
+    }.get(language, language)
+
 
 def image_language(language: str) -> str:
     """Convert scenario languages to image languages."""
@@ -159,7 +172,8 @@ def gen_loadtest_configs(
             metadata['name'] = name
             if 'labels' not in metadata:
                 metadata['labels'] = dict()
-            metadata['labels']['language'] = language_config.language
+            metadata['labels']['language'] = label_language(
+                language_config.language)
             metadata['labels']['prefix'] = prefix
             if 'annotations' not in metadata:
                 metadata['annotations'] = dict()
