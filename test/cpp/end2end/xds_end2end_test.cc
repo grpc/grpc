@@ -2251,7 +2251,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     if (stop_index == 0) stop_index = backends_.size();
     std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
     for (size_t i = start_index; i < stop_index; ++i) {
-      endpoints.emplace_back(CreateEndpoint(i, health_status, health_status));
+      endpoints.emplace_back(CreateEndpoint(i, health_status, lb_weight));
     }
     return endpoints;
   }
