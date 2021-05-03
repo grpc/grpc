@@ -78,7 +78,8 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
               lrs_load_reporting_server_name ==
                   other.lrs_load_reporting_server_name &&
               max_concurrent_requests == other.max_concurrent_requests &&
-              type == other.type && eds_service_name == other.eds_service_name &&
+              type == other.type &&
+              eds_service_name == other.eds_service_name &&
               dns_hostname == other.dns_hostname);
     }
   };
@@ -211,9 +212,11 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
 
     absl::string_view GetEdsResourceName() const {
       if (!parent()->is_xds_uri_) return parent()->server_name_;
-      if (!parent()->config_->discovery_mechanisms()[index()]
+      if (!parent()
+               ->config_->discovery_mechanisms()[index()]
                .eds_service_name.empty()) {
-        return parent()->config_->discovery_mechanisms()[index()]
+        return parent()
+            ->config_->discovery_mechanisms()[index()]
             .eds_service_name;
       }
       return parent()->config_->discovery_mechanisms()[index()].cluster_name;
@@ -406,10 +409,10 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
     gpr_log(GPR_INFO,
             "[xds_cluster_resolver_lb %p] eds discovery mechanism %" PRIuPTR
             ":%p cancelling xds watch for %s",
-            parent(), index(), this,
-            std::string(GetEdsResourceName()).c_str());
+            parent(), index(), this, std::string(GetEdsResourceName()).c_str());
   }
-  parent()->xds_client_->CancelEndpointDataWatch(GetEdsResourceName(), watcher_);
+  parent()->xds_client_->CancelEndpointDataWatch(GetEdsResourceName(),
+                                                 watcher_);
   Unref();
 }
 

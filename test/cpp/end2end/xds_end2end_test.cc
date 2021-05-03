@@ -6308,9 +6308,12 @@ TEST_P(CdsTest, LogicalDNSClusterType) {
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* address = cluster.mutable_load_assignment()->add_endpoints()
-                      ->add_lb_endpoints()->mutable_endpoint()
-                      ->mutable_address()->mutable_socket_address();
+  auto* address = cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
   address->set_address(kServerName);
   address->set_port_value(443);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -6370,10 +6373,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLocalities) {
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "load_assignment for LOGICAL_DNS cluster must have "
-                  "exactly one locality, found 0"));
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
+                           "exactly one locality, found 0"));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
@@ -6398,10 +6401,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
   const auto response_state =
       balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(response_state.error_message,
-              ::testing::HasSubstr(
-                  "load_assignment for LOGICAL_DNS cluster must have "
-                  "exactly one locality, found 2"));
+  EXPECT_THAT(
+      response_state.error_message,
+      ::testing::HasSubstr("load_assignment for LOGICAL_DNS cluster must have "
+                           "exactly one locality, found 2"));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
@@ -6492,7 +6495,9 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEndpointMissingAddress) {
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()->add_endpoints()->add_lb_endpoints()
+  cluster.mutable_load_assignment()
+      ->add_endpoints()
+      ->add_lb_endpoints()
       ->mutable_endpoint();
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Wait until xDS server sees NACK.
@@ -6517,8 +6522,11 @@ TEST_P(CdsTest, LogicalDNSClusterTypeAddressMissingSocketAddress) {
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()->add_endpoints()->add_lb_endpoints()
-      ->mutable_endpoint()->mutable_address();
+  cluster.mutable_load_assignment()
+      ->add_endpoints()
+      ->add_lb_endpoints()
+      ->mutable_endpoint()
+      ->mutable_address();
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Wait until xDS server sees NACK.
   do {
@@ -6542,8 +6550,12 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressHasResolverName) {
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()->add_endpoints()->add_lb_endpoints()
-      ->mutable_endpoint()->mutable_address()->mutable_socket_address()
+  cluster.mutable_load_assignment()
+      ->add_endpoints()
+      ->add_lb_endpoints()
+      ->mutable_endpoint()
+      ->mutable_address()
+      ->mutable_socket_address()
       ->set_resolver_name("foo");
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Wait until xDS server sees NACK.
@@ -6569,8 +6581,12 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingAddress) {
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()->add_endpoints()->add_lb_endpoints()
-      ->mutable_endpoint()->mutable_address()->mutable_socket_address();
+  cluster.mutable_load_assignment()
+      ->add_endpoints()
+      ->add_lb_endpoints()
+      ->mutable_endpoint()
+      ->mutable_address()
+      ->mutable_socket_address();
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Wait until xDS server sees NACK.
   do {
@@ -6594,8 +6610,12 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingPort) {
   // Create Logical DNS Cluster
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::LOGICAL_DNS);
-  cluster.mutable_load_assignment()->add_endpoints()->add_lb_endpoints()
-      ->mutable_endpoint()->mutable_address()->mutable_socket_address()
+  cluster.mutable_load_assignment()
+      ->add_endpoints()
+      ->add_lb_endpoints()
+      ->mutable_endpoint()
+      ->mutable_address()
+      ->mutable_socket_address()
       ->set_address(kServerName);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   // Wait until xDS server sees NACK.
@@ -6690,9 +6710,12 @@ TEST_P(CdsTest, AggregateClusterEdsToLogicalDns) {
   auto logical_dns_cluster = default_cluster_;
   logical_dns_cluster.set_name(kLogicalDNSClusterName);
   logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* address = logical_dns_cluster.mutable_load_assignment()->add_endpoints()
-                      ->add_lb_endpoints()->mutable_endpoint()
-                      ->mutable_address()->mutable_socket_address();
+  auto* address = logical_dns_cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
   address->set_address(kServerName);
   address->set_port_value(443);
   balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
@@ -6751,9 +6774,12 @@ TEST_P(CdsTest, AggregateClusterLogicalDnsToEds) {
   auto logical_dns_cluster = default_cluster_;
   logical_dns_cluster.set_name(kLogicalDNSClusterName);
   logical_dns_cluster.set_type(Cluster::LOGICAL_DNS);
-  auto* address = logical_dns_cluster.mutable_load_assignment()->add_endpoints()
-                      ->add_lb_endpoints()->mutable_endpoint()
-                      ->mutable_address()->mutable_socket_address();
+  auto* address = logical_dns_cluster.mutable_load_assignment()
+                      ->add_endpoints()
+                      ->add_lb_endpoints()
+                      ->mutable_endpoint()
+                      ->mutable_address()
+                      ->mutable_socket_address();
   address->set_address(kServerName);
   address->set_port_value(443);
   balancers_[0]->ads_service()->SetCdsResource(logical_dns_cluster);
