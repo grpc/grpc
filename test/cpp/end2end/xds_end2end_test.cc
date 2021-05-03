@@ -6340,9 +6340,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLoadAssignment) {
   // Wait until xDS server sees NACK.
   do {
     CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
+  } while (balancers_[0]->ads_service()->cds_response_state().state ==
            AdsServiceImpl::ResponseState::SENT);
-  const auto response_state = RouteConfigurationResponseState(0);
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
@@ -6364,9 +6365,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingLocalities) {
   // Wait until xDS server sees NACK.
   do {
     CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
+  } while (balancers_[0]->ads_service()->cds_response_state().state ==
            AdsServiceImpl::ResponseState::SENT);
-  const auto response_state = RouteConfigurationResponseState(0);
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
@@ -6391,9 +6393,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleLocalities) {
   // Wait until xDS server sees NACK.
   do {
     CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
+  } while (balancers_[0]->ads_service()->cds_response_state().state ==
            AdsServiceImpl::ResponseState::SENT);
-  const auto response_state = RouteConfigurationResponseState(0);
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
@@ -6416,14 +6419,15 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMissingEndpoints) {
   // Wait until xDS server sees NACK.
   do {
     CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
+  } while (balancers_[0]->ads_service()->cds_response_state().state ==
            AdsServiceImpl::ResponseState::SENT);
-  const auto response_state = RouteConfigurationResponseState(0);
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
-                  "load_assignment for LOGICAL_DNS cluster must have "
-                  "exactly one endpoint, found 0"));
+                  "locality for LOGICAL_DNS cluster must have exactly one "
+                  "endpoint, found 0"));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
@@ -6443,14 +6447,15 @@ TEST_P(CdsTest, LogicalDNSClusterTypeMultipleEndpoints) {
   // Wait until xDS server sees NACK.
   do {
     CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
+  } while (balancers_[0]->ads_service()->cds_response_state().state ==
            AdsServiceImpl::ResponseState::SENT);
-  const auto response_state = RouteConfigurationResponseState(0);
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr(
-                  "load_assignment for LOGICAL_DNS cluster must have "
-                  "exactly one endpoint, found 2"));
+                  "locality for LOGICAL_DNS cluster must have exactly one "
+                  "endpoint, found 2"));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
@@ -6468,9 +6473,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEmptyEndpoint) {
   // Wait until xDS server sees NACK.
   do {
     CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
+  } while (balancers_[0]->ads_service()->cds_response_state().state ==
            AdsServiceImpl::ResponseState::SENT);
-  const auto response_state = RouteConfigurationResponseState(0);
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("LbEndpoint endpoint field not set"));
@@ -6492,9 +6498,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeEndpointMissingAddress) {
   // Wait until xDS server sees NACK.
   do {
     CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
+  } while (balancers_[0]->ads_service()->cds_response_state().state ==
            AdsServiceImpl::ResponseState::SENT);
-  const auto response_state = RouteConfigurationResponseState(0);
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("Endpoint address field not set"));
@@ -6516,9 +6523,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeAddressMissingSocketAddress) {
   // Wait until xDS server sees NACK.
   do {
     CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
+  } while (balancers_[0]->ads_service()->cds_response_state().state ==
            AdsServiceImpl::ResponseState::SENT);
-  const auto response_state = RouteConfigurationResponseState(0);
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("Address socket_address field not set"));
@@ -6541,13 +6549,14 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressHasResolverName) {
   // Wait until xDS server sees NACK.
   do {
     CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
+  } while (balancers_[0]->ads_service()->cds_response_state().state ==
            AdsServiceImpl::ResponseState::SENT);
-  const auto response_state = RouteConfigurationResponseState(0);
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("LOGICAL_DNS clusters must NOT have a "
-                                   " custom resolver name set"));
+                                   "custom resolver name set"));
   gpr_unsetenv(
       "GRPC_XDS_EXPERIMENTAL_ENABLE_AGGREGATE_AND_LOGICAL_DNS_CLUSTER");
 }
@@ -6566,9 +6575,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingAddress) {
   // Wait until xDS server sees NACK.
   do {
     CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
+  } while (balancers_[0]->ads_service()->cds_response_state().state ==
            AdsServiceImpl::ResponseState::SENT);
-  const auto response_state = RouteConfigurationResponseState(0);
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("SocketAddress address field not set"));
@@ -6591,9 +6601,10 @@ TEST_P(CdsTest, LogicalDNSClusterTypeSocketAddressMissingPort) {
   // Wait until xDS server sees NACK.
   do {
     CheckRpcSendFailure();
-  } while (RouteConfigurationResponseState(0).state ==
+  } while (balancers_[0]->ads_service()->cds_response_state().state ==
            AdsServiceImpl::ResponseState::SENT);
-  const auto response_state = RouteConfigurationResponseState(0);
+  const auto response_state =
+      balancers_[0]->ads_service()->cds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
   EXPECT_THAT(response_state.error_message,
               ::testing::HasSubstr("SocketAddress port_value field not set"));
