@@ -32,6 +32,15 @@ from grpc_health.v1 import health_pb2_grpc
 _DESCRIPTION = "A general purpose phony server."
 
 
+def bool_arg(arg: str) -> bool:
+    if arg.lower() in ("true", "yes", "y"):
+        return True
+    elif arg.lower() in ("false", "no", "n"):
+        return False
+    else:
+        raise argparse.ArgumentTypeError(f"Could not parse '{arg}' as a bool.")
+
+
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
     def __init__(self, hostname: str):
@@ -43,9 +52,10 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
             message=f"Hello {request.name} from {self._hostname}!")
 
 
-def serve(port: int, hostname: str):
+def serve(port: int, hostname: str, secure: bool):
     server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()))
+        futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()),
+        xds=secure)
 
     # Add the application servicer to the server.
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(hostname), server)
@@ -65,7 +75,14 @@ def serve(port: int, hostname: str):
 
     # Add the reflection service to the server.
     reflection.enable_server_reflection(services, server)
-    server.add_insecure_port(f"[::]:{port}")
+    listen_address = f"[::]:{port}"
+    if not secure:
+        server.add_insecure_port(listen_address)
+    else:
+        print("Running with xDS Server credentials")
+        server_fallback_creds = grpc.insecure_server_credentials()
+        server_creds = grpc.xds_server_credentials(server_fallback_creds)
+        server.add_secure_port(listen_address, server_creds)
     server.start()
 
     # Mark all services as healthy.
@@ -89,6 +106,11 @@ if __name__ == '__main__':
                         default=None,
                         nargs="?",
                         help="The name clients will see in responses.")
+    parser.add_argument(
+        "--secure",
+        default="False",
+        type=bool_arg,
+        help="If specified, uses xDS credentials to connect to the server.")
     args = parser.parse_args()
     logging.basicConfig()
-    serve(args.port, args.hostname)
+    serve(args.port, args.hostname, args.secure)
