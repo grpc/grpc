@@ -31,6 +31,16 @@ from grpc_health.v1 import health_pb2_grpc
 
 _DESCRIPTION = "A general purpose phony server."
 
+_LISTEN_HOST = "[::]"
+
+_THREAD_POOL_SIZE = 256
+
+logger = logging.getLogger()
+console_handler = logging.StreamHandler()
+formatter = logging.Formatter(fmt='%(asctime)s: %(levelname)-8s %(message)s')
+console_handler.setFormatter(formatter)
+logger.addHandler(console_handler)
+
 
 def bool_arg(arg: str) -> bool:
     if arg.lower() in ("true", "yes", "y"):
@@ -52,20 +62,17 @@ class Greeter(helloworld_pb2_grpc.GreeterServicer):
             message=f"Hello {request.name} from {self._hostname}!")
 
 
-def serve(port: int, hostname: str, secure: bool):
-    server = grpc.server(
-        futures.ThreadPoolExecutor(max_workers=multiprocessing.cpu_count()),
-        xds=secure)
-
-    # Add the application servicer to the server.
-    helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(hostname), server)
+def _configure_maintenance_server(server: grpc.Server,
+                                  maintenance_port: int) -> None:
+    listen_address = f"{_LISTEN_HOST}:{maintenance_port}"
+    server.add_insecure_port(listen_address)
 
     # Create a health check servicer. We use the non-blocking implementation
     # to avoid thread starvation.
     health_servicer = health.HealthServicer(
         experimental_non_blocking=True,
-        experimental_thread_pool=futures.ThreadPoolExecutor(max_workers=1))
-    health_pb2_grpc.add_HealthServicer_to_server(health_servicer, server)
+        experimental_thread_pool=futures.ThreadPoolExecutor(
+            max_workers=_THREAD_POOL_SIZE))
 
     # Create a tuple of all of the services we want to export via reflection.
     services = tuple(
@@ -73,25 +80,57 @@ def serve(port: int, hostname: str, secure: bool):
         for service in helloworld_pb2.DESCRIPTOR.services_by_name.values()) + (
             reflection.SERVICE_NAME, health.SERVICE_NAME)
 
-    # Add the reflection service to the server.
+    # Mark all services as healthy.
+    health_pb2_grpc.add_HealthServicer_to_server(health_servicer, server)
+    for service in services:
+        health_servicer.set(service, health_pb2.HealthCheckResponse.SERVING)
     reflection.enable_server_reflection(services, server)
-    listen_address = f"[::]:{port}"
-    if not secure:
+
+
+def _configure_greeter_server(server: grpc.Server, port: int, secure_mode: bool,
+                              hostname) -> None:
+    # Add the application servicer to the server.
+    helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(hostname), server)
+    listen_address = f"{_LISTEN_HOST}:{port}"
+    if not secure_mode:
         server.add_insecure_port(listen_address)
     else:
-        print("Running with xDS Server credentials")
+        # Use xDS credentials.
+        logger.info("Running with xDS Server credentials")
+
+        # Fall back to insecure credentials.
         server_fallback_creds = grpc.insecure_server_credentials()
         server_creds = grpc.xds_server_credentials(server_fallback_creds)
         server.add_secure_port(listen_address, server_creds)
-    server.start()
 
-    # Mark all services as healthy.
-    overall_server_health = ""
-    for service in services + (overall_server_health,):
-        health_servicer.set(service, health_pb2.HealthCheckResponse.SERVING)
 
-    # Park the main application thread.
-    server.wait_for_termination()
+def serve(port: int, hostname: str, maintenance_port: int,
+          secure_mode: bool) -> None:
+    if port == maintenance_port:
+        # If maintenance port and port are the same, start a single server.
+        server = grpc.server(
+            futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE))
+        _configure_greeter_server(server, port, secure_mode, hostname)
+        _configure_maintenance_server(server, maintenance_port)
+        server.start()
+        logger.info("Greeter server listening on port %d", port)
+        logger.info("Maintenance server listening on port %d", maintenance_port)
+        server.wait_for_termination()
+    else:
+        # Otherwise, start two different servers.
+        greeter_server = grpc.server(
+            futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE),
+            xds=secure_mode)
+        _configure_greeter_server(greeter_server, port, secure_mode, hostname)
+        greeter_server.start()
+        logger.info("Greeter server listening on port %d", port)
+        maintenance_server = grpc.server(
+            futures.ThreadPoolExecutor(max_workers=_THREAD_POOL_SIZE))
+        _configure_maintenance_server(maintenance_server, maintenance_port)
+        maintenance_server.start()
+        logger.info("Maintenance server listening on port %d", maintenance_port)
+        greeter_server.wait_for_termination()
+        maintenance_server.wait_for_termination()
 
 
 if __name__ == '__main__':
@@ -106,11 +145,20 @@ if __name__ == '__main__':
                         default=None,
                         nargs="?",
                         help="The name clients will see in responses.")
+    parser.add_argument("--maintenance_port",
+                        type=int,
+                        default=8080,
+                        help="Port for servers besides test server.")
     parser.add_argument(
         "--secure",
         default="False",
         type=bool_arg,
         help="If specified, uses xDS credentials to connect to the server.")
     args = parser.parse_args()
+    if args.secure and args.port == args.maintenance_port:
+        raise ValueError(
+            "--port and --maintenance_port must not be the same when --secure_mode is set."
+        )
     logging.basicConfig()
-    serve(args.port, args.hostname, args.secure)
+    logger.setLevel(logging.INFO)
+    serve(args.port, args.hostname, args.maintenance_port, args.secure)
