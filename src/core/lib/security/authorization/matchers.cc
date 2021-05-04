@@ -19,37 +19,6 @@
 
 namespace grpc_core {
 
-namespace {
-
-bool AuthenticatedMatchesHelper(const EvaluateArgs& args,
-                                const StringMatcher& matcher) {
-  if (args.GetTransportSecurityType() != GRPC_SSL_TRANSPORT_SECURITY_TYPE) {
-    // Connection is not authenticated.
-    return false;
-  }
-  if (matcher.string_matcher().empty()) {
-    // Allows any authenticated user.
-    return true;
-  }
-  absl::string_view spiffe_id = args.GetSpiffeId();
-  if (!spiffe_id.empty()) {
-    return matcher.Match(spiffe_id);
-  }
-  std::vector<absl::string_view> dns_sans = args.GetDnsSans();
-  if (!dns_sans.empty()) {
-    for (const auto& dns : dns_sans) {
-      if (matcher.Match(dns)) {
-        return true;
-      }
-    }
-    return false;
-  }
-  // TODO(ashithasantosh): Check Subject field from certificate.
-  return false;
-}
-
-}  // namespace
-
 std::unique_ptr<AuthorizationMatcher> AuthorizationMatcher::Create(
     Rbac::Permission permission) {
   switch (permission.type) {
@@ -221,8 +190,29 @@ bool PortAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
 
 bool AuthenticatedAuthorizationMatcher::Matches(
     const EvaluateArgs& args) const {
-  bool matches = AuthenticatedMatchesHelper(args, matcher_);
-  return matches != not_rule_;
+  if (args.GetTransportSecurityType() != GRPC_SSL_TRANSPORT_SECURITY_TYPE) {
+    // Connection is not authenticated.
+    return not_rule_;
+  }
+  if (matcher_.string_matcher().empty()) {
+    // Allows any authenticated user.
+    return !not_rule_;
+  }
+  absl::string_view spiffe_id = args.GetSpiffeId();
+  if (!spiffe_id.empty()) {
+    return matcher_.Match(spiffe_id) != not_rule_;
+  }
+  std::vector<absl::string_view> dns_sans = args.GetDnsSans();
+  if (!dns_sans.empty()) {
+    for (const auto& dns : dns_sans) {
+      if (matcher_.Match(dns)) {
+        return !not_rule_;
+      }
+    }
+    return not_rule_;
+  }
+  // TODO(ashithasantosh): Check Subject field from certificate.
+  return not_rule_;
 }
 
 bool ReqServerNameAuthorizationMatcher::Matches(const EvaluateArgs&) const {
