@@ -18,11 +18,10 @@ import logging
 import argparse
 
 import grpc
+import grpc.experimental
 
 import helloworld_pb2
 import helloworld_pb2_grpc
-
-import grpc.experimental
 
 _DESCRIPTION = "Get a greeting from a server."
 
