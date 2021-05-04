@@ -139,9 +139,12 @@ static void connected_channel_start_transport_stream_op_batch(
   GRPC_CALL_COMBINER_STOP(calld->call_combiner, "passed batch to transport");
 }
 
-static void connected_channel_pre_cancel_call(grpc_call_element* /*elem*/,
+static void connected_channel_pre_cancel_call(grpc_call_element* elem,
                                               grpc_error* error) {
-  GRPC_ERROR_UNREF(error);
+  auto* chand = static_cast<channel_data*>(elem->channel_data);
+  auto* calld = static_cast<call_data*>(elem->call_data);
+  grpc_transport_cancel_stream(chand->transport,
+                               TRANSPORT_STREAM_FROM_CALL_DATA(calld), error);
 }
 
 static void connected_channel_start_transport_op(grpc_channel_element* elem,

@@ -478,15 +478,14 @@ class RetryFilter::CallData {
   // Note that call_attempt_ and committed_call_ themselves are not guarded by
   // this mutex, because we only need to guard the creation or deletion of the
   // LB call.  If PreCancel() runs before either of those fields are set, then
-  // lb_call_pre_cancelled_ will be true, in which case the LB call will not
+  // cancel_error_ will be set, in which case the LB call will not
   // be created; if PreCancel() runs after either field is set, it will
   // propagate the pre-cancellation down to the appropriate LB call(s).
   //
   // This mutex should not cause contention *except* when a cancellation
   // is occurring.
-  Mutex lb_call_pre_cancellation_mu_;
-  bool lb_call_pre_cancelled_ ABSL_GUARDED_BY(lb_call_pre_cancellation_mu_) =
-      false;
+  Mutex cancel_mu_;
+  grpc_error_handle cancel_error_ ABSL_GUARDED_BY(cancel_mu_) = GRPC_ERROR_NONE;
 
   // When are are not yet fully committed to a particular call (i.e.,
   // either we might still retry or we have committed to the call but
@@ -1710,8 +1709,8 @@ void RetryFilter::CallData::PreCancel(grpc_call_element* elem,
   // Retry timer not pending, so propagate pre-cancellation down to LB call.
   RefCountedPtr<ClientChannel::LoadBalancedCall> lb_call;
   {
-    MutexLock lock(&calld->lb_call_pre_cancellation_mu_);
-    calld->lb_call_pre_cancelled_ = true;
+    MutexLock lock(&calld->cancel_mu_);
+    calld->cancel_error_ = GRPC_ERROR_REF(error);
     if (calld->committed_call_ != nullptr) {
       lb_call = calld->committed_call_;
       GPR_DEBUG_ASSERT(calld->call_attempt_ == nullptr);
@@ -1773,6 +1772,7 @@ RetryFilter::CallData::CallData(RetryFilter* chand,
       last_attempt_got_server_pushback_(false) {}
 
 RetryFilter::CallData::~CallData() {
+  GRPC_ERROR_UNREF(cancel_error_);
   grpc_slice_unref_internal(path_);
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
@@ -1788,6 +1788,9 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
     committed_call_->StartTransportStreamOpBatch(batch);
     return;
   }
+
+// FIXME: remove
+#if 0
   // Handle cancellation.
   if (GPR_UNLIKELY(batch->cancel_stream)) {
     grpc_error_handle cancel_error = batch->payload->cancel_stream.cancel_error;
@@ -1811,15 +1814,19 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
         batch, GRPC_ERROR_REF(cancel_error), call_combiner_);
     return;
   }
+#endif
+
   // Add the batch to the pending list.
   PendingBatch* pending = PendingBatchesAdd(batch);
   if (call_attempt_ == nullptr) {
-    MutexLock lock(&lb_call_pre_cancellation_mu_);
+// FIXME: don't hold lock while actually sending batch up or down?
+    MutexLock lock(&cancel_mu_);
     // If the LB call was already pre-cancelled, yield the call combiner
     // and return here without doing anything.  The batch will stay
     // pending until we see the cancel_stream op.
-    if (lb_call_pre_cancelled_) {
-      GRPC_CALL_COMBINER_STOP(call_combiner_, "retry call pre-cancelled");
+    if (cancel_error_ != GRPC_ERROR_NONE) {
+      // Fail pending batches.
+      PendingBatchesFail(GRPC_ERROR_REF(cancel_error_));
       return;
     }
     // If this is the first batch and retries are already committed
@@ -2149,7 +2156,7 @@ void RetryFilter::CallData::RetryCommit(CallAttempt* call_attempt) {
 void RetryFilter::CallData::DoRetry(grpc_millis server_pushback_ms) {
   // Reset call attempt.
   {
-    MutexLock lock(&lb_call_pre_cancellation_mu_);
+    MutexLock lock(&cancel_mu_);
     call_attempt_.reset();
   }
   // Compute backoff delay.

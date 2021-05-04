@@ -396,6 +396,9 @@ int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
 void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
                              grpc_polling_entity* pollent);
 
+void grpc_transport_cancel_stream(grpc_transport* transport, grpc_stream* stream,
+                                  grpc_error_handle error);
+
 /* Destroy transport data for a stream.
 
    Requires: a recv_batch with final_state == GRPC_STREAM_CLOSED has been

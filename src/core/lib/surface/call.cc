@@ -676,6 +676,8 @@ grpc_call_error grpc_call_cancel_with_status(grpc_call* c,
   return GRPC_CALL_OK;
 }
 
+// FIXME: remove
+#if 0
 struct cancel_state {
   grpc_call* call;
   grpc_closure start_batch;
@@ -690,6 +692,7 @@ static void done_termination(void* arg, grpc_error_handle /*error*/) {
   GRPC_CALL_INTERNAL_UNREF(state->call, "termination");
   gpr_free(state);
 }
+#endif
 
 void grpc_call_cancel_with_error_internal(grpc_call* c,
                                           grpc_error_handle error) {
@@ -697,15 +700,17 @@ void grpc_call_cancel_with_error_internal(grpc_call* c,
     GRPC_ERROR_UNREF(error);
     return;
   }
-  GRPC_CALL_INTERNAL_REF(c, "termination");
   // Call the channel stack's pre_cancel_call() function.  This allows
   // the filters to cancel any in-flight asynchronous actions that may be
   // holding the call combiner.  This ensures that the cancel_stream batch
   // can be sent down the filter stack in a timely manner.
   grpc_call_element* elem = CALL_ELEM_FROM_CALL(c, 0);
   GRPC_CALL_LOG_PRE_CANCEL(GPR_INFO, elem, error);
-  elem->filter->pre_cancel_call(elem, GRPC_ERROR_REF(error));
+  elem->filter->pre_cancel_call(elem, error);
+// FIXME: remove
+#if 0
   // Now send down a batch containing the cancel_stream op.
+  GRPC_CALL_INTERNAL_REF(c, "termination");
   cancel_state* state = static_cast<cancel_state*>(gpr_malloc(sizeof(*state)));
   state->call = c;
   GRPC_CLOSURE_INIT(&state->finish_batch, done_termination, state,
@@ -715,6 +720,7 @@ void grpc_call_cancel_with_error_internal(grpc_call* c,
   op->cancel_stream = true;
   op->payload->cancel_stream.cancel_error = error;
   execute_batch(c, op, &state->start_batch);
+#endif
 }
 
 void grpc_call_cancel_internal(grpc_call* call) {

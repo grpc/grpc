@@ -159,6 +159,11 @@ void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
   }
 }
 
+void grpc_transport_cancel_stream(grpc_transport* transport, grpc_stream* stream,
+                                  grpc_error_handle error) {
+  transport->vtable->cancel_stream(transport, stream, error);
+}
+
 void grpc_transport_destroy_stream(grpc_transport* transport,
                                    grpc_stream* stream,
                                    grpc_closure* then_schedule_closure) {

@@ -153,6 +153,7 @@ class CallData {
   // Used to track the policy structs that needs to be destroyed in dtor.
   bool fi_policy_owned_ = false;
   const FaultInjectionMethodParsedConfig::FaultInjectionPolicy* fi_policy_;
+  grpc_call_stack* owning_call_;
   Arena* arena_;
   CallCombiner* call_combiner_;
 
@@ -161,6 +162,7 @@ class CallData {
   bool abort_request_ = false;
 
   // Delay states
+  Mutex delay_mu_;
   grpc_timer delay_timer_ ABSL_GUARDED_BY(delay_mu_);
   bool delay_timer_pending_ ABSL_GUARDED_BY(delay_mu_) = false;
   grpc_transport_stream_op_batch* delayed_batch_ ABSL_GUARDED_BY(delay_mu_);
@@ -168,8 +170,6 @@ class CallData {
   grpc_error_handle abort_error_ = GRPC_ERROR_NONE;
   grpc_closure recv_trailing_metadata_ready_;
   grpc_closure* original_recv_trailing_metadata_ready_;
-  // Protects the asynchronous delay, resume, and cancellation.
-  Mutex delay_mu_;
 };
 
 // ChannelData
@@ -282,7 +282,9 @@ void CallData::PreCancel(grpc_call_element* elem, grpc_error_handle error) {
 }
 
 CallData::CallData(grpc_call_element* elem, const grpc_call_element_args* args)
-    : arena_(args->arena), call_combiner_(args->call_combiner) {
+    : owning_call_(args->call_stack),
+      arena_(args->arena),
+      call_combiner_(args->call_combiner) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   // Fetch the fault injection policy from the service config, based on the
   // relative index for which policy should this CallData use.
@@ -407,6 +409,7 @@ void CallData::DelayBatch(grpc_call_element* elem,
   grpc_millis resume_time = ExecCtx::Get()->Now() + fi_policy_->delay;
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, ResumeBatch, elem,
                     grpc_schedule_on_exec_ctx);
+  GRPC_CALL_STACK_REF(owning_call_, "fault_injection_delay_timer");
   delay_timer_pending_ = true;
   grpc_timer_init(&delay_timer_, resume_time, &batch->handler_private.closure);
 }
@@ -414,26 +417,31 @@ void CallData::DelayBatch(grpc_call_element* elem,
 void CallData::ResumeBatch(void* arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   auto* calld = static_cast<CallData*>(elem->call_data);
-  MutexLock lock(&calld->delay_mu_);
-  // Timer cancelled or pre-cancellation has already run.
-  if (error == GRPC_ERROR_CANCELLED || !calld->delay_timer_pending_) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
-    gpr_log(GPR_INFO, "chand=%p calld=%p: Resuming delayed stream op batch %p",
-            elem->channel_data, calld, calld->delayed_batch_);
+  {
+    MutexLock lock(&calld->delay_mu_);
+    // Resume only if not cancelled.
+    if (error != GRPC_ERROR_CANCELLED && calld->delay_timer_pending_) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_fault_injection_filter_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p calld=%p: Resuming delayed stream op batch %p",
+                elem->channel_data, calld, calld->delayed_batch_);
+      }
+      // Lame the pre-canceller
+      calld->delay_timer_pending_ = false;
+      // Finish fault injection.
+      calld->FaultInjectionFinished();
+      // Abort if needed.
+      error = calld->MaybeAbort();
+      if (error != GRPC_ERROR_NONE) {
+        grpc_transport_stream_op_batch_finish_with_failure(
+            calld->delayed_batch_, error, calld->call_combiner_);
+        return;
+      }
+      // Chain to the next filter.
+      grpc_call_next_op(elem, calld->delayed_batch_);
+    }
   }
-  // Lame the pre-canceller
-  calld->delay_timer_pending_ = false;
-  // Finish fault injection.
-  calld->FaultInjectionFinished();
-  // Abort if needed.
-  error = calld->MaybeAbort();
-  if (error != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        calld->delayed_batch_, error, calld->call_combiner_);
-    return;
-  }
-  // Chain to the next filter.
-  grpc_call_next_op(elem, calld->delayed_batch_);
+  GRPC_CALL_STACK_UNREF(calld->owning_call_, "fault_injection_delay_timer");
 }
 
 void CallData::HijackedRecvTrailingMetadataReady(void* arg,
