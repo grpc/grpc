@@ -188,6 +188,11 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_csds/setup.py \
       sdist bdist_wheel
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_admin source distribution
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_admin/setup.py \
+      sdist bdist_wheel
+  cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 fi
 
 if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
