@@ -21,6 +21,7 @@
 #include <string>
 
 #include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 
 #include <grpcpp/grpcpp.h>
 
@@ -77,6 +78,7 @@ class GreeterClient {
 };
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
   GreeterClient greeter(grpc::CreateChannel(
       absl::GetFlag(FLAGS_target), absl::GetFlag(FLAGS_secure)
                                        ? grpc::experimental::XdsCredentials(

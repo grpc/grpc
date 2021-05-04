@@ -21,6 +21,7 @@
 #include <string>
 
 #include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "absl/strings/str_cat.h"
 
 #include <grpcpp/ext/admin_services.h>
@@ -101,6 +102,7 @@ void RunServer() {
 }
 
 int main(int argc, char** argv) {
+  absl::ParseCommandLine(argc, argv);
   RunServer();
   return 0;
 }
