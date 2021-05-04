@@ -65,8 +65,8 @@ static void intercept_callback(call_data* calld, callback_state* state,
   state->original_closure = *original_closure;
   state->call_combiner = calld->call_combiner;
   state->reason = reason;
-  *original_closure = GRPC_CLOSURE_INIT(
-      &state->closure, run_in_call_combiner, state, grpc_schedule_on_exec_ctx);
+  *original_closure = GRPC_CLOSURE_INIT(&state->closure, run_in_call_combiner,
+                                        state, grpc_schedule_on_exec_ctx);
 }
 
 static callback_state* get_state_for_batch(

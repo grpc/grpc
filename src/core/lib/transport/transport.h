@@ -386,8 +386,8 @@ void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
       convert to a HTTP2 error code using
       grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
       error. */
-void grpc_transport_cancel_stream(grpc_transport* transport, grpc_stream* stream,
-                                grpc_error_handle error);
+void grpc_transport_cancel_stream(grpc_transport* transport,
+                                  grpc_stream* stream, grpc_error_handle error);
 
 /* Destroy transport data for a stream.
 

@@ -1791,7 +1791,8 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
   // Add the batch to the pending list.
   PendingBatch* pending = PendingBatchesAdd(batch);
   if (call_attempt_ == nullptr) {
-// FIXME: don't hold lock while actually sending batch up or down?
+    // TODO(roth): Consider restructuring this such that we aren't
+    // holding the lock while sending the batches down to the call attempt.
     MutexLock lock(&cancel_mu_);
     // If the LB call was already cancelled, fail the batch, which should
     // be the only one pending.

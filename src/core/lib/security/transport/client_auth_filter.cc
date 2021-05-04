@@ -138,8 +138,7 @@ struct call_data {
   // is occurring, because all accesses to it other than in
   // client_auth_cancel_call() are done while holding the call combiner.
   grpc_core::Mutex cancel_mu;
-  grpc_error_handle cancel_error ABSL_GUARDED_BY(cancel_mu) =
-      GRPC_ERROR_NONE;
+  grpc_error_handle cancel_error ABSL_GUARDED_BY(cancel_mu) = GRPC_ERROR_NONE;
   bool check_call_host_started ABSL_GUARDED_BY(cancel_mu) = false;
   bool get_request_metadata_started ABSL_GUARDED_BY(cancel_mu) = false;
 };

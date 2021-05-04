@@ -1663,7 +1663,8 @@ static void cancel_stream(grpc_transport* gt, grpc_stream* gs,
             grpc_error_std_string(error).c_str());
   }
   GRPC_CHTTP2_STREAM_REF(s, "cancel_stream");
-  t->combiner->Run(GRPC_CLOSURE_CREATE(cancel_stream_locked, s, nullptr), error);
+  t->combiner->Run(GRPC_CLOSURE_CREATE(cancel_stream_locked, s, nullptr),
+                   error);
 }
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error_handle error) {

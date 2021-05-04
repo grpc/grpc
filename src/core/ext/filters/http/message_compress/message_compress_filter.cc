@@ -373,8 +373,8 @@ void CallData::FailSendMessageBatch(grpc_error_handle error) {
     send_message_batch = send_message_batch_;
     send_message_batch_ = nullptr;
   }
-  grpc_transport_stream_op_batch_finish_with_failure(
-      send_message_batch, error, call_combiner_);
+  grpc_transport_stream_op_batch_finish_with_failure(send_message_batch, error,
+                                                     call_combiner_);
 }
 
 // Pulls a slice from the send_message byte stream and adds it to slices_.
@@ -473,7 +473,8 @@ void CallData::CompressStartTransportStreamOpBatch(
         // handle it now.  Note that we need to re-enter the call combiner
         // for this, since we can't send two batches down while holding the
         // call combiner, since the connected_channel filter (at the bottom of
-        // the call stack) will release the call combiner for each batch it sees.
+        // the call stack) will release the call combiner for each batch it
+        // sees.
         if (send_message_batch_ != nullptr) {
           GRPC_CALL_COMBINER_START(
               call_combiner_, &start_send_message_batch_in_call_combiner_,

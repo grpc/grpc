@@ -1986,8 +1986,8 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
               chand, calld, grpc_error_std_string(cancel_error).c_str());
     }
     // Note: This will release the call combiner.
-    grpc_transport_stream_op_batch_finish_with_failure(
-        batch, cancel_error, calld->call_combiner_);
+    grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error,
+                                                       calld->call_combiner_);
     return;
   }
   // Add the batch to the pending list.
@@ -2682,8 +2682,8 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
               chand_, this, grpc_error_std_string(cancel_error).c_str());
     }
     // Note: This will release the call combiner.
-    grpc_transport_stream_op_batch_finish_with_failure(
-        batch, cancel_error, call_combiner_);
+    grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error,
+                                                       call_combiner_);
     return;
   }
   // Add the batch to the pending list.

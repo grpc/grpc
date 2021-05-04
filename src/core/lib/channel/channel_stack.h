@@ -321,8 +321,7 @@ extern grpc_core::TraceFlag grpc_trace_channel;
   } while (0)
 
 // Does NOT take ownership of error.
-void grpc_call_log_cancel(const char* file, int line,
-                          gpr_log_severity severity,
+void grpc_call_log_cancel(const char* file, int line, gpr_log_severity severity,
                           grpc_call_element* elem, grpc_error_handle error);
 
 #define GRPC_CALL_LOG_CANCEL(sev, elem, error)         \

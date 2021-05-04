@@ -269,9 +269,7 @@ HealthCheckClient::CallState::~CallState() {
   arena_->Destroy();
 }
 
-void HealthCheckClient::CallState::Orphan() {
-  Cancel();
-}
+void HealthCheckClient::CallState::Orphan() { Cancel(); }
 
 void HealthCheckClient::CallState::StartCall() {
   SubchannelCall::Args args = {

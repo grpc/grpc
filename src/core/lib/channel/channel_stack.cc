@@ -271,8 +271,7 @@ grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)));
 }
 
-void grpc_call_log_cancel(const char* file, int line,
-                          gpr_log_severity severity,
+void grpc_call_log_cancel(const char* file, int line, gpr_log_severity severity,
                           grpc_call_element* elem, grpc_error_handle error) {
   gpr_log(file, line, severity, "CANCEL[%s:%p]: %s", elem->filter->name, elem,
           grpc_error_std_string(error).c_str());
