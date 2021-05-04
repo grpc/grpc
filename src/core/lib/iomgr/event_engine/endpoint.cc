@@ -23,8 +23,8 @@
 #include <grpc/support/time.h>
 #include "absl/strings/string_view.h"
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"

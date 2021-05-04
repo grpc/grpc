@@ -67,7 +67,8 @@ SliceAllocatorFactory::SliceAllocatorFactory(SliceAllocatorFactory&& other)
   other.resource_quota_ = nullptr;
 }
 
-SliceAllocatorFactory& SliceAllocatorFactory::operator=(SliceAllocatorFactory&& other) {
+SliceAllocatorFactory& SliceAllocatorFactory::operator=(
+    SliceAllocatorFactory&& other) {
   resource_quota_ = other.resource_quota_;
   other.resource_quota_ = nullptr;
   return *this;

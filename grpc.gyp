@@ -786,7 +786,6 @@
         'src/core/lib/debug/stats_data.cc',
         'src/core/lib/debug/trace.cc',
         'src/core/lib/event_engine/event_engine.cc',
-        'src/core/lib/event_engine/resolved_address_internal.cc',
         'src/core/lib/event_engine/slice_allocator.cc',
         'src/core/lib/event_engine/sockaddr.cc',
         'src/core/lib/http/format_request.cc',
@@ -1105,6 +1104,7 @@
       'dependencies': [
         'absl/container:flat_hash_map',
         'absl/container:inlined_vector',
+        'absl/functional:bind_front',
         'absl/status:statusor',
         'gpr',
         'address_sorting',
@@ -1242,7 +1242,6 @@
         'src/core/lib/debug/stats_data.cc',
         'src/core/lib/debug/trace.cc',
         'src/core/lib/event_engine/event_engine.cc',
-        'src/core/lib/event_engine/resolved_address_internal.cc',
         'src/core/lib/event_engine/slice_allocator.cc',
         'src/core/lib/event_engine/sockaddr.cc',
         'src/core/lib/http/format_request.cc',

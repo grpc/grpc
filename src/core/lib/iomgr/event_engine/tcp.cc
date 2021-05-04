@@ -17,13 +17,12 @@
 
 #include <grpc/event_engine/event_engine.h>
 
-#include "src/core/lib/event_engine/resolved_address_internal.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/event_engine/sockaddr.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -96,20 +95,20 @@ static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 // EventEngine directly, closures will be replaced with EE callback types.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_endpoint** endpoint_ptr) {
-  return [closure, endpoint_ptr](
-             absl::Status status,
-             std::unique_ptr<EventEngine::Endpoint> endpoint) {
-    grpc_core::ExecCtx exec_ctx;
-    if (status.ok()) {
-      auto* grpc_endpoint_out =
-          reinterpret_cast<grpc_event_engine_endpoint*>(endpoint_ptr);
-      grpc_endpoint_out->endpoint = std::move(endpoint);
-    } else {
-      *endpoint_ptr = nullptr;
-    }
-    grpc_core::Closure::Run(DEBUG_LOCATION, closure,
-                            absl_status_to_grpc_error(status));
-  };
+  return
+      [closure, endpoint_ptr](absl::Status status,
+                              std::unique_ptr<EventEngine::Endpoint> endpoint) {
+        grpc_core::ExecCtx exec_ctx;
+        if (status.ok()) {
+          auto* grpc_endpoint_out =
+              reinterpret_cast<grpc_event_engine_endpoint*>(endpoint_ptr);
+          grpc_endpoint_out->endpoint = std::move(endpoint);
+        } else {
+          *endpoint_ptr = nullptr;
+        }
+        grpc_core::Closure::Run(DEBUG_LOCATION, closure,
+                                absl_status_to_grpc_error(status));
+      };
 }
 
 /// Note: this method does not take ownership of any pointer arguments.
