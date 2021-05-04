@@ -504,7 +504,7 @@ const grpc_channel_filter Server::kServerTopFilter = {
     Server::CallData::InitCallElement,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     Server::CallData::DestroyCallElement,
-    grpc_call_pre_cancel_next_filter,
+    grpc_call_cancel_next_filter,
     sizeof(Server::ChannelData),
     Server::ChannelData::InitChannelElement,
     Server::ChannelData::DestroyChannelElement,

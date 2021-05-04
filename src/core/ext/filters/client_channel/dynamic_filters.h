@@ -51,9 +51,8 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
     // Continues processing a transport stream op batch.
     void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
-    // Cancels any async processing that may be occurring, in preparation for
-    // sending a cancel_stream op via StartTransportStreamOpBatch().
-    void PreCancel(grpc_error* error);
+    // Cancels the call.
+    void Cancel(grpc_error* error);
 
     // Sets the 'then_schedule_closure' argument for call stack destruction.
     // Must be called once per call.

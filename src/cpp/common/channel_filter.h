@@ -274,7 +274,7 @@ class CallData {
                                            TransportStreamOpBatch* op);
 
   /// Pre-cancels a call.
-  virtual void PreCancelCall(grpc_call_element* elem, grpc_error* error);
+  virtual void CancelCall(grpc_call_element* elem, grpc_error* error);
 
   /// Sets a pollset or pollset set.
   virtual void SetPollsetOrPollsetSet(grpc_call_element* elem,
@@ -344,9 +344,9 @@ class ChannelFilter final {
     call_data->StartTransportStreamOpBatch(elem, &op_wrapper);
   }
 
-  static void PreCancelCall(grpc_call_element* elem, grpc_error* error) {
+  static void CancelCall(grpc_call_element* elem, grpc_error* error) {
     CallDataType* call_data = static_cast<CallDataType*>(elem->call_data);
-    call_data->PreCancelCall(elem, error);
+    call_data->CancelCall(elem, error);
   }
 
   static void SetPollsetOrPollsetSet(grpc_call_element* elem,
@@ -400,7 +400,7 @@ void RegisterChannelFilter(
       {FilterType::StartTransportStreamOpBatch, FilterType::StartTransportOp,
        FilterType::call_data_size, FilterType::InitCallElement,
        FilterType::SetPollsetOrPollsetSet, FilterType::DestroyCallElement,
-       FilterType::PreCancelCall, FilterType::channel_data_size,
+       FilterType::CancelCall, FilterType::channel_data_size,
        FilterType::InitChannelElement, FilterType::DestroyChannelElement,
        FilterType::GetChannelInfo, name}};
   internal::channel_filters->push_back(filter_record);

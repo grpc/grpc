@@ -150,7 +150,7 @@ const grpc_channel_filter grpc_client_load_reporting_filter = {
     clr_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     clr_destroy_call_elem,
-    grpc_call_pre_cancel_next_filter,
+    grpc_call_cancel_next_filter,
     0,  // sizeof(channel_data)
     clr_init_channel_elem,
     clr_destroy_channel_elem,

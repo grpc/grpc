@@ -392,7 +392,7 @@ const grpc_channel_filter MessageDecompressFilter = {
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     DecompressDestroyCallElem,
     // TODO(roth): This filter needs to support cancellation.
-    grpc_call_pre_cancel_next_filter,
+    grpc_call_cancel_next_filter,
     sizeof(ChannelData),
     DecompressInitChannelElem,
     DecompressDestroyChannelElem,

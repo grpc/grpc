@@ -113,35 +113,35 @@ struct call_data {
   //
   // There are two async calls done in this filter: check_call_host()
   // and get_request_metadata(), both invoked while holding the call
-  // combiner.  The client_auth_pre_cancel_call() function, which is
+  // combiner.  The client_auth_cancel_call() function, which is
   // *not* run in the call combiner, needs to cancel either of these
   // operations if they are in flight, so that we can quickly yield the
   // call combiner and thus allow the cancel_stream op to come down in a
   // timely manner.  In both cases, if the async operation has already
   // completed, then a cancellation of that operation is a no-op.
   //
-  // When client_auth_pre_cancel_call() runs, it will set cancel_error.
+  // When client_auth_cancel_call() runs, it will set cancel_error.
   // The code running in the call combiner will check whether
   // cancel_error was set before starting either of the async calls; if
   // it was, then they will fail the send_initial_metadata batch instead
   // of starting the async call.
   //
-  // If client_auth_pre_cancel_call() runs after check_call_host() is
+  // If client_auth_cancel_call() runs after check_call_host() is
   // started, it will attempt to cancel check_call_host() (which may be a
   // no-op if it check_call_host() has already finished).
   //
-  // If client_auth_pre_cancel_call() runs after get_request_metadata()
+  // If client_auth_cancel_call() runs after get_request_metadata()
   // is started, it will attempt to cancel get_request_metadata() (which
   // may be a no-op if get_request_metadata() has already finished).
   //
   // This mutex should not cause contention *except* when a cancellation
   // is occurring, because all accesses to it other than in
-  // client_auth_pre_cancel_call() are done while holding the call combiner.
-  grpc_core::Mutex pre_cancel_mu;
-  grpc_error_handle cancel_error ABSL_GUARDED_BY(pre_cancel_mu) =
+  // client_auth_cancel_call() are done while holding the call combiner.
+  grpc_core::Mutex cancel_mu;
+  grpc_error_handle cancel_error ABSL_GUARDED_BY(cancel_mu) =
       GRPC_ERROR_NONE;
-  bool check_call_host_started ABSL_GUARDED_BY(pre_cancel_mu) = false;
-  bool get_request_metadata_started ABSL_GUARDED_BY(pre_cancel_mu) = false;
+  bool check_call_host_started ABSL_GUARDED_BY(cancel_mu) = false;
+  bool get_request_metadata_started ABSL_GUARDED_BY(cancel_mu) = false;
 };
 
 }  // namespace
@@ -219,11 +219,11 @@ static void on_credentials_metadata(void* arg, grpc_error_handle error) {
   auto* elem =
       static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
   auto* calld = static_cast<call_data*>(elem->call_data);
-  // If we saw pre-cancellation while get_request_metadata() was in flight,
+  // If we saw cancellation while get_request_metadata() was in flight,
   // fail the batch.
   grpc_error_handle cancel_error = GRPC_ERROR_NONE;
   {
-    grpc_core::MutexLock lock(&calld->pre_cancel_mu);
+    grpc_core::MutexLock lock(&calld->cancel_mu);
     cancel_error = GRPC_ERROR_REF(calld->cancel_error);
   }
   if (cancel_error != GRPC_ERROR_NONE) {
@@ -356,7 +356,7 @@ static void send_security_metadata(grpc_call_element* elem,
   bool is_done = false;
   grpc_error_handle cancel_error = GRPC_ERROR_NONE;
   {
-    grpc_core::MutexLock lock(&calld->pre_cancel_mu);
+    grpc_core::MutexLock lock(&calld->cancel_mu);
     if (calld->cancel_error != GRPC_ERROR_NONE) {
       cancel_error = GRPC_ERROR_REF(calld->cancel_error);
     } else {
@@ -367,7 +367,7 @@ static void send_security_metadata(grpc_call_element* elem,
     }
   }
   if (cancel_error != GRPC_ERROR_NONE) {
-    // We've already seen pre-cancellation, so fail the batch.
+    // We've already seen cancellation, so fail the batch.
     grpc_transport_stream_op_batch_finish_with_failure(batch, cancel_error,
                                                        calld->call_combiner);
     GRPC_CALL_STACK_UNREF(calld->owning_call, "get_request_metadata");
@@ -406,11 +406,11 @@ static void on_host_checked(void* arg, grpc_error_handle error) {
   auto* elem =
       static_cast<grpc_call_element*>(batch->handler_private.extra_arg);
   auto* calld = static_cast<call_data*>(elem->call_data);
-  // If we saw pre-cancellation while check_call_host() was in flight,
+  // If we saw cancellation while check_call_host() was in flight,
   // fail the batch.
   grpc_error_handle cancel_error = GRPC_ERROR_NONE;
   {
-    grpc_core::MutexLock lock(&calld->pre_cancel_mu);
+    grpc_core::MutexLock lock(&calld->cancel_mu);
     cancel_error = GRPC_ERROR_REF(calld->cancel_error);
   }
   if (cancel_error != GRPC_ERROR_NONE) {
@@ -447,7 +447,7 @@ static void client_auth_start_transport_stream_op_batch(
       bool is_done = false;
       grpc_error_handle cancel_error = GRPC_ERROR_NONE;
       {
-        grpc_core::MutexLock lock(&calld->pre_cancel_mu);
+        grpc_core::MutexLock lock(&calld->cancel_mu);
         if (calld->cancel_error != GRPC_ERROR_NONE) {
           cancel_error = GRPC_ERROR_REF(calld->cancel_error);
         } else {
@@ -475,12 +475,12 @@ static void client_auth_start_transport_stream_op_batch(
   grpc_call_next_op(elem, batch);
 }
 
-static void client_auth_pre_cancel_call(grpc_call_element* elem,
-                                        grpc_error_handle error) {
+static void client_auth_cancel_call(grpc_call_element* elem,
+                                    grpc_error_handle error) {
   auto* calld = static_cast<call_data*>(elem->call_data);
   auto* chand = static_cast<channel_data*>(elem->channel_data);
   {
-    grpc_core::MutexLock lock(&calld->pre_cancel_mu);
+    grpc_core::MutexLock lock(&calld->cancel_mu);
     calld->cancel_error = GRPC_ERROR_REF(error);
     if (calld->check_call_host_started) {
       // check_call_host() was started.  Try cancelling it.
@@ -495,8 +495,8 @@ static void client_auth_pre_cancel_call(grpc_call_element* elem,
       }
     }
   }
-  // Propagate pre-cancellation to next filter.
-  grpc_call_pre_cancel_next_filter(elem, error);
+  // Propagate cancellation to next filter.
+  grpc_call_cancel_next_filter(elem, error);
 }
 
 /* Constructor for call_data */
@@ -557,7 +557,7 @@ const grpc_channel_filter grpc_client_auth_filter = {
     client_auth_init_call_elem,
     client_auth_set_pollset_or_pollset_set,
     client_auth_destroy_call_elem,
-    client_auth_pre_cancel_call,
+    client_auth_cancel_call,
     sizeof(channel_data),
     client_auth_init_channel_elem,
     client_auth_destroy_channel_elem,

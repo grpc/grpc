@@ -102,7 +102,7 @@ class ClientChannel::CallData {
                       grpc_closure* then_schedule_closure);
   static void StartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
-  static void PreCancel(grpc_call_element* elem, grpc_error_handle error);
+  static void Cancel(grpc_call_element* elem, grpc_error_handle error);
   static void SetPollent(grpc_call_element* elem, grpc_polling_entity* pollent);
 
   // Invoked by channel for queued calls when name resolution is completed.
@@ -218,10 +218,10 @@ class ClientChannel::CallData {
   // Mutex guarding cancellation.
   //
   // Note that dynamic_call_ itself is not guarded by this mutex, because we
-  // only need to guard the *creation* of the dynamic call.  If PreCancel()
+  // only need to guard the *creation* of the dynamic call.  If Cancel()
   // runs before dynamic_call_ is set, then cancel_error_ will be set, in
-  // which case dynamic_call_ will not be created; if PreCancel()
-  // runs after dynamic_call_ is set, it will propagate the pre-cancellation
+  // which case dynamic_call_ will not be created; if Cancel()
+  // runs after dynamic_call_ is set, it will propagate the cancellation
   // down to dynamic_call_.
   //
   // This mutex should not cause contention *except* when a cancellation
@@ -248,7 +248,7 @@ const grpc_channel_filter ClientChannel::kFilterVtable = {
     ClientChannel::CallData::Init,
     ClientChannel::CallData::SetPollent,
     ClientChannel::CallData::Destroy,
-    ClientChannel::CallData::PreCancel,
+    ClientChannel::CallData::Cancel,
     sizeof(ClientChannel),
     ClientChannel::Init,
     ClientChannel::Destroy,
@@ -348,9 +348,9 @@ class DynamicTerminationFilter::CallData {
     calld->lb_call_->StartTransportStreamOpBatch(batch);
   }
 
-  static void PreCancel(grpc_call_element* elem, grpc_error_handle error) {
+  static void Cancel(grpc_call_element* elem, grpc_error_handle error) {
     auto* calld = static_cast<CallData*>(elem->call_data);
-    calld->lb_call_->PreCancel(error);
+    calld->lb_call_->Cancel(error);
   }
 
   static void SetPollent(grpc_call_element* elem,
@@ -402,7 +402,7 @@ const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     DynamicTerminationFilter::CallData::Init,
     DynamicTerminationFilter::CallData::SetPollent,
     DynamicTerminationFilter::CallData::Destroy,
-    DynamicTerminationFilter::CallData::PreCancel,
+    DynamicTerminationFilter::CallData::Cancel,
     sizeof(DynamicTerminationFilter),
     DynamicTerminationFilter::Init,
     DynamicTerminationFilter::Destroy,
@@ -1924,8 +1924,8 @@ void ClientChannel::CallData::Destroy(
   }
 }
 
-void ClientChannel::CallData::PreCancel(grpc_call_element* elem,
-                                        grpc_error_handle error) {
+void ClientChannel::CallData::Cancel(grpc_call_element* elem,
+                                     grpc_error_handle error) {
   auto* calld = static_cast<CallData*>(elem->call_data);
   auto* chand = static_cast<ClientChannel*>(elem->channel_data);
   if (GPR_LIKELY(chand->deadline_checking_enabled_)) {
@@ -1956,7 +1956,7 @@ void ClientChannel::CallData::PreCancel(grpc_call_element* elem,
     if (calld->dynamic_call_ != nullptr) dynamic_call_exists = true;
   }
   if (dynamic_call_exists) {
-    calld->dynamic_call_->PreCancel(error);
+    calld->dynamic_call_->Cancel(error);
   } else {
     GRPC_ERROR_UNREF(error);
   }
@@ -2723,7 +2723,7 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
   }
 }
 
-void ClientChannel::LoadBalancedCall::PreCancel(grpc_error_handle error) {
+void ClientChannel::LoadBalancedCall::Cancel(grpc_error_handle error) {
   // Check if we're queued pending an LB pick.
   {
     MutexLock lock(&chand_->data_plane_mu_);
@@ -2747,7 +2747,7 @@ void ClientChannel::LoadBalancedCall::PreCancel(grpc_error_handle error) {
     if (subchannel_call_ != nullptr) subchannel_call_exists = true;
   }
   if (subchannel_call_exists) {
-    subchannel_call_->PreCancel(error);
+    subchannel_call_->Cancel(error);
   } else {
     GRPC_ERROR_UNREF(error);
   }

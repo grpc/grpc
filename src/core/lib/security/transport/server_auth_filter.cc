@@ -269,8 +269,8 @@ static void server_auth_start_transport_stream_op_batch(
   grpc_call_next_op(elem, batch);
 }
 
-static void server_auth_pre_cancel_call(grpc_call_element* elem,
-                                        grpc_error_handle error) {
+static void server_auth_cancel_call(grpc_call_element* elem,
+                                    grpc_error_handle error) {
   auto* calld = static_cast<call_data*>(elem->call_data);
   // If the result was not already processed, invoke the callback now.
   call_data::AsyncState expected = call_data::AsyncState::kStarted;
@@ -280,8 +280,8 @@ static void server_auth_pre_cancel_call(grpc_call_element* elem,
     on_md_processing_done_inner(elem, nullptr, 0, nullptr, 0,
                                 GRPC_ERROR_REF(error));
   }
-  // Propagate pre-cancellation to next filter.
-  grpc_call_pre_cancel_next_filter(elem, error);
+  // Propagate cancellation to next filter.
+  grpc_call_cancel_next_filter(elem, error);
 }
 
 /* Constructor for call_data */
@@ -332,7 +332,7 @@ const grpc_channel_filter grpc_server_auth_filter = {
     server_auth_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     server_auth_destroy_call_elem,
-    server_auth_pre_cancel_call,
+    server_auth_cancel_call,
     sizeof(channel_data),
     server_auth_init_channel_elem,
     server_auth_destroy_channel_elem,

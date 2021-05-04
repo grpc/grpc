@@ -68,8 +68,8 @@ static void lame_start_transport_stream_op_batch(
       op, GRPC_ERROR_REF(chand->error), calld->call_combiner);
 }
 
-static void lame_pre_cancel_call(grpc_call_element* /*elem*/,
-                                 grpc_error* error) {
+static void lame_cancel_call(grpc_call_element* /*elem*/,
+                             grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 
@@ -157,7 +157,7 @@ const grpc_channel_filter grpc_lame_filter = {
     grpc_core::lame_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     grpc_core::lame_destroy_call_elem,
-    grpc_core::lame_pre_cancel_call,
+    grpc_core::lame_cancel_call,
     sizeof(grpc_core::ChannelData),
     grpc_core::lame_init_channel_elem,
     grpc_core::lame_destroy_channel_elem,

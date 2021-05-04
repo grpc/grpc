@@ -273,7 +273,7 @@ static void deadline_client_start_transport_stream_op_batch(
 static void deadline_client_cancel_call(grpc_call_element* elem,
                                         grpc_error_handle error) {
   grpc_deadline_state_client_cancel_call(elem);
-  grpc_call_pre_cancel_next_filter(elem, error);
+  grpc_call_cancel_next_filter(elem, error);
 }
 
 // Callback for receiving initial metadata on the server.
@@ -321,7 +321,7 @@ static void deadline_server_cancel_call(grpc_call_element* elem,
                                         grpc_error_handle error) {
   auto* calld = static_cast<server_call_data*>(elem->call_data);
   cancel_timer_if_needed(&calld->base.deadline_state);
-  grpc_call_pre_cancel_next_filter(elem, error);
+  grpc_call_cancel_next_filter(elem, error);
 }
 
 const grpc_channel_filter grpc_client_deadline_filter = {

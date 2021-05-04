@@ -240,11 +240,11 @@ void grpc_call_next_op(grpc_call_element* elem,
   next_elem->filter->start_transport_stream_op_batch(next_elem, op);
 }
 
-void grpc_call_pre_cancel_next_filter(grpc_call_element* elem,
-                                      grpc_error* error) {
+void grpc_call_cancel_next_filter(grpc_call_element* elem,
+                                  grpc_error_handle error) {
   grpc_call_element* next_elem = elem + 1;
-  GRPC_CALL_LOG_PRE_CANCEL(GPR_INFO, next_elem, error);
-  next_elem->filter->pre_cancel_call(next_elem, error);
+  GRPC_CALL_LOG_CANCEL(GPR_INFO, next_elem, error);
+  next_elem->filter->cancel_call(next_elem, error);
 }
 
 void grpc_channel_next_get_info(grpc_channel_element* elem,
@@ -271,9 +271,9 @@ grpc_call_stack* grpc_call_stack_from_top_element(grpc_call_element* elem) {
       GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(grpc_call_stack)));
 }
 
-void grpc_call_log_pre_cancel(const char* file, int line,
-                              gpr_log_severity severity,
-                              grpc_call_element* elem, grpc_error* error) {
-  gpr_log(file, line, severity, "PRE_CANCEL[%s:%p]: %s", elem->filter->name,
-          elem, grpc_error_string(error));
+void grpc_call_log_cancel(const char* file, int line,
+                          gpr_log_severity severity,
+                          grpc_call_element* elem, grpc_error_handle error) {
+  gpr_log(file, line, severity, "CANCEL[%s:%p]: %s", elem->filter->name, elem,
+          grpc_error_std_string(error).c_str());
 }

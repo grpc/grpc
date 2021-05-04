@@ -410,7 +410,7 @@ const grpc_channel_filter grpc_client_idle_filter = {
     CallData::Init,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     CallData::Destroy,
-    grpc_call_pre_cancel_next_filter,
+    grpc_call_cancel_next_filter,
     sizeof(ChannelData),
     ChannelData::Init,
     ChannelData::Destroy,

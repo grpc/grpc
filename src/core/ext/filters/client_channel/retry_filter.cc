@@ -198,7 +198,7 @@ class RetryFilter::CallData {
   static void StartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
   static void SetPollent(grpc_call_element* elem, grpc_polling_entity* pollent);
-  static void PreCancel(grpc_call_element* elem, grpc_error_handle error);
+  static void Cancel(grpc_call_element* elem, grpc_error_handle error);
 
  private:
   class CallStackDestructionBarrier;
@@ -477,10 +477,10 @@ class RetryFilter::CallData {
   //
   // Note that call_attempt_ and committed_call_ themselves are not guarded by
   // this mutex, because we only need to guard the creation or deletion of the
-  // LB call.  If PreCancel() runs before either of those fields are set, then
+  // LB call.  If Cancel() runs before either of those fields are set, then
   // cancel_error_ will be set, in which case the LB call will not
-  // be created; if PreCancel() runs after either field is set, it will
-  // propagate the pre-cancellation down to the appropriate LB call(s).
+  // be created; if Cancel() runs after either field is set, it will
+  // propagate the cancellation down to the appropriate LB call(s).
   //
   // This mutex should not cause contention *except* when a cancellation
   // is occurring.
@@ -1688,8 +1688,8 @@ void RetryFilter::CallData::SetPollent(grpc_call_element* elem,
   calld->pollent_ = pollent;
 }
 
-void RetryFilter::CallData::PreCancel(grpc_call_element* elem,
-                                      grpc_error_handle error) {
+void RetryFilter::CallData::Cancel(grpc_call_element* elem,
+                                   grpc_error_handle error) {
   auto* calld = static_cast<CallData*>(elem->call_data);
   {
     MutexLock lock(&calld->timer_mu_);
@@ -1706,7 +1706,7 @@ void RetryFilter::CallData::PreCancel(grpc_call_element* elem,
       return;
     }
   }
-  // Retry timer not pending, so propagate pre-cancellation down to LB call.
+  // Retry timer not pending, so propagate cancellation down to LB call.
   RefCountedPtr<ClientChannel::LoadBalancedCall> lb_call;
   {
     MutexLock lock(&calld->cancel_mu_);
@@ -1719,7 +1719,7 @@ void RetryFilter::CallData::PreCancel(grpc_call_element* elem,
     }
   }
   if (lb_call != nullptr) {
-    lb_call->PreCancel(error);
+    lb_call->Cancel(error);
   } else {
     GRPC_ERROR_UNREF(error);
   }
@@ -2182,7 +2182,7 @@ const grpc_channel_filter kRetryFilterVtable = {
     RetryFilter::CallData::Init,
     RetryFilter::CallData::SetPollent,
     RetryFilter::CallData::Destroy,
-    RetryFilter::CallData::PreCancel,
+    RetryFilter::CallData::Cancel,
     sizeof(RetryFilter),
     RetryFilter::Init,
     RetryFilter::Destroy,

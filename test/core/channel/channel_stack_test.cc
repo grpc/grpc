@@ -82,7 +82,7 @@ static void test_create_channel_stack(void) {
       call_init_func,
       grpc_call_stack_ignore_set_pollset_or_pollset_set,
       call_destroy_func,
-      grpc_call_pre_cancel_next_filter,
+      grpc_call_cancel_next_filter,
       sizeof(int),
       channel_init_func,
       channel_destroy_func,

@@ -345,7 +345,7 @@ struct Fixture {
   const uint32_t flags = kFlags;
 };
 
-static void PreCancelCallNoOp(grpc_call_element* /*elem*/, grpc_error* error) {
+static void CancelCallNoOp(grpc_call_element* /*elem*/, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
@@ -385,7 +385,7 @@ static const grpc_channel_filter phony_filter = {StartTransportStreamOp,
                                                  InitCallElem,
                                                  SetPollsetOrPollsetSet,
                                                  DestroyCallElem,
-                                                 PreCancelCallNoOp,
+                                                 CancelCallNoOp,
                                                  0,
                                                  InitChannelElem,
                                                  DestroyChannelElem,
@@ -679,7 +679,7 @@ static const grpc_channel_filter isolated_call_filter = {
     StartTransportStreamOp, StartTransportOp,
     sizeof(call_data),      InitCallElem,
     SetPollsetOrPollsetSet, DestroyCallElem,
-    PreCancelCallNoOp,      0,
+    CancelCallNoOp,         0,
     InitChannelElem,        DestroyChannelElem,
     GetChannelInfo,         "isolated_call_filter"};
 }  // namespace isolated_call_filter

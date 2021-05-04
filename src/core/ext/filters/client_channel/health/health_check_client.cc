@@ -401,7 +401,7 @@ void HealthCheckClient::CallState::Cancel() {
   bool expected = false;
   if (cancelled_.CompareExchangeStrong(&expected, true, MemoryOrder::ACQ_REL,
                                        MemoryOrder::ACQUIRE)) {
-    call_->PreCancel(GRPC_ERROR_CANCELLED);
+    call_->Cancel(GRPC_ERROR_CANCELLED);
   }
 }
 

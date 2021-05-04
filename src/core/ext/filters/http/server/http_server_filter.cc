@@ -525,7 +525,7 @@ const grpc_channel_filter grpc_http_server_filter = {
     hs_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     hs_destroy_call_elem,
-    grpc_call_pre_cancel_next_filter,
+    grpc_call_cancel_next_filter,
     sizeof(channel_data),
     hs_init_channel_elem,
     hs_destroy_channel_elem,

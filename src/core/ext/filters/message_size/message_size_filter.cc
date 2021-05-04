@@ -340,7 +340,7 @@ const grpc_channel_filter grpc_message_size_filter = {
     message_size_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     message_size_destroy_call_elem,
-    grpc_call_pre_cancel_next_filter,
+    grpc_call_cancel_next_filter,
     sizeof(channel_data),
     message_size_init_channel_elem,
     message_size_destroy_channel_elem,

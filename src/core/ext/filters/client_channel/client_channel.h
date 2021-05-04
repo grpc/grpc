@@ -388,7 +388,7 @@ class ClientChannel::LoadBalancedCall
   ~LoadBalancedCall() override;
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
-  void PreCancel(grpc_error* error);
+  void Cancel(grpc_error* error);
 
   // Invoked by channel for queued LB picks when the picker is updated.
   static void PickSubchannel(void* arg, grpc_error_handle error);
@@ -489,10 +489,10 @@ class ClientChannel::LoadBalancedCall
   // Mutex guarding cancellation.
   //
   // Note that subchannel_call_ itself is not guarded by this mutex, because we
-  // only need to guard the *creation* of the subchannel call.  If PreCancel()
+  // only need to guard the *creation* of the subchannel call.  If Cancel()
   // runs before subchannel_call_ is set, then cancel_error_ will be set, in
-  // which case subchannel_call_ will not be created; if PreCancel() runs after
-  // subchannel_call_ is set, it will propagate the pre-cancellation down to
+  // which case subchannel_call_ will not be created; if Cancel() runs after
+  // subchannel_call_ is set, it will propagate the cancellation down to
   // subchannel_call_.
   //
   // This mutex should not cause contention *except* when a cancellation

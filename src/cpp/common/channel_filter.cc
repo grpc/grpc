@@ -56,8 +56,8 @@ void CallData::StartTransportStreamOpBatch(grpc_call_element* elem,
   grpc_call_next_op(elem, op->op());
 }
 
-void CallData::PreCancelCall(grpc_call_element* elem, grpc_error* error) {
-  grpc_call_pre_cancel_next_filter(elem, error);
+void CallData::CancelCall(grpc_call_element* elem, grpc_error* error) {
+  grpc_call_cancel_next_filter(elem, error);
 }
 
 void CallData::SetPollsetOrPollsetSet(grpc_call_element* elem,

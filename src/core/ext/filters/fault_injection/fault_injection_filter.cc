@@ -109,7 +109,7 @@ class CallData {
   static void StartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
 
-  static void PreCancel(grpc_call_element* elem, grpc_error_handle error);
+  static void Cancel(grpc_call_element* elem, grpc_error_handle error);
 
  private:
   CallData(grpc_call_element* elem, const grpc_call_element_args* args);
@@ -258,7 +258,7 @@ void CallData::StartTransportStreamOpBatch(
   grpc_call_next_op(elem, batch);
 }
 
-void CallData::PreCancel(grpc_call_element* elem, grpc_error_handle error) {
+void CallData::Cancel(grpc_call_element* elem, grpc_error_handle error) {
   auto* calld = static_cast<CallData*>(elem->call_data);
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
   {
@@ -278,7 +278,7 @@ void CallData::PreCancel(grpc_call_element* elem, grpc_error_handle error) {
       return;
     }
   }
-  grpc_call_pre_cancel_next_filter(elem, error);
+  grpc_call_cancel_next_filter(elem, error);
 }
 
 CallData::CallData(grpc_call_element* elem, const grpc_call_element_args* args)
@@ -426,7 +426,7 @@ void CallData::ResumeBatch(void* arg, grpc_error_handle error) {
                 "chand=%p calld=%p: Resuming delayed stream op batch %p",
                 elem->channel_data, calld, calld->delayed_batch_);
       }
-      // Lame the pre-canceller
+      // Lame the canceller
       calld->delay_timer_pending_ = false;
       // Finish fault injection.
       calld->FaultInjectionFinished();
@@ -467,7 +467,7 @@ extern const grpc_channel_filter FaultInjectionFilterVtable = {
     CallData::Init,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     CallData::Destroy,
-    CallData::PreCancel,
+    CallData::Cancel,
     sizeof(ChannelData),
     ChannelData::Init,
     ChannelData::Destroy,

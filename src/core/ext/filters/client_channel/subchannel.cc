@@ -176,11 +176,11 @@ void SubchannelCall::StartTransportStreamOpBatch(
   top_elem->filter->start_transport_stream_op_batch(top_elem, batch);
 }
 
-void SubchannelCall::PreCancel(grpc_error* error) {
+void SubchannelCall::Cancel(grpc_error* error) {
   grpc_call_stack* call_stack = SUBCHANNEL_CALL_TO_CALL_STACK(this);
   grpc_call_element* top_elem = grpc_call_stack_element(call_stack, 0);
-  GRPC_CALL_LOG_PRE_CANCEL(GPR_INFO, top_elem, error);
-  top_elem->filter->pre_cancel_call(top_elem, error);
+  GRPC_CALL_LOG_CANCEL(GPR_INFO, top_elem, error);
+  top_elem->filter->cancel_call(top_elem, error);
 }
 
 grpc_call_stack* SubchannelCall::GetCallStack() {

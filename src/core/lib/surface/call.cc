@@ -682,13 +682,9 @@ void grpc_call_cancel_with_error_internal(grpc_call* c,
     GRPC_ERROR_UNREF(error);
     return;
   }
-  // Call the channel stack's pre_cancel_call() function.  This allows
-  // the filters to cancel any in-flight asynchronous actions that may be
-  // holding the call combiner.  This ensures that the cancel_stream batch
-  // can be sent down the filter stack in a timely manner.
   grpc_call_element* elem = CALL_ELEM_FROM_CALL(c, 0);
-  GRPC_CALL_LOG_PRE_CANCEL(GPR_INFO, elem, error);
-  elem->filter->pre_cancel_call(elem, error);
+  GRPC_CALL_LOG_CANCEL(GPR_INFO, elem, error);
+  elem->filter->cancel_call(elem, error);
 }
 
 void grpc_call_cancel_internal(grpc_call* call) {

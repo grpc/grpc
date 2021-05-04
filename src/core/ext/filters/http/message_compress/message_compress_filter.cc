@@ -538,7 +538,7 @@ void CallData::Cancel(grpc_call_element* elem, grpc_error_handle error) {
       }
     }
   }
-  grpc_call_pre_cancel_next_filter(elem, error);
+  grpc_call_cancel_next_filter(elem, error);
 }
 
 //

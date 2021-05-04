@@ -93,7 +93,7 @@ class SubchannelCall {
   // Continues processing a transport stream op batch.
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
 
-  void PreCancel(grpc_error* error);
+  void Cancel(grpc_error* error);
 
   // Returns the call stack of the subchannel call.
   grpc_call_stack* GetCallStack();
