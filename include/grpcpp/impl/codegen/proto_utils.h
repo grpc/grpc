@@ -84,6 +84,7 @@ Status GenericDeserialize(ByteBuffer* buffer,
       return reader.status();
     }
     if (!msg->ParseFromZeroCopyStream(&reader)) {
+      gpr_log(GPR_ERROR, "Failed to deserialize message");
       result = Status(StatusCode::INTERNAL, msg->InitializationErrorString());
     }
   }
