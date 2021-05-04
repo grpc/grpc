@@ -2069,13 +2069,13 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       const RpcOptions& rpc_options = RpcOptions()) {
     gpr_log(GPR_INFO, "========= WAITING FOR BACKEND %lu ==========",
             static_cast<unsigned long>(backend_idx));
-    do {
+    while (!SeenBackend(backend_idx, rpc_options.service)) {
       Status status = SendRpc(rpc_options);
       if (!wait_options.allow_failures) {
         EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                  << " message=" << status.error_message();
       }
-    } while (!SeenBackend(backend_idx, rpc_options.service));
+    }
     if (wait_options.reset_counters) ResetBackendCounters();
     gpr_log(GPR_INFO, "========= BACKEND %lu READY ==========",
             static_cast<unsigned long>(backend_idx));
@@ -2769,7 +2769,6 @@ TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
 // Tests that subchannel sharing works when the same backend is listed multiple
 // times.
 TEST_P(BasicTest, SameBackendListedMultipleTimes) {
-  const uint32_t kRpcTimeoutMs = 5000;
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Same backend listed twice.
@@ -2781,9 +2780,9 @@ TEST_P(BasicTest, SameBackendListedMultipleTimes) {
   const size_t kNumRpcsPerAddress = 10;
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
-  // We need to wait for the backend to come online.
-  WaitForBackend(0, WaitForBackendOptions(),
-                 RpcOptions().set_timeout_ms(kRpcTimeoutMs));
+  // Make sure that trying to connect works without a call.
+  channel_->GetState(true /* try_to_connect */);
+  // Wait for backend 0 to come online.
   WaitForBackend(0);
   // Send kNumRpcsPerAddress RPCs per server.
   CheckRpcSendOk(kNumRpcsPerAddress * endpoints.size());
