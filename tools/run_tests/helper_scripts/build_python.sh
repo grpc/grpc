@@ -220,6 +220,9 @@ $VENV_PYTHON "$ROOT/src/python/grpcio_status/setup.py" preprocess
 $VENV_PYTHON "$ROOT/src/python/grpcio_status/setup.py" build_package_protos
 pip_install_dir "$ROOT/src/python/grpcio_status"
 
+# Build/install csds
+pip_install_dir "$ROOT/src/python/grpcio_csds"
+
 # Install testing
 pip_install_dir "$ROOT/src/python/grpcio_testing"
 

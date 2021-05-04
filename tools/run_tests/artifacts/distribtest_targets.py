@@ -353,6 +353,7 @@ def targets():
         PythonDistribTest('linux', 'x64', 'arch'),
         PythonDistribTest('linux', 'x64', 'ubuntu1604'),
         PythonDistribTest('linux', 'x64', 'ubuntu1804'),
+        PythonDistribTest('linux', 'aarch64', 'python38_buster'),
         PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
         PythonDistribTest('linux', 'x64', 'jessie', source=True),
         PythonDistribTest('linux', 'x86', 'jessie', source=True),

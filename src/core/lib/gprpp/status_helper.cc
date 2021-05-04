@@ -25,8 +25,10 @@
 
 #include "absl/strings/cord.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/match.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
+#include "absl/time/clock.h"
 
 #include "google/protobuf/any.upb.h"
 #include "google/rpc/status.upb.h"
@@ -37,72 +39,86 @@ namespace grpc_core {
 namespace {
 
 #define TYPE_URL_PREFIX "type.googleapis.com/grpc.status."
+#define TYPE_INT_TAG "int."
+#define TYPE_STR_TAG "str."
+#define TYPE_TIME_TAG "time."
+#define TYPE_CHILDREN_TAG "children"
 #define TYPE_URL(name) (TYPE_URL_PREFIX name)
 const absl::string_view kTypeUrlPrefix = TYPE_URL_PREFIX;
-const absl::string_view kChildrenPropertyUrl = TYPE_URL("children");
+const absl::string_view kTypeIntTag = TYPE_INT_TAG;
+const absl::string_view kTypeStrTag = TYPE_STR_TAG;
+const absl::string_view kTypeTimeTag = TYPE_TIME_TAG;
+const absl::string_view kTypeChildrenTag = TYPE_CHILDREN_TAG;
+const absl::string_view kChildrenPropertyUrl = TYPE_URL(TYPE_CHILDREN_TAG);
 
 const char* GetStatusIntPropertyUrl(StatusIntProperty key) {
   switch (key) {
-    case StatusIntProperty::ERRNO:
-      return TYPE_URL("errno");
-    case StatusIntProperty::FILE_LINE:
-      return TYPE_URL("file_line");
-    case StatusIntProperty::STREAM_ID:
-      return TYPE_URL("stream_id");
-    case StatusIntProperty::GRPC_STATUS:
-      return TYPE_URL("grpc_status");
-    case StatusIntProperty::OFFSET:
-      return TYPE_URL("offset");
-    case StatusIntProperty::INDEX:
-      return TYPE_URL("index");
-    case StatusIntProperty::SIZE:
-      return TYPE_URL("size");
-    case StatusIntProperty::HTTP2_ERROR:
-      return TYPE_URL("http2_error");
-    case StatusIntProperty::TSI_CODE:
-      return TYPE_URL("tsi_code");
-    case StatusIntProperty::FD:
-      return TYPE_URL("fd");
-    case StatusIntProperty::WSA_ERROR:
-      return TYPE_URL("wsa_error");
-    case StatusIntProperty::HTTP_STATUS:
-      return TYPE_URL("http_status");
-    case StatusIntProperty::OCCURRED_DURING_WRITE:
-      return TYPE_URL("occurred_during_write");
-    case StatusIntProperty::CHANNEL_CONNECTIVITY_STATE:
-      return TYPE_URL("channel_connectivity_state");
-    case StatusIntProperty::LB_POLICY_DROP:
-      return TYPE_URL("lb_policy_drop");
+    case StatusIntProperty::kErrorNo:
+      return TYPE_URL(TYPE_INT_TAG "errno");
+    case StatusIntProperty::kFileLine:
+      return TYPE_URL(TYPE_INT_TAG "file_line");
+    case StatusIntProperty::kStreamId:
+      return TYPE_URL(TYPE_INT_TAG "stream_id");
+    case StatusIntProperty::kRpcStatus:
+      return TYPE_URL(TYPE_INT_TAG "grpc_status");
+    case StatusIntProperty::kOffset:
+      return TYPE_URL(TYPE_INT_TAG "offset");
+    case StatusIntProperty::kIndex:
+      return TYPE_URL(TYPE_INT_TAG "index");
+    case StatusIntProperty::kSize:
+      return TYPE_URL(TYPE_INT_TAG "size");
+    case StatusIntProperty::kHttp2Error:
+      return TYPE_URL(TYPE_INT_TAG "http2_error");
+    case StatusIntProperty::kTsiCode:
+      return TYPE_URL(TYPE_INT_TAG "tsi_code");
+    case StatusIntProperty::kWsaError:
+      return TYPE_URL(TYPE_INT_TAG "wsa_error");
+    case StatusIntProperty::kFd:
+      return TYPE_URL(TYPE_INT_TAG "fd");
+    case StatusIntProperty::kHttpStatus:
+      return TYPE_URL(TYPE_INT_TAG "http_status");
+    case StatusIntProperty::kOccurredDuringWrite:
+      return TYPE_URL(TYPE_INT_TAG "occurred_during_write");
+    case StatusIntProperty::ChannelConnectivityState:
+      return TYPE_URL(TYPE_INT_TAG "channel_connectivity_state");
+    case StatusIntProperty::kLbPolicyDrop:
+      return TYPE_URL(TYPE_INT_TAG "lb_policy_drop");
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
 
 const char* GetStatusStrPropertyUrl(StatusStrProperty key) {
   switch (key) {
-    case StatusStrProperty::KEY:
-      return TYPE_URL("key");
-    case StatusStrProperty::VALUE:
-      return TYPE_URL("value");
-    case StatusStrProperty::DESCRIPTION:
-      return TYPE_URL("description");
-    case StatusStrProperty::OS_ERROR:
-      return TYPE_URL("os_error");
-    case StatusStrProperty::TARGET_ADDRESS:
-      return TYPE_URL("target_address");
-    case StatusStrProperty::SYSCALL:
-      return TYPE_URL("syscall");
-    case StatusStrProperty::FILE:
-      return TYPE_URL("file");
-    case StatusStrProperty::GRPC_MESSAGE:
-      return TYPE_URL("grpc_message");
-    case StatusStrProperty::RAW_BYTES:
-      return TYPE_URL("raw_bytes");
-    case StatusStrProperty::TSI_ERROR:
-      return TYPE_URL("tsi_error");
-    case StatusStrProperty::FILENAME:
-      return TYPE_URL("filename");
-    case StatusStrProperty::CREATED_TIME:
-      return TYPE_URL("created_time");
+    case StatusStrProperty::kDescription:
+      return TYPE_URL(TYPE_STR_TAG "description");
+    case StatusStrProperty::kFile:
+      return TYPE_URL(TYPE_STR_TAG "file");
+    case StatusStrProperty::kOsError:
+      return TYPE_URL(TYPE_STR_TAG "os_error");
+    case StatusStrProperty::kSyscall:
+      return TYPE_URL(TYPE_STR_TAG "syscall");
+    case StatusStrProperty::kTargetAddress:
+      return TYPE_URL(TYPE_STR_TAG "target_address");
+    case StatusStrProperty::kGrpcMessage:
+      return TYPE_URL(TYPE_STR_TAG "grpc_message");
+    case StatusStrProperty::kRawBytes:
+      return TYPE_URL(TYPE_STR_TAG "raw_bytes");
+    case StatusStrProperty::kTsiError:
+      return TYPE_URL(TYPE_STR_TAG "tsi_error");
+    case StatusStrProperty::kFilename:
+      return TYPE_URL(TYPE_STR_TAG "filename");
+    case StatusStrProperty::kKey:
+      return TYPE_URL(TYPE_STR_TAG "key");
+    case StatusStrProperty::kValue:
+      return TYPE_URL(TYPE_STR_TAG "value");
+  }
+  GPR_UNREACHABLE_CODE(return "unknown");
+}
+
+const char* GetStatusTimePropertyUrl(StatusTimeProperty key) {
+  switch (key) {
+    case StatusTimeProperty::kCreated:
+      return TYPE_URL(TYPE_TIME_TAG "created_time");
   }
   GPR_UNREACHABLE_CODE(return "unknown");
 }
@@ -145,13 +161,12 @@ absl::Status StatusCreate(absl::StatusCode code, absl::string_view msg,
                           std::initializer_list<absl::Status> children) {
   absl::Status s(code, msg);
   if (location.file() != nullptr) {
-    StatusSetStr(&s, StatusStrProperty::FILE, location.file());
+    StatusSetStr(&s, StatusStrProperty::kFile, location.file());
   }
   if (location.line() != -1) {
-    StatusSetInt(&s, StatusIntProperty::FILE_LINE, location.line());
+    StatusSetInt(&s, StatusIntProperty::kFileLine, location.line());
   }
-  absl::Time now = grpc_core::ToAbslTime(gpr_now(GPR_CLOCK_REALTIME));
-  StatusSetStr(&s, StatusStrProperty::CREATED_TIME, absl::FormatTime(now));
+  StatusSetTime(&s, StatusTimeProperty::kCreated, absl::Now());
   for (const absl::Status& child : children) {
     if (!child.ok()) {
       StatusAddChild(&s, child);
@@ -200,6 +215,29 @@ absl::optional<std::string> StatusGetStr(const absl::Status& status,
   return {};
 }
 
+void StatusSetTime(absl::Status* status, StatusTimeProperty key,
+                   absl::Time time) {
+  status->SetPayload(GetStatusTimePropertyUrl(key),
+                     absl::Cord(absl::string_view(
+                         reinterpret_cast<const char*>(&time), sizeof(time))));
+}
+
+absl::optional<absl::Time> StatusGetTime(const absl::Status& status,
+                                         StatusTimeProperty key) {
+  absl::optional<absl::Cord> p =
+      status.GetPayload(GetStatusTimePropertyUrl(key));
+  if (p.has_value()) {
+    absl::optional<absl::string_view> sv = p->TryFlat();
+    if (sv.has_value()) {
+      return *reinterpret_cast<const absl::Time*>(sv->data());
+    } else {
+      std::string s = std::string(*p);
+      return *reinterpret_cast<const absl::Time*>(s.c_str());
+    }
+  }
+  return {};
+}
+
 void StatusAddChild(absl::Status* status, absl::Status child) {
   upb::Arena arena;
   // Serialize msg to buf
@@ -237,20 +275,45 @@ std::string StatusToString(const absl::Status& status) {
   }
   std::vector<std::string> kvs;
   absl::optional<absl::Cord> children;
-  status.ForEachPayload(
-      [&](absl::string_view type_url, const absl::Cord& payload) {
-        if (type_url.substr(0, kTypeUrlPrefix.size()) == kTypeUrlPrefix) {
-          type_url.remove_prefix(kTypeUrlPrefix.size());
-        }
-        if (type_url == kChildrenPropertyUrl.substr(kTypeUrlPrefix.size())) {
-          children = payload;
-        } else {
-          absl::optional<absl::string_view> payload_view = payload.TryFlat();
-          std::string payload_str = absl::CHexEscape(
-              payload_view.has_value() ? *payload_view : std::string(payload));
-          kvs.push_back(absl::StrCat(type_url, ":\"", payload_str, "\""));
-        }
-      });
+  status.ForEachPayload([&](absl::string_view type_url,
+                            const absl::Cord& payload) {
+    if (absl::StartsWith(type_url, kTypeUrlPrefix)) {
+      type_url.remove_prefix(kTypeUrlPrefix.size());
+      if (type_url == kTypeChildrenTag) {
+        children = payload;
+        return;
+      }
+      absl::string_view payload_view;
+      std::string payload_storage;
+      if (payload.TryFlat().has_value()) {
+        payload_view = payload.TryFlat().value();
+      } else {
+        payload_storage = std::string(payload);
+        payload_view = payload_storage;
+      }
+      if (absl::StartsWith(type_url, kTypeIntTag)) {
+        type_url.remove_prefix(kTypeIntTag.size());
+        kvs.push_back(absl::StrCat(type_url, ":", payload_view));
+      } else if (absl::StartsWith(type_url, kTypeStrTag)) {
+        type_url.remove_prefix(kTypeStrTag.size());
+        kvs.push_back(absl::StrCat(type_url, ":\"",
+                                   absl::CHexEscape(payload_view), "\""));
+      } else if (absl::StartsWith(type_url, kTypeTimeTag)) {
+        type_url.remove_prefix(kTypeTimeTag.size());
+        absl::Time t =
+            *reinterpret_cast<const absl::Time*>(payload_view.data());
+        kvs.push_back(absl::StrCat(type_url, ":\"", absl::FormatTime(t), "\""));
+      } else {
+        kvs.push_back(absl::StrCat(type_url, ":\"",
+                                   absl::CHexEscape(payload_view), "\""));
+      }
+    } else {
+      absl::optional<absl::string_view> payload_view = payload.TryFlat();
+      std::string payload_str = absl::CHexEscape(
+          payload_view.has_value() ? *payload_view : std::string(payload));
+      kvs.push_back(absl::StrCat(type_url, ":\"", payload_str, "\""));
+    }
+  });
   if (children.has_value()) {
     std::vector<absl::Status> children_status = ParseChildren(*children);
     std::vector<std::string> children_text;
@@ -313,6 +376,30 @@ absl::Status StatusFromProto(google_rpc_Status* msg) {
                       absl::Cord(absl::string_view(value.data, value.size)));
   }
   return status;
+}
+
+uintptr_t StatusAllocPtr(absl::Status s) {
+  // This relies the fact that absl::Status has only one member, StatusRep*
+  // so the sizeof(absl::Status) has the same size of intptr_t and StatusRep*
+  // can be stolen using placement allocation.
+  static_assert(sizeof(intptr_t) == sizeof(absl::Status),
+                "absl::Status should be as big as intptr_t");
+  // This does two things;
+  // 1. Copies StatusRep* of absl::Status to ptr
+  // 2. Increases the counter of StatusRep if it's not inlined
+  uintptr_t ptr;
+  new (&ptr) absl::Status(s);
+  return ptr;
+}
+
+void StatusFreePtr(uintptr_t ptr) {
+  // Decreases the counter of StatusRep if it's not inlined.
+  reinterpret_cast<absl::Status*>(&ptr)->~Status();
+}
+
+absl::Status StatusGetFromPtr(uintptr_t ptr) {
+  // Constructs Status from ptr having the address of StatusRep.
+  return *reinterpret_cast<absl::Status*>(&ptr);
 }
 
 }  // namespace internal

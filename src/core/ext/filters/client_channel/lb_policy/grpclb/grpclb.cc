@@ -90,6 +90,8 @@
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -98,9 +100,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -893,6 +893,10 @@ void GrpcLb::BalancerCallState::StartQuery() {
 }
 
 void GrpcLb::BalancerCallState::ScheduleNextClientLoadReportLocked() {
+  // InvalidateNow to avoid getting stuck re-initializing this timer
+  // in a loop while draining the currently-held WorkSerializer.
+  // Also see https://github.com/grpc/grpc/issues/26079.
+  ExecCtx::Get()->InvalidateNow();
   const grpc_millis next_client_load_report_time =
       ExecCtx::Get()->Now() + client_stats_report_interval_;
   GRPC_CLOSURE_INIT(&client_load_report_closure_, MaybeSendClientLoadReport,

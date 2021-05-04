@@ -16,8 +16,8 @@
 
 #include "src/core/lib/security/authorization/evaluate_args.h"
 
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/core/lib/iomgr/parse_address.h"
 #include "src/core/lib/slice/slice_utils.h"
 
 namespace grpc_core {
