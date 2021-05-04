@@ -42,6 +42,8 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/transport/static_metadata.h"
 
+namespace grpc_core {
+
 namespace {
 
 class ChannelData {
@@ -127,6 +129,8 @@ class CallData {
   void CompressStartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
 
+  void Cancel(grpc_call_element* elem, grpc_error_handle error);
+
  private:
   bool SkipMessageCompression();
   void InitializeState(grpc_call_element* elem);
@@ -141,17 +145,31 @@ class CallData {
   void ContinueReadingSendMessage(grpc_call_element* elem);
   void FinishSendMessage(grpc_call_element* elem);
   void SendMessageBatchContinue(grpc_call_element* elem);
-  static void FailSendMessageBatchInCallCombiner(void* calld_arg,
+  void FailSendMessageBatch(grpc_error_handle error);
+  static void FailSendMessageBatchInCallCombiner(void* arg,
                                                  grpc_error_handle error);
 
   static void SendMessageOnComplete(void* calld_arg, grpc_error_handle error);
 
-  grpc_core::CallCombiner* call_combiner_;
+  CallCombiner* call_combiner_;
   grpc_message_compression_algorithm message_compression_algorithm_ =
       GRPC_MESSAGE_COMPRESS_NONE;
-  grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
+
+  // Mutex guarding cancellation.
+  //
+  // Note that send_message_batch_ itself is not guarded by this mutex, because
+  // we only need to guard *setting* that field, not the struct that it
+  // points to.  If Cancel() runs before send_message_batch_ is set,
+  // then cancel_error_ will be set, in which case send_message_batch_ will not
+  // be set; if Cancel() runs after send_message_batch_ is set, it will
+  // shut down the byte stream.
+  //
+  // This mutex should not cause contention *except* when a cancellation
+  // is occurring.
+  Mutex cancel_mu_;
+  grpc_error_handle cancel_error_ ABSL_GUARDED_BY(cancel_mu_) = GRPC_ERROR_NONE;
   grpc_transport_stream_op_batch* send_message_batch_ = nullptr;
-  bool seen_initial_metadata_ = false;
+  bool seen_initial_metadata_ ABSL_GUARDED_BY(cancel_mu_) = false;
   /* Set to true, if the fields below are initialized. */
   bool state_initialized_ = false;
   grpc_closure start_send_message_batch_in_call_combiner_;
@@ -164,8 +182,8 @@ class CallData {
   grpc_linked_mdelem accept_stream_encoding_storage_;
   grpc_slice_buffer slices_; /**< Buffers up input slices to be compressed */
   // Allocate space for the replacement stream
-  std::aligned_storage<sizeof(grpc_core::SliceBufferByteStream),
-                       alignof(grpc_core::SliceBufferByteStream)>::type
+  std::aligned_storage<sizeof(SliceBufferByteStream),
+                       alignof(SliceBufferByteStream)>::type
       replacement_stream_;
   grpc_closure* original_send_message_on_complete_ = nullptr;
   grpc_closure send_message_on_complete_;
@@ -284,16 +302,19 @@ grpc_error_handle CallData::ProcessSendInitialMetadata(
 void CallData::SendMessageOnComplete(void* calld_arg, grpc_error_handle error) {
   CallData* calld = static_cast<CallData*>(calld_arg);
   grpc_slice_buffer_reset_and_unref_internal(&calld->slices_);
-  grpc_core::Closure::Run(DEBUG_LOCATION,
-                          calld->original_send_message_on_complete_,
-                          GRPC_ERROR_REF(error));
+  Closure::Run(DEBUG_LOCATION, calld->original_send_message_on_complete_,
+               GRPC_ERROR_REF(error));
 }
 
 void CallData::SendMessageBatchContinue(grpc_call_element* elem) {
   // Note: The call to grpc_call_next_op() results in yielding the
   // call combiner, so we need to clear send_message_batch_ before we do that.
-  grpc_transport_stream_op_batch* send_message_batch = send_message_batch_;
-  send_message_batch_ = nullptr;
+  grpc_transport_stream_op_batch* send_message_batch;
+  {
+    MutexLock lock(&cancel_mu_);
+    send_message_batch = send_message_batch_;
+    send_message_batch_ = nullptr;
+  }
   grpc_call_next_op(elem, send_message_batch);
 }
 
@@ -337,25 +358,23 @@ void CallData::FinishSendMessage(grpc_call_element* elem) {
   grpc_slice_buffer_destroy_internal(&tmp);
   // Swap out the original byte stream with our new one and send the
   // batch down.
-  new (&replacement_stream_)
-      grpc_core::SliceBufferByteStream(&slices_, send_flags);
+  new (&replacement_stream_) SliceBufferByteStream(&slices_, send_flags);
   send_message_batch_->payload->send_message.send_message.reset(
-      reinterpret_cast<grpc_core::SliceBufferByteStream*>(
-          &replacement_stream_));
+      reinterpret_cast<SliceBufferByteStream*>(&replacement_stream_));
   original_send_message_on_complete_ = send_message_batch_->on_complete;
   send_message_batch_->on_complete = &send_message_on_complete_;
   SendMessageBatchContinue(elem);
 }
 
-void CallData::FailSendMessageBatchInCallCombiner(void* calld_arg,
-                                                  grpc_error_handle error) {
-  CallData* calld = static_cast<CallData*>(calld_arg);
-  if (calld->send_message_batch_ != nullptr) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        calld->send_message_batch_, GRPC_ERROR_REF(error),
-        calld->call_combiner_);
-    calld->send_message_batch_ = nullptr;
+void CallData::FailSendMessageBatch(grpc_error_handle error) {
+  grpc_transport_stream_op_batch* send_message_batch;
+  {
+    MutexLock lock(&cancel_mu_);
+    send_message_batch = send_message_batch_;
+    send_message_batch_ = nullptr;
   }
+  grpc_transport_stream_op_batch_finish_with_failure(
+      send_message_batch, error, call_combiner_);
 }
 
 // Pulls a slice from the send_message byte stream and adds it to slices_.
@@ -384,9 +403,7 @@ void CallData::ContinueReadingSendMessage(grpc_call_element* elem) {
       ~static_cast<size_t>(0), &on_send_message_next_done_)) {
     grpc_error_handle error = PullSliceFromSendMessage();
     if (error != GRPC_ERROR_NONE) {
-      // Closure callback; does not take ownership of error.
-      FailSendMessageBatchInCallCombiner(this, error);
-      GRPC_ERROR_UNREF(error);
+      FailSendMessageBatch(error);
       return;
     }
     if (slices_.length ==
@@ -402,15 +419,12 @@ void CallData::OnSendMessageNextDone(void* elem_arg, grpc_error_handle error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(elem_arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (error != GRPC_ERROR_NONE) {
-    // Closure callback; does not take ownership of error.
-    FailSendMessageBatchInCallCombiner(calld, error);
+    calld->FailSendMessageBatch(GRPC_ERROR_REF(error));
     return;
   }
   error = calld->PullSliceFromSendMessage();
   if (error != GRPC_ERROR_NONE) {
-    // Closure callback; does not take ownership of error.
-    FailSendMessageBatchInCallCombiner(calld, error);
-    GRPC_ERROR_UNREF(error);
+    calld->FailSendMessageBatch(error);
     return;
   }
   if (calld->slices_.length == calld->send_message_batch_->payload->send_message
@@ -435,67 +449,101 @@ void CallData::StartSendMessageBatch(void* elem_arg,
 void CallData::CompressStartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   GPR_TIMER_SCOPE("compress_start_transport_stream_op_batch", 0);
-  // Handle cancel_stream.
-  if (batch->cancel_stream) {
-    GRPC_ERROR_UNREF(cancel_error_);
-    cancel_error_ = GRPC_ERROR_REF(batch->payload->cancel_stream.cancel_error);
-    if (send_message_batch_ != nullptr) {
-      if (!seen_initial_metadata_) {
-        GRPC_CALL_COMBINER_START(
-            call_combiner_,
-            GRPC_CLOSURE_CREATE(FailSendMessageBatchInCallCombiner, this,
-                                grpc_schedule_on_exec_ctx),
-            GRPC_ERROR_REF(cancel_error_), "failing send_message op");
-      } else {
-        send_message_batch_->payload->send_message.send_message->Shutdown(
-            GRPC_ERROR_REF(cancel_error_));
+  if (batch->send_initial_metadata || batch->send_message) {
+    bool start_send_message = false;
+    {
+      MutexLock lock(&cancel_mu_);
+      if (cancel_error_ != GRPC_ERROR_NONE) {
+        grpc_transport_stream_op_batch_finish_with_failure(
+            batch, GRPC_ERROR_REF(cancel_error_), call_combiner_);
+        return;
+      }
+      // Handle send_initial_metadata.
+      if (batch->send_initial_metadata) {
+        GPR_ASSERT(!seen_initial_metadata_);
+        grpc_error_handle error = ProcessSendInitialMetadata(
+            elem, batch->payload->send_initial_metadata.send_initial_metadata);
+        if (error != GRPC_ERROR_NONE) {
+          grpc_transport_stream_op_batch_finish_with_failure(batch, error,
+                                                             call_combiner_);
+          return;
+        }
+        seen_initial_metadata_ = true;
+        // If we had previously received a batch containing a send_message op,
+        // handle it now.  Note that we need to re-enter the call combiner
+        // for this, since we can't send two batches down while holding the
+        // call combiner, since the connected_channel filter (at the bottom of
+        // the call stack) will release the call combiner for each batch it sees.
+        if (send_message_batch_ != nullptr) {
+          GRPC_CALL_COMBINER_START(
+              call_combiner_, &start_send_message_batch_in_call_combiner_,
+              GRPC_ERROR_NONE,
+              "starting send_message after send_initial_metadata");
+        }
+      }
+      // Handle send_message.
+      if (batch->send_message) {
+        GPR_ASSERT(send_message_batch_ == nullptr);
+        send_message_batch_ = batch;
+        // If we have not yet seen send_initial_metadata, then we have to
+        // wait.  We save the batch and then drop the call combiner, which we'll
+        // have to pick up again later when we get send_initial_metadata.
+        if (!seen_initial_metadata_) {
+          GRPC_CALL_COMBINER_STOP(
+              call_combiner_,
+              "send_message batch pending send_initial_metadata");
+          return;
+        }
+        start_send_message = true;
       }
     }
-  } else if (cancel_error_ != GRPC_ERROR_NONE) {
-    grpc_transport_stream_op_batch_finish_with_failure(
-        batch, GRPC_ERROR_REF(cancel_error_), call_combiner_);
-    return;
-  }
-  // Handle send_initial_metadata.
-  if (batch->send_initial_metadata) {
-    GPR_ASSERT(!seen_initial_metadata_);
-    grpc_error_handle error = ProcessSendInitialMetadata(
-        elem, batch->payload->send_initial_metadata.send_initial_metadata);
-    if (error != GRPC_ERROR_NONE) {
-      grpc_transport_stream_op_batch_finish_with_failure(batch, error,
-                                                         call_combiner_);
+    // If we need to start processing the send_message payload, wait
+    // until we've released the lock to do so.
+    if (start_send_message) {
+      StartSendMessageBatch(elem, GRPC_ERROR_NONE);
       return;
     }
-    seen_initial_metadata_ = true;
-    // If we had previously received a batch containing a send_message op,
-    // handle it now.  Note that we need to re-enter the call combiner
-    // for this, since we can't send two batches down while holding the
-    // call combiner, since the connected_channel filter (at the bottom of
-    // the call stack) will release the call combiner for each batch it sees.
-    if (send_message_batch_ != nullptr) {
-      GRPC_CALL_COMBINER_START(
-          call_combiner_, &start_send_message_batch_in_call_combiner_,
-          GRPC_ERROR_NONE, "starting send_message after send_initial_metadata");
-    }
   }
-  // Handle send_message.
-  if (batch->send_message) {
-    GPR_ASSERT(send_message_batch_ == nullptr);
-    send_message_batch_ = batch;
-    // If we have not yet seen send_initial_metadata, then we have to
-    // wait.  We save the batch and then drop the call combiner, which we'll
-    // have to pick up again later when we get send_initial_metadata.
-    if (!seen_initial_metadata_) {
-      GRPC_CALL_COMBINER_STOP(
-          call_combiner_, "send_message batch pending send_initial_metadata");
-      return;
-    }
-    StartSendMessageBatch(elem, GRPC_ERROR_NONE);
-  } else {
-    // Pass control down the stack.
-    grpc_call_next_op(elem, batch);
-  }
+  // Pass control down the stack.
+  grpc_call_next_op(elem, batch);
 }
+
+void CallData::FailSendMessageBatchInCallCombiner(void* arg,
+                                                  grpc_error_handle error) {
+  auto* send_message_batch = static_cast<grpc_transport_stream_op_batch*>(arg);
+  auto* call_combiner =
+      static_cast<CallCombiner*>(send_message_batch->handler_private.extra_arg);
+  grpc_transport_stream_op_batch_finish_with_failure(
+      send_message_batch, GRPC_ERROR_REF(error), call_combiner);
+}
+
+void CallData::Cancel(grpc_call_element* elem, grpc_error_handle error) {
+  {
+    MutexLock lock(&cancel_mu_);
+    cancel_error_ = GRPC_ERROR_REF(error);
+    if (send_message_batch_ != nullptr) {
+      if (!seen_initial_metadata_) {
+        auto* send_message_batch = send_message_batch_;
+        send_message_batch_ = nullptr;
+        send_message_batch->handler_private.extra_arg = call_combiner_;
+        GRPC_CLOSURE_INIT(&send_message_batch->handler_private.closure,
+                          FailSendMessageBatchInCallCombiner,
+                          send_message_batch, nullptr);
+        GRPC_CALL_COMBINER_START(
+            call_combiner_, &send_message_batch->handler_private.closure,
+            GRPC_ERROR_REF(error), "failing send_message op");
+      } else {
+        send_message_batch_->payload->send_message.send_message->Shutdown(
+            GRPC_ERROR_REF(error));
+      }
+    }
+  }
+  grpc_call_pre_cancel_next_filter(elem, error);
+}
+
+//
+// vtable functions
+//
 
 void CompressStartTransportStreamOpBatch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
@@ -503,14 +551,17 @@ void CompressStartTransportStreamOpBatch(
   calld->CompressStartTransportStreamOpBatch(elem, batch);
 }
 
-/* Constructor for call_data */
+void CompressCancelCall(grpc_call_element* elem, grpc_error_handle error) {
+  auto* calld = static_cast<CallData*>(elem->call_data);
+  calld->Cancel(elem, error);
+}
+
 grpc_error_handle CompressInitCallElem(grpc_call_element* elem,
                                        const grpc_call_element_args* args) {
   new (elem->call_data) CallData(elem, *args);
   return GRPC_ERROR_NONE;
 }
 
-/* Destructor for call_data */
 void CompressDestroyCallElem(grpc_call_element* elem,
                              const grpc_call_final_info* /*final_info*/,
                              grpc_closure* /*ignored*/) {
@@ -518,14 +569,12 @@ void CompressDestroyCallElem(grpc_call_element* elem,
   calld->~CallData();
 }
 
-/* Constructor for ChannelData */
 grpc_error_handle CompressInitChannelElem(grpc_channel_element* elem,
                                           grpc_channel_element_args* args) {
   new (elem->channel_data) ChannelData(args);
   return GRPC_ERROR_NONE;
 }
 
-/* Destructor for channel data */
 void CompressDestroyChannelElem(grpc_channel_element* elem) {
   ChannelData* channeld = static_cast<ChannelData*>(elem->channel_data);
   channeld->~ChannelData();
@@ -533,16 +582,18 @@ void CompressDestroyChannelElem(grpc_channel_element* elem) {
 
 }  // namespace
 
+}  // namespace grpc_core
+
 const grpc_channel_filter grpc_message_compress_filter = {
-    CompressStartTransportStreamOpBatch,
+    grpc_core::CompressStartTransportStreamOpBatch,
     grpc_channel_next_op,
-    sizeof(CallData),
-    CompressInitCallElem,
+    sizeof(grpc_core::CallData),
+    grpc_core::CompressInitCallElem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    CompressDestroyCallElem,
-    grpc_call_pre_cancel_next_filter,
-    sizeof(ChannelData),
-    CompressInitChannelElem,
-    CompressDestroyChannelElem,
+    grpc_core::CompressDestroyCallElem,
+    grpc_core::CompressCancelCall,
+    sizeof(grpc_core::ChannelData),
+    grpc_core::CompressInitChannelElem,
+    grpc_core::CompressDestroyChannelElem,
     grpc_channel_next_get_info,
     "message_compress"};

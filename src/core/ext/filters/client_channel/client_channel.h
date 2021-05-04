@@ -490,7 +490,7 @@ class ClientChannel::LoadBalancedCall
   //
   // Note that subchannel_call_ itself is not guarded by this mutex, because we
   // only need to guard the *creation* of the subchannel call.  If PreCancel()
-  // runs before subchannel_call_ is set, then cancel_error_ will be true, in
+  // runs before subchannel_call_ is set, then cancel_error_ will be set, in
   // which case subchannel_call_ will not be created; if PreCancel() runs after
   // subchannel_call_ is set, it will propagate the pre-cancellation down to
   // subchannel_call_.

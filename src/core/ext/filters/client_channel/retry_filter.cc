@@ -1788,44 +1788,14 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
     committed_call_->StartTransportStreamOpBatch(batch);
     return;
   }
-
-// FIXME: remove
-#if 0
-  // Handle cancellation.
-  if (GPR_UNLIKELY(batch->cancel_stream)) {
-    grpc_error_handle cancel_error = batch->payload->cancel_stream.cancel_error;
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-      gpr_log(GPR_INFO, "chand=%p calld=%p: cancelled from surface: %s", chand_,
-              this, grpc_error_std_string(cancel_error).c_str());
-    }
-    // If we have a current call attempt, commit the call, then send
-    // the cancellation down to that attempt.  When the call fails, it
-    // will not be retried, because we have committed it here.
-    if (call_attempt_ != nullptr) {
-      RetryCommit(call_attempt_.get());
-      // Note: This will release the call combiner.
-      call_attempt_->lb_call()->StartTransportStreamOpBatch(batch);
-      return;
-    }
-    // Fail pending batches.
-    PendingBatchesFail(GRPC_ERROR_REF(cancel_error));
-    // Note: This will release the call combiner.
-    grpc_transport_stream_op_batch_finish_with_failure(
-        batch, GRPC_ERROR_REF(cancel_error), call_combiner_);
-    return;
-  }
-#endif
-
   // Add the batch to the pending list.
   PendingBatch* pending = PendingBatchesAdd(batch);
   if (call_attempt_ == nullptr) {
 // FIXME: don't hold lock while actually sending batch up or down?
     MutexLock lock(&cancel_mu_);
-    // If the LB call was already pre-cancelled, yield the call combiner
-    // and return here without doing anything.  The batch will stay
-    // pending until we see the cancel_stream op.
+    // If the LB call was already cancelled, fail the batch, which should
+    // be the only one pending.
     if (cancel_error_ != GRPC_ERROR_NONE) {
-      // Fail pending batches.
       PendingBatchesFail(GRPC_ERROR_REF(cancel_error_));
       return;
     }

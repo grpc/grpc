@@ -270,7 +270,6 @@ HealthCheckClient::CallState::~CallState() {
 }
 
 void HealthCheckClient::CallState::Orphan() {
-  call_->PreCancel(GRPC_ERROR_CANCELLED);
   Cancel();
 }
 
@@ -398,34 +397,11 @@ void HealthCheckClient::CallState::AfterCallStackDestruction(
   delete self;
 }
 
-void HealthCheckClient::CallState::OnCancelComplete(
-    void* arg, grpc_error_handle /*error*/) {
-  HealthCheckClient::CallState* self =
-      static_cast<HealthCheckClient::CallState*>(arg);
-  GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "health_cancel");
-  self->call_->Unref(DEBUG_LOCATION, "cancel");
-}
-
-void HealthCheckClient::CallState::StartCancel(void* arg,
-                                               grpc_error_handle /*error*/) {
-  HealthCheckClient::CallState* self =
-      static_cast<HealthCheckClient::CallState*>(arg);
-  auto* batch = grpc_make_transport_stream_op(
-      GRPC_CLOSURE_CREATE(OnCancelComplete, self, grpc_schedule_on_exec_ctx));
-  batch->cancel_stream = true;
-  batch->payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
-  self->call_->StartTransportStreamOpBatch(batch);
-}
-
 void HealthCheckClient::CallState::Cancel() {
   bool expected = false;
   if (cancelled_.CompareExchangeStrong(&expected, true, MemoryOrder::ACQ_REL,
                                        MemoryOrder::ACQUIRE)) {
-    call_->Ref(DEBUG_LOCATION, "cancel").release();
-    GRPC_CALL_COMBINER_START(
-        &call_combiner_,
-        GRPC_CLOSURE_CREATE(StartCancel, this, grpc_schedule_on_exec_ctx),
-        GRPC_ERROR_NONE, "health_cancel");
+    call_->PreCancel(GRPC_ERROR_CANCELLED);
   }
 }
 

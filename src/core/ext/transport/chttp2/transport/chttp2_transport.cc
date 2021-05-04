@@ -1404,11 +1404,6 @@ static void perform_stream_op_locked(void* stream_op,
     on_complete->error_data.error = GRPC_ERROR_NONE;
   }
 
-  if (op->cancel_stream) {
-    GRPC_STATS_INC_HTTP2_OP_CANCEL();
-    grpc_chttp2_cancel_stream(t, s, op_payload->cancel_stream.cancel_error);
-  }
-
   if (op->send_initial_metadata) {
     if (t->is_client && t->channelz_socket != nullptr) {
       t->channelz_socket->RecordStreamStartedFromLocal();

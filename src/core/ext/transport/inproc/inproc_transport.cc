@@ -975,12 +975,7 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                                     nullptr, grpc_schedule_on_exec_ctx);
   }
 
-  if (op->cancel_stream) {
-    // Call cancel_stream_locked without ref'ing the cancel_error because
-    // this function is responsible to make sure that that field gets unref'ed
-    cancel_stream_locked(s, op->payload->cancel_stream.cancel_error);
-    // this op can complete without an error
-  } else if (s->cancel_self_error != GRPC_ERROR_NONE) {
+  if (s->cancel_self_error != GRPC_ERROR_NONE) {
     // already self-canceled so still give it an error
     error = GRPC_ERROR_REF(s->cancel_self_error);
   } else {

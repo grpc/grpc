@@ -168,7 +168,6 @@ struct grpc_transport_stream_op_batch {
         recv_initial_metadata(false),
         recv_message(false),
         recv_trailing_metadata(false),
-        cancel_stream(false),
         is_traced(false) {}
 
   /** Should be scheduled when all of the non-recv operations in the batch
@@ -203,9 +202,6 @@ struct grpc_transport_stream_op_batch {
   /** Receive trailing metadata from the stream, into provided metadata batch.
    */
   bool recv_trailing_metadata : 1;
-
-  /** Cancel this stream with the provided error */
-  bool cancel_stream : 1;
 
   /** Is this stream traced */
   bool is_traced : 1;
@@ -306,22 +302,6 @@ struct grpc_transport_stream_op_batch_payload {
     grpc_closure* recv_trailing_metadata_ready = nullptr;
   } recv_trailing_metadata;
 
-  /** Forcefully close this stream.
-      The HTTP2 semantics should be:
-      - server side: if cancel_error has GRPC_ERROR_INT_GRPC_STATUS, and
-        trailing metadata has not been sent, send trailing metadata with status
-        and message from cancel_error (use grpc_error_get_status) followed by
-        a RST_STREAM with error=GRPC_CHTTP2_NO_ERROR to force a full close
-      - at all other times: use grpc_error_get_status to get a status code, and
-        convert to a HTTP2 error code using
-        grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
-        error. */
-  struct {
-    // Error contract: the transport that gets this op must cause cancel_error
-    //                 to be unref'ed after processing it
-    grpc_error_handle cancel_error = GRPC_ERROR_NONE;
-  } cancel_stream;
-
   /* Indexes correspond to grpc_context_index enum values */
   grpc_call_context_element* context;
 };
@@ -396,8 +376,18 @@ int grpc_transport_init_stream(grpc_transport* transport, grpc_stream* stream,
 void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
                              grpc_polling_entity* pollent);
 
+/** Forcefully close this stream.
+    The HTTP2 semantics should be:
+    - server side: if error has GRPC_ERROR_INT_GRPC_STATUS, and
+      trailing metadata has not been sent, send trailing metadata with status
+      and message from error (use grpc_error_get_status) followed by
+      a RST_STREAM with error=GRPC_CHTTP2_NO_ERROR to force a full close
+    - at all other times: use grpc_error_get_status to get a status code, and
+      convert to a HTTP2 error code using
+      grpc_chttp2_grpc_status_to_http2_error. Send a RST_STREAM with this
+      error. */
 void grpc_transport_cancel_stream(grpc_transport* transport, grpc_stream* stream,
-                                  grpc_error_handle error);
+                                grpc_error_handle error);
 
 /* Destroy transport data for a stream.
 
