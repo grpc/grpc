@@ -166,6 +166,15 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
 
 }  // namespace
 
+grpc_event_engine_endpoint* grpc_tcp_create(
+    std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
+  auto endpoint = new grpc_event_engine_endpoint;
+  endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
+  endpoint->endpoint = std::move(ee_endpoint);
+  // TODO(hork): extract the RU from the EE::Endpoint
+  return endpoint;
+}
+
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
                                absl::string_view peer_address) {
   auto endpoint = new grpc_event_engine_endpoint;
