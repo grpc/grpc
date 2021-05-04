@@ -133,9 +133,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
       activation->InsertValue(kHeaders,
                               mock_cel::CelValue::CreateMap(headers_.get()));
     } else if (elem == kSourceAddress) {
-      grpc_resolved_address address = args.GetPeerAddress();
-      absl::string_view source_address(
-          grpc_sockaddr_to_string(&address, false));
+      absl::string_view source_address(args.GetPeerAddressString());
       if (!source_address.empty()) {
         activation->InsertValue(
             kSourceAddress,
@@ -145,9 +143,7 @@ std::unique_ptr<mock_cel::Activation> CelAuthorizationEngine::CreateActivation(
       activation->InsertValue(
           kSourcePort, mock_cel::CelValue::CreateInt64(args.GetPeerPort()));
     } else if (elem == kDestinationAddress) {
-      grpc_resolved_address address = args.GetLocalAddress();
-      absl::string_view destination_address(
-          grpc_sockaddr_to_string(&address, false));
+      absl::string_view destination_address(args.GetLocalAddressString());
       if (!destination_address.empty()) {
         activation->InsertValue(
             kDestinationAddress,

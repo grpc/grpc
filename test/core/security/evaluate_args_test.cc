@@ -17,6 +17,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
@@ -81,15 +82,10 @@ TEST_F(EvaluateArgsTest, TestLocalAddressAndPort) {
   util_.SetLocalEndpoint("ipv6:[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:456");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   grpc_resolved_address local_address = args.GetLocalAddress();
-  char ntop_buf[GRPC_INET6_ADDRSTRLEN];
-  grpc_sockaddr_in6* addr_in =
-      reinterpret_cast<grpc_sockaddr_in6*>(local_address.addr);
-  ASSERT_EQ(addr_in->sin6_family, GRPC_AF_INET6);
-  ASSERT_NE(grpc_inet_ntop(GRPC_AF_INET6, &addr_in->sin6_addr, ntop_buf,
-                           sizeof(ntop_buf)),
-            nullptr);
-  EXPECT_EQ(strcmp(ntop_buf, "2001:db8:85a3::8a2e:370:7334"), 0);
-  EXPECT_EQ(grpc_ntohs(addr_in->sin6_port), 0);
+  EXPECT_EQ(grpc_sockaddr_to_uri(&local_address),
+            "ipv6:[2001:db8:85a3::8a2e:370:7334]:456");
+  EXPECT_EQ(args.GetLocalAddressString(),
+            "2001:0db8:85a3:0000:0000:8a2e:0370:7334");
   EXPECT_EQ(args.GetLocalPort(), 456);
 }
 
@@ -97,15 +93,8 @@ TEST_F(EvaluateArgsTest, TestPeerAddressAndPort) {
   util_.SetPeerEndpoint("ipv4:255.255.255.255:123");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   grpc_resolved_address peer_address = args.GetPeerAddress();
-  char ntop_buf[GRPC_INET_ADDRSTRLEN];
-  grpc_sockaddr_in* addr_in =
-      reinterpret_cast<grpc_sockaddr_in*>(peer_address.addr);
-  ASSERT_EQ(addr_in->sin_family, GRPC_AF_INET);
-  ASSERT_NE(grpc_inet_ntop(GRPC_AF_INET, &addr_in->sin_addr, ntop_buf,
-                           sizeof(ntop_buf)),
-            nullptr);
-  EXPECT_EQ(strcmp(ntop_buf, "255.255.255.255"), 0);
-  EXPECT_EQ(grpc_ntohs(addr_in->sin_port), 0);
+  EXPECT_EQ(grpc_sockaddr_to_uri(&peer_address), "ipv4:255.255.255.255:123");
+  EXPECT_EQ(args.GetPeerAddressString(), "255.255.255.255");
   EXPECT_EQ(args.GetPeerPort(), 123);
 }
 

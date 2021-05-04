@@ -33,16 +33,22 @@ class EvaluateArgs {
   // Caller is responsible for ensuring auth_context outlives PerChannelArgs
   // struct.
   struct PerChannelArgs {
+    struct Address {
+      // The address in sockaddr form.
+      grpc_resolved_address address;
+      // The same address with only the host part.
+      std::string address_str;
+      int port = 0;
+    };
+
     PerChannelArgs(grpc_auth_context* auth_context, grpc_endpoint* endpoint);
 
     absl::string_view transport_security_type;
     absl::string_view spiffe_id;
     std::vector<absl::string_view> dns_sans;
     absl::string_view common_name;
-    grpc_resolved_address local_address;
-    int local_port = 0;
-    grpc_resolved_address peer_address;
-    int peer_port = 0;
+    Address local_address;
+    Address peer_address;
   };
 
   EvaluateArgs(grpc_metadata_batch* metadata, PerChannelArgs* channel_args)
@@ -63,8 +69,10 @@ class EvaluateArgs {
       absl::string_view key, std::string* concatenated_value) const;
 
   grpc_resolved_address GetLocalAddress() const;
+  absl::string_view GetLocalAddressString() const;
   int GetLocalPort() const;
   grpc_resolved_address GetPeerAddress() const;
+  absl::string_view GetPeerAddressString() const;
   int GetPeerPort() const;
   absl::string_view GetTransportSecurityType() const;
   absl::string_view GetSpiffeId() const;
