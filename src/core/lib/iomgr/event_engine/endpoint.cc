@@ -56,6 +56,7 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
         auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
         read_buffer->~SliceBuffer();
         // Invoke original callback.
+        grpc_core::ExecCtx exec_ctx;
         grpc_core::Closure::Run(DEBUG_LOCATION, cb,
                                 absl_status_to_grpc_error(status));
       },
