@@ -150,8 +150,9 @@ bool HeaderAuthorizationMatcher::Matches(const EvaluateArgs& args) const {
 IpAuthorizationMatcher::IpAuthorizationMatcher(Type type, Rbac::CidrRange range,
                                                bool not_rule)
     : type_(type), prefix_len_(range.prefix_len), not_rule_(not_rule) {
-  grpc_error_handle error = grpc_string_to_sockaddr(
-      &subnet_address_, range.address_prefix.c_str(), 0);
+  grpc_error_handle error =
+      grpc_string_to_sockaddr(&subnet_address_, range.address_prefix.c_str(),
+                              /*port does not matter here*/ 0);
   if (error == GRPC_ERROR_NONE) {
     grpc_sockaddr_mask_bits(&subnet_address_, prefix_len_);
   } else {
