@@ -61,9 +61,12 @@ Status GenericSerialize(const grpc::protobuf::MessageLite& msg, ByteBuffer* bb,
     return g_core_codegen_interface->ok();
   }
   ProtoBufferWriter writer(bb, kProtoBufferWriterMaxBufferLength, byte_size);
-  return msg.SerializeToZeroCopyStream(&writer)
-             ? g_core_codegen_interface->ok()
-             : Status(StatusCode::INTERNAL, "Failed to serialize message");
+  if (msg.SerializeToZeroCopyStream(&writer)) {
+    return g_core_codegen_interface->ok();
+  } else {
+    gpr_log(GPR_ERROR, "Failed to serialize message");
+    return Status(StatusCode::INTERNAL, "Failed to serialize message");
+  }
 }
 
 // BufferReader must be a subclass of ::protobuf::io::ZeroCopyInputStream.
