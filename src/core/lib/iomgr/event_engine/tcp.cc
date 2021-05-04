@@ -95,12 +95,18 @@ static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 // endpoint that iomgr is expected to populate. When gRPC eventually uses the
 // EventEngine directly, closures will be replaced with EE callback types.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
-    grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out) {
-  return [closure, grpc_endpoint_out](
+    grpc_closure* closure, grpc_endpoint** endpoint_ptr) {
+  return [closure, endpoint_ptr](
              absl::Status status,
              std::unique_ptr<EventEngine::Endpoint> endpoint) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_endpoint_out->endpoint = std::move(endpoint);
+    if (status.ok()) {
+      auto* grpc_endpoint_out =
+          reinterpret_cast<grpc_event_engine_endpoint*>(endpoint_ptr);
+      grpc_endpoint_out->endpoint = std::move(endpoint);
+    } else {
+      *endpoint_ptr = nullptr;
+    }
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));
   };
@@ -116,7 +122,7 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
           grpc_tcp_create(channel_args, grpc_sockaddr_to_uri(addr)));
   *endpoint = &ee_endpoint->base;
   EventEngine::OnConnectCallback ee_on_connect =
-      GrpcClosureToOnConnectCallback(on_connect, ee_endpoint);
+      GrpcClosureToOnConnectCallback(on_connect, endpoint);
   SliceAllocator sa(ee_endpoint->ru);
   EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
                                   addr->len);
@@ -129,6 +135,7 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
       ee->Connect(ee_on_connect, ra, ca, std::move(sa), ee_deadline);
   if (!connected.ok()) {
     // EventEngine failed to start an asynchronous connect.
+    *endpoint = nullptr;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect,
                             absl_status_to_grpc_error(connected));
   }
