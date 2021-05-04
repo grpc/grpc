@@ -41,11 +41,10 @@ using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 struct grpc_tcp_server {
   grpc_tcp_server(std::unique_ptr<EventEngine::Listener> listener,
                   std::shared_ptr<EventEngine> ee, grpc_resource_quota* rq)
-      : listener(std::move(listener)),
+      : refcount(1, GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) ? "tcp" : nullptr),
+        listener(std::move(listener)),
         engine(std::move(ee)),
         resource_quota(rq) {
-    new (&refcount) grpc_core::RefCount(
-        1, GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace) ? "tcp" : nullptr);
     shutdown_starting.head = nullptr;
     shutdown_starting.tail = nullptr;
   };
@@ -137,6 +136,7 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
             // TODO(hork): grpc_tcp_server_cb does not handle statuses.
             // A status arg in the EE OnAcceptCallback is probably unnecessary.
             GPR_ASSERT(status.ok());
+            GPR_ASSERT((*server)->on_accept_internal != nullptr);
             grpc_event_engine_endpoint* g_endpoint =
                 grpc_tcp_create(std::move(ee_endpoint));
             grpc_tcp_server_acceptor* acceptor =

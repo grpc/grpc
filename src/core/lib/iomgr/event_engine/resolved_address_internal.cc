@@ -11,8 +11,6 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifdef GRPC_EVENT_ENGINE_TEST
-
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
@@ -41,5 +39,3 @@ grpc_resolved_address CreateGRPCResolvedAddress(
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
-
-#endif
