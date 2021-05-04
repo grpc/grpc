@@ -14,8 +14,6 @@
 #ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
 #define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H
 
-#ifdef GRPC_EVENT_ENGINE_TEST
-
 #include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/event_engine.h>
@@ -34,5 +32,4 @@ grpc_resolved_address CreateGRPCResolvedAddress(
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif
 #endif  // GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_RESOLVED_ADDRESS_INTERNAL_H

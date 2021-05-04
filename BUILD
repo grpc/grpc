@@ -782,7 +782,6 @@ grpc_cc_library(
         "src/core/lib/debug/stats.cc",
         "src/core/lib/debug/stats_data.cc",
         "src/core/lib/event_engine/event_engine.cc",
-        "src/core/lib/event_engine/resolved_address_internal.cc",
         "src/core/lib/event_engine/slice_allocator.cc",
         "src/core/lib/event_engine/sockaddr.cc",
         "src/core/lib/http/format_request.cc",
@@ -951,7 +950,6 @@ grpc_cc_library(
         "src/core/lib/compression/stream_compression_identity.h",
         "src/core/lib/debug/stats.h",
         "src/core/lib/debug/stats_data.h",
-        "src/core/lib/event_engine/resolved_address_internal.h",
         "src/core/lib/event_engine/sockaddr.h",
         "src/core/lib/http/format_request.h",
         "src/core/lib/http/httpcli.h",
@@ -2705,7 +2703,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/timer.cc",
     ],
     hdrs = [
-        "src/core/lib/event_engine/resolved_address_internal.h",  # keep
         "src/core/lib/event_engine/sockaddr.h",  # keep
         "src/core/lib/iomgr/event_engine/closure.h",
         "src/core/lib/iomgr/event_engine/endpoint.h",
