@@ -428,6 +428,7 @@ void CallData::DelayBatch(grpc_call_element* elem,
   MutexLock lock(&delay_mu_);
   delayed_batch_ = batch;
   resume_batch_canceller_ = new ResumeBatchCanceller(elem);
+  ExecCtx::Get()->InvalidateNow();
   grpc_millis resume_time = ExecCtx::Get()->Now() + fi_policy_->delay;
   GRPC_CLOSURE_INIT(&batch->handler_private.closure, ResumeBatch, elem,
                     grpc_schedule_on_exec_ctx);
