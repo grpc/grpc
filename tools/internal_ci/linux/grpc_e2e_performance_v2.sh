@@ -31,12 +31,12 @@ gcloud container clusters get-credentials benchmarks-prod \
 
 # This is subject to change. Runs a single test and does not wait for the
 # result.
-tools/run_tests/performance/loadtest_config.py -l go \
+tools/run_tests/performance/loadtest_config.py -l c++ -l go \
     -t ./tools/run_tests/performance/templates/loadtest_template_basic_all_languages.yaml \
     -s client_pool=workers-8core -s server_pool=workers-8core \
     -s big_query_table=e2e_benchmarks.experimental_results \
     -s timeout_seconds=900 --prefix="kokoro-test" -u "$(date +%Y%m%d%H%M%S)" \
-    -r '(go_generic_sync_streaming_ping_pong_secure|go_protobuf_sync_unary_ping_pong_secure)' \
+    -r '(go_generic_sync_streaming_ping_pong_secure|go_protobuf_sync_unary_ping_pong_secure|cpp_protobuf_async_streaming_qps_unconstrained_secure)$' \
     -o ./loadtest.yaml
 
 # Dump the contents of the loadtest.yaml (since loadtest_config.py doesn't

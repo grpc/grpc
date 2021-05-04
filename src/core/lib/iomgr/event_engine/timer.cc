@@ -26,19 +26,13 @@ using ::grpc_event_engine::experimental::EventEngine;
 using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 
-struct grpc_event_engine_timer_data {
-  EventEngine::TaskHandle handle;
-};
-
 void timer_init(grpc_timer* timer, grpc_millis deadline,
                 grpc_closure* closure) {
   // Note: post-iomgr, callers will find their own EventEngine
   std::shared_ptr<EventEngine> engine = GetDefaultEventEngine();
-  auto metadata = new grpc_event_engine_timer_data;
-  timer->custom_timer = metadata;
   // TODO(hork): EventEngine and gRPC need to use the same clock type for
   // deadlines.
-  metadata->handle =
+  timer->ee_task_handle =
       engine->RunAt(grpc_core::ToAbslTime(
                         grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
                     GrpcClosureToCallback(closure), {});
@@ -47,10 +41,8 @@ void timer_init(grpc_timer* timer, grpc_millis deadline,
 void timer_cancel(grpc_timer* timer) {
   // Note: post-iomgr, callers will find their own EventEngine
   std::shared_ptr<EventEngine> engine = GetDefaultEventEngine();
-  auto metadata =
-      static_cast<grpc_event_engine_timer_data*>(timer->custom_timer);
-  engine->TryCancel(metadata->handle);
-  delete metadata;
+  auto handle = timer->ee_task_handle;
+  engine->TryCancel(handle);
 }
 
 /* Internal API */

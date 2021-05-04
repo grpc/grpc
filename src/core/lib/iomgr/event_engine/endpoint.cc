@@ -56,6 +56,7 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
         auto* read_buffer = reinterpret_cast<SliceBuffer*>(&eeep->read_buffer);
         read_buffer->~SliceBuffer();
         // Invoke original callback.
+        grpc_core::ExecCtx exec_ctx;
         grpc_core::Closure::Run(DEBUG_LOCATION, cb,
                                 absl_status_to_grpc_error(status));
       },
@@ -165,6 +166,15 @@ grpc_endpoint_vtable grpc_event_engine_endpoint_vtable = {
     endpoint_can_track_err};
 
 }  // namespace
+
+grpc_event_engine_endpoint* grpc_tcp_create(
+    std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
+  auto endpoint = new grpc_event_engine_endpoint;
+  endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
+  endpoint->endpoint = std::move(ee_endpoint);
+  // TODO(hork): extract the RU from the EE::Endpoint
+  return endpoint;
+}
 
 grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
                                absl::string_view peer_address) {

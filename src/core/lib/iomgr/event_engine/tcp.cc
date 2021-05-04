@@ -23,7 +23,7 @@
 #include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/transport/error_utils.h"
@@ -60,6 +60,8 @@ struct grpc_tcp_server {
   std::shared_ptr<EventEngine> engine;
   grpc_closure_list shutdown_starting ABSL_GUARDED_BY(mu);
   grpc_resource_quota* resource_quota;
+  grpc_tcp_server_cb on_accept_internal;
+  void* on_accept_internal_arg;
 };
 
 namespace {
@@ -93,27 +95,20 @@ static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 // endpoint that iomgr is expected to populate. When gRPC eventually uses the
 // EventEngine directly, closures will be replaced with EE callback types.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
-    grpc_closure* closure, grpc_event_engine_endpoint* grpc_endpoint_out, grpc_endpoint** endpoint_ptr) {
-  return [closure, grpc_endpoint_out, endpoint_ptr](
+    grpc_closure* closure, grpc_endpoint** endpoint_ptr) {
+  return [closure, endpoint_ptr](
              absl::Status status,
              std::unique_ptr<EventEngine::Endpoint> endpoint) {
     grpc_core::ExecCtx exec_ctx;
     if (status.ok()) {
+      auto* grpc_endpoint_out =
+          reinterpret_cast<grpc_event_engine_endpoint*>(endpoint_ptr);
       grpc_endpoint_out->endpoint = std::move(endpoint);
     } else {
       *endpoint_ptr = nullptr;
     }
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));
-  };
-}
-
-EventEngine::Listener::AcceptCallback GrpcClosureToAcceptCallback(
-    grpc_closure* closure) {
-  (void)closure;
-  return [](absl::Status, std::unique_ptr<EventEngine::Endpoint>) {
-    // TODO(hork): implement
-    GPR_ASSERT(false && "not implemented");
   };
 }
 
@@ -127,7 +122,7 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
           grpc_tcp_create(channel_args, grpc_sockaddr_to_uri(addr)));
   *endpoint = &ee_endpoint->base;
   EventEngine::OnConnectCallback ee_on_connect =
-      GrpcClosureToOnConnectCallback(on_connect, ee_endpoint, endpoint);
+      GrpcClosureToOnConnectCallback(on_connect, endpoint);
   SliceAllocator sa(ee_endpoint->ru);
   EventEngine::ResolvedAddress ra(reinterpret_cast<const sockaddr*>(addr->addr),
                                   addr->len);
@@ -156,14 +151,28 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   if (rq == nullptr) {
     rq = grpc_resource_quota_create(nullptr);
   }
-  // TODO(nnoble): The on_accept callback needs to be set later due to iomgr
-  // API differences. We can solve this with an overloaded
-  // Listener::Start(on_accept) method in a custom EE impl. This should not be
-  // needed once iomgr goes away.
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
-      ee->CreateListener(GrpcClosureToAcceptCallback(nullptr),
-                         GrpcClosureToCallback(shutdown_complete), ca,
-                         SliceAllocatorFactory(rq));
+      ee->CreateListener(
+          [server](absl::Status status,
+                   std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
+            grpc_core::ExecCtx exec_ctx;
+            // TODO(hork): grpc_tcp_server_cb does not handle statuses.
+            // A status arg in the EE OnAcceptCallback is probably unnecessary.
+            GPR_ASSERT(status.ok());
+            grpc_event_engine_endpoint* g_endpoint =
+                grpc_tcp_create(std::move(ee_endpoint));
+            grpc_tcp_server_acceptor* acceptor =
+                static_cast<grpc_tcp_server_acceptor*>(
+                    gpr_zalloc(sizeof(*acceptor)));
+            acceptor->from_server = *server;
+            // TODO(hork): should we add a ports() method on Listener?
+            // acceptor->port_index is only used internally.
+            acceptor->external_connection = false;
+            (*server)->on_accept_internal((*server)->on_accept_internal_arg,
+                                          &g_endpoint->base, nullptr, acceptor);
+          },
+          GrpcClosureToCallback(shutdown_complete), ca,
+          SliceAllocatorFactory(rq));
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());
   }
@@ -172,15 +181,14 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
 }
 
 void tcp_server_start(grpc_tcp_server* server,
-                      const std::vector<grpc_pollset*>* pollsets,
+                      const std::vector<grpc_pollset*>* /* pollsets */,
                       grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
-  (void)server;
-  (void)pollsets;
-  (void)on_accept_cb;
-  (void)cb_arg;
-  // TODO(nnoble): Needs something like:
-  // LibuvEventEngine::Listener::Start(AcceptCallback)
-  abort();
+  server->on_accept_internal = on_accept_cb;
+  server->on_accept_internal_arg = cb_arg;
+  std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
+  // The iomgr API does not handle situations where the server cannot start, so
+  // a crash may be preferable for now.
+  GPR_ASSERT(server->listener->Start().ok());
 }
 
 grpc_error* tcp_server_add_port(grpc_tcp_server* s,
