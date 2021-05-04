@@ -121,22 +121,25 @@ class uvEndpoint final
              grpc_event_engine::experimental::SliceAllocator slice_allocator)
       : uvTCP_(new uvTCP(args, std::move(slice_allocator))) {
     uvTCP_->tcp_.data = this;
+    write_req_.data = this;
+    write_timer_.data = this;
+    read_timer_.data = this;
   }
-  virtual ~uvEndpoint() override final { abort(); }
+  virtual ~uvEndpoint() override final {
+    GPR_ASSERT(write_bufs_ == nullptr);
+    abort();
+  }
+  int init(uvEngine* engine);
 
   virtual void Read(
       grpc_event_engine::experimental::EventEngine::Callback on_read,
       grpc_event_engine::experimental::SliceBuffer* buffer,
-      absl::Time deadline) override final {
-    abort();
-  }
+      absl::Time deadline) override final;
 
   virtual void Write(
       grpc_event_engine::experimental::EventEngine::Callback on_writable,
       grpc_event_engine::experimental::SliceBuffer* data,
-      absl::Time deadline) override final {
-    abort();
-  }
+      absl::Time deadline) override final;
 
   virtual const grpc_event_engine::experimental::EventEngine::ResolvedAddress*
 
@@ -155,13 +158,75 @@ class uvEndpoint final
   static void uvConnectCB(uv_connect_t* req, int status) {
     uvEndpoint* epRaw = reinterpret_cast<uvEndpoint*>(req->handle->data);
     std::unique_ptr<uvEndpoint> ep(epRaw);
-    ep->on_connect_(status == 0 ? absl::OkStatus() : absl::UnknownError("blah"),
+    ep->on_connect_(status == 0
+                        ? absl::OkStatus()
+                        : absl::UnknownError("uv_tcp_connect gave us an error"),
                     std::move(ep));
   }
 
+  static void uvWriteCB(uv_write_t* req, int status) {
+    uvEndpoint* ep = reinterpret_cast<uvEndpoint*>(req->data);
+    delete[] ep->write_bufs_;
+    ep->write_bufs_ = nullptr;
+    uv_timer_stop(&ep->write_timer_);
+    ep->on_writable_(status == 0
+                         ? absl::OkStatus()
+                         : absl::UnknownError("uv_write gave us an error"));
+  }
+  static void uvAllocCB(uv_handle_t* handle, size_t suggested_size,
+                        uv_buf_t* buf) {
+    uvEndpoint* ep = reinterpret_cast<uvEndpoint*>(handle->data);
+    buf->base = reinterpret_cast<char*>(ep->read_buf_);
+    buf->len = sizeof(ep->read_buf_);
+  }
+
+  static void uvReadCB(uv_stream_t* stream, ssize_t nread,
+                       const uv_buf_t* buf) {
+    if (nread == 0) return;
+    uvEndpoint* ep = reinterpret_cast<uvEndpoint*>(stream->data);
+    uv_timer_stop(&ep->read_timer_);
+    uv_read_stop(stream);
+    if (nread < 0) {
+      ep->on_read_(absl::UnknownError("uv_read_start gave us an error"));
+    }
+    grpc_event_engine::experimental::Slice slice(
+        ep->read_buf_, nread,
+        grpc_event_engine::experimental::Slice::STATIC_SLICE);
+    ep->read_sb_->add(slice);
+    ep->on_read_(absl::OkStatus());
+  }
+
+  static void uvReadTimeoutCB(uv_timer_t* timer) {
+    uvEndpoint* ep = reinterpret_cast<uvEndpoint*>(timer->data);
+    uv_read_stop(reinterpret_cast<uv_stream_t*>(&ep->uvTCP_->tcp_));
+    ep->on_read_(absl::CancelledError("deadline"));
+  }
+
+  static void uvWriteTimeoutCB(uv_timer_t* timer) {
+    uvEndpoint* ep = reinterpret_cast<uvEndpoint*>(timer->data);
+    uv_cancel(reinterpret_cast<uv_req_t*>(&ep->write_req_));
+    delete[] ep->write_bufs_;
+    ep->write_bufs_ = nullptr;
+    ep->on_writable_(absl::CancelledError("deadline"));
+  }
+
   uvTCP* uvTCP_ = nullptr;
+  uv_write_t write_req_;
+  uv_buf_t* write_bufs_ = nullptr;
+  size_t write_bufs_count_ = 0;
+  uv_timer_t write_timer_;
+  uint8_t read_buf_[4096];
+  uv_timer_t read_timer_;
+  grpc_event_engine::experimental::SliceBuffer* read_sb_;
+  grpc_event_engine::experimental::EventEngine::Callback on_writable_;
+  grpc_event_engine::experimental::EventEngine::Callback on_read_;
+
   grpc_event_engine::experimental::EventEngine::OnConnectCallback on_connect_ =
       nullptr;
+
+  uvEngine* getEngine() {
+    return reinterpret_cast<uvEngine*>(uvTCP_->tcp_.loop->data);
+  }
 };
 
 struct schedulingRequest : grpc_core::MultiProducerSingleConsumerQueue::Node {
@@ -193,9 +258,10 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     while (!empty) {
       schedulingRequest* node =
           reinterpret_cast<schedulingRequest*>(queue_.PopAndCheckEnd(&empty));
-      if (!node) break;
-      node->f_(this);
+      if (!node) continue;
+      schedulingRequest::functor f = std::move(node->f_);
       delete node;
+      f(this);
     }
   }
 
@@ -246,7 +312,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     e->on_connect_ = on_connect;
     schedule([addr, e](uvEngine* engine) {
       int r;
-      r = e->uvTCP_->init(engine);
+      r = e->init(engine);
       uv_tcp_connect(&e->uvTCP_->connect_, &e->uvTCP_->tcp_, addr.address(),
                      uvEndpoint::uvConnectCB);
     });
@@ -493,6 +559,50 @@ void uvEngine::eraseLookupTask(intptr_t taskKey) {
   GPR_ASSERT(it != lookupTaskMap_.end());
   delete it->second;
   lookupTaskMap_.erase(it);
+}
+
+int uvEndpoint::init(uvEngine* engine) {
+  uv_timer_init(&engine->loop_, &write_timer_);
+  uv_timer_init(&engine->loop_, &read_timer_);
+  return uvTCP_->init(engine);
+}
+
+void uvEndpoint::Write(
+    grpc_event_engine::experimental::EventEngine::Callback on_writable,
+    grpc_event_engine::experimental::SliceBuffer* data, absl::Time deadline) {
+  GPR_ASSERT(write_bufs_ == nullptr);
+  size_t count = data->count();
+  write_bufs_ = new uv_buf_t[count];
+  write_bufs_count_ = count;
+  on_writable_ = std::move(on_writable);
+  for (size_t i = 0; i < count; i++) {
+    grpc_event_engine::experimental::Slice slice = data->ref(i);
+    write_bufs_[i].base =
+        reinterpret_cast<char*>(const_cast<uint8_t*>(slice.begin()));
+    write_bufs_[i].len = slice.size();
+  }
+  getEngine()->schedule([this, deadline](uvEngine* engine) {
+    absl::Duration timeout = deadline - absl::Now();
+    uv_timer_start(&write_timer_, uvWriteTimeoutCB,
+                   timeout / absl::Milliseconds(1), 0);
+    uv_write(&write_req_, reinterpret_cast<uv_stream_t*>(&uvTCP_->tcp_),
+             write_bufs_, write_bufs_count_, uvWriteCB);
+  });
+}
+
+void uvEndpoint::Read(
+    grpc_event_engine::experimental::EventEngine::Callback on_read,
+    grpc_event_engine::experimental::SliceBuffer* buffer, absl::Time deadline) {
+  buffer->clear();
+  read_sb_ = buffer;
+  on_read_ = std::move(on_read);
+  getEngine()->schedule([this, deadline](uvEngine* engine) {
+    absl::Duration timeout = deadline - absl::Now();
+    uv_timer_start(&write_timer_, uvReadTimeoutCB,
+                   timeout / absl::Milliseconds(1), 0);
+    uv_read_start(reinterpret_cast<uv_stream_t*>(&uvTCP_->tcp_), uvAllocCB,
+                  uvReadCB);
+  });
 }
 
 grpc_core::DebugOnlyTraceFlag grpc_polling_trace(false, "polling");

@@ -54,11 +54,12 @@ class SliceBuffer final {
   }
   uint8_t* tiny_add(size_t len) { return grpc_slice_buffer_tiny_add(sb_, len); }
   void pop() { grpc_slice_buffer_pop(sb_); }
+  size_t count() { return sb_->count; }
   void trim_end(size_t n) { grpc_slice_buffer_trim_end(sb_, n, nullptr); }
   void move_first_into_buffer(size_t n, void* dst) {
     grpc_slice_buffer_move_first_into_buffer(sb_, n, dst);
   }
-
+  void clear() { grpc_slice_buffer_reset_and_unref(sb_); }
   Slice take_first() {
     grpc_slice slice = grpc_slice_buffer_take_first(sb_);
     return Slice(slice, Slice::STEAL_REF);
@@ -70,6 +71,10 @@ class SliceBuffer final {
   void undo_take_first(Slice&& slice) {
     grpc_slice_buffer_undo_take_first(sb_, slice.slice_);
     slice.slice_ = grpc_empty_slice();
+  }
+  Slice ref(size_t index) {
+    if (index >= count()) return Slice();
+    return Slice(sb_->slices[index], Slice::ADD_REF);
   }
 
  private:

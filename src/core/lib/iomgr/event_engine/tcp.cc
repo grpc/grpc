@@ -102,7 +102,7 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_core::ExecCtx exec_ctx;
     if (status.ok()) {
       auto* grpc_endpoint_out =
-          reinterpret_cast<grpc_event_engine_endpoint*>(endpoint_ptr);
+          reinterpret_cast<grpc_event_engine_endpoint*>(*endpoint_ptr);
       grpc_endpoint_out->endpoint = std::move(endpoint);
     } else {
       *endpoint_ptr = nullptr;
