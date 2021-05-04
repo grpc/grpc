@@ -18,8 +18,6 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/security/authorization/evaluate_args.h"
 #include "test/core/util/evaluate_args_test_util.h"
 #include "test/core/util/test_config.h"

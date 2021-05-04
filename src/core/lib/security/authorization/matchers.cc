@@ -209,7 +209,6 @@ bool AuthenticatedAuthorizationMatcher::Matches(
         return !not_rule_;
       }
     }
-    return not_rule_;
   }
   // TODO(ashithasantosh): Check Subject field from certificate.
   return not_rule_;
