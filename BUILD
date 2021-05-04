@@ -2708,6 +2708,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
     ] + [
         # required headers that overlap with grpc_base_c, mostly iomgr base
+        "src/core/lib/address_utils/parse_address.h",
+        "src/core/lib/address_utils/sockaddr_utils.h",
         "src/core/lib/channel/channel_args.h",
         "src/core/lib/iomgr/closure.h",
         "src/core/lib/iomgr/endpoint.h",
@@ -2716,14 +2718,12 @@ grpc_cc_library(
         "src/core/lib/iomgr/exec_ctx.h",
         "src/core/lib/iomgr/iomgr.h",
         "src/core/lib/iomgr/iomgr_internal.h",
-        "src/core/lib/iomgr/parse_address.h",
         "src/core/lib/iomgr/pollset.h",
         "src/core/lib/iomgr/pollset_set.h",
         "src/core/lib/iomgr/port.h",
         "src/core/lib/iomgr/resolve_address.h",
         "src/core/lib/iomgr/resource_quota.h",
         "src/core/lib/iomgr/sockaddr.h",
-        "src/core/lib/iomgr/sockaddr_utils.h",
         "src/core/lib/iomgr/socket_mutator.h",
         "src/core/lib/iomgr/socket_utils.h",
         "src/core/lib/iomgr/tcp_client.h",
