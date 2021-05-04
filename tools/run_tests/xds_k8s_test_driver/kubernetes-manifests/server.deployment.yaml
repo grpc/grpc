@@ -26,6 +26,11 @@ spec:
           - "--port=${test_port}"
         ports:
           - containerPort: ${test_port}
+        env:
+          - name: GRPC_VERBOSITY
+            value: "DEBUG"
+          - name: GRPC_TRACE
+            value: "all,-timer,-timer_check"
         resources:
           limits:
             cpu: 800m

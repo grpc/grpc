@@ -41,6 +41,10 @@ spec:
             value: "true"
           - name: GRPC_XDS_EXPERIMENTAL_V3_SUPPORT
             value: "true"
+          - name: GRPC_VERBOSITY
+            value: "DEBUG"
+          - name: GRPC_TRACE
+            value: "all,-timer,-timer_check"
         volumeMounts:
           - mountPath: /tmp/grpc-xds/
             name: grpc-td-conf
