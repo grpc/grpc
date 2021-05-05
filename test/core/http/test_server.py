@@ -51,7 +51,7 @@ class Handler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
             self.good()
 
     def do_POST(self):
-        content = self.rfile.read(int(self.headers['content-length']))
+        content = self.rfile.read(int(self.headers['content-length'])).decode('utf-8')
         if self.path == '/post' and content == 'hello':
             self.good()
 
