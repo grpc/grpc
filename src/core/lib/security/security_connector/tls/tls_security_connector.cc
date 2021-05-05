@@ -391,13 +391,6 @@ int TlsChannelSecurityConnector::cmp(
       target_name_.c_str(), other->target_name_.c_str(),
       overridden_target_name_.c_str(), other->overridden_target_name_.c_str());
   if (c != 0) return c;
-  /*if (pem_root_certs_ != other->pem_root_certs_ ||
-      pem_key_cert_pair_list_ != other->pem_key_cert_pair_list_)
-    return 1;
-  if (certificate_watcher_ != other->certificate_watcher_ ||
-      client_handshaker_factory_ != other->client_handshaker_factory_ ||
-      ssl_session_cache_ != other->ssl_session_cache_)
-    return 1;*/
   return 0;
 }
 
@@ -677,12 +670,6 @@ int TlsServerSecurityConnector::cmp(
   auto* other = reinterpret_cast<const TlsServerSecurityConnector*>(other_sc);
   int c = server_security_connector_cmp(other);
   if (c != 0) return c;
-  /*if (pem_root_certs_ != other->pem_root_certs_ ||
-      pem_key_cert_pair_list_ != other->pem_key_cert_pair_list_)
-    return 1;
-  if (certificate_watcher_ != other->certificate_watcher_ ||
-      server_handshaker_factory_ != other->server_handshaker_factory_)
-    return 1;*/
   return 0;
 }
 

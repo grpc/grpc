@@ -51,8 +51,8 @@ bool ExternalCertificateVerifier::Verify(
                                             &sync_status_c, &error_details);
   if (is_done) {
     if (sync_status_c != GRPC_STATUS_OK) {
-      *sync_status =
-          absl::Status(absl::StatusCode::kUnauthenticated, error_details);
+      *sync_status = absl::Status(static_cast<absl::StatusCode>(sync_status_c),
+                                  error_details);
     }
     MutexLock lock(&mu_);
     request_map_.erase(request);
@@ -79,7 +79,7 @@ void ExternalCertificateVerifier::OnVerifyDone(
     absl::Status return_status = absl::OkStatus();
     if (status != GRPC_STATUS_OK) {
       return_status =
-          absl::Status(absl::StatusCode::kUnauthenticated, error_details);
+          absl::Status(static_cast<absl::StatusCode>(status), error_details);
     }
     callback(return_status);
   }
@@ -165,7 +165,8 @@ int grpc_tls_certificate_verifier_verify(
         if (async_status.ok()) {
           callback(request, callback_arg, GRPC_STATUS_OK, "");
         } else {
-          callback(request, callback_arg, GRPC_STATUS_UNAUTHENTICATED,
+          callback(request, callback_arg,
+                   static_cast<grpc_status_code>(async_status.code()),
                    async_status.ToString().c_str());
         }
       };
@@ -173,7 +174,7 @@ int grpc_tls_certificate_verifier_verify(
   bool is_done = verifier->Verify(request, async_cb, &sync_status_cpp);
   if (is_done) {
     if (!sync_status_cpp.ok()) {
-      *sync_status = GRPC_STATUS_UNAUTHENTICATED;
+      *sync_status = static_cast<grpc_status_code>(sync_status_cpp.code());
       gpr_free(*sync_error_details);
       *sync_error_details = gpr_strdup(sync_status_cpp.ToString().c_str());
     }

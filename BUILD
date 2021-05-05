@@ -325,6 +325,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/tls_certificate_provider.h",
     "include/grpcpp/security/authorization_policy_provider.h",
+    "include/grpcpp/security/tls_certificate_verifier.h",
     "include/grpcpp/security/tls_credentials_options.h",
     "include/grpcpp/server.h",
     "include/grpcpp/server_builder.h",
@@ -465,7 +466,6 @@ grpc_cc_library(
     hdrs = [
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
-        "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
     language = "c++",
@@ -505,15 +505,14 @@ grpc_cc_library(
         "src/cpp/common/secure_channel_arguments.cc",
         "src/cpp/common/secure_create_auth_context.cc",
         "src/cpp/common/tls_certificate_provider.cc",
+        "src/cpp/common/tls_certificate_verifier.cc",
         "src/cpp/common/tls_credentials_options.cc",
-        "src/cpp/common/tls_credentials_options_util.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
     ],
     hdrs = [
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
-        "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
     external_deps = [

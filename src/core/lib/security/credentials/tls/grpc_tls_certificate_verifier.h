@@ -89,7 +89,7 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
   // stores each check request and its corresponding callback function.
   std::map<grpc_tls_custom_verification_check_request*,
            std::function<void(absl::Status)>>
-      request_map_;
+      request_map_ ABSL_GUARDED_BY(mu_);
 };
 
 // An internal verifier that will perform hostname verification check.
