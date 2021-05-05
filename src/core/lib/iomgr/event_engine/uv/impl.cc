@@ -26,6 +26,10 @@ class uvTCPbase {
       grpc_event_engine::experimental::EventEngine::Callback on_shutdown)
       : on_accept_(on_accept), on_shutdown_(on_shutdown) {}
   virtual ~uvTCPbase() = default;
+  static void uvCloseCB(uv_handle_t* handle) {
+    uvTCPbase* tcp = reinterpret_cast<uvTCPbase*>(handle->data);
+    delete tcp;
+  }
 
   int init(uvEngine* engine);
 
@@ -125,10 +129,7 @@ class uvEndpoint final
     write_timer_.data = this;
     read_timer_.data = this;
   }
-  virtual ~uvEndpoint() override final {
-    GPR_ASSERT(write_bufs_ == nullptr);
-    abort();
-  }
+  virtual ~uvEndpoint() override final;
   int init(uvEngine* engine);
 
   virtual void Read(
@@ -188,12 +189,14 @@ class uvEndpoint final
     uv_read_stop(stream);
     if (nread < 0) {
       ep->on_read_(absl::UnknownError("uv_read_start gave us an error"));
+      return;
     }
     grpc_event_engine::experimental::Slice slice(
         ep->read_buf_, nread,
         grpc_event_engine::experimental::Slice::STATIC_SLICE);
     ep->read_sb_->add(slice);
-    ep->on_read_(absl::OkStatus());
+    auto cb = std::move(ep->on_read_);
+    cb(absl::OkStatus());
   }
 
   static void uvReadTimeoutCB(uv_timer_t* timer) {
@@ -559,6 +562,16 @@ void uvEngine::eraseLookupTask(intptr_t taskKey) {
   GPR_ASSERT(it != lookupTaskMap_.end());
   delete it->second;
   lookupTaskMap_.erase(it);
+}
+
+uvEndpoint::~uvEndpoint() {
+  GPR_ASSERT(write_bufs_ == nullptr);
+  GPR_ASSERT(on_read_ == nullptr);
+  uvTCPbase* tcp = uvTCP_;
+  tcp->tcp_.data = tcp;
+  getEngine()->schedule([tcp](uvEngine* engine) {
+    uv_close(reinterpret_cast<uv_handle_t*>(&tcp->tcp_), uvTCPbase::uvCloseCB);
+  });
 }
 
 int uvEndpoint::init(uvEngine* engine) {
