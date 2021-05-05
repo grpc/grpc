@@ -179,32 +179,42 @@ class EventEngine {
     virtual absl::Status Start() = 0;
   };
 
-  /// Factory method to create a network listener.
+  /// Factory method to create a network listener / server.
   ///
-  /// \a on_accept will be called once a connection is established. There is no
-  /// status code parameter since the callback will only be called in healthy
-  /// scenarios.
+  /// Once a \a Listener is created and started, the \a on_accept callback will
+  /// be called once asynchronously for each established connection. Note that
+  /// unlike other callbacks, there is no status code parameter since the
+  /// callback will only be called in healthy scenarios where connections can be
+  /// accepted.
   ///
   /// \a on_shutdown will be called exactly once, with either an OK status for a
-  /// normal shutdown, or a non-OK status if the Listener or gRPC encountered an
-  /// error.
+  /// normal \a Listener or \a EventEngine shutdown, or a non-OK status if the
+  /// Listener or gRPC encountered an error.
   ///
-  /// This method may return a non-OK status if a Listener was not able to be
-  /// created synchronously. If this happens, neither \a on_shutdown nor \a
-  /// on_accept callbacks will have been executed.
-  // TODO(hork): describe needs for SliceAllocatorFactory
+  /// This method may return a non-OK status immediately if an error was
+  /// encountered in any synchronous steps required to create a \a Listener. If
+  /// this happens, neither \a on_shutdown nor \a on_accept callbacks will have
+  /// been executed.
+  ///
+  /// The provided \a SliceAllocatorFactory is used to create \a SliceAllocators
+  /// for Endpoint construction.
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept, Callback on_shutdown,
       const ChannelArgs& args,
       SliceAllocatorFactory slice_allocator_factory) = 0;
-  /// Creates a network connection to a remote network listener.
+  /// Creates a client network connection to a remote network listener.
   ///
-  /// \a Connect can return an error status immediately if there was a failure
-  /// in the synchronous steps of establishing a connection. In that event, the
+  /// \a Connect may return an error status immediately if there was a failure
+  /// in the synchronous part of establishing a connection. In that event, the
   /// \a on_connect callback *will not* have been executed. Otherwise, it is
   /// expected that the \a on_connect callback will be asynchronously executed
-  /// by the EventEngine with an appropriate status.
-  // TODO(hork): describe needs for SliceAllocator
+  /// exactly once by the EventEngine.
+  ///
+  /// Implementation Note: it is important that the \a slice_allocator be used
+  /// for all read/write buffer allocations in the EventEngine implementation.
+  /// This allows gRPC's \a ResourceQuota system to monitor and control memory
+  /// usage with graceful degradation mechanisms. Please see the \a
+  /// SliceAllocator API for more information.
   virtual absl::Status Connect(OnConnectCallback on_connect,
                                const ResolvedAddress& addr,
                                const ChannelArgs& args,
