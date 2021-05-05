@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python3
 # Copyright 2015 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,7 +15,7 @@
 """Server for httpcli_test"""
 
 import argparse
-import BaseHTTPServer
+import six.moves.BaseHTTPServer
 import os
 import ssl
 import sys
@@ -26,7 +26,7 @@ _PEM = os.path.abspath(
 _KEY = os.path.abspath(
     os.path.join(os.path.dirname(sys.argv[0]), '../../..',
                  'src/core/tsi/test_creds/server1.key'))
-print _PEM
+print(_PEM)
 open(_PEM).close()
 
 argp = argparse.ArgumentParser(description='Server for httpcli_test')
@@ -34,10 +34,10 @@ argp.add_argument('-p', '--port', default=10080, type=int)
 argp.add_argument('-s', '--ssl', default=False, action='store_true')
 args = argp.parse_args()
 
-print 'server running on port %d' % args.port
+print('server running on port %d' % args.port)
 
 
-class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
+class Handler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
 
     def good(self):
         self.send_response(200)
@@ -56,7 +56,7 @@ class Handler(BaseHTTPServer.BaseHTTPRequestHandler):
             self.good()
 
 
-httpd = BaseHTTPServer.HTTPServer(('localhost', args.port), Handler)
+httpd = six.moves.BaseHTTPServer.HTTPServer(('localhost', args.port), Handler)
 if args.ssl:
     httpd.socket = ssl.wrap_socket(httpd.socket,
                                    certfile=_PEM,
