@@ -160,8 +160,7 @@ class EventEngine {
    public:
     /// A callback handle, used to cancel a callback. Called when the listener
     /// has accepted a new client connection.
-    using AcceptCallback =
-        std::function<void(absl::Status, std::unique_ptr<Endpoint>)>;
+    using AcceptCallback = std::function<void(std::unique_ptr<Endpoint>)>;
     virtual ~Listener() = default;
     // TODO(hork): define return status codes
     /// Bind an address/port to this Listener. It is expected that multiple
@@ -175,6 +174,9 @@ class EventEngine {
   // TODO(hork): define return status codes
   // TODO(hork): document status arg meanings for on_accept and on_shutdown
   /// Factory method to create a network listener.
+  ///
+  /// This method may return a non-OK status if a Listener was not able to be
+  /// created synchronously.
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept, Callback on_shutdown,
       const ChannelArgs& args,

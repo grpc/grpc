@@ -130,12 +130,8 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   }
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
       ee->CreateListener(
-          [server](absl::Status status,
-                   std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
+          [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
             grpc_core::ExecCtx exec_ctx;
-            // TODO(hork): grpc_tcp_server_cb does not handle statuses.
-            // A status arg in the EE OnAcceptCallback is probably unnecessary.
-            GPR_ASSERT(status.ok());
             GPR_ASSERT((*server)->on_accept_internal != nullptr);
             grpc_event_engine_endpoint* g_endpoint =
                 grpc_tcp_create(std::move(ee_endpoint));
