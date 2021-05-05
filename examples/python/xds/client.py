@@ -26,15 +26,6 @@ import helloworld_pb2_grpc
 _DESCRIPTION = "Get a greeting from a server."
 
 
-def bool_arg(arg: str) -> bool:
-    if arg.lower() in ("true", "yes", "y"):
-        return True
-    elif arg.lower() in ("false", "no", "n"):
-        return False
-    else:
-        raise argparse.ArgumentTypeError(f"Could not parse '{arg}' as a bool.")
-
-
 def run(server_address, secure):
     if secure:
         fallback_creds = grpc.experimental.insecure_channel_credentials()
@@ -54,10 +45,9 @@ if __name__ == '__main__':
                         default=None,
                         help="The address of the server.")
     parser.add_argument(
-        "--secure",
-        default="False",
-        type=bool_arg,
+        "--xds-creds",
+        action="store_true",
         help="If specified, uses xDS credentials to connect to the server.")
     args = parser.parse_args()
     logging.basicConfig()
-    run(args.server, args.secure)
+    run(args.server, args.xds_creds)

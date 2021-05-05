@@ -42,15 +42,6 @@ console_handler.setFormatter(formatter)
 logger.addHandler(console_handler)
 
 
-def bool_arg(arg: str) -> bool:
-    if arg.lower() in ("true", "yes", "y"):
-        return True
-    elif arg.lower() in ("false", "no", "n"):
-        return False
-    else:
-        raise argparse.ArgumentTypeError(f"Could not parse '{arg}' as a bool.")
-
-
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
     def __init__(self, hostname: str):
@@ -145,20 +136,12 @@ if __name__ == '__main__':
                         default=None,
                         nargs="?",
                         help="The name clients will see in responses.")
-    parser.add_argument("--maintenance_port",
-                        type=int,
-                        default=8080,
-                        help="Port for servers besides test server.")
     parser.add_argument(
-        "--secure",
-        default="False",
-        type=bool_arg,
+        "--xds-creds",
+        action="store_true",
         help="If specified, uses xDS credentials to connect to the server.")
     args = parser.parse_args()
-    if args.secure and args.port == args.maintenance_port:
-        raise ValueError(
-            "--port and --maintenance_port must not be the same when --secure_mode is set."
-        )
+    maintenance_port = args.port + 1
     logging.basicConfig()
     logger.setLevel(logging.INFO)
-    serve(args.port, args.hostname, args.maintenance_port, args.secure)
+    serve(args.port, args.hostname, maintenance_port, args.xds_creds)
