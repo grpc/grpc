@@ -73,6 +73,11 @@ argp.add_argument('-t',
                   default=False,
                   action='store_const',
                   const=True)
+argp.add_argument('-x',
+                  '--xml_report',
+                  default='report_taskrunner_sponge_log.xml',
+                  type=str,
+                  help='Filename for the JUnit-compatible XML report')
 
 args = argp.parse_args()
 
