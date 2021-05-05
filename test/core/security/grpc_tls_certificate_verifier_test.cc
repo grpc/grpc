@@ -37,59 +37,15 @@ namespace grpc_core {
 
 namespace testing {
 
+// Unit tests for grpc_tls_certificate_verifier and all its successors.
+// In these tests, |request_| is not outliving the test itself, so it's fine to
+// point fields in |request_| directly to the address of local variables. In
+// actual implementation, these fields are dynamically allocated.
 class GrpcTlsCertificateVerifierTest : public ::testing::Test {
  protected:
-  void SetUp() override {
-    request_.target_name = nullptr;
-    request_.peer_info.common_name = nullptr;
-    request_.peer_info.san_names.uri_names = nullptr;
-    request_.peer_info.san_names.uri_names_size = 0;
-    request_.peer_info.san_names.dns_names = nullptr;
-    request_.peer_info.san_names.dns_names_size = 0;
-    request_.peer_info.san_names.email_names = nullptr;
-    request_.peer_info.san_names.email_names_size = 0;
-    request_.peer_info.san_names.ip_names = nullptr;
-    request_.peer_info.san_names.ip_names_size = 0;
-    request_.peer_info.peer_cert = nullptr;
-    request_.peer_info.peer_cert_full_chain = nullptr;
-  }
+  void SetUp() override { memset(&request_, 0, sizeof(request_)); }
 
-  void TearDown() override {
-    if (request_.peer_info.common_name != nullptr) {
-      gpr_free(const_cast<char*>(request_.peer_info.common_name));
-    }
-    if (request_.peer_info.san_names.uri_names_size > 0) {
-      for (size_t i = 0; i < request_.peer_info.san_names.uri_names_size; ++i) {
-        gpr_free(request_.peer_info.san_names.uri_names[i]);
-      }
-      delete[] request_.peer_info.san_names.uri_names;
-    }
-    if (request_.peer_info.san_names.dns_names_size > 0) {
-      for (size_t i = 0; i < request_.peer_info.san_names.dns_names_size; ++i) {
-        gpr_free(request_.peer_info.san_names.dns_names[i]);
-      }
-      delete[] request_.peer_info.san_names.dns_names;
-    }
-    if (request_.peer_info.san_names.email_names_size > 0) {
-      for (size_t i = 0; i < request_.peer_info.san_names.email_names_size;
-           ++i) {
-        gpr_free(request_.peer_info.san_names.email_names[i]);
-      }
-      delete[] request_.peer_info.san_names.email_names;
-    }
-    if (request_.peer_info.san_names.ip_names_size > 0) {
-      for (size_t i = 0; i < request_.peer_info.san_names.ip_names_size; ++i) {
-        gpr_free(request_.peer_info.san_names.ip_names[i]);
-      }
-      delete[] request_.peer_info.san_names.ip_names;
-    }
-    if (request_.peer_info.peer_cert != nullptr) {
-      gpr_free(const_cast<char*>(request_.peer_info.peer_cert));
-    }
-    if (request_.peer_info.peer_cert_full_chain != nullptr) {
-      gpr_free(const_cast<char*>(request_.peer_info.peer_cert_full_chain));
-    }
-  }
+  void TearDown() override {}
 
   grpc_tls_custom_verification_check_request request_;
   HostNameCertificateVerifier hostname_certificate_verifier_;
@@ -99,8 +55,8 @@ TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierSucceeds) {
   auto* sync_verifier = new SyncExternalVerifier(true);
   ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
   absl::Status sync_status;
-  core_external_verifier.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  EXPECT_TRUE(core_external_verifier.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_TRUE(sync_status.ok());
 }
 
@@ -108,8 +64,8 @@ TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierFails) {
   auto* sync_verifier = new SyncExternalVerifier(false);
   ExternalCertificateVerifier core_external_verifier(sync_verifier->base());
   absl::Status sync_status;
-  core_external_verifier.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  EXPECT_TRUE(core_external_verifier.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_EQ(sync_status.code(), absl::StatusCode::kUnauthenticated);
   EXPECT_EQ(sync_status.ToString(),
             "UNAUTHENTICATED: SyncExternalVerifierBadVerify failed");
@@ -118,24 +74,21 @@ TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierFails) {
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierSucceeds) {
   absl::Status sync_status;
   auto* async_verifier = new AsyncExternalVerifier(true);
-  auto* core_external_verifier =
-      new ExternalCertificateVerifier(async_verifier->base());
-  core_external_verifier->Verify(
+  ExternalCertificateVerifier core_external_verifier(async_verifier->base());
+  EXPECT_FALSE(core_external_verifier.Verify(
       &request_,
       [](absl::Status async_status) {
         gpr_log(GPR_INFO, "Callback is invoked.");
         EXPECT_TRUE(async_status.ok());
       },
-      &sync_status);
-  delete core_external_verifier;
+      &sync_status));
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
   absl::Status sync_status;
   auto* async_verifier = new AsyncExternalVerifier(false);
-  auto* core_external_verifier =
-      new ExternalCertificateVerifier(async_verifier->base());
-  core_external_verifier->Verify(
+  ExternalCertificateVerifier core_external_verifier(async_verifier->base());
+  EXPECT_FALSE(core_external_verifier.Verify(
       &request_,
       [](absl::Status async_status) {
         gpr_log(GPR_INFO, "Callback is invoked.");
@@ -143,14 +96,13 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
         EXPECT_EQ(async_status.ToString(),
                   "UNAUTHENTICATED: AsyncExternalVerifierBadVerify failed");
       },
-      &sync_status);
-  delete core_external_verifier;
+      &sync_status));
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierNullTargetName) {
   absl::Status sync_status;
-  hostname_certificate_verifier_.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  EXPECT_TRUE(hostname_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_EQ(sync_status.code(), absl::StatusCode::kUnauthenticated);
   EXPECT_EQ(sync_status.ToString(),
             "UNAUTHENTICATED: Target name is not specified.");
@@ -159,8 +111,8 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierNullTargetName) {
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierInvalidTargetName) {
   absl::Status sync_status;
   request_.target_name = "[foo.com@443";
-  hostname_certificate_verifier_.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  EXPECT_TRUE(hostname_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_EQ(sync_status.code(), absl::StatusCode::kUnauthenticated);
   EXPECT_EQ(sync_status.ToString(),
             "UNAUTHENTICATED: Failed to split hostname and port.");
@@ -169,11 +121,11 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierInvalidTargetName) {
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierDNSExactCheckSucceeds) {
   absl::Status sync_status;
   request_.target_name = "foo.com:443";
-  request_.peer_info.san_names.dns_names = new char*[1];
-  request_.peer_info.san_names.dns_names[0] = gpr_strdup("foo.com");
+  char* dns_names[] = {const_cast<char*>("foo.com")};
+  request_.peer_info.san_names.dns_names = dns_names;
   request_.peer_info.san_names.dns_names_size = 1;
-  hostname_certificate_verifier_.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  EXPECT_TRUE(hostname_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_TRUE(sync_status.ok());
 }
 
@@ -181,11 +133,11 @@ TEST_F(GrpcTlsCertificateVerifierTest,
        HostnameVerifierDNSWildcardCheckSucceeds) {
   absl::Status sync_status;
   request_.target_name = "foo.bar.com:443";
-  request_.peer_info.san_names.dns_names = new char*[1];
-  request_.peer_info.san_names.dns_names[0] = gpr_strdup("*.bar.com");
+  char* dns_names[] = {const_cast<char*>("*.bar.com")};
+  request_.peer_info.san_names.dns_names = dns_names;
   request_.peer_info.san_names.dns_names_size = 1;
-  hostname_certificate_verifier_.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  EXPECT_TRUE(hostname_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_TRUE(sync_status.ok());
 }
 
@@ -193,11 +145,11 @@ TEST_F(GrpcTlsCertificateVerifierTest,
        HostnameVerifierDNSWildcardCaseInsensitiveCheckSucceeds) {
   absl::Status sync_status;
   request_.target_name = "fOo.bar.cOm:443";
-  request_.peer_info.san_names.dns_names = new char*[1];
-  request_.peer_info.san_names.dns_names[0] = gpr_strdup("*.BaR.Com");
+  char* dns_names[] = {const_cast<char*>("*.BaR.Com")};
+  request_.peer_info.san_names.dns_names = dns_names;
   request_.peer_info.san_names.dns_names_size = 1;
-  hostname_certificate_verifier_.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  EXPECT_TRUE(hostname_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_TRUE(sync_status.ok());
 }
 
@@ -205,11 +157,11 @@ TEST_F(GrpcTlsCertificateVerifierTest,
        HostnameVerifierDNSTopWildcardCheckFails) {
   absl::Status sync_status;
   request_.target_name = "foo.com:443";
-  request_.peer_info.san_names.dns_names = new char*[1];
-  request_.peer_info.san_names.dns_names[0] = gpr_strdup("*.");
+  char* dns_names[] = {const_cast<char*>("*.")};
+  request_.peer_info.san_names.dns_names = dns_names;
   request_.peer_info.san_names.dns_names_size = 1;
-  hostname_certificate_verifier_.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  EXPECT_TRUE(hostname_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_EQ(sync_status.code(), absl::StatusCode::kUnauthenticated);
   EXPECT_EQ(sync_status.ToString(),
             "UNAUTHENTICATED: Hostname Verification Check failed.");
@@ -218,11 +170,11 @@ TEST_F(GrpcTlsCertificateVerifierTest,
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierDNSExactCheckFails) {
   absl::Status sync_status;
   request_.target_name = "foo.com:443";
-  request_.peer_info.san_names.dns_names = new char*[1];
-  request_.peer_info.san_names.dns_names[0] = gpr_strdup("bar.com");
+  char* dns_names[] = {const_cast<char*>("bar.com")};
+  request_.peer_info.san_names.dns_names = dns_names;
   request_.peer_info.san_names.dns_names_size = 1;
-  hostname_certificate_verifier_.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  EXPECT_TRUE(hostname_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_EQ(sync_status.code(), absl::StatusCode::kUnauthenticated);
   EXPECT_EQ(sync_status.ToString(),
             "UNAUTHENTICATED: Hostname Verification Check failed.");
@@ -231,22 +183,22 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierDNSExactCheckFails) {
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierIpCheckSucceeds) {
   absl::Status sync_status;
   request_.target_name = "192.168.0.1:443";
-  request_.peer_info.san_names.ip_names = new char*[1];
-  request_.peer_info.san_names.ip_names[0] = gpr_strdup("192.168.0.1");
+  char* ip_names[] = {const_cast<char*>("192.168.0.1")};
+  request_.peer_info.san_names.ip_names = ip_names;
   request_.peer_info.san_names.ip_names_size = 1;
-  hostname_certificate_verifier_.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  EXPECT_TRUE(hostname_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_TRUE(sync_status.ok());
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierIpCheckFails) {
   absl::Status sync_status;
   request_.target_name = "192.168.0.1:443";
-  request_.peer_info.san_names.ip_names = new char*[1];
-  request_.peer_info.san_names.ip_names[0] = gpr_strdup("192.168.1.1");
+  char* ip_names[] = {const_cast<char*>("192.168.1.1")};
+  request_.peer_info.san_names.ip_names = ip_names;
   request_.peer_info.san_names.ip_names_size = 1;
-  hostname_certificate_verifier_.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  EXPECT_TRUE(hostname_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_EQ(sync_status.code(), absl::StatusCode::kUnauthenticated);
   EXPECT_EQ(sync_status.ToString(),
             "UNAUTHENTICATED: Hostname Verification Check failed.");
@@ -256,18 +208,18 @@ TEST_F(GrpcTlsCertificateVerifierTest,
        HostnameVerifierCommonNameCheckSucceeds) {
   absl::Status sync_status;
   request_.target_name = "foo.com:443";
-  request_.peer_info.common_name = gpr_strdup("foo.com");
-  hostname_certificate_verifier_.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  request_.peer_info.common_name = "foo.com";
+  EXPECT_TRUE(hostname_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_TRUE(sync_status.ok());
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierCommonNameCheckFails) {
   absl::Status sync_status;
   request_.target_name = "foo.com:443";
-  request_.peer_info.common_name = gpr_strdup("bar.com");
-  hostname_certificate_verifier_.Verify(
-      &request_, [](absl::Status) {}, &sync_status);
+  request_.peer_info.common_name = "bar.com";
+  EXPECT_TRUE(hostname_certificate_verifier_.Verify(
+      &request_, [](absl::Status) {}, &sync_status));
   EXPECT_EQ(sync_status.code(), absl::StatusCode::kUnauthenticated);
   EXPECT_EQ(sync_status.ToString(),
             "UNAUTHENTICATED: Hostname Verification Check failed.");
