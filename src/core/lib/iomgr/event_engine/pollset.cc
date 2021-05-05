@@ -13,6 +13,8 @@
 // limitations under the License.
 #if defined(GRPC_EVENT_ENGINE_TEST)
 
+#include <unordered_set>
+
 #include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/event_engine.h>
@@ -23,7 +25,14 @@
 
 struct grpc_pollset {
   gpr_mu mu;
+  gpr_cv cv;
 };
+
+struct grpc_pollset_set {
+  gpr_mu mu;
+  std::unordered_set<grpc_pollset*> set;
+};
+
 
 namespace {
 
@@ -32,18 +41,21 @@ void pollset_global_init(void) {}
 void pollset_global_shutdown(void) {}
 void pollset_init(grpc_pollset* pollset, gpr_mu** mu) {
   gpr_mu_init(&pollset->mu);
+  gpr_cv_init(&pollset->cv);
   *mu = &pollset->mu;
 }
 void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
-  (void)pollset;
-  (void)closure;
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
 }
-void pollset_destroy(grpc_pollset* pollset) { gpr_mu_destroy(&pollset->mu); }
+void pollset_destroy(grpc_pollset* pollset) {
+  gpr_mu_destroy(&pollset->mu);
+  gpr_cv_destroy(&pollset->cv);
+}
 grpc_error* pollset_work(grpc_pollset* pollset, grpc_pollset_worker** worker,
                          grpc_millis deadline) {
-  (void)pollset;
   (void)worker;
-  (void)deadline;
+  gpr_cv_wait(&pollset->cv, &pollset->mu,
+              grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME));
   return GRPC_ERROR_NONE;
 }
 grpc_error* pollset_kick(grpc_pollset* pollset,
@@ -56,31 +68,51 @@ size_t pollset_size(void) { return sizeof(grpc_pollset); }
 
 // --- pollset_set vtable API ---
 grpc_pollset_set* pollset_set_create(void) {
-  return reinterpret_cast<grpc_pollset_set*>(static_cast<intptr_t>(0xBAAAAAAD));
+  grpc_pollset_set* ret = new grpc_pollset_set();
+  gpr_mu_init(&ret->mu);
+  return ret;
 }
-void pollset_set_destroy(grpc_pollset_set* pollset_set) { (void)pollset_set; }
+void pollset_set_destroy(grpc_pollset_set* pollset_set) {
+  gpr_mu_destroy(&pollset_set->mu);
+  delete pollset_set;
+}
 void pollset_set_add_pollset(grpc_pollset_set* pollset_set,
                              grpc_pollset* pollset) {
-  (void)pollset_set;
-  (void)pollset;
+  gpr_mu_lock(&pollset_set->mu);
+  pollset_set->set.emplace(pollset);
+  gpr_mu_unlock(&pollset_set->mu);
 }
 void pollset_set_del_pollset(grpc_pollset_set* pollset_set,
                              grpc_pollset* pollset) {
-  (void)pollset_set;
-  (void)pollset;
+  gpr_mu_lock(&pollset_set->mu);
+  auto it = pollset_set->set.find(pollset);
+  if (it != pollset_set->set.end()) {
+    pollset_set->set.erase(it);
+  }
+  gpr_mu_unlock(&pollset_set->mu);
 }
 void pollset_set_add_pollset_set(grpc_pollset_set* bag,
                                  grpc_pollset_set* item) {
   (void)bag;
   (void)item;
+  abort();
 }
 void pollset_set_del_pollset_set(grpc_pollset_set* bag,
                                  grpc_pollset_set* item) {
   (void)bag;
   (void)item;
+  abort();
 }
 
 }  // namespace
+
+void pollset_ee_broadcast_event(grpc_pollset_set* set) {
+  gpr_mu_lock(&set->mu);
+  for (auto& it : set->set) {
+    gpr_cv_signal(&it->cv);
+  }
+  gpr_mu_unlock(&set->mu);
+}
 
 // --- vtables ---
 grpc_pollset_vtable grpc_event_engine_pollset_vtable = {

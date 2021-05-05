@@ -33,6 +33,8 @@
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
 
+void pollset_ee_broadcast_event(grpc_pollset_set* set);
+
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace {
@@ -87,11 +89,17 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
       write_buffer, absl::InfiniteFuture());
 }
 void endpoint_add_to_pollset(grpc_endpoint* /* ep */,
-                             grpc_pollset* /* pollset */) {}
+                             grpc_pollset* /* pollset */) {
+  abort();
+}
 void endpoint_add_to_pollset_set(grpc_endpoint* /* ep */,
-                                 grpc_pollset_set* /* pollset */) {}
+                                 grpc_pollset_set* /* pollset */) {
+  abort();
+}
 void endpoint_delete_from_pollset_set(grpc_endpoint* /* ep */,
-                                      grpc_pollset_set* /* pollset */) {}
+                                      grpc_pollset_set* /* pollset */) {
+  abort();
+}
 // Note: After shutdown, all other endpoint operations (except destroy) are
 // no-op, and will return some kind of sane default (empty strings, nullptrs,
 // etc). It is the caller's responsibility to ensure that calls to
