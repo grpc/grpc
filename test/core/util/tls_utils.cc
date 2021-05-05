@@ -73,22 +73,12 @@ std::string GetFileContents(const char* path) {
   return credential;
 }
 
-SyncExternalVerifier::SyncExternalVerifier(bool is_good) {
-  auto* user_data = new UserData();
-  user_data->self = this;
-  user_data->is_good = is_good;
-  base_.user_data = user_data;
-  base_.verify = Verify;
-  base_.cancel = Cancel;
-  base_.destruct = Destruct;
-}
-
 int SyncExternalVerifier::Verify(
     void* user_data, grpc_tls_custom_verification_check_request* request,
     grpc_tls_on_custom_verification_check_done_cb callback, void* callback_arg,
     grpc_status_code* sync_status, char** sync_error_details) {
-  auto* data = static_cast<UserData*>(user_data);
-  if (data->is_good) {
+  auto* self = static_cast<SyncExternalVerifier*>(user_data);
+  if (self->success_) {
     return true;  // Synchronous call
   }
   *sync_status = GRPC_STATUS_UNAUTHENTICATED;
@@ -98,9 +88,8 @@ int SyncExternalVerifier::Verify(
 }
 
 void SyncExternalVerifier::Destruct(void* user_data) {
-  auto* data = static_cast<UserData*>(user_data);
-  delete data->self;
-  delete data;
+  auto* self = static_cast<SyncExternalVerifier*>(user_data);
+  delete self;
 }
 
 int AsyncExternalVerifier::Verify(
@@ -111,7 +100,6 @@ int AsyncExternalVerifier::Verify(
   // Add request to queue to be picked up by worker thread.
   MutexLock lock(&self->mu_);
   self->queue_.push_back(Request{request, callback, callback_arg, false});
-  self->alive_request_number++;
   return false;  // Asynchronous call
 }
 
@@ -121,22 +109,6 @@ void AsyncExternalVerifier::Destruct(void* user_data) {
   {
     MutexLock lock(&self->mu_);
     self->queue_.push_back(Request{nullptr, nullptr, nullptr, true});
-  }
-  // Make sure there are no pending request to be processed at this moment,
-  // since the callback of these requests may need to access
-  // AsyncExternalVerifier.
-  while (true) {
-    int alive_request_number = -1;
-    {
-      MutexLock lock(&self->mu_);
-      alive_request_number = self->alive_request_number;
-    }
-    if (alive_request_number != 0) {
-      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
-      continue;
-    } else {
-      break;
-    }
   }
   // Wait for thread to exit.
   self->thread_.Join();
@@ -165,17 +137,13 @@ void AsyncExternalVerifier::WorkerThread(void* arg) {
     // If we're being told to shut down, return.
     if (request.shutdown) return;
     // Process the request.
-    if (self->is_good_) {
+    if (self->success_) {
       request.callback(request.request, request.callback_arg, GRPC_STATUS_OK,
                        "");
     } else {
       request.callback(request.request, request.callback_arg,
                        GRPC_STATUS_UNAUTHENTICATED,
                        "AsyncExternalVerifierBadVerify failed");
-    }
-    {
-      MutexLock lock(&self->mu_);
-      self->alive_request_number--;
     }
   }
 }

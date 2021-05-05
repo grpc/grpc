@@ -57,16 +57,12 @@ std::string GetFileContents(const char* path);
 // semantics in AsyncExternalVerifier.
 class SyncExternalVerifier {
  public:
-  SyncExternalVerifier(bool is_good);
+  explicit SyncExternalVerifier(bool success)
+      : success_(success), base_{this, Verify, Cancel, Destruct} {}
 
   grpc_tls_certificate_verifier_external* base() { return &base_; }
 
  private:
-  struct UserData {
-    SyncExternalVerifier* self = nullptr;
-    bool is_good = false;
-  };
-
   static int Verify(void* user_data,
                     grpc_tls_custom_verification_check_request* request,
                     grpc_tls_on_custom_verification_check_done_cb callback,
@@ -78,6 +74,7 @@ class SyncExternalVerifier {
 
   static void Destruct(void* user_data);
 
+  bool success_ = false;
   grpc_tls_certificate_verifier_external base_;
 };
 
@@ -95,8 +92,8 @@ class SyncExternalVerifier {
 // ExternalCertificateVerifier implementation.
 class AsyncExternalVerifier {
  public:
-  AsyncExternalVerifier(bool is_good)
-      : is_good_(is_good),
+  explicit AsyncExternalVerifier(bool success)
+      : success_(success),
         thread_("AsyncExternalVerifierWorkerThread", WorkerThread, this),
         base_{this, Verify, Cancel, Destruct} {
     thread_.Start();
@@ -126,12 +123,11 @@ class AsyncExternalVerifier {
 
   static void WorkerThread(void* arg);
 
-  bool is_good_;
+  bool success_ = false;
   grpc_core::Thread thread_;
   grpc_tls_certificate_verifier_external base_;
   Mutex mu_;
   std::deque<Request> queue_ ABSL_GUARDED_BY(mu_);
-  int alive_request_number ABSL_GUARDED_BY(mu_) = 0;
 };
 
 }  // namespace testing
