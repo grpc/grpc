@@ -254,6 +254,7 @@ class CSharpExtArtifact:
                 'tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
                 self.arch
             ],
+                                  timeout_seconds=45 * 60,
                                   use_workspace=True)
         else:
             if self.platform == 'linux':
