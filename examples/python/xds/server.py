@@ -16,7 +16,6 @@
 from concurrent import futures
 import argparse
 import logging
-import multiprocessing
 import socket
 
 import grpc
@@ -141,7 +140,6 @@ if __name__ == '__main__':
         action="store_true",
         help="If specified, uses xDS credentials to connect to the server.")
     args = parser.parse_args()
-    maintenance_port = args.port + 1
     logging.basicConfig()
     logger.setLevel(logging.INFO)
-    serve(args.port, args.hostname, maintenance_port, args.xds_creds)
+    serve(args.port, args.hostname, args.port + 1, args.xds_creds)
