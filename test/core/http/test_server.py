@@ -43,8 +43,8 @@ class Handler(six.moves.BaseHTTPServer.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-Type', 'text/html')
         self.end_headers()
-        self.wfile.write('<html><head><title>Hello world!</title></head>')
-        self.wfile.write('<body><p>This is a test</p></body></html>')
+        self.wfile.write('<html><head><title>Hello world!</title></head>'.encode('ascii'))
+        self.wfile.write('<body><p>This is a test</p></body></html>'.encode('ascii'))
 
     def do_GET(self):
         if self.path == '/get':
