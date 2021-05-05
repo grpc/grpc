@@ -122,7 +122,12 @@ class EventEngine {
     /// \a buffer, and the \a on_read callback is called. The caller must ensure
     /// that the callback has access to the buffer when executed later.
     /// Ownership of the buffer is not transferred. Valid slices *may* be placed
-    /// into the buffer even if the callback is invoked with Status != OK.
+    /// into the buffer even if the callback is invoked with a non-OK Status.
+    ///
+    /// For failed read operations, implementations should pass the appropriate
+    /// statuses to \a on_read. For example, callbacks might expect to receive
+    /// DEADLINE_EXCEEDED when the deadline is exceeded, and CANCELLED on
+    /// endpoint shutdown.
     virtual void Read(Callback on_read, SliceBuffer* buffer,
                       absl::Time deadline) = 0;
     // TODO(hork): define status codes for the callback
@@ -144,40 +149,57 @@ class EventEngine {
     virtual const ResolvedAddress* GetLocalAddress() const = 0;
   };
 
-  /// Called when a new connection is established. This callback takes ownership
-  /// of the Endpoint and is responsible for its destruction.
-  using OnConnectCallback = std::function<void(absl::Status, Endpoint*)>;
+  /// Called when a new connection is established.
+  ///
+  /// If the connection attempt was not successful, implementations should pass
+  /// the appropriate statuses to \a on_read. For example, callbacks might
+  /// expect to receive DEADLINE_EXCEEDED statuses when appropriate, or
+  /// CANCELLED statuses on EventEngine shutdown.
+  using OnConnectCallback =
+      std::function<void(absl::Status, std::unique_ptr<Endpoint>)>;
 
   /// An EventEngine Listener listens for incoming connection requests from gRPC
   /// clients and initiates request processing once connections are established.
   class Listener {
    public:
-    /// A callback handle, used to cancel a callback. Called when the listener
-    /// has accepted a new client connection. This callback takes ownership of
-    /// the Endpoint and is responsible its destruction.
-    using AcceptCallback = std::function<void(absl::Status, Endpoint*)>;
-
-    virtual ~Listener() = 0;
-
-    // TODO(hork): define return status codes
-    /// Bind an address/port to this Listener. It is expected that multiple
-    /// addresses/ports can be bound to this Listener before Listener::Start has
-    /// been called. Returns the bound port or an error status.
+    /// Called when the listener has accepted a new client connection.
+    using AcceptCallback = std::function<void(std::unique_ptr<Endpoint>)>;
+    virtual ~Listener() = default;
+    /// Bind an address/port to this Listener.
+    ///
+    /// It is expected that multiple addresses/ports can be bound to this
+    /// Listener before Listener::Start has been called. Returns either the
+    /// bound port or an appropriate error status.
     virtual absl::StatusOr<int> Bind(const ResolvedAddress& addr) = 0;
     virtual absl::Status Start() = 0;
   };
 
-  // TODO(hork): define status codes for the callback
-  // TODO(hork): define return status codes
-  // TODO(hork): document status arg meanings for on_accept and on_shutdown
   /// Factory method to create a network listener.
+  ///
+  /// \a on_accept will be called once a connection is established. There is no
+  /// status code parameter since the callback will only be called in healthy
+  /// scenarios.
+  ///
+  /// \a on_shutdown will be called exactly once, with either an OK status for a
+  /// normal shutdown, or a non-OK status if the Listener or gRPC encountered an
+  /// error.
+  ///
+  /// This method may return a non-OK status if a Listener was not able to be
+  /// created synchronously. If this happens, neither \a on_shutdown nor \a
+  /// on_accept callbacks will have been executed.
+  // TODO(hork): describe needs for SliceAllocatorFactory
   virtual absl::StatusOr<std::unique_ptr<Listener>> CreateListener(
       Listener::AcceptCallback on_accept, Callback on_shutdown,
       const ChannelArgs& args,
       SliceAllocatorFactory slice_allocator_factory) = 0;
-  // TODO(hork): define status codes for the callback
-  // TODO(hork): define return status codes
   /// Creates a network connection to a remote network listener.
+  ///
+  /// \a Connect can return an error status immediately if there was a failure
+  /// in the synchronous steps of establishing a connection. In that event, the
+  /// \a on_connect callback *will not* have been executed. Otherwise, it is
+  /// expected that the \a on_connect callback will be asynchronously executed
+  /// by the EventEngine with an appropriate status.
+  // TODO(hork): describe needs for SliceAllocator
   virtual absl::Status Connect(OnConnectCallback on_connect,
                                const ResolvedAddress& addr,
                                const ChannelArgs& args,
@@ -210,19 +232,30 @@ class EventEngine {
 
     virtual ~DNSResolver() = 0;
 
-    // TODO(hork): define status codes for the callback
-    /// Asynchronously resolve an address. \a default_port may be a non-numeric
-    /// named service port, and will only be used if \a address does not already
-    /// contain a port component.
+    /// Asynchronously resolve an address.
+    ///
+    /// \a default_port may be a non-numeric named service port, and will only
+    /// be used if \a address does not already contain a port component.
+    ///
+    /// \a on_resolve will be called exactly once. Implementations are expected
+    /// to pass a status argument of CANCELLED if
+    /// \a DNSResolver::TryCancelLookup was called, or a DEADLINE_EXCEEDED stats
+    /// as appropriate.
     virtual LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                             absl::string_view address,
                                             absl::string_view default_port,
                                             absl::Time deadline) = 0;
-    // TODO(hork): define status codes for the callback
+    /// Asynchronously perform an SRV record lookup.
+    ///
+    /// \a on_resolve has the same meaning and expectations as \a
+    /// LookupHostname's \a on_resolve callback.
     virtual LookupTaskHandle LookupSRV(LookupSRVCallback on_resolve,
                                        absl::string_view name,
                                        absl::Time deadline) = 0;
-    // TODO(hork): define status codes for the callback
+    /// Asynchronously perform a TXT record lookup.
+    ///
+    /// \a on_resolve has the same meaning and expectations as \a
+    /// LookupHostname's \a on_resolve callback.
     virtual LookupTaskHandle LookupTXT(LookupTXTCallback on_resolve,
                                        absl::string_view name,
                                        absl::Time deadline) = 0;
@@ -238,9 +271,12 @@ class EventEngine {
 
   /// Intended for future expansion of Task run functionality.
   struct RunOptions {};
-  // TODO(hork): define status codes for the callback
   // TODO(hork): consider recommendation to make TaskHandle an output arg
   /// Run a callback as soon as possible.
+  ///
+  /// The \a fn callback's \a status argument is used to indicate whether it was
+  /// executed normally. For example, the status may be CANCELLED if
+  /// \a TryCancel was called, or if the EventEngine is being shut down.
   virtual TaskHandle Run(Callback fn, RunOptions opts) = 0;
   // TODO(hork): define status codes for the callback
   /// Synonymous with scheduling an alarm to run at time \a when.
