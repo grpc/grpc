@@ -38,6 +38,8 @@ using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceAllocatorFactory;
 }  // namespace
 
+void pollset_ee_broadcast_event();
+
 struct grpc_tcp_server {
   grpc_tcp_server(std::unique_ptr<EventEngine::Listener> listener,
                   std::shared_ptr<EventEngine> ee, grpc_resource_quota* rq)
@@ -86,6 +88,8 @@ EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
         }
         grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                                 absl_status_to_grpc_error(status));
+        exec_ctx.Flush();
+        pollset_ee_broadcast_event();
       };
 }
 
