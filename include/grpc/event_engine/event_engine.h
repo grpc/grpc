@@ -80,6 +80,7 @@ class EventEngine {
   /// callback. Each EventEngine method that takes a callback parameter, defines
   /// the expected sets and meanings of statuses for that use case.
   using Callback = std::function<void(absl::Status)>;
+  /// A callback handle, used to cancel a callback.
   struct TaskHandle {
     intptr_t key;
   };
@@ -113,9 +114,9 @@ class EventEngine {
   /// allocation being handled by the quota system.
   class Endpoint {
    public:
-    virtual ~Endpoint() = 0;
-
-    // TODO(hork): define status codes for the callback
+    /// The Endpoint destructor is responsible for shutting down all connections
+    /// and invoking all pending read or write callbacks with an error status.
+    virtual ~Endpoint() = default;
     /// Read data from the Endpoint.
     ///
     /// When data is available on the connection, that data is moved into the
@@ -130,13 +131,17 @@ class EventEngine {
     /// endpoint shutdown.
     virtual void Read(Callback on_read, SliceBuffer* buffer,
                       absl::Time deadline) = 0;
-    // TODO(hork): define status codes for the callback
     /// Write data out on the connection.
     ///
     /// \a on_writable is called when the connection is ready for more data. The
     /// Slices within the \a data buffer may be mutated at will by the Endpoint
     /// until \a on_writable is called. The \a data SliceBuffer will remain
     /// valid after calling \a Write, but its state is otherwise undefined.
+    ///
+    /// For failed write operations, implementations should pass the appropriate
+    /// statuses to \a on_writable. For example, callbacks might expect to
+    /// receive DEADLINE_EXCEEDED when the deadline is exceeded, and CANCELLED
+    /// on endpoint shutdown.
     virtual void Write(Callback on_writable, SliceBuffer* data,
                        absl::Time deadline) = 0;
     // TODO(hork): define status codes for the callback
@@ -230,7 +235,7 @@ class EventEngine {
     /// Called with the result of a TXT record lookup
     using LookupTXTCallback = std::function<void(absl::Status, std::string)>;
 
-    virtual ~DNSResolver() = 0;
+    virtual ~DNSResolver() = default;
 
     /// Asynchronously resolve an address.
     ///
@@ -263,7 +268,7 @@ class EventEngine {
     virtual void TryCancelLookup(LookupTaskHandle handle) = 0;
   };
 
-  virtual ~EventEngine() = 0;
+  virtual ~EventEngine() = default;
 
   // TODO(hork): define return status codes
   /// Retrieves an instance of a DNSResolver.
@@ -278,8 +283,11 @@ class EventEngine {
   /// executed normally. For example, the status may be CANCELLED if
   /// \a TryCancel was called, or if the EventEngine is being shut down.
   virtual TaskHandle Run(Callback fn, RunOptions opts) = 0;
-  // TODO(hork): define status codes for the callback
   /// Synonymous with scheduling an alarm to run at time \a when.
+  ///
+  /// The callback \a fn will execute when either when time \a when arrives
+  /// (receiving status OK), or when the \a fn is cancelled (reveiving status
+  /// CANCELLED). The callback is guaranteed to be called exactly once.
   virtual TaskHandle RunAt(absl::Time when, Callback fn, RunOptions opts) = 0;
   /// Immediately tries to cancel a callback.
   /// Note that this is a "best effort" cancellation. No guarantee is made that
@@ -294,20 +302,22 @@ class EventEngine {
   /// callback will be run exactly once from either cancellation or from its
   /// activation.
   virtual void TryCancel(TaskHandle handle) = 0;
-  // TODO(hork): define return status codes
-  // TODO(hork): Carefully evaluate shutdown requirements, determine if we need
-  // a callback parameter to be added to this method.
   /// Immediately run all callbacks with status indicating the shutdown. Every
   /// EventEngine is expected to shut down exactly once. No new callbacks/tasks
-  /// should be scheduled after shutdown has begun. Any registered callbacks
-  /// must be executed.
-  virtual absl::Status Shutdown() = 0;
+  /// should be scheduled after shutdown has begun, no new connections should be
+  /// created.
+  ///
+  /// If the \a on_shutdown_complete callback is given a non-OK status, errors
+  /// are expected to be unrecoverable. For example, an implementation could
+  /// warn callers about leaks if memory cannot be freed within a certain
+  /// timeframe.
+  virtual void Shutdown(Callback on_shutdown_complete) = 0;
 };
 
-// Lazily instantiate and return a default global EventEngine instance if no
-// custom instance is provided. If a custom EventEngine is provided for every
-// channel/server via ChannelArgs, this method should never be called, and the
-// default instance will never be instantiated.
+/// Lazily instantiate and return a default global EventEngine instance if no
+/// custom instance is provided. If a custom EventEngine is provided for every
+/// channel/server via ChannelArgs, this method should never be called, and the
+/// default instance will never be instantiated.
 std::shared_ptr<EventEngine> GetDefaultEventEngine();
 
 }  // namespace experimental
