@@ -28,6 +28,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
+#include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
@@ -1213,46 +1214,16 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
                   "field:RING_HASH error:type should be object"));
               continue;
             }
+            xds_lb_policy = array[i];
             // TODO(donnadionne): Move this to a method in
             // ring_hash_experimental and call it here.
             const Json::Object& ring_hash = policy_it->second.object_value();
-            xds_lb_policy = array[i];
             size_t min_ring_size = 1024;
             size_t max_ring_size = 8388608;
-            auto ring_hash_it = ring_hash.find("min_ring_size");
-            if (ring_hash_it == ring_hash.end()) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:min_ring_size missing"));
-            } else if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:min_ring_size error: should be of "
-                  "number"));
-            } else {
-              min_ring_size = gpr_parse_nonnegative_int(
-                  ring_hash_it->second.string_value().c_str());
-            }
-            ring_hash_it = ring_hash.find("max_ring_size");
-            if (ring_hash_it == ring_hash.end()) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:max_ring_size missing"));
-            } else if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:max_ring_size error: should be of "
-                  "number"));
-            } else {
-              max_ring_size = gpr_parse_nonnegative_int(
-                  ring_hash_it->second.string_value().c_str());
-            }
-            if (min_ring_size <= 0 || min_ring_size > 8388608 ||
-                max_ring_size <= 0 || max_ring_size > 8388608 ||
-                min_ring_size > max_ring_size) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:max_ring_size and or min_ring_size error: "
-                  "values need to be in the range of 1 to 8388608 "
-                  "and max_ring_size cannot be smaller than "
-                  "min_ring_size"));
-            }
-            break;
+            std::vector<grpc_error*> ring_hash_error_list =
+                ParseRingHash(ring_hash, &min_ring_size, &max_ring_size);
+            error_list.insert(error_list.end(), ring_hash_error_list.begin(),
+                              ring_hash_error_list.end());
           }
         }
       }

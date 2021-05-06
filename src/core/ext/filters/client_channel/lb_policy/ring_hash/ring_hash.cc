@@ -44,6 +44,42 @@ namespace grpc_core {
 const char* kRequestRingHashAttribute = "request_ring_hash";
 TraceFlag grpc_lb_ring_hash_trace(false, "ring_hash_lb");
 
+// Helper Parser method
+std::vector<grpc_error*> ParseRingHash(const Json& json, size_t* min_ring_size,
+                                       size_t* max_ring_size) {
+  std::vector<grpc_error*> error_list;
+  const Json::Object& ring_hash = json.object_value();
+  auto ring_hash_it = ring_hash.find("min_ring_size");
+  if (ring_hash_it != ring_hash.end()) {
+    if (ring_hash_it->second.type() != Json::Type::NUMBER) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:min_ring_size error: should be of type number"));
+    } else {
+      *min_ring_size = gpr_parse_nonnegative_int(
+          ring_hash_it->second.string_value().c_str());
+    }
+  }
+  ring_hash_it = ring_hash.find("max_ring_size");
+  if (ring_hash_it != ring_hash.end()) {
+    if (ring_hash_it->second.type() != Json::Type::NUMBER) {
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+          "field:max_ring_size error: should be of type number"));
+    } else {
+      *max_ring_size = gpr_parse_nonnegative_int(
+          ring_hash_it->second.string_value().c_str());
+    }
+  }
+  if (*min_ring_size == 0 || *min_ring_size > 8388608 || *max_ring_size == 0 ||
+      *max_ring_size > 8388608 || *min_ring_size > *max_ring_size) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "field:max_ring_size and or min_ring_size error: "
+        "values need to be in the range of 1 to 8388608 "
+        "and max_ring_size cannot be smaller than "
+        "min_ring_size"));
+  }
+  return error_list;
+}
+
 namespace {
 
 constexpr char kRingHash[] = "ring_hash_experimental";
@@ -726,38 +762,11 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
           "ring_hash_experimental should be of type object");
       return nullptr;
     }
-    std::vector<grpc_error*> error_list;
     const Json::Object& ring_hash = json.object_value();
     size_t min_ring_size = 1024;
     size_t max_ring_size = 8388608;
-    auto ring_hash_it = ring_hash.find("min_ring_size");
-    if (ring_hash_it != ring_hash.end()) {
-      if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:min_ring_size error: should be of type number"));
-      } else {
-        min_ring_size = gpr_parse_nonnegative_int(
-            ring_hash_it->second.string_value().c_str());
-      }
-    }
-    ring_hash_it = ring_hash.find("max_ring_size");
-    if (ring_hash_it != ring_hash.end()) {
-      if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:max_ring_size error: should be of type number"));
-      } else {
-        max_ring_size = gpr_parse_nonnegative_int(
-            ring_hash_it->second.string_value().c_str());
-      }
-    }
-    if (min_ring_size == 0 || min_ring_size > 8388608 || max_ring_size == 0 ||
-        max_ring_size > 8388608 || min_ring_size > max_ring_size) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:max_ring_size and or min_ring_size error: "
-          "values need to be in the range of 1 to 8388608 "
-          "and max_ring_size cannot be smaller than "
-          "min_ring_size"));
-    }
+    std::vector<grpc_error*> error_list =
+        ParseRingHash(ring_hash, &min_ring_size, &max_ring_size);
     if (error_list.empty()) {
       return MakeRefCounted<RingHashLbConfig>(min_ring_size, max_ring_size);
     } else {
