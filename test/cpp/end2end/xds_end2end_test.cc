@@ -7093,6 +7093,49 @@ TEST_P(CdsTest,
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
+// Tests round robin is not implacted by the endpoint weight, and that the
+// localities in a locality map are picked according to their weights.
+TEST_P(CdsTest, RingHashEndpointWeightDoesNotImpactWeightedRoundRobin) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  const int kLocalityWeight0 = 2;
+  const int kLocalityWeight1 = 8;
+  const int kTotalLocalityWeight = kLocalityWeight0 + kLocalityWeight1;
+  const double kLocalityWeightRate0 =
+      static_cast<double>(kLocalityWeight0) / kTotalLocalityWeight;
+  const double kLocalityWeightRate1 =
+      static_cast<double>(kLocalityWeight1) / kTotalLocalityWeight;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kLocalityWeightRate0, kErrorTolerance);
+  // ADS response contains 2 localities, each of which contains 1 backend.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0",
+       {CreateEndpoint(0, HealthStatus::UNKNOWN, 8)},
+       kLocalityWeight0},
+      {"locality1",
+       {CreateEndpoint(1, HealthStatus::UNKNOWN, 2)},
+       kLocalityWeight1},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  // Wait for both backends to be ready.
+  WaitForAllBackends(0, 2);
+  // Send kNumRpcs RPCs.
+  CheckRpcSendOk(kNumRpcs);
+  // The locality picking rates should be roughly equal to the expectation.
+  const double locality_picked_rate_0 =
+      static_cast<double>(backends_[0]->backend_service()->request_count()) /
+      kNumRpcs;
+  const double locality_picked_rate_1 =
+      static_cast<double>(backends_[1]->backend_service()->request_count()) /
+      kNumRpcs;
+  EXPECT_THAT(locality_picked_rate_0,
+              ::testing::DoubleNear(kLocalityWeightRate0, kErrorTolerance));
+  EXPECT_THAT(locality_picked_rate_1,
+              ::testing::DoubleNear(kLocalityWeightRate1, kErrorTolerance));
+}
+
 // Tests that ring hash policy that hashes using a fixed string ensures all RPCs
 // to go 1 particular backend; and that subsequent hashing policies are ignored
 // due to the setting of terminal.
