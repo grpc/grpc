@@ -20,6 +20,7 @@
 require_once(dirname(__FILE__) . '/../../lib/Grpc/ServerCallReader.php');
 require_once(dirname(__FILE__) . '/../../lib/Grpc/ServerCallWriter.php');
 require_once(dirname(__FILE__) . '/../../lib/Grpc/Status.php');
+require_once(dirname(__FILE__) . '/../../lib/Grpc/ServerContext.php');
 
 class StartBatchEvent
 {
@@ -62,6 +63,7 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
         $this->mockCall = $this->getMockBuilder(stdClass::class)
             ->setMethods(['startBatch'])
             ->getMock();
+        $this->serverContext = new \Grpc\ServerContext($this->mockCall);
     }
 
     public function newStringMessage(string $value = 'a string')
@@ -97,8 +99,12 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
                 \Grpc\OP_SEND_INITIAL_METADATA => [],
             ]));
 
-        $serverCallWriter = new \Grpc\ServerCallWriter($this->mockCall);
-        $serverCallWriter->start([]);
+        $serverCallWriter = new \Grpc\ServerCallWriter(
+            $this->mockCall,
+            $this->serverContext
+        );
+        $this->serverContext->setInitialMetadata([]);
+        $serverCallWriter->start();
     }
 
     public function testStartWithMetadata()
@@ -111,8 +117,12 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
                 \Grpc\OP_SEND_INITIAL_METADATA => $metadata,
             ]));
 
-        $serverCallWriter = new \Grpc\ServerCallWriter($this->mockCall);
-        $serverCallWriter->start($metadata);
+        $serverCallWriter = new \Grpc\ServerCallWriter(
+            $this->mockCall,
+            $this->serverContext
+        );
+        $this->serverContext->setInitialMetadata($metadata);
+        $serverCallWriter->start();
         return $serverCallWriter;
     }
 
@@ -128,8 +138,12 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
                 \Grpc\OP_SEND_MESSAGE => ['message' => $message->serializeToString()],
             ]));
 
-        $serverCallWriter = new \Grpc\ServerCallWriter($this->mockCall);
-        $serverCallWriter->start($metadata, $message);
+        $serverCallWriter = new \Grpc\ServerCallWriter(
+            $this->mockCall,
+            $this->serverContext
+        );
+        $this->serverContext->setInitialMetadata($metadata);
+        $serverCallWriter->start($message);
     }
 
     public function testWriteStartWithMessageAndOptions()
@@ -147,8 +161,12 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
                 ],
             ]));
 
-        $serverCallWriter = new \Grpc\ServerCallWriter($this->mockCall);
-        $serverCallWriter->start($metadata, $message, ['flags' => 0x02]);
+        $serverCallWriter = new \Grpc\ServerCallWriter(
+            $this->mockCall,
+            $this->serverContext
+        );
+        $this->serverContext->setInitialMetadata($metadata);
+        $serverCallWriter->start($message, ['flags' => 0x02]);
     }
 
     public function testWriteDataOnly()
@@ -162,7 +180,10 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
                 \Grpc\OP_SEND_MESSAGE => ['message' => $message->serializeToString()],
             ]));
 
-        $serverCallWriter = new \Grpc\ServerCallWriter($this->mockCall);
+        $serverCallWriter = new \Grpc\ServerCallWriter(
+            $this->mockCall,
+            $this->serverContext
+        );
         $serverCallWriter->write($message);
     }
 
@@ -180,7 +201,10 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
                 ],
             ]));
 
-        $serverCallWriter = new \Grpc\ServerCallWriter($this->mockCall);
+        $serverCallWriter = new \Grpc\ServerCallWriter(
+            $this->mockCall,
+            $this->serverContext
+        );
         $serverCallWriter->write($message, ['flags' => 0x02]);
     }
 
@@ -196,8 +220,12 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
                 \Grpc\OP_SEND_MESSAGE => ['message' => $message->serializeToString()],
             ]));
 
-        $serverCallWriter = new \Grpc\ServerCallWriter($this->mockCall);
-        $serverCallWriter->write($message, [], $metadata);
+        $serverCallWriter = new \Grpc\ServerCallWriter(
+            $this->mockCall,
+            $this->serverContext
+        );
+        $this->serverContext->setInitialMetadata($metadata);
+        $serverCallWriter->write($message, []);
     }
 
     public function testFinish()
@@ -216,8 +244,12 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
                 \Grpc\OP_SEND_INITIAL_METADATA => [],
             ]));
 
-        $serverCallWriter = new \Grpc\ServerCallWriter($this->mockCall);
-        $serverCallWriter->finish($status);
+        $serverCallWriter = new \Grpc\ServerCallWriter(
+            $this->mockCall,
+            $this->serverContext
+        );
+        $this->serverContext->setStatus($status);
+        $serverCallWriter->finish();
     }
 
     public function testFinishWithMetadataAndMessage()
@@ -238,8 +270,13 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
                 ],
             ]));
 
-        $serverCallWriter = new \Grpc\ServerCallWriter($this->mockCall);
-        $serverCallWriter->finish($status, $metadata, $message, ['flags' => 0x02]);
+        $serverCallWriter = new \Grpc\ServerCallWriter(
+            $this->mockCall,
+            $this->serverContext
+        );
+        $this->serverContext->setInitialMetadata($metadata);
+        $this->serverContext->setStatus($status);
+        $serverCallWriter->finish($message, ['flags' => 0x02]);
     }
 
     public function testStartWriteFinish()
@@ -274,8 +311,12 @@ class ServerCallTest extends \PHPUnit\Framework\TestCase
                 \Grpc\OP_RECV_CLOSE_ON_SERVER => true,
             ]));
 
-        $serverCallWriter = new \Grpc\ServerCallWriter($this->mockCall);
-        $serverCallWriter->start($metadata);
+        $serverCallWriter = new \Grpc\ServerCallWriter(
+            $this->mockCall,
+            $this->serverContext
+        );
+        $this->serverContext->setInitialMetadata($metadata);
+        $serverCallWriter->start();
         $serverCallWriter->write($message1, [], $metadata2 /* should not send */);
         $serverCallWriter->write($message2, ['flags' => 0x02]);
         $serverCallWriter->finish();

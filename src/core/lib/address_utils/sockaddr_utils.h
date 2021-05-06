@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H
-#define GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H
+#ifndef GRPC_CORE_LIB_ADDRESS_UTILS_SOCKADDR_UTILS_H
+#define GRPC_CORE_LIB_ADDRESS_UTILS_SOCKADDR_UTILS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -97,4 +97,4 @@ bool grpc_sockaddr_match_subnet(const grpc_resolved_address* address,
                                 const grpc_resolved_address* subnet_address,
                                 uint32_t mask_bits);
 
-#endif /* GRPC_CORE_LIB_IOMGR_SOCKADDR_UTILS_H */
+#endif /* GRPC_CORE_LIB_ADDRESS_UTILS_SOCKADDR_UTILS_H */

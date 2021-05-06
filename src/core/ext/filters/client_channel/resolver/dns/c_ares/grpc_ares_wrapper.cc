@@ -38,14 +38,14 @@
 
 #include <address_sorting/address_sorting.h>
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
+#include "src/core/lib/address_utils/parse_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/nameser.h"
-#include "src/core/lib/iomgr/parse_address.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/transport/authority_override.h"
 
@@ -332,6 +332,10 @@ static void on_ares_backup_poll_alarm_locked(grpc_ares_ev_driver* driver,
       fdn = fdn->next;
     }
     if (!driver->shutting_down) {
+      // InvalidateNow to avoid getting stuck re-initializing this timer
+      // in a loop while draining the currently-held WorkSerializer.
+      // Also see https://github.com/grpc/grpc/issues/26079.
+      grpc_core::ExecCtx::Get()->InvalidateNow();
       grpc_millis next_ares_backup_poll_alarm =
           calculate_next_ares_backup_poll_alarm_ms(driver);
       grpc_ares_ev_driver_ref(driver);

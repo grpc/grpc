@@ -433,6 +433,8 @@ cdef extern from "grpc/grpc.h":
   char* grpc_channelz_get_subchannel(intptr_t subchannel_id)
   char* grpc_channelz_get_socket(intptr_t socket_id)
 
+  grpc_slice grpc_dump_xds_configs() nogil
+
 
 cdef extern from "grpc/grpc_security.h":
 

@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/parse_address.h"
+#include "src/core/lib/address_utils/parse_address.h"
 
 #include <stdio.h>
 #include <string.h>

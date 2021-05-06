@@ -40,7 +40,7 @@ mv $output_file ./src/proto/grpc/testing/test.proto
 # interop test protos
 $PROTOC --proto_path=. \
        --php_out=src/php/tests/interop \
-       --grpc_out=src/php/tests/interop \
+       --grpc_out=generate_server:src/php/tests/interop \
        --plugin=$PLUGIN \
        src/proto/grpc/testing/messages.proto \
        src/proto/grpc/testing/empty.proto \
@@ -53,12 +53,3 @@ mv $output_file ./src/proto/grpc/testing/empty.proto
 sed 's/grpc\.testing\.EmptyMessage/grpc\.testing\.Empty/g' \
   src/proto/grpc/testing/test.proto > $output_file
 mv $output_file ./src/proto/grpc/testing/test.proto
-
-# Hack for xDS interop: need this to be a separate file in the correct namespace.
-# To be removed when grpc_php_plugin generates service stubs.
-echo '<?php
-// DO NOT EDIT
-namespace Grpc\Testing;
-class LoadBalancerStatsServiceStub {
-}
-' > ./src/php/tests/interop/Grpc/Testing/LoadBalancerStatsServiceStub.php

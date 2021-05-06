@@ -30,7 +30,7 @@
 
 #include "absl/strings/str_cat.h"
 
-#include "src/core/lib/iomgr/parse_address.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 #include <grpc/support/alloc.h>

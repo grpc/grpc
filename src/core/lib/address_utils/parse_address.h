@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_PARSE_ADDRESS_H
-#define GRPC_CORE_LIB_IOMGR_PARSE_ADDRESS_H
+#ifndef GRPC_CORE_LIB_ADDRESS_UTILS_PARSE_ADDRESS_H
+#define GRPC_CORE_LIB_ADDRESS_UTILS_PARSE_ADDRESS_H
 
 #include <grpc/support/port_platform.h>
 
@@ -74,4 +74,4 @@ grpc_error_handle UnixAbstractSockaddrPopulate(
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_IOMGR_PARSE_ADDRESS_H */
+#endif /* GRPC_CORE_LIB_ADDRESS_UTILS_PARSE_ADDRESS_H */
