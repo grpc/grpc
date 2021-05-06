@@ -7114,11 +7114,11 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   ShutdownBackend(1);
-  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
+  CheckRpcSendFailure(1, rpc_options);
   StartBackend(1);
   // Ensure we are actively connecting without any traffic.
-  channel_->WaitForConnected(
-      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds));
+  EXPECT_TRUE(channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
