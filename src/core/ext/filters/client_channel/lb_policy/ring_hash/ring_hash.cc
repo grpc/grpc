@@ -212,11 +212,6 @@ class RingHash : public LoadBalancingPolicy {
       absl::InlinedVector<RefCountedPtr<SubchannelInterface>, 10> subchannels_;
     };
 
-    // Helper which returns true if attempt to connect is needed; false
-    // otherwise.  As well, the helper will return a PickResult if one is
-    // picked.
-    bool ConnectAndPickHelper(const RingEntry& entry, PickResult* result);
-
     RefCountedPtr<RingHash> parent_;
 
     // A ring of subchannels.
@@ -346,27 +341,6 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
   }
 }
 
-bool RingHash::Picker::ConnectAndPickHelper(const RingEntry& entry,
-                                            PickResult* result) {
-  gpr_log(GPR_INFO, "donna ConnectAndPickHelper state is %d",
-          entry.connectivity_state);
-  if (entry.connectivity_state == GRPC_CHANNEL_READY) {
-    result->type = PickResult::PICK_COMPLETE;
-    result->subchannel = entry.subchannel;
-    return false;
-  }
-  if (entry.connectivity_state == GRPC_CHANNEL_IDLE) {
-    result->type = PickResult::PICK_QUEUE;
-    return true;
-  }
-  if (entry.connectivity_state == GRPC_CHANNEL_CONNECTING) {
-    result->type = PickResult::PICK_QUEUE;
-    return false;
-  }
-  // TRANSIENT_FAILURE
-  return true;
-}
-
 RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   PickResult result;
   // Initialize to PICK_FAILED.
@@ -382,9 +356,8 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     return result;
   }
   // Ported from https://github.com/RJ/ketama/blob/master/libketama/ketama.c
-  // (ketama_get_server) I've generally kept the variable names to make the code
-  // easier to compare. NOTE: The algorithm depends on using signed integers for
-  // lowp, midp, and highp. Do not change them!
+  // (ketama_get_server) NOTE: The algorithm depends on using signed integers
+  // for lowp, highp, and first_index. Do not change them!
   int64_t lowp = 0;
   int64_t highp = ring_.size();
   int64_t first_index = 0;
@@ -419,7 +392,21 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         }
         subchannel_connection_attempter->AddSubchannel(std::move(subchannel));
       };
-  bool attempt_to_connect = ConnectAndPickHelper(ring_[first_index], &result);
+  bool attempt_to_connect = true;
+  gpr_log(GPR_INFO, "donna ConnectAndPickHelper state is %d",
+          ring_[first_index].connectivity_state);
+  if (ring_[first_index].connectivity_state == GRPC_CHANNEL_READY) {
+    result.type = PickResult::PICK_COMPLETE;
+    result.subchannel = ring_[first_index].subchannel;
+    attempt_to_connect = false;
+  }
+  if (ring_[first_index].connectivity_state == GRPC_CHANNEL_IDLE) {
+    result.type = PickResult::PICK_QUEUE;
+  }
+  if (ring_[first_index].connectivity_state == GRPC_CHANNEL_CONNECTING) {
+    result.type = PickResult::PICK_QUEUE;
+    attempt_to_connect = false;
+  }
   if (attempt_to_connect) {
     gpr_log(GPR_INFO, "donna needing to reattempt");
     ScheduleSubchannelConnectionAttempt(ring_[first_index].subchannel);
@@ -431,14 +418,13 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   // Loop through remaining subchannels to find one in READY.
   // On the way, we make sure the right set of connection attempts
   // will happen.
-  auto first_channel = ring_[first_index].subchannel;
   bool found_second_subchannel = false;
   bool found_first_non_failed = false;
   for (size_t i = 1; i < ring_.size(); ++i) {
     const RingEntry& entry = ring_[(first_index + i) % ring_.size()];
     gpr_log(GPR_INFO, "donna index %" PRIuPTR " state %d and subchannel %p", i,
             entry.connectivity_state, entry.subchannel.get());
-    if (entry.subchannel == first_channel) continue;
+    if (entry.subchannel == ring_[first_index].subchannel) continue;
     if (entry.connectivity_state == GRPC_CHANNEL_READY) {
       result.type = PickResult::PICK_COMPLETE;
       result.subchannel = entry.subchannel;
