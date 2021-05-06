@@ -43,6 +43,10 @@ OUTPUT_PATH = WORK_DIR
 TEST_FILE_NAME = 'generated_file_import_test.py'
 TEST_IMPORTS = []
 
+# The pkgutil-style namespace packaging __init__.py
+PKGUTIL_STYLE_INIT = "__path__ = __import__('pkgutil').extend_path(__path__, __name__)\n"
+NAMESPACE_PACKAGES = ["google"]
+
 
 def add_test_import(proto_package_path: str,
                     file_name: str,
@@ -95,6 +99,15 @@ def compile_protos(proto_root: str, sub_dir: str = '.') -> None:
                     raise Exception('error: {} failed'.format(COMPILE_BOTH))
 
 
+def create_init_file(path: str, package_path: str = "") -> None:
+    with open(os.path.join(path, "__init__.py"), 'w') as f:
+        # Apply the pkgutil-style namespace packaging, which is compatible for 2
+        # and 3. Here is the full table of namespace compatibility:
+        # https://github.com/pypa/sample-namespace-packages/blob/master/table.md
+        if package_path in NAMESPACE_PACKAGES:
+            f.write(PKGUTIL_STYLE_INIT)
+
+
 def main():
     # Compile xDS protos
     compile_protos(XDS_PROTO_ROOT)
@@ -109,22 +122,13 @@ def main():
     compile_protos(OPENCENSUS_PROTO_ROOT)
 
     # Generate __init__.py files for all modules
-    def create_init_file(path: str) -> None:
-        f = open(os.path.join(path, "__init__.py"), 'w')
-        f.close()
-
     create_init_file(WORK_DIR)
     for proto_root_module in [
             'envoy', 'google', 'opencensus', 'udpa', 'validate', 'xds'
     ]:
         for root, _, _ in os.walk(os.path.join(WORK_DIR, proto_root_module)):
             package_path = os.path.relpath(root, WORK_DIR)
-            if package_path == "google":
-                # Google packages are namespace packages. We don't want to create a
-                # package named "google", which will create many trouble down the
-                # line.
-                continue
-            create_init_file(root)
+            create_init_file(root, package_path)
 
     # Generate test file
     with open(os.path.join(WORK_DIR, TEST_FILE_NAME), 'w') as f:

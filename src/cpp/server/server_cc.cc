@@ -67,6 +67,15 @@ namespace {
 // max-threads set) to the server builder.
 #define DEFAULT_MAX_SYNC_SERVER_THREADS INT_MAX
 
+// Give a useful status error message if the resource is exhausted specifically
+// because the server threadpool is full.
+const char* kServerThreadpoolExhausted = "Server Threadpool Exhausted";
+
+// Although we might like to give a useful status error message on unimplemented
+// RPCs, it's not always possible since that also would need to be added across
+// languages and isn't actually required by the spec.
+const char* kUnknownRpcMethod = "";
+
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
   ~DefaultGlobalCallbacks() override {}
@@ -802,7 +811,7 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
     if (has_sync_method_) {
       unknown_method_ = absl::make_unique<grpc::internal::RpcServiceMethod>(
           "unknown", grpc::internal::RpcMethod::BIDI_STREAMING,
-          new grpc::internal::UnknownMethodHandler);
+          new grpc::internal::UnknownMethodHandler(kUnknownRpcMethod));
       server_->server()->core_server->SetBatchMethodAllocator(
           server_cq_->cq(), [this] {
             grpc_core::Server::BatchCallAllocation result;
@@ -1194,7 +1203,8 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   // to deal with the case of thread exhaustion
   if (sync_server_cqs_ != nullptr && !sync_server_cqs_->empty()) {
     resource_exhausted_handler_ =
-        absl::make_unique<grpc::internal::ResourceExhaustedHandler>();
+        absl::make_unique<grpc::internal::ResourceExhaustedHandler>(
+            kServerThreadpoolExhausted);
   }
 
   for (const auto& value : sync_req_mgrs_) {
@@ -1321,8 +1331,9 @@ bool Server::UnimplementedAsyncRequest::FinalizeResult(void** tag,
 Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
     UnimplementedAsyncRequest* request)
     : request_(request) {
-  grpc::Status status(grpc::StatusCode::UNIMPLEMENTED, "");
-  grpc::internal::UnknownMethodHandler::FillOps(request_->context(), this);
+  grpc::Status status(grpc::StatusCode::UNIMPLEMENTED, kUnknownRpcMethod);
+  grpc::internal::UnknownMethodHandler::FillOps(request_->context(),
+                                                kUnknownRpcMethod, this);
   request_->stream()->call_.PerformOps(this);
 }
 
