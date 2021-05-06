@@ -6889,6 +6889,47 @@ TEST_P(CdsTest, RingHashRandomHashing) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
+// Test next method: another header hasing is usesd when header hashing
+// specified a header field that the RPC did not have.
+TEST_P(CdsTest, RingHashUnknownHeaderMoveToNextHeader) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const size_t kNumRpcs = ComputeIdealNumRpcs(0.5, 0.05);
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("fixed_header");
+  hash_policy->set_terminal(true);
+  auto* hash_policy2 = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("fixed_header_2");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
+         CreateEndpoint(1, HealthStatus::UNKNOWN, 1)}}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"fixed_header_2", absl::StrFormat("%" PRIu32, rand())},
+  };
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  CheckRpcSendOk(100, rpc_options);
+  bool found = false;
+  for (size_t i = 0; i < 2; ++i) {
+    if (backends_[i]->backend_service()->request_count() > 0) {
+      EXPECT_EQ(backends_[i]->backend_service()->request_count(), 100)
+          << "backend " << i;
+      EXPECT_FALSE(found) << "backend " << i;
+      found = true;
+    }
+  }
+  EXPECT_TRUE(found);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
 // Test random hash is usesd when header hashing specified a header field that
 // the RPC did not have.
 TEST_P(CdsTest, RingHashUnknownHeaderDefaultToRandomHashing) {
@@ -6910,7 +6951,7 @@ TEST_P(CdsTest, RingHashUnknownHeaderDefaultToRandomHashing) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"random_string", absl::StrFormat("%" PRIu32, rand())},
+      {"fixed_header_2", absl::StrFormat("%" PRIu32, rand())},
   };
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   gpr_log(GPR_INFO, "donna before failure");
