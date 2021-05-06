@@ -2810,61 +2810,60 @@ grpc_error_handle CdsResponseParse(
       // Record ring hash lb config
       auto* ring_hash_config =
           envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
-      if (ring_hash_config == nullptr) {
-        continue;
-      }
-      const google_protobuf_UInt64Value* max_ring_size =
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
-              ring_hash_config);
-      if (max_ring_size != nullptr) {
-        cds_update.max_ring_size =
-            google_protobuf_UInt64Value_value(max_ring_size);
-        if (cds_update.max_ring_size > 8388608 ||
-            cds_update.max_ring_size == 0) {
+      if (ring_hash_config != nullptr) {
+        const google_protobuf_UInt64Value* max_ring_size =
+            envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
+                ring_hash_config);
+        if (max_ring_size != nullptr) {
+          cds_update.max_ring_size =
+              google_protobuf_UInt64Value_value(max_ring_size);
+          if (cds_update.max_ring_size > 8388608 ||
+              cds_update.max_ring_size == 0) {
+            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat(
+                    cluster_name,
+                    ": max_ring_size is not in the range of 1 to 8388608.")
+                    .c_str()));
+            resource_names_failed->insert(cluster_name);
+            continue;
+          }
+        }
+        const google_protobuf_UInt64Value* min_ring_size =
+            envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
+                ring_hash_config);
+        if (min_ring_size != nullptr) {
+          cds_update.min_ring_size =
+              google_protobuf_UInt64Value_value(min_ring_size);
+          if (cds_update.min_ring_size > 8388608 ||
+              cds_update.min_ring_size == 0) {
+            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat(
+                    cluster_name,
+                    ": min_ring_size is not in the range of 1 to 8388608.")
+                    .c_str()));
+            resource_names_failed->insert(cluster_name);
+            continue;
+          }
+          if (cds_update.min_ring_size > cds_update.max_ring_size) {
+            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat(
+                    cluster_name,
+                    ": min_ring_size cannot be greater than max_ring_size.")
+                    .c_str()));
+            resource_names_failed->insert(cluster_name);
+            continue;
+          }
+        }
+        if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
+                ring_hash_config) !=
+            envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
           errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(
-                  cluster_name,
-                  ": max_ring_size is not in the range of 1 to 8388608.")
+              absl::StrCat(cluster_name,
+                           ": ring hash lb config has invalid hash function.")
                   .c_str()));
           resource_names_failed->insert(cluster_name);
           continue;
         }
-      }
-      const google_protobuf_UInt64Value* min_ring_size =
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
-              ring_hash_config);
-      if (min_ring_size != nullptr) {
-        cds_update.min_ring_size =
-            google_protobuf_UInt64Value_value(min_ring_size);
-        if (cds_update.min_ring_size > 8388608 ||
-            cds_update.min_ring_size == 0) {
-          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(
-                  cluster_name,
-                  ": min_ring_size is not in the range of 1 to 8388608.")
-                  .c_str()));
-          resource_names_failed->insert(cluster_name);
-          continue;
-        }
-        if (cds_update.min_ring_size > cds_update.max_ring_size) {
-          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(
-                  cluster_name,
-                  ": min_ring_size cannot be greater than max_ring_size.")
-                  .c_str()));
-          resource_names_failed->insert(cluster_name);
-          continue;
-        }
-      }
-      if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
-              ring_hash_config) !=
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name,
-                         ": ring hash lb config has invalid hash function.")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
       }
     } else {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(

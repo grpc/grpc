@@ -490,10 +490,8 @@ void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
     grpc_connectivity_state old_state, grpc_connectivity_state new_state) {
   GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (old_state == GRPC_CHANNEL_IDLE) {
-    if (new_state != GRPC_CHANNEL_IDLE) {
-      GPR_ASSERT(num_idle_ > 0);
-      --num_idle_;
-    }
+    GPR_ASSERT(num_idle_ > 0);
+    --num_idle_;
   } else if (old_state == GRPC_CHANNEL_READY) {
     GPR_ASSERT(num_ready_ > 0);
     --num_ready_;
@@ -627,7 +625,7 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   // Update the RH policy's connectivity state, creating new picker and new
   // ring.
   bool reattempt = subchannel_list()->UpdateRingHashConnectivityStateLocked();
-  // While the ring_hash policy is reporting TRANSIENT_FAILURE or IDLE, it will
+  // While the ring_hash policy is reporting TRANSIENT_FAILURE, it will
   // not be getting any pick requests from the priority policy.
   // However, because the ring_hash policy does not attempt to
   // reconnect to subchannels unless it is getting pick requests,
