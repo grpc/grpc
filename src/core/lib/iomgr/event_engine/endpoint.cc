@@ -81,6 +81,7 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
             reinterpret_cast<SliceBuffer*>(&eeep->write_buffer);
         write_buffer->~SliceBuffer();
         // Invoke original callback.
+        grpc_core::ExecCtx exec_ctx;
         grpc_core::Closure::Run(DEBUG_LOCATION, cb,
                                 absl_status_to_grpc_error(status));
       },
