@@ -833,9 +833,9 @@ bool IsEds(absl::string_view type_url) {
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_SUFFIX="...", that string
 // will be appended to the user agent reported to the xDS server.
 #ifdef GRPC_XDS_USER_AGENT_SUFFIX
-#define GRPC_XDS_USER_AGENT_SUFFIX " " GRPC_XDS_USER_AGENT_SUFFIX
+#define _GRPC_XDS_USER_AGENT_SUFFIX "##GRPC_XDS_USER_AGENT_SUFFIX##"
 #else
-#define GRPC_XDS_USER_AGENT_SUFFIX ""
+#define _GRPC_XDS_USER_AGENT_SUFFIX ""
 #endif
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
@@ -846,7 +846,7 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string())),
       user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
-                                    GRPC_XDS_USER_AGENT_SUFFIX)) {
+                                    _GRPC_XDS_USER_AGENT_SUFFIX)) {
   // Populate upb symtab with xDS proto messages that we want to print
   // properly in logs.
   // Note: This won't actually work properly until upb adds support for
