@@ -113,7 +113,7 @@ class RingHash : public LoadBalancingPolicy {
         grpc_connectivity_state connectivity_state) override;
 
     ServerAddress address_;
-    grpc_connectivity_state last_connectivity_state_ = GRPC_CHANNEL_IDLE;
+    grpc_connectivity_state last_connectivity_state_ = GRPC_CHANNEL_SHUTDOWN;
     bool seen_failure_since_ready_ = false;
   };
 
@@ -466,11 +466,16 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
 
 void RingHash::RingHashSubchannelList::StartWatchingLocked() {
   if (num_subchannels() == 0) return;
+  // Check current state of each subchannel synchronously.
+  for (size_t i = 0; i < num_subchannels(); ++i) {
+    grpc_connectivity_state state =
+        subchannel(i)->CheckConnectivityStateLocked();
+    subchannel(i)->UpdateConnectivityStateLocked(state);
+  }
   // Start connectivity watch for each subchannel.
   for (size_t i = 0; i < num_subchannels(); i++) {
     if (subchannel(i)->subchannel() != nullptr) {
       subchannel(i)->StartConnectivityWatchLocked();
-      subchannel(i)->UpdateConnectivityStateLocked(GRPC_CHANNEL_IDLE);
     }
   }
   RingHash* p = static_cast<RingHash*>(policy());
@@ -483,7 +488,6 @@ void RingHash::RingHashSubchannelList::StartWatchingLocked() {
 
 void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
     grpc_connectivity_state old_state, grpc_connectivity_state new_state) {
-  GPR_ASSERT(old_state != GRPC_CHANNEL_SHUTDOWN);
   GPR_ASSERT(new_state != GRPC_CHANNEL_SHUTDOWN);
   if (old_state == GRPC_CHANNEL_IDLE) {
     if (new_state != GRPC_CHANNEL_IDLE) {
