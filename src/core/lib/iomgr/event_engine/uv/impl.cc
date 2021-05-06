@@ -19,16 +19,22 @@ class uvLookupTask;
 
 class uvTCPbase {
  public:
-  uvTCPbase() {}
+  uvTCPbase() { printf("Created uvTCPbase with handle @ %p\n", &tcp_); }
   uvTCPbase(
       grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
           on_accept,
       grpc_event_engine::experimental::EventEngine::Callback on_shutdown)
-      : on_accept_(on_accept), on_shutdown_(on_shutdown) {}
-  virtual ~uvTCPbase() = default;
+      : on_accept_(on_accept), on_shutdown_(on_shutdown) {
+    printf("Created uvTCPbase with handle @ %p\n", &tcp_);
+  }
+  virtual ~uvTCPbase() {
+    printf("Deleting uvTCPbase with handle @ %p\n", &tcp_);
+  };
   static void uvCloseCB(uv_handle_t* handle) {
     uvTCPbase* tcp = reinterpret_cast<uvTCPbase*>(handle->data);
-    delete tcp;
+    if (--tcp->to_close_ == 0) {
+      delete tcp;
+    }
   }
 
   int init(uvEngine* engine);
@@ -39,6 +45,7 @@ class uvTCPbase {
   grpc_event_engine::experimental::EventEngine::Callback on_shutdown_;
 
   uv_tcp_t tcp_;
+  int to_close_ = 0;
 };
 
 class uvTCPlistener final : public uvTCPbase {
@@ -64,6 +71,8 @@ class uvTCP final : public uvTCPbase {
   virtual ~uvTCP() = default;
 
   uv_connect_t connect_;
+  uv_timer_t write_timer_;
+  uv_timer_t read_timer_;
 };
 
 class uvListener final
@@ -126,8 +135,8 @@ class uvEndpoint final
       : uvTCP_(new uvTCP(args, std::move(slice_allocator))) {
     uvTCP_->tcp_.data = this;
     write_req_.data = this;
-    write_timer_.data = this;
-    read_timer_.data = this;
+    uvTCP_->write_timer_.data = this;
+    uvTCP_->read_timer_.data = this;
   }
   virtual ~uvEndpoint() override final;
   int init(uvEngine* engine);
@@ -169,7 +178,7 @@ class uvEndpoint final
     uvEndpoint* ep = reinterpret_cast<uvEndpoint*>(req->data);
     delete[] ep->write_bufs_;
     ep->write_bufs_ = nullptr;
-    uv_timer_stop(&ep->write_timer_);
+    uv_timer_stop(&ep->uvTCP_->write_timer_);
     ep->on_writable_(status == 0
                          ? absl::OkStatus()
                          : absl::UnknownError("uv_write gave us an error"));
@@ -185,7 +194,7 @@ class uvEndpoint final
                        const uv_buf_t* buf) {
     if (nread == 0) return;
     uvEndpoint* ep = reinterpret_cast<uvEndpoint*>(stream->data);
-    uv_timer_stop(&ep->read_timer_);
+    uv_timer_stop(&ep->uvTCP_->read_timer_);
     uv_read_stop(stream);
     if (nread < 0) {
       ep->on_read_(absl::UnknownError("uv_read_start gave us an error"));
@@ -197,6 +206,7 @@ class uvEndpoint final
     ep->read_sb_->add(slice);
     auto cb = std::move(ep->on_read_);
     cb(absl::OkStatus());
+    memset(ep->read_buf_, 0, buf->len);
   }
 
   static void uvReadTimeoutCB(uv_timer_t* timer) {
@@ -217,9 +227,7 @@ class uvEndpoint final
   uv_write_t write_req_;
   uv_buf_t* write_bufs_ = nullptr;
   size_t write_bufs_count_ = 0;
-  uv_timer_t write_timer_;
   uint8_t read_buf_[4096];
-  uv_timer_t read_timer_;
   grpc_event_engine::experimental::SliceBuffer* read_sb_;
   grpc_event_engine::experimental::EventEngine::Callback on_writable_;
   grpc_event_engine::experimental::EventEngine::Callback on_read_;
@@ -268,11 +276,6 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     }
   }
 
-  static void closeCallback(uv_handle_t* handle) {
-    uvTCP* tcp = reinterpret_cast<uvTCP*>(handle->data);
-    delete tcp;
-  }
-
   void threadBody() {
     if (uv_loop_init(&loop_) != 0) {
       ready_.set_value(false);
@@ -285,12 +288,15 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     }
     ready_.set_value(true);
     uv_run(&loop_, UV_RUN_DEFAULT);
+    on_shutdown_complete_(absl::OkStatus());
   }
 
   uvEngine() {
     bool success = false;
-    thread_ =
-        grpc_core::Thread("uv loop", threadBodyTrampoline, this, &success);
+    grpc_core::Thread::Options options;
+    options.set_joinable(false);
+    thread_ = grpc_core::Thread("uv loop", threadBodyTrampoline, this, &success,
+                                options);
     thread_.Start();
     GPR_ASSERT(success);
     success = ready_.get_future().get();
@@ -341,8 +347,18 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
 
   virtual void TryCancel(TaskHandle handle) override final { abort(); }
 
+  static void walkCB(uv_handle_t* handle, void* arg) {
+    printf("handle @ %p: %s (ref: %s)\n", handle,
+           uv_handle_type_name(uv_handle_get_type(handle)),
+           uv_has_ref(handle) ? "yes" : "no");
+  }
+
   virtual void Shutdown(Callback on_shutdown_complete) override final {
-    abort();
+    on_shutdown_complete_ = on_shutdown_complete;
+    schedule([](uvEngine* engine) {
+      uv_unref(reinterpret_cast<uv_handle_t*>(&engine->kicker_));
+      uv_walk(&engine->loop_, uvEngine::walkCB, engine);
+    });
   }
 
   void eraseTask(intptr_t taskKey);
@@ -357,6 +373,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
   std::atomic<intptr_t> lookupTaskKey_;
   std::unordered_map<intptr_t, uvTask*> taskMap_;
   std::unordered_map<intptr_t, uvLookupTask*> lookupTaskMap_;
+  grpc_event_engine::experimental::EventEngine::Callback on_shutdown_complete_;
 };
 
 int uvTCPbase::init(uvEngine* engine) {
@@ -382,8 +399,12 @@ uvListener::uvListener(
 }
 
 uvListener::~uvListener() {
-  engine_->schedule([tcp{&uvTCP_->tcp_}](uvEngine* engine) {
-    uv_close(reinterpret_cast<uv_handle_t*>(tcp), uvEngine::closeCallback);
+  uvTCPbase* tcp = uvTCP_;
+  engine_->schedule([tcp](uvEngine* engine) {
+    tcp->tcp_.data = tcp;
+    tcp->to_close_ = 1;
+    printf("Closing uvListener with handle @ %p\n", &tcp->tcp_);
+    uv_close(reinterpret_cast<uv_handle_t*>(&tcp->tcp_), uvTCPbase::uvCloseCB);
   });
 }
 
@@ -489,7 +510,11 @@ class uvLookupTask {
     }
 
     uv_freeaddrinfo(res);
-    engine->eraseLookupTask(key_);
+    uv_close(reinterpret_cast<uv_handle_t*>(&timer_), [](uv_handle_t* timer) {
+      uvLookupTask* task = reinterpret_cast<uvLookupTask*>(timer->data);
+      uvEngine* engine = reinterpret_cast<uvEngine*>(timer->loop->data);
+      engine->eraseLookupTask(task->key_);
+    });
     on_resolve_(status == UV_ECANCELED ? absl::CancelledError("Cancelled")
                                        : absl::OkStatus(),
                 std::move(ret));
@@ -567,16 +592,23 @@ void uvEngine::eraseLookupTask(intptr_t taskKey) {
 uvEndpoint::~uvEndpoint() {
   GPR_ASSERT(write_bufs_ == nullptr);
   GPR_ASSERT(on_read_ == nullptr);
-  uvTCPbase* tcp = uvTCP_;
-  tcp->tcp_.data = tcp;
+  uvTCP* tcp = uvTCP_;
   getEngine()->schedule([tcp](uvEngine* engine) {
+    tcp->to_close_ = 3;
+    uvTCPbase* base = tcp;
+    tcp->tcp_.data = base;
+    printf("Closing uvEndpoint with handle @ %p\n", &tcp->tcp_);
     uv_close(reinterpret_cast<uv_handle_t*>(&tcp->tcp_), uvTCPbase::uvCloseCB);
+    uv_close(reinterpret_cast<uv_handle_t*>(&tcp->write_timer_),
+             uvTCPbase::uvCloseCB);
+    uv_close(reinterpret_cast<uv_handle_t*>(&tcp->read_timer_),
+             uvTCPbase::uvCloseCB);
   });
 }
 
 int uvEndpoint::init(uvEngine* engine) {
-  uv_timer_init(&engine->loop_, &write_timer_);
-  uv_timer_init(&engine->loop_, &read_timer_);
+  uv_timer_init(&engine->loop_, &uvTCP_->write_timer_);
+  uv_timer_init(&engine->loop_, &uvTCP_->read_timer_);
   return uvTCP_->init(engine);
 }
 
@@ -596,7 +628,7 @@ void uvEndpoint::Write(
   }
   getEngine()->schedule([this, deadline](uvEngine* engine) {
     absl::Duration timeout = deadline - absl::Now();
-    uv_timer_start(&write_timer_, uvWriteTimeoutCB,
+    uv_timer_start(&uvTCP_->write_timer_, uvWriteTimeoutCB,
                    timeout / absl::Milliseconds(1), 0);
     uv_write(&write_req_, reinterpret_cast<uv_stream_t*>(&uvTCP_->tcp_),
              write_bufs_, write_bufs_count_, uvWriteCB);
@@ -611,7 +643,7 @@ void uvEndpoint::Read(
   on_read_ = std::move(on_read);
   getEngine()->schedule([this, deadline](uvEngine* engine) {
     absl::Duration timeout = deadline - absl::Now();
-    uv_timer_start(&write_timer_, uvReadTimeoutCB,
+    uv_timer_start(&uvTCP_->read_timer_, uvReadTimeoutCB,
                    timeout / absl::Milliseconds(1), 0);
     uv_read_start(reinterpret_cast<uv_stream_t*>(&uvTCP_->tcp_), uvAllocCB,
                   uvReadCB);
