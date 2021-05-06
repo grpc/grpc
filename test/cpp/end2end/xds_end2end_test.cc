@@ -6812,9 +6812,9 @@ TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
   hash_policy->mutable_header()
       ->mutable_regex_rewrite()
       ->mutable_pattern()
-      ->set_regex(ipv6_only_ ? "(::1):([0-9]+)" : "(127.0.0.1):([0-9]+)");
+      ->set_regex("([0-9]+)");
   hash_policy->mutable_header()->mutable_regex_rewrite()->set_substitution(
-      ipv6_only_ ? "::1" : "127.0.0.1");
+      "foo");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", CreateEndpointsForBackends()},
@@ -6874,8 +6874,6 @@ TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  auto new_route_config = default_route_config_;
-  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
       {{"locality0",
         {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
@@ -6917,8 +6915,6 @@ TEST_P(CdsTest,
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
-  auto new_route_config = default_route_config_;
-  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
       {{"locality0", {CreateEndpoint(0, HealthStatus::UNKNOWN, 1)}, 1},
        {"locality1", {CreateEndpoint(1, HealthStatus::UNKNOWN, 2)}, 2}});
@@ -7003,7 +6999,7 @@ TEST_P(CdsTest, RingHashIdleToReady) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  (void)SendRpc();
+  CheckRpcSendOk();
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
@@ -7025,8 +7021,11 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   auto* hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
+  endpoints.emplace_back(grpc_pick_unused_port_or_die());
+  endpoints.emplace_back(backends_[1]->port());
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 2)},
+      {"locality0", std::move(endpoints)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -7037,7 +7036,6 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   };
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  ShutdownBackend(0);
   gpr_log(GPR_INFO, "donna test after shutdown");
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   WaitForBackend(1, WaitForBackendOptions(), rpc_options);
@@ -7100,8 +7098,11 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   auto* hash_policy = route->mutable_route()->add_hash_policy();
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
+  endpoints.emplace_back(grpc_pick_unused_port_or_die());
+  endpoints.emplace_back(backends_[1]->port());
   AdsServiceImpl::EdsResourceArgs args({
-      {"locality0", CreateEndpointsForBackends(0, 2)},
+      {"locality0", std::move(endpoints)},
   });
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
@@ -7112,7 +7113,6 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   };
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  ShutdownBackend(0);
   ShutdownBackend(1);
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   StartBackend(1);
