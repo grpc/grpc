@@ -48,7 +48,7 @@ std::vector<absl::string_view> GetAuthPropertyArray(grpc_auth_context* context,
       grpc_auth_context_find_properties_by_name(context, property_name);
   const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
   while (prop != nullptr) {
-    values.emplace_back(absl::string_view(prop->value, prop->value_length));
+    values.emplace_back(prop->value, prop->value_length);
     prop = grpc_auth_property_iterator_next(&it);
   }
   if (values.empty()) {
@@ -80,8 +80,8 @@ EvaluateArgs::PerChannelArgs::Address ParseEndpointUri(
   grpc_error_handle error = grpc_string_to_sockaddr(
       &address.address, address.address_str.c_str(), address.port);
   if (error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_DEBUG, "Address %s is not IPv4/IPv6.",
-            address.address_str.c_str());
+    gpr_log(GPR_DEBUG, "Address %s is not IPv4/IPv6. Error: %s",
+            address.address_str.c_str(), grpc_error_std_string(error).c_str());
   }
   GRPC_ERROR_UNREF(error);
   return address;
