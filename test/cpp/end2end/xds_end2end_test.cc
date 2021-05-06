@@ -6859,6 +6859,119 @@ TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
+// Tests that ring hash policy that hashes using a random value.
+TEST_P(CdsTest, RingHashRandomHashing) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const size_t kNumRpcs = ComputeIdealNumRpcs(0.5, 0.05);
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
+         CreateEndpoint(1, HealthStatus::UNKNOWN, 1)}}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends(0, 2);
+  CheckRpcSendOk(kNumRpcs);
+  gpr_log(GPR_INFO, "donna sent %" PRIuPTR, kNumRpcs);
+  for (size_t i = 0; i < 2; ++i) {
+    gpr_log(GPR_INFO, "donna backend %" PRIuPTR " got %" PRIuPTR, i,
+            backends_[i]->backend_service()->request_count());
+  }
+  const int request_count_1 = backends_[0]->backend_service()->request_count();
+  const int request_count_2 = backends_[1]->backend_service()->request_count();
+  EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
+              ::testing::DoubleNear(0.5, 0.05));
+  EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
+              ::testing::DoubleNear(0.5, 0.05));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test random hash is usesd when header hashing specified a header field that
+// the RPC did not have.
+TEST_P(CdsTest, RingHashUnknownHeaderDefaultToRandomHashing) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const size_t kNumRpcs = ComputeIdealNumRpcs(0.5, 0.05);
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("fixed_header");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
+         CreateEndpoint(1, HealthStatus::UNKNOWN, 1)}}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"random_string", absl::StrFormat("%" PRIu32, rand())},
+  };
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  gpr_log(GPR_INFO, "donna before failure");
+  WaitForAllBackends(0, 2, WaitForBackendOptions(), rpc_options);
+  gpr_log(GPR_INFO, "donna after failure");
+  CheckRpcSendOk(kNumRpcs, rpc_options);
+  gpr_log(GPR_INFO, "donna sent %" PRIuPTR, kNumRpcs);
+  for (size_t i = 0; i < 2; ++i) {
+    gpr_log(GPR_INFO, "donna backend %" PRIuPTR " got %" PRIuPTR, i,
+            backends_[i]->backend_service()->request_count());
+  }
+  const int request_count_1 = backends_[0]->backend_service()->request_count();
+  const int request_count_2 = backends_[1]->backend_service()->request_count();
+  EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
+              ::testing::DoubleNear(0.5, 0.05));
+  EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
+              ::testing::DoubleNear(0.5, 0.05));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test random hash is usesd when only unsupported hash policies are configured.
+TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const size_t kNumRpcs = ComputeIdealNumRpcs(0.5, 0.05);
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy_unsupported_1 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_1->mutable_cookie()->set_name("cookie");
+  auto* hash_policy_unsupported_2 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_2->mutable_connection_properties()->set_source_ip(
+      true);
+  auto* hash_policy_unsupported_3 = route->mutable_route()->add_hash_policy();
+  hash_policy_unsupported_3->mutable_query_parameter()->set_name(
+      "query_parameter");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  AdsServiceImpl::EdsResourceArgs args(
+      {{"locality0",
+        {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
+         CreateEndpoint(1, HealthStatus::UNKNOWN, 1)}}});
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  WaitForAllBackends(0, 2);
+  CheckRpcSendOk(kNumRpcs);
+  gpr_log(GPR_INFO, "donna sent %" PRIuPTR, kNumRpcs);
+  for (size_t i = 0; i < 2; ++i) {
+    gpr_log(GPR_INFO, "donna backend %" PRIuPTR " got %" PRIuPTR, i,
+            backends_[i]->backend_service()->request_count());
+  }
+  const int request_count_1 = backends_[0]->backend_service()->request_count();
+  const int request_count_2 = backends_[1]->backend_service()->request_count();
+  EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
+              ::testing::DoubleNear(0.5, 0.05));
+  EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
+              ::testing::DoubleNear(0.5, 0.05));
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
 // Tests that ring hash policy that hashes using a random value can spread RPCs
 // across all the backends according to locality weight.
 TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
@@ -7158,56 +7271,6 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyUntilChannelIdHashing) {
     }
   }
   EXPECT_TRUE(found);
-  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
-}
-
-// Test random has is usesd when only supported hash policies are configured.
-TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
-  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
-  const size_t kWeight1 = 1;
-  const size_t kWeight2 = 2;
-  const size_t kWeightTotal = kWeight1 + kWeight2;
-  const double kWeight33Percent = static_cast<double>(kWeight1) / kWeightTotal;
-  const double kWeight66Percent = static_cast<double>(kWeight2) / kWeightTotal;
-  const double kErrorTolerance = 0.05;
-  const size_t kNumRpcs =
-      ComputeIdealNumRpcs(kWeight33Percent, kErrorTolerance);
-  auto cluster = default_cluster_;
-  cluster.set_lb_policy(Cluster::RING_HASH);
-  balancers_[0]->ads_service()->SetCdsResource(cluster);
-  auto new_route_config = default_route_config_;
-  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
-  auto* hash_policy_unsupported_1 = route->mutable_route()->add_hash_policy();
-  hash_policy_unsupported_1->mutable_cookie()->set_name("cookie");
-  auto* hash_policy_unsupported_2 = route->mutable_route()->add_hash_policy();
-  hash_policy_unsupported_2->mutable_connection_properties()->set_source_ip(
-      true);
-  auto* hash_policy_unsupported_3 = route->mutable_route()->add_hash_policy();
-  hash_policy_unsupported_3->mutable_query_parameter()->set_name(
-      "query_parameter");
-  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
-  AdsServiceImpl::EdsResourceArgs args(
-      {{"locality0",
-        {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
-         CreateEndpoint(1, HealthStatus::UNKNOWN, 2)}}});
-  balancers_[0]->ads_service()->SetEdsResource(
-      BuildEdsResource(args, DefaultEdsServiceName()));
-  SetNextResolutionForLbChannelAllBalancers();
-  WaitForAllBackends(0, 2);
-  CheckRpcSendOk(kNumRpcs);
-  gpr_log(GPR_INFO, "donna sent %" PRIuPTR, kNumRpcs);
-  for (size_t i = 0; i < 2; ++i) {
-    gpr_log(GPR_INFO, "donna backend %" PRIuPTR " got %" PRIuPTR, i,
-            backends_[i]->backend_service()->request_count());
-  }
-  const int weight_33_request_count =
-      backends_[0]->backend_service()->request_count();
-  const int weight_66_request_count =
-      backends_[1]->backend_service()->request_count();
-  EXPECT_THAT(static_cast<double>(weight_33_request_count) / kNumRpcs,
-              ::testing::DoubleNear(kWeight33Percent, kErrorTolerance));
-  EXPECT_THAT(static_cast<double>(weight_66_request_count) / kNumRpcs,
-              ::testing::DoubleNear(kWeight66Percent, kErrorTolerance));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 

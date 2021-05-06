@@ -568,6 +568,10 @@ absl::optional<uint64_t> HeaderHashHelper(
   std::string value_buffer;
   absl::optional<absl::string_view> header_value =
       GetHeaderValue(initial_metadata, policy.header_name, &value_buffer);
+  if (!header_value.has_value()) {
+    gpr_log(GPR_INFO, "donna could not find header");
+    return absl::nullopt;
+  }
   if (policy.regex != nullptr) {
     // If GetHeaderValue() did not already store the value in
     // value_buffer, copy it there now, so we can modify it.
@@ -677,6 +681,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       // If there is no hash, we just choose a random value as a default.
       address_str = absl::StrCat(rand());
       hash = XXH64(address_str.c_str(), address_str.length(), 0);
+      gpr_log(GPR_INFO, "donna defaulted to random %" PRIu64, hash.value());
     }
     CallConfig call_config;
     if (method_config != nullptr) {
