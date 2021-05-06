@@ -157,7 +157,7 @@ class EventEngine {
   /// Called when a new connection is established.
   ///
   /// If the connection attempt was not successful, implementations should pass
-  /// the appropriate statuses to \a on_read. For example, callbacks might
+  /// the appropriate statuses to this callback. For example, callbacks might
   /// expect to receive DEADLINE_EXCEEDED statuses when appropriate, or
   /// CANCELLED statuses on EventEngine shutdown.
   using OnConnectCallback =
@@ -187,14 +187,13 @@ class EventEngine {
   /// callback will only be called in healthy scenarios where connections can be
   /// accepted.
   ///
-  /// \a on_shutdown will be called exactly once, with either an OK status for a
-  /// normal \a Listener or \a EventEngine shutdown, or a non-OK status if the
-  /// Listener or gRPC encountered an error.
-  ///
   /// This method may return a non-OK status immediately if an error was
-  /// encountered in any synchronous steps required to create a \a Listener. If
-  /// this happens, neither \a on_shutdown nor \a on_accept callbacks will have
-  /// been executed.
+  /// encountered in any synchronous steps required to create the Listener. In
+  /// this case, \a on_shutdown will never be called.
+  ///
+  /// If this method returns a Listener, then \a on_shutdown will be invoked
+  /// exactly once, when the Listener is shut down. The status passed to it will
+  /// indicate if there was a problem during shutdown.
   ///
   /// The provided \a SliceAllocatorFactory is used to create \a SliceAllocators
   /// for Endpoint construction.
