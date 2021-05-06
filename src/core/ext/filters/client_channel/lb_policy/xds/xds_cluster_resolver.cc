@@ -494,6 +494,7 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
         fake_resolver_response_generator);
     args = grpc_channel_args_copy_and_add(parent()->args_, &new_arg, 1);
   } else {
+    target = absl::StrCat("dns:", target);
     args = grpc_channel_args_copy(parent()->args_);
   }
   resolver_ = ResolverRegistry::CreateResolver(
