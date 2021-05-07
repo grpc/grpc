@@ -3,7 +3,7 @@
 Proxyless Security Mesh Interop Tests executed on Kubernetes.
 
 ### Experimental
-Work in progress. Internal APIs may and will change. Please refrain from making 
+Work in progress. Internal APIs may and will change. Please refrain from making
 changes to this codebase at the moment.
 
 ### Stabilization roadmap 
@@ -11,10 +11,11 @@ changes to this codebase at the moment.
 - [ ] Generate namespace for each test to prevent resource name conflicts and
       allow running tests in parallel
 - [ ] Security: run server and client in separate namespaces
-- [ ] Make framework.infrastructure.gcp resources [first-class citizen](https://en.wikipedia.org/wiki/First-class_citizen),
-      support simpler CRUD
-- [ ] Security: manage `roles/iam.workloadIdentityUser` role grant lifecycle
-      for dynamically-named namespaces 
+- [ ] Make framework.infrastructure.gcp resources [first-class
+      citizen](https://en.wikipedia.org/wiki/First-class_citizen), support
+      simpler CRUD
+- [ ] Security: manage `roles/iam.workloadIdentityUser` role grant lifecycle for
+      dynamically-named namespaces 
 - [ ] Restructure `framework.test_app` and `framework.xds_k8s*` into a module
       containing xDS-interop-specific logic
 - [ ] Address inline TODOs in code
@@ -25,8 +26,12 @@ changes to this codebase at the moment.
 #### Requirements
 1. Python v3.6+
 2. [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
-3. A GKE cluster (must enable "Enable VPC-native traffic routing" to use it with the Traffic Director)
-    * Otherwise, you will see error logs when you inspect Kubernetes virtual service
+3. A GKE cluster (must enable "Enable VPC-native traffic routing" to use it with
+   the Traffic Director)
+    * Otherwise, you will see error logs when you inspect Kubernetes virtual
+      service
+    * (In `grpc-testing`, you will need a metadata tag
+      `--tags=allow-health-checks` to allow UHC to reach your resources.)
 
 #### Configure GKE cluster access
 
@@ -65,10 +70,15 @@ python -m grpc_tools.protoc --proto_path=../../../ \
 
 ### xDS Baseline Tests
 
-Test suite meant to confirm that basic xDS features work as expected.
-Executing it before other test suites will help to identify whether test failure
-related to specific features under test, or caused by unrelated infrastructure
+Test suite meant to confirm that basic xDS features work as expected. Executing
+it before other test suites will help to identify whether test failure related
+to specific features under test, or caused by unrelated infrastructure
 disturbances.
+
+The client and server images are created based on Git commit hashes, but not
+every single one of them. It is triggered nightly and per-release. For example,
+the commit we are using below (`d12ac30cde0c4d7f03ade13de177ad96c501ff79`) comes
+from `v1.37.x` in `grpc-java` repo.
 
 ```sh
 # Help
@@ -79,8 +89,8 @@ python -m tests.baseline_test --helpful
 python -m tests.baseline_test \
   --flagfile="config/grpc-testing.cfg" \
   --kube_context="${KUBE_CONTEXT}" \
-  --server_image="gcr.io/grpc-testing/xds-k8s-test-server-java:latest" \
-  --client_image="gcr.io/grpc-testing/xds-k8s-test-client-java:latest"
+  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d12ac30cde0c4d7f03ade13de177ad96c501ff79" \
+  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d12ac30cde0c4d7f03ade13de177ad96c501ff79"
 ```
 
 ### xDS Security Tests
@@ -93,11 +103,11 @@ python -m tests.security_test --helpful
 python -m tests.security_test \
   --flagfile="config/grpc-testing.cfg" \
   --kube_context="${KUBE_CONTEXT}" \
-  --server_image="gcr.io/grpc-testing/xds-interop/java-server:git_commit_hash" \
-  --client_image="gcr.io/grpc-testing/xds-interop/java-client:git_commit_hash"
+  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d12ac30cde0c4d7f03ade13de177ad96c501ff79" \
+  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d12ac30cde0c4d7f03ade13de177ad96c501ff79"
 ```
 
-### Workload namespace
+### Test namespace
 
 It's possible to run multiple xDS interop test workloads in the same project.
 But we need to ensure the name of the global resources won't conflict. This can
@@ -109,8 +119,28 @@ avoid if possible). Here is an example:
 python3 -m tests.baseline_test \
   --flagfile="config/grpc-testing.cfg" \
   --kube_context="${KUBE_CONTEXT}" \
-  --server_image="gcr.io/grpc-testing/xds-k8s-test-server-java:latest" \
-  --client_image="gcr.io/grpc-testing/xds-k8s-test-client-java:latest" \
+  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d12ac30cde0c4d7f03ade13de177ad96c501ff79" \
+  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d12ac30cde0c4d7f03ade13de177ad96c501ff79" \
   --namespace="box-$(date +"%F-%R")" \
   --server_xds_port="$(($RANDOM%1000 + 34567))"
+```
+
+### Setup test configuration
+
+There are many arguments to be passed into the test run. You can save the
+arguments to a config file for your development environment. Please take a look
+at
+https://github.com/grpc/grpc/blob/master/tools/run_tests/xds_k8s_test_driver/config/local-dev.cfg.example.
+You can create your own config by:
+
+```shell
+cp config/local-dev.cfg.example config/local-dev.cfg
+```
+
+### Clean-up resources
+
+```shell
+python -m bin.run_td_setup --cmd=cleanup --flagfile=config/local-dev.cfg && \
+python -m bin.run_test_client --cmd=cleanup --flagfile=config/local-dev.cfg && \
+python -m bin.run_test_server --cmd=cleanup --cleanup_namespace --flagfile=config/local-dev.cfg
 ```
