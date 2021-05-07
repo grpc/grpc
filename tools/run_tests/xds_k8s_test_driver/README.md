@@ -25,6 +25,8 @@ changes to this codebase at the moment.
 #### Requirements
 1. Python v3.6+
 2. [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
+3. A GKE cluster (must enable "Enable VPC-native traffic routing" to use it with the Traffic Director)
+    * Otherwise, you will see error logs when you inspect Kubernetes virtual service
 
 #### Configure GKE cluster access
 
@@ -78,7 +80,7 @@ python -m tests.baseline_test \
   --flagfile="config/grpc-testing.cfg" \
   --kube_context="${KUBE_CONTEXT}" \
   --server_image="gcr.io/grpc-testing/xds-k8s-test-server-java:latest" \
-  --client_image="gcr.io/grpc-testing/xds-k8s-test-client-java:latest" \
+  --client_image="gcr.io/grpc-testing/xds-k8s-test-client-java:latest"
 ```
 
 ### xDS Security Tests
@@ -92,5 +94,23 @@ python -m tests.security_test \
   --flagfile="config/grpc-testing.cfg" \
   --kube_context="${KUBE_CONTEXT}" \
   --server_image="gcr.io/grpc-testing/xds-k8s-test-server-java:latest" \
+  --client_image="gcr.io/grpc-testing/xds-k8s-test-client-java:latest"
+```
+
+### Workload namespace
+
+It's possible to run multiple xDS interop test workloads in the same project.
+But we need to ensure the name of the global resources won't conflict. This can
+be solved by supplying `--namespace` and `--server_xds_port`. The xDS port needs
+to be unique across the entire project (default port range is [8080, 8280],
+avoid if possible). Here is an example:
+
+```shell
+python3 -m tests.baseline_test \
+  --flagfile="config/grpc-testing.cfg" \
+  --kube_context="${KUBE_CONTEXT}" \
+  --server_image="gcr.io/grpc-testing/xds-k8s-test-server-java:latest" \
   --client_image="gcr.io/grpc-testing/xds-k8s-test-client-java:latest" \
+  --namespace="box-$(date +"%F-%R")" \
+  --server_xds_port="$($(($RANDOM%1000 + 34567)))"
 ```
