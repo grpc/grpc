@@ -56,7 +56,7 @@ export GRPC_XDS_BOOTSTRAP=/etc/xds-bootstrap.json
 3. Run the client:
 
 ```
-python client.py xds-experimental:///my-backend
+python client.py xds:///my-backend
 ```
 
 ### Verifying Configuration with a CLI Tool
@@ -100,4 +100,24 @@ grpc.health.v1.Health/Check
 {
   "status": "SERVING"
 }
+```
+
+### Running with Proxyless Security
+
+#### Run the Server with Secure Credentials
+
+Add the `--secure true` flag to the invocation outlined above.
+
+```sh
+python server.py --secure true
+```
+
+#### Run the Client with Secure Credentials
+
+Add the `--secure true` flag to the invocation outlined above.
+
+3. Run the client:
+
+```
+python client.py xds:///my-backend --secure true
 ```
