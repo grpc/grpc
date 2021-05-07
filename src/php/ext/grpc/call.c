@@ -314,6 +314,11 @@ PHP_METHOD(Call, startBatch) {
     goto cleanup;
   }
 
+  // c-core may call rand(). If we don't call srand() here, all the
+  // random numbers being returned would be the same.
+  gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
+  srand(now.tv_nsec);
+
   array_hash = Z_ARRVAL_P(array);
 
   char *key = NULL;

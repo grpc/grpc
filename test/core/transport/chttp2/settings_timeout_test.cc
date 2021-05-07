@@ -104,9 +104,9 @@ class Client {
   void Connect() {
     grpc_core::ExecCtx exec_ctx;
     grpc_resolved_addresses* server_addresses = nullptr;
-    grpc_error* error =
+    grpc_error_handle error =
         grpc_blocking_resolve_address(server_address_, "80", &server_addresses);
-    ASSERT_EQ(GRPC_ERROR_NONE, error) << grpc_error_string(error);
+    ASSERT_EQ(GRPC_ERROR_NONE, error) << grpc_error_std_string(error);
     ASSERT_GE(server_addresses->naddrs, 1UL);
     pollset_ = static_cast<grpc_pollset*>(gpr_zalloc(grpc_pollset_size()));
     grpc_pollset_init(pollset_, &mu_);
@@ -177,11 +177,12 @@ class Client {
     bool done() const { return gpr_atm_acq_load(&done_atm_) != 0; }
 
     // Caller does NOT take ownership of the error.
-    grpc_error* error() const { return error_; }
+    grpc_error_handle error() const { return error_; }
 
    private:
-    static void OnEventDone(void* arg, grpc_error* error) {
-      gpr_log(GPR_INFO, "OnEventDone(): %s", grpc_error_string(error));
+    static void OnEventDone(void* arg, grpc_error_handle error) {
+      gpr_log(GPR_INFO, "OnEventDone(): %s",
+              grpc_error_std_string(error).c_str());
       EventState* state = static_cast<EventState*>(arg);
       state->error_ = GRPC_ERROR_REF(error);
       gpr_atm_rel_store(&state->done_atm_, 1);
@@ -189,7 +190,7 @@ class Client {
 
     grpc_closure closure_;
     gpr_atm done_atm_ = 0;
-    grpc_error* error_ = GRPC_ERROR_NONE;
+    grpc_error_handle error_ = GRPC_ERROR_NONE;
   };
 
   // Returns true if done, or false if deadline exceeded.
@@ -209,7 +210,7 @@ class Client {
     }
   }
 
-  static void PollsetDestroy(void* arg, grpc_error* /*error*/) {
+  static void PollsetDestroy(void* arg, grpc_error_handle /*error*/) {
     grpc_pollset* pollset = static_cast<grpc_pollset*>(arg);
     grpc_pollset_destroy(pollset);
     gpr_free(pollset);

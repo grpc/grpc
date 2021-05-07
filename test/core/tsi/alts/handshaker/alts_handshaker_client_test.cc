@@ -138,10 +138,7 @@ static grpc_gcp_HandshakerReq* deserialize_handshaker_req(
 }
 
 static bool is_recv_status_op(const grpc_op* op, size_t nops) {
-  if (nops == 1 && op->op == GRPC_OP_RECV_STATUS_ON_CLIENT) {
-    return true;
-  }
-  return false;
+  return nops == 1 && op->op == GRPC_OP_RECV_STATUS_ON_CLIENT;
 }
 
 /**

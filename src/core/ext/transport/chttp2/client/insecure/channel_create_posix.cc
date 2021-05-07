@@ -56,13 +56,13 @@ grpc_channel* grpc_insecure_channel_create_from_fd(
   grpc_transport* transport =
       grpc_create_chttp2_transport(final_args, client, true);
   GPR_ASSERT(transport);
-  grpc_error* error = nullptr;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   grpc_channel* channel =
       grpc_channel_create(target, final_args, GRPC_CLIENT_DIRECT_CHANNEL,
                           transport, nullptr, &error);
   grpc_channel_args_destroy(final_args);
   if (channel != nullptr) {
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
     grpc_core::ExecCtx::Get()->Flush();
   } else {
     intptr_t integer;

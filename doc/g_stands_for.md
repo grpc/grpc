@@ -36,4 +36,5 @@
 - 1.34 'g' stands for ['gauntlet'](https://github.com/grpc/grpc/tree/v1.34.x)
 - 1.35 'g' stands for ['gecko'](https://github.com/grpc/grpc/tree/v1.35.x)
 - 1.36 'g' stands for ['gummybear'](https://github.com/grpc/grpc/tree/v1.36.x)
-- 1.37 'g' stands for ['gilded'](https://github.com/grpc/grpc/tree/master)
+- 1.37 'g' stands for ['gilded'](https://github.com/grpc/grpc/tree/v1.37.x)
+- 1.38 'g' stands for ['guadalupe_river_park_conservancy'](https://github.com/grpc/grpc/tree/master)

@@ -25,7 +25,6 @@ grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
         "cmdline.cc",
-        "eval_args_mock_endpoint.cc",
         "fuzzer_util.cc",
         "grpc_profiler.cc",
         "histogram.cc",
@@ -48,11 +47,12 @@ grpc_cc_library(
     ],
     hdrs = [
         "cmdline.h",
-        "eval_args_mock_endpoint.h",
+        "evaluate_args_test_util.h",
         "fuzzer_util.h",
         "grpc_profiler.h",
         "histogram.h",
         "memory_counters.h",
+        "mock_authorization_endpoint.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
         "passthru_endpoint.h",

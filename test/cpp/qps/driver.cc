@@ -634,9 +634,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
   ReceiveFinalStatusFromServer(servers, *result);
   ShutdownServers(servers, *result);
 
-  if (g_inproc_servers != nullptr) {
-    delete g_inproc_servers;
-  }
+  delete g_inproc_servers;
 
   merged_latencies.FillProto(result->mutable_latencies());
   for (std::unordered_map<int, int64_t>::iterator it = merged_statuses.begin();

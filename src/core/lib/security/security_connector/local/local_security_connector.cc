@@ -29,12 +29,12 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 #include "src/core/lib/security/credentials/local/local_credentials.h"
@@ -103,7 +103,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
       }
     }
   }
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (!is_endpoint_local) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Endpoint is neither UDS or TCP loopback address.");
@@ -181,10 +181,15 @@ class grpc_local_channel_security_connector final
                      creds->connect_type());
   }
 
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
+  }
+
   bool check_call_host(absl::string_view host,
                        grpc_auth_context* /*auth_context*/,
                        grpc_closure* /*on_call_host_checked*/,
-                       grpc_error** error) override {
+                       grpc_error_handle* error) override {
     if (host.empty() || host != target_name_) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "local call host does not match target name");
@@ -193,7 +198,7 @@ class grpc_local_channel_security_connector final
   }
 
   void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
-                              grpc_error* error) override {
+                              grpc_error_handle error) override {
     GRPC_ERROR_UNREF(error);
   }
 
@@ -228,6 +233,11 @@ class grpc_local_server_security_connector final
         static_cast<grpc_local_server_credentials*>(mutable_server_creds());
     local_check_peer(peer, ep, auth_context, on_peer_checked,
                      creds->connect_type());
+  }
+
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
   }
 
   int cmp(const grpc_security_connector* other) const override {

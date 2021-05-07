@@ -67,6 +67,15 @@ namespace {
 // max-threads set) to the server builder.
 #define DEFAULT_MAX_SYNC_SERVER_THREADS INT_MAX
 
+// Give a useful status error message if the resource is exhausted specifically
+// because the server threadpool is full.
+const char* kServerThreadpoolExhausted = "Server Threadpool Exhausted";
+
+// Although we might like to give a useful status error message on unimplemented
+// RPCs, it's not always possible since that also would need to be added across
+// languages and isn't actually required by the spec.
+const char* kUnknownRpcMethod = "";
+
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
   ~DefaultGlobalCallbacks() override {}
@@ -802,7 +811,7 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
     if (has_sync_method_) {
       unknown_method_ = absl::make_unique<grpc::internal::RpcServiceMethod>(
           "unknown", grpc::internal::RpcMethod::BIDI_STREAMING,
-          new grpc::internal::UnknownMethodHandler);
+          new grpc::internal::UnknownMethodHandler(kUnknownRpcMethod));
       server_->server()->core_server->SetBatchMethodAllocator(
           server_cq_->cq(), [this] {
             grpc_core::Server::BatchCallAllocation result;
@@ -930,14 +939,16 @@ Server::~Server() {
       for (const auto& value : sync_req_mgrs_) {
         value->Shutdown();
       }
-      if (callback_cq_ != nullptr) {
+      CompletionQueue* callback_cq =
+          callback_cq_.load(std::memory_order_relaxed);
+      if (callback_cq != nullptr) {
         if (grpc_iomgr_run_in_background()) {
           // gRPC-core provides the backing needed for the preferred CQ type
-          callback_cq_->Shutdown();
+          callback_cq->Shutdown();
         } else {
-          CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq_);
+          CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq);
         }
-        callback_cq_ = nullptr;
+        callback_cq_.store(nullptr, std::memory_order_release);
       }
     }
   }
@@ -1104,8 +1115,9 @@ void Server::UnrefAndWaitLocked() {
     shutdown_done_ = true;
     return;  // no need to wait on CV since done condition already set
   }
-  grpc::internal::WaitUntil(&shutdown_done_cv_, &mu_,
-                            [this] { return shutdown_done_; });
+  grpc::internal::WaitUntil(
+      &shutdown_done_cv_, &mu_,
+      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return shutdown_done_; });
 }
 
 void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
@@ -1191,7 +1203,8 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   // to deal with the case of thread exhaustion
   if (sync_server_cqs_ != nullptr && !sync_server_cqs_->empty()) {
     resource_exhausted_handler_ =
-        absl::make_unique<grpc::internal::ResourceExhaustedHandler>();
+        absl::make_unique<grpc::internal::ResourceExhaustedHandler>(
+            kServerThreadpoolExhausted);
   }
 
   for (const auto& value : sync_req_mgrs_) {
@@ -1255,14 +1268,15 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
 
   // Shutdown the callback CQ. The CQ is owned by its own shutdown tag, so it
   // will delete itself at true shutdown.
-  if (callback_cq_ != nullptr) {
+  CompletionQueue* callback_cq = callback_cq_.load(std::memory_order_relaxed);
+  if (callback_cq != nullptr) {
     if (grpc_iomgr_run_in_background()) {
       // gRPC-core provides the backing needed for the preferred CQ type
-      callback_cq_->Shutdown();
+      callback_cq->Shutdown();
     } else {
-      CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq_);
+      CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq);
     }
-    callback_cq_ = nullptr;
+    callback_cq_.store(nullptr, std::memory_order_release);
   }
 
   // Drain the shutdown queue (if the previous call to AsyncNext() timed out
@@ -1317,8 +1331,9 @@ bool Server::UnimplementedAsyncRequest::FinalizeResult(void** tag,
 Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
     UnimplementedAsyncRequest* request)
     : request_(request) {
-  grpc::Status status(grpc::StatusCode::UNIMPLEMENTED, "");
-  grpc::internal::UnknownMethodHandler::FillOps(request_->context(), this);
+  grpc::Status status(grpc::StatusCode::UNIMPLEMENTED, kUnknownRpcMethod);
+  grpc::internal::UnknownMethodHandler::FillOps(request_->context(),
+                                                kUnknownRpcMethod, this);
   request_->stream()->call_.PerformOps(this);
 }
 
@@ -1329,25 +1344,33 @@ grpc::ServerInitializer* Server::initializer() {
 grpc::CompletionQueue* Server::CallbackCQ() {
   // TODO(vjpai): Consider using a single global CQ for the default CQ
   // if there is no explicit per-server CQ registered
+  CompletionQueue* callback_cq = callback_cq_.load(std::memory_order_acquire);
+  if (callback_cq != nullptr) {
+    return callback_cq;
+  }
+  // The callback_cq_ wasn't already set, so grab a lock and set it up exactly
+  // once for this server.
   grpc::internal::MutexLock l(&mu_);
-  if (callback_cq_ != nullptr) {
-    return callback_cq_;
+  callback_cq = callback_cq_.load(std::memory_order_relaxed);
+  if (callback_cq != nullptr) {
+    return callback_cq;
   }
   if (grpc_iomgr_run_in_background()) {
     // gRPC-core provides the backing needed for the preferred CQ type
     auto* shutdown_callback = new grpc::ShutdownCallback;
-    callback_cq_ = new grpc::CompletionQueue(grpc_completion_queue_attributes{
+    callback_cq = new grpc::CompletionQueue(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
         shutdown_callback});
 
     // Transfer ownership of the new cq to its own shutdown callback
-    shutdown_callback->TakeCQ(callback_cq_);
+    shutdown_callback->TakeCQ(callback_cq);
   } else {
     // Otherwise we need to use the alternative CQ variant
-    callback_cq_ = CompletionQueue::CallbackAlternativeCQ();
+    callback_cq = CompletionQueue::CallbackAlternativeCQ();
   }
 
-  return callback_cq_;
+  callback_cq_.store(callback_cq, std::memory_order_release);
+  return callback_cq;
 }
 
 }  // namespace grpc

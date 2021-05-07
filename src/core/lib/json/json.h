@@ -56,7 +56,7 @@ class Json {
   using Array = std::vector<Json>;
 
   // Parses JSON string from json_str.  On error, sets *error.
-  static Json Parse(absl::string_view json_str, grpc_error** error);
+  static Json Parse(absl::string_view json_str, grpc_error_handle* error);
 
   Json() = default;
 

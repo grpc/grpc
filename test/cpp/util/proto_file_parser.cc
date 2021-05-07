@@ -24,6 +24,7 @@
 #include <unordered_set>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/str_split.h"
 
 #include <grpcpp/support/config.h>
 
@@ -79,7 +80,10 @@ ProtoFileParser::ProtoFileParser(const std::shared_ptr<grpc::Channel>& channel,
 
   std::unordered_set<std::string> known_services;
   if (!protofiles.empty()) {
-    source_tree_.MapPath("", proto_path);
+    for (const absl::string_view single_path : absl::StrSplit(
+             proto_path, GRPC_CLI_PATH_SEPARATOR, absl::AllowEmpty())) {
+      source_tree_.MapPath("", std::string(single_path));
+    }
     error_printer_ = absl::make_unique<ErrorPrinter>(this);
     importer_ = absl::make_unique<protobuf::compiler::Importer>(
         &source_tree_, error_printer_.get());

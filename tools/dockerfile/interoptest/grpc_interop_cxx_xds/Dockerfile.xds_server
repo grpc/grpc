@@ -1,0 +1,38 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Dockerfile for building //test/cpp/interop:xds_interop_client
+
+FROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64bdb429e2354d58f5462750
+
+RUN apt-get update -y && \
+        apt-get install -y \
+            build-essential \
+            clang \
+            python3 \
+            python3-dev
+
+WORKDIR /workdir
+
+RUN ln -s /usr/bin/python3 /usr/bin/python
+RUN mkdir /artifacts
+
+COPY . .
+RUN tools/bazel build //test/cpp/interop:xds_interop_server
+RUN cp -rL /workdir/bazel-bin/test/cpp/interop/xds_interop_server /artifacts/
+
+FROM phusion/baseimage:master@sha256:65ea10d5f757e5e86272625f8675d437dd83d8db64bdb429e2354d58f5462750
+COPY --from=0 /artifacts ./
+
+ENTRYPOINT ["/xds_interop_server"]

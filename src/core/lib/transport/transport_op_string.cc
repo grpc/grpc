@@ -109,7 +109,7 @@ std::string grpc_transport_stream_op_batch_string(
   if (op->cancel_stream) {
     out.push_back(absl::StrCat(
         " CANCEL:",
-        grpc_error_string(op->payload->cancel_stream.cancel_error)));
+        grpc_error_std_string(op->payload->cancel_stream.cancel_error)));
   }
 
   return absl::StrJoin(out, "");
@@ -131,13 +131,13 @@ std::string grpc_transport_op_string(grpc_transport_op* op) {
   }
 
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
-    out.push_back(absl::StrCat(" DISCONNECT:",
-                               grpc_error_string(op->disconnect_with_error)));
+    out.push_back(absl::StrCat(
+        " DISCONNECT:", grpc_error_std_string(op->disconnect_with_error)));
   }
 
   if (op->goaway_error) {
-    out.push_back(
-        absl::StrCat(" SEND_GOAWAY:%s", grpc_error_string(op->goaway_error)));
+    out.push_back(absl::StrCat(" SEND_GOAWAY:%s",
+                               grpc_error_std_string(op->goaway_error)));
   }
 
   if (op->set_accept_stream) {

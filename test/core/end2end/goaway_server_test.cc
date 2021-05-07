@@ -75,7 +75,7 @@ static void my_resolve_address(const char* addr, const char* default_port,
     return;
   }
 
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   gpr_mu_lock(&g_mu);
   if (g_resolve_port < 0) {
     gpr_mu_unlock(&g_mu);
@@ -97,7 +97,7 @@ static void my_resolve_address(const char* addr, const char* default_port,
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
 }
 
-static grpc_error* my_blocking_resolve_address(
+static grpc_error_handle my_blocking_resolve_address(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
   return default_resolver->blocking_resolve_address(name, default_port,
@@ -121,7 +121,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
         std::move(work_serializer));
   }
 
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   gpr_mu_lock(&g_mu);
   if (g_resolve_port < 0) {
     gpr_mu_unlock(&g_mu);

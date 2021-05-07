@@ -139,6 +139,28 @@ describe Server do
         expect(&blk).to raise_error(RuntimeError)
       end
     end
+
+    describe 'for xds servers' do
+      let(:cert) { create_test_cert }
+      let(:xds) { GRPC::Core::XdsServerCredentials.new(cert) }
+      it 'runs without failing' do
+        blk = proc do
+          s = new_core_server_for_testing(nil)
+          s.add_http2_port('localhost:0', xds)
+          s.shutdown_and_notify(nil)
+          s.close
+        end
+        expect(&blk).to_not raise_error
+      end
+
+      it 'fails if the server is closed' do
+        s = new_core_server_for_testing(nil)
+        s.shutdown_and_notify(nil)
+        s.close
+        blk = proc { s.add_http2_port('localhost:0', xds) }
+        expect(&blk).to raise_error(RuntimeError)
+      end
+    end
   end
 
   shared_examples '#new' do

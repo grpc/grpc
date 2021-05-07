@@ -48,7 +48,7 @@ typedef struct args_struct {
   grpc_pollset_set* pollset_set;
 } args_struct;
 
-static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
+static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 void args_init(args_struct* args) {
   gpr_event_init(&args->ev);
@@ -105,7 +105,7 @@ static void poll_pollset_until_request_done(args_struct* args) {
   gpr_event_set(&args->ev, reinterpret_cast<void*>(1));
 }
 
-static void must_succeed(void* argsp, grpc_error* err) {
+static void must_succeed(void* argsp, grpc_error_handle err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);
@@ -115,7 +115,7 @@ static void must_succeed(void* argsp, grpc_error* err) {
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
 
-static void must_fail(void* argsp, grpc_error* err) {
+static void must_fail(void* argsp, grpc_error_handle err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err != GRPC_ERROR_NONE);
   grpc_core::MutexLockForGprMu lock(args->mu);
@@ -124,7 +124,7 @@ static void must_fail(void* argsp, grpc_error* err) {
 }
 
 // This test assumes the environment has an ipv6 loopback
-static void must_succeed_with_ipv6_first(void* argsp, grpc_error* err) {
+static void must_succeed_with_ipv6_first(void* argsp, grpc_error_handle err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);
@@ -137,7 +137,7 @@ static void must_succeed_with_ipv6_first(void* argsp, grpc_error* err) {
   GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
 }
 
-static void must_succeed_with_ipv4_first(void* argsp, grpc_error* err) {
+static void must_succeed_with_ipv4_first(void* argsp, grpc_error_handle err) {
   args_struct* args = static_cast<args_struct*>(argsp);
   GPR_ASSERT(err == GRPC_ERROR_NONE);
   GPR_ASSERT(args->addrs != nullptr);

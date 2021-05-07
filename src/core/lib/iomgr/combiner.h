@@ -32,9 +32,9 @@ namespace grpc_core {
 // use ExecCtx
 class Combiner {
  public:
-  void Run(grpc_closure* closure, grpc_error* error);
+  void Run(grpc_closure* closure, grpc_error_handle error);
   // TODO(yashkt) : Remove this method
-  void FinallyRun(grpc_closure* closure, grpc_error* error);
+  void FinallyRun(grpc_closure* closure, grpc_error_handle error);
   Combiner* next_combiner_on_this_exec_ctx = nullptr;
   MultiProducerSingleConsumerQueue queue;
   // either:

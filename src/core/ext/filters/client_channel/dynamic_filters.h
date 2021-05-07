@@ -46,7 +46,7 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
       CallCombiner* call_combiner;
     };
 
-    Call(Args args, grpc_error** error);
+    Call(Args args, grpc_error_handle* error);
 
     // Continues processing a transport stream op batch.
     void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
@@ -73,7 +73,7 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
     void IncrementRefCount();
     void IncrementRefCount(const DebugLocation& location, const char* reason);
 
-    static void Destroy(void* arg, grpc_error* error);
+    static void Destroy(void* arg, grpc_error_handle error);
 
     RefCountedPtr<DynamicFilters> channel_stack_;
     grpc_closure* after_call_stack_destroy_ = nullptr;
@@ -88,7 +88,7 @@ class DynamicFilters : public RefCounted<DynamicFilters> {
 
   ~DynamicFilters() override;
 
-  RefCountedPtr<Call> CreateCall(Call::Args args, grpc_error** error);
+  RefCountedPtr<Call> CreateCall(Call::Args args, grpc_error_handle* error);
 
  private:
   grpc_channel_stack* channel_stack_;

@@ -52,13 +52,13 @@ RefCountedPtr<grpc_auth_context> TestOnlyMakeInsecureAuthContext() {
 // provide an insecure channel.
 bool InsecureChannelSecurityConnector::check_call_host(
     absl::string_view /*host*/, grpc_auth_context* /*auth_context*/,
-    grpc_closure* /*on_call_host_checked*/, grpc_error** error) {
+    grpc_closure* /*on_call_host_checked*/, grpc_error_handle* error) {
   *error = GRPC_ERROR_NONE;
   return true;
 }
 
 void InsecureChannelSecurityConnector::cancel_check_call_host(
-    grpc_closure* /*on_call_host_checked*/, grpc_error* error) {
+    grpc_closure* /*on_call_host_checked*/, grpc_error_handle error) {
   GRPC_ERROR_UNREF(error);
 }
 

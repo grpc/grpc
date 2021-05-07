@@ -35,9 +35,11 @@
 #define EXPECTED_CONTENT_TYPE "application/grpc"
 #define EXPECTED_CONTENT_TYPE_LENGTH (sizeof(EXPECTED_CONTENT_TYPE) - 1)
 
-static void hs_recv_initial_metadata_ready(void* user_data, grpc_error* err);
-static void hs_recv_trailing_metadata_ready(void* user_data, grpc_error* err);
-static void hs_recv_message_ready(void* user_data, grpc_error* err);
+static void hs_recv_initial_metadata_ready(void* user_data,
+                                           grpc_error_handle err);
+static void hs_recv_trailing_metadata_ready(void* user_data,
+                                            grpc_error_handle err);
+static void hs_recv_message_ready(void* user_data, grpc_error_handle err);
 
 namespace {
 
@@ -74,7 +76,7 @@ struct call_data {
 
   // State for intercepting recv_initial_metadata.
   grpc_closure recv_initial_metadata_ready;
-  grpc_error* recv_initial_metadata_ready_error = GRPC_ERROR_NONE;
+  grpc_error_handle recv_initial_metadata_ready_error = GRPC_ERROR_NONE;
   grpc_closure* original_recv_initial_metadata_ready;
   grpc_metadata_batch* recv_initial_metadata = nullptr;
   uint32_t* recv_initial_metadata_flags;
@@ -89,7 +91,7 @@ struct call_data {
   // State for intercepting recv_trailing_metadata
   grpc_closure recv_trailing_metadata_ready;
   grpc_closure* original_recv_trailing_metadata_ready;
-  grpc_error* recv_trailing_metadata_ready_error;
+  grpc_error_handle recv_trailing_metadata_ready_error;
   bool seen_recv_trailing_metadata_ready = false;
 };
 
@@ -99,7 +101,7 @@ struct channel_data {
 
 }  // namespace
 
-static grpc_error* hs_filter_outgoing_metadata(grpc_metadata_batch* b) {
+static grpc_error_handle hs_filter_outgoing_metadata(grpc_metadata_batch* b) {
   if (b->idx.named.grpc_message != nullptr) {
     grpc_slice pct_encoded_msg = grpc_percent_encode_slice(
         GRPC_MDVALUE(b->idx.named.grpc_message->md),
@@ -114,8 +116,8 @@ static grpc_error* hs_filter_outgoing_metadata(grpc_metadata_batch* b) {
   return GRPC_ERROR_NONE;
 }
 
-static void hs_add_error(const char* error_name, grpc_error** cumulative,
-                         grpc_error* new_err) {
+static void hs_add_error(const char* error_name, grpc_error_handle* cumulative,
+                         grpc_error_handle new_err) {
   if (new_err == GRPC_ERROR_NONE) return;
   if (*cumulative == GRPC_ERROR_NONE) {
     *cumulative = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_name);
@@ -149,10 +151,10 @@ static bool md_strict_equal(grpc_mdelem a, grpc_mdelem b_static) {
   }
 }
 
-static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
-                                               grpc_metadata_batch* b) {
+static grpc_error_handle hs_filter_incoming_metadata(grpc_call_element* elem,
+                                                     grpc_metadata_batch* b) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   static const char* error_name = "Failed processing incoming headers";
 
   if (b->idx.named.method != nullptr) {
@@ -330,7 +332,8 @@ static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
   return error;
 }
 
-static void hs_recv_initial_metadata_ready(void* user_data, grpc_error* err) {
+static void hs_recv_initial_metadata_ready(void* user_data,
+                                           grpc_error_handle err) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->seen_recv_initial_metadata_ready = true;
@@ -367,7 +370,7 @@ static void hs_recv_initial_metadata_ready(void* user_data, grpc_error* err) {
                           calld->original_recv_initial_metadata_ready, err);
 }
 
-static void hs_recv_message_ready(void* user_data, grpc_error* err) {
+static void hs_recv_message_ready(void* user_data, grpc_error_handle err) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->seen_recv_message_ready = true;
@@ -392,7 +395,8 @@ static void hs_recv_message_ready(void* user_data, grpc_error* err) {
   }
 }
 
-static void hs_recv_trailing_metadata_ready(void* user_data, grpc_error* err) {
+static void hs_recv_trailing_metadata_ready(void* user_data,
+                                            grpc_error_handle err) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (!calld->seen_recv_initial_metadata_ready) {
@@ -410,13 +414,13 @@ static void hs_recv_trailing_metadata_ready(void* user_data, grpc_error* err) {
                           calld->original_recv_trailing_metadata_ready, err);
 }
 
-static grpc_error* hs_mutate_op(grpc_call_element* elem,
-                                grpc_transport_stream_op_batch* op) {
+static grpc_error_handle hs_mutate_op(grpc_call_element* elem,
+                                      grpc_transport_stream_op_batch* op) {
   /* grab pointers to our data from the call element */
   call_data* calld = static_cast<call_data*>(elem->call_data);
 
   if (op->send_initial_metadata) {
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
     static const char* error_name = "Failed sending initial metadata";
     hs_add_error(
         error_name, &error,
@@ -463,7 +467,7 @@ static grpc_error* hs_mutate_op(grpc_call_element* elem,
   }
 
   if (op->send_trailing_metadata) {
-    grpc_error* error = hs_filter_outgoing_metadata(
+    grpc_error_handle error = hs_filter_outgoing_metadata(
         op->payload->send_trailing_metadata.send_trailing_metadata);
     if (error != GRPC_ERROR_NONE) return error;
   }
@@ -475,7 +479,7 @@ static void hs_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   GPR_TIMER_SCOPE("hs_start_transport_stream_op_batch", 0);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  grpc_error* error = hs_mutate_op(elem, op);
+  grpc_error_handle error = hs_mutate_op(elem, op);
   if (error != GRPC_ERROR_NONE) {
     grpc_transport_stream_op_batch_finish_with_failure(op, error,
                                                        calld->call_combiner);
@@ -485,8 +489,8 @@ static void hs_start_transport_stream_op_batch(
 }
 
 /* Constructor for call_data */
-static grpc_error* hs_init_call_elem(grpc_call_element* elem,
-                                     const grpc_call_element_args* args) {
+static grpc_error_handle hs_init_call_elem(grpc_call_element* elem,
+                                           const grpc_call_element_args* args) {
   new (elem->call_data) call_data(elem, *args);
   return GRPC_ERROR_NONE;
 }
@@ -500,8 +504,8 @@ static void hs_destroy_call_elem(grpc_call_element* elem,
 }
 
 /* Constructor for channel_data */
-static grpc_error* hs_init_channel_elem(grpc_channel_element* elem,
-                                        grpc_channel_element_args* args) {
+static grpc_error_handle hs_init_channel_elem(grpc_channel_element* elem,
+                                              grpc_channel_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(!args->is_last);
   chand->surface_user_agent = grpc_channel_arg_get_bool(

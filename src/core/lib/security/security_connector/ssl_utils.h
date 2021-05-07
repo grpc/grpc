@@ -44,11 +44,11 @@
 #define GRPC_SSL_URL_SCHEME "https"
 
 /* Check ALPN information returned from SSL handshakes. */
-grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer);
+grpc_error_handle grpc_ssl_check_alpn(const tsi_peer* peer);
 
 /* Check peer name information returned from SSL handshakes. */
-grpc_error* grpc_ssl_check_peer_name(absl::string_view peer_name,
-                                     const tsi_peer* peer);
+grpc_error_handle grpc_ssl_check_peer_name(absl::string_view peer_name,
+                                           const tsi_peer* peer);
 /* Compare targer_name information extracted from SSL security connectors. */
 int grpc_ssl_cmp_target_name(absl::string_view target_name,
                              absl::string_view other_target_name,
@@ -59,7 +59,7 @@ bool grpc_ssl_check_call_host(absl::string_view host,
                               absl::string_view target_name,
                               absl::string_view overridden_target_name,
                               grpc_auth_context* auth_context,
-                              grpc_error** error);
+                              grpc_error_handle* error);
 /* Return HTTP2-compliant cipher suites that gRPC accepts by default. */
 const char* grpc_get_ssl_cipher_suites(void);
 

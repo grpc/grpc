@@ -22,6 +22,7 @@
 #include <list>
 #include <vector>
 
+#include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 
 #include <grpc/grpc.h>
@@ -31,6 +32,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/atomic.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/core/lib/transport/transport.h"
 
@@ -126,7 +128,7 @@ class Server : public InternallyRefCounted<Server> {
 
   // Sets up a transport.  Creates a channel stack and binds the transport to
   // the server.  Called from the listener when a new connection is accepted.
-  grpc_error* SetupTransport(
+  grpc_error_handle SetupTransport(
       grpc_transport* transport, grpc_pollset* accepting_pollset,
       const grpc_channel_args* args,
       const RefCountedPtr<channelz::SocketNode>& socket_node,
@@ -200,8 +202,8 @@ class Server : public InternallyRefCounted<Server> {
                                                  bool is_idempotent);
 
     // Filter vtable functions.
-    static grpc_error* InitChannelElement(grpc_channel_element* elem,
-                                          grpc_channel_element_args* args);
+    static grpc_error_handle InitChannelElement(
+        grpc_channel_element* elem, grpc_channel_element_args* args);
     static void DestroyChannelElement(grpc_channel_element* elem);
 
    private:
@@ -212,7 +214,7 @@ class Server : public InternallyRefCounted<Server> {
 
     void Destroy() ABSL_EXCLUSIVE_LOCKS_REQUIRED(server_->mu_global_);
 
-    static void FinishDestroy(void* arg, grpc_error* error);
+    static void FinishDestroy(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Server> server_;
     grpc_channel* channel_;
@@ -262,8 +264,8 @@ class Server : public InternallyRefCounted<Server> {
     void FailCallCreation();
 
     // Filter vtable functions.
-    static grpc_error* InitCallElement(grpc_call_element* elem,
-                                       const grpc_call_element_args* args);
+    static grpc_error_handle InitCallElement(
+        grpc_call_element* elem, const grpc_call_element_args* args);
     static void DestroyCallElement(grpc_call_element* elem,
                                    const grpc_call_final_info* /*final_info*/,
                                    grpc_closure* /*ignored*/);
@@ -272,15 +274,16 @@ class Server : public InternallyRefCounted<Server> {
 
    private:
     // Helper functions for handling calls at the top of the call stack.
-    static void RecvInitialMetadataBatchComplete(void* arg, grpc_error* error);
+    static void RecvInitialMetadataBatchComplete(void* arg,
+                                                 grpc_error_handle error);
     void StartNewRpc(grpc_call_element* elem);
-    static void PublishNewRpc(void* arg, grpc_error* error);
+    static void PublishNewRpc(void* arg, grpc_error_handle error);
 
     // Functions used inside the call stack.
     void StartTransportStreamOpBatchImpl(grpc_call_element* elem,
                                          grpc_transport_stream_op_batch* batch);
-    static void RecvInitialMetadataReady(void* arg, grpc_error* error);
-    static void RecvTrailingMetadataReady(void* arg, grpc_error* error);
+    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
+    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
 
     RefCountedPtr<Server> server_;
 
@@ -307,12 +310,12 @@ class Server : public InternallyRefCounted<Server> {
     uint32_t recv_initial_metadata_flags_ = 0;
     grpc_closure recv_initial_metadata_ready_;
     grpc_closure* original_recv_initial_metadata_ready_;
-    grpc_error* recv_initial_metadata_error_ = GRPC_ERROR_NONE;
+    grpc_error_handle recv_initial_metadata_error_ = GRPC_ERROR_NONE;
 
     bool seen_recv_trailing_metadata_ready_ = false;
     grpc_closure recv_trailing_metadata_ready_;
     grpc_closure* original_recv_trailing_metadata_ready_;
-    grpc_error* recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
+    grpc_error_handle recv_trailing_metadata_error_ = GRPC_ERROR_NONE;
 
     grpc_closure publish_;
 
@@ -334,7 +337,7 @@ class Server : public InternallyRefCounted<Server> {
     grpc_cq_completion completion;
   };
 
-  static void ListenerDestroyDone(void* arg, grpc_error* error);
+  static void ListenerDestroyDone(void* arg, grpc_error_handle error);
 
   static void DoneShutdownEvent(void* server,
                                 grpc_cq_completion* /*completion*/) {
@@ -343,13 +346,13 @@ class Server : public InternallyRefCounted<Server> {
 
   static void DoneRequestEvent(void* req, grpc_cq_completion* completion);
 
-  void FailCall(size_t cq_idx, RequestedCall* rc, grpc_error* error);
+  void FailCall(size_t cq_idx, RequestedCall* rc, grpc_error_handle error);
   grpc_call_error QueueRequestedCall(size_t cq_idx, RequestedCall* rc);
 
   void MaybeFinishShutdown() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_global_)
       ABSL_LOCKS_EXCLUDED(mu_call_);
 
-  void KillPendingWorkLocked(grpc_error* error)
+  void KillPendingWorkLocked(grpc_error_handle error)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_call_);
 
   static grpc_call_error ValidateServerRequest(
@@ -456,11 +459,24 @@ struct grpc_server {
 // approaches here.
 struct grpc_server_config_fetcher {
  public:
+  class ConnectionManager : public grpc_core::RefCounted<ConnectionManager> {
+   public:
+    // Ownership of \a args is transfered.
+    virtual absl::StatusOr<grpc_channel_args*> UpdateChannelArgsForConnection(
+        grpc_channel_args* args, grpc_endpoint* tcp) = 0;
+  };
+
   class WatcherInterface {
    public:
     virtual ~WatcherInterface() = default;
-    // Ownership of \a args is transferred.
-    virtual void UpdateConfig(grpc_channel_args* args) = 0;
+    // UpdateConnectionManager() is invoked by the config fetcher when a new
+    // config is available. Implementations should update the connection manager
+    // and start serving if not already serving.
+    virtual void UpdateConnectionManager(
+        grpc_core::RefCountedPtr<ConnectionManager> manager) = 0;
+    // Implementations should stop serving when this is called. Serving should
+    // only resume when UpdateConfig() is invoked.
+    virtual void StopServing() = 0;
   };
 
   virtual ~grpc_server_config_fetcher() = default;

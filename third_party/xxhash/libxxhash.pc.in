@@ -1,0 +1,15 @@
+#   xxHash - Extremely fast hash algorithm
+#   Copyright (C) 2012-2020, Yann Collet, Facebook
+#   BSD 2-Clause License (https://www.opensource.org/licenses/bsd-license.php)
+
+prefix=@PREFIX@
+exec_prefix=@EXECPREFIX@
+includedir=${prefix}/@INCLUDEDIR@
+libdir=${exec_prefix}/@LIBDIR@
+
+Name: xxhash
+Description: extremely fast hash algorithm
+URL: http://www.xxhash.com/
+Version: @VERSION@
+Libs: -L${libdir} -lxxhash
+Cflags: -I${includedir}

@@ -26,16 +26,17 @@ namespace grpc_core {
 class FileExternalAccountCredentials final : public ExternalAccountCredentials {
  public:
   static RefCountedPtr<FileExternalAccountCredentials> Create(
-      Options options, std::vector<std::string> scopes, grpc_error** error);
+      Options options, std::vector<std::string> scopes,
+      grpc_error_handle* error);
 
   FileExternalAccountCredentials(Options options,
                                  std::vector<std::string> scopes,
-                                 grpc_error** error);
+                                 grpc_error_handle* error);
 
  private:
   void RetrieveSubjectToken(
       HTTPRequestContext* ctx, const Options& options,
-      std::function<void(std::string, grpc_error*)> cb) override;
+      std::function<void(std::string, grpc_error_handle)> cb) override;
 
   // Fields of credential source
   std::string file_;

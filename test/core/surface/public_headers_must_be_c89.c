@@ -144,6 +144,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_resource_quota_unref);
   printf("%lx", (unsigned long) grpc_resource_quota_resize);
   printf("%lx", (unsigned long) grpc_resource_quota_set_max_threads);
+  printf("%lx", (unsigned long) grpc_dump_xds_configs);
   printf("%lx", (unsigned long) grpc_resource_quota_arg_vtable);
   printf("%lx", (unsigned long) grpc_channelz_get_top_channels);
   printf("%lx", (unsigned long) grpc_channelz_get_servers);

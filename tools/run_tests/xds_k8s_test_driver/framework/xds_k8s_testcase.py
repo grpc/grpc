@@ -23,6 +23,7 @@ from absl.testing import absltest
 
 from framework import xds_flags
 from framework import xds_k8s_flags
+from framework.helpers import retryers
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
@@ -36,6 +37,12 @@ _FORCE_CLEANUP = flags.DEFINE_bool(
     "force_cleanup",
     default=False,
     help="Force resource cleanup, even if not created by this test run")
+# TODO(yashkt): We will no longer need this flag once Core exposes local certs
+# from channelz
+_CHECK_LOCAL_CERTS = flags.DEFINE_bool(
+    "check_local_certs",
+    default=True,
+    help="Security Tests also check the value of local certs")
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
@@ -83,6 +90,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.force_cleanup = _FORCE_CLEANUP.value
         cls.debug_use_port_forwarding = \
             xds_k8s_flags.DEBUG_USE_PORT_FORWARDING.value
+        cls.check_local_certs = _CHECK_LOCAL_CERTS.value
 
         # Resource managers
         cls.k8s_api_manager = k8s.KubernetesApiManager(
@@ -107,6 +115,15 @@ class XdsKubernetesTestCase(absltest.TestCase):
 
     def tearDown(self):
         logger.info('----- TestMethod %s teardown -----', self.id())
+        retryer = retryers.constant_retryer(wait_fixed=_timedelta(seconds=10),
+                                            attempts=3,
+                                            log_level=logging.INFO)
+        try:
+            retryer(self._cleanup)
+        except retryers.RetryError:
+            logger.exception('Got error during teardown')
+
+    def _cleanup(self):
         self.td.cleanup(force=self.force_cleanup)
         self.client_runner.cleanup(force=self.force_cleanup)
         self.server_runner.cleanup(force=self.force_cleanup,
@@ -340,26 +357,30 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         server_tls, client_tls = server_security.tls, client_security.tls
 
         # Confirm regular TLS: server local cert == client remote cert
-        self.assertNotEmpty(server_tls.local_certificate,
-                            msg="(mTLS) Server local certificate is missing")
         self.assertNotEmpty(client_tls.remote_certificate,
                             msg="(mTLS) Client remote certificate is missing")
-        self.assertEqual(
-            server_tls.local_certificate,
-            client_tls.remote_certificate,
-            msg="(mTLS) Server local certificate must match client's "
-            "remote certificate")
+        if self.check_local_certs:
+            self.assertNotEmpty(
+                server_tls.local_certificate,
+                msg="(mTLS) Server local certificate is missing")
+            self.assertEqual(
+                server_tls.local_certificate,
+                client_tls.remote_certificate,
+                msg="(mTLS) Server local certificate must match client's "
+                "remote certificate")
 
         # mTLS: server remote cert == client local cert
         self.assertNotEmpty(server_tls.remote_certificate,
                             msg="(mTLS) Server remote certificate is missing")
-        self.assertNotEmpty(client_tls.local_certificate,
-                            msg="(mTLS) Client local certificate is missing")
-        self.assertEqual(
-            server_tls.remote_certificate,
-            client_tls.local_certificate,
-            msg="(mTLS) Server remote certificate must match client's "
-            "local certificate")
+        if self.check_local_certs:
+            self.assertNotEmpty(
+                client_tls.local_certificate,
+                msg="(mTLS) Client local certificate is missing")
+            self.assertEqual(
+                server_tls.remote_certificate,
+                client_tls.local_certificate,
+                msg="(mTLS) Server remote certificate must match client's "
+                "local certificate")
 
     def assertSecurityTls(self, client_security: grpc_channelz.Security,
                           server_security: grpc_channelz.Security):
@@ -372,14 +393,16 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         server_tls, client_tls = server_security.tls, client_security.tls
 
         # Regular TLS: server local cert == client remote cert
-        self.assertNotEmpty(server_tls.local_certificate,
-                            msg="(TLS) Server local certificate is missing")
         self.assertNotEmpty(client_tls.remote_certificate,
                             msg="(TLS) Client remote certificate is missing")
-        self.assertEqual(server_tls.local_certificate,
-                         client_tls.remote_certificate,
-                         msg="(TLS) Server local certificate must match client "
-                         "remote certificate")
+        if self.check_local_certs:
+            self.assertNotEmpty(server_tls.local_certificate,
+                                msg="(TLS) Server local certificate is missing")
+            self.assertEqual(
+                server_tls.local_certificate,
+                client_tls.remote_certificate,
+                msg="(TLS) Server local certificate must match client "
+                "remote certificate")
 
         # mTLS must not be used
         self.assertEmpty(

@@ -19,9 +19,6 @@
 # before https://github.com/dockcross/dockcross/pull/449
 FROM dockcross/manylinux2014-aarch64:20200929-608e6ac
 
-# Update the package manager
-RUN yum update -y && yum install -y curl-devel expat-devel gettext-devel openssl-devel zlib-devel
-
 ###################################
 # Install Python build requirements
 RUN /opt/python/cp35-cp35m/bin/pip install --upgrade cython
@@ -29,3 +26,10 @@ RUN /opt/python/cp36-cp36m/bin/pip install --upgrade cython
 RUN /opt/python/cp37-cp37m/bin/pip install --upgrade cython
 RUN /opt/python/cp38-cp38/bin/pip install --upgrade cython
 RUN /opt/python/cp39-cp39/bin/pip install --upgrade cython
+
+# the dockcross docker image sets variables like CC, CXX etc.
+# to point to the crosscompilation toolchain, but doesn't set corresponding
+# variables for the "strip" and "objcopy" tools.
+# see https://github.com/dockcross/dockcross/blob/4349cb4999401cbf22a90f46f5052d29be240e50/manylinux2014-aarch64/Dockerfile.in#L23
+ENV STRIP=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-strip \
+    OBJCOPY=${CROSS_ROOT}/bin/${CROSS_TRIPLE}-objcopy

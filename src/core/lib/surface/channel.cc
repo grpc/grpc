@@ -54,11 +54,11 @@
  *  (OK, Cancelled, Unknown). */
 #define NUM_CACHED_STATUS_ELEMS 3
 
-static void destroy_channel(void* arg, grpc_error* error);
+static void destroy_channel(void* arg, grpc_error_handle error);
 
 grpc_channel* grpc_channel_create_with_builder(
     grpc_channel_stack_builder* builder,
-    grpc_channel_stack_type channel_stack_type, grpc_error** error) {
+    grpc_channel_stack_type channel_stack_type, grpc_error_handle* error) {
   char* target = gpr_strdup(grpc_channel_stack_builder_get_target(builder));
   grpc_channel_args* args = grpc_channel_args_copy(
       grpc_channel_stack_builder_get_channel_arguments(builder));
@@ -70,12 +70,12 @@ grpc_channel* grpc_channel_create_with_builder(
   } else {
     GRPC_STATS_INC_CLIENT_CHANNELS_CREATED();
   }
-  grpc_error* builder_error = grpc_channel_stack_builder_finish(
+  grpc_error_handle builder_error = grpc_channel_stack_builder_finish(
       builder, sizeof(grpc_channel), 1, destroy_channel, nullptr,
       reinterpret_cast<void**>(&channel));
   if (builder_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "channel stack builder failed: %s",
-            grpc_error_string(builder_error));
+            grpc_error_std_string(builder_error).c_str());
     GPR_ASSERT(channel == nullptr);
     if (error != nullptr) {
       *error = builder_error;
@@ -225,7 +225,7 @@ grpc_channel* grpc_channel_create(const char* target,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport* optional_transport,
                                   grpc_resource_user* resource_user,
-                                  grpc_error** error) {
+                                  grpc_error_handle* error) {
   // We need to make sure that grpc_shutdown() does not shut things down
   // until after the channel is destroyed.  However, the channel may not
   // actually be destroyed by the time grpc_channel_destroy() returns,
@@ -497,7 +497,7 @@ grpc_call* grpc_channel_create_registered_call(
   return call;
 }
 
-static void destroy_channel(void* arg, grpc_error* /*error*/) {
+static void destroy_channel(void* arg, grpc_error_handle /*error*/) {
   grpc_channel* channel = static_cast<grpc_channel*>(arg);
   if (channel->channelz_node != nullptr) {
     channel->channelz_node->AddTraceEvent(

@@ -55,12 +55,17 @@ class grpc_security_connector
         url_scheme_(url_scheme) {}
   ~grpc_security_connector() override = default;
 
-  /* Check the peer. Callee takes ownership of the peer object.
-     When done, sets *auth_context and invokes on_peer_checked. */
+  // Checks the peer. Callee takes ownership of the peer object.
+  // When done, sets *auth_context and invokes on_peer_checked.
   virtual void check_peer(
       tsi_peer peer, grpc_endpoint* ep,
       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
       grpc_closure* on_peer_checked) = 0;
+
+  // Cancels the pending check_peer() request associated with on_peer_checked.
+  // If there is no such request pending, this is a no-op.
+  virtual void cancel_check_peer(grpc_closure* on_peer_checked,
+                                 grpc_error_handle error) = 0;
 
   /* Compares two security connectors. */
   virtual int cmp(const grpc_security_connector* other) const = 0;
@@ -103,12 +108,12 @@ class grpc_channel_security_connector : public grpc_security_connector {
   virtual bool check_call_host(absl::string_view host,
                                grpc_auth_context* auth_context,
                                grpc_closure* on_call_host_checked,
-                               grpc_error** error) = 0;
+                               grpc_error_handle* error) = 0;
   /// Cancels a pending asynchronous call to
   /// grpc_channel_security_connector_check_call_host() with
   /// \a on_call_host_checked as its callback.
   virtual void cancel_check_call_host(grpc_closure* on_call_host_checked,
-                                      grpc_error* error) = 0;
+                                      grpc_error_handle error) = 0;
   /// Registers handshakers with \a handshake_mgr.
   virtual void add_handshakers(const grpc_channel_args* args,
                                grpc_pollset_set* interested_parties,

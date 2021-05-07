@@ -134,6 +134,16 @@ def main():
                     name_long='gRPC Health Checking',
                     destination_package='grpcio-health-checking'))
 
+    generate_package(
+        PackageMeta(name='grpc-csds',
+                    name_long='gRPC Client Status Discovery Service',
+                    destination_package='grpcio-csds'))
+
+    generate_package(
+        PackageMeta(name='grpc-admin',
+                    name_long='gRPC Admin Interface',
+                    destination_package='grpcio-admin'))
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)

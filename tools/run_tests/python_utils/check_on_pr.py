@@ -55,7 +55,7 @@ def _access_token():
                 url='https://api.github.com/app/installations/%s/access_tokens'
                 % _INSTALLATION_ID,
                 headers={
-                    'Authorization': 'Bearer %s' % _jwt_token().decode('ASCII'),
+                    'Authorization': 'Bearer %s' % _jwt_token(),
                     'Accept': 'application/vnd.github.machine-man-preview+json',
                 })
 
@@ -65,8 +65,8 @@ def _access_token():
                     'exp': time.time() + 60
                 }
                 break
-            except (KeyError, ValueError) as e:
-                traceback.print_exc(e)
+            except (KeyError, ValueError):
+                traceback.print_exc()
                 print('HTTP Status %d %s' % (resp.status_code, resp.reason))
                 print("Fetch access token from Github API failed:")
                 print(resp.text)
