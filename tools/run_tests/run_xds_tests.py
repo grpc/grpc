@@ -2131,7 +2131,7 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
                         raise ValueError(
                             'stats.stats_per_method is None, the interop client stats service does not support this test case'
                         )
-                    logger.info('%s: attempt %d', testcase_name, i)
+                    logger.info('%s: attempt %d', testcase_name, attempt_counter)
 
                     test_runtime_secs = 10
                     time.sleep(test_runtime_secs)
@@ -2154,7 +2154,7 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
                     if success:
                         logger.info('success')
                         break
-                    logger.info('%s attempt %d failed', testcase_name, i)
+                    logger.info('%s attempt %d failed', testcase_name, attempt_counter)
                     raise RpcDistributionError(
                         '%s: timeout waiting for expected results: %s; got %s' %
                         (testcase_name, expected_results,
