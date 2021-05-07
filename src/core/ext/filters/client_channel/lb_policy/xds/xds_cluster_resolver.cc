@@ -1215,8 +1215,6 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
               continue;
             }
             xds_lb_policy = array[i];
-            // TODO(donnadionne): Move this to a method in
-            // ring_hash_experimental and call it here.
             const Json::Object& ring_hash = policy_it->second.object_value();
             size_t min_ring_size = 1024;
             size_t max_ring_size = 8388608;

@@ -484,11 +484,11 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     found_second_subchannel = true;
     if (!found_first_non_failed) {
       if (entry.connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        gpr_log(GPR_INFO, "donna schedule to to TF");
+        gpr_log(GPR_INFO, "donna schedule due to TF for index %" PRIuPTR, i);
         ScheduleSubchannelConnectionAttempt(entry.subchannel);
       } else {
         if (entry.connectivity_state == GRPC_CHANNEL_IDLE) {
-          gpr_log(GPR_INFO, "donna schedule to to IDLE");
+          gpr_log(GPR_INFO, "donna schedule to to IDLE for index %" PRIuPTR, i);
           ScheduleSubchannelConnectionAttempt(entry.subchannel);
         }
         found_first_non_failed = true;

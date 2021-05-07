@@ -6764,6 +6764,9 @@ TEST_P(CdsTest, RingHashHeaderHashing) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
+  // Note each type of RPC will contains a header value that will always be
+  // hashed to a specific backend as the header value matches the value used to
+  // create the entry in the ring.
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
                                     backends_[0]->port(), "_0")},
@@ -6875,11 +6878,6 @@ TEST_P(CdsTest, RingHashRandomHashing) {
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumRpcs);
-  gpr_log(GPR_INFO, "donna sent %" PRIuPTR, kNumRpcs);
-  for (size_t i = 0; i < 2; ++i) {
-    gpr_log(GPR_INFO, "donna backend %" PRIuPTR " got %" PRIuPTR, i,
-            backends_[i]->backend_service()->request_count());
-  }
   const int request_count_1 = backends_[0]->backend_service()->request_count();
   const int request_count_2 = backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
@@ -6893,7 +6891,6 @@ TEST_P(CdsTest, RingHashRandomHashing) {
 // specified a header field that the RPC did not have.
 TEST_P(CdsTest, RingHashUnknownHeaderMoveToNextHeader) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
-  const size_t kNumRpcs = ComputeIdealNumRpcs(0.5, 0.05);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -6903,7 +6900,7 @@ TEST_P(CdsTest, RingHashUnknownHeaderMoveToNextHeader) {
   hash_policy->mutable_header()->set_header_name("fixed_header");
   hash_policy->set_terminal(true);
   auto* hash_policy2 = route->mutable_route()->add_hash_policy();
-  hash_policy->mutable_header()->set_header_name("fixed_header_2");
+  hash_policy2->mutable_header()->set_header_name("fixed_header_2");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
       {{"locality0",
@@ -6954,15 +6951,8 @@ TEST_P(CdsTest, RingHashUnknownHeaderDefaultToRandomHashing) {
       {"fixed_header_2", absl::StrFormat("%" PRIu32, rand())},
   };
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  gpr_log(GPR_INFO, "donna before failure");
   WaitForAllBackends(0, 2, WaitForBackendOptions(), rpc_options);
-  gpr_log(GPR_INFO, "donna after failure");
   CheckRpcSendOk(kNumRpcs, rpc_options);
-  gpr_log(GPR_INFO, "donna sent %" PRIuPTR, kNumRpcs);
-  for (size_t i = 0; i < 2; ++i) {
-    gpr_log(GPR_INFO, "donna backend %" PRIuPTR " got %" PRIuPTR, i,
-            backends_[i]->backend_service()->request_count());
-  }
   const int request_count_1 = backends_[0]->backend_service()->request_count();
   const int request_count_2 = backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
@@ -6999,11 +6989,6 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumRpcs);
-  gpr_log(GPR_INFO, "donna sent %" PRIuPTR, kNumRpcs);
-  for (size_t i = 0; i < 2; ++i) {
-    gpr_log(GPR_INFO, "donna backend %" PRIuPTR " got %" PRIuPTR, i,
-            backends_[i]->backend_service()->request_count());
-  }
   const int request_count_1 = backends_[0]->backend_service()->request_count();
   const int request_count_2 = backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
@@ -7037,11 +7022,6 @@ TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumRpcs);
-  gpr_log(GPR_INFO, "donna sent %" PRIuPTR, kNumRpcs);
-  for (size_t i = 0; i < 2; ++i) {
-    gpr_log(GPR_INFO, "donna backend %" PRIuPTR " got %" PRIuPTR, i,
-            backends_[i]->backend_service()->request_count());
-  }
   const int weight_33_request_count =
       backends_[0]->backend_service()->request_count();
   const int weight_66_request_count =
@@ -7077,11 +7057,6 @@ TEST_P(CdsTest,
   SetNextResolutionForLbChannelAllBalancers();
   WaitForAllBackends(0, 2);
   CheckRpcSendOk(kNumRpcs);
-  gpr_log(GPR_INFO, "donna sent %" PRIuPTR, kNumRpcs);
-  for (size_t i = 0; i < 2; ++i) {
-    gpr_log(GPR_INFO, "donna backend %" PRIuPTR " got %" PRIuPTR, i,
-            backends_[i]->backend_service()->request_count());
-  }
   const int weight_20_request_count =
       backends_[0]->backend_service()->request_count();
   const int weight_80_request_count =
@@ -7233,10 +7208,8 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   };
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  gpr_log(GPR_INFO, "donna test after shutdown");
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   WaitForBackend(1, WaitForBackendOptions(), rpc_options);
-  gpr_log(GPR_INFO, "donna backend 1 up ready to send 100");
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
   CheckRpcSendOk(100, rpc_options);
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());

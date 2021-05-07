@@ -569,7 +569,6 @@ absl::optional<uint64_t> HeaderHashHelper(
   absl::optional<absl::string_view> header_value =
       GetHeaderValue(initial_metadata, policy.header_name, &value_buffer);
   if (!header_value.has_value()) {
-    gpr_log(GPR_INFO, "donna could not find header");
     return absl::nullopt;
   }
   if (policy.regex != nullptr) {
@@ -659,7 +658,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
               "%" PRIu64,
               static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver)));
           new_hash = XXH64(address_str.c_str(), address_str.length(), 0);
-          gpr_log(GPR_INFO, "donna new hash is %" PRIu64, new_hash.value());
           break;
         default:
           GPR_ASSERT(0);
@@ -681,7 +679,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       // If there is no hash, we just choose a random value as a default.
       address_str = absl::StrCat(rand());
       hash = XXH64(address_str.c_str(), address_str.length(), 0);
-      gpr_log(GPR_INFO, "donna defaulted to random %" PRIu64, hash.value());
     }
     CallConfig call_config;
     if (method_config != nullptr) {
@@ -696,9 +693,6 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     memcpy(hash_value, hash_string.c_str(), hash_string.size());
     hash_value[hash_string.size()] = '\0';
     call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
-    gpr_log(GPR_INFO, "donna hash stored as %s",
-            std::string(call_config.call_attributes[kRequestRingHashAttribute])
-                .c_str());
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
       ExecCtx::Run(
