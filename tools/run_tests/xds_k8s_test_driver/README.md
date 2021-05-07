@@ -112,5 +112,5 @@ python3 -m tests.baseline_test \
   --server_image="gcr.io/grpc-testing/xds-k8s-test-server-java:latest" \
   --client_image="gcr.io/grpc-testing/xds-k8s-test-client-java:latest" \
   --namespace="box-$(date +"%F-%R")" \
-  --server_xds_port="$($(($RANDOM%1000 + 34567)))"
+  --server_xds_port="$(($RANDOM%1000 + 34567))"
 ```
