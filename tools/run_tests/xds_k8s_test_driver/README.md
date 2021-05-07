@@ -93,8 +93,8 @@ python -m tests.security_test --helpful
 python -m tests.security_test \
   --flagfile="config/grpc-testing.cfg" \
   --kube_context="${KUBE_CONTEXT}" \
-  --server_image="gcr.io/grpc-testing/xds-k8s-test-server-java:latest" \
-  --client_image="gcr.io/grpc-testing/xds-k8s-test-client-java:latest"
+  --server_image="gcr.io/grpc-testing/xds-interop/java-server:git_commit_hash" \
+  --client_image="gcr.io/grpc-testing/xds-interop/java-client:git_commit_hash"
 ```
 
 ### Workload namespace
