@@ -804,6 +804,14 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_poll_posix.cc",
         "src/core/lib/iomgr/ev_posix.cc",
         "src/core/lib/iomgr/ev_windows.cc",
+        "src/core/lib/iomgr/event_engine/closure.cc",
+        "src/core/lib/iomgr/event_engine/endpoint.cc",
+        "src/core/lib/iomgr/event_engine/iomgr.cc",
+        "src/core/lib/iomgr/event_engine/pollset.cc",
+        "src/core/lib/iomgr/event_engine/resolved_address_internal.cc",
+        "src/core/lib/iomgr/event_engine/resolver.cc",
+        "src/core/lib/iomgr/event_engine/tcp.cc",
+        "src/core/lib/iomgr/event_engine/timer.cc",
         "src/core/lib/iomgr/exec_ctx.cc",
         "src/core/lib/iomgr/executor.cc",
         "src/core/lib/iomgr/executor/mpmcqueue.cc",
@@ -969,6 +977,9 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_epollex_linux.h",
         "src/core/lib/iomgr/ev_poll_posix.h",
         "src/core/lib/iomgr/ev_posix.h",
+        "src/core/lib/iomgr/event_engine/closure.h",
+        "src/core/lib/iomgr/event_engine/endpoint.h",
+        "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
         "src/core/lib/iomgr/exec_ctx.h",
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/executor/mpmcqueue.h",
@@ -1065,6 +1076,7 @@ grpc_cc_library(
     external_deps = [
         "madler_zlib",
         "absl/container:inlined_vector",
+        "absl/functional:bind_front",
         "absl/status",
         "absl/status:statusor",
         "absl/strings",
@@ -1077,7 +1089,6 @@ grpc_cc_library(
         "dual_ref_counted",
         "gpr_base",
         "grpc_codegen",
-        "grpc_event_engine_iomgr",
         "grpc_trace",
         "orphanable",
         "ref_counted",
@@ -2682,67 +2693,6 @@ grpc_cc_library(
         ":grpcpp_channelz",
     ],
     alwayslink = 1,
-)
-
-# This is EventEngine-iomgr code that should be removed along with iomgr.
-# The more-permanent EventEngine code is already in the `grpc_base_c` target.
-grpc_cc_library(
-    name = "grpc_event_engine_iomgr",
-    srcs = [
-        "src/core/lib/iomgr/event_engine/closure.cc",
-        "src/core/lib/iomgr/event_engine/endpoint.cc",
-        "src/core/lib/iomgr/event_engine/iomgr.cc",
-        "src/core/lib/iomgr/event_engine/pollset.cc",
-        "src/core/lib/iomgr/event_engine/resolved_address_internal.cc",
-        "src/core/lib/iomgr/event_engine/resolver.cc",
-        "src/core/lib/iomgr/event_engine/tcp.cc",
-        "src/core/lib/iomgr/event_engine/timer.cc",
-    ],
-    hdrs = [
-        "src/core/lib/event_engine/sockaddr.h",  # keep
-        "src/core/lib/iomgr/event_engine/closure.h",
-        "src/core/lib/iomgr/event_engine/endpoint.h",
-        "src/core/lib/iomgr/event_engine/resolved_address_internal.h",
-    ] + [
-        # required headers that overlap with grpc_base_c, mostly iomgr base
-        "src/core/lib/address_utils/parse_address.h",
-        "src/core/lib/address_utils/sockaddr_utils.h",
-        "src/core/lib/channel/channel_args.h",
-        "src/core/lib/iomgr/closure.h",
-        "src/core/lib/iomgr/endpoint.h",
-        "src/core/lib/iomgr/error.h",
-        "src/core/lib/iomgr/error_internal.h",
-        "src/core/lib/iomgr/exec_ctx.h",
-        "src/core/lib/iomgr/iomgr.h",
-        "src/core/lib/iomgr/iomgr_internal.h",
-        "src/core/lib/iomgr/pollset.h",
-        "src/core/lib/iomgr/pollset_set.h",
-        "src/core/lib/iomgr/port.h",
-        "src/core/lib/iomgr/resolve_address.h",
-        "src/core/lib/iomgr/resource_quota.h",
-        "src/core/lib/iomgr/sockaddr.h",
-        "src/core/lib/iomgr/socket_mutator.h",
-        "src/core/lib/iomgr/socket_utils.h",
-        "src/core/lib/iomgr/tcp_client.h",
-        "src/core/lib/iomgr/tcp_server.h",
-        "src/core/lib/iomgr/timer.h",
-        "src/core/lib/iomgr/work_serializer.h",
-        "src/core/lib/surface/channel_stack_type.h",
-        "src/core/lib/transport/error_utils.h",
-        "src/core/lib/transport/http2_errors.h",
-    ],
-    external_deps = [
-        "absl/functional:bind_front",
-        "absl/status",
-        "absl/status:statusor",
-        "absl/strings",
-    ],
-    public_hdrs = GRPC_PUBLIC_HDRS + GRPC_PUBLIC_EVENT_ENGINE_HDRS,
-    deps = [
-        "gpr_base",
-        "grpc_trace",
-        "orphanable",
-    ],
 )
 
 grpc_cc_library(
