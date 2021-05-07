@@ -371,9 +371,8 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
             "with %" PRIuPTR " ring entries",
             parent_.get(), this, subchannel_list, ring_.size());
     // for (const auto& r : ring_) {
-    //  gpr_log(GPR_INFO, "donna ring hash: %" PRIx64 " subchannel: %p state:
-    //  %d",
-    //          r.hash, r.subchannel.get(), r.connectivity_state);
+    // gpr_log(GPR_INFO, "donn ring hash: %" PRIx64 " subchannel: %p state: %d",
+    //         r.hash, r.subchannel.get(), r.connectivity_state);
     //}
   }
 }
@@ -461,13 +460,19 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     const RingEntry& entry = ring_[(first_index + i) % ring_.size()];
     gpr_log(GPR_INFO, "donna index %" PRIuPTR " state %d and subchannel %p", i,
             entry.connectivity_state, entry.subchannel.get());
-    if (entry.subchannel == ring_[first_index].subchannel) continue;
+    if (entry.subchannel == ring_[first_index].subchannel) {
+      gpr_log(GPR_INFO,
+              "donna skipping the same subchannel index %" PRIuPTR
+              " state %d and subchannel %p",
+              i, entry.connectivity_state, entry.subchannel.get());
+      continue;
+    }
     if (entry.connectivity_state == GRPC_CHANNEL_READY) {
       result.type = PickResult::PICK_COMPLETE;
       result.subchannel = entry.subchannel;
       gpr_log(GPR_INFO,
               "donna picker in first or second attempt found ready channel "
-              "%" PRIuPTR "subchannel=%p",
+              "%" PRIuPTR " subchannel=%p",
               i, result.subchannel.get());
       return result;
     }
@@ -479,9 +484,11 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     found_second_subchannel = true;
     if (!found_first_non_failed) {
       if (entry.connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        gpr_log(GPR_INFO, "donna schedule to to TF");
         ScheduleSubchannelConnectionAttempt(entry.subchannel);
       } else {
         if (entry.connectivity_state == GRPC_CHANNEL_IDLE) {
+          gpr_log(GPR_INFO, "donna schedule to to IDLE");
           ScheduleSubchannelConnectionAttempt(entry.subchannel);
         }
         found_first_non_failed = true;

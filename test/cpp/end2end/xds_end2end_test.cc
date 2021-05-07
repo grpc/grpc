@@ -7296,8 +7296,11 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
-  endpoints.emplace_back(grpc_pick_unused_port_or_die());
+  // Make sure we include some unused ports to fill the ring.
+  endpoints.emplace_back(backends_[0]->port());
   endpoints.emplace_back(backends_[1]->port());
+  endpoints.emplace_back(grpc_pick_unused_port_or_die());
+  endpoints.emplace_back(grpc_pick_unused_port_or_die());
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", std::move(endpoints)},
   });
@@ -7310,12 +7313,32 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   };
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
+  ShutdownBackend(0);
   ShutdownBackend(1);
+  CheckRpcSendFailure(0, rpc_options);
   CheckRpcSendFailure(1, rpc_options);
+  StartBackend(0);
+  // Ensure we are actively connecting without any traffic.
+  EXPECT_TRUE(channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
+  WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true),
+                 rpc_options);
+  // Bring down 0 and bring up 1.
+  // Note the RPC contains a header value that will always be hashed to backend
+  // 0. So by purposely bring down backend 0 and bring up another backend, this
+  // will ensure Picker's first choice of backend 0 will fail and it will
+  // 1. reattempt backend 0 and
+  // 2. go through the remaining subchannels to find one in READY.
+  // Since the the entries in the ring is pretty distributed and we have unused
+  // ports to fill the ring, it is almost guaranteed that the Picker will go
+  // through some non-READY entries and skip them as per design.
+  ShutdownBackend(0);
   StartBackend(1);
   // Ensure we are actively connecting without any traffic.
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true),
+                 rpc_options);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
