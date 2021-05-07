@@ -114,7 +114,7 @@ num_failures, resultset = jobset.run(build_jobs,
                                      newline_on_success=True,
                                      maxjobs=args.jobs)
 report_utils.render_junit_xml_report(resultset,
-                                     'report_taskrunner_sponge_log.xml',
+                                     args.xml_report,
                                      suite_name='tasks')
 if num_failures == 0:
     jobset.message('SUCCESS',
