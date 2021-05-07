@@ -19,6 +19,10 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <stdlib.h>
+
+#include "src/core/lib/iomgr/error.h"
+
 namespace grpc_core {
 extern const char* kRequestRingHashAttribute;
 extern std::vector<grpc_error*> ParseRingHash(const Json& json,
