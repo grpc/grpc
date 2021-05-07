@@ -161,7 +161,7 @@ class EventEngine {
   /// expect to receive DEADLINE_EXCEEDED statuses when appropriate, or
   /// CANCELLED statuses on EventEngine shutdown.
   using OnConnectCallback =
-      std::function<void(absl::Status, std::unique_ptr<Endpoint>)>;
+      std::function<void(absl::StatusOr<std::unique_ptr<Endpoint>>)>;
 
   /// An EventEngine Listener listens for incoming connection requests from gRPC
   /// clients and initiates request processing once connections are established.
@@ -237,12 +237,12 @@ class EventEngine {
     /// Called with the collection of sockaddrs that were resolved from a given
     /// target address.
     using LookupHostnameCallback =
-        std::function<void(absl::Status, std::vector<ResolvedAddress>)>;
+        std::function<void(absl::StatusOr<std::vector<ResolvedAddress>>)>;
     /// Called with a collection of SRV records.
     using LookupSRVCallback =
-        std::function<void(absl::Status, std::vector<SRVRecord>)>;
+        std::function<void(absl::StatusOr<std::vector<SRVRecord>>)>;
     /// Called with the result of a TXT record lookup
-    using LookupTXTCallback = std::function<void(absl::Status, std::string)>;
+    using LookupTXTCallback = std::function<void(absl::StatusOr<std::string>)>;
 
     virtual ~DNSResolver() = default;
 
@@ -251,10 +251,11 @@ class EventEngine {
     /// \a default_port may be a non-numeric named service port, and will only
     /// be used if \a address does not already contain a port component.
     ///
-    /// \a on_resolve will be called exactly once. Implementations are expected
-    /// to pass a status argument of CANCELLED if
-    /// \a DNSResolver::TryCancelLookup was called, or a DEADLINE_EXCEEDED stats
-    /// as appropriate.
+    /// When the lookup is complete, the \a on_resolve callback will be invoked
+    /// with a status indicating the success or failure of the lookup.
+    /// Implementations should pass the appropriate statuses to the callback.
+    /// For example, callbacks might expect to receive DEADLINE_EXCEEDED when
+    /// the deadline is exceeded or CANCELLED if the lookup was cancelled.
     virtual LookupTaskHandle LookupHostname(LookupHostnameCallback on_resolve,
                                             absl::string_view address,
                                             absl::string_view default_port,
