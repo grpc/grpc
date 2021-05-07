@@ -204,11 +204,11 @@ cdef class _ServicerContext:
         return self._rpc_state.invocation_metadata()
 
     def is_active(self):
-	return self._rpc_state.status_code == StatusCode.ok
+        return self._rpc_state.status_code == StatusCode.ok
 
     def add_callback(self, callback):
-	self._rpc_state.callbacks.append(callback)
-	return
+        self._rpc_state.callbacks.append(callback)
+        return
 
     def set_code(self, object code):
         self._rpc_state.status_code = get_status_code(code)
