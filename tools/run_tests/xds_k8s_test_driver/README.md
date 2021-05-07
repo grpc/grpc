@@ -77,8 +77,8 @@ disturbances.
 
 The client and server images are created based on Git commit hashes, but not
 every single one of them. It is triggered nightly and per-release. For example,
-the commit we are using below (`d12ac30cde0c4d7f03ade13de177ad96c501ff79`) comes
-from `v1.37.x` in `grpc-java` repo.
+the commit we are using below (`d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf`) comes
+from branch `v1.37.x` in `grpc-java` repo.
 
 ```sh
 # Help
@@ -89,8 +89,8 @@ python -m tests.baseline_test --helpful
 python -m tests.baseline_test \
   --flagfile="config/grpc-testing.cfg" \
   --kube_context="${KUBE_CONTEXT}" \
-  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d12ac30cde0c4d7f03ade13de177ad96c501ff79" \
-  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d12ac30cde0c4d7f03ade13de177ad96c501ff79"
+  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf" \
+  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf"
 ```
 
 ### xDS Security Tests
@@ -103,8 +103,8 @@ python -m tests.security_test --helpful
 python -m tests.security_test \
   --flagfile="config/grpc-testing.cfg" \
   --kube_context="${KUBE_CONTEXT}" \
-  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d12ac30cde0c4d7f03ade13de177ad96c501ff79" \
-  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d12ac30cde0c4d7f03ade13de177ad96c501ff79"
+  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf" \
+  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf"
 ```
 
 ### Test namespace
@@ -119,8 +119,8 @@ avoid if possible). Here is an example:
 python3 -m tests.baseline_test \
   --flagfile="config/grpc-testing.cfg" \
   --kube_context="${KUBE_CONTEXT}" \
-  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d12ac30cde0c4d7f03ade13de177ad96c501ff79" \
-  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d12ac30cde0c4d7f03ade13de177ad96c501ff79" \
+  --server_image="gcr.io/grpc-testing/xds-interop/java-server:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf" \
+  --client_image="gcr.io/grpc-testing/xds-interop/java-client:d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf" \
   --namespace="box-$(date +"%F-%R")" \
   --server_xds_port="$(($RANDOM%1000 + 34567))"
 ```
