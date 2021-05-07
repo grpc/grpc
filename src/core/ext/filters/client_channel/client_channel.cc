@@ -304,9 +304,13 @@ class DynamicTerminationFilter {
  private:
   explicit DynamicTerminationFilter(const grpc_channel_args* args)
       : chand_(grpc_channel_args_find_pointer<ClientChannel>(
-            args, GRPC_ARG_CLIENT_CHANNEL)) {}
+            args, GRPC_ARG_CLIENT_CHANNEL)),
+        call_dispatch_controller_(
+            ConfigSelector::CallDispatchController::GetFromChannelArgs(*args)) {}
 
   ClientChannel* chand_;
+  RefCountedPtr<ConfigSelector::CallDispatchController>
+      call_dispatch_controller_;
 };
 
 class DynamicTerminationFilter::CallData {
@@ -350,8 +354,8 @@ class DynamicTerminationFilter::CallData {
         calld->call_context_,    calld->path_,
         calld->call_start_time_, calld->deadline_,
         calld->arena_,           calld->call_combiner_};
-    calld->lb_call_ =
-        client_channel->CreateLoadBalancedCall(args, pollent, nullptr);
+    calld->lb_call_ = client_channel->CreateLoadBalancedCall(
+        args, pollent, nullptr, chand->call_dispatch_controller_.get());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p dynamic_termination_calld=%p: create lb_call=%p", chand,
@@ -1172,9 +1176,11 @@ ClientChannel::~ClientChannel() {
 RefCountedPtr<ClientChannel::LoadBalancedCall>
 ClientChannel::CreateLoadBalancedCall(
     const grpc_call_element_args& args, grpc_polling_entity* pollent,
-    grpc_closure* on_call_destruction_complete) {
+    grpc_closure* on_call_destruction_complete,
+    ConfigSelector::CallDispatchController* call_dispatch_controller) {
   return args.arena->New<LoadBalancedCall>(this, args, pollent,
-                                           on_call_destruction_complete);
+                                           on_call_destruction_complete,
+                                           call_dispatch_controller);
 }
 
 namespace {
@@ -2532,7 +2538,8 @@ class ClientChannel::LoadBalancedCall::LbCallState
 
 ClientChannel::LoadBalancedCall::LoadBalancedCall(
     ClientChannel* chand, const grpc_call_element_args& args,
-    grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete)
+    grpc_polling_entity* pollent, grpc_closure* on_call_destruction_complete,
+    ConfigSelector::CallDispatchController* call_dispatch_controller)
     : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)
                      ? "LoadBalancedCall"
                      : nullptr),
@@ -2545,7 +2552,8 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
       call_combiner_(args.call_combiner),
       call_context_(args.context),
       pollent_(pollent),
-      on_call_destruction_complete_(on_call_destruction_complete) {}
+      on_call_destruction_complete_(on_call_destruction_complete),
+      call_dispatch_controller_(call_dispatch_controller) {}
 
 ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   grpc_slice_unref_internal(path_);
@@ -2929,6 +2937,12 @@ void ClientChannel::LoadBalancedCall::PickDone(void* arg,
     }
     self->PendingBatchesFail(GRPC_ERROR_REF(error), YieldCallCombiner);
     return;
+  }
+  if (self->call_dispatch_controller_ != nullptr) {
+    auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+        self->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+    auto& call_attributes = service_config_call_data->call_attributes();
+    self->call_dispatch_controller_->Commit(call_attributes);
   }
   self->CreateSubchannelCall();
 }

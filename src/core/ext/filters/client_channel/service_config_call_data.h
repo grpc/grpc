@@ -23,6 +23,7 @@
 
 #include "absl/strings/string_view.h"
 
+#include "src/core/ext/filters/client_channel/config_selector.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/channel/context.h"
@@ -39,7 +40,7 @@ class ServiceConfigCallData {
   ServiceConfigCallData(
       RefCountedPtr<ServiceConfig> service_config,
       const ServiceConfigParser::ParsedConfigVector* method_configs,
-      std::map<const char*, absl::string_view> call_attributes,
+      ConfigSelector::CallAttributes call_attributes,
       grpc_call_context_element* call_context)
       : service_config_(std::move(service_config)),
         method_configs_(method_configs),
@@ -78,7 +79,7 @@ class ServiceConfigCallData {
 
   RefCountedPtr<ServiceConfig> service_config_;
   const ServiceConfigParser::ParsedConfigVector* method_configs_ = nullptr;
-  std::map<const char*, absl::string_view> call_attributes_;
+  ConfigSelector::CallAttributes call_attributes_;
 };
 
 }  // namespace grpc_core

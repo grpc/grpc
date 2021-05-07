@@ -38,12 +38,36 @@
 // Channel arg key for ConfigSelector.
 #define GRPC_ARG_CONFIG_SELECTOR "grpc.internal.config_selector"
 
+// Channel arg key for CallDispatchController.
+#define GRPC_ARG_CALL_DISPATCH_CONTROLLER \
+  "grpc.internal.call_dispatch_controller"
+
 namespace grpc_core {
 
 // Internal API used to allow resolver implementations to override
 // MethodConfig and provide input to LB policies on a per-call basis.
 class ConfigSelector : public RefCounted<ConfigSelector> {
  public:
+  using CallAttributes = std::map<const char*, absl::string_view>;
+
+  // An interface to be used by the channel when dispatching calls.
+  class CallDispatchController : public RefCounted<CallDispatchController> {
+   public:
+    virtual ~CallDispatchController() = default;
+
+    // Called by the channel to decide if it should retry the call upon a
+    // failure.
+    virtual bool ShouldRetry(const CallAttributes& call_attributes) = 0;
+
+    // Called by the channel when no more LB picks will be performed for
+    // the call.
+    virtual void Commit(const CallAttributes& call_attributes) = 0;
+
+    grpc_arg MakeChannelArg() const;
+    static RefCountedPtr<CallDispatchController> GetFromChannelArgs(
+        const grpc_channel_args& args);
+  };
+
   struct GetCallConfigArgs {
     grpc_slice* path;
     grpc_metadata_batch* initial_metadata;
@@ -60,10 +84,8 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     // the call to ensure that method_configs lives long enough.
     RefCountedPtr<ServiceConfig> service_config;
     // Call attributes that will be accessible to LB policy implementations.
-    std::map<const char*, absl::string_view> call_attributes;
-    // A callback that, if set, will be invoked when the call is
-    // committed (i.e., when we know that we will never again need to
-    // ask the picker for a subchannel for this call).
+    CallAttributes call_attributes;
+// FIXME: remove
     std::function<void()> on_call_committed;
   };
 
@@ -85,7 +107,6 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   // The channel will call this when the resolver returns a new ConfigSelector
   // to determine what set of dynamic filters will be configured.
   virtual std::vector<const grpc_channel_filter*> GetFilters() { return {}; }
-
   // Modifies channel args to be passed to the dynamic filter stack.
   // Takes ownership of argument.  Caller takes ownership of result.
   virtual grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) {
