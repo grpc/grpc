@@ -53,7 +53,6 @@ struct grpc_tcp_server {
   ~grpc_tcp_server() {
     // TODO(nnoble): see if we can handle this in ~SliceAllocatorFactory
     grpc_resource_quota_unref_internal(resource_quota);
-    grpc_core::MutexLock lock(&mu);
     grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &shutdown_starting);
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -76,18 +75,19 @@ namespace {
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_endpoint** endpoint_ptr) {
   return
-      [closure, endpoint_ptr](absl::Status status,
-                              std::unique_ptr<EventEngine::Endpoint> endpoint) {
+      [closure, endpoint_ptr](
+          absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
         grpc_core::ExecCtx exec_ctx;
-        if (status.ok()) {
+        if (endpoint.ok()) {
           auto* grpc_endpoint_out =
               reinterpret_cast<grpc_event_engine_endpoint*>(*endpoint_ptr);
-          grpc_endpoint_out->endpoint = std::move(endpoint);
+          grpc_endpoint_out->endpoint = std::move(*endpoint);
         } else {
+          grpc_endpoint_destroy(*endpoint_ptr);
           *endpoint_ptr = nullptr;
         }
         grpc_core::Closure::Run(DEBUG_LOCATION, closure,
-                                absl_status_to_grpc_error(status));
+                                absl_status_to_grpc_error(endpoint.status()));
         exec_ctx.Flush();
         pollset_ee_broadcast_event();
       };
@@ -116,6 +116,7 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
       ee->Connect(ee_on_connect, ra, ca, std::move(sa), ee_deadline);
   if (!connected.ok()) {
     // EventEngine failed to start an asynchronous connect.
+    grpc_endpoint_destroy(*endpoint);
     *endpoint = nullptr;
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_connect,
                             absl_status_to_grpc_error(connected));
@@ -134,24 +135,19 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   }
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
       ee->CreateListener(
-          [server](absl::Status status,
-                   std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
+          [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
             grpc_core::ExecCtx exec_ctx;
-            // TODO(hork): grpc_tcp_server_cb does not handle statuses.
-            // A status arg in the EE OnAcceptCallback is probably unnecessary.
-            GPR_ASSERT(status.ok());
             GPR_ASSERT((*server)->on_accept_internal != nullptr);
-            grpc_event_engine_endpoint* g_endpoint =
+            grpc_event_engine_endpoint* iomgr_endpoint =
                 grpc_tcp_create(std::move(ee_endpoint));
             grpc_tcp_server_acceptor* acceptor =
                 static_cast<grpc_tcp_server_acceptor*>(
                     gpr_zalloc(sizeof(*acceptor)));
             acceptor->from_server = *server;
-            // TODO(hork): should we add a ports() method on Listener?
-            // acceptor->port_index is only used internally.
             acceptor->external_connection = false;
             (*server)->on_accept_internal((*server)->on_accept_internal_arg,
-                                          &g_endpoint->base, nullptr, acceptor);
+                                          &iomgr_endpoint->base, nullptr,
+                                          acceptor);
           },
           GrpcClosureToCallback(shutdown_complete), ca,
           SliceAllocatorFactory(rq));
@@ -167,7 +163,6 @@ void tcp_server_start(grpc_tcp_server* server,
                       grpc_tcp_server_cb on_accept_cb, void* cb_arg) {
   server->on_accept_internal = on_accept_cb;
   server->on_accept_internal_arg = cb_arg;
-  std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
   // The iomgr API does not handle situations where the server cannot start, so
   // a crash may be preferable for now.
   GPR_ASSERT(server->listener->Start().ok());

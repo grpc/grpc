@@ -68,8 +68,9 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
 
 #else  // !GPR_SUPPORT_CHANNELS_FROM_FD
 
-void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
-                                              void* reserved, int fd) {
+void grpc_server_add_insecure_channel_from_fd(grpc_server* /* server */,
+                                              void* /* reserved */,
+                                              int /* fd */) {
   GPR_ASSERT(0);
 }
 
