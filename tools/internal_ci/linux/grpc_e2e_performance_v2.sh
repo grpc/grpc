@@ -45,8 +45,10 @@ ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
 
 # Clone test-infra repository to one upper level directory than grpc
 cd ..
-git clone --recursive https://github.com/grpc/test-infra.git
-cd grpc
+git clone --recursive https://github.com/jtattermusch/test-infra.git
+cd test-infra
+git checkout prebuilt_improvements
+cd ../grpc
 
 trap deleteImages ERR
 
@@ -54,6 +56,12 @@ trap deleteImages ERR
 go run ../test-infra/tools/prepare_prebuilt_workers/prepare_prebuilt_workers.go \
   -l cxx:master \
   -l go:master \
+  -l ruby:master \
+  -l python:master \
+  -l csharp:master \
+  -l php:master \
+  -l java:master \
+  -l node:master \
   -p $PREBUILT_IMAGE_PREFIX \
   -t $UNIQUE_IDENTIFIER \
   -r $ROOT_DIRECTORY_OF_DOCKERFILES
