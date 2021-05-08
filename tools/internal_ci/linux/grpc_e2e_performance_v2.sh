@@ -42,6 +42,8 @@ gcloud container clusters get-credentials benchmarks-prod \
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/"${KOKORO_BUILD_INITIATOR}
 UNIQUE_IDENTIFIER=$(date '+%F-%H-%M-%S')
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
+# enable fast building
+export DOCKER_BUILDKIT=1
 
 # Clone test-infra repository to one upper level directory than grpc
 cd ..
