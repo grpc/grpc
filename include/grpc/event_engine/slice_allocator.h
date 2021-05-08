@@ -32,7 +32,7 @@ namespace experimental {
 class SliceBuffer {
  public:
   SliceBuffer() { abort(); }
-  SliceBuffer(grpc_slice_buffer*) { abort(); }
+  explicit SliceBuffer(grpc_slice_buffer*) { abort(); }
 };
 
 class SliceAllocator {
@@ -43,8 +43,8 @@ class SliceAllocator {
   SliceAllocator(SliceAllocator& other) = delete;
   SliceAllocator& operator=(const SliceAllocator& other) = delete;
   // Moveable
-  SliceAllocator(SliceAllocator&& other);
-  SliceAllocator& operator=(SliceAllocator&& other);
+  SliceAllocator(SliceAllocator&& other) noexcept;
+  SliceAllocator& operator=(SliceAllocator&& other) noexcept;
   ~SliceAllocator();
 
   using AllocateCallback =
@@ -67,8 +67,8 @@ class SliceAllocatorFactory {
   SliceAllocatorFactory(SliceAllocatorFactory& other) = delete;
   SliceAllocatorFactory& operator=(const SliceAllocatorFactory& other) = delete;
   // Moveable
-  SliceAllocatorFactory(SliceAllocatorFactory&& other);
-  SliceAllocatorFactory& operator=(SliceAllocatorFactory&& other);
+  SliceAllocatorFactory(SliceAllocatorFactory&& other) noexcept;
+  SliceAllocatorFactory& operator=(SliceAllocatorFactory&& other) noexcept;
   ~SliceAllocatorFactory();
 
   /// On Endpoint creation, call \a CreateSliceAllocator with the name of the

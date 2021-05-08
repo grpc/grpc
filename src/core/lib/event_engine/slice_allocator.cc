@@ -35,12 +35,12 @@ SliceAllocator::~SliceAllocator() {
   }
 };
 
-SliceAllocator::SliceAllocator(SliceAllocator&& other)
+SliceAllocator::SliceAllocator(SliceAllocator&& other) noexcept
     : resource_user_(other.resource_user_) {
   other.resource_user_ = nullptr;
 }
 
-SliceAllocator& SliceAllocator::operator=(SliceAllocator&& other) {
+SliceAllocator& SliceAllocator::operator=(SliceAllocator&& other) noexcept {
   resource_user_ = other.resource_user_;
   other.resource_user_ = nullptr;
   return *this;
@@ -66,13 +66,14 @@ SliceAllocatorFactory::~SliceAllocatorFactory() {
   }
 }
 
-SliceAllocatorFactory::SliceAllocatorFactory(SliceAllocatorFactory&& other)
+SliceAllocatorFactory::SliceAllocatorFactory(
+    SliceAllocatorFactory&& other) noexcept
     : resource_quota_(other.resource_quota_) {
   other.resource_quota_ = nullptr;
 }
 
 SliceAllocatorFactory& SliceAllocatorFactory::operator=(
-    SliceAllocatorFactory&& other) {
+    SliceAllocatorFactory&& other) noexcept {
   resource_quota_ = other.resource_quota_;
   other.resource_quota_ = nullptr;
   return *this;
