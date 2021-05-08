@@ -168,10 +168,11 @@ class uvEndpoint final
   static void uvConnectCB(uv_connect_t* req, int status) {
     uvEndpoint* epRaw = reinterpret_cast<uvEndpoint*>(req->handle->data);
     std::unique_ptr<uvEndpoint> ep(epRaw);
-    ep->on_connect_(status == 0
-                        ? absl::OkStatus()
-                        : absl::UnknownError("uv_tcp_connect gave us an error"),
-                    std::move(ep));
+    if (status == 0) {
+      ep->on_connect_(std::move(ep));
+    } else {
+      ep->on_connect_(absl::UnknownError("uv_tcp_connect gave us an error"));
+    }
   }
 
   static void uvWriteCB(uv_write_t* req, int status) {
@@ -515,9 +516,11 @@ class uvLookupTask {
       uvEngine* engine = reinterpret_cast<uvEngine*>(timer->loop->data);
       engine->eraseLookupTask(task->key_);
     });
-    on_resolve_(status == UV_ECANCELED ? absl::CancelledError("Cancelled")
-                                       : absl::OkStatus(),
-                std::move(ret));
+    if (status == UV_ECANCELED) {
+      on_resolve_(absl::CancelledError("Cancelled"));
+    } else {
+      on_resolve_(std::move(ret));
+    }
   }
   static void uvTimerCallback(uv_timer_t* timer) {
     uvLookupTask* task = reinterpret_cast<uvLookupTask*>(timer->data);
@@ -553,7 +556,7 @@ uvDNSResolver::LookupHostname(LookupHostnameCallback on_resolve,
     if (r != 0) {
       auto on_resolve = std::move(task->on_resolve_);
       engine->eraseLookupTask(key);
-      on_resolve(absl::UnknownError("blah"), {});
+      on_resolve(absl::UnknownError("blah"));
       return;
     }
     uv_timer_init(&engine->loop_, &task->timer_);

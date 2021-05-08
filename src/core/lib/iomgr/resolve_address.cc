@@ -28,7 +28,7 @@ void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable) {
 }
 
 void grpc_resolve_address(const char* addr, const char* default_port,
-                          grpc_pollset_set* interested_parties,
+                          grpc_pollset_set* /* interested_parties */,
                           grpc_closure* on_done,
                           grpc_resolved_addresses** addresses) {
 #if 0
@@ -41,23 +41,22 @@ void grpc_resolve_address(const char* addr, const char* default_port,
                      .value();
   resolver->LookupHostname(
       [addresses, on_done](
-          absl::Status status,
-          std::vector<
-              grpc_event_engine::experimental::EventEngine::ResolvedAddress>
+          absl::StatusOr<std::vector<
+              grpc_event_engine::experimental::EventEngine::ResolvedAddress> >
               vaddresses) {
-        if (!status.ok()) abort();
+        if (!vaddresses.ok()) abort();
         grpc_resolved_addresses* a = *addresses =
             (grpc_resolved_addresses*)gpr_malloc(
                 sizeof(grpc_resolved_addresses));
         a->addrs = (grpc_resolved_address*)gpr_malloc(
-            sizeof(grpc_resolved_address) * vaddresses.size());
-        for (size_t i = 0; i < vaddresses.size(); i++) {
-          auto& r = vaddresses[i];
+            sizeof(grpc_resolved_address) * vaddresses->size());
+        for (size_t i = 0; i < vaddresses->size(); i++) {
+          auto& r = (*vaddresses)[i];
           memcpy(&a->addrs[i].addr, r.address(), r.size());
           a->addrs[i].len = r.size();
           break;
         }
-        a->naddrs = vaddresses.size();
+        a->naddrs = vaddresses->size();
         grpc_core::ExecCtx ctx;
         grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
       },
