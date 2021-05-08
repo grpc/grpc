@@ -48,23 +48,23 @@ class DnsRequest {
   }
 
  private:
-  void OnLookupComplete(absl::Status status,
-                        std::vector<EventEngine::ResolvedAddress> addresses) {
+  void OnLookupComplete(
+      absl::StatusOr<std::vector<EventEngine::ResolvedAddress>> addresses) {
     grpc_core::ExecCtx exec_ctx;
     // Convert addresses to iomgr form.
     *addresses_ = static_cast<grpc_resolved_addresses*>(
         gpr_malloc(sizeof(grpc_resolved_addresses)));
-    (*addresses_)->naddrs = addresses.size();
+    (*addresses_)->naddrs = addresses->size();
     (*addresses_)->addrs = static_cast<grpc_resolved_address*>(
-        gpr_malloc(sizeof(grpc_resolved_address) * addresses.size()));
-    for (size_t i = 0; i < addresses.size(); ++i) {
-      (*addresses_)->addrs[i] = CreateGRPCResolvedAddress(addresses[i]);
+        gpr_malloc(sizeof(grpc_resolved_address) * addresses->size()));
+    for (size_t i = 0; i < addresses->size(); ++i) {
+      (*addresses_)->addrs[i] = CreateGRPCResolvedAddress((*addresses)[i]);
     }
     // Delete ourselves and invoke closure.
     grpc_closure* cb = cb_;
     delete this;
     grpc_core::Closure::Run(DEBUG_LOCATION, cb,
-                            absl_status_to_grpc_error(status));
+                            absl_status_to_grpc_error(addresses.status()));
   }
 
   std::unique_ptr<EventEngine::DNSResolver> dns_resolver_;
