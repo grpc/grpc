@@ -80,7 +80,6 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
   SliceBuffer* write_buffer = new (&eeep->write_buffer) SliceBuffer(slices);
   eeep->endpoint->Write(
       [eeep, cb](absl::Status status) {
-        grpc_core::ExecCtx exec_ctx;
         // Destroy SliceBuffer wrapper.
         auto* write_buffer =
             reinterpret_cast<SliceBuffer*>(&eeep->write_buffer);
