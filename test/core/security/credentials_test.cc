@@ -1325,7 +1325,7 @@ static void test_jwt_creds_lifetime(void) {
   // Max lifetime.
   grpc_call_credentials* jwt_creds =
       grpc_service_account_jwt_access_credentials_create(
-          json_key_string, grpc_max_auth_token_lifetime(), nullptr);
+          json_key_string, grpc_max_auth_token_lifetime(), "");
   GPR_ASSERT(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
                           grpc_max_auth_token_lifetime()) == 0);
   /* Check security level. */
@@ -1339,7 +1339,7 @@ static void test_jwt_creds_lifetime(void) {
   gpr_timespec token_lifetime = {10, 0, GPR_TIMESPAN};
   GPR_ASSERT(gpr_time_cmp(grpc_max_auth_token_lifetime(), token_lifetime) > 0);
   jwt_creds = grpc_service_account_jwt_access_credentials_create(
-      json_key_string, token_lifetime, nullptr);
+      json_key_string, token_lifetime, "");
   GPR_ASSERT(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
                           token_lifetime) == 0);
   GPR_ASSERT(strncmp(expected_creds_debug_string_prefix,
@@ -1351,7 +1351,7 @@ static void test_jwt_creds_lifetime(void) {
   gpr_timespec add_to_max = {10, 0, GPR_TIMESPAN};
   token_lifetime = gpr_time_add(grpc_max_auth_token_lifetime(), add_to_max);
   jwt_creds = grpc_service_account_jwt_access_credentials_create(
-      json_key_string, token_lifetime, nullptr);
+      json_key_string, token_lifetime, "");
   GPR_ASSERT(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
                           grpc_max_auth_token_lifetime()) == 0);
   GPR_ASSERT(strncmp(expected_creds_debug_string_prefix,
@@ -1374,7 +1374,7 @@ static void test_jwt_creds_success(void) {
   expected_md emd[] = {{"authorization", expected_md_value.c_str()}};
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
-          json_key_string, grpc_max_auth_token_lifetime(), nullptr);
+          json_key_string, grpc_max_auth_token_lifetime(), "");
 
   /* First request: jwt_encode_and_sign should be called. */
   request_metadata_state* state =
@@ -1420,7 +1420,7 @@ static void test_jwt_creds_signing_failure(void) {
       0);
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
-          json_key_string, grpc_max_auth_token_lifetime(), nullptr);
+          json_key_string, grpc_max_auth_token_lifetime(), "");
 
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_failure);
   run_request_metadata_test(creds, auth_md_ctx, state);

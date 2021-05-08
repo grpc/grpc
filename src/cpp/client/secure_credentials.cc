@@ -329,8 +329,9 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
   }
   gpr_timespec lifetime =
       gpr_time_from_seconds(token_lifetime_seconds, GPR_TIMESPAN);
+  // TODO(jiangtaoli2016): plumb audience field.
   return WrapCallCredentials(grpc_service_account_jwt_access_credentials_create(
-      json_key.c_str(), lifetime, nullptr));
+      json_key.c_str(), lifetime, ""));
 }
 
 // Builds refresh token credentials.

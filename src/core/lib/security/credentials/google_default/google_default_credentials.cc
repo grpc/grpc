@@ -250,7 +250,7 @@ static grpc_error_handle create_default_creds_from_path(
   if (grpc_auth_json_key_is_valid(&key)) {
     result =
         grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
-            key, grpc_max_auth_token_lifetime());
+            key, grpc_max_auth_token_lifetime(), "");
     if (result == nullptr) {
       error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "grpc_service_account_jwt_access_credentials_create_from_auth_json_"
