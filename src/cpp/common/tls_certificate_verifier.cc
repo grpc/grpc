@@ -29,10 +29,17 @@ TlsCustomVerificationCheckRequest::TlsCustomVerificationCheckRequest(
     grpc_tls_custom_verification_check_request* request)
     : c_request_(request) {
   GPR_ASSERT(c_request_ != nullptr);
-  target_name_ = c_request_->target_name;
-  peer_cert_ = c_request_->peer_info.peer_cert;
-  peer_cert_full_chain_ = c_request_->peer_info.peer_cert_full_chain;
-  common_name_ = c_request_->peer_info.common_name;
+  target_name_ =
+      c_request_->target_name != nullptr ? c_request_->target_name : "";
+  peer_cert_ = c_request_->peer_info.peer_cert != nullptr
+                   ? c_request_->peer_info.peer_cert
+                   : "";
+  peer_cert_full_chain_ = c_request_->peer_info.peer_cert_full_chain != nullptr
+                              ? c_request_->peer_info.peer_cert_full_chain
+                              : "";
+  common_name_ = c_request_->peer_info.common_name != nullptr
+                     ? c_request_->peer_info.common_name
+                     : "";
   for (size_t i = 0; i < c_request_->peer_info.san_names.uri_names_size; ++i) {
     uri_names_.emplace_back(c_request_->peer_info.san_names.uri_names[i]);
   }
@@ -105,14 +112,6 @@ void CertificateVerifier::AsyncCheckDone(
     }
     callback(return_status);
   }
-}
-
-template <typename Subclass, typename... Args>
-std::shared_ptr<CertificateVerifier> ExternalCertificateVerifier::Create(
-    Args&&... args) {
-  auto* external_verifier = new Subclass(std::forward(args...));
-  return std::make_shared<CertificateVerifier>(
-      grpc_tls_certificate_verifier_external_create(&external_verifier->base_));
 }
 
 ExternalCertificateVerifier::ExternalCertificateVerifier() {
