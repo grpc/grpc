@@ -27,6 +27,7 @@
 #include <map>
 #include <memory>
 #include <mutex>
+#include <utility>
 #include <vector>
 
 // TODO(yihuazhang): remove the forward declaration here and include
@@ -39,6 +40,9 @@ typedef struct grpc_tls_certificate_verifier_external
 typedef void (*grpc_tls_on_custom_verification_check_done_cb)(
     grpc_tls_custom_verification_check_request* request, void* callback_arg,
     grpc_status_code status, const char* error_details);
+extern "C" grpc_tls_certificate_verifier*
+grpc_tls_certificate_verifier_external_create(
+    grpc_tls_certificate_verifier_external* external_verifier);
 
 namespace grpc {
 namespace experimental {
@@ -117,12 +121,17 @@ class ExternalCertificateVerifier {
   // Subclass when invoking the user-specified callbacks, and hence we need to
   // bind its lifetime to the core objects.
   template <typename Subclass, typename... Args>
-  static std::shared_ptr<CertificateVerifier> Create(Args&&... args);
+  static std::shared_ptr<CertificateVerifier> Create(Args&&... args) {
+    auto* external_verifier = new Subclass(std::forward<Args>(args)...);
+    return std::make_shared<CertificateVerifier>(
+        grpc_tls_certificate_verifier_external_create(
+            external_verifier->base_));
+  }
 
  protected:
   ExternalCertificateVerifier();
 
-  ~ExternalCertificateVerifier();
+  virtual ~ExternalCertificateVerifier();
 
  private:
   struct AsyncCallbackProfile {
