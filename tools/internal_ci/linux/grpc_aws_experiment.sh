@@ -26,8 +26,9 @@ ln -s $AWS_CREDENTIALS ~/.aws/credentials
 sudo apt update && sudo apt install -y jq 
 
 # ubuntu 18.04 lts(arm64)
-AMI=ami-026141f3d5c6d2d0c
-INSTANCE_TYPE=t4g.xlarge
+# https://aws.amazon.com/amazon-linux-ami/
+AWS_MACHINE_IMAGE=ami-026141f3d5c6d2d0c
+AWS_INSTANCE_TYPE=t4g.xlarge
 SG=sg-021240e886feba750
 
 ssh-keygen -N '' -t rsa -b 4096 -f ~/.ssh/temp_client_key
@@ -49,8 +50,8 @@ echo 'runcmd:' >> userdata
 echo ' - sleep 120m' >> userdata
 echo ' - shutdown' >> userdata
 
-ID=$(aws ec2 run-instances --image-id $AMI --instance-initiated-shutdown-behavior=terminate \
-    --instance-type $INSTANCE_TYPE \
+ID=$(aws ec2 run-instances --image-id $AWS_MACHINE_IMAGE --instance-initiated-shutdown-behavior=terminate \
+    --instance-type $AWS_INSTANCE_TYPE \
     --security-group-ids $SG \
     --user-data file://userdata \
     --region us-east-2 | jq .Instances[0].InstanceId | sed 's/"//g')
