@@ -329,7 +329,12 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     return absl::OkStatus();
   }
 
-  virtual ~uvEngine() override final { abort(); }
+  virtual ~uvEngine() override final {
+    // still a bit non-obvious what to do here; probably check if
+    // the shutdown happened, and assert on it ?
+
+    // abort();
+  }
 
   virtual absl::StatusOr<std::unique_ptr<
       grpc_event_engine::experimental::EventEngine::DNSResolver>>

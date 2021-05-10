@@ -21,6 +21,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
+void pollset_ee_broadcast_event();
+
 grpc_address_resolver_vtable* grpc_resolve_address_impl;
 
 void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable) {
@@ -54,11 +56,12 @@ void grpc_resolve_address(const char* addr, const char* default_port,
           auto& r = (*vaddresses)[i];
           memcpy(&a->addrs[i].addr, r.address(), r.size());
           a->addrs[i].len = r.size();
-          break;
         }
         a->naddrs = vaddresses->size();
         grpc_core::ExecCtx ctx;
         grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
+        ctx.Flush();
+        pollset_ee_broadcast_event();
       },
       addr, default_port, absl::InfiniteFuture());
 #endif
