@@ -19,6 +19,7 @@ class uvLookupTask;
 
 class uvTCPbase {
  public:
+  uvTCPbase() = default;
   uvTCPbase(
       grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
           on_accept,
