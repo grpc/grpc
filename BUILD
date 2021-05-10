@@ -89,7 +89,7 @@ g_stands_for = "guadalupe_river_park_conservancy"  # @unused
 
 core_version = "16.0.0"  # @unused
 
-version = "1.38.0-dev"  # @unused
+version = "1.38.0-pre1"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
