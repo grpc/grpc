@@ -45,7 +45,7 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     bool internal_access = false;
     // the suffix that will get appended to the name generated from the name
     // of the original .proto file
-    std::string file_extension = "Grpc.cs";
+    std::string file_suffix = "Grpc.cs";
     for (size_t i = 0; i < options.size(); i++) {
       if (options[i].first == "no_client") {
         generate_client = false;
@@ -53,8 +53,9 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
         generate_server = false;
       } else if (options[i].first == "internal_access") {
         internal_access = true;
-      } if (options[i].first == "file_extension") {
-        file_extension = options[i].second;
+      }
+      if (options[i].first == "file_suffix") {
+        file_suffix = options[i].second;
       } else {
         *error = "Unknown generator option: " + options[i].first;
         return false;
@@ -69,7 +70,8 @@ class CSharpGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
     // Get output file name.
     std::string file_name;
-    if (!grpc_csharp_generator::ServicesFilename(file, file_extension, &file_name)) {
+    if (!grpc_csharp_generator::ServicesFilename(file, file_suffix,
+                                                 &file_name)) {
       return false;
     }
     std::unique_ptr<grpc::protobuf::io::ZeroCopyOutputStream> output(
