@@ -2153,7 +2153,7 @@ def test_fault_injection(gcp, original_backend_service, instance_group):
                             success = False
                     if success:
                         logger.info('success')
-                        break
+                        return
                     logger.info('%s attempt %d failed', testcase_name, i)
                     raise RpcDistributionError(
                         '%s: timeout waiting for expected results: %s; got %s' %
