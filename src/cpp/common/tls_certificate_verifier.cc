@@ -29,30 +29,54 @@ TlsCustomVerificationCheckRequest::TlsCustomVerificationCheckRequest(
     grpc_tls_custom_verification_check_request* request)
     : c_request_(request) {
   GPR_ASSERT(c_request_ != nullptr);
-  target_name_ =
-      c_request_->target_name != nullptr ? c_request_->target_name : "";
-  peer_cert_ = c_request_->peer_info.peer_cert != nullptr
-                   ? c_request_->peer_info.peer_cert
-                   : "";
-  peer_cert_full_chain_ = c_request_->peer_info.peer_cert_full_chain != nullptr
-                              ? c_request_->peer_info.peer_cert_full_chain
-                              : "";
-  common_name_ = c_request_->peer_info.common_name != nullptr
-                     ? c_request_->peer_info.common_name
-                     : "";
+}
+
+const std::string TlsCustomVerificationCheckRequest::target_name() const {
+  return c_request_->target_name != nullptr ? c_request_->target_name : "";
+}
+
+const std::string TlsCustomVerificationCheckRequest::peer_cert() const {
+  return c_request_->peer_info.peer_cert != nullptr ? c_request_->peer_info.peer_cert : "";
+}
+
+const std::string TlsCustomVerificationCheckRequest::peer_cert_full_chain() const {
+  return c_request_->peer_info.peer_cert_full_chain != nullptr ? c_request_->peer_info.peer_cert_full_chain : "";
+}
+
+const std::string TlsCustomVerificationCheckRequest::common_name() const {
+  return c_request_->peer_info.common_name != nullptr ? c_request_->peer_info.common_name : "";
+}
+
+std::vector<std::string> TlsCustomVerificationCheckRequest::uri_names() const {
+  std::vector<std::string> uri_names;
   for (size_t i = 0; i < c_request_->peer_info.san_names.uri_names_size; ++i) {
-    uri_names_.emplace_back(c_request_->peer_info.san_names.uri_names[i]);
+    uri_names.emplace_back(c_request_->peer_info.san_names.uri_names[i]);
   }
+  return uri_names;
+}
+
+std::vector<std::string> TlsCustomVerificationCheckRequest::dns_names() const {
+  std::vector<std::string> dns_names;
   for (size_t i = 0; i < c_request_->peer_info.san_names.dns_names_size; ++i) {
-    dns_names_.emplace_back(c_request_->peer_info.san_names.dns_names[i]);
+    dns_names.emplace_back(c_request_->peer_info.san_names.dns_names[i]);
   }
-  for (size_t i = 0; i < c_request_->peer_info.san_names.email_names_size;
-       ++i) {
-    email_names_.emplace_back(c_request_->peer_info.san_names.email_names[i]);
+  return dns_names;
+}
+
+std::vector<std::string> TlsCustomVerificationCheckRequest::email_names() const {
+  std::vector<std::string> email_names;
+  for (size_t i = 0; i < c_request_->peer_info.san_names.email_names_size;++i) {
+    email_names.emplace_back(c_request_->peer_info.san_names.email_names[i]);
   }
+  return email_names;
+}
+
+std::vector<std::string> TlsCustomVerificationCheckRequest::ip_names() const {
+  std::vector<std::string> ip_names;
   for (size_t i = 0; i < c_request_->peer_info.san_names.ip_names_size; ++i) {
-    ip_names_.emplace_back(c_request_->peer_info.san_names.ip_names[i]);
+    ip_names.emplace_back(c_request_->peer_info.san_names.ip_names[i]);
   }
+  return ip_names;
 }
 
 CertificateVerifier::~CertificateVerifier() {
@@ -65,11 +89,11 @@ bool CertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
   GPR_ASSERT(request != nullptr);
   GPR_ASSERT(request->c_request() != nullptr);
   {
-    const std::lock_guard<std::mutex> lock(mu_);
+    internal::MutexLock lock(&mu_);
     request_map_.emplace(request->c_request(), std::move(callback));
   }
   grpc_status_code sync_status_c = GRPC_STATUS_OK;
-  char* error_details = gpr_strdup("");
+  char* error_details = nullptr;
   bool is_done = grpc_tls_certificate_verifier_verify(
       verifier_, request->c_request(), &AsyncCheckDone, this, &sync_status_c,
       &error_details);
@@ -78,7 +102,7 @@ bool CertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
       *sync_status = grpc::Status(static_cast<grpc::StatusCode>(sync_status_c),
                                   error_details);
     }
-    const std::lock_guard<std::mutex> lock(mu_);
+    internal::MutexLock lock(&mu_);
     request_map_.erase(request->c_request());
   }
   gpr_free(error_details);
@@ -97,7 +121,7 @@ void CertificateVerifier::AsyncCheckDone(
   auto* self = static_cast<CertificateVerifier*>(callback_arg);
   std::function<void(grpc::Status)> callback;
   {
-    const std::lock_guard<std::mutex> lock(self->mu_);
+    internal::MutexLock lock(&self->mu_);
     auto it = self->request_map_.find(request);
     if (it != self->request_map_.end()) {
       callback = std::move(it->second);
@@ -131,9 +155,9 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
   auto* self = static_cast<ExternalCertificateVerifier*>(user_data);
   TlsCustomVerificationCheckRequest* cpp_request = nullptr;
   {
-    const std::lock_guard<std::mutex> lock(self->mu_);
+    internal::MutexLock lock(&self->mu_);
     auto pair = self->request_map_.emplace(
-        request, AsyncCallbackProfile(callback, callback_arg, request));
+        request, AsyncRequestState(callback, callback_arg, request));
     GPR_ASSERT(pair.second);
     cpp_request = &pair.first->second.cpp_request;
   }
@@ -144,7 +168,7 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
         grpc_tls_on_custom_verification_check_done_cb callback = nullptr;
         void* callback_arg = nullptr;
         {
-          const std::lock_guard<std::mutex> lock(self->mu_);
+          internal::MutexLock lock(&self->mu_);
           auto it = self->request_map_.find(request);
           if (it != self->request_map_.end()) {
             callback = it->second.callback;
@@ -173,7 +197,7 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
       *sync_error_details =
           gpr_strdup(sync_current_verifier_status.error_details().c_str());
     }
-    const std::lock_guard<std::mutex> lock(self->mu_);
+    internal::MutexLock lock(&self->mu_);
     self->request_map_.erase(request);
   }
   return is_done;
@@ -184,7 +208,7 @@ void ExternalCertificateVerifier::CancelInCoreExternalVerifier(
   auto* self = static_cast<ExternalCertificateVerifier*>(user_data);
   TlsCustomVerificationCheckRequest* cpp_request = nullptr;
   {
-    const std::lock_guard<std::mutex> lock(self->mu_);
+    internal::MutexLock lock(&self->mu_);
     auto it = self->request_map_.find(request);
     if (it != self->request_map_.end()) {
       cpp_request = &it->second.cpp_request;

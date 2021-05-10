@@ -39,19 +39,14 @@ bool ExternalCertificateVerifier::Verify(
   }
   // Invoke the caller-specified verification logic embedded in
   // external_verifier_.
-  grpc_status_code sync_status_c = GRPC_STATUS_OK;
-  // Question: this probably is a dumb question, but is there any way to
-  // allocate a char* on stack, so that we can pass its address to verify()?
-  // Right now it is on heap, and we will need to free the old value every time
-  // we change its value. It would be better if we can create it on the stack,
-  // like |sync_status_c|.
-  char* error_details = gpr_strdup("");
+  grpc_status_code status_code = GRPC_STATUS_OK;
+  char* error_details = nullptr;
   bool is_done = external_verifier_->verify(external_verifier_->user_data,
                                             request, &OnVerifyDone, this,
-                                            &sync_status_c, &error_details);
+                                            &status_code, &error_details);
   if (is_done) {
-    if (sync_status_c != GRPC_STATUS_OK) {
-      *sync_status = absl::Status(static_cast<absl::StatusCode>(sync_status_c),
+    if (status_code != GRPC_STATUS_OK) {
+      *sync_status = absl::Status(static_cast<absl::StatusCode>(status_code),
                                   error_details);
     }
     MutexLock lock(&mu_);
@@ -167,7 +162,7 @@ int grpc_tls_certificate_verifier_verify(
         } else {
           callback(request, callback_arg,
                    static_cast<grpc_status_code>(async_status.code()),
-                   async_status.ToString().c_str());
+                   std::string(async_status.message()).c_str());
         }
       };
   absl::Status sync_status_cpp;
@@ -175,8 +170,10 @@ int grpc_tls_certificate_verifier_verify(
   if (is_done) {
     if (!sync_status_cpp.ok()) {
       *sync_status = static_cast<grpc_status_code>(sync_status_cpp.code());
-      gpr_free(*sync_error_details);
-      *sync_error_details = gpr_strdup(sync_status_cpp.ToString().c_str());
+      if (*sync_error_details != nullptr) {
+        gpr_free(*sync_error_details);
+      }
+      *sync_error_details = gpr_strdup(std::string(sync_status_cpp.message()).c_str());
     }
   }
   return is_done;
