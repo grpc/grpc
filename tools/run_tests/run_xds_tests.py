@@ -84,7 +84,6 @@ _TEST_CASES = [
     'traffic_splitting',
     'path_matching',
     'header_matching',
-    'api_listener',
     'forwarding_rule_port_match',
     'forwarding_rule_default_port',
     'metadata_filter',
@@ -99,6 +98,7 @@ _ADDITIONAL_TEST_CASES = [
     'timeout',
     'fault_injection',
     'csds',
+    'api_listener',  # TODO(b/187352987) Relieve quota pressure
 ]
 
 # Test cases that require the V3 API.  Skipped in older runs.
