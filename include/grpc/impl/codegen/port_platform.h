@@ -666,7 +666,7 @@ typedef unsigned __int64 uint64_t;
 
 #ifdef GRPC_EVENT_ENGINE_TEST
 #undef GPR_SUPPORT_CHANNELS_FROM_FD
-// #define GRPC_ARES 0
+#define GRPC_ARES 0
 #endif  // GRPC_EVENT_ENGINE_TEST
 
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */
