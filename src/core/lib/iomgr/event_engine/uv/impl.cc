@@ -197,15 +197,15 @@ class uvEndpoint final
     uvEndpoint* ep = reinterpret_cast<uvEndpoint*>(stream->data);
     uv_timer_stop(&ep->uvTCP_->read_timer_);
     uv_read_stop(stream);
+    auto cb = std::move(ep->on_read_);
     if (nread < 0) {
-      ep->on_read_(absl::UnknownError("uv_read_start gave us an error"));
+      cb(absl::UnknownError("uv_read_start gave us an error"));
       return;
     }
     grpc_event_engine::experimental::Slice slice(
         ep->read_buf_, nread,
         grpc_event_engine::experimental::Slice::STATIC_SLICE);
     ep->read_sb_->add(slice);
-    auto cb = std::move(ep->on_read_);
     cb(absl::OkStatus());
     memset(ep->read_buf_, 0, buf->len);
   }

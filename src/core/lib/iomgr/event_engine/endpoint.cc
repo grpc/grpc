@@ -123,7 +123,7 @@ void endpoint_shutdown(grpc_endpoint* ep, grpc_error* why) {
 void endpoint_destroy(grpc_endpoint* ep) {
   auto* eeep = reinterpret_cast<grpc_event_engine_endpoint*>(ep);
   grpc_resource_user_unref(eeep->ru);
-  delete ep;
+  delete eeep;
 }
 
 grpc_resource_user* endpoint_get_resource_user(grpc_endpoint* ep) {
