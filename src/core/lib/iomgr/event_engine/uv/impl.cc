@@ -19,17 +19,12 @@ class uvLookupTask;
 
 class uvTCPbase {
  public:
-  uvTCPbase() { printf("Created uvTCPbase with handle @ %p\n", &tcp_); }
   uvTCPbase(
       grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
           on_accept,
       grpc_event_engine::experimental::EventEngine::Callback on_shutdown)
-      : on_accept_(on_accept), on_shutdown_(on_shutdown) {
-    printf("Created uvTCPbase with handle @ %p\n", &tcp_);
-  }
-  virtual ~uvTCPbase() {
-    printf("Deleting uvTCPbase with handle @ %p\n", &tcp_);
-  };
+      : on_accept_(on_accept), on_shutdown_(on_shutdown) {}
+  virtual ~uvTCPbase() = default;
   static void uvCloseCB(uv_handle_t* handle) {
     uvTCPbase* tcp = reinterpret_cast<uvTCPbase*>(handle->data);
     if (--tcp->to_close_ == 0) {
@@ -353,17 +348,10 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
 
   virtual void TryCancel(TaskHandle handle) override final { abort(); }
 
-  static void walkCB(uv_handle_t* handle, void* arg) {
-    printf("handle @ %p: %s (ref: %s)\n", handle,
-           uv_handle_type_name(uv_handle_get_type(handle)),
-           uv_has_ref(handle) ? "yes" : "no");
-  }
-
   virtual void Shutdown(Callback on_shutdown_complete) override final {
     on_shutdown_complete_ = on_shutdown_complete;
     schedule([](uvEngine* engine) {
       uv_unref(reinterpret_cast<uv_handle_t*>(&engine->kicker_));
-      uv_walk(&engine->loop_, uvEngine::walkCB, engine);
     });
   }
 
@@ -409,7 +397,6 @@ uvListener::~uvListener() {
   engine_->schedule([tcp](uvEngine* engine) {
     tcp->tcp_.data = tcp;
     tcp->to_close_ = 1;
-    printf("Closing uvListener with handle @ %p\n", &tcp->tcp_);
     uv_close(reinterpret_cast<uv_handle_t*>(&tcp->tcp_), uvTCPbase::uvCloseCB);
   });
 }
@@ -605,7 +592,6 @@ uvEndpoint::~uvEndpoint() {
     tcp->to_close_ = 3;
     uvTCPbase* base = tcp;
     tcp->tcp_.data = base;
-    printf("Closing uvEndpoint with handle @ %p\n", &tcp->tcp_);
     uv_close(reinterpret_cast<uv_handle_t*>(&tcp->tcp_), uvTCPbase::uvCloseCB);
     uv_close(reinterpret_cast<uv_handle_t*>(&tcp->write_timer_),
              uvTCPbase::uvCloseCB);
