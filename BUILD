@@ -370,6 +370,7 @@ grpc_cc_library(
         "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
+    defines = ["GRPC_XDS_USER_AGENT_SUFFIX=C++"],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = {
@@ -379,7 +380,6 @@ grpc_cc_library(
             "grpc++_xds_server",
         ],
     },
-    defines = ["GRPC_XDS_USER_AGENT_SUFFIX=C++"],
     standalone = True,
     deps = [
         "grpc++_internals",
