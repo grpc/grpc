@@ -1001,30 +1001,33 @@ struct grpc_tls_certificate_verifier_external {
    * performed after the TLS handshake is done. It could be processed
    * synchronously or asynchronously.
    * - If expected to be processed synchronously, the implementer should
-   * populate the verification result through |sync_status| and
-   * |sync_error_details|, and then return true.
+   *   populate the verification result through |sync_status| and
+   *   |sync_error_details|, and then return true.
    * - If expected to be processed asynchronously, the implementer should return
-   * false immediately, and then in the asynchronous thread invoke |callback|
-   * with the verification result. The implementer MUST NOT invoke the async
-   * |callback| in the same thread before |verify| returns, otherwise it can
-   * lead to deadlocks.
+   *   false immediately, and then in the asynchronous thread invoke |callback|
+   *   with the verification result. The implementer MUST NOT invoke the async
+   *   |callback| in the same thread before |verify| returns, otherwise it can
+   *   lead to deadlocks.
    *
    * user_data: any argument that is passed in the user_data of
-   * grpc_tls_certificate_verifier_external during construction time can be
-   * retrieved later here.
+   *            grpc_tls_certificate_verifier_external during construction time
+   *            can be retrieved later here.
    * request: request information exposed to the function implementer.
-   * callback: the callback that the function implementer needs to invoke,
-   * if return a non-zero value. It is usually invoked when the asynchronous
-   * verification is done, and serves to bring the control back to gRPC.
+   * callback: the callback that the function implementer needs to invoke, if
+   *           return a non-zero value. It is usually invoked when the
+   *           asynchronous verification is done, and serves to bring the
+   *           control back to gRPC.
    * callback_arg: A pointer to the internal ExternalVerifier instance. This is
-   * mainly used as an argument in |callback|, if want to invoke |callback| in
-   * async mode.
-   * status: indicates if a connection should be allowed. This should only be
-   * used if the verification check is done synchronously. error_details: the
-   * error generated while verifying a connection. This should only be used if
-   * the verification check is done synchronously. return: return 0 if |verify|
-   * is expected to be executed asynchronously, otherwise return a non-zero
-   * value.
+   *               mainly used as an argument in |callback|, if want to invoke
+   *               |callback| in async mode.
+   * sync_status: indicates if a connection should be allowed. This should only
+   *              be used if the verification check is done synchronously.
+   * sync_error_details: the error generated while verifying a connection. This
+   *                     should only be used if the verification check is done
+   *                     synchronously. the implementation must allocate the
+   *                     error string via gpr_malloc() or gpr_strdup().
+   * return: return 0 if |verify| is expected to be executed asynchronously,
+   *         otherwise return a non-zero value.
    */
   int (*verify)(void* user_data,
                 grpc_tls_custom_verification_check_request* request,
@@ -1040,11 +1043,11 @@ struct grpc_tls_certificate_verifier_external {
    * want to be notified, and properly clean up some resources.
    *
    * user_data: any argument that is passed in the user_data of
-   * grpc_tls_certificate_verifier_external during construction time can be
-   * retrieved later here.
+   *            grpc_tls_certificate_verifier_external during construction time
+   *            can be retrieved later here.
    * request: request information exposed to the function implementer. It will
-   * be the same request object that was passed to verify(), and it tells the
-   * cancel() which request to cancel.
+   *          be the same request object that was passed to verify(), and it
+   *          tells the cancel() which request to cancel.
    */
   void (*cancel)(void* user_data,
                  grpc_tls_custom_verification_check_request* request);
@@ -1062,8 +1065,8 @@ struct grpc_tls_certificate_verifier_external {
    * callers to later delete it in destruct().
    *
    * user_data: any argument that is passed in the user_data of
-   * grpc_tls_certificate_verifier_external during construction time can be
-   * retrieved later here.
+   *            grpc_tls_certificate_verifier_external during construction time
+   *            can be retrieved later here.
    */
   void (*destruct)(void* user_data);
 };
