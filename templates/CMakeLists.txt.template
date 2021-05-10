@@ -73,6 +73,7 @@
       deps.append("${_gRPC_CARES_LIBRARIES}")
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
       deps.append("${_gRPC_RE2_LIBRARIES}")
+      deps.append("${_gRPC_S2A_CORE_LIBRARIES}")
       deps.append("${_gRPC_UPB_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
@@ -200,6 +201,9 @@
   set(gRPC_RE2_PROVIDER "module" CACHE STRING "Provider of re2 library")
   set_property(CACHE gRPC_RE2_PROVIDER PROPERTY STRINGS "module" "package")
 
+  set(gRPC_S2A_CORE_PROVIDER "module" CACHE STRING "Provider of s2a-core library")
+  set_property(CACHE gRPC_S2A_CORE_PROVIDER PROPERTY STRINGS "module" "package")
+
   set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
   set_property(CACHE gRPC_SSL_PROVIDER PROPERTY STRINGS "module" "package")
 
@@ -324,6 +328,7 @@
   include(cmake/cares.cmake)
   include(cmake/protobuf.cmake)
   include(cmake/re2.cmake)
+  include(cmake/s2a-core.cmake)
   include(cmake/ssl.cmake)
   include(cmake/upb.cmake)
   include(cmake/xxhash.cmake)
@@ -467,7 +472,7 @@
     for lib in libs:
       if lib.build not in ["all", "protoc", "tool", "test", "private"] or lib.boringssl: continue
       if lib.get('build_system', []) and 'cmake' not in lib.get('build_system', []): continue
-      if lib.name in ['ares', 'benchmark', 're2', 'xxhash', 'z']: continue  # we build these using CMake instead
+      if lib.name in ['ares', 'benchmark', 're2', 's2a-core', 'xxhash', 'z']: continue  # we build these using CMake instead
       if is_absl_lib(lib.name): continue  # we build these using CMake instead
       cmake_libs.append(lib)
   %>

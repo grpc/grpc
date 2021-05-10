@@ -151,6 +151,11 @@ def grpc_deps():
         actual = "@libuv//:libuv",
     )
 
+    native.bind(
+        name = "s2a-core",
+        actual = "@s2a_core//:s2a_core",
+    )
+
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
@@ -408,6 +413,15 @@ def grpc_deps():
             urls = [
                 "https://storage.googleapis.com/grpc-bazel-mirror/github.com/envoyproxy/protoc-gen-validate/archive/278964a8052f96a2f514add0298098f63fb7f47f.tar.gz",
                 "https://github.com/envoyproxy/protoc-gen-validate/archive/278964a8052f96a2f514add0298098f63fb7f47f.tar.gz",
+            ],
+        )
+
+    if "s2a_core" not in native.existing_rules():
+        http_archive(
+            name = "s2a_core",
+            strip_prefix = "s2a_core-814a25eea8927dea81447ffda708680af9cbacce",
+            urls = [
+                "https://github.com/google/s2a-core/archive/814a25eea8927dea81447ffda708680af9cbacce.tar.gz",
             ],
         )
 
