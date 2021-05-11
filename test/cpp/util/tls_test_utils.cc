@@ -101,14 +101,13 @@ bool AsyncCertificateVerifier::Verify(
 void AsyncCertificateVerifier::AdditionalAsyncCheck(void* arg) {
   auto* thread_args = static_cast<ThreadArgs*>(arg);
   auto* self = thread_args->self;
+  auto* request = thread_args->request;
   std::function<void(grpc::Status)> callback;
   {
     const std::lock_guard<std::mutex> lock(self->mu_);
-    auto* request = thread_args->request;
     auto it = self->request_map_.find(request);
     if (it != self->request_map_.end()) {
       callback = std::move(it->second);
-      self->request_map_.erase(it);
     }
   }
   if (callback != nullptr) {
@@ -127,10 +126,14 @@ void AsyncCertificateVerifier::AdditionalAsyncCheck(void* arg) {
     } else {
       return_status = thread_args->status;
     }
-    // Here the status is printed as "UNAUTHENTICATED: Hostname Verification
-    // Check failed.", but after the callback the message part is removed. What
-    // could go wrong here...
     callback(return_status);
+  }
+  {
+    const std::lock_guard<std::mutex> lock(self->mu_);
+    auto it = self->request_map_.find(request);
+    if (it != self->request_map_.end()) {
+      self->request_map_.erase(it);
+    }
   }
   delete thread_args;
 }
