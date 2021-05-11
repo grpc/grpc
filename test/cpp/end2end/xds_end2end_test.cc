@@ -6895,28 +6895,20 @@ TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
   hash_policy->mutable_header()->set_header_name("fixed_header");
   hash_policy->set_terminal(true);
   auto* hash_policy2 = route->mutable_route()->add_hash_policy();
-  hash_policy2->mutable_header()->set_header_name("fixed_header_2");
+  hash_policy2->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
       {{"locality0", CreateEndpointsForBackends(0, 2)}});
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  std::vector<std::pair<std::string, std::string>> metadata = {
-      {"fixed_header_2", absl::StrFormat("%" PRIu32, rand())},
-  };
+  std::vector<std::pair<std::string, std::string>> metadata =
+      CreateHeaderAddressHashForBackend(0);
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   CheckRpcSendOk(100, rpc_options);
   bool found = false;
-  for (size_t i = 0; i < 2; ++i) {
-    if (backends_[i]->backend_service()->request_count() > 0) {
-      EXPECT_EQ(backends_[i]->backend_service()->request_count(), 100)
-          << "backend " << i;
-      EXPECT_FALSE(found) << "backend " << i;
-      found = true;
-    }
-  }
-  EXPECT_TRUE(found);
+  EXPECT_EQ(backends_[0]->backend_service()->request_count(), 100);
+  EXPECT_EQ(backends_[1]->backend_service()->request_count(), 0);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
@@ -7189,7 +7181,8 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
-  endpoints.emplace_back(grpc_pick_unused_port_or_die());
+  const int unused_port = grpc_pick_unused_port_or_die();
+  endpoints.emplace_back(unused_port);
   endpoints.emplace_back(backends_[1]->port());
   AdsServiceImpl::EdsResourceArgs args({
       {"locality0", std::move(endpoints)},
@@ -7197,8 +7190,9 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  std::vector<std::pair<std::string, std::string>> metadata =
-      CreateHeaderAddressHashForBackend(0);
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash",
+       absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":", unused_port, "_0")}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
@@ -7277,7 +7271,7 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   ShutdownBackend(0);
   ShutdownBackend(1);
-  CheckRpcSendFailure(1, rpc_options);
+  CheckRpcSendFailure(1, rpc_options, StatusCode::UNAVAILABLE);
   StartBackend(0);
   // Ensure we are actively connecting without any traffic.
   EXPECT_TRUE(channel_->WaitForConnected(
