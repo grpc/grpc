@@ -170,10 +170,8 @@ int grpc_tls_certificate_verifier_verify(
   if (is_done) {
     if (!sync_status_cpp.ok()) {
       *sync_status = static_cast<grpc_status_code>(sync_status_cpp.code());
-      if (*sync_error_details != nullptr) {
-        gpr_free(*sync_error_details);
-      }
-      *sync_error_details = gpr_strdup(std::string(sync_status_cpp.message()).c_str());
+      *sync_error_details =
+          gpr_strdup(std::string(sync_status_cpp.message()).c_str());
     }
   }
   return is_done;

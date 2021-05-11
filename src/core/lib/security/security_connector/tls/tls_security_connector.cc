@@ -55,20 +55,104 @@ char* CopyCoreString(char* src, size_t length) {
 }
 
 void PendingVerifierRequestInit(
-    grpc_tls_custom_verification_check_request* request) {
+    tsi_peer peer, grpc_tls_custom_verification_check_request* request) {
   GPR_ASSERT(request != nullptr);
   request->target_name = nullptr;
-  request->peer_info.common_name = nullptr;
-  request->peer_info.san_names.uri_names = nullptr;
-  request->peer_info.san_names.uri_names_size = 0;
-  request->peer_info.san_names.dns_names = nullptr;
-  request->peer_info.san_names.dns_names_size = 0;
-  request->peer_info.san_names.email_names = nullptr;
-  request->peer_info.san_names.email_names_size = 0;
-  request->peer_info.san_names.ip_names = nullptr;
-  request->peer_info.san_names.ip_names_size = 0;
-  request->peer_info.peer_cert = nullptr;
-  request->peer_info.peer_cert_full_chain = nullptr;
+  // TODO(ZhenLian): avoid the copy when the underlying core implementation used
+  // the null-terminating string.
+  bool has_common_name = false;
+  bool has_peer_cert = false;
+  bool has_peer_cert_full_chain = false;
+  std::vector<char*> uri_names;
+  std::vector<char*> dns_names;
+  std::vector<char*> email_names;
+  std::vector<char*> ip_names;
+  for (size_t i = 0; i < peer.property_count; ++i) {
+    const tsi_peer_property* prop = &peer.properties[i];
+    if (prop->name == nullptr) continue;
+    if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
+      request->peer_info.common_name =
+          CopyCoreString(prop->value.data, prop->value.length);
+      has_common_name = true;
+    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_PROPERTY) == 0) {
+      request->peer_info.peer_cert =
+          CopyCoreString(prop->value.data, prop->value.length);
+      has_peer_cert = true;
+    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_CHAIN_PROPERTY) == 0) {
+      request->peer_info.peer_cert_full_chain =
+          CopyCoreString(prop->value.data, prop->value.length);
+      has_peer_cert_full_chain = true;
+    } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
+      char* uri = CopyCoreString(prop->value.data, prop->value.length);
+      uri_names.emplace_back(uri);
+    } else if (strcmp(prop->name, TSI_X509_DNS_PEER_PROPERTY) == 0) {
+      char* dns = CopyCoreString(prop->value.data, prop->value.length);
+      dns_names.emplace_back(dns);
+    } else if (strcmp(prop->name, TSI_X509_EMAIL_PEER_PROPERTY) == 0) {
+      char* email = CopyCoreString(prop->value.data, prop->value.length);
+      email_names.emplace_back(email);
+    } else if (strcmp(prop->name, TSI_X509_IP_PEER_PROPERTY) == 0) {
+      char* ip = CopyCoreString(prop->value.data, prop->value.length);
+      ip_names.emplace_back(ip);
+    }
+  }
+  if (!has_common_name) {
+    request->peer_info.common_name = nullptr;
+  }
+  if (!has_peer_cert) {
+    request->peer_info.peer_cert = nullptr;
+  }
+  if (!has_peer_cert_full_chain) {
+    request->peer_info.peer_cert_full_chain = nullptr;
+  }
+  request->peer_info.san_names.uri_names_size = uri_names.size();
+  if (!uri_names.empty()) {
+    request->peer_info.san_names.uri_names =
+        new char*[request->peer_info.san_names.uri_names_size];
+    for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
+      request->peer_info.san_names.uri_names[i] = uri_names[i];
+    }
+  } else {
+    request->peer_info.san_names.uri_names = nullptr;
+  }
+  request->peer_info.san_names.dns_names_size = dns_names.size();
+  if (!dns_names.empty()) {
+    request->peer_info.san_names.dns_names =
+        new char*[request->peer_info.san_names.dns_names_size];
+    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
+      request->peer_info.san_names.dns_names[i] = dns_names[i];
+    }
+  } else {
+    request->peer_info.san_names.dns_names = nullptr;
+  }
+  request->peer_info.san_names.email_names_size = email_names.size();
+  if (!email_names.empty()) {
+    request->peer_info.san_names.email_names =
+        new char*[request->peer_info.san_names.email_names_size];
+    for (size_t i = 0; i < request->peer_info.san_names.email_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
+      request->peer_info.san_names.email_names[i] = email_names[i];
+    }
+  } else {
+    request->peer_info.san_names.email_names = nullptr;
+  }
+  request->peer_info.san_names.ip_names_size = ip_names.size();
+  if (!ip_names.empty()) {
+    request->peer_info.san_names.ip_names =
+        new char*[request->peer_info.san_names.ip_names_size];
+    for (size_t i = 0; i < request->peer_info.san_names.ip_names_size; ++i) {
+      // We directly point the char* string stored in vector to the |request|.
+      // That string will be released when the |request| is destroyed.
+      request->peer_info.san_names.ip_names[i] = ip_names[i];
+    }
+  } else {
+    request->peer_info.san_names.ip_names = nullptr;
+  }
 }
 
 void PendingVerifierRequestDestroy(
@@ -106,85 +190,6 @@ void PendingVerifierRequestDestroy(
   }
   if (request->peer_info.peer_cert_full_chain != nullptr) {
     gpr_free(const_cast<char*>(request->peer_info.peer_cert_full_chain));
-  }
-}
-
-// Parse tsi_peer and feed in the values in the check request.
-// We will make a copy of each field.
-void ParseTsiPeer(tsi_peer peer,
-                  grpc_tls_custom_verification_check_request* request) {
-  GPR_ASSERT(request != nullptr);
-  // TODO(ZhenLian): avoid the copy when the underlying core implementation used
-  // the null-terminating string.
-  std::vector<char*> uri_names;
-  std::vector<char*> dns_names;
-  std::vector<char*> email_names;
-  std::vector<char*> ip_names;
-  for (size_t i = 0; i < peer.property_count; ++i) {
-    const tsi_peer_property* prop = &peer.properties[i];
-    if (prop->name == nullptr) continue;
-    if (strcmp(prop->name, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY) == 0) {
-      request->peer_info.common_name =
-          CopyCoreString(prop->value.data, prop->value.length);
-    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_PROPERTY) == 0) {
-      request->peer_info.peer_cert =
-          CopyCoreString(prop->value.data, prop->value.length);
-    } else if (strcmp(prop->name, TSI_X509_PEM_CERT_CHAIN_PROPERTY) == 0) {
-      request->peer_info.peer_cert_full_chain =
-          CopyCoreString(prop->value.data, prop->value.length);
-    } else if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
-      char* uri = CopyCoreString(prop->value.data, prop->value.length);
-      uri_names.emplace_back(uri);
-    } else if (strcmp(prop->name, TSI_X509_DNS_PEER_PROPERTY) == 0) {
-      char* dns = CopyCoreString(prop->value.data, prop->value.length);
-      dns_names.emplace_back(dns);
-    } else if (strcmp(prop->name, TSI_X509_EMAIL_PEER_PROPERTY) == 0) {
-      char* email = CopyCoreString(prop->value.data, prop->value.length);
-      email_names.emplace_back(email);
-    } else if (strcmp(prop->name, TSI_X509_IP_PEER_PROPERTY) == 0) {
-      char* ip = CopyCoreString(prop->value.data, prop->value.length);
-      ip_names.emplace_back(ip);
-    }
-  }
-  request->peer_info.san_names.uri_names_size = uri_names.size();
-  if (!uri_names.empty()) {
-    request->peer_info.san_names.uri_names =
-        new char*[request->peer_info.san_names.uri_names_size];
-    for (size_t i = 0; i < request->peer_info.san_names.uri_names_size; ++i) {
-      // We directly point the char* string stored in vector to the |request|.
-      // That string will be released when the |request| is destroyed.
-      request->peer_info.san_names.uri_names[i] = uri_names[i];
-    }
-  }
-  request->peer_info.san_names.dns_names_size = dns_names.size();
-  if (!dns_names.empty()) {
-    request->peer_info.san_names.dns_names =
-        new char*[request->peer_info.san_names.dns_names_size];
-    for (size_t i = 0; i < request->peer_info.san_names.dns_names_size; ++i) {
-      // We directly point the char* string stored in vector to the |request|.
-      // That string will be released when the |request| is destroyed.
-      request->peer_info.san_names.dns_names[i] = dns_names[i];
-    }
-  }
-  request->peer_info.san_names.email_names_size = email_names.size();
-  if (!email_names.empty()) {
-    request->peer_info.san_names.email_names =
-        new char*[request->peer_info.san_names.email_names_size];
-    for (size_t i = 0; i < request->peer_info.san_names.email_names_size; ++i) {
-      // We directly point the char* string stored in vector to the |request|.
-      // That string will be released when the |request| is destroyed.
-      request->peer_info.san_names.email_names[i] = email_names[i];
-    }
-  }
-  request->peer_info.san_names.ip_names_size = ip_names.size();
-  if (!ip_names.empty()) {
-    request->peer_info.san_names.ip_names =
-        new char*[request->peer_info.san_names.ip_names_size];
-    for (size_t i = 0; i < request->peer_info.san_names.ip_names_size; ++i) {
-      // We directly point the char* string stored in vector to the |request|.
-      // That string will be released when the |request| is destroyed.
-      request->peer_info.san_names.ip_names[i] = ip_names[i];
-    }
   }
 }
 
@@ -377,7 +382,14 @@ void TlsChannelSecurityConnector::cancel_check_peer(
       }
     }
     if (pending_verifier_request != nullptr) {
-      verifier->Cancel(pending_verifier_request->request());
+      grpc_tls_custom_verification_check_request* request = nullptr;
+      {
+        MutexLock lock(&verifier_request_map_mu_);
+        request = pending_verifier_request->request();
+      }
+      if (request != nullptr) {
+        verifier->Cancel(request);
+      }
     }
   }
 }
@@ -456,12 +468,11 @@ TlsChannelSecurityConnector::ChannelPendingVerifierRequest::
         grpc_closure* on_peer_checked, tsi_peer peer, const char* target_name)
     : security_connector_(std::move(security_connector)),
       on_peer_checked_(on_peer_checked) {
-  PendingVerifierRequestInit(&request_);
+  PendingVerifierRequestInit(std::move(peer), &request_);
   // We can pass a pointer of the string cached in security connector directly
   // because the verifier holds a ref to the security connector until this
   // verification request is completed.
   request_.target_name = target_name;
-  ParseTsiPeer(std::move(peer), &request_);
   tsi_peer_destruct(&peer);
 }
 
@@ -660,7 +671,14 @@ void TlsServerSecurityConnector::cancel_check_peer(
       }
     }
     if (pending_verifier_request != nullptr) {
-      verifier->Cancel(pending_verifier_request->request());
+      grpc_tls_custom_verification_check_request* request = nullptr;
+      {
+        MutexLock lock(&verifier_request_map_mu_);
+        request = pending_verifier_request->request();
+      }
+      if (request != nullptr) {
+        verifier->Cancel(request);
+      }
     }
   }
 }
@@ -725,8 +743,7 @@ TlsServerSecurityConnector::ServerPendingVerifierRequest::
         grpc_closure* on_peer_checked, tsi_peer peer)
     : security_connector_(std::move(security_connector)),
       on_peer_checked_(on_peer_checked) {
-  PendingVerifierRequestInit(&request_);
-  ParseTsiPeer(std::move(peer), &request_);
+  PendingVerifierRequestInit(std::move(peer), &request_);
   tsi_peer_destruct(&peer);
 }
 
