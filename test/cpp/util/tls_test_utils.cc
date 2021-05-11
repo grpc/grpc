@@ -120,7 +120,7 @@ void AsyncCertificateVerifier::AdditionalAsyncCheck(void* arg) {
                              thread_args->status.error_message());
       } else {
         return_status =
-            grpc::Status(thread_args->status.error_code(),
+            grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
                          "AsyncCertificateVerifier is marked unsuccessful");
       }
     } else {

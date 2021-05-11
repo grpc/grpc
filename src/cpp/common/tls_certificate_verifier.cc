@@ -167,7 +167,6 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
     internal::MutexLock lock(&self->mu_);
     auto pair = self->request_map_.emplace(
         request, AsyncRequestState(callback, callback_arg, request));
-    GPR_ASSERT(pair.second);
     cpp_request = &pair.first->second.cpp_request;
   }
   grpc::Status sync_current_verifier_status;

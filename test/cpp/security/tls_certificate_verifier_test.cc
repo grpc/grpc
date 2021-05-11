@@ -36,66 +36,6 @@ namespace grpc {
 namespace testing {
 namespace {
 
-TEST(TlsCertificateVerifierTest, HostNameCertificateVerifierSucceeds) {
-  grpc_tls_custom_verification_check_request request;
-  memset(&request, 0, sizeof(request));
-  request.target_name = "foo.bar.com";
-  request.peer_info.common_name = "foo.bar.com";
-  auto verifier = std::make_shared<HostNameCertificateVerifier>();
-  TlsCustomVerificationCheckRequest cpp_request(&request);
-  std::function<void(grpc::Status)> empty_callback;
-  grpc::Status sync_status;
-  verifier->Verify(&cpp_request, empty_callback, &sync_status);
-  EXPECT_TRUE(sync_status.ok());
-}
-
-TEST(TlsCertificateVerifierTest, HostNameCertificateVerifierFails) {
-  grpc_tls_custom_verification_check_request request;
-  memset(&request, 0, sizeof(request));
-  request.target_name = "foo.bar.com";
-  request.peer_info.common_name = "foo.baz.com";
-  auto verifier = std::make_shared<HostNameCertificateVerifier>();
-  TlsCustomVerificationCheckRequest cpp_request(&request);
-  std::function<void(grpc::Status)> empty_callback;
-  grpc::Status sync_status;
-  verifier->Verify(&cpp_request, empty_callback, &sync_status);
-  EXPECT_FALSE(sync_status.ok());
-}
-
-TEST(TlsCertificateVerifierTest,
-     HostNameCertificateVerifierSucceedsMultipleFields) {
-  grpc_tls_custom_verification_check_request request;
-  memset(&request, 0, sizeof(request));
-  request.target_name = "foo.bar.com";
-  request.peer_info.common_name = "foo.baz.com";
-  char* dns_names[] = {const_cast<char*>("*.bar.com")};
-  request.peer_info.san_names.dns_names = dns_names;
-  request.peer_info.san_names.dns_names_size = 1;
-  auto verifier = std::make_shared<HostNameCertificateVerifier>();
-  TlsCustomVerificationCheckRequest cpp_request(&request);
-  std::function<void(grpc::Status)> empty_callback;
-  grpc::Status sync_status;
-  verifier->Verify(&cpp_request, empty_callback, &sync_status);
-  EXPECT_TRUE(sync_status.ok());
-}
-
-TEST(TlsCertificateVerifierTest,
-     HostNameCertificateVerifierFailsMultipleFields) {
-  grpc_tls_custom_verification_check_request request;
-  memset(&request, 0, sizeof(request));
-  request.target_name = "foo.bar.com";
-  request.peer_info.common_name = "foo.baz.com";
-  char* dns_names[] = {const_cast<char*>("*.")};
-  request.peer_info.san_names.dns_names = dns_names;
-  request.peer_info.san_names.dns_names_size = 1;
-  auto verifier = std::make_shared<HostNameCertificateVerifier>();
-  TlsCustomVerificationCheckRequest cpp_request(&request);
-  std::function<void(grpc::Status)> empty_callback;
-  grpc::Status sync_status;
-  verifier->Verify(&cpp_request, empty_callback, &sync_status);
-  EXPECT_FALSE(sync_status.ok());
-}
-
 TEST(TlsCertificateVerifierTest, SyncCertificateVerifierSucceeds) {
   grpc_tls_custom_verification_check_request request;
   memset(&request, 0, sizeof(request));
@@ -191,6 +131,75 @@ TEST(TlsCertificateVerifierTest,
   };
   grpc::Status sync_status;
   EXPECT_FALSE(verifier->Verify(&cpp_request, callback, &sync_status));
+}
+
+TEST(TlsCertificateVerifierTest,
+     AsyncCertificateVerifierFailsOnAdditionalCheck) {
+  grpc_tls_custom_verification_check_request request;
+  memset(&request, 0, sizeof(request));
+  request.target_name = "foo.bar.com";
+  request.peer_info.common_name = "foo.bar.com";
+  auto verifier =
+      ExternalCertificateVerifier::Create<AsyncCertificateVerifier>(false);
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  std::function<void(grpc::Status)> callback = [](grpc::Status async_status) {
+    EXPECT_EQ(async_status.error_message(),
+              "AsyncCertificateVerifier is marked unsuccessful");
+  };
+  grpc::Status sync_status;
+  EXPECT_FALSE(verifier->Verify(&cpp_request, callback, &sync_status));
+}
+
+TEST(TlsCertificateVerifierTest,
+     AsyncCertificateVerifierFailsOnHostnameAndAdditionalCheck) {
+  grpc_tls_custom_verification_check_request request;
+  memset(&request, 0, sizeof(request));
+  request.target_name = "foo.bar.com";
+  request.peer_info.common_name = "foo.baz.com";
+  auto verifier =
+      ExternalCertificateVerifier::Create<AsyncCertificateVerifier>(false);
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  std::function<void(grpc::Status)> callback = [](grpc::Status async_status) {
+    EXPECT_EQ(async_status.error_message(),
+              "AsyncCertificateVerifier is marked unsuccessful: Hostname "
+              "Verification Check failed.");
+  };
+  grpc::Status sync_status;
+  EXPECT_FALSE(verifier->Verify(&cpp_request, callback, &sync_status));
+}
+
+TEST(TlsCertificateVerifierTest,
+     HostNameCertificateVerifierSucceedsMultipleFields) {
+  grpc_tls_custom_verification_check_request request;
+  memset(&request, 0, sizeof(request));
+  request.target_name = "foo.bar.com";
+  request.peer_info.common_name = "foo.baz.com";
+  char* dns_names[] = {const_cast<char*>("*.bar.com")};
+  request.peer_info.san_names.dns_names = dns_names;
+  request.peer_info.san_names.dns_names_size = 1;
+  auto verifier = std::make_shared<HostNameCertificateVerifier>();
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  std::function<void(grpc::Status)> empty_callback;
+  grpc::Status sync_status;
+  verifier->Verify(&cpp_request, empty_callback, &sync_status);
+  EXPECT_TRUE(sync_status.ok());
+}
+
+TEST(TlsCertificateVerifierTest,
+     HostNameCertificateVerifierFailsMultipleFields) {
+  grpc_tls_custom_verification_check_request request;
+  memset(&request, 0, sizeof(request));
+  request.target_name = "foo.bar.com";
+  request.peer_info.common_name = "foo.baz.com";
+  char* dns_names[] = {const_cast<char*>("*.")};
+  request.peer_info.san_names.dns_names = dns_names;
+  request.peer_info.san_names.dns_names_size = 1;
+  auto verifier = std::make_shared<HostNameCertificateVerifier>();
+  TlsCustomVerificationCheckRequest cpp_request(&request);
+  std::function<void(grpc::Status)> empty_callback;
+  grpc::Status sync_status;
+  verifier->Verify(&cpp_request, empty_callback, &sync_status);
+  EXPECT_FALSE(sync_status.ok());
 }
 
 }  // namespace
