@@ -15,6 +15,7 @@ cd /mnt/build/grpc
 # build with bazel
 export CXX=clang++
 export CC=clang
-tools/bazel test --config=dbg //test/...
+results=$(tools/bazel test --config=dbg //test/...)
 sudo shutdown
+exit $results
 
