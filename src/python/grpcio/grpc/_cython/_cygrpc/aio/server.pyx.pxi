@@ -203,6 +203,14 @@ cdef class _ServicerContext:
     def invocation_metadata(self):
         return self._rpc_state.invocation_metadata()
 
+    def is_active(self):
+        return self._rpc_state.status_code == None
+
+    def add_callback(self, callback):
+        if type(self._rpc_state.callbacks) == list:
+            self._rpc_state.callbacks.append(callback)
+        return
+
     def set_code(self, object code):
         self._rpc_state.status_code = get_status_code(code)
 
