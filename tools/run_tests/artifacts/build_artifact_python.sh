@@ -188,6 +188,15 @@ then
   ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_csds/setup.py \
       sdist bdist_wheel
   cp -r src/python/grpcio_csds/dist/* "$ARTIFACT_DIR"
+
+  # Build grpcio_admin source distribution and it needs the cutting-edge version
+  # of Channelz and CSDS to be installed.
+  "${PIP}" install --upgrade xds-protos==0.0.8
+  "${PIP}" install grpcio-channelz --no-index --find-links "file://$ARTIFACT_DIR/"
+  "${PIP}" install grpcio-csds --no-index --find-links "file://$ARTIFACT_DIR/"
+  ${SETARCH_CMD} "${PYTHON}" src/python/grpcio_admin/setup.py \
+      sdist bdist_wheel
+  cp -r src/python/grpcio_admin/dist/* "$ARTIFACT_DIR"
 fi
 
 if [ "$GRPC_SKIP_TWINE_CHECK" == "" ]
