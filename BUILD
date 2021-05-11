@@ -85,11 +85,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "guadalupe_river_park_conservancy"  # @unused
+g_stands_for = "goofy"  # @unused
 
-core_version = "16.0.0"  # @unused
+core_version = "17.0.0"  # @unused
 
-version = "1.38.0-dev"  # @unused
+version = "1.39.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -370,6 +370,7 @@ grpc_cc_library(
         "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
+    defines = ["GRPC_XDS_USER_AGENT_SUFFIX=C++"],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = {
