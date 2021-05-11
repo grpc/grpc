@@ -453,6 +453,12 @@
   RE2_MERGE_OBJS = $(LIBRE2_OBJS)
   RE2_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libre2.a
 
+  # Setup re2 dependency
+
+  S2A_CORE_DEP = $(LIBDIR)/$(CONFIG)/libs2a-core.a
+  S2A_CORE_MERGE_OBJS = $(LIBS2A_CORE_OBJS)
+  S2A_CORE_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libs2a-core.a
+
   # Setup upb dependency
 
   UPB_DEP = $(LIBDIR)/$(CONFIG)/libupb.a
@@ -909,15 +915,16 @@
 
   else
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) \
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(S2A_CORE_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP) \
   ## The else here corresponds to the if secure earlier.
   % else:
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name not in ['z', 'ares', 'address_sorting', 're2', 'upb', 'grpc_abseil']:
+  % if lib.name not in ['z', 'ares', 'address_sorting', 're2', 's2a-core', 'upb', 'grpc_abseil']:
   $(ZLIB_DEP) \
   $(CARES_DEP) \
   $(ADDRESS_SORTING_DEP) \
   $(RE2_DEP) \
+  $(S2A_CORE_DEP) \
   $(UPB_DEP) \
   $(GRPC_ABSEIL_DEP) \
   % endif
@@ -930,6 +937,7 @@
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
    $(RE2_MERGE_OBJS) \
+   $(S2A_CORE_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
   % if 'libssl' in lib.get('deps', []):
    $(OPENSSL_MERGE_OBJS) \
@@ -947,6 +955,7 @@
    $(CARES_MERGE_OBJS) \
    $(ADDRESS_SORTING_MERGE_OBJS) \
    $(RE2_MERGE_OBJS) \
+   $(S2A_CORE_MERGE_OBJS) \
    $(UPB_MERGE_OBJS) \
   % if 'libssl' in lib.get('deps', []):
    $(OPENSSL_MERGE_OBJS) \
@@ -966,9 +975,9 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
-    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(S2A_CORE_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(RE2_DEP) $(S2A_CORE_DEP) $(UPB_DEP) $(GRPC_ABSEIL_DEP)'
     for dep in lib.get('deps', []):
       if is_absl_lib(dep): continue
       if 'libssl' == dep: continue
@@ -980,7 +989,7 @@
     security = 'libssl' in lib.get('deps', [])
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS) $(RE2_MERGE_LIBS) $(S2A_CORE_MERGE_LIBS) $(UPB_MERGE_LIBS) $(GRPC_ABSEIL_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
