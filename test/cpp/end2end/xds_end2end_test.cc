@@ -7254,6 +7254,42 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   hash_policy->mutable_header()->set_header_name("address_hash");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
+  endpoints.emplace_back(grpc_pick_unused_port_or_die());
+  endpoints.emplace_back(backends_[1]->port());
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", std::move(endpoints)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args, DefaultEdsServiceName()));
+  SetNextResolutionForLbChannelAllBalancers();
+  std::vector<std::pair<std::string, std::string>> metadata =
+      CreateHeaderAddressHashForBackend(0);
+  const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
+  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
+  ShutdownBackend(1);
+  CheckRpcSendFailure(1, rpc_options);
+  StartBackend(1);
+  // Ensure we are actively connecting without any traffic.
+  EXPECT_TRUE(channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
+  WaitForBackend(1, WaitForBackendOptions(), rpc_options);
+  gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
+}
+
+// Test that when all backends are down and then up, we may pick a TF backend
+// and we will then jump to ready backend.
+TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
+  gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
+  const uint32_t kConnectionTimeoutMilliseconds = 5000;
+  auto cluster = default_cluster_;
+  cluster.set_lb_policy(Cluster::RING_HASH);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  auto new_route_config = default_route_config_;
+  auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
+  auto* hash_policy = route->mutable_route()->add_hash_policy();
+  hash_policy->mutable_header()->set_header_name("address_hash");
+  SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
+  std::vector<AdsServiceImpl::EdsResourceArgs::Endpoint> endpoints;
   // Make sure we include some unused ports to fill the ring.
   endpoints.emplace_back(backends_[0]->port());
   endpoints.emplace_back(backends_[1]->port());
@@ -7271,13 +7307,8 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   ShutdownBackend(0);
   ShutdownBackend(1);
-  CheckRpcSendFailure(1, rpc_options, StatusCode::UNAVAILABLE);
-  StartBackend(0);
-  // Ensure we are actively connecting without any traffic.
-  EXPECT_TRUE(channel_->WaitForConnected(
-      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
-  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
-  // Bring down 0 and bring up 1.
+  CheckRpcSendFailure(1, rpc_options);
+  // Bring up 1.
   // Note the RPC contains a header value that will always be hashed to backend
   // 0. So by purposely bring down backend 0 and bring up another backend, this
   // will ensure Picker's first choice of backend 0 will fail and it will
@@ -7286,11 +7317,7 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   // Since the the entries in the ring is pretty distributed and we have unused
   // ports to fill the ring, it is almost guaranteed that the Picker will go
   // through some non-READY entries and skip them as per design.
-  ShutdownBackend(0);
   StartBackend(1);
-  // Ensure we are actively connecting without any traffic.
-  EXPECT_TRUE(channel_->WaitForConnected(
-      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
   WaitForBackend(1, WaitForBackendOptions(), rpc_options);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
