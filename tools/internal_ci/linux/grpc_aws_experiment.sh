@@ -2,7 +2,6 @@
 
 # This script is responsible for remotely running tests on an ARM instance.
 # It should return a status code useful to the kokoro infrastructure.
-# It currently assumes an instance will be selected by the time this script begins running.
 
 if [ -z "$KOKORO_KEYSTORE_DIR" ]; then
     echo "KOKORO_KEYSTORE_DIR is unset. This must be run from kokoro"
@@ -29,7 +28,7 @@ sudo apt update && sudo apt install -y jq
 # https://aws.amazon.com/amazon-linux-ami/
 AWS_MACHINE_IMAGE=ami-026141f3d5c6d2d0c
 AWS_INSTANCE_TYPE=t4g.xlarge
-SG=sg-021240e886feba750
+AWS_SECURITY_GROUP=sg-021240e886feba750
 
 ssh-keygen -N '' -t rsa -b 4096 -f ~/.ssh/temp_client_key
 ssh-keygen -N '' -t ecdsa -b 256 -f ~/.ssh/temp_server_key
@@ -52,7 +51,7 @@ echo ' - shutdown' >> userdata
 
 ID=$(aws ec2 run-instances --image-id $AWS_MACHINE_IMAGE --instance-initiated-shutdown-behavior=terminate \
     --instance-type $AWS_INSTANCE_TYPE \
-    --security-group-ids $SG \
+    --security-group-ids $AWS_SECURITY_GROUP \
     --user-data file://userdata \
     --region us-east-2 | jq .Instances[0].InstanceId | sed 's/"//g')
 echo "instance-id=$ID"
@@ -72,11 +71,6 @@ echo "Copying to remote instance..."
 scp -i ~/.ssh/temp_client_key -r github/grpc ubuntu@$IP:
 echo "Beginning CI workload..."
 ssh -i ~/.ssh/temp_client_key ubuntu@$IP "uname -a; ls -l; bash grpc/tools/internal_ci/linux/$WORKLOAD" || REMOTE_SCRIPT_FAILURE=$?
-
-# Sync back sponge_log artifacts (wip)
-# echo "looking for sponge logs..."
-# find . | grep sponge_log
-
 
 # Match return value
 echo "returning $REMOTE_SCRIPT_FAILURE based on script output"
