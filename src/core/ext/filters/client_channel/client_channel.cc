@@ -2573,6 +2573,15 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   }
 }
 
+void ClientChannel::LoadBalancedCall::ReportCallCommitted() {
+  if (call_dispatch_controller_ != nullptr) {
+    auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+        call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+    auto& call_attributes = service_config_call_data->call_attributes();
+    call_dispatch_controller_->Commit(call_attributes);
+  }
+}
+
 size_t ClientChannel::LoadBalancedCall::GetBatchIndex(
     grpc_transport_stream_op_batch* batch) {
   // Note: It is important the send_initial_metadata be the first entry
@@ -2881,6 +2890,7 @@ class ClientChannel::LoadBalancedCall::LbQueuedCallCanceller {
                 lb_call->lb_call_canceller_);
       }
       if (lb_call->lb_call_canceller_ == self && error != GRPC_ERROR_NONE) {
+        lb_call->ReportCallCommitted();
         // Remove pick from list of queued picks.
         lb_call->MaybeRemoveCallFromLbQueuedCallsLocked();
         // Fail pending batches on the call.
@@ -2938,12 +2948,7 @@ void ClientChannel::LoadBalancedCall::PickDone(void* arg,
     self->PendingBatchesFail(GRPC_ERROR_REF(error), YieldCallCombiner);
     return;
   }
-  if (self->call_dispatch_controller_ != nullptr) {
-    auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-        self->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-    auto& call_attributes = service_config_call_data->call_attributes();
-    self->call_dispatch_controller_->Commit(call_attributes);
-  }
+  self->ReportCallCommitted();
   self->CreateSubchannelCall();
 }
 
