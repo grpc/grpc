@@ -646,9 +646,9 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     ClusterState* cluster_state = it->second->Ref().release();
     // Generate a hash
     absl::optional<uint64_t> hash;
-    std::string address_str;
     for (const auto& hash_policy : entry.route.hash_policies) {
       absl::optional<uint64_t> new_hash;
+      std::string address_str;
       switch (hash_policy.type) {
         case XdsApi::Route::HashPolicy::HEADER:
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
@@ -677,8 +677,10 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     if (!hash.has_value()) {
       // If there is no hash, we just choose a random value as a default.
-      address_str = absl::StrCat(rand());
-      hash = XXH64(address_str.c_str(), address_str.length(), 0);
+      // hash = rand();  hash generated is too mall, not 64-bit long so it's not
+      // randomly hitting the entries always entry 1
+      std::string rand_str = absl::StrCat(rand());
+      hash = XXH64(rand_str.c_str(), rand_str.length(), 0);
     }
     CallConfig call_config;
     if (method_config != nullptr) {
