@@ -130,20 +130,32 @@ class XdsResolver : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
   };
 
-  class ClusterState
-      : public RefCounted<ClusterState, PolymorphicRefCount, kUnrefNoDelete> {
+  class ClusterState : public DualRefCounted<ClusterState>  {
    public:
     using ClusterStateMap =
-        std::map<std::string, std::unique_ptr<ClusterState>>;
+        std::map<std::string, WeakRefCountedPtr<ClusterState>>;
 
-    ClusterState(const std::string& cluster_name,
-                 ClusterStateMap* cluster_state_map)
-        : it_(cluster_state_map
-                  ->emplace(cluster_name, std::unique_ptr<ClusterState>(this))
+    ClusterState(RefCountedPtr<XdsResolver> resolver,
+                 const std::string& cluster_name)
+        : DualRefCounted("ClusterState"),
+          resolver_(std::move(resolver)),
+          it_(resolver_->cluster_state_map_.emplace(cluster_name, WeakRef())
                   .first) {}
+
     const std::string& cluster() const { return it_->first; }
 
+    void Orphan() override {
+      auto* resolver = resolver_.release();
+      resolver->work_serializer_->Run(
+          [resolver]() {
+            resolver->MaybeRemoveUnusedClusters();
+            resolver->Unref();
+          },
+          DEBUG_LOCATION);
+    }
+
    private:
+    RefCountedPtr<XdsResolver> resolver_;
     ClusterStateMap::iterator it_;
   };
 
@@ -525,8 +537,7 @@ void XdsResolver::XdsConfigSelector::MaybeAddCluster(const std::string& name) {
   if (clusters_.find(name) == clusters_.end()) {
     auto it = resolver_->cluster_state_map_.find(name);
     if (it == resolver_->cluster_state_map_.end()) {
-      auto new_cluster_state =
-          MakeRefCounted<ClusterState>(name, &resolver_->cluster_state_map_);
+      auto new_cluster_state = MakeRefCounted<ClusterState>(resolver_, name);
       clusters_[new_cluster_state->cluster()] = std::move(new_cluster_state);
     } else {
       clusters_[it->second->cluster()] = it->second->Ref();
@@ -638,10 +649,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     auto it = clusters_.find(cluster_name);
     GPR_ASSERT(it != clusters_.end());
-    XdsResolver* resolver =
-        static_cast<XdsResolver*>(resolver_->Ref().release());
-    ClusterState* cluster_state = it->second->Ref().release();
-    // Generate a hash
+    // Generate a hash.
     absl::optional<uint64_t> hash;
     for (const auto& hash_policy : entry.route.hash_policies) {
       absl::optional<uint64_t> new_hash;
@@ -650,8 +658,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
         case XdsApi::Route::HashPolicy::CHANNEL_ID:
-          new_hash =
-              static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
+          new_hash = static_cast<uint64_t>(
+              reinterpret_cast<uintptr_t>(resolver_.get()));
           break;
         default:
           GPR_ASSERT(0);
@@ -682,30 +690,9 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.call_attributes[kRequestRingHashAttribute] =
         absl::StrFormat("%" PRIu64, hash.value());
-    call_config.on_call_committed = [resolver, cluster_state]() {
+    ClusterState* cluster_state = it->second->Ref().release();
+    call_config.on_call_committed = [cluster_state]() {
       cluster_state->Unref();
-      ExecCtx::Run(
-          // TODO(roth): This hop into the ExecCtx is being done to avoid
-          // entering the WorkSerializer while holding the client channel data
-          // plane mutex, since that can lead to deadlocks. However, we should
-          // not have to solve this problem in each individual ConfigSelector
-          // implementation. When we have time, we should fix the client channel
-          // code to avoid this by not invoking the
-          // CallConfig::on_call_committed callback until after it has released
-          // the data plane mutex.
-          DEBUG_LOCATION,
-          GRPC_CLOSURE_CREATE(
-              [](void* arg, grpc_error_handle /*error*/) {
-                auto* resolver = static_cast<XdsResolver*>(arg);
-                resolver->work_serializer_->Run(
-                    [resolver]() {
-                      resolver->MaybeRemoveUnusedClusters();
-                      resolver->Unref();
-                    },
-                    DEBUG_LOCATION);
-              },
-              resolver, nullptr),
-          GRPC_ERROR_NONE);
     };
     return call_config;
   }
