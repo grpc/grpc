@@ -338,16 +338,10 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     return absl::make_unique<uvDNSResolver>(this);
   }
 
-  virtual TaskHandle Run(Callback fn, RunOptions opts) override final {
-    abort();
-  }
-
+  virtual TaskHandle Run(Callback fn, RunOptions opts) override final;
   virtual TaskHandle RunAt(absl::Time when, Callback fn,
-                           RunOptions opts) override final {
-    abort();
-  }
-
-  virtual void TryCancel(TaskHandle handle) override final { abort(); }
+                           RunOptions opts) override final;
+  virtual void TryCancel(TaskHandle handle) override final;
 
   virtual void Shutdown(Callback on_shutdown_complete) override final {
     on_shutdown_complete_ = on_shutdown_complete;
@@ -468,6 +462,61 @@ grpc_event_engine::experimental::GetDefaultEventEngine() {
   return engine;
 }
 
+class uvTask {
+ public:
+  uvTask(uvEngine* engine) : key_(engine->taskKey_.fetch_add(1)) {
+    timer_.data = this;
+  }
+  grpc_event_engine::experimental::EventEngine::Callback fn_;
+  uv_timer_t timer_;
+  bool done_ = false;
+  const intptr_t key_;
+  void uvTimerCallback() {
+    cancel();
+    fn_(absl::OkStatus());
+  }
+  void cancel() {
+    uv_timer_stop(&timer_);
+    uv_close(reinterpret_cast<uv_handle_t*>(&timer_), [](uv_handle_t* handle) {
+      uv_timer_t* timer = reinterpret_cast<uv_timer_t*>(handle);
+      uvTask* task = reinterpret_cast<uvTask*>(timer->data);
+      uvEngine* engine = reinterpret_cast<uvEngine*>(timer->loop->data);
+      engine->eraseTask(task->key_);
+    });
+  }
+};
+
+uvEngine::TaskHandle uvEngine::Run(Callback fn, RunOptions opts) {
+  return RunAt(absl::Now(), fn, opts);
+}
+
+uvEngine::TaskHandle uvEngine::RunAt(absl::Time when, Callback fn,
+                                     RunOptions opts) {
+  uvTask* task = new uvTask(this);
+  task->fn_ = std::move(fn);
+  schedule([task, when](uvEngine* engine) {
+    intptr_t key = task->key_;
+    engine->taskMap_[key] = task;
+    uv_timer_init(&engine->loop_, &task->timer_);
+    absl::Duration timeout = when - absl::Now();
+    uv_timer_start(
+        &task->timer_,
+        [](uv_timer_t* timer) {
+          reinterpret_cast<uvTask*>(timer->data)->uvTimerCallback();
+        },
+        timeout / absl::Milliseconds(1), 0);
+  });
+
+  return {task->key_};
+}
+void uvEngine::TryCancel(TaskHandle handle) {
+  schedule([handle](uvEngine* engine) {
+    auto it = engine->taskMap_.find(handle.key);
+    if (it == engine->taskMap_.end()) return;
+    it->second->cancel();
+  });
+}
+
 class uvLookupTask {
  public:
   uvLookupTask(uvEngine* engine) : key_(engine->lookupTaskKey_.fetch_add(1)) {
@@ -532,7 +581,7 @@ uvDNSResolver::LookupHostname(LookupHostnameCallback on_resolve,
                               absl::string_view default_port,
                               absl::Time deadline) {
   uvLookupTask* task = new uvLookupTask(engine_);
-  task->on_resolve_ = on_resolve;
+  task->on_resolve_ = std::move(on_resolve);
   if (!grpc_core::SplitHostPort(address, &task->address_,
                                 &task->default_port_)) {
     task->address_ = std::string(address);
