@@ -308,8 +308,8 @@ if BUILD_WITH_SYSTEM_S2A_CORE:
 
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
-                                 RE2_INCLUDE + S2A_CORE + SSL_INCLUDE + UPB_INCLUDE +
-                                 UPB_GRPC_GENERATED_INCLUDE +
+                                 RE2_INCLUDE + S2A_CORE_INCLUDE + SSL_INCLUDE +
+                                 UPB_INCLUDE + UPB_GRPC_GENERATED_INCLUDE +
                                  UPBDEFS_GRPC_GENERATED_INCLUDE +
                                  XXHASH_INCLUDE + ZLIB_INCLUDE)
 
