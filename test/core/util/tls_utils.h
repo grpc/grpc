@@ -99,6 +99,8 @@ class AsyncExternalVerifier {
     thread_.Start();
   }
 
+  ~AsyncExternalVerifier();
+
   grpc_tls_certificate_verifier_external* base() { return &base_; }
 
  private:
