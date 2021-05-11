@@ -22,7 +22,5 @@ sudo pip install six
 
 cd grpc
 # build with bazel
-export CXX=clang++
-export CC=clang
-tools/bazel test --config=dbg //test/...
+tools/bazel build --config=opt //test/...
 
