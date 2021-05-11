@@ -149,9 +149,7 @@ class RetryFilter {
   RetryFilter(const grpc_channel_args* args, grpc_error_handle* error)
       : client_channel_(grpc_channel_args_find_pointer<ClientChannel>(
             args, GRPC_ARG_CLIENT_CHANNEL)),
-        per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)),
-        call_dispatch_controller_(
-            ConfigSelector::CallDispatchController::GetFromChannelArgs(*args)) {
+        per_rpc_retry_buffer_size_(GetMaxPerRpcRetryBufferSize(args)) {
     // Get retry throttling parameters from service config.
     auto* service_config = grpc_channel_args_find_pointer<ServiceConfig>(
         args, GRPC_ARG_SERVICE_CONFIG_OBJ);
@@ -183,8 +181,6 @@ class RetryFilter {
 
   ClientChannel* client_channel_;
   size_t per_rpc_retry_buffer_size_;
-  RefCountedPtr<ConfigSelector::CallDispatchController>
-      call_dispatch_controller_;
   RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_;
 };
 
@@ -322,27 +318,28 @@ class RetryFilter::CallData {
       grpc_closure on_complete_;
     };
 
+// FIXME: remove this?
+// (won't be needed if we decide not to use this API for existing cluster refs)
     class AttemptDispatchController
         : public ConfigSelector::CallDispatchController {
      public:
       explicit AttemptDispatchController(CallAttempt* call_attempt)
           : call_attempt_(call_attempt) {}
 
-      bool ShouldRetry(const ConfigSelector::CallAttributes& call_attributes)
-          override {
+      bool ShouldRetry() override {
         return false;
       }
 
-      void Commit(const ConfigSelector::CallAttributes& call_attributes)
-          override {
+      void Commit() override {
         call_attempt_->lb_call_committed_ = true;
         auto* calld = call_attempt_->calld_;
-        if (calld->retry_committed_ &&
-            calld->chand_->call_dispatch_controller_ != nullptr) {
+        if (calld->retry_committed_) {
           auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
               calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-          auto& call_attributes = service_config_call_data->call_attributes();
-          calld->chand_->call_dispatch_controller_->Commit(call_attributes);
+          auto* call_dispatch_controller =
+              service_config_call_data->call_dispatch_controller();
+          GPR_ASSERT(call_dispatch_controller != nullptr);
+          call_dispatch_controller->Commit();
         }
       }
 
@@ -675,8 +672,10 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld)
       started_recv_trailing_metadata_(false),
       completed_recv_trailing_metadata_(false),
       retry_dispatched_(false) {
+  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+      calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
   lb_call_ = calld->CreateLoadBalancedCall(
-      calld_->chand_->call_dispatch_controller_ == nullptr
+      service_config_call_data->call_dispatch_controller() == nullptr
           ? nullptr
           : &attempt_dispatch_controller_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
@@ -1099,19 +1098,18 @@ bool RetryFilter::CallData::CallAttempt::BatchData::MaybeRetry(
   }
   // Check with call dispatch controller.
 // FIXME: maybe do this only on first retry attempt?
-  if (calld->chand_->call_dispatch_controller_ != nullptr) {
-    auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-        calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-    auto& call_attributes = service_config_call_data->call_attributes();
-    if (!calld->chand_->call_dispatch_controller_->ShouldRetry(
-            call_attributes)) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-        gpr_log(GPR_INFO,
-                "chand=%p calld=%p: call dispatch controller denied retry",
-                calld->chand_, calld);
-      }
-      return false;
+  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+      calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  auto* call_dispatch_controller =
+      service_config_call_data->call_dispatch_controller();
+  if (call_dispatch_controller != nullptr &&
+      !call_dispatch_controller->ShouldRetry()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p calld=%p: call dispatch controller denied retry",
+              calld->chand_, calld);
     }
+    return false;
   }
   // Do retry.
   call_attempt_->retry_dispatched_ = true;
@@ -1871,8 +1869,10 @@ void RetryFilter::CallData::StartTransportStreamOpBatch(
                 chand_, this);
       }
       PendingBatchClear(pending);
-      committed_call_ =
-          CreateLoadBalancedCall(chand_->call_dispatch_controller_.get());
+      auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+          call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+      committed_call_ = CreateLoadBalancedCall(
+          service_config_call_data->call_dispatch_controller());
       committed_call_->StartTransportStreamOpBatch(batch);
       return;
     }
@@ -2187,12 +2187,14 @@ void RetryFilter::CallData::RetryCommit(CallAttempt* call_attempt) {
     // retry attempt is started, in which case we'll just pass the real
     // call dispatch controller down into the LB call, and it won't be
     // our problem anymore.
-    if (call_attempt_->lb_call_committed() &&
-        chand_->call_dispatch_controller_ != nullptr) {
+    if (call_attempt_->lb_call_committed()) {
       auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
           call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-      auto& call_attributes = service_config_call_data->call_attributes();
-      chand_->call_dispatch_controller_->Commit(call_attributes);
+      auto* call_dispatch_controller =
+          service_config_call_data->call_dispatch_controller();
+      if (call_dispatch_controller != nullptr) {
+        call_dispatch_controller->Commit();
+      }
     }
     // Free cached send ops.
     call_attempt->FreeCachedSendOpDataAfterCommit();

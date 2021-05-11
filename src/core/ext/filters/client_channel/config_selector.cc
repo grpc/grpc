@@ -55,43 +55,4 @@ RefCountedPtr<ConfigSelector> ConfigSelector::GetFromChannelArgs(
   return config_selector != nullptr ? config_selector->Ref() : nullptr;
 }
 
-namespace {
-
-void* CallDispatchControllerArgCopy(void* p) {
-  auto* dispatch_controller =
-      static_cast<ConfigSelector::CallDispatchController*>(p);
-  dispatch_controller->Ref().release();
-  return p;
-}
-
-void CallDispatchControllerArgDestroy(void* p) {
-  auto* dispatch_controller =
-      static_cast<ConfigSelector::CallDispatchController*>(p);
-  dispatch_controller->Unref();
-}
-
-int CallDispatchControllerArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
-
-const grpc_arg_pointer_vtable kCallDispatchControllerChannelArgVtable = {
-    CallDispatchControllerArgCopy, CallDispatchControllerArgDestroy,
-    CallDispatchControllerArgCmp};
-
-}  // namespace
-
-grpc_arg ConfigSelector::CallDispatchController::MakeChannelArg() const {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_CALL_DISPATCH_CONTROLLER),
-      const_cast<CallDispatchController*>(this),
-      &kCallDispatchControllerChannelArgVtable);
-}
-
-RefCountedPtr<ConfigSelector::CallDispatchController>
-ConfigSelector::CallDispatchController::GetFromChannelArgs(
-    const grpc_channel_args& args) {
-  auto* dispatch_controller =
-      grpc_channel_args_find_pointer<CallDispatchController>(
-          &args, GRPC_ARG_CALL_DISPATCH_CONTROLLER);
-  return dispatch_controller != nullptr ? dispatch_controller->Ref() : nullptr;
-}
-
 }  // namespace grpc_core

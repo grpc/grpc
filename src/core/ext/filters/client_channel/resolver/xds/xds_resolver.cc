@@ -130,15 +130,14 @@ class XdsResolver : public Resolver {
     RefCountedPtr<XdsResolver> resolver_;
   };
 
-  class ClusterState : public DualRefCounted<ClusterState>  {
+  class ClusterState : public DualRefCounted<ClusterState> {
    public:
     using ClusterStateMap =
         std::map<std::string, WeakRefCountedPtr<ClusterState>>;
 
     ClusterState(RefCountedPtr<XdsResolver> resolver,
                  const std::string& cluster_name)
-        : DualRefCounted("ClusterState"),
-          resolver_(std::move(resolver)),
+        : resolver_(std::move(resolver)),
           it_(resolver_->cluster_state_map_.emplace(cluster_name, WeakRef())
                   .first) {}
 
@@ -183,6 +182,37 @@ class XdsResolver : public Resolver {
     grpc_channel_args* ModifyChannelArgs(grpc_channel_args* args) override;
 
    private:
+// FIXME: ???
+#if 0
+    class CallDispatchController
+        : public ConfigSelector::CallDispatchController {
+     public:
+      CallDispatchController(RefCountedPtr<XdsResolver> resolver,
+                             RefCountedPtr<ClusterState> cluster_state)
+          : resolver_(std::move(resolver)),
+            cluster_state_(std::move(cluster_state)) {}
+
+      bool ShouldRetry(const CallAttributes& call_attributes) override {
+        return true;
+      }
+
+      void Commit(const CallAttributes& call_attributes) override {
+        cluster_state_.reset();
+        auto* resolver = resolver_.release();
+        resolver->work_serializer_->Run(
+            [resolver]() {
+              resolver->MaybeRemoveUnusedClusters();
+              resolver->Unref();
+            },
+            DEBUG_LOCATION);
+      };
+
+     private:
+      RefCountedPtr<XdsResolver> resolver_;
+      RefCountedPtr<ClusterState> cluster_state_;
+    };
+#endif
+
     struct Route {
       struct ClusterWeightState {
         uint32_t range_end;
@@ -690,6 +720,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
     call_config.call_attributes[kRequestRingHashAttribute] =
         absl::StrFormat("%" PRIu64, hash.value());
+// FIXME:
+//    call_config.call_dispatch_controller = ...
     ClusterState* cluster_state = it->second->Ref().release();
     call_config.on_call_committed = [cluster_state]() {
       cluster_state->Unref();

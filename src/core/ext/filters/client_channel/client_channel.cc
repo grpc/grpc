@@ -304,13 +304,9 @@ class DynamicTerminationFilter {
  private:
   explicit DynamicTerminationFilter(const grpc_channel_args* args)
       : chand_(grpc_channel_args_find_pointer<ClientChannel>(
-            args, GRPC_ARG_CLIENT_CHANNEL)),
-        call_dispatch_controller_(
-            ConfigSelector::CallDispatchController::GetFromChannelArgs(*args)) {}
+            args, GRPC_ARG_CLIENT_CHANNEL)) {}
 
   ClientChannel* chand_;
-  RefCountedPtr<ConfigSelector::CallDispatchController>
-      call_dispatch_controller_;
 };
 
 class DynamicTerminationFilter::CallData {
@@ -354,8 +350,11 @@ class DynamicTerminationFilter::CallData {
         calld->call_context_,    calld->path_,
         calld->call_start_time_, calld->deadline_,
         calld->arena_,           calld->call_combiner_};
+    auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+        calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
     calld->lb_call_ = client_channel->CreateLoadBalancedCall(
-        args, pollent, nullptr, chand->call_dispatch_controller_.get());
+        args, pollent, nullptr,
+        service_config_call_data->call_dispatch_controller());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p dynamic_termination_calld=%p: create lb_call=%p", chand,
@@ -2232,7 +2231,8 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     // will be cleaned up when the call ends.
     auto* service_config_call_data = arena_->New<ServiceConfigCallData>(
         std::move(call_config.service_config), call_config.method_configs,
-        std::move(call_config.call_attributes), call_context_);
+        std::move(call_config.call_attributes),
+        call_config.call_dispatch_controller, call_context_);
     // Apply our own method params to the call.
     auto* method_params = static_cast<ClientChannelMethodParsedConfig*>(
         service_config_call_data->GetMethodParsedConfig(
@@ -2575,10 +2575,7 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
 
 void ClientChannel::LoadBalancedCall::ReportCallCommitted() {
   if (call_dispatch_controller_ != nullptr) {
-    auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-        call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-    auto& call_attributes = service_config_call_data->call_attributes();
-    call_dispatch_controller_->Commit(call_attributes);
+    call_dispatch_controller_->Commit();
   }
 }
 

@@ -38,10 +38,6 @@
 // Channel arg key for ConfigSelector.
 #define GRPC_ARG_CONFIG_SELECTOR "grpc.internal.config_selector"
 
-// Channel arg key for CallDispatchController.
-#define GRPC_ARG_CALL_DISPATCH_CONTROLLER \
-  "grpc.internal.call_dispatch_controller"
-
 namespace grpc_core {
 
 // Internal API used to allow resolver implementations to override
@@ -57,15 +53,11 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
 
     // Called by the channel to decide if it should retry the call upon a
     // failure.
-    virtual bool ShouldRetry(const CallAttributes& call_attributes) = 0;
+    virtual bool ShouldRetry() = 0;
 
     // Called by the channel when no more LB picks will be performed for
     // the call.
-    virtual void Commit(const CallAttributes& call_attributes) = 0;
-
-    grpc_arg MakeChannelArg() const;
-    static RefCountedPtr<CallDispatchController> GetFromChannelArgs(
-        const grpc_channel_args& args);
+    virtual void Commit() = 0;
   };
 
   struct GetCallConfigArgs {
@@ -85,7 +77,11 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     RefCountedPtr<ServiceConfig> service_config;
     // Call attributes that will be accessible to LB policy implementations.
     CallAttributes call_attributes;
-// FIXME: remove
+    // Call dispatch controller.
+    CallDispatchController* call_dispatch_controller = nullptr;
+    // A callback that, if set, will be invoked when the call is
+    // committed (i.e., when we know that we will never again need to
+    // ask the picker for a subchannel for this call).
     std::function<void()> on_call_committed;
   };
 
