@@ -95,12 +95,14 @@ class EventEngine {
     static constexpr socklen_t MAX_SIZE_BYTES = 128;
 
     ResolvedAddress(const sockaddr* address, socklen_t size);
+    ResolvedAddress() = default;
+    ResolvedAddress(const ResolvedAddress&) = default;
     const struct sockaddr* address() const;
     socklen_t size() const;
 
    private:
     char address_[MAX_SIZE_BYTES];
-    socklen_t size_;
+    socklen_t size_ = 0;
   };
 
   /// An Endpoint represents one end of a connection between a gRPC client and
