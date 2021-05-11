@@ -79,10 +79,10 @@ int SyncExternalVerifier::Verify(
     grpc_status_code* sync_status, char** sync_error_details) {
   auto* self = static_cast<SyncExternalVerifier*>(user_data);
   if (self->success_) {
+    *sync_status = GRPC_STATUS_OK;
     return true;  // Synchronous call
   }
   *sync_status = GRPC_STATUS_UNAUTHENTICATED;
-  gpr_free(*sync_error_details);
   *sync_error_details = gpr_strdup("SyncExternalVerifierBadVerify failed");
   return true;  // Synchronous call
 }
@@ -90,6 +90,16 @@ int SyncExternalVerifier::Verify(
 void SyncExternalVerifier::Destruct(void* user_data) {
   auto* self = static_cast<SyncExternalVerifier*>(user_data);
   delete self;
+}
+
+AsyncExternalVerifier::~AsyncExternalVerifier() {
+  // Tell the thread to shut down.
+  {
+    MutexLock lock(&mu_);
+    queue_.push_back(Request{nullptr, nullptr, nullptr, true});
+  }
+  // Wait for thread to exit.
+  thread_.Join();
 }
 
 int AsyncExternalVerifier::Verify(
@@ -105,13 +115,6 @@ int AsyncExternalVerifier::Verify(
 
 void AsyncExternalVerifier::Destruct(void* user_data) {
   auto* self = static_cast<AsyncExternalVerifier*>(user_data);
-  // Tell the thread to shut down.
-  {
-    MutexLock lock(&self->mu_);
-    self->queue_.push_back(Request{nullptr, nullptr, nullptr, true});
-  }
-  // Wait for thread to exit.
-  self->thread_.Join();
   delete self;
 }
 
