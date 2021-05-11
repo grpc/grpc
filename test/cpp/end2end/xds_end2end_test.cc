@@ -1951,6 +1951,16 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   };
 
+  // Creating a header address_hash that will hash to a given backend:
+  // the header value matches the value used to create the entry in the ring.
+  std::vector<std::pair<std::string, std::string>>
+  CreateHeaderAddressHashForBackend(size_t index) {
+    return {
+        {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
+                                      backends_[index]->port(), "_0")},
+    };
+  }
+
   template <typename Stub>
   Status SendRpcMethod(Stub* stub, const RpcOptions& rpc_options,
                        ClientContext* context, EchoRequest& request,
@@ -6767,22 +6777,14 @@ TEST_P(CdsTest, RingHashHeaderHashing) {
   // Note each type of RPC will contains a header value that will always be
   // hashed to a specific backend as the header value matches the value used to
   // create the entry in the ring.
-  std::vector<std::pair<std::string, std::string>> metadata = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[0]->port(), "_0")},
-  };
-  std::vector<std::pair<std::string, std::string>> metadata1 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[1]->port(), "_0")},
-  };
-  std::vector<std::pair<std::string, std::string>> metadata2 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[2]->port(), "_0")},
-  };
-  std::vector<std::pair<std::string, std::string>> metadata3 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[3]->port(), "_0")},
-  };
+  std::vector<std::pair<std::string, std::string>> metadata =
+      CreateHeaderAddressHashForBackend(0);
+  std::vector<std::pair<std::string, std::string>> metadata1 =
+      CreateHeaderAddressHashForBackend(1);
+  std::vector<std::pair<std::string, std::string>> metadata2 =
+      CreateHeaderAddressHashForBackend(2);
+  std::vector<std::pair<std::string, std::string>> metadata3 =
+      CreateHeaderAddressHashForBackend(3);
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
   const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
@@ -6815,7 +6817,7 @@ TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
   hash_policy->mutable_header()
       ->mutable_regex_rewrite()
       ->mutable_pattern()
-      ->set_regex("([0-9]+)");
+      ->set_regex("[0-9]+");
   hash_policy->mutable_header()->mutable_regex_rewrite()->set_substitution(
       "foo");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
@@ -6825,22 +6827,14 @@ TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  std::vector<std::pair<std::string, std::string>> metadata = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[0]->port(), "_0")},
-  };
-  std::vector<std::pair<std::string, std::string>> metadata1 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[1]->port(), "_0")},
-  };
-  std::vector<std::pair<std::string, std::string>> metadata2 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[2]->port(), "_0")},
-  };
-  std::vector<std::pair<std::string, std::string>> metadata3 = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[3]->port(), "_0")},
-  };
+  std::vector<std::pair<std::string, std::string>> metadata =
+      CreateHeaderAddressHashForBackend(0);
+  std::vector<std::pair<std::string, std::string>> metadata1 =
+      CreateHeaderAddressHashForBackend(1);
+  std::vector<std::pair<std::string, std::string>> metadata2 =
+      CreateHeaderAddressHashForBackend(2);
+  std::vector<std::pair<std::string, std::string>> metadata3 =
+      CreateHeaderAddressHashForBackend(3);
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
   const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
@@ -6863,16 +6857,17 @@ TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
 }
 
 // Tests that ring hash policy that hashes using a random value.
-TEST_P(CdsTest, RingHashRandomHashing) {
+TEST_P(CdsTest, RingHashNoHashPolicy) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
-  const size_t kNumRpcs = ComputeIdealNumRpcs(0.5, 0.05);
+  const double kDistribution50Percent = 0.5;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
   AdsServiceImpl::EdsResourceArgs args(
-      {{"locality0",
-        {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
-         CreateEndpoint(1, HealthStatus::UNKNOWN, 1)}}});
+      {{"locality0", CreateEndpointsForBackends(0, 2)}});
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
@@ -6881,15 +6876,15 @@ TEST_P(CdsTest, RingHashRandomHashing) {
   const int request_count_1 = backends_[0]->backend_service()->request_count();
   const int request_count_2 = backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
-              ::testing::DoubleNear(0.5, 0.05));
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
-              ::testing::DoubleNear(0.5, 0.05));
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
-// Test next method: another header hasing is usesd when header hashing
-// specified a header field that the RPC did not have.
-TEST_P(CdsTest, RingHashUnknownHeaderMoveToNextHeader) {
+// Test that ring hash policy evaluation will continue past the terminal policy
+// if no results are produced yet.
+TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
@@ -6931,7 +6926,10 @@ TEST_P(CdsTest, RingHashUnknownHeaderMoveToNextHeader) {
 // the RPC did not have.
 TEST_P(CdsTest, RingHashUnknownHeaderDefaultToRandomHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
-  const size_t kNumRpcs = ComputeIdealNumRpcs(0.5, 0.05);
+  const double kDistribution50Percent = 0.5;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -6956,16 +6954,19 @@ TEST_P(CdsTest, RingHashUnknownHeaderDefaultToRandomHashing) {
   const int request_count_1 = backends_[0]->backend_service()->request_count();
   const int request_count_2 = backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
-              ::testing::DoubleNear(0.5, 0.05));
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
-              ::testing::DoubleNear(0.5, 0.05));
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
 // Test random hash is usesd when only unsupported hash policies are configured.
 TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
-  const size_t kNumRpcs = ComputeIdealNumRpcs(0.5, 0.05);
+  const double kDistribution50Percent = 0.5;
+  const double kErrorTolerance = 0.05;
+  const size_t kNumRpcs =
+      ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -6992,9 +6993,9 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   const int request_count_1 = backends_[0]->backend_service()->request_count();
   const int request_count_2 = backends_[1]->backend_service()->request_count();
   EXPECT_THAT(static_cast<double>(request_count_1) / kNumRpcs,
-              ::testing::DoubleNear(0.5, 0.05));
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
   EXPECT_THAT(static_cast<double>(request_count_2) / kNumRpcs,
-              ::testing::DoubleNear(0.5, 0.05));
+              ::testing::DoubleNear(kDistribution50Percent, kErrorTolerance));
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
@@ -7202,10 +7203,8 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  std::vector<std::pair<std::string, std::string>> metadata = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[0]->port(), "_0")},
-  };
+  std::vector<std::pair<std::string, std::string>> metadata =
+      CreateHeaderAddressHashForBackend(0);
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
@@ -7239,10 +7238,8 @@ TEST_P(CdsTest, RingHashSwitchToLowerPrioirtyAndThenBack) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  std::vector<std::pair<std::string, std::string>> metadata = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[0]->port(), "_0")},
-  };
+  std::vector<std::pair<std::string, std::string>> metadata =
+      CreateHeaderAddressHashForBackend(0);
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   WaitForBackend(0, WaitForBackendOptions(), rpc_options);
   ShutdownBackend(0);
@@ -7280,10 +7277,8 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  std::vector<std::pair<std::string, std::string>> metadata = {
-      {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                    backends_[0]->port(), "_0")},
-  };
+  std::vector<std::pair<std::string, std::string>> metadata =
+      CreateHeaderAddressHashForBackend(0);
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   ShutdownBackend(0);
