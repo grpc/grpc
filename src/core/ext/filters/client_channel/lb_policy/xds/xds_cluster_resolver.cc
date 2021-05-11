@@ -1219,7 +1219,8 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
             size_t min_ring_size = 1024;
             size_t max_ring_size = 8388608;
             std::vector<grpc_error*> ring_hash_error_list =
-                ParseRingHash(ring_hash, &min_ring_size, &max_ring_size);
+                ParseRingHashLbConfig(ring_hash, &min_ring_size,
+                                      &max_ring_size);
             error_list.insert(error_list.end(), ring_hash_error_list.begin(),
                               ring_hash_error_list.end());
           }

@@ -7294,8 +7294,7 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   // Ensure we are actively connecting without any traffic.
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
-  WaitForBackend(0, WaitForBackendOptions().set_allow_failures(true),
-                 rpc_options);
+  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
   // Bring down 0 and bring up 1.
   // Note the RPC contains a header value that will always be hashed to backend
   // 0. So by purposely bring down backend 0 and bring up another backend, this
@@ -7310,8 +7309,7 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   // Ensure we are actively connecting without any traffic.
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
-  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true),
-                 rpc_options);
+  WaitForBackend(1, WaitForBackendOptions(), rpc_options);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 

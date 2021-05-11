@@ -26,9 +26,12 @@
 
 namespace grpc_core {
 extern const char* kRequestRingHashAttribute;
-extern std::vector<grpc_error*> ParseRingHash(const Json& json,
-                                              size_t* min_ring_size,
-                                              size_t* max_ring_size);
+
+// Helper Parsing method to parse ring hash policy configs; for example, ring
+// hash size validity.
+std::vector<grpc_error*> ParseRingHashLbConfig(const Json& json,
+                                               size_t* min_ring_size,
+                                               size_t* max_ring_size);
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_RING_HASH_RING_HASH_H
