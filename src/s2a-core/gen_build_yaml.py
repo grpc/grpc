@@ -29,8 +29,8 @@ out['libs'] =[{
     'language' : 'c',
     'secure' : False,
     'src' : sorted(
-        glob.glob('third_party/s2a-core/**/*.cc') +
-        glob.glob('third_party/s2a-core/**/*.h') +
+        [src_file for src_file in glob.glob('third_party/s2a-core/src/**/*.cc') if not os.path.basename(src_file).endswith('_test.cc')] +
+        glob.glob('third_party/s2a-core/src/**/*.h') +
         glob.glob('third_party/s2a-core/src/proto/upb-generated/proto/*.c') +
         glob.glob('third_party/s2a-core/src/proto/upb-generated/proto/*.h')),
     'headers' : sorted(glob.glob('third_party/s2a-core/include/*.h')),
