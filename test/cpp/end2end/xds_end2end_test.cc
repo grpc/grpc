@@ -6898,9 +6898,7 @@ TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
   hash_policy2->mutable_header()->set_header_name("fixed_header_2");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
-      {{"locality0",
-        {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
-         CreateEndpoint(1, HealthStatus::UNKNOWN, 1)}}});
+      {{"locality0", CreateEndpointsForBackends(0, 2)}});
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
@@ -6922,9 +6920,9 @@ TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
-// Test random hash is usesd when header hashing specified a header field that
+// Test random hash is used when header hashing specified a header field that
 // the RPC did not have.
-TEST_P(CdsTest, RingHashUnknownHeaderDefaultToRandomHashing) {
+TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
@@ -6939,9 +6937,7 @@ TEST_P(CdsTest, RingHashUnknownHeaderDefaultToRandomHashing) {
   hash_policy->mutable_header()->set_header_name("fixed_header");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
-      {{"locality0",
-        {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
-         CreateEndpoint(1, HealthStatus::UNKNOWN, 1)}}});
+      {{"locality0", CreateEndpointsForBackends(0, 2)}});
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
@@ -6960,7 +6956,7 @@ TEST_P(CdsTest, RingHashUnknownHeaderDefaultToRandomHashing) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
-// Test random hash is usesd when only unsupported hash policies are configured.
+// Test random hash is used when only unsupported hash policies are configured.
 TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const double kDistribution50Percent = 0.5;
@@ -6982,9 +6978,7 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
       "query_parameter");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
-      {{"locality0",
-        {CreateEndpoint(0, HealthStatus::UNKNOWN, 1),
-         CreateEndpoint(1, HealthStatus::UNKNOWN, 1)}}});
+      {{"locality0", CreateEndpointsForBackends(0, 2)}});
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
@@ -7283,7 +7277,6 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   ShutdownBackend(0);
   ShutdownBackend(1);
-  CheckRpcSendFailure(0, rpc_options);
   CheckRpcSendFailure(1, rpc_options);
   StartBackend(0);
   // Ensure we are actively connecting without any traffic.
