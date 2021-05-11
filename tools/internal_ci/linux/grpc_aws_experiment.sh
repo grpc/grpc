@@ -29,6 +29,8 @@ sudo apt update && sudo apt install -y jq
 AWS_MACHINE_IMAGE=ami-026141f3d5c6d2d0c
 AWS_INSTANCE_TYPE=t4g.xlarge
 AWS_SECURITY_GROUP=sg-021240e886feba750
+AWS_STORAGE_SIZE_GB=30
+AWS_DEVICE_MAPPING="DeviceName='/dev/sdb',VirtualName='ephemeral0',Ebs={DeleteOnTermination=True,VolumeSize=${AWS_STORAGE_SIZE_GB},VolumeType='standard'}"
 
 ssh-keygen -N '' -t rsa -b 4096 -f ~/.ssh/temp_client_key
 ssh-keygen -N '' -t ecdsa -b 256 -f ~/.ssh/temp_server_key
@@ -53,6 +55,7 @@ ID=$(aws ec2 run-instances --image-id $AWS_MACHINE_IMAGE --instance-initiated-sh
     --instance-type $AWS_INSTANCE_TYPE \
     --security-group-ids $AWS_SECURITY_GROUP \
     --user-data file://userdata \
+    --block-device-mapping=$AWS_DEVICE_MAPPING \
     --region us-east-2 | jq .Instances[0].InstanceId | sed 's/"//g')
 echo "instance-id=$ID"
 echo "Waiting 1m for instance ip..."
