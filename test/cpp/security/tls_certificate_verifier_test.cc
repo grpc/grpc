@@ -123,10 +123,7 @@ TEST(TlsCertificateVerifierTest,
   grpc::Status sync_status;
   verifier->Verify(&cpp_request, empty_callback, &sync_status);
   EXPECT_FALSE(sync_status.ok());
-  // I realized that the status for sync verifier is also truncated(please see
-  // my below comments for async verifier). There must be something I don't know
-  // happening under the hood... EXPECT_EQ(sync_status.error_message(),
-  // "UNAUTHENTICATED: Hostname Verification Check failed.");
+  EXPECT_EQ(sync_status.error_message(), "Hostname Verification Check failed.");
 }
 
 TEST(TlsCertificateVerifierTest,
@@ -142,8 +139,8 @@ TEST(TlsCertificateVerifierTest,
   grpc::Status sync_status;
   verifier->Verify(&cpp_request, empty_callback, &sync_status);
   EXPECT_FALSE(sync_status.ok());
-  // EXPECT_EQ(sync_status.error_message(),
-  // "UNAUTHENTICATED: SyncCertificateVerifier is marked unsuccessful");
+  EXPECT_EQ(sync_status.error_message(),
+            "SyncCertificateVerifier is marked unsuccessful");
 }
 
 TEST(TlsCertificateVerifierTest,
@@ -159,9 +156,9 @@ TEST(TlsCertificateVerifierTest,
   grpc::Status sync_status;
   verifier->Verify(&cpp_request, empty_callback, &sync_status);
   EXPECT_FALSE(sync_status.ok());
-  // EXPECT_EQ(sync_status.error_message(),
-  // "UNAUTHENTICATED: SyncCertificateVerifier is marked unsuccessful:
-  // UNAUTHENTICATED: Hostname Verification Check failed.");
+  EXPECT_EQ(sync_status.error_message(),
+            "SyncCertificateVerifier is marked unsuccessful: Hostname "
+            "Verification Check failed.");
 }
 
 TEST(TlsCertificateVerifierTest, AsyncCertificateVerifierSucceeds) {
@@ -189,19 +186,8 @@ TEST(TlsCertificateVerifierTest,
       ExternalCertificateVerifier::Create<AsyncCertificateVerifier>(true);
   TlsCustomVerificationCheckRequest cpp_request(&request);
   std::function<void(grpc::Status)> callback = [](grpc::Status async_status) {
-    gpr_log(GPR_ERROR, "%s", async_status.error_message().c_str());
-    EXPECT_FALSE(async_status.ok());
-    // Question: this is really weird here.
-    // The printed message here becomes "UNAUTHENTICATED: "(the message part is
-    // truncated). But when I print out the status immediately before we invoke
-    // this callback, the full message is printed. It's unlikely that I am
-    // logging to the wrong place, because if I changed the logged status to an
-    // OK status, the value here will be "". I've read somewhere that gRPC users
-    // couldn't know the specific status error though. Could it be due to that?
-    // But how come the message is there before invoking the callback, but after
-    // entering the callback it is gone(I tried std::move the status but nothing
-    // changed). EXPECT_EQ(async_status.error_message(), "UNAUTHENTICATED:
-    // Hostname Verification Check failed.");
+    EXPECT_EQ(async_status.error_message(),
+              "Hostname Verification Check failed.");
   };
   grpc::Status sync_status;
   EXPECT_FALSE(verifier->Verify(&cpp_request, callback, &sync_status));
