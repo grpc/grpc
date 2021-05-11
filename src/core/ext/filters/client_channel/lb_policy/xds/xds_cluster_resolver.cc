@@ -1209,17 +1209,11 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           }
           policy_it = policy.find("RING_HASH");
           if (policy_it != policy.end()) {
-            if (policy_it->second.type() != Json::Type::OBJECT) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:RING_HASH error:type should be object"));
-              continue;
-            }
             xds_lb_policy = array[i];
-            const Json::Object& ring_hash = policy_it->second.object_value();
-            size_t min_ring_size = 1024;
-            size_t max_ring_size = 8388608;
+            size_t min_ring_size;
+            size_t max_ring_size;
             std::vector<grpc_error*> ring_hash_error_list =
-                ParseRingHashLbConfig(ring_hash, &min_ring_size,
+                ParseRingHashLbConfig(policy_it->second, &min_ring_size,
                                       &max_ring_size);
             error_list.insert(error_list.end(), ring_hash_error_list.begin(),
                               ring_hash_error_list.end());

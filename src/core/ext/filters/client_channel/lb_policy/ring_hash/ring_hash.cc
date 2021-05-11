@@ -48,7 +48,14 @@ TraceFlag grpc_lb_ring_hash_trace(false, "ring_hash_lb");
 std::vector<grpc_error*> ParseRingHashLbConfig(const Json& json,
                                                size_t* min_ring_size,
                                                size_t* max_ring_size) {
+  *min_ring_size = 1024;
+  *max_ring_size = 8388608;
   std::vector<grpc_error*> error_list;
+  if (json.type() != Json::Type::OBJECT) {
+    error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "ring_hash_experimental should be of type object"));
+    return error_list;
+  }
   const Json::Object& ring_hash = json.object_value();
   auto ring_hash_it = ring_hash.find("min_ring_size");
   if (ring_hash_it != ring_hash.end()) {
@@ -437,28 +444,23 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         }
         subchannel_connection_attempter->AddSubchannel(std::move(subchannel));
       };
-  bool attempt_to_connect = true;
   gpr_log(GPR_INFO, "donna ConnectAndPickHelper state is %d",
           ring_[first_index].connectivity_state);
-  if (ring_[first_index].connectivity_state == GRPC_CHANNEL_READY) {
-    result.type = PickResult::PICK_COMPLETE;
-    result.subchannel = ring_[first_index].subchannel;
-    attempt_to_connect = false;
+  switch (ring_[first_index].connectivity_state) {
+    case GRPC_CHANNEL_READY:
+      result.type = PickResult::PICK_COMPLETE;
+      result.subchannel = ring_[first_index].subchannel;
+      return result;
+    case GRPC_CHANNEL_IDLE:
+      ScheduleSubchannelConnectionAttempt(ring_[first_index].subchannel);
+      // fallthrough
+    case GRPC_CHANNEL_CONNECTING:
+      result.type = PickResult::PICK_QUEUE;
+      return result;
+    default:  // GRPC_CHANNEL_TRANSIENT_FAILURE
+      break;
   }
-  if (ring_[first_index].connectivity_state == GRPC_CHANNEL_IDLE) {
-    result.type = PickResult::PICK_QUEUE;
-  }
-  if (ring_[first_index].connectivity_state == GRPC_CHANNEL_CONNECTING) {
-    result.type = PickResult::PICK_QUEUE;
-    attempt_to_connect = false;
-  }
-  if (attempt_to_connect) {
-    gpr_log(GPR_INFO, "donna needing to reattempt");
-    ScheduleSubchannelConnectionAttempt(ring_[first_index].subchannel);
-  }
-  if (result.type != PickResult::PICK_FAILED) {
-    return result;
-  }
+  ScheduleSubchannelConnectionAttempt(ring_[first_index].subchannel);
   gpr_log(GPR_INFO, "donna look for next");
   // Loop through remaining subchannels to find one in READY.
   // On the way, we make sure the right set of connection attempts
@@ -601,7 +603,6 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
     connectivity_state_ = GRPC_CHANNEL_CONNECTING;
     return false;
   }
-
   if (num_idle_ > 0 && num_transient_failure_ < 2) {
     gpr_log(GPR_INFO, "donna report IDLE");
     p->channel_control_helper()->UpdateState(
@@ -610,7 +611,6 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
     connectivity_state_ = GRPC_CHANNEL_IDLE;
     return false;
   }
-
   grpc_error* error =
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                              "connections to backend failing or idle"),
@@ -800,16 +800,10 @@ class RingHashFactory : public LoadBalancingPolicyFactory {
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
       const Json& json, grpc_error** error) const override {
-    if (json.type() != Json::Type::OBJECT) {
-      *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "ring_hash_experimental should be of type object");
-      return nullptr;
-    }
-    const Json::Object& ring_hash = json.object_value();
-    size_t min_ring_size = 1024;
-    size_t max_ring_size = 8388608;
+    size_t min_ring_size;
+    size_t max_ring_size;
     std::vector<grpc_error*> error_list =
-        ParseRingHashLbConfig(ring_hash, &min_ring_size, &max_ring_size);
+        ParseRingHashLbConfig(json, &min_ring_size, &max_ring_size);
     if (error_list.empty()) {
       return MakeRefCounted<RingHashLbConfig>(min_ring_size, max_ring_size);
     } else {
