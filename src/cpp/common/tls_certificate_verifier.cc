@@ -36,15 +36,22 @@ const std::string TlsCustomVerificationCheckRequest::target_name() const {
 }
 
 const std::string TlsCustomVerificationCheckRequest::peer_cert() const {
-  return c_request_->peer_info.peer_cert != nullptr ? c_request_->peer_info.peer_cert : "";
+  return c_request_->peer_info.peer_cert != nullptr
+             ? c_request_->peer_info.peer_cert
+             : "";
 }
 
-const std::string TlsCustomVerificationCheckRequest::peer_cert_full_chain() const {
-  return c_request_->peer_info.peer_cert_full_chain != nullptr ? c_request_->peer_info.peer_cert_full_chain : "";
+const std::string TlsCustomVerificationCheckRequest::peer_cert_full_chain()
+    const {
+  return c_request_->peer_info.peer_cert_full_chain != nullptr
+             ? c_request_->peer_info.peer_cert_full_chain
+             : "";
 }
 
 const std::string TlsCustomVerificationCheckRequest::common_name() const {
-  return c_request_->peer_info.common_name != nullptr ? c_request_->peer_info.common_name : "";
+  return c_request_->peer_info.common_name != nullptr
+             ? c_request_->peer_info.common_name
+             : "";
 }
 
 std::vector<std::string> TlsCustomVerificationCheckRequest::uri_names() const {
@@ -63,9 +70,11 @@ std::vector<std::string> TlsCustomVerificationCheckRequest::dns_names() const {
   return dns_names;
 }
 
-std::vector<std::string> TlsCustomVerificationCheckRequest::email_names() const {
+std::vector<std::string> TlsCustomVerificationCheckRequest::email_names()
+    const {
   std::vector<std::string> email_names;
-  for (size_t i = 0; i < c_request_->peer_info.san_names.email_names_size;++i) {
+  for (size_t i = 0; i < c_request_->peer_info.san_names.email_names_size;
+       ++i) {
     email_names.emplace_back(c_request_->peer_info.san_names.email_names[i]);
   }
   return email_names;
@@ -92,14 +101,14 @@ bool CertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
     internal::MutexLock lock(&mu_);
     request_map_.emplace(request->c_request(), std::move(callback));
   }
-  grpc_status_code sync_status_c = GRPC_STATUS_OK;
+  grpc_status_code status_code = GRPC_STATUS_OK;
   char* error_details = nullptr;
   bool is_done = grpc_tls_certificate_verifier_verify(
-      verifier_, request->c_request(), &AsyncCheckDone, this, &sync_status_c,
+      verifier_, request->c_request(), &AsyncCheckDone, this, &status_code,
       &error_details);
   if (is_done) {
-    if (sync_status_c != GRPC_STATUS_OK) {
-      *sync_status = grpc::Status(static_cast<grpc::StatusCode>(sync_status_c),
+    if (status_code != GRPC_STATUS_OK) {
+      *sync_status = grpc::Status(static_cast<grpc::StatusCode>(status_code),
                                   error_details);
     }
     internal::MutexLock lock(&mu_);
@@ -173,17 +182,21 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
           if (it != self->request_map_.end()) {
             callback = it->second.callback;
             callback_arg = it->second.callback_arg;
+            // Question: would it be better if we erase this after the callback
+            // is invoked? I know it probably doesn't make any difference under
+            // current implementation, but just worrying that it may cause
+            // confusions if later we want to do something in the callback while
+            // still hoping the entry in the map to be accessible.
+            // I might think too much, but this comes to me when trying to debug
+            // an issue in C++ tests.
             self->request_map_.erase(it);
           }
         }
         if (callback != nullptr) {
-          grpc_status_code return_status = GRPC_STATUS_OK;
-          char* return_error_details = gpr_strdup("");
-          if (!status.ok()) {
-            return_status = static_cast<grpc_status_code>(status.error_code());
-            gpr_free(return_error_details);
-            return_error_details = gpr_strdup(status.error_details().c_str());
-          }
+          grpc_status_code return_status =
+              static_cast<grpc_status_code>(status.error_code());
+          char* return_error_details =
+              gpr_strdup(status.error_message().c_str());
           callback(request, callback_arg, return_status, return_error_details);
           gpr_free(return_error_details);
         }
@@ -193,9 +206,8 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
     if (!sync_current_verifier_status.ok()) {
       *sync_status = static_cast<grpc_status_code>(
           sync_current_verifier_status.error_code());
-      gpr_free(*sync_error_details);
       *sync_error_details =
-          gpr_strdup(sync_current_verifier_status.error_details().c_str());
+          gpr_strdup(sync_current_verifier_status.error_message().c_str());
     }
     internal::MutexLock lock(&self->mu_);
     self->request_map_.erase(request);
