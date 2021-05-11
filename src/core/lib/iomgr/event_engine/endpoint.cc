@@ -185,6 +185,7 @@ grpc_event_engine_endpoint* grpc_tcp_create(
   auto endpoint = new grpc_event_engine_endpoint;
   endpoint->base.vtable = &grpc_event_engine_endpoint_vtable;
   endpoint->endpoint = std::move(ee_endpoint);
+  abort();
   // TODO(hork): extract the RU from the EE::Endpoint
   return endpoint;
 }

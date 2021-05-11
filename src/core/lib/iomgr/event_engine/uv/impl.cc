@@ -20,11 +20,6 @@ class uvLookupTask;
 class uvTCPbase {
  public:
   uvTCPbase() = default;
-  uvTCPbase(
-      grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
-          on_accept,
-      grpc_event_engine::experimental::EventEngine::Callback on_shutdown)
-      : on_accept_(on_accept), on_shutdown_(on_shutdown) {}
   virtual ~uvTCPbase() = default;
   static void uvCloseCB(uv_handle_t* handle) {
     uvTCPbase* tcp = reinterpret_cast<uvTCPbase*>(handle->data);
@@ -34,11 +29,6 @@ class uvTCPbase {
   }
 
   int init(uvEngine* engine);
-
-  grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
-      on_accept_;
-
-  grpc_event_engine::experimental::EventEngine::Callback on_shutdown_;
 
   uv_tcp_t tcp_;
   int to_close_ = 0;
@@ -53,9 +43,15 @@ class uvTCPlistener final : public uvTCPbase {
       const grpc_event_engine::experimental::ChannelArgs& args,
       grpc_event_engine::experimental::SliceAllocatorFactory
           slice_allocator_factory)
-      : uvTCPbase(on_accept, on_shutdown),
+      : on_accept_(std::move(on_accept)),
+        on_shutdown_(std::move(on_shutdown)),
+        args_(args),
         slice_allocator_factory_(std::move(slice_allocator_factory)) {}
   virtual ~uvTCPlistener() = default;
+  grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
+      on_accept_;
+  grpc_event_engine::experimental::EventEngine::Callback on_shutdown_;
+  grpc_event_engine::experimental::ChannelArgs args_;
   grpc_event_engine::experimental::SliceAllocatorFactory
       slice_allocator_factory_;
 };
@@ -63,18 +59,21 @@ class uvTCPlistener final : public uvTCPbase {
 class uvTCP final : public uvTCPbase {
  public:
   uvTCP(const grpc_event_engine::experimental::ChannelArgs& args,
-        grpc_event_engine::experimental::SliceAllocator slice_allocator) {}
+        grpc_event_engine::experimental::SliceAllocator slice_allocator)
+      : args_(args), slice_allocator_(std::move(slice_allocator)) {}
   virtual ~uvTCP() = default;
 
   uv_connect_t connect_;
   uv_timer_t write_timer_;
   uv_timer_t read_timer_;
+  const grpc_event_engine::experimental::ChannelArgs args_;
+  grpc_event_engine::experimental::SliceAllocator slice_allocator_;
 };
 
 class uvListener final
     : public grpc_event_engine::experimental::EventEngine::Listener {
  public:
-  uvListener(uvEngine* engine, Listener::AcceptCallback on_accept,
+  uvListener(Listener::AcceptCallback on_accept,
              grpc_event_engine::experimental::EventEngine::Callback on_shutdown,
              const grpc_event_engine::experimental::ChannelArgs& args,
              grpc_event_engine::experimental::SliceAllocatorFactory
@@ -82,13 +81,16 @@ class uvListener final
 
   virtual ~uvListener();
 
+  uvEngine* getEngine() {
+    return reinterpret_cast<uvEngine*>(uvTCP_->tcp_.loop->data);
+  }
+  int init(uvEngine* engine) { return uvTCP_->init(engine); }
+
   virtual absl::StatusOr<int> Bind(
       const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr)
       override final;
 
   virtual absl::Status Start() override final;
-
-  uvEngine* engine_;
 
   uvTCPlistener* uvTCP_ = nullptr;
   int init_result_ = 0;
@@ -136,6 +138,23 @@ class uvEndpoint final
   }
   virtual ~uvEndpoint() override final;
   int init(uvEngine* engine);
+  int populateAddressesUnsafe() {
+    auto populate =
+        [this](
+            std::function<int(const uv_tcp_t*, struct sockaddr*, int*)> f,
+            grpc_event_engine::experimental::EventEngine::ResolvedAddress* a) {
+          int namelen;
+          sockaddr_storage addr;
+          int ret =
+              f(&uvTCP_->tcp_, reinterpret_cast<sockaddr*>(&addr), &namelen);
+          *a = grpc_event_engine::experimental::EventEngine::ResolvedAddress(
+              reinterpret_cast<sockaddr*>(&addr), namelen);
+          return ret;
+        };
+    populate(uv_tcp_getsockname, &local_address_);
+    populate(uv_tcp_getpeername, &peer_address_);
+    return 0;
+  }
 
   virtual void Read(
       grpc_event_engine::experimental::EventEngine::Callback on_read,
@@ -148,15 +167,13 @@ class uvEndpoint final
       absl::Time deadline) override final;
 
   virtual const grpc_event_engine::experimental::EventEngine::ResolvedAddress*
-
   GetPeerAddress() const override final {
-    abort();
+    return &peer_address_;
   };
 
   virtual const grpc_event_engine::experimental::EventEngine::ResolvedAddress*
-
   GetLocalAddress() const override final {
-    abort();
+    return &local_address_;
   };
 
   static void uvGetaddrInfoCB(uv_getaddrinfo_t* req, int status,
@@ -164,6 +181,7 @@ class uvEndpoint final
   static void uvConnectCB(uv_connect_t* req, int status) {
     uvEndpoint* epRaw = reinterpret_cast<uvEndpoint*>(req->handle->data);
     std::unique_ptr<uvEndpoint> ep(epRaw);
+    ep->populateAddressesUnsafe();
     if (status == 0) {
       ep->on_connect_(std::move(ep));
     } else {
@@ -228,6 +246,8 @@ class uvEndpoint final
   grpc_event_engine::experimental::SliceBuffer* read_sb_;
   grpc_event_engine::experimental::EventEngine::Callback on_writable_;
   grpc_event_engine::experimental::EventEngine::Callback on_read_;
+  grpc_event_engine::experimental::EventEngine::ResolvedAddress peer_address_;
+  grpc_event_engine::experimental::EventEngine::ResolvedAddress local_address_;
 
   grpc_event_engine::experimental::EventEngine::OnConnectCallback on_connect_ =
       nullptr;
@@ -305,8 +325,10 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
       const grpc_event_engine::experimental::ChannelArgs& args,
       grpc_event_engine::experimental::SliceAllocatorFactory
           slice_allocator_factory) override final {
-    return absl::make_unique<uvListener>(this, on_accept, on_shutdown, args,
-                                         std::move(slice_allocator_factory));
+    std::unique_ptr<uvListener> ret = absl::make_unique<uvListener>(
+        on_accept, on_shutdown, args, std::move(slice_allocator_factory));
+    ret->init(this);
+    return std::move(ret);
   }
 
   virtual absl::Status Connect(
@@ -370,26 +392,19 @@ int uvTCPbase::init(uvEngine* engine) {
 }
 
 uvListener::uvListener(
-    uvEngine* engine, Listener::AcceptCallback on_accept,
+    Listener::AcceptCallback on_accept,
     grpc_event_engine::experimental::EventEngine::Callback on_shutdown,
     const grpc_event_engine::experimental::ChannelArgs& args,
     grpc_event_engine::experimental::SliceAllocatorFactory
         slice_allocator_factory)
-    : engine_(engine),
-      uvTCP_(new uvTCPlistener(on_accept, on_shutdown, args,
+    : uvTCP_(new uvTCPlistener(on_accept, on_shutdown, args,
                                std::move(slice_allocator_factory))) {
-  std::promise<int> p;
-  engine->schedule([this, &p](uvEngine* engine) {
-    int r = uv_tcp_init(&engine->loop_, &uvTCP_->tcp_);
-
-    p.set_value(r);
-  });
-  init_result_ = p.get_future().get();
+  uvTCP_->tcp_.data = uvTCP_;
 }
 
 uvListener::~uvListener() {
   uvTCPbase* tcp = uvTCP_;
-  engine_->schedule([tcp](uvEngine* engine) {
+  getEngine()->schedule([tcp](uvEngine* engine) {
     tcp->tcp_.data = tcp;
     tcp->to_close_ = 1;
     uv_close(reinterpret_cast<uv_handle_t*>(&tcp->tcp_), uvTCPbase::uvCloseCB);
@@ -399,7 +414,7 @@ uvListener::~uvListener() {
 absl::StatusOr<int> uvListener::Bind(
     const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr) {
   std::promise<absl::StatusOr<int>> p;
-  engine_->schedule([this, &p, &addr](uvEngine* engine) {
+  getEngine()->schedule([this, &p, &addr](uvEngine* engine) {
     int r = uv_tcp_bind(&uvTCP_->tcp_, addr.address(), 0 /* flags */);
     switch (r) {
       case UV_EINVAL:
@@ -450,7 +465,22 @@ absl::StatusOr<int> uvListener::Bind(
 }
 
 absl::Status uvListener::Start() {
-  engine_->schedule([](uvEngine* engine) { abort(); });
+  getEngine()->schedule([this](uvEngine* engine) {
+    uv_listen(reinterpret_cast<uv_stream_t*>(&uvTCP_->tcp_), 42,
+              [](uv_stream_t* server, int status) {
+                if (status < 0) return;
+                uvTCPlistener* l = static_cast<uvTCPlistener*>(server->data);
+                std::unique_ptr<uvEndpoint> e = absl::make_unique<uvEndpoint>(
+                    l->args_,
+                    l->slice_allocator_factory_.CreateSliceAllocator("foo"));
+                uvEngine* engine = static_cast<uvEngine*>(server->loop->data);
+                e->init(engine);
+                uv_accept(server,
+                          reinterpret_cast<uv_stream_t*>(&e->uvTCP_->tcp_));
+                e->populateAddressesUnsafe();
+                l->on_accept_(std::move(e));
+              });
+  });
   return absl::OkStatus();
 }
 
