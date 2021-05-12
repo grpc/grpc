@@ -89,13 +89,13 @@ echo "Waiting 2m for instance to initialize..."
 sleep 2m
 
 WORKLOAD=grpc_aws_experiment_remote.sh
-REMOTE_SCRIPT_FAILURE=0
+REMOTE_SCRIPT_EXITCODE=0
 echo "Copying workspace to remote instance..."
 # use rsync over ssh since it's much faster than scp
 time rsync -e "ssh -i ~/.ssh/temp_client_key" -a github/grpc ubuntu@$IP:~/workspace
 echo "Beginning CI workload..."
-ssh -i ~/.ssh/temp_client_key ubuntu@$IP "uname -a; cd ~/workspace; ls -l; bash grpc/tools/internal_ci/linux/$WORKLOAD" || REMOTE_SCRIPT_FAILURE=$?
+ssh -i ~/.ssh/temp_client_key ubuntu@$IP "uname -a; cd ~/workspace; ls -l; bash grpc/tools/internal_ci/linux/$WORKLOAD" || REMOTE_SCRIPT_EXITCODE=$?
 
-# Match return value
-echo "returning $REMOTE_SCRIPT_FAILURE based on script output"
-exit $REMOTE_SCRIPT_FAILURE
+# Match exitcode
+echo "Exiting with exitcode $REMOTE_SCRIPT_EXITCODE based on remote script output."
+exit $REMOTE_SCRIPT_EXITCODE
