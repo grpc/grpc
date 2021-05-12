@@ -506,6 +506,14 @@ class TestServer(AioTestBase):
         await channel.close()
         await server.stop(0)
 
+    async def test_is_active(self):
+        if (self._server.context.is_active()):
+            pass
+
+    async def test_set_callback(self):
+        def callback(call):
+            return
+        self._server.context.add_callback(callback)
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.DEBUG)
