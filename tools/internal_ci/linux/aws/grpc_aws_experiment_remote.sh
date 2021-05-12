@@ -21,6 +21,9 @@ sudo apt install -y build-essential autoconf libtool pkg-config cmake python pyt
 sudo pip install six
 
 cd grpc
+
+# without port server running, many tests will fail
+python tools/run_tests/start_port_server.py
+
 # build with bazel
 tools/bazel build --config=opt //test/...
-

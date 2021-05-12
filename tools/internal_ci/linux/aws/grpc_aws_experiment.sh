@@ -96,7 +96,21 @@ echo "Copying workspace to remote instance..."
 # use rsync over ssh since it's much faster than scp
 time rsync -e "ssh -i ~/.ssh/temp_client_key" -a github/grpc ubuntu@$IP:~/workspace
 echo "Beginning CI workload..."
-ssh -i ~/.ssh/temp_client_key ubuntu@$IP "uname -a; cd ~/workspace; ls -l; bash grpc/tools/internal_ci/linux/aws/$WORKLOAD" || REMOTE_SCRIPT_EXITCODE=$?
+
+# run remote workload script in the background, with redirected stdout and stderr
+# to avoid problems with ssh session not closing after the remote script finishes
+# but stdout and stderr are still open because the remote has spawned subprocesses
+# that keep stdout and stderr open.
+# * PID of the process that executes the remote script will be stored in aws_build.pid
+# * stderr and stdout will be streamed to aws_build.log
+# * once done, the exitcode of the remote script will be in aws_build.exitcode
+REMOTE_WORKLOAD_COMMAND="nohup bash -c '(bash grpc/tools/internal_ci/linux/aws/${WORKLOAD}; echo \$? >/tmp/aws_build.exitcode) >>/tmp/aws_build.log 2>&1' >/dev/null 2>&1 & echo \$! >/tmp/aws_build.pid"
+
+# the tail command simply streams the contents of aws_build.log as they become available
+# and stops when the remote workload exits (determined based on the PID)
+SSH_COMMAND='uname -a; rm -f /tmp/aws_build.log /tmp/aws_build.exitcode /tmp/aws_build.pid; touch /tmp/aws_build.log; cd ~/workspace; '"${REMOTE_WORKLOAD_COMMAND};"' tail -f /tmp/aws_build.log --pid $(cat /tmp/aws_build.pid); exit $(cat /tmp/aws_build.exitcode)'
+
+time ssh -i ~/.ssh/temp_client_key ubuntu@$IP "${SSH_COMMAND}" || REMOTE_SCRIPT_EXITCODE=$?
 
 # Regardless of the remote script's result (success or failure), initiate shutdown of AWS instance a minute from now.
 # The small delay is useful to make sure the ssh session doesn't hang up on us if shutdown happens too quickly.
