@@ -41,20 +41,20 @@ TraceFlag* TraceFlagList::root_tracer_ = nullptr;
 bool TraceFlagList::Set(const char* name, bool enabled) {
   TraceFlag* t;
   if (0 == strcmp(name, "all")) {
-    for (t = root_tracer_; t; t = t->next_tracer_) {
+    for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
       t->set_enabled(enabled);
     }
   } else if (0 == strcmp(name, "list_tracers")) {
     LogAllTracers();
   } else if (0 == strcmp(name, "refcount")) {
-    for (t = root_tracer_; t; t = t->next_tracer_) {
+    for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
       if (strstr(t->name_, "refcount") != nullptr) {
         t->set_enabled(enabled);
       }
     }
   } else {
     bool found = false;
-    for (t = root_tracer_; t; t = t->next_tracer_) {
+    for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
       if (0 == strcmp(name, t->name_)) {
         t->set_enabled(enabled);
         found = true;
@@ -70,8 +70,19 @@ bool TraceFlagList::Set(const char* name, bool enabled) {
 }
 
 void TraceFlagList::Add(TraceFlag* flag) {
-  flag->next_tracer_ = root_tracer_;
-  root_tracer_ = flag;
+  bool found = false;
+  // prevent cycles at 'Add' flag to 'root_tracer_'
+  for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
+    // check if flag is already part of 'root_tracer_'
+    if (t == flag) {
+      found = true;
+    }
+  }
+  // append ot 'root_tracer_' only if not found
+  if (! found) {
+    flag->next_tracer_ = root_tracer_;
+    root_tracer_ = flag;
+  }
 }
 
 void TraceFlagList::LogAllTracers() {
