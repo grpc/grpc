@@ -155,6 +155,16 @@ class XdsKubernetesTestCase(absltest.TestCase):
             0,
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
 
+    def assertXdsConfigExists(self, test_client: XdsTestClient):
+        config = test_client.csds.fetch_client_status()
+        self.assertIsNotNone(config)
+        seen = set()
+        want = frozenset('listener_config', 'cluster_config', 'route_config',
+                         'endpoint_config')
+        for xds_config in config.xds_config:
+            seen.add(xds_config.WhichOneOf('per_xds_config'))
+        self.assertEqual(want, seen)
+
     def assertFailedRpcs(self,
                          test_client: XdsTestClient,
                          num_rpcs: Optional[int] = 100):

@@ -56,6 +56,9 @@ class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('8_test_server_received_rpcs_from_test_client'):
             self.assertSuccessfulRpcs(test_client)
 
+        with self.subTest('9_validate_xDS_config'):
+            self.assertXdsConfigExists(test_client)
+
 
 if __name__ == '__main__':
     absltest.main(failfast=True)
