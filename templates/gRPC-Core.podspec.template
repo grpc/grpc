@@ -66,6 +66,7 @@
       for file in list_lib_files("grpc", ("public_headers", "headers", "src"))
       if '/event_engine/' in file
       and not file.endswith('/port.h')
+      and not file.endswith('/resolved_address_internal.h')
   ]
 
   # ObjectiveC doesn't use c-ares so we don't need address_sorting files at all
