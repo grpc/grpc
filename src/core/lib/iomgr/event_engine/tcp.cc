@@ -72,21 +72,20 @@ namespace {
 // EventEngine directly, closures will be replaced with EE callback types.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_endpoint** endpoint_ptr) {
-  return
-      [closure, endpoint_ptr](
-          absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-        grpc_core::ExecCtx exec_ctx;
-        if (endpoint.ok()) {
-          auto* grpc_endpoint_out =
-              reinterpret_cast<grpc_event_engine_endpoint*>(*endpoint_ptr);
-          grpc_endpoint_out->endpoint = std::move(*endpoint);
-        } else {
-          grpc_endpoint_destroy(*endpoint_ptr);
-          *endpoint_ptr = nullptr;
-        }
-        grpc_core::Closure::Run(DEBUG_LOCATION, closure,
-                                absl_status_to_grpc_error(endpoint.status()));
-      };
+  return [closure, endpoint_ptr](
+             absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
+    grpc_core::ExecCtx exec_ctx;
+    if (endpoint.ok()) {
+      auto* grpc_endpoint_out =
+          reinterpret_cast<grpc_event_engine_endpoint*>(*endpoint_ptr);
+      grpc_endpoint_out->endpoint = std::move(*endpoint);
+    } else {
+      grpc_endpoint_destroy(*endpoint_ptr);
+      *endpoint_ptr = nullptr;
+    }
+    grpc_core::Closure::Run(DEBUG_LOCATION, closure,
+                            absl_status_to_grpc_error(endpoint.status()));
+  };
 }
 
 /// Note: this method does not take ownership of any pointer arguments.
