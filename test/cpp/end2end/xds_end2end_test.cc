@@ -6906,7 +6906,6 @@ TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
       CreateHeaderAddressHashForBackend(0);
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   CheckRpcSendOk(100, rpc_options);
-  bool found = false;
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 100);
   EXPECT_EQ(backends_[1]->backend_service()->request_count(), 0);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
