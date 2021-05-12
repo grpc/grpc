@@ -45,6 +45,9 @@ sudo apt update && sudo apt install -y jq
 AWS_MACHINE_IMAGE=ami-026141f3d5c6d2d0c
 AWS_INSTANCE_TYPE=t4g.xlarge
 AWS_SECURITY_GROUP=sg-021240e886feba750
+# Max allowed lifespan of the AWS instance. After this period of time, the instance will
+# self-terminate (delete itself).
+AWS_INSTANCE_MAX_LIFESPAN_MINS=120
 # increase the size of the root volume so that builds don't run out of disk space
 AWS_STORAGE_SIZE_GB=75
 AWS_DEVICE_MAPPING="DeviceName='/dev/sda1',Ebs={VolumeSize=${AWS_STORAGE_SIZE_GB}}"
@@ -65,7 +68,7 @@ echo "$SERVER_PRIVATE_KEY" >> userdata
 echo "  ecdsa_public: $SERVER_PUBLIC_KEY" >> userdata
 echo '' >> userdata
 echo 'runcmd:' >> userdata
-echo ' - sleep 120m' >> userdata
+echo " - sleep ${AWS_INSTANCE_MAX_LIFESPAN_MINS}m" >> userdata
 echo ' - shutdown' >> userdata
 
 ID=$(aws ec2 run-instances --image-id $AWS_MACHINE_IMAGE --instance-initiated-shutdown-behavior=terminate \
