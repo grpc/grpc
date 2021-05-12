@@ -7272,7 +7272,6 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   // Ensure we are actively connecting without any traffic.
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
-  WaitForBackend(1, WaitForBackendOptions(), rpc_options);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
@@ -7308,7 +7307,12 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
   ShutdownBackend(0);
   ShutdownBackend(1);
   CheckRpcSendFailure(1, rpc_options);
-  // Bring up 1.
+  // Bring up 0, should be picked as the RPC is hashed to it.
+  StartBackend(0);
+  EXPECT_TRUE(channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
+  WaitForBackend(0, WaitForBackendOptions(), rpc_options);
+  // Bring down 0 and bring up 1.
   // Note the RPC contains a header value that will always be hashed to backend
   // 0. So by purposely bring down backend 0 and bring up another backend, this
   // will ensure Picker's first choice of backend 0 will fail and it will
@@ -7317,6 +7321,7 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
   // Since the the entries in the ring is pretty distributed and we have unused
   // ports to fill the ring, it is almost guaranteed that the Picker will go
   // through some non-READY entries and skip them as per design.
+  ShutdownBackend(0);
   StartBackend(1);
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
