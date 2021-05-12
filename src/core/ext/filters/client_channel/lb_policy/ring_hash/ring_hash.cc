@@ -112,7 +112,6 @@ class RingHash : public LoadBalancingPolicy {
 
   const char* name() const override { return kRingHash; }
 
-  void ExitIdleLocked() override;
   void UpdateLocked(UpdateArgs args) override;
   void ResetBackoffLocked() override;
 
@@ -148,10 +147,6 @@ class RingHash : public LoadBalancingPolicy {
     // first start watching and when a watcher notification is received.
     void UpdateConnectivityStateLocked(
         grpc_connectivity_state connectivity_state);
-
-    // Attempts to connect to the next subchannel to keep at least one
-    // connection in flight.
-    void AttemptToConnectNextSubChannel();
 
    private:
     // Performs connectivity state updates that need to be done only
@@ -605,7 +600,8 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
     gpr_log(GPR_INFO, "donna report IDLE");
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_IDLE, absl::Status(),
-        absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
+        absl::make_unique<Picker>(p->Ref(DEBUG_LOCATION, "RingHashPicker"),
+                                  this));
     connectivity_state_ = GRPC_CHANNEL_IDLE;
     return false;
   }
@@ -660,13 +656,6 @@ void RingHash::RingHashSubchannelData::UpdateConnectivityStateLocked(
   last_connectivity_state_ = connectivity_state;
 }
 
-void RingHash::RingHashSubchannelData::AttemptToConnectNextSubChannel() {
-  size_t next_index = (Index() + 1) % subchannel_list()->num_subchannels();
-  gpr_log(GPR_INFO, "donna which next index %" PRIuPTR, next_index);
-  RingHashSubchannelData* next_sd = subchannel_list()->subchannel(next_index);
-  next_sd->subchannel()->AttemptToConnect();
-}
-
 void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
     grpc_connectivity_state connectivity_state) {
   RingHash* p = static_cast<RingHash*>(subchannel_list()->policy());
@@ -708,7 +697,9 @@ void RingHash::RingHashSubchannelData::ProcessConnectivityChangeLocked(
   // even if subchannels are in state CONNECTING during that time.
   if (transient_failure &&
       connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    AttemptToConnectNextSubChannel();
+    size_t next_index = (Index() + 1) % subchannel_list()->num_subchannels();
+    RingHashSubchannelData* next_sd = subchannel_list()->subchannel(next_index);
+    next_sd->subchannel()->AttemptToConnect();
   }
 }
 
@@ -735,17 +726,6 @@ void RingHash::ShutdownLocked() {
   }
   shutdown_ = true;
   subchannel_list_.reset();
-}
-
-void RingHash::ExitIdleLocked() {
-  gpr_log(GPR_INFO, "donna chance to exit idle state %d",
-          subchannel_list_->ConnectivityState());
-  // If this method is called and we are not in CONNECTING, it means we have no
-  // connection attempt in flight, we need to start one.
-  if (subchannel_list_->ConnectivityState() == GRPC_CHANNEL_IDLE ||
-      subchannel_list_->ConnectivityState() == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-    subchannel_list_->subchannel(0)->AttemptToConnectNextSubChannel();
-  }
 }
 
 void RingHash::ResetBackoffLocked() { subchannel_list_->ResetBackoffLocked(); }

@@ -7195,7 +7195,8 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  WaitForBackend(1, WaitForBackendOptions(), rpc_options);
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true),
+                 rpc_options);
   EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
   CheckRpcSendOk(100, rpc_options);
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
@@ -7306,6 +7307,7 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
   ShutdownBackend(0);
   ShutdownBackend(1);
   CheckRpcSendFailure(1, rpc_options);
+  EXPECT_EQ(GRPC_CHANNEL_TRANSIENT_FAILURE, channel_->GetState(false));
   // Bring up 0, should be picked as the RPC is hashed to it.
   StartBackend(0);
   EXPECT_TRUE(channel_->WaitForConnected(
