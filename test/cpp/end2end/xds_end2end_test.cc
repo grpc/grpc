@@ -7318,6 +7318,8 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
   // ports to fill the ring, it is almost guaranteed that the Picker will go
   // through some non-READY entries and skip them as per design.
   StartBackend(1);
+  EXPECT_TRUE(channel_->WaitForConnected(
+      grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
   WaitForBackend(1, WaitForBackendOptions(), rpc_options);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
