@@ -32,6 +32,10 @@ AWS_SECURITY_GROUP=sg-021240e886feba750
 AWS_STORAGE_SIZE_GB=30
 AWS_DEVICE_MAPPING="DeviceName='/dev/sdb',VirtualName='ephemeral0',Ebs={DeleteOnTermination=True,VolumeSize=${AWS_STORAGE_SIZE_GB},VolumeType='standard'}"
 
+KOKORO_JOB_TAG="{Key='kokoro_job_name',Value='${KOKORO_JOB_NAME}'}"
+KOKORO_BUILD_NUM="{Key='kokoro_build_number',Value='${KOKORO_BUILD_NUMBER}'}"
+AWS_INSTANCE_TAGS="ResourceType='instance',Tags=[${KOKORO_JOB_TAG},${KOKORO_BUILD_NUM}]"
+
 ssh-keygen -N '' -t rsa -b 4096 -f ~/.ssh/temp_client_key
 ssh-keygen -N '' -t ecdsa -b 256 -f ~/.ssh/temp_server_key
 SERVER_PRIVATE_KEY=$(cat ~/.ssh/temp_server_key | sed 's/\(.*\)/    \1/')
@@ -56,6 +60,7 @@ ID=$(aws ec2 run-instances --image-id $AWS_MACHINE_IMAGE --instance-initiated-sh
     --security-group-ids $AWS_SECURITY_GROUP \
     --user-data file://userdata \
     --block-device-mapping=$AWS_DEVICE_MAPPING \
+    --tag-specifications $AWS_INSTANCE_TAGS \
     --region us-east-2 | jq .Instances[0].InstanceId | sed 's/"//g')
 echo "instance-id=$ID"
 echo "Waiting 1m for instance ip..."
