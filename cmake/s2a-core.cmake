@@ -52,6 +52,3 @@ elseif(gRPC_S2A_CORE_PROVIDER STREQUAL "package")
   set(_gRPC_S2A_CORE_INCLUDE_DIR ${S2A_CORE_INCLUDE_DIRS})
   set(_gRPC_FIND_S2A_CORE "if(NOT s2a_core_FOUND)\n  find_package(s2a_core)\nendif()")
 endif()
-
-# Needed because gRPC is using an old UPB version.
-add_compile_definitions(S2A_CORE_USE_OLD_UPB_APIS="true")
