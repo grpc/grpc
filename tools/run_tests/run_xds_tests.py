@@ -279,14 +279,23 @@ CLIENT_HOSTS = []
 if args.client_hosts:
     CLIENT_HOSTS = args.client_hosts.split(',')
 
+# Each of the config propagation in the control plane should finish within 600s.
+# Otherwise, it indicates a bug in the control plane. The config propagation
+# includes all kinds of traffic config update, like updating urlMap, creating
+# the resources for the first time, updating BackendService, and changing the
+# status of endpoints in BackendService.
+_WAIT_FOR_URL_MAP_PATCH_SEC = 600
+# In general, fetching load balancing stats only takes ~10s. However, slow
+# config update could lead to empty EDS or similar symptoms causing the
+# connection to hang for a long period of time. So, we want to extend the stats
+# wait time to be the same as urlMap patch time.
+_WAIT_FOR_STATS_SEC = _WAIT_FOR_URL_MAP_PATCH_SEC
+
 _DEFAULT_SERVICE_PORT = 80
 _WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
 _WAIT_FOR_OPERATION_SEC = 1200
 _INSTANCE_GROUP_SIZE = args.instance_group_size
 _NUM_TEST_RPCS = 10 * args.qps
-_WAIT_FOR_STATS_SEC = 360
-_WAIT_FOR_VALID_CONFIG_SEC = 60
-_WAIT_FOR_URL_MAP_PATCH_SEC = 300
 _CONNECTION_TIMEOUT_SEC = 60
 _GCP_API_RETRIES = 5
 _BOOTSTRAP_TEMPLATE = """
