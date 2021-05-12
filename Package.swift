@@ -22,6 +22,8 @@ let package = Package(
   dependencies: [
     .package(
       name: "abseil",
+      //TODO(yulinliang): Firebase abseil is too old, update the dependency
+      //when abseil repo supports SPM.
       url: "https://github.com/firebase/abseil-cpp-SwiftPM.git",
       .revision("05d8107f2971a37e6c77245b7c4c6b0a7e97bc99")
     ),
@@ -139,6 +141,13 @@ let package = Package(
         .headerSearchPath("src/core/ext/upb-generated"),
         .unsafeFlags(["-Wno-module-import-in-extern-c"]),
       ]
+    ),
+    .testTarget(
+      name: "build-test",
+      dependencies: [
+        "gRPC-cpp",
+      ],
+      path: "test/spm_build"
     ),
   ],
   cLanguageStandard: .gnu11,
