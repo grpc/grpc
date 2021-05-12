@@ -52,8 +52,6 @@ elseif(gRPC_S2A_CORE_PROVIDER STREQUAL "package")
   set(_gRPC_S2A_CORE_INCLUDE_DIR ${S2A_CORE_INCLUDE_DIRS})
   set(_gRPC_FIND_S2A_CORE "if(NOT s2a_core_FOUND)\n  find_package(s2a_core)\nendif()")
 endif()
-#if (_gRPC_SSL_LIBRARIES)
-#  set(S2A_CORE_SSL_LIBRARIES _gRPC_SSL_LIBRARIES)
-#else()
-#  message(WARNING "_gRPC_SSL_LIBRARIES not set, cannot set S2A_CORE_SSL_LIBRARIES")
-#endif()
+
+# Needed because gRPC is using an old UPB version.
+add_compile_definitions(S2A_CORE_USE_OLD_UPB_APIS="true")

@@ -71,6 +71,15 @@ ExternalProject_Add(re2
         -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/re2
 )
 
+# Builds s2a-core project from the git submodule.
+ExternalProject_Add(s2a-core
+  PREFIX s2a-core
+  SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../../../../third_party/s2a-core"
+  CMAKE_CACHE_ARGS
+        -DCMAKE_POSITION_INDEPENDENT_CODE:BOOL=TRUE
+        -DCMAKE_INSTALL_PREFIX:PATH=${CMAKE_CURRENT_BINARY_DIR}/s2a-core
+)
+
 # Builds zlib project from the git submodule.
 ExternalProject_Add(zlib
   PREFIX zlib

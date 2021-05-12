@@ -158,7 +158,8 @@ BUILD_WITH_SYSTEM_RE2 = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_RE2', 'False')
 # Export this variable to use the system installation of s2a-core. You need to
 # have the header files installed (in /usr/include/s2a-core) and during
 # runtime, the shared library must be installed
-BUILD_WITH_SYSTEM_S2A_CORE = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_S2A_CORE', 'False')
+BUILD_WITH_SYSTEM_S2A_CORE = _env_bool_value(
+    'GRPC_PYTHON_BUILD_SYSTEM_S2A_CORE', 'False')
 
 # Export this variable to force building the python extension with a statically linked libstdc++.
 # At least on linux, this is normally not needed as we can build manylinux-compatible wheels on linux just fine
@@ -303,8 +304,9 @@ if BUILD_WITH_SYSTEM_RE2:
     RE2_INCLUDE = (os.path.join('/usr', 'include', 're2'),)
 
 if BUILD_WITH_SYSTEM_S2A_CORE:
-     CORE_C_FILES = filter(lambda x: 'third_party/s2a-core' not in x, CORE_C_FILES)
-     S2A_CORE_INCLUDE = (os.path.join('/usr', 'include', 's2a-core'),)
+    CORE_C_FILES = filter(lambda x: 'third_party/s2a-core' not in x,
+                          CORE_C_FILES)
+    S2A_CORE_INCLUDE = (os.path.join('/usr', 'include', 's2a-core'),)
 
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
