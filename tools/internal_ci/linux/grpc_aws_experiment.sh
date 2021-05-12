@@ -51,6 +51,7 @@ AWS_INSTANCE_MAX_LIFESPAN_MINS=120
 # increase the size of the root volume so that builds don't run out of disk space
 AWS_STORAGE_SIZE_GB=75
 AWS_DEVICE_MAPPING="DeviceName='/dev/sda1',Ebs={VolumeSize=${AWS_STORAGE_SIZE_GB}}"
+AWS_INSTANCE_TAGS="ResourceType='instance',Tags=[{Key='kokoro_job_name',Value='${KOKORO_JOB_NAME}'},{Key='kokoro_build_number',Value='${KOKORO_BUILD_NUMBER}'},{Key='kokoro_aws_integration',Value='true'}]"
 
 ssh-keygen -N '' -t rsa -b 4096 -f ~/.ssh/temp_client_key
 ssh-keygen -N '' -t ecdsa -b 256 -f ~/.ssh/temp_server_key
@@ -76,6 +77,7 @@ ID=$(aws ec2 run-instances --image-id $AWS_MACHINE_IMAGE --instance-initiated-sh
     --security-group-ids $AWS_SECURITY_GROUP \
     --user-data file://userdata \
     --block-device-mapping "$AWS_DEVICE_MAPPING" \
+    --tag-specifications "$AWS_INSTANCE_TAGS" \
     --region us-east-2 | jq .Instances[0].InstanceId | sed 's/"//g')
 echo "instance-id=$ID"
 echo "Waiting 1m for instance ip..."
