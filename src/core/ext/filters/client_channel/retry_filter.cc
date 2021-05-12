@@ -318,8 +318,6 @@ class RetryFilter::CallData {
       grpc_closure on_complete_;
     };
 
-// FIXME: remove this?
-// (won't be needed if we decide not to use this API for existing cluster refs)
     class AttemptDispatchController
         : public ConfigSelector::CallDispatchController {
      public:
@@ -336,12 +334,11 @@ class RetryFilter::CallData {
         if (calld->retry_committed_) {
           auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
               calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-          auto* call_dispatch_controller =
-              service_config_call_data->call_dispatch_controller();
-          GPR_ASSERT(call_dispatch_controller != nullptr);
-          call_dispatch_controller->Commit();
+          service_config_call_data->call_dispatch_controller()->Commit();
         }
       }
+
+      void Orphan() override {}  // No-op -- not actually ref-counted.
 
      private:
       CallAttempt* call_attempt_;
@@ -672,12 +669,7 @@ RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld)
       started_recv_trailing_metadata_(false),
       completed_recv_trailing_metadata_(false),
       retry_dispatched_(false) {
-  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-      calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-  lb_call_ = calld->CreateLoadBalancedCall(
-      service_config_call_data->call_dispatch_controller() == nullptr
-          ? nullptr
-          : &attempt_dispatch_controller_);
+  lb_call_ = calld->CreateLoadBalancedCall(&attempt_dispatch_controller_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: attempt=%p: create lb_call=%p",
             calld->chand_, calld, this, lb_call_.get());
@@ -1100,10 +1092,7 @@ bool RetryFilter::CallData::CallAttempt::BatchData::MaybeRetry(
 // FIXME: maybe do this only on first retry attempt?
   auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
       calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-  auto* call_dispatch_controller =
-      service_config_call_data->call_dispatch_controller();
-  if (call_dispatch_controller != nullptr &&
-      !call_dispatch_controller->ShouldRetry()) {
+  if (!service_config_call_data->call_dispatch_controller()->ShouldRetry()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: call dispatch controller denied retry",
@@ -2181,8 +2170,8 @@ void RetryFilter::CallData::RetryCommit(CallAttempt* call_attempt) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: committing retries", chand_, this);
   }
   if (call_attempt != nullptr) {
-    // If the call attempt's LB call has been committed and we have a call
-    // dispatch controller, inform it that the call has been committed.
+    // If the call attempt's LB call has been committed, inform the call
+    // dispatch controller that the call has been committed.
     // Note: If call_attempt is null, this is happening before the first
     // retry attempt is started, in which case we'll just pass the real
     // call dispatch controller down into the LB call, and it won't be
@@ -2190,11 +2179,7 @@ void RetryFilter::CallData::RetryCommit(CallAttempt* call_attempt) {
     if (call_attempt_->lb_call_committed()) {
       auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
           call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
-      auto* call_dispatch_controller =
-          service_config_call_data->call_dispatch_controller();
-      if (call_dispatch_controller != nullptr) {
-        call_dispatch_controller->Commit();
-      }
+      service_config_call_data->call_dispatch_controller()->Commit();
     }
     // Free cached send ops.
     call_attempt->FreeCachedSendOpDataAfterCommit();

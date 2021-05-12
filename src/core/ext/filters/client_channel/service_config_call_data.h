@@ -73,11 +73,40 @@ class ServiceConfigCallData {
     return call_attributes_;
   }
 
-  ConfigSelector::CallDispatchController* call_dispatch_controller() const {
-    return call_dispatch_controller_;
+  ConfigSelector::CallDispatchController* call_dispatch_controller() {
+    return &call_dispatch_controller_;
   }
 
  private:
+  // A wrapper that ensures that we call Commit() at most once.
+  class SingleCommitCallDispatchController
+      : public ConfigSelector::CallDispatchController {
+   public:
+    explicit SingleCommitCallDispatchController(
+        ConfigSelector::CallDispatchController* call_dispatch_controller)
+        : call_dispatch_controller_(call_dispatch_controller) {}
+
+    bool ShouldRetry() override {
+      if (call_dispatch_controller_ != nullptr) {
+        return call_dispatch_controller_->ShouldRetry();
+      }
+      return true;
+    }
+
+    void Commit() override {
+      if (call_dispatch_controller_ != nullptr && !commit_called_) {
+        call_dispatch_controller_->Commit();
+        commit_called_ = true;
+      }
+    }
+
+    void Orphan() override {}  // No-op -- not actually ref-counted.
+
+   private:
+    ConfigSelector::CallDispatchController* call_dispatch_controller_;
+    bool commit_called_ = false;
+  };
+
   static void Destroy(void* ptr) {
     ServiceConfigCallData* self = static_cast<ServiceConfigCallData*>(ptr);
     self->~ServiceConfigCallData();
@@ -86,7 +115,7 @@ class ServiceConfigCallData {
   RefCountedPtr<ServiceConfig> service_config_;
   const ServiceConfigParser::ParsedConfigVector* method_configs_;
   ConfigSelector::CallAttributes call_attributes_;
-  ConfigSelector::CallDispatchController* call_dispatch_controller_;
+  SingleCommitCallDispatchController call_dispatch_controller_;
 };
 
 }  // namespace grpc_core

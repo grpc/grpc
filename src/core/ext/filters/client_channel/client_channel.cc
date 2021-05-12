@@ -174,9 +174,9 @@ class ClientChannel::CallData {
   void MaybeAddCallToResolverQueuedCallsLocked(grpc_call_element* elem)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(&ClientChannel::resolution_mu_);
 
-  static void RecvInitialMetadataReadyForConfigSelectorCommitCallback(
+  static void RecvTrailingMetadataReadyForConfigSelectorCommitCallback(
       void* arg, grpc_error_handle error);
-  void InjectRecvInitialMetadataReadyForConfigSelectorCommitCallback(
+  void InjectRecvTrailingMetadataReadyForConfigSelectorCommitCallback(
       grpc_transport_stream_op_batch* batch);
 
   void CreateDynamicCall(grpc_call_element* elem);
@@ -211,10 +211,8 @@ class ClientChannel::CallData {
   ResolverQueuedCallCanceller* resolver_call_canceller_
       ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = nullptr;
 
-  std::function<void()> on_call_committed_;
-
-  grpc_closure* original_recv_initial_metadata_ready_ = nullptr;
-  grpc_closure recv_initial_metadata_ready_;
+  grpc_closure* original_recv_trailing_metadata_ready_ = nullptr;
+  grpc_closure recv_trailing_metadata_ready_;
 
   RefCountedPtr<DynamicFilters> dynamic_filters_;
   RefCountedPtr<DynamicFilters::Call> dynamic_call_;
@@ -1924,9 +1922,11 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
   if (GPR_LIKELY(chand->deadline_checking_enabled_)) {
     grpc_deadline_state_client_start_transport_stream_op_batch(elem, batch);
   }
-  // Intercept recv_initial_metadata for config selector on-committed callback.
-  if (batch->recv_initial_metadata) {
-    calld->InjectRecvInitialMetadataReadyForConfigSelectorCommitCallback(batch);
+  // Intercept recv_trailing_metadata to call CallDispatchController::Commit(),
+  // in case we wind up failing the call before we get down to the retry
+  // or LB call layer.
+  if (batch->recv_trailing_metadata) {
+    calld->InjectRecvTrailingMetadataReadyForConfigSelectorCommitCallback(batch);
   }
   // If we've previously been cancelled, immediately fail any new batches.
   if (GPR_UNLIKELY(calld->cancel_error_ != GRPC_ERROR_NONE)) {
@@ -2223,7 +2223,6 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
     ConfigSelector::CallConfig call_config =
         config_selector->GetCallConfig({&path_, initial_metadata, arena_});
     if (call_config.error != GRPC_ERROR_NONE) return call_config.error;
-    on_call_committed_ = std::move(call_config.on_call_committed);
     // Create a ServiceConfigCallData for the call.  This stores a ref to the
     // ServiceConfig and caches the right set of parsed configs to use for
     // the call.  The MethodConfig will store itself in the call context,
@@ -2271,30 +2270,29 @@ grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
 }
 
 void ClientChannel::CallData::
-    RecvInitialMetadataReadyForConfigSelectorCommitCallback(
+    RecvTrailingMetadataReadyForConfigSelectorCommitCallback(
         void* arg, grpc_error_handle error) {
   auto* self = static_cast<CallData*>(arg);
-  if (self->on_call_committed_ != nullptr) {
-    self->on_call_committed_();
-    self->on_call_committed_ = nullptr;
+  auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
+      self->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+  if (service_config_call_data != nullptr) {
+    service_config_call_data->call_dispatch_controller()->Commit();
   }
   // Chain to original callback.
-  Closure::Run(DEBUG_LOCATION, self->original_recv_initial_metadata_ready_,
+  Closure::Run(DEBUG_LOCATION, self->original_recv_trailing_metadata_ready_,
                GRPC_ERROR_REF(error));
 }
 
-// TODO(roth): Consider not intercepting this callback unless we
-// actually need to, if this causes a performance problem.
 void ClientChannel::CallData::
-    InjectRecvInitialMetadataReadyForConfigSelectorCommitCallback(
+    InjectRecvTrailingMetadataReadyForConfigSelectorCommitCallback(
         grpc_transport_stream_op_batch* batch) {
-  original_recv_initial_metadata_ready_ =
-      batch->payload->recv_initial_metadata.recv_initial_metadata_ready;
-  GRPC_CLOSURE_INIT(&recv_initial_metadata_ready_,
-                    RecvInitialMetadataReadyForConfigSelectorCommitCallback,
+  original_recv_trailing_metadata_ready_ =
+      batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready;
+  GRPC_CLOSURE_INIT(&recv_trailing_metadata_ready_,
+                    RecvTrailingMetadataReadyForConfigSelectorCommitCallback,
                     this, nullptr);
-  batch->payload->recv_initial_metadata.recv_initial_metadata_ready =
-      &recv_initial_metadata_ready_;
+  batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready =
+      &recv_trailing_metadata_ready_;
 }
 
 void ClientChannel::CallData::AsyncResolutionDone(grpc_call_element* elem,
@@ -2570,12 +2568,6 @@ ClientChannel::LoadBalancedCall::~LoadBalancedCall() {
   if (on_call_destruction_complete_ != nullptr) {
     ExecCtx::Run(DEBUG_LOCATION, on_call_destruction_complete_,
                  GRPC_ERROR_NONE);
-  }
-}
-
-void ClientChannel::LoadBalancedCall::ReportCallCommitted() {
-  if (call_dispatch_controller_ != nullptr) {
-    call_dispatch_controller_->Commit();
   }
 }
 
@@ -2887,7 +2879,7 @@ class ClientChannel::LoadBalancedCall::LbQueuedCallCanceller {
                 lb_call->lb_call_canceller_);
       }
       if (lb_call->lb_call_canceller_ == self && error != GRPC_ERROR_NONE) {
-        lb_call->ReportCallCommitted();
+        lb_call->call_dispatch_controller_->Commit();
         // Remove pick from list of queued picks.
         lb_call->MaybeRemoveCallFromLbQueuedCallsLocked();
         // Fail pending batches on the call.
@@ -2945,7 +2937,7 @@ void ClientChannel::LoadBalancedCall::PickDone(void* arg,
     self->PendingBatchesFail(GRPC_ERROR_REF(error), YieldCallCombiner);
     return;
   }
-  self->ReportCallCommitted();
+  self->call_dispatch_controller_->Commit();
   self->CreateSubchannelCall();
 }
 

@@ -36,7 +36,7 @@ void ConfigSelectorArgDestroy(void* p) {
 
 int ConfigSelectorArgCmp(void* p, void* q) { return GPR_ICMP(p, q); }
 
-const grpc_arg_pointer_vtable kConfigSelectorChannelArgVtable = {
+const grpc_arg_pointer_vtable kChannelArgVtable = {
     ConfigSelectorArgCopy, ConfigSelectorArgDestroy, ConfigSelectorArgCmp};
 
 }  // namespace
@@ -44,7 +44,7 @@ const grpc_arg_pointer_vtable kConfigSelectorChannelArgVtable = {
 grpc_arg ConfigSelector::MakeChannelArg() const {
   return grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_CONFIG_SELECTOR),
-      const_cast<ConfigSelector*>(this), &kConfigSelectorChannelArgVtable);
+      const_cast<ConfigSelector*>(this), &kChannelArgVtable);
 }
 
 RefCountedPtr<ConfigSelector> ConfigSelector::GetFromChannelArgs(

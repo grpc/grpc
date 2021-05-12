@@ -31,6 +31,7 @@
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/transport/metadata_batch.h"
@@ -47,7 +48,7 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   using CallAttributes = std::map<const char*, absl::string_view>;
 
   // An interface to be used by the channel when dispatching calls.
-  class CallDispatchController : public RefCounted<CallDispatchController> {
+  class CallDispatchController : public DualRefCounted<CallDispatchController> {
    public:
     virtual ~CallDispatchController() = default;
 
@@ -79,10 +80,6 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
     CallAttributes call_attributes;
     // Call dispatch controller.
     CallDispatchController* call_dispatch_controller = nullptr;
-    // A callback that, if set, will be invoked when the call is
-    // committed (i.e., when we know that we will never again need to
-    // ask the picker for a subchannel for this call).
-    std::function<void()> on_call_committed;
   };
 
   ~ConfigSelector() override = default;
