@@ -1951,16 +1951,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     }
   };
 
-  // Creating a header address_hash that will hash to a given backend:
-  // the header value matches the value used to create the entry in the ring.
-  std::vector<std::pair<std::string, std::string>>
-  CreateHeaderAddressHashForBackend(size_t index) {
-    return {
-        {"address_hash", absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":",
-                                      backends_[index]->port(), "_0")},
-    };
-  }
-
   template <typename Stub>
   Status SendRpcMethod(Stub* stub, const RpcOptions& rpc_options,
                        ClientContext* context, EchoRequest& request,
@@ -2082,6 +2072,11 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             static_cast<unsigned long>(backend_idx));
     do {
       Status status = SendRpc(rpc_options);
+      if (!status.ok()) {
+        gpr_log(GPR_INFO,
+                "Wait for backend to be up, currently getting %d and %s",
+                status.error_code(), status.error_message().c_str());
+      }
       if (!wait_options.allow_failures) {
         EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                  << " message=" << status.error_message();
@@ -2104,6 +2099,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
       addresses.emplace_back(address.addr, address.len, nullptr);
     }
     return addresses;
+  }
+
+  std::string CreateMetadataValueThatHashesToBackendPort(int port) {
+    return absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":", port, "_0");
+  }
+
+  std::string CreateMetadataValueThatHashesToBackend(int index) {
+    return CreateMetadataValueThatHashesToBackendPort(backends_[index]->port());
   }
 
   void SetNextResolution(
@@ -2789,8 +2792,8 @@ TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
   }
 }
 
-// Tests that subchannel sharing works when the same backend is listed multiple
-// times.
+// Tests that subchannel sharing works when the same backend is listed
+// multiple times.
 TEST_P(BasicTest, SameBackendListedMultipleTimes) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -2875,8 +2878,8 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
 }
 
-// Tests that RPCs fail when the backends are down, and will succeed again after
-// the backends are restarted.
+// Tests that RPCs fail when the backends are down, and will succeed again
+// after the backends are restarted.
 TEST_P(BasicTest, BackendsRestart) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -2890,13 +2893,13 @@ TEST_P(BasicTest, BackendsRestart) {
   ShutdownAllBackends();
   // Sending multiple failed requests instead of just one to ensure that the
   // client notices that all backends are down before we restart them. If we
-  // didn't do this, then a single RPC could fail here due to the race condition
-  // between the LB pick and the GOAWAY from the chosen backend being shut down,
-  // which would not actually prove that the client noticed that all of the
-  // backends are down. Then, when we send another request below (which we
-  // expect to succeed), if the callbacks happen in the wrong order, the same
-  // race condition could happen again due to the client not yet having noticed
-  // that the backends were all down.
+  // didn't do this, then a single RPC could fail here due to the race
+  // condition between the LB pick and the GOAWAY from the chosen backend
+  // being shut down, which would not actually prove that the client noticed
+  // that all of the backends are down. Then, when we send another request
+  // below (which we expect to succeed), if the callbacks happen in the wrong
+  // order, the same race condition could happen again due to the client not
+  // yet having noticed that the backends were all down.
   CheckRpcSendFailure(num_backends_);
   // Restart all backends.  RPCs should start succeeding again.
   StartAllBackends();
@@ -3482,7 +3485,8 @@ TEST_P(LdsTest, RdsMissingConfigSource) {
 }
 
 // Tests that LDS client should send a NACK if the rds message in the
-// http_connection_manager has a config_source field that does not specify ADS.
+// http_connection_manager has a config_source field that does not specify
+// ADS.
 TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   auto listener = default_listener_;
   HttpConnectionManager http_connection_manager;
@@ -3500,10 +3504,9 @@ TEST_P(LdsTest, RdsConfigSourceDoesNotSpecifyAds) {
   const auto response_state =
       balancers_[0]->ads_service()->lds_response_state();
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      response_state.error_message,
-      ::testing::HasSubstr(
-          "HttpConnectionManager ConfigSource for RDS does not specify ADS."));
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("HttpConnectionManager ConfigSource for "
+                                   "RDS does not specify ADS."));
 }
 
 // Tests that we ignore filters after the router filter.
@@ -3874,8 +3877,8 @@ TEST_P(LdsRdsTest, NoMatchedDomain) {
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Tests that LDS client should choose the virtual host with matching domain if
-// multiple virtual hosts exist in the LDS response.
+// Tests that LDS client should choose the virtual host with matching domain
+// if multiple virtual hosts exist in the LDS response.
 TEST_P(LdsRdsTest, ChooseMatchedDomain) {
   RouteConfiguration route_config = default_route_config_;
   *(route_config.add_virtual_hosts()) = route_config.virtual_hosts(0);
@@ -4214,10 +4217,9 @@ TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasEmptyClusterName) {
   CheckRpcSendFailure();
   const auto response_state = RouteConfigurationResponseState(0);
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::NACKED);
-  EXPECT_THAT(
-      response_state.error_message,
-      ::testing::HasSubstr(
-          "RouteAction weighted_cluster cluster contains empty cluster name."));
+  EXPECT_THAT(response_state.error_message,
+              ::testing::HasSubstr("RouteAction weighted_cluster cluster "
+                                   "contains empty cluster name."));
 }
 
 TEST_P(LdsRdsTest, RouteActionWeightedTargetClusterHasNoWeight) {
@@ -4973,8 +4975,8 @@ TEST_P(LdsRdsTest, XdsRoutingWeightedClusterUpdateWeights) {
   // Change Route Configurations: same clusters different weights.
   weighted_cluster1->mutable_weight()->set_value(kWeight50);
   weighted_cluster2->mutable_weight()->set_value(kWeight50);
-  // Change default route to a new cluster to help to identify when new polices
-  // are seen by the client.
+  // Change default route to a new cluster to help to identify when new
+  // polices are seen by the client.
   default_route->mutable_route()->set_cluster(kNewCluster3Name);
   SetRouteConfiguration(0, new_route_config);
   ResetBackendCounters();
@@ -5239,8 +5241,8 @@ TEST_P(LdsRdsTest, XdsRoutingClusterUpdateClustersWithPickingDelays) {
       new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   default_route->mutable_route()->set_cluster(kNewClusterName);
   SetRouteConfiguration(0, new_route_config);
-  // Wait for RPCs to go to the new backend: 1, this ensures that the client has
-  // processed the update.
+  // Wait for RPCs to go to the new backend: 1, this ensures that the client
+  // has processed the update.
   WaitForBackend(
       1, WaitForBackendOptions().set_reset_counters(false).set_allow_failures(
              true));
@@ -6629,8 +6631,8 @@ TEST_P(CdsTest, AggregateClusterTypeDisabled) {
               ::testing::HasSubstr("DiscoveryType is not valid."));
 }
 
-// Tests that CDS client should send a NACK if the cluster type in CDS response
-// is unsupported.
+// Tests that CDS client should send a NACK if the cluster type in CDS
+// response is unsupported.
 TEST_P(CdsTest, UnsupportedClusterType) {
   auto cluster = default_cluster_;
   cluster.set_type(Cluster::STATIC);
@@ -6676,8 +6678,8 @@ TEST_P(CdsTest, MultipleBadResources) {
                       kClusterName2, ": DiscoveryType is not valid."))));
 }
 
-// Tests that CDS client should send a NACK if the eds_config in CDS response is
-// other than ADS.
+// Tests that CDS client should send a NACK if the eds_config in CDS response
+// is other than ADS.
 TEST_P(CdsTest, WrongEdsConfig) {
   auto cluster = default_cluster_;
   cluster.mutable_eds_cluster_config()->mutable_eds_config()->mutable_self();
@@ -6692,8 +6694,8 @@ TEST_P(CdsTest, WrongEdsConfig) {
               ::testing::HasSubstr("EDS ConfigSource is not ADS."));
 }
 
-// Tests that CDS client should send a NACK if the lb_policy in CDS response is
-// other than ROUND_ROBIN.
+// Tests that CDS client should send a NACK if the lb_policy in CDS response
+// is other than ROUND_ROBIN.
 TEST_P(CdsTest, WrongLbPolicy) {
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::LEAST_REQUEST);
@@ -6708,8 +6710,8 @@ TEST_P(CdsTest, WrongLbPolicy) {
               ::testing::HasSubstr("LB policy is not supported."));
 }
 
-// Tests that CDS client should send a NACK if the lrs_server in CDS response is
-// other than SELF.
+// Tests that CDS client should send a NACK if the lrs_server in CDS response
+// is other than SELF.
 TEST_P(CdsTest, WrongLrsServer) {
   auto cluster = default_cluster_;
   cluster.mutable_lrs_server()->mutable_ads();
@@ -6724,8 +6726,8 @@ TEST_P(CdsTest, WrongLrsServer) {
               ::testing::HasSubstr("LRS ConfigSource is not self."));
 }
 
-// Tests that ring hash policy that hashes using channel id ensures all RPCs to
-// go 1 particular backend.
+// Tests that ring hash policy that hashes using channel id ensures all RPCs
+// to go 1 particular backend.
 TEST_P(CdsTest, RingHashChannelIdHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
@@ -6756,8 +6758,8 @@ TEST_P(CdsTest, RingHashChannelIdHashing) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
-// Tests that ring hash policy that hashes using a header value can spread RPCs
-// across all the backends.
+// Tests that ring hash policy that hashes using a header value can spread
+// RPCs across all the backends.
 TEST_P(CdsTest, RingHashHeaderHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
@@ -6775,16 +6777,16 @@ TEST_P(CdsTest, RingHashHeaderHashing) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
   // Note each type of RPC will contains a header value that will always be
-  // hashed to a specific backend as the header value matches the value used to
-  // create the entry in the ring.
-  std::vector<std::pair<std::string, std::string>> metadata =
-      CreateHeaderAddressHashForBackend(0);
-  std::vector<std::pair<std::string, std::string>> metadata1 =
-      CreateHeaderAddressHashForBackend(1);
-  std::vector<std::pair<std::string, std::string>> metadata2 =
-      CreateHeaderAddressHashForBackend(2);
-  std::vector<std::pair<std::string, std::string>> metadata3 =
-      CreateHeaderAddressHashForBackend(3);
+  // hashed to a specific backend as the header value matches the value used
+  // to create the entry in the ring.
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
+  std::vector<std::pair<std::string, std::string>> metadata1 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
+  std::vector<std::pair<std::string, std::string>> metadata2 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
+  std::vector<std::pair<std::string, std::string>> metadata3 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
   const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
@@ -6827,14 +6829,14 @@ TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  std::vector<std::pair<std::string, std::string>> metadata =
-      CreateHeaderAddressHashForBackend(0);
-  std::vector<std::pair<std::string, std::string>> metadata1 =
-      CreateHeaderAddressHashForBackend(1);
-  std::vector<std::pair<std::string, std::string>> metadata2 =
-      CreateHeaderAddressHashForBackend(2);
-  std::vector<std::pair<std::string, std::string>> metadata3 =
-      CreateHeaderAddressHashForBackend(3);
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
+  std::vector<std::pair<std::string, std::string>> metadata1 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(1)}};
+  std::vector<std::pair<std::string, std::string>> metadata2 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(2)}};
+  std::vector<std::pair<std::string, std::string>> metadata3 = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(3)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   const auto rpc_options1 = RpcOptions().set_metadata(std::move(metadata1));
   const auto rpc_options2 = RpcOptions().set_metadata(std::move(metadata2));
@@ -6882,8 +6884,8 @@ TEST_P(CdsTest, RingHashNoHashPolicy) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
-// Test that ring hash policy evaluation will continue past the terminal policy
-// if no results are produced yet.
+// Test that ring hash policy evaluation will continue past the terminal
+// policy if no results are produced yet.
 TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
@@ -6892,7 +6894,7 @@ TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   auto* hash_policy = route->mutable_route()->add_hash_policy();
-  hash_policy->mutable_header()->set_header_name("fixed_header");
+  hash_policy->mutable_header()->set_header_name("header_not_present");
   hash_policy->set_terminal(true);
   auto* hash_policy2 = route->mutable_route()->add_hash_policy();
   hash_policy2->mutable_header()->set_header_name("address_hash");
@@ -6902,8 +6904,8 @@ TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  std::vector<std::pair<std::string, std::string>> metadata =
-      CreateHeaderAddressHashForBackend(0);
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   CheckRpcSendOk(100, rpc_options);
   EXPECT_EQ(backends_[0]->backend_service()->request_count(), 100);
@@ -6925,7 +6927,7 @@ TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
   auto new_route_config = default_route_config_;
   auto* route = new_route_config.mutable_virtual_hosts(0)->mutable_routes(0);
   auto* hash_policy = route->mutable_route()->add_hash_policy();
-  hash_policy->mutable_header()->set_header_name("fixed_header");
+  hash_policy->mutable_header()->set_header_name("header_not_present");
   SetListenerAndRouteConfiguration(0, default_listener_, new_route_config);
   AdsServiceImpl::EdsResourceArgs args(
       {{"locality0", CreateEndpointsForBackends(0, 2)}});
@@ -6933,7 +6935,7 @@ TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
-      {"fixed_header_2", absl::StrFormat("%" PRIu32, rand())},
+      {"unmatched_header", absl::StrFormat("%" PRIu32, rand())},
   };
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   WaitForAllBackends(0, 2, WaitForBackendOptions(), rpc_options);
@@ -6947,7 +6949,8 @@ TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
-// Test random hash is used when only unsupported hash policies are configured.
+// Test random hash is used when only unsupported hash policies are
+// configured.
 TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const double kDistribution50Percent = 0.5;
@@ -6984,8 +6987,8 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
-// Tests that ring hash policy that hashes using a random value can spread RPCs
-// across all the backends according to locality weight.
+// Tests that ring hash policy that hashes using a random value can spread
+// RPCs across all the backends according to locality weight.
 TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const size_t kWeight1 = 1;
@@ -7019,8 +7022,8 @@ TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
-// Tests that ring hash policy that hashes using a random value can spread RPCs
-// across all the backends according to locality weight.
+// Tests that ring hash policy that hashes using a random value can spread
+// RPCs across all the backends according to locality weight.
 TEST_P(CdsTest,
        RingHashRandomHashingDistributionAccordingToLocalityAndEndpointWeight) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
@@ -7097,9 +7100,9 @@ TEST_P(CdsTest, RingHashEndpointWeightDoesNotImpactWeightedRoundRobin) {
               ::testing::DoubleNear(kLocalityWeightRate1, kErrorTolerance));
 }
 
-// Tests that ring hash policy that hashes using a fixed string ensures all RPCs
-// to go 1 particular backend; and that subsequent hashing policies are ignored
-// due to the setting of terminal.
+// Tests that ring hash policy that hashes using a fixed string ensures all
+// RPCs to go 1 particular backend; and that subsequent hashing policies are
+// ignored due to the setting of terminal.
 TEST_P(CdsTest, RingHashFixedHashingTerminalPolicy) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
@@ -7139,7 +7142,8 @@ TEST_P(CdsTest, RingHashFixedHashingTerminalPolicy) {
 }
 
 // Test that the channel will go from idle to ready via connecting;
-// (tho it is not possible to catch the connecting state before moving to ready)
+// (tho it is not possible to catch the connecting state before moving to
+// ready)
 TEST_P(CdsTest, RingHashIdleToReady) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
@@ -7162,13 +7166,13 @@ TEST_P(CdsTest, RingHashIdleToReady) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
-// Test that when the first pick is down leading to a transient failure, we will
-// move on to the next ring hash entry.  And if the next ring hash entry is also
-// down, we will look for any connected subchannel.
-// This test will definitely test the first attempt to use the next ring hash
-// entry, and since the down backend is heavily weighted, it is very possible
-// the the next entry will also be for that backend and was down, leading to
-// test looking for any connected subchannel.
+// Test that when the first pick is down leading to a transient failure, we
+// will move on to the next ring hash entry.  And if the next ring hash entry
+// is also down, we will look for any connected subchannel. This test will
+// definitely test the first attempt to use the next ring hash entry, and
+// since the down backend is heavily weighted, it is very possible the the
+// next entry will also be for that backend and was down, leading to test
+// looking for any connected subchannel.
 TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
@@ -7191,7 +7195,7 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   SetNextResolutionForLbChannelAllBalancers();
   std::vector<std::pair<std::string, std::string>> metadata = {
       {"address_hash",
-       absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":", unused_port, "_0")}};
+       CreateMetadataValueThatHashesToBackendPort(unused_port)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
@@ -7226,8 +7230,8 @@ TEST_P(CdsTest, RingHashSwitchToLowerPrioirtyAndThenBack) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  std::vector<std::pair<std::string, std::string>> metadata =
-      CreateHeaderAddressHashForBackend(0);
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   WaitForBackend(0, WaitForBackendOptions(), rpc_options);
   ShutdownBackend(0);
@@ -7262,8 +7266,8 @@ TEST_P(CdsTest, RingHashAllFailReattempt) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  std::vector<std::pair<std::string, std::string>> metadata =
-      CreateHeaderAddressHashForBackend(0);
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   ShutdownBackend(1);
@@ -7300,8 +7304,8 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
   SetNextResolutionForLbChannelAllBalancers();
-  std::vector<std::pair<std::string, std::string>> metadata =
-      CreateHeaderAddressHashForBackend(0);
+  std::vector<std::pair<std::string, std::string>> metadata = {
+      {"address_hash", CreateMetadataValueThatHashesToBackend(0)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
   EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
   ShutdownBackend(0);
@@ -7314,14 +7318,15 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
   WaitForBackend(0, WaitForBackendOptions(), rpc_options);
   // Bring down 0 and bring up 1.
-  // Note the RPC contains a header value that will always be hashed to backend
-  // 0. So by purposely bring down backend 0 and bring up another backend, this
-  // will ensure Picker's first choice of backend 0 will fail and it will
+  // Note the RPC contains a header value that will always be hashed to
+  // backend 0. So by purposely bring down backend 0 and bring up another
+  // backend, this will ensure Picker's first choice of backend 0 will fail
+  // and it will
   // 1. reattempt backend 0 and
   // 2. go through the remaining subchannels to find one in READY.
-  // Since the the entries in the ring is pretty distributed and we have unused
-  // ports to fill the ring, it is almost guaranteed that the Picker will go
-  // through some non-READY entries and skip them as per design.
+  // Since the the entries in the ring is pretty distributed and we have
+  // unused ports to fill the ring, it is almost guaranteed that the Picker
+  // will go through some non-READY entries and skip them as per design.
   ShutdownBackend(0);
   StartBackend(1);
   EXPECT_TRUE(channel_->WaitForConnected(
@@ -7330,7 +7335,8 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
-// Test unspported hash policy types are all ignored before a supported policy.
+// Test unspported hash policy types are all ignored before a supported
+// policy.
 TEST_P(CdsTest, RingHashUnsupportedHashPolicyUntilChannelIdHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
@@ -7369,8 +7375,8 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyUntilChannelIdHashing) {
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 
-// Test we nack when ring hash policy has invalid hash function (something other
-// than XX_HASH.
+// Test we nack when ring hash policy has invalid hash function (something
+// other than XX_HASH.
 TEST_P(CdsTest, RingHashPolicyHasInvalidHashFunction) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
@@ -7505,8 +7511,8 @@ class XdsSecurityTest : public BasicTest {
     root_cert_ = ReadFile(kCaCertPath);
     bad_root_cert_ = ReadFile(kBadClientCertPath);
     identity_pair_ = ReadTlsIdentityPair(kClientKeyPath, kClientCertPath);
-    // TODO(yashykt): Use different client certs here instead of reusing server
-    // certs after https://github.com/grpc/grpc/pull/24876 is merged
+    // TODO(yashykt): Use different client certs here instead of reusing
+    // server certs after https://github.com/grpc/grpc/pull/24876 is merged
     fallback_identity_pair_ =
         ReadTlsIdentityPair(kServerKeyPath, kServerCertPath);
     bad_identity_pair_ =
@@ -8307,7 +8313,8 @@ TEST_P(XdsEnabledServerTest,
   EXPECT_EQ(response_state.state, AdsServiceImpl::ResponseState::ACKED);
 }
 
-// Verify that a mismatch of listening address results in "not serving" status.
+// Verify that a mismatch of listening address results in "not serving"
+// status.
 TEST_P(XdsEnabledServerTest, ListenerAddressMismatch) {
   Listener listener;
   listener.set_name(
@@ -9166,8 +9173,8 @@ TEST_P(XdsServerFilterChainMatchTest,
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->add_application_protocols("h2");
   balancers_[0]->ads_service()->SetLdsResource(listener);
-  // A successful RPC proves that filter chains that mention "raw_buffer" as the
-  // transport protocol are chosen as the best match in the round.
+  // A successful RPC proves that filter chains that mention "raw_buffer" as
+  // the transport protocol are chosen as the best match in the round.
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {});
 }
 
@@ -9194,8 +9201,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(16);
   filter_chain->mutable_filter_chain_match()->add_server_names("server_name");
-  // Add filter chain with two prefix ranges (length 8 and 24). Since 24 is the
-  // highest match, it should be chosen.
+  // Add filter chain with two prefix ranges (length 8 and 24). Since 24 is
+  // the highest match, it should be chosen.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -9207,7 +9214,8 @@ TEST_P(XdsServerFilterChainMatchTest,
       filter_chain->mutable_filter_chain_match()->add_prefix_ranges();
   prefix_range->set_address_prefix(ipv6_only_ ? "::1" : "127.0.0.1");
   prefix_range->mutable_prefix_len()->set_value(24);
-  // Add another filter chain with a non-matching prefix range (with length 30)
+  // Add another filter chain with a non-matching prefix range (with length
+  // 30)
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -9273,10 +9281,10 @@ TEST_P(XdsServerFilterChainMatchTest,
   auto* socket_address = listener.mutable_address()->mutable_socket_address();
   socket_address->set_address(ipv6_only_ ? "::1" : "127.0.0.1");
   socket_address->set_port_value(backends_[0]->port());
-  // Add filter chain with source prefix range (length 16) but with a bad source
-  // port mentioned. (Prefix range is matched first.)
-  // Note that backends_[0]->port() will never be a match for the source port
-  // because it is already being used by a backend.
+  // Add filter chain with source prefix range (length 16) but with a bad
+  // source port mentioned. (Prefix range is matched first.) Note that
+  // backends_[0]->port() will never be a match for the source port because it
+  // is already being used by a backend.
   auto* filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -9290,8 +9298,8 @@ TEST_P(XdsServerFilterChainMatchTest,
   source_prefix_range->mutable_prefix_len()->set_value(16);
   filter_chain->mutable_filter_chain_match()->add_source_ports(
       backends_[0]->port());
-  // Add filter chain with two source prefix ranges (length 8 and 24). Since 24
-  // is the highest match, it should be chosen.
+  // Add filter chain with two source prefix ranges (length 8 and 24). Since
+  // 24 is the highest match, it should be chosen.
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -9461,8 +9469,8 @@ TEST_P(XdsServerFilterChainMatchTest, DuplicateMatchOnTransportProtocolNacked) {
       HttpConnectionManager());
   filter_chain->mutable_filter_chain_match()->set_transport_protocol(
       "raw_buffer");
-  // Add a duplicate filter chain with the same "raw_buffer" transport protocol
-  // entry
+  // Add a duplicate filter chain with the same "raw_buffer" transport
+  // protocol entry
   filter_chain = listener.add_filter_chains();
   filter_chain->add_filters()->mutable_typed_config()->PackFrom(
       HttpConnectionManager());
@@ -9828,8 +9836,8 @@ TEST_P(LocalityMapTest, StressTest) {
   delayed_resource_setter.join();
 }
 
-// Tests that the localities in a locality map are picked correctly after update
-// (addition, modification, deletion).
+// Tests that the localities in a locality map are picked correctly after
+// update (addition, modification, deletion).
 TEST_P(LocalityMapTest, UpdateMap) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -9893,8 +9901,8 @@ TEST_P(LocalityMapTest, UpdateMap) {
       BuildEdsResource(args, DefaultEdsServiceName()));
   // Backend 3 hasn't received any request.
   EXPECT_EQ(0U, backends_[3]->backend_service()->request_count());
-  // Wait until the locality update has been processed, as signaled by backend 3
-  // receiving a request.
+  // Wait until the locality update has been processed, as signaled by backend
+  // 3 receiving a request.
   WaitForAllBackends(3, 4);
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
   // Send kNumRpcs RPCs.
@@ -10013,8 +10021,8 @@ TEST_P(FailoverTest, DoesNotUseLocalityWithNoEndpoints) {
   EXPECT_EQ(0, std::get<1>(counts));
 }
 
-// If the higher priority localities are not reachable, failover to the highest
-// priority among the rest.
+// If the higher priority localities are not reachable, failover to the
+// highest priority among the rest.
 TEST_P(FailoverTest, Failover) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -10117,8 +10125,8 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
   delayed_resource_setter.join();
 }
 
-// Tests that after the localities' priorities are updated, we still choose the
-// highest READY priority with the updated localities.
+// Tests that after the localities' priorities are updated, we still choose
+// the highest READY priority with the updated localities.
 TEST_P(FailoverTest, UpdatePriority) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -10369,8 +10377,8 @@ TEST_P(DropTest, Update) {
                           {kThrottleDropType, kDropPerMillionForThrottle}};
   balancers_[0]->ads_service()->SetEdsResource(
       BuildEdsResource(args, DefaultEdsServiceName()));
-  // Wait until the drop rate increases to the middle of the two configs, which
-  // implies that the update has been in effect.
+  // Wait until the drop rate increases to the middle of the two configs,
+  // which implies that the update has been in effect.
   const double kDropRateThreshold =
       (kDropRateForLb + kDropRateForLbAndThrottle) / 2;
   size_t num_rpcs = kNumRpcsBoth;
@@ -10438,8 +10446,8 @@ class BalancerUpdateTest : public XdsEnd2endTest {
   BalancerUpdateTest() : XdsEnd2endTest(4, 3) {}
 };
 
-// Tests that the old LB call is still used after the balancer address update as
-// long as that call is still alive.
+// Tests that the old LB call is still used after the balancer address update
+// as long as that call is still alive.
 TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -10497,10 +10505,10 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
 }
 
 // Tests that the old LB call is still used after multiple balancer address
-// updates as long as that call is still alive. Send an update with the same set
-// of LBs as the one in SetUp() in order to verify that the LB channel inside
-// xds keeps the initial connection (which by definition is also present in the
-// update).
+// updates as long as that call is still alive. Send an update with the same
+// set of LBs as the one in SetUp() in order to verify that the LB channel
+// inside xds keeps the initial connection (which by definition is also
+// present in the update).
 TEST_P(BalancerUpdateTest, Repeated) {
   SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
@@ -10932,9 +10940,9 @@ class FaultInjectionTest : public XdsEnd2endTest {
  public:
   FaultInjectionTest() : XdsEnd2endTest(1, 1) {}
 
-  // Builds a Listener with Fault Injection filter config. If the http_fault is
-  // nullptr, then assign an empty filter config. This filter config is required
-  // to enable the fault injection features.
+  // Builds a Listener with Fault Injection filter config. If the http_fault
+  // is nullptr, then assign an empty filter config. This filter config is
+  // required to enable the fault injection features.
   static Listener BuildListenerWithFaultInjection(
       const HTTPFault& http_fault = HTTPFault()) {
     HttpConnectionManager http_connection_manager;
@@ -11246,9 +11254,9 @@ TEST_P(FaultInjectionTest, XdsFaultInjectionAlwaysDelayPercentageAbort) {
               ::testing::DoubleNear(kAbortRate, kErrorTolerance));
 }
 
-// This test and the above test apply different denominators to delay and abort.
-// This ensures that we are using the right denominator for each injected fault
-// in our code.
+// This test and the above test apply different denominators to delay and
+// abort. This ensures that we are using the right denominator for each
+// injected fault in our code.
 TEST_P(FaultInjectionTest,
        XdsFaultInjectionAlwaysDelayPercentageAbortSwitchDenominator) {
   const uint32_t kAbortPercentagePerMillion = 500000;

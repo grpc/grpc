@@ -648,17 +648,17 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     absl::optional<uint64_t> hash;
     for (const auto& hash_policy : entry.route.hash_policies) {
       absl::optional<uint64_t> new_hash;
-      std::string address_str;
       switch (hash_policy.type) {
         case XdsApi::Route::HashPolicy::HEADER:
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
-        case XdsApi::Route::HashPolicy::CHANNEL_ID:
-          address_str = absl::StrFormat(
+        case XdsApi::Route::HashPolicy::CHANNEL_ID: {
+          std::string address_str = absl::StrFormat(
               "%" PRIu64,
               static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver)));
           new_hash = XXH64(address_str.c_str(), address_str.length(), 0);
           break;
+        }
         default:
           GPR_ASSERT(0);
       }
@@ -677,8 +677,9 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     if (!hash.has_value()) {
       // If there is no hash, we just choose a random value as a default.
-      // hash = rand();  hash generated is too mall, not 64-bit long so it's not
-      // randomly hitting the entries always entry 1
+      // We cannot directly use the result of rand() as the hash value,
+      // since it is a 32-bit number and not a 64-bit number and will
+      // therefore not be evenly distributed.
       std::string rand_str = absl::StrCat(rand());
       hash = XXH64(rand_str.c_str(), rand_str.length(), 0);
     }
