@@ -4844,6 +4844,16 @@ targets:
   - linux
   - posix
   - mac
+- name: client_context_test_peer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/test/client_context_test_peer_test.cc
+  deps:
+  - grpc++_test
+  - grpc++_test_util
 - name: client_fuzzer
   build: fuzzer
   language: c++
