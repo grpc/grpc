@@ -2149,7 +2149,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/ex_data.c \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/bcm.c \
     third_party/boringssl-with-bazel/src/crypto/fipsmodule/fips_shared_support.c \
-    third_party/boringssl-with-bazel/src/crypto/fipsmodule/is_fips.c \
     third_party/boringssl-with-bazel/src/crypto/hkdf/hkdf.c \
     third_party/boringssl-with-bazel/src/crypto/hpke/hpke.c \
     third_party/boringssl-with-bazel/src/crypto/hrss/hrss.c \
@@ -2216,7 +2215,6 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_ext.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_lu.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_obj.c \
-    third_party/boringssl-with-bazel/src/crypto/x509/x509_r2x.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_req.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_set.c \
     third_party/boringssl-with-bazel/src/crypto/x509/x509_trs.c \
@@ -2281,6 +2279,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl-with-bazel/src/ssl/d1_srtp.cc \
     third_party/boringssl-with-bazel/src/ssl/dtls_method.cc \
     third_party/boringssl-with-bazel/src/ssl/dtls_record.cc \
+    third_party/boringssl-with-bazel/src/ssl/encrypted_client_hello.cc \
     third_party/boringssl-with-bazel/src/ssl/handoff.cc \
     third_party/boringssl-with-bazel/src/ssl/handshake.cc \
     third_party/boringssl-with-bazel/src/ssl/handshake_client.cc \
