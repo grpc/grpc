@@ -174,8 +174,6 @@ class RingHash : public LoadBalancingPolicy {
       policy->Ref(DEBUG_LOCATION, "subchannel_list").release();
     }
 
-    grpc_connectivity_state ConnectivityState() { return connectivity_state_; }
-
     ~RingHashSubchannelList() override {
       RingHash* p = static_cast<RingHash*>(policy());
       p->Unref(DEBUG_LOCATION, "subchannel_list");
@@ -200,7 +198,6 @@ class RingHash : public LoadBalancingPolicy {
     size_t num_ready_ = 0;
     size_t num_connecting_ = 0;
     size_t num_transient_failure_ = 0;
-    grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_SHUTDOWN;
   };
 
   class Picker : public SubchannelPicker {
@@ -480,12 +477,19 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
               i, result.subchannel.get());
       return result;
     }
-    if (entry.connectivity_state == GRPC_CHANNEL_CONNECTING &&
-        !found_second_subchannel) {
-      result.type = PickResult::PICK_QUEUE;
-      return result;
+    if (!found_second_subchannel) {
+      switch (entry.connectivity_state) {
+        case GRPC_CHANNEL_IDLE:
+          ScheduleSubchannelConnectionAttempt(entry.subchannel);
+          // fallthrough
+        case GRPC_CHANNEL_CONNECTING:
+          result.type = PickResult::PICK_QUEUE;
+          return result;
+        default:
+          break;
+      }
+      found_second_subchannel = true;
     }
-    found_second_subchannel = true;
     if (!found_first_non_failed) {
       if (entry.connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
         gpr_log(GPR_INFO, "donna schedule due to TF for index %" PRIuPTR, i);
@@ -499,16 +503,12 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       }
     }
   }
-  if (found_first_non_failed) {
-    result.type = PickResult::PICK_QUEUE;
-  } else {
-    result.error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat("xds ring hash found a subchannel "
-                         "that is in TRANSIENT_FAILURE state")
-                .c_str()),
-        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
-  }
+  result.error =
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                             absl::StrCat("xds ring hash found a subchannel "
+                                          "that is in TRANSIENT_FAILURE state")
+                                 .c_str()),
+                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
   return result;
 }
 
@@ -589,7 +589,6 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
         GRPC_CHANNEL_READY, absl::Status(),
         absl::make_unique<Picker>(p->Ref(DEBUG_LOCATION, "RingHashPicker"),
                                   this));
-    connectivity_state_ = GRPC_CHANNEL_READY;
     return false;
   }
   if (num_connecting_ > 0 && num_transient_failure_ < 2) {
@@ -597,7 +596,6 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
-    connectivity_state_ = GRPC_CHANNEL_CONNECTING;
     return false;
   }
   if (num_idle_ > 0 && num_transient_failure_ < 2) {
@@ -606,7 +604,6 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
         GRPC_CHANNEL_IDLE, absl::Status(),
         absl::make_unique<Picker>(p->Ref(DEBUG_LOCATION, "RingHashPicker"),
                                   this));
-    connectivity_state_ = GRPC_CHANNEL_IDLE;
     return false;
   }
   grpc_error* error =
@@ -617,7 +614,6 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
   p->channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
       absl::make_unique<TransientFailurePicker>(error));
-  connectivity_state_ = GRPC_CHANNEL_TRANSIENT_FAILURE;
   return true;
 }
 
