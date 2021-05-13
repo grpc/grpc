@@ -7167,12 +7167,7 @@ TEST_P(CdsTest, RingHashIdleToReady) {
 }
 
 // Test that when the first pick is down leading to a transient failure, we
-// will move on to the next ring hash entry.  And if the next ring hash entry
-// is also down, we will look for any connected subchannel. This test will
-// definitely test the first attempt to use the next ring hash entry, and
-// since the down backend is heavily weighted, it is very possible the the
-// next entry will also be for that backend and was down, leading to test
-// looking for any connected subchannel.
+// will move on to the next ring hash entry.
 TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   auto cluster = default_cluster_;
@@ -7197,11 +7192,7 @@ TEST_P(CdsTest, RingHashTransientFailureCheckNextOne) {
       {"address_hash",
        CreateMetadataValueThatHashesToBackendPort(unused_port)}};
   const auto rpc_options = RpcOptions().set_metadata(std::move(metadata));
-  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  EXPECT_EQ(GRPC_CHANNEL_IDLE, channel_->GetState(false));
-  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true),
-                 rpc_options);
-  EXPECT_EQ(GRPC_CHANNEL_READY, channel_->GetState(false));
+  WaitForBackend(1, WaitForBackendOptions(), rpc_options);
   CheckRpcSendOk(100, rpc_options);
   EXPECT_EQ(0, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(100, backends_[1]->backend_service()->request_count());
@@ -7331,7 +7322,10 @@ TEST_P(CdsTest, RingHashTransientFailureSkipToAvailableReady) {
   StartBackend(1);
   EXPECT_TRUE(channel_->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kConnectionTimeoutMilliseconds)));
-  WaitForBackend(1, WaitForBackendOptions(), rpc_options);
+  // Failures can occur if we didn't detected backend 0 is down and picked
+  // it; this can result in transient faiulre for the first attempted RPC.
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true),
+                 rpc_options);
   gpr_unsetenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH");
 }
 

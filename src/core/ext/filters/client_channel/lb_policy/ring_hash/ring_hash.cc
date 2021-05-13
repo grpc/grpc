@@ -499,12 +499,16 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       }
     }
   }
-  result.error =
-      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-                             absl::StrCat("xds ring hash found a subchannel "
-                                          "that is in TRANSIENT_FAILURE state")
-                                 .c_str()),
-                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
+  if (found_first_non_failed) {
+    result.type = PickResult::PICK_QUEUE;
+  } else {
+    result.error = grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat("xds ring hash found a subchannel "
+                         "that is in TRANSIENT_FAILURE state")
+                .c_str()),
+        GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_INTERNAL);
+  }
   return result;
 }
 
