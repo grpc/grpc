@@ -2072,11 +2072,6 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
             static_cast<unsigned long>(backend_idx));
     do {
       Status status = SendRpc(rpc_options);
-      if (!status.ok()) {
-        gpr_log(GPR_INFO,
-                "Wait for backend to be up, currently getting %d and %s",
-                status.error_code(), status.error_message().c_str());
-      }
       if (!wait_options.allow_failures) {
         EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
                                  << " message=" << status.error_message();
