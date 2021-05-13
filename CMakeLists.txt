@@ -25,13 +25,13 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME          "grpc")
-set(PACKAGE_VERSION       "1.38.0-dev")
-set(gRPC_CORE_VERSION     "16.0.0")
-set(gRPC_CORE_SOVERSION   "16")
-set(gRPC_CPP_VERSION      "1.38.0-dev")
-set(gRPC_CPP_SOVERSION    "1.38")
-set(gRPC_CSHARP_VERSION   "2.38.0-dev")
-set(gRPC_CSHARP_SOVERSION "2.38")
+set(PACKAGE_VERSION       "1.39.0-dev")
+set(gRPC_CORE_VERSION     "17.0.0")
+set(gRPC_CORE_SOVERSION   "17")
+set(gRPC_CPP_VERSION      "1.39.0-dev")
+set(gRPC_CPP_SOVERSION    "1.39")
+set(gRPC_CSHARP_VERSION   "2.39.0-dev")
+set(gRPC_CSHARP_SOVERSION "2.39")
 set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
@@ -2327,6 +2327,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
+  src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc

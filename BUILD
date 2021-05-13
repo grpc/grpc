@@ -85,11 +85,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build_handwritten.yaml
-g_stands_for = "guadalupe_river_park_conservancy"  # @unused
+g_stands_for = "goofy"  # @unused
 
-core_version = "16.0.0"  # @unused
+core_version = "17.0.0"  # @unused
 
-version = "1.38.0-dev"  # @unused
+version = "1.39.0-dev"  # @unused
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -370,6 +370,7 @@ grpc_cc_library(
         "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
+    defines = ["GRPC_XDS_USER_AGENT_SUFFIX=C++"],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     select_deps = {
@@ -1104,6 +1105,7 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_priority",
+        "grpc_lb_policy_ring_hash",
         "grpc_lb_policy_round_robin",
         "grpc_lb_policy_weighted_target",
         "grpc_client_idle_filter",
@@ -1543,6 +1545,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
+        "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
         "grpc_resolver_fake",
@@ -1634,6 +1637,10 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "xxhash",
     ],
     language = "c++",
     deps = [
