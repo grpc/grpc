@@ -115,7 +115,8 @@ size_t Executor::RunClosures(const char* executor_name,
   grpc_closure* c = list.head;
   while (c != nullptr) {
     grpc_closure* next = c->next_data.next;
-    grpc_error_handle error = c->error_data.error;
+    grpc_error_handle error = GRPC_ERROR_GET_FROM_PTR(c->error_data.ptr);
+    GRPC_ERROR_FREE_PTR(c->error_data.ptr);
 #ifndef NDEBUG
     EXECUTOR_TRACE("(%s) run %p [created by %s:%d]", executor_name, c,
                    c->file_created, c->line_created);

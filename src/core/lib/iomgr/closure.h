@@ -72,7 +72,7 @@ struct grpc_closure {
 
   /** Once queued, the result of the closure. Before then: scratch space */
   union {
-    grpc_error_handle error;
+    uintptr_t ptr;
     uintptr_t scratch;
   } error_data;
 
@@ -98,7 +98,7 @@ inline grpc_closure* grpc_closure_init(grpc_closure* closure,
 #endif
   closure->cb = cb;
   closure->cb_arg = cb_arg;
-  closure->error_data.error = GRPC_ERROR_NONE;
+  closure->error_data.ptr = 0;
 #ifndef NDEBUG
   closure->scheduled = false;
   closure->file_initiated = nullptr;
@@ -181,7 +181,8 @@ inline bool grpc_closure_list_append(grpc_closure_list* closure_list,
     GRPC_ERROR_UNREF(error);
     return false;
   }
-  closure->error_data.error = error;
+  closure->error_data.ptr = GRPC_ERROR_ALLOC_PTR(error);
+  GRPC_ERROR_UNREF(error);
   closure->next_data.next = nullptr;
   bool was_empty = (closure_list->head == nullptr);
   if (was_empty) {
@@ -197,8 +198,8 @@ inline bool grpc_closure_list_append(grpc_closure_list* closure_list,
 inline void grpc_closure_list_fail_all(grpc_closure_list* list,
                                        grpc_error_handle forced_failure) {
   for (grpc_closure* c = list->head; c != nullptr; c = c->next_data.next) {
-    if (c->error_data.error == GRPC_ERROR_NONE) {
-      c->error_data.error = GRPC_ERROR_REF(forced_failure);
+    if (c->error_data.ptr == 0) {
+      c->error_data.ptr = GRPC_ERROR_ALLOC_PTR(forced_failure);
     }
   }
   GRPC_ERROR_UNREF(forced_failure);

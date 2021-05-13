@@ -219,6 +219,14 @@ absl::Status grpc_wsa_error(const grpc_core::DebugLocation& location, int err,
 #define GRPC_WSA_ERROR(err, call_name) \
   grpc_wsa_error(DEBUG_LOCATION, err, call_name)
 
+#define GRPC_ERROR_ALLOC_PTR(e) grpc_core::internal::StatusAllocPtr(e)
+#define GRPC_ERROR_GET_FROM_PTR(p) grpc_core::internal::StatusGetFromPtr(p)
+#define GRPC_ERROR_FREE_PTR(p)             \
+  do {                                     \
+    grpc_core::internal::StatusFreePtr(p); \
+    (p) = 0;                               \
+  } while (false)
+
 #else  // GRPC_ERROR_IS_ABSEIL_STATUS
 
 /// The following "special" errors can be propagated without allocating memory.
@@ -339,6 +347,15 @@ grpc_error_handle grpc_wsa_error(const char* file, int line, int err,
 /// windows only: create an error associated with WSAGetLastError()!=0
 #define GRPC_WSA_ERROR(err, call_name) \
   grpc_wsa_error(__FILE__, __LINE__, err, call_name)
+
+#define GRPC_ERROR_ALLOC_PTR(e) reinterpret_cast<uintptr_t>(GRPC_ERROR_REF(e))
+#define GRPC_ERROR_GET_FROM_PTR(p) \
+  GRPC_ERROR_REF(reinterpret_cast<grpc_error_handle>(p))
+#define GRPC_ERROR_FREE_PTR(p)                                \
+  do {                                                        \
+    GRPC_ERROR_UNREF(reinterpret_cast<grpc_error_handle>(p)); \
+    (p) = 0;                                                  \
+  } while (false)
 
 #endif  // GRPC_ERROR_IS_ABSEIL_STATUS
 

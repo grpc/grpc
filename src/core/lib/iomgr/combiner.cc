@@ -154,7 +154,8 @@ static void combiner_exec(grpc_core::Combiner* lock, grpc_closure* cl,
   }
   GPR_ASSERT(last & STATE_UNORPHANED);  // ensure lock has not been destroyed
   assert(cl->cb);
-  cl->error_data.error = error;
+  cl->error_data.ptr = GRPC_ERROR_ALLOC_PTR(error);
+  GRPC_ERROR_UNREF(error);
   lock->queue.Push(cl->next_data.mpscq_node.get());
 }
 
@@ -231,7 +232,8 @@ bool grpc_combiner_continue_exec_ctx() {
     }
     GPR_TIMER_SCOPE("combiner.exec1", 0);
     grpc_closure* cl = reinterpret_cast<grpc_closure*>(n);
-    grpc_error_handle cl_err = cl->error_data.error;
+    grpc_error_handle cl_err = GRPC_ERROR_GET_FROM_PTR(cl->error_data.ptr);
+    GRPC_ERROR_FREE_PTR(cl->error_data.ptr);
 #ifndef NDEBUG
     cl->scheduled = false;
 #endif
@@ -247,7 +249,8 @@ bool grpc_combiner_continue_exec_ctx() {
       GRPC_COMBINER_TRACE(
           gpr_log(GPR_INFO, "C:%p execute_final[%d] c=%p", lock, loops, c));
       grpc_closure* next = c->next_data.next;
-      grpc_error_handle error = c->error_data.error;
+      grpc_error_handle error = GRPC_ERROR_GET_FROM_PTR(c->error_data.ptr);
+      GRPC_ERROR_FREE_PTR(c->error_data.ptr);
 #ifndef NDEBUG
       c->scheduled = false;
 #endif
