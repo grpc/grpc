@@ -31,17 +31,24 @@ gcloud container clusters get-credentials benchmarks-prod \
 
 # Set up environment variables.
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/${KOKORO_BUILD_INITIATOR}"
-UNIQUE_IDENTIFIER=$(date +%Y%m%d%H%M%S)
+UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
-GRPC_CORE_GITREF="$(git ls-remote https://github.com/grpc/grpc.git master | cut -c1-7)"
-GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/grpc-go.git master | cut -c1-7)"
-GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -c1-7)"
+# Prebuilt workers for core languages are always built from grpc/grpc.
+if [[ "${KOKORO_GITHUB_COMMIT_URL%/*}" == "https://github.com/grpc/grpc/commit" ]]; then
+    GRPC_CORE_GITREF="${KOKORO_GIT_COMMIT}"
+else
+    GRPC_CORE_GITREF="$(git ls-remote https://github.com/grpc/grpc.git master | cut -f1)"
+fi
+GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/grpc-go.git master | cut -f1)"
+GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
 
 # Clone test-infra repository to one upper level directory than grpc.
 pushd ..
 git clone --recursive https://github.com/grpc/test-infra.git
 cd test-infra
 go build -o bin/runner cmd/runner/main.go
+go build -o bin/prepare_prebuilt_workers tools/prepare_prebuilt_workers/prepare_prebuilt_workers.go
+go build -o bin/delete_prebuilt_workers tools/delete_prebuilt_workers/delete_prebuilt_workers.go
 popd
 
 # Build test configurations.
@@ -53,9 +60,9 @@ buildConfigs() {
         -s client_pool="${pool}" -s server_pool="${pool}" \
         -s big_query_table=e2e_benchmarks.experimental_results \
         -s timeout_seconds=900 \
-        -s prebuilt_image_prefix=$PREBUILT_IMAGE_PREFIX \
-        -s prebuilt_image_tag=$UNIQUE_IDENTIFIER \
-        --prefix=$KOKORO_BUILD_INITIATOR -u $UNIQUE_IDENTIFIER -u "${pool}" \
+        -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
+        -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
+        --prefix=$KOKORO_BUILD_INITIATOR -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
         --allow_client_language=c++ --allow_server_language=c++ \
         -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
@@ -68,23 +75,23 @@ buildConfigs workers-32core -l c++ -l csharp -l go -l java
 # Delete prebuilt images on exit.
 deleteImages() {
     echo "deleting images on exit"
-    go run ../test-infra/tools/delete_prebuilt_workers/delete_prebuilt_workers.go \
-    -p $PREBUILT_IMAGE_PREFIX \
-    -t $UNIQUE_IDENTIFIER
+    ../test-infra/bin/delete_prebuilt_workers \
+    -p "${PREBUILT_IMAGE_PREFIX}" \
+    -t "${UNIQUE_IDENTIFIER}"
 }
 trap deleteImages EXIT
 
 # Build and push prebuilt images for running tests.
-go run ../test-infra/tools/prepare_prebuilt_workers/prepare_prebuilt_workers.go \
-    -l cxx:$GRPC_CORE_GITREF \
-    -l csharp:$GRPC_CORE_GITREF \
-    -l go:$GRPC_GO_GITREF \
-    -l java:$GRPC_JAVA_GITREF \
-    -l python:$GRPC_CORE_GITREF \
-    -l ruby:$GRPC_CORE_GITREF \
-    -p $PREBUILT_IMAGE_PREFIX \
-    -t $UNIQUE_IDENTIFIER \
-    -r $ROOT_DIRECTORY_OF_DOCKERFILES
+../test-infra/bin/prepare_prebuilt_workers \
+    -l "cxx:${GRPC_CORE_GITREF}" \
+    -l "csharp:${GRPC_CORE_GITREF}" \
+    -l "go:${GRPC_GO_GITREF}" \
+    -l "java:${GRPC_JAVA_GITREF}" \
+    -l "python:${GRPC_CORE_GITREF}" \
+    -l "ruby:${GRPC_CORE_GITREF}" \
+    -p "${PREBUILT_IMAGE_PREFIX}" \
+    -t "${UNIQUE_IDENTIFIER}" \
+    -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
 
 # Run tests.
 ../test-infra/bin/runner \
