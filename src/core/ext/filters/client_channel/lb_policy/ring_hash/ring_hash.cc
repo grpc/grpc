@@ -424,7 +424,6 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       break;
     }
   }
-  gpr_log(GPR_INFO, "donna first index is %" PRIu64, first_index);
   OrphanablePtr<SubchannelConnectionAttempter> subchannel_connection_attempter;
   auto ScheduleSubchannelConnectionAttempt =
       [&](RefCountedPtr<SubchannelInterface> subchannel) {
@@ -434,8 +433,6 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
         }
         subchannel_connection_attempter->AddSubchannel(std::move(subchannel));
       };
-  gpr_log(GPR_INFO, "donna ConnectAndPickHelper state is %d",
-          ring_[first_index].connectivity_state);
   switch (ring_[first_index].connectivity_state) {
     case GRPC_CHANNEL_READY:
       result.type = PickResult::PICK_COMPLETE;
@@ -451,7 +448,6 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
       break;
   }
   ScheduleSubchannelConnectionAttempt(ring_[first_index].subchannel);
-  gpr_log(GPR_INFO, "donna look for next");
   // Loop through remaining subchannels to find one in READY.
   // On the way, we make sure the right set of connection attempts
   // will happen.
@@ -459,22 +455,12 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   bool found_first_non_failed = false;
   for (size_t i = 1; i < ring_.size(); ++i) {
     const RingEntry& entry = ring_[(first_index + i) % ring_.size()];
-    gpr_log(GPR_INFO, "donna index %" PRIuPTR " state %d and subchannel %p", i,
-            entry.connectivity_state, entry.subchannel.get());
     if (entry.subchannel == ring_[first_index].subchannel) {
-      gpr_log(GPR_INFO,
-              "donna skipping the same subchannel index %" PRIuPTR
-              " state %d and subchannel %p",
-              i, entry.connectivity_state, entry.subchannel.get());
       continue;
     }
     if (entry.connectivity_state == GRPC_CHANNEL_READY) {
       result.type = PickResult::PICK_COMPLETE;
       result.subchannel = entry.subchannel;
-      gpr_log(GPR_INFO,
-              "donna picker in first or second attempt found ready channel "
-              "%" PRIuPTR " subchannel=%p",
-              i, result.subchannel.get());
       return result;
     }
     if (!found_second_subchannel) {
@@ -492,11 +478,9 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
     }
     if (!found_first_non_failed) {
       if (entry.connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        gpr_log(GPR_INFO, "donna schedule due to TF for index %" PRIuPTR, i);
         ScheduleSubchannelConnectionAttempt(entry.subchannel);
       } else {
         if (entry.connectivity_state == GRPC_CHANNEL_IDLE) {
-          gpr_log(GPR_INFO, "donna schedule to to IDLE for index %" PRIuPTR, i);
           ScheduleSubchannelConnectionAttempt(entry.subchannel);
         }
         found_first_non_failed = true;
@@ -569,10 +553,6 @@ void RingHash::RingHashSubchannelList::UpdateStateCountersLocked(
 // on the current subchannel list or requests an re-attempt by returning true..
 bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
   RingHash* p = static_cast<RingHash*>(policy());
-  gpr_log(GPR_INFO,
-          "donna idle %" PRIuPTR " connecting %" PRIuPTR " ready %" PRIuPTR
-          " TF %" PRIuPTR,
-          num_idle_, num_connecting_, num_ready_, num_transient_failure_);
   // Only set connectivity state if this is the current subchannel list.
   if (p->subchannel_list_.get() != this) return false;
   // The overall aggregation rules here are:
@@ -592,14 +572,12 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
     return false;
   }
   if (num_connecting_ > 0 && num_transient_failure_ < 2) {
-    gpr_log(GPR_INFO, "donna report CONNECTING");
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING, absl::Status(),
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
     return false;
   }
   if (num_idle_ > 0 && num_transient_failure_ < 2) {
-    gpr_log(GPR_INFO, "donna report IDLE");
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_IDLE, absl::Status(),
         absl::make_unique<Picker>(p->Ref(DEBUG_LOCATION, "RingHashPicker"),
@@ -610,7 +588,6 @@ bool RingHash::RingHashSubchannelList::UpdateRingHashConnectivityStateLocked() {
       grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                              "connections to backend failing or idle"),
                          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-  gpr_log(GPR_INFO, "donna report TRANSIENT FAILURE");
   p->channel_control_helper()->UpdateState(
       GRPC_CHANNEL_TRANSIENT_FAILURE, grpc_error_to_absl_status(error),
       absl::make_unique<TransientFailurePicker>(error));
