@@ -137,6 +137,9 @@ class uvEndpoint final
     uvTCP_->read_timer_.data = this;
   }
   virtual ~uvEndpoint() override final;
+  virtual void* GetResourceUser() override final {
+    return uvTCP_->slice_allocator_.GetResourceUser();
+  }
   int init(uvEngine* engine);
   int populateAddressesUnsafe() {
     auto populate =
@@ -216,9 +219,7 @@ class uvEndpoint final
       cb(absl::UnknownError("uv_read_start gave us an error"));
       return;
     }
-    grpc_event_engine::experimental::Slice slice(
-        ep->read_buf_, nread,
-        grpc_event_engine::experimental::Slice::STATIC_SLICE);
+    grpc_event_engine::experimental::Slice slice(ep->read_buf_, nread);
     ep->read_sb_->add(slice);
     cb(absl::OkStatus());
     memset(ep->read_buf_, 0, buf->len);

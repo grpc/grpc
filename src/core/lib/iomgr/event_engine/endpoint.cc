@@ -98,13 +98,9 @@ void endpoint_add_to_pollset(grpc_endpoint* /* ep */,
   abort();
 }
 void endpoint_add_to_pollset_set(grpc_endpoint* /* ep */,
-                                 grpc_pollset_set* /* pollset */) {
-  abort();
-}
+                                 grpc_pollset_set* /* pollset */) {}
 void endpoint_delete_from_pollset_set(grpc_endpoint* /* ep */,
-                                      grpc_pollset_set* /* pollset */) {
-  abort();
-}
+                                      grpc_pollset_set* /* pollset */) {}
 // Note: After shutdown, all other endpoint operations (except destroy) are
 // no-op, and will return some kind of sane default (empty strings, nullptrs,
 // etc). It is the caller's responsibility to ensure that calls to

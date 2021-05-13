@@ -32,10 +32,10 @@ struct grpc_event_engine_endpoint {
   std::string local_address;
   grpc_resource_user* ru = nullptr;
   std::aligned_storage<sizeof(grpc_event_engine::experimental::SliceBuffer),
-                       alignof(grpc_event_engine::experimental::SliceBuffer)>
+                       alignof(grpc_event_engine::experimental::SliceBuffer)>::type
       read_buffer;
   std::aligned_storage<sizeof(grpc_event_engine::experimental::SliceBuffer),
-                       alignof(grpc_event_engine::experimental::SliceBuffer)>
+                       alignof(grpc_event_engine::experimental::SliceBuffer)>::type
       write_buffer;
 };
 
