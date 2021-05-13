@@ -90,4 +90,4 @@ go run ../test-infra/tools/prepare_prebuilt_workers/prepare_prebuilt_workers.go 
 ../test-infra/bin/runner \
     -i ../grpc/loadtest_with_prebuilt_workers_workers-8core.yaml \
     -i ../grpc/loadtest_with_prebuilt_workers_workers-32core.yaml \
-    -a pool -c workers-8core:8 -c workers-32core:8
+    -c workers-8core:5 -c workers-32core:5
