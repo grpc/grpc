@@ -568,9 +568,6 @@ absl::optional<uint64_t> HeaderHashHelper(
   std::string value_buffer;
   absl::optional<absl::string_view> header_value =
       GetHeaderValue(initial_metadata, policy.header_name, &value_buffer);
-  if (!header_value.has_value()) {
-    return absl::nullopt;
-  }
   if (policy.regex != nullptr) {
     // If GetHeaderValue() did not already store the value in
     // value_buffer, copy it there now, so we can modify it.
@@ -652,13 +649,10 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         case XdsApi::Route::HashPolicy::HEADER:
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
-        case XdsApi::Route::HashPolicy::CHANNEL_ID: {
-          std::string address_str = absl::StrFormat(
-              "%" PRIu64,
-              static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver)));
-          new_hash = XXH64(address_str.c_str(), address_str.length(), 0);
+        case XdsApi::Route::HashPolicy::CHANNEL_ID:
+          new_hash =
+              static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
           break;
-        }
         default:
           GPR_ASSERT(0);
       }
@@ -677,11 +671,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     if (!hash.has_value()) {
       // If there is no hash, we just choose a random value as a default.
-      // We cannot directly use the result of rand() as the hash value,
-      // since it is a 32-bit number and not a 64-bit number and will
-      // therefore not be evenly distributed.
-      std::string rand_str = absl::StrCat(rand());
-      hash = XXH64(rand_str.c_str(), rand_str.length(), 0);
+      hash = rand();
     }
     CallConfig call_config;
     if (method_config != nullptr) {
@@ -690,12 +680,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       call_config.service_config = std::move(method_config);
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
-    std::string hash_string = absl::StrCat(hash.value());
-    char* hash_value =
-        static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
-    memcpy(hash_value, hash_string.c_str(), hash_string.size());
-    hash_value[hash_string.size()] = '\0';
-    call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
+    call_config.call_attributes[kRequestRingHashAttribute] =
+        absl::StrFormat("%" PRIu64, hash.value());
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
       ExecCtx::Run(
