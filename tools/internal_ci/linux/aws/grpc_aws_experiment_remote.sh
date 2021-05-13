@@ -17,6 +17,7 @@ export CXX=clang++
 export CC=clang
 tools/bazel test --config=dbg //test/...
 results=$?
+df -h
 sudo shutdown
 exit $results
 

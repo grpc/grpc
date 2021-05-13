@@ -29,7 +29,7 @@ sudo apt update && sudo apt install -y jq
 AWS_MACHINE_IMAGE=ami-026141f3d5c6d2d0c
 AWS_INSTANCE_TYPE=t4g.xlarge
 AWS_SECURITY_GROUP=sg-021240e886feba750
-AWS_STORAGE_SIZE_GB=30
+AWS_STORAGE_SIZE_GB=60
 AWS_DEVICE_MAPPING="DeviceName='/dev/sdb',VirtualName='ephemeral0',Ebs={DeleteOnTermination=True,VolumeSize=${AWS_STORAGE_SIZE_GB},VolumeType='standard'}"
 
 KOKORO_JOB_TAG="{Key='kokoro_job_name',Value='${KOKORO_JOB_NAME}'}"
