@@ -107,18 +107,25 @@ class HeaderAuthorizationMatcher : public AuthorizationMatcher {
 };
 
 // Perform a match against IP Cidr Range.
-// TODO(ashithasantosh): Handle type of Ip or use seperate matchers for each
-// type. Implement Match functionality, this would require updating EvaluateArgs
-// getters, to return format of IP as well.
 class IpAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  explicit IpAuthorizationMatcher(Rbac::CidrRange range, bool not_rule = false)
-      : range_(std::move(range)), not_rule_(not_rule) {}
+  enum class Type {
+    kDestIp,
+    kSourceIp,
+    kDirectRemoteIp,
+    kRemoteIp,
+  };
 
-  bool Matches(const EvaluateArgs&) const override;
+  IpAuthorizationMatcher(Type type, Rbac::CidrRange range,
+                         bool not_rule = false);
+
+  bool Matches(const EvaluateArgs& args) const override;
 
  private:
-  const Rbac::CidrRange range_;
+  const Type type_;
+  // Subnet masked address.
+  grpc_resolved_address subnet_address_;
+  const uint32_t prefix_len_;
   // Negates matching the provided permission/principal.
   const bool not_rule_;
 };
