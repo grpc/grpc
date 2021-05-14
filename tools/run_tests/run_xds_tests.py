@@ -2639,7 +2639,7 @@ def delete_global_forwarding_rule(gcp, name=None):
     else:
         forwarding_rule_to_delete = gcp.global_forwarding_rule.name
     try:
-        logger.debug('Deleting forwarding rule', forwarding_rule_to_delete)
+        logger.debug('Deleting forwarding rule %s', forwarding_rule_to_delete)
         result = gcp.compute.globalForwardingRules().delete(
             project=gcp.project,
             forwardingRule=forwarding_rule_to_delete).execute(
@@ -2656,12 +2656,12 @@ def delete_target_proxy(gcp, name=None):
         proxy_to_delete = gcp.target_proxy.name
     try:
         if gcp.alpha_compute:
-            logger.debug('Deleting grpc proxy', proxy_to_delete)
+            logger.debug('Deleting grpc proxy %s', proxy_to_delete)
             result = gcp.alpha_compute.targetGrpcProxies().delete(
                 project=gcp.project, targetGrpcProxy=proxy_to_delete).execute(
                     num_retries=_GCP_API_RETRIES)
         else:
-            logger.debug('Deleting http proxy', proxy_to_delete)
+            logger.debug('Deleting http proxy %s', proxy_to_delete)
             result = gcp.compute.targetHttpProxies().delete(
                 project=gcp.project, targetHttpProxy=proxy_to_delete).execute(
                     num_retries=_GCP_API_RETRIES)
@@ -2676,7 +2676,7 @@ def delete_url_map(gcp, name=None):
     else:
         url_map_to_delete = gcp.url_map.name
     try:
-        logger.debug('Deleting url map', url_map_to_delete)
+        logger.debug('Deleting url map %s', url_map_to_delete)
         result = gcp.compute.urlMaps().delete(
             project=gcp.project,
             urlMap=url_map_to_delete).execute(num_retries=_GCP_API_RETRIES)
@@ -2687,7 +2687,7 @@ def delete_url_map(gcp, name=None):
 
 def delete_backend_service(gcp, backend_service):
     try:
-        logger.debug('Deleting backend service', backend_service.name)
+        logger.debug('Deleting backend service %s', backend_service.name)
         result = gcp.compute.backendServices().delete(
             project=gcp.project, backendService=backend_service.name).execute(
                 num_retries=_GCP_API_RETRIES)
@@ -2703,7 +2703,7 @@ def delete_backend_services(gcp):
 
 def delete_firewall(gcp):
     try:
-        logger.debug('Deleting firewall', gcp.health_check_firewall_rule.name)
+        logger.debug('Deleting firewall %s', gcp.health_check_firewall_rule.name)
         result = gcp.compute.firewalls().delete(
             project=gcp.project,
             firewall=gcp.health_check_firewall_rule.name).execute(
@@ -2715,7 +2715,7 @@ def delete_firewall(gcp):
 
 def delete_health_check(gcp):
     try:
-        logger.debug('Deleting health check', gcp.health_check.name)
+        logger.debug('Deleting health check %s', gcp.health_check.name)
         result = gcp.compute.healthChecks().delete(
             project=gcp.project, healthCheck=gcp.health_check.name).execute(
                 num_retries=_GCP_API_RETRIES)
@@ -2727,7 +2727,7 @@ def delete_health_check(gcp):
 def delete_instance_groups(gcp):
     for instance_group in gcp.instance_groups:
         try:
-            logger.debug('Deleting instance group', gcp.instance_group.name)
+            logger.debug('Deleting instance group %s %s', instance_group.name, instance_group.zone)
             result = gcp.compute.instanceGroupManagers().delete(
                 project=gcp.project,
                 zone=instance_group.zone,
@@ -2743,7 +2743,7 @@ def delete_instance_groups(gcp):
 
 def delete_instance_template(gcp):
     try:
-        logger.debug('Deleting instance template', gcp.instance_template.name)
+        logger.debug('Deleting instance template %s', gcp.instance_template.name)
         result = gcp.compute.instanceTemplates().delete(
             project=gcp.project,
             instanceTemplate=gcp.instance_template.name).execute(
