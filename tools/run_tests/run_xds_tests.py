@@ -2541,62 +2541,94 @@ def create_global_forwarding_rule(gcp,
 
 
 def get_health_check(gcp, health_check_name):
-    result = gcp.compute.healthChecks().get(
-        project=gcp.project, healthCheck=health_check_name).execute()
-    gcp.health_check = GcpResource(health_check_name, result['selfLink'])
+    try:
+        result = gcp.compute.healthChecks().get(
+            project=gcp.project, healthCheck=health_check_name).execute()
+        gcp.health_check = GcpResource(health_check_name, result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        gcp.health_check = GcpResource(health_check_name, None)
+
 
 
 def get_health_check_firewall_rule(gcp, firewall_name):
-    result = gcp.compute.firewalls().get(project=gcp.project,
-                                         firewall=firewall_name).execute()
-    gcp.health_check_firewall_rule = GcpResource(firewall_name,
-                                                 result['selfLink'])
+    try:
+        result = gcp.compute.firewalls().get(project=gcp.project,
+                                             firewall=firewall_name).execute()
+        gcp.health_check_firewall_rule = GcpResource(firewall_name,
+                                                     result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        gcp.health_check_firewall_rule = GcpResource(firewall_name, None)
 
 
 def get_backend_service(gcp, backend_service_name):
-    result = gcp.compute.backendServices().get(
-        project=gcp.project, backendService=backend_service_name).execute()
-    backend_service = GcpResource(backend_service_name, result['selfLink'])
+    try:
+        result = gcp.compute.backendServices().get(
+            project=gcp.project, backendService=backend_service_name).execute()
+        backend_service = GcpResource(backend_service_name, result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        backend_service = GcpResource(backend_service_name, None)
     gcp.backend_services.append(backend_service)
     return backend_service
 
 
 def get_url_map(gcp, url_map_name):
-    result = gcp.compute.urlMaps().get(project=gcp.project,
-                                       urlMap=url_map_name).execute()
-    gcp.url_map = GcpResource(url_map_name, result['selfLink'])
-
+    try:
+        result = gcp.compute.urlMaps().get(project=gcp.project,
+                                           urlMap=url_map_name).execute()
+        gcp.url_map = GcpResource(url_map_name, result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        gcp.url_map = GcpResource(url_map_name, None)
 
 def get_target_proxy(gcp, target_proxy_name):
-    if gcp.alpha_compute:
-        result = gcp.alpha_compute.targetGrpcProxies().get(
-            project=gcp.project, targetGrpcProxy=target_proxy_name).execute()
-    else:
-        result = gcp.compute.targetHttpProxies().get(
-            project=gcp.project, targetHttpProxy=target_proxy_name).execute()
-    gcp.target_proxy = GcpResource(target_proxy_name, result['selfLink'])
+    try:
+        if gcp.alpha_compute:
+            result = gcp.alpha_compute.targetGrpcProxies().get(
+                project=gcp.project, targetGrpcProxy=target_proxy_name).execute()
+        else:
+            result = gcp.compute.targetHttpProxies().get(
+                project=gcp.project, targetHttpProxy=target_proxy_name).execute()
+        gcp.target_proxy = GcpResource(target_proxy_name, result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        gcp.target_proxy = GcpResource(target_proxy_name, None)
 
 
 def get_global_forwarding_rule(gcp, forwarding_rule_name):
-    result = gcp.compute.globalForwardingRules().get(
-        project=gcp.project, forwardingRule=forwarding_rule_name).execute()
-    gcp.global_forwarding_rule = GcpResource(forwarding_rule_name,
-                                             result['selfLink'])
+    try:
+        result = gcp.compute.globalForwardingRules().get(
+            project=gcp.project, forwardingRule=forwarding_rule_name).execute()
+        gcp.global_forwarding_rule = GcpResource(forwarding_rule_name,
+                                                 result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        gcp.global_forwarding_rule = GcpResource(forwarding_rule_name, None)
 
 
 def get_instance_template(gcp, template_name):
-    result = gcp.compute.instanceTemplates().get(
-        project=gcp.project, instanceTemplate=template_name).execute()
-    gcp.instance_template = GcpResource(template_name, result['selfLink'])
+    try:
+        result = gcp.compute.instanceTemplates().get(
+            project=gcp.project, instanceTemplate=template_name).execute()
+        gcp.instance_template = GcpResource(template_name, result['selfLink'])
+    except Exception as e:
+        gcp.errors.append(e)
+        gcp.instance_template = GcpResource(template_name, None)
 
 
 def get_instance_group(gcp, zone, instance_group_name):
-    result = gcp.compute.instanceGroups().get(
-        project=gcp.project, zone=zone,
-        instanceGroup=instance_group_name).execute()
-    gcp.service_port = result['namedPorts'][0]['port']
-    instance_group = InstanceGroup(instance_group_name, result['selfLink'],
-                                   zone)
+    try:
+        result = gcp.compute.instanceGroups().get(
+            project=gcp.project, zone=zone,
+            instanceGroup=instance_group_name).execute()
+        gcp.service_port = result['namedPorts'][0]['port']
+        instance_group = InstanceGroup(instance_group_name, result['selfLink'],
+                                       zone)
+    except Exception as e:
+        gcp.errors.append(e)
+        instance_group = InstanceGroup(instance_group_name, None, zone)
     gcp.instance_groups.append(instance_group)
     return instance_group
 
@@ -2952,6 +2984,7 @@ class GcpState(object):
         self.service_port = None
         self.instance_template = None
         self.instance_groups = []
+        self.errors = []
 
 
 alpha_compute = None
@@ -3006,13 +3039,7 @@ try:
     if args.use_existing_gcp_resources:
         logger.info('Reusing existing GCP resources')
         get_health_check(gcp, health_check_name)
-        try:
-            get_health_check_firewall_rule(gcp, firewall_name)
-        except googleapiclient.errors.HttpError as http_error:
-            # Firewall rule may be auto-deleted periodically depending on GCP
-            # project settings.
-            logger.exception('Failed to find firewall rule, recreating')
-            create_health_check_firewall_rule(gcp, firewall_name)
+        get_health_check_firewall_rule(gcp, firewall_name)
         backend_service = get_backend_service(gcp, backend_service_name)
         alternate_backend_service = get_backend_service(
             gcp, alternate_backend_service_name)
@@ -3025,6 +3052,8 @@ try:
             gcp, args.zone, same_zone_instance_group_name)
         secondary_zone_instance_group = get_instance_group(
             gcp, args.secondary_zone, secondary_zone_instance_group_name)
+        if gcp.errors:
+            raise Exception(gcp.errors)
     else:
         create_health_check_firewall_rule(gcp, firewall_name)
         backend_service = add_backend_service(gcp, backend_service_name)
