@@ -143,6 +143,10 @@ class KubernetesBaseRunner:
                      resource.metadata.creation_timestamp)
         return resource
 
+    def _reuse_service_account(self, service_account_name) -> k8s.V1ServiceAccount:
+        return self.k8s_namespace.get_service_account(service_account_name)
+
+
     def _create_deployment(self, template, **kwargs) -> k8s.V1Deployment:
         deployment = self._create_from_template(template, **kwargs)
         if not isinstance(deployment, k8s.V1Deployment):
