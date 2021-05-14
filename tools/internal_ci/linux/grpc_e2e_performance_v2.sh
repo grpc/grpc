@@ -62,7 +62,7 @@ buildConfigs() {
         -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
         -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
-        --prefix=$KOKORO_BUILD_INITIATOR -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
+        --prefix="${KOKORO_BUILD_INITIATOR}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
         --allow_client_language=c++ --allow_server_language=c++ \
         -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
@@ -97,4 +97,4 @@ trap deleteImages EXIT
 ../test-infra/bin/runner \
     -i ../grpc/loadtest_with_prebuilt_workers_workers-8core.yaml \
     -i ../grpc/loadtest_with_prebuilt_workers_workers-32core.yaml \
-    -c workers-8core:5 -c workers-32core:5
+    -c workers-8core:2 -c workers-32core:2
