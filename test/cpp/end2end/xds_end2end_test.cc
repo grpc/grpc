@@ -1633,10 +1633,11 @@ grpc_millis NowFromCycleCounter() {
 //
 // E.g., with p=0.5 k=0.1, n >= 378; with p=0.5 k=0.05, n >= 1513; with p=0.5
 // k=0.01, n >= 37830.
-size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
+size_t ComputeIdealNumRpcs(double p, double error_tolerance,
+                           double sigma = 3.89) {
   GPR_ASSERT(p >= 0 && p <= 1);
   size_t num_rpcs =
-      ceil(p * (1 - p) * 3.89 * 3.89 / error_tolerance / error_tolerance);
+      ceil(p * (1 - p) * sigma * sigma / error_tolerance / error_tolerance);
   gpr_log(GPR_INFO,
           "Sending %" PRIuPTR " RPCs for percentage=%.3f error_tolerance=%.3f",
           num_rpcs, p, error_tolerance);
@@ -6857,9 +6858,11 @@ TEST_P(CdsTest, RingHashHeaderHashingWithRegexRewrite) {
 TEST_P(CdsTest, RingHashNoHashPolicy) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const double kDistribution50Percent = 0.5;
-  const double kErrorTolerance = 0.05;
-  const size_t kNumRpcs =
-      ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
+  const double kErrorTolerance = 0.1;
+  // 2x Standard deviation
+  const double kStandardDeviation = 3.89 * 2;
+  const size_t kNumRpcs = ComputeIdealNumRpcs(
+      kDistribution50Percent, kErrorTolerance, kStandardDeviation);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -6913,9 +6916,11 @@ TEST_P(CdsTest, RingHashContinuesPastTerminalPolicyThatDoesNotProduceResult) {
 TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const double kDistribution50Percent = 0.5;
-  const double kErrorTolerance = 0.05;
-  const size_t kNumRpcs =
-      ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
+  const double kErrorTolerance = 0.1;
+  // 2x Standard deviation
+  const double kStandardDeviation = 3.89 * 2;
+  const size_t kNumRpcs = ComputeIdealNumRpcs(
+      kDistribution50Percent, kErrorTolerance, kStandardDeviation);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -6949,9 +6954,11 @@ TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
 TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const double kDistribution50Percent = 0.5;
-  const double kErrorTolerance = 0.05;
-  const size_t kNumRpcs =
-      ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
+  const double kErrorTolerance = 0.1;
+  // 2x Standard deviation
+  const double kStandardDeviation = 3.89 * 2;
+  const size_t kNumRpcs = ComputeIdealNumRpcs(
+      kDistribution50Percent, kErrorTolerance, kStandardDeviation);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -6991,9 +6998,11 @@ TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
   const size_t kWeightTotal = kWeight1 + kWeight2;
   const double kWeight33Percent = static_cast<double>(kWeight1) / kWeightTotal;
   const double kWeight66Percent = static_cast<double>(kWeight2) / kWeightTotal;
-  const double kErrorTolerance = 0.05;
-  const size_t kNumRpcs =
-      ComputeIdealNumRpcs(kWeight33Percent, kErrorTolerance);
+  const double kErrorTolerance = 0.1;
+  // 2x Standard deviation
+  const double kStandardDeviation = 3.89 * 2;
+  const size_t kNumRpcs = ComputeIdealNumRpcs(kWeight33Percent, kErrorTolerance,
+                                              kStandardDeviation);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
@@ -7027,9 +7036,11 @@ TEST_P(CdsTest,
   const size_t kWeightTotal = kWeight1 + kWeight2;
   const double kWeight20Percent = static_cast<double>(kWeight1) / kWeightTotal;
   const double kWeight80Percent = static_cast<double>(kWeight2) / kWeightTotal;
-  const double kErrorTolerance = 0.05;
-  const size_t kNumRpcs =
-      ComputeIdealNumRpcs(kWeight20Percent, kErrorTolerance);
+  const double kErrorTolerance = 0.1;
+  // 2x Standard deviation
+  const double kStandardDeviation = 3.89 * 2;
+  const size_t kNumRpcs = ComputeIdealNumRpcs(kWeight20Percent, kErrorTolerance,
+                                              kStandardDeviation);
   auto cluster = default_cluster_;
   cluster.set_lb_policy(Cluster::RING_HASH);
   balancers_[0]->ads_service()->SetCdsResource(cluster);
