@@ -1164,9 +1164,9 @@ static bool process_errors(grpc_tcp* tcp) {
     struct cmsghdr align;
   } aligned_buf;
   msg.msg_control = aligned_buf.rbuf;
-  msg.msg_controllen = sizeof(aligned_buf.rbuf);
   int r, saved_errno;
   while (true) {
+    msg.msg_controllen = sizeof(aligned_buf.rbuf);
     do {
       r = recvmsg(tcp->fd, &msg, MSG_ERRQUEUE);
       saved_errno = errno;
