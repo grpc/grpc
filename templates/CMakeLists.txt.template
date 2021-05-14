@@ -760,7 +760,7 @@
       "<%text>${output_filepath}</%text>"
       @ONLY)
     install(FILES "<%text>${output_filepath}</%text>"
-      DESTINATION "lib/pkgconfig/")
+      DESTINATION "${gRPC_INSTALL_LIBDIR}/pkgconfig/")
   endfunction()
 
   # gpr .pc file
