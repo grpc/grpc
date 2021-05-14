@@ -2550,7 +2550,6 @@ def get_health_check(gcp, health_check_name):
         gcp.health_check = GcpResource(health_check_name, None)
 
 
-
 def get_health_check_firewall_rule(gcp, firewall_name):
     try:
         result = gcp.compute.firewalls().get(project=gcp.project,
@@ -2583,14 +2582,17 @@ def get_url_map(gcp, url_map_name):
         gcp.errors.append(e)
         gcp.url_map = GcpResource(url_map_name, None)
 
+
 def get_target_proxy(gcp, target_proxy_name):
     try:
         if gcp.alpha_compute:
             result = gcp.alpha_compute.targetGrpcProxies().get(
-                project=gcp.project, targetGrpcProxy=target_proxy_name).execute()
+                project=gcp.project,
+                targetGrpcProxy=target_proxy_name).execute()
         else:
             result = gcp.compute.targetHttpProxies().get(
-                project=gcp.project, targetHttpProxy=target_proxy_name).execute()
+                project=gcp.project,
+                targetHttpProxy=target_proxy_name).execute()
         gcp.target_proxy = GcpResource(target_proxy_name, result['selfLink'])
     except Exception as e:
         gcp.errors.append(e)
@@ -2703,7 +2705,8 @@ def delete_backend_services(gcp):
 
 def delete_firewall(gcp):
     try:
-        logger.debug('Deleting firewall %s', gcp.health_check_firewall_rule.name)
+        logger.debug('Deleting firewall %s',
+                     gcp.health_check_firewall_rule.name)
         result = gcp.compute.firewalls().delete(
             project=gcp.project,
             firewall=gcp.health_check_firewall_rule.name).execute(
@@ -2727,7 +2730,8 @@ def delete_health_check(gcp):
 def delete_instance_groups(gcp):
     for instance_group in gcp.instance_groups:
         try:
-            logger.debug('Deleting instance group %s %s', instance_group.name, instance_group.zone)
+            logger.debug('Deleting instance group %s %s', instance_group.name,
+                         instance_group.zone)
             result = gcp.compute.instanceGroupManagers().delete(
                 project=gcp.project,
                 zone=instance_group.zone,
@@ -2743,7 +2747,8 @@ def delete_instance_groups(gcp):
 
 def delete_instance_template(gcp):
     try:
-        logger.debug('Deleting instance template %s', gcp.instance_template.name)
+        logger.debug('Deleting instance template %s',
+                     gcp.instance_template.name)
         result = gcp.compute.instanceTemplates().delete(
             project=gcp.project,
             instanceTemplate=gcp.instance_template.name).execute(
