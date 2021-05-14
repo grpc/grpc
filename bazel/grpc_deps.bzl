@@ -351,7 +351,7 @@ def grpc_deps():
         http_archive(
             name = "build_bazel_rules_apple",
             strip_prefix = "rules_apple-709d8b12d68b571f23a1187b1cf7b10bb89fa46f",
-            sha256 = "c84962b64d9ae4472adfb01ec2cf1aa73cb2ee8308242add55fa7cc38602d882",
+            sha256 = "a0b7066d9f4193e8a800db2a66f4fe867a7806b8cdeecc3f0b9c9b3fc415338e",
             urls = [
                 "https://github.com/bazelbuild/rules_apple/archive/709d8b12d68b571f23a1187b1cf7b10bb89fa46f.tar.gz",
             ],
