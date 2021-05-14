@@ -17,6 +17,4 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
-source tools/internal_ci/helper_scripts/prepare_build_linux_rc
-
 python3 tools/run_tests/helper_scripts/clean_xds_interop_resources.py
