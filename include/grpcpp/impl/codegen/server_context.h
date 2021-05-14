@@ -434,6 +434,8 @@ class ServerContextBase {
     message_allocator_state_ = allocator_state;
   }
 
+  void MaybeMarkCancelledOnRead();
+
   struct CallWrapper {
     ~CallWrapper();
 
@@ -525,6 +527,8 @@ class ServerContextBase {
       default_reactor_;
   std::atomic_bool default_reactor_used_{false};
   std::unique_ptr<TestServerCallbackUnary> test_unary_;
+
+  std::atomic_bool marked_cancelled_{false};
 };
 
 /// A ServerContext or CallbackServerContext allows the code implementing a

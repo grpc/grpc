@@ -120,6 +120,10 @@ size_t grpc_call_get_initial_size_estimate();
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call* call, grpc_compression_level level);
 
+/* Returns whether or not the call's receive message operation failed because of
+ * an error (as opposed to a graceful end-of-stream) */
+bool grpc_call_recv_message_error(grpc_call* c);
+
 extern grpc_core::TraceFlag grpc_call_error_trace;
 extern grpc_core::TraceFlag grpc_compression_trace;
 

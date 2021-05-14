@@ -485,6 +485,7 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
   if (s->recv_message_op) {
     INPROC_LOG(GPR_INFO, "fail_helper %p scheduling message-ready %p", s,
                error);
+    *s->recv_message_op->payload->recv_message.recv_message_error = true;
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION,
         s->recv_message_op->payload->recv_message.recv_message_ready,
