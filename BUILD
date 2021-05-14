@@ -719,6 +719,26 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "promise",
+    language = "c++",
+    public_hdrs = [
+        "src/core/lib/promise/join.h",
+        "src/core/lib/promise/poll.h",
+        "src/core/lib/promise/promise.h",
+        "src/core/lib/promise/race.h",
+        "src/core/lib/promise/seq.h",
+        "src/core/lib/promise/try_join.h",
+        "src/core/lib/promise/try_seq.h",
+    ],
+    external_deps = [
+        "absl/status",
+        "absl/status:statusor",
+        "absl/types:optional",
+        "absl/types:variant",
+    ]
+)
+
+grpc_cc_library(
     name = "ref_counted",
     language = "c++",
     public_hdrs = ["src/core/lib/gprpp/ref_counted.h"],

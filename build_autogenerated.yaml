@@ -5570,6 +5570,26 @@ targets:
   - linux
   - posix
   - mac
+- name: join_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/try_join.h
+  - src/core/lib/promise/try_seq.h
+  src:
+  - test/core/promise/join_test.cc
+  deps:
+  - absl/status:status
+  - absl/status:statusor
+  - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
 - name: json_fuzzer_test
   build: fuzzer
   language: c++
@@ -5814,6 +5834,26 @@ targets:
   - test/core/transport/pid_controller_test.cc
   deps:
   - grpc_test_util
+- name: poll_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/try_join.h
+  - src/core/lib/promise/try_seq.h
+  src:
+  - test/core/promise/poll_test.cc
+  deps:
+  - absl/status:status
+  - absl/status:statusor
+  - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
 - name: port_sharing_end2end_test
   gtest: true
   build: test
@@ -5828,6 +5868,26 @@ targets:
   - test/cpp/end2end/test_service_impl.cc
   deps:
   - grpc++_test_util
+- name: promise_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/try_join.h
+  - src/core/lib/promise/try_seq.h
+  src:
+  - test/core/promise/promise_test.cc
+  deps:
+  - absl/status:status
+  - absl/status:statusor
+  - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
 - name: proto_server_reflection_test
   gtest: true
   build: test
@@ -5938,6 +5998,26 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: race_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/try_join.h
+  - src/core/lib/promise/try_seq.h
+  src:
+  - test/core/promise/race_test.cc
+  deps:
+  - absl/status:status
+  - absl/status:statusor
+  - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
 - name: raw_end2end_test
   gtest: true
   build: test
@@ -6023,6 +6103,26 @@ targets:
   - test/cpp/common/secure_auth_context_test.cc
   deps:
   - grpc++_test_util
+- name: seq_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/try_join.h
+  - src/core/lib/promise/try_seq.h
+  src:
+  - test/core/promise/seq_test.cc
+  deps:
+  - absl/status:status
+  - absl/status:statusor
+  - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
 - name: server_builder_plugin_test
   gtest: true
   build: test
@@ -6486,6 +6586,46 @@ targets:
   deps:
   - grpc++_test_config
   - grpc++_test_util
+- name: try_join_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/try_join.h
+  - src/core/lib/promise/try_seq.h
+  src:
+  - test/core/promise/try_join_test.cc
+  deps:
+  - absl/status:status
+  - absl/status:statusor
+  - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
+- name: try_seq_test
+  gtest: true
+  build: test
+  language: c++
+  headers:
+  - src/core/lib/promise/join.h
+  - src/core/lib/promise/poll.h
+  - src/core/lib/promise/promise.h
+  - src/core/lib/promise/race.h
+  - src/core/lib/promise/seq.h
+  - src/core/lib/promise/try_join.h
+  - src/core/lib/promise/try_seq.h
+  src:
+  - test/core/promise/try_seq_test.cc
+  deps:
+  - absl/status:status
+  - absl/status:statusor
+  - absl/types:optional
+  - absl/types:variant
+  uses_polling: false
 - name: unknown_frame_bad_client_test
   gtest: true
   build: test
