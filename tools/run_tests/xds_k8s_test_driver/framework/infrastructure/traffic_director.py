@@ -46,7 +46,6 @@ class TrafficDirectorManager:
     URL_MAP_PATH_MATCHER_NAME = "path-matcher"
     TARGET_PROXY_NAME = "target-proxy"
     FORWARDING_RULE_NAME = "forwarding-rule"
-    FIREWALL_RULE_NAME = "allow-health-checks"
 
     def __init__(
         self,
@@ -114,7 +113,6 @@ class TrafficDirectorManager:
         self.delete_url_map(force=force)
         self.delete_backend_service(force=force)
         self.delete_health_check(force=force)
-        self.delete_firewall_rule(force=force)
 
     def _ns_name(self, name):
         return f'{self.resource_prefix}-{name}'
@@ -291,26 +289,6 @@ class TrafficDirectorManager:
         logger.info('Deleting Forwarding rule "%s"', name)
         self.compute.delete_forwarding_rule(name)
         self.forwarding_rule = None
-
-    def create_firewall_rule(self, force=False):
-        name = self._ns_name(self.FIREWALL_RULE_NAME)
-        logging.info('Creating firewall rule "%s" in network "%s"', name,
-                     self.network)
-        resource = self.compute.create_firewall_rule(
-            name, self.network_url, ['35.191.0.0/16', '130.211.0.0/22'],
-            ['8080-8100'])
-        self.firewall_rule = resource
-
-    def delete_firewall_rule(self, force=False):
-        if force:
-            name = self._ns_name(self.FIREWALL_RULE_NAME)
-        elif self.firewall_rule:
-            name = self.firewall_rule.name
-        else:
-            return
-        logger.info('Deleting Firewall Rule "%s"', name)
-        self.compute.delete_firewall_rule(name)
-        self.firewall_rule = None
 
 
 class TrafficDirectorSecureManager(TrafficDirectorManager):
