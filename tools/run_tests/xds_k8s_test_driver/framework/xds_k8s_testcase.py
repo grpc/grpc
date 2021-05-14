@@ -17,7 +17,6 @@ import hashlib
 import logging
 import time
 from typing import Optional, Tuple
-from google.protobuf import json_format
 
 from absl import flags
 from absl.testing import absltest
@@ -34,6 +33,10 @@ from framework.test_app import client_app
 from framework.test_app import server_app
 
 logger = logging.getLogger(__name__)
+_ENSURE_FIREWALL = flags.DEFINE_bool(
+    "ensure_firewall",
+    default=False,
+    help="Ensure the allow-health-check firewall exists before each test case")
 _FORCE_CLEANUP = flags.DEFINE_bool(
     "force_cleanup",
     default=False,
@@ -156,20 +159,6 @@ class XdsKubernetesTestCase(absltest.TestCase):
             0,
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
 
-    def assertXdsConfigExists(self, test_client: XdsTestClient):
-        config = test_client.csds.fetch_client_status()
-        self.assertIsNotNone(config)
-        seen = set()
-        want = frozenset([
-            'listener_config', 'cluster_config', 'route_config',
-            'endpoint_config'
-        ])
-        for xds_config in config.xds_config:
-            seen.add(xds_config.WhichOneof('per_xds_config'))
-        logger.debug('Received xDS config dump: %s',
-                     json_format.MessageToJson(config, indent=2))
-        self.assertEqual(want, seen)
-
     def assertFailedRpcs(self,
                          test_client: XdsTestClient,
                          num_rpcs: Optional[int] = 100):
@@ -279,6 +268,10 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             project=self.project,
             resource_prefix=self.namespace,
             network=self.network)
+
+        # Ensures the firewall exist
+        if _ENSURE_FIREWALL.value:
+            self.td.create_firewall_rule()
 
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(
