@@ -124,6 +124,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
 
     // recv_message
     OrphanablePtr<ByteStream> recv_message_;
+    bool recv_message_error_;
     grpc_closure recv_message_ready_;
     grpc_slice_buffer recv_message_buffer_;
     Atomic<bool> seen_response_{false};
