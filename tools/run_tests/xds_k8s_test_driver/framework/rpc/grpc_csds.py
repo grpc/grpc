@@ -21,9 +21,15 @@ import logging
 from typing import Optional, Callable
 
 import grpc
-from envoy.config.listener.v3 import listener_pb2
 from envoy.service.status.v3 import csds_pb2
 from envoy.service.status.v3 import csds_pb2_grpc
+
+# Envoy protos provided by PyPI package xds-protos
+# Needs to import the generated Python file to load descriptors
+from envoy.extensions.filters.network.http_connection_manager.v3 import http_connection_manager_pb2
+from envoy.extensions.filters.common.fault.v3 import fault_pb2
+from envoy.extensions.filters.http.fault.v3 import fault_pb2
+from envoy.extensions.filters.http.router.v3 import router_pb2
 
 import framework.rpc
 

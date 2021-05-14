@@ -29,6 +29,9 @@ _XdsTestClient = xds_k8s_testcase.XdsTestClient
 class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     def test_traffic_director_grpc_setup(self):
+        with self.subTest('create_firewall_rule'):
+            self.td.create_firewall_rule()
+
         with self.subTest('0_create_health_check'):
             self.td.create_health_check()
 
@@ -53,11 +56,11 @@ class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('7_start_test_client'):
             test_client: _XdsTestClient = self.startTestClient(test_server)
 
-        with self.subTest('8_test_server_received_rpcs_from_test_client'):
-            self.assertSuccessfulRpcs(test_client)
-
-        with self.subTest('9_validate_xDS_config'):
+        with self.subTest('8_validate_xDS_config'):
             self.assertXdsConfigExists(test_client)
+
+        with self.subTest('9_test_server_received_rpcs_from_test_client'):
+            self.assertSuccessfulRpcs(test_client)
 
 
 if __name__ == '__main__':
