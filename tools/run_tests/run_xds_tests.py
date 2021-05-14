@@ -29,7 +29,6 @@ import sys
 import tempfile
 import time
 import uuid
-from typing import Any, Callable
 
 from oauth2client.client import GoogleCredentials
 from google.protobuf import json_format
@@ -290,7 +289,6 @@ _WAIT_FOR_VALID_CONFIG_SEC = 60
 _WAIT_FOR_URL_MAP_PATCH_SEC = 300
 _CONNECTION_TIMEOUT_SEC = 60
 _GCP_API_RETRIES = 5
-_CHECK_URL_MAP_INTERVAL_SEC = 5
 _BOOTSTRAP_TEMPLATE = """
 {{
   "node": {{
@@ -413,21 +411,6 @@ def get_client_xds_config_dump():
                     response.config[0], preserving_proto_field_name=True)
 
 
-def ensure_xds_config(validator: Callable[[Any], bool],
-                      timeout: int = _WAIT_FOR_URL_MAP_PATCH_SEC) -> None:
-    config = None
-    deadline = time.time() + timeout
-    while time.time() < deadline:
-        config = get_client_xds_config_dump()
-        if validator(config):
-            return
-        else:
-            time.sleep(_CHECK_URL_MAP_INTERVAL_SEC)
-    raise ControlPlaneError(
-        'Failed to receive valid xDS config after %s seconds, latest xDS config: %s'
-        % (timeout, config))
-
-
 def configure_client(rpc_types, metadata=[], timeout_sec=None):
     if CLIENT_HOSTS:
         hosts = CLIENT_HOSTS
@@ -457,10 +440,6 @@ def configure_client(rpc_types, metadata=[], timeout_sec=None):
 
 
 class RpcDistributionError(Exception):
-    pass
-
-
-class ControlPlaneError(Exception):
     pass
 
 
