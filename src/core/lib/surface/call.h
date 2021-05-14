@@ -120,6 +120,9 @@ size_t grpc_call_get_initial_size_estimate();
 grpc_compression_algorithm grpc_call_compression_for_level(
     grpc_call* call, grpc_compression_level level);
 
+/* Did this client call receive a trailers-only response */
+bool grpc_call_is_trailers_only(const grpc_call* call);
+
 extern grpc_core::TraceFlag grpc_call_error_trace;
 extern grpc_core::TraceFlag grpc_compression_trace;
 

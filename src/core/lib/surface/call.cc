@@ -192,6 +192,9 @@ struct grpc_call {
 
   grpc_metadata compression_md;
 
+  // Trailers-only response status
+  bool is_trailers_only = false;
+
   // A char* indicating the peer name.
   gpr_atm peer_string = 0;
 
@@ -1824,7 +1827,10 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
             &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
         stream_op_payload->recv_initial_metadata.recv_initial_metadata_ready =
             &call->receiving_initial_metadata_ready;
-        if (!call->is_client) {
+        if (call->is_client) {
+          stream_op_payload->recv_initial_metadata.trailing_metadata_available =
+              &call->is_trailers_only;
+        } else {
           stream_op_payload->recv_initial_metadata.peer_string =
               &call->peer_string;
         }
@@ -2012,6 +2018,10 @@ grpc_compression_algorithm grpc_call_compression_for_level(
   grpc_compression_algorithm algo =
       compression_algorithm_for_level_locked(call, level);
   return algo;
+}
+
+bool grpc_call_is_trailers_only(const grpc_call* call) {
+  return call->is_trailers_only;
 }
 
 const char* grpc_call_error_to_string(grpc_call_error error) {
