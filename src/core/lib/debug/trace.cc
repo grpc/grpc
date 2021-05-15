@@ -39,22 +39,21 @@ namespace grpc_core {
 TraceFlag* TraceFlagList::root_tracer_ = nullptr;
 
 bool TraceFlagList::Set(const char* name, bool enabled) {
-  TraceFlag* t;
   if (0 == strcmp(name, "all")) {
-    for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
+    for (auto t = root_tracer_; t != nullptr; t = t->next_tracer_) {
       t->set_enabled(enabled);
     }
   } else if (0 == strcmp(name, "list_tracers")) {
     LogAllTracers();
   } else if (0 == strcmp(name, "refcount")) {
-    for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
+    for (auto t = root_tracer_; t != nullptr; t = t->next_tracer_) {
       if (strstr(t->name_, "refcount") != nullptr) {
         t->set_enabled(enabled);
       }
     }
   } else {
     bool found = false;
-    for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
+    for (auto t = root_tracer_; t != nullptr; t = t->next_tracer_) {
       if (0 == strcmp(name, t->name_)) {
         t->set_enabled(enabled);
         found = true;
@@ -70,9 +69,9 @@ bool TraceFlagList::Set(const char* name, bool enabled) {
 }
 
 void TraceFlagList::Add(TraceFlag* flag) {
-  bool found = false;
+  gpr_log(GPR_DEBUG, "Add tracer:\t%s", flag->name_);
   // prevent cycles at 'Add' flag to 'root_tracer_'
-  for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
+  for (auto t = root_tracer_; t != nullptr; t = t->next_tracer_) {
     // check if flag is already part of 'root_tracer_'
     if (t == flag) {
       return;
@@ -84,8 +83,7 @@ void TraceFlagList::Add(TraceFlag* flag) {
 
 void TraceFlagList::LogAllTracers() {
   gpr_log(GPR_DEBUG, "available tracers:");
-  TraceFlag* t;
-  for (t = root_tracer_; t != nullptr; t = t->next_tracer_) {
+  for (auto t = root_tracer_; t != nullptr; t = t->next_tracer_) {
     gpr_log(GPR_DEBUG, "\t%s", t->name_);
   }
 }
