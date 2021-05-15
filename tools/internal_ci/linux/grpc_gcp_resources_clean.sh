@@ -17,4 +17,7 @@ set -ex
 # Enter the gRPC repo root
 cd $(dirname $0)/../../..
 
+# Prepares the environment to run the clean script
+tools/run_tests/helper_scripts/prep_xds.sh
+
 python3 tools/run_tests/helper_scripts/clean_xds_interop_resources.py

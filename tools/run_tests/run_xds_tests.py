@@ -270,6 +270,12 @@ argp.add_argument('--only_stable_gcp_apis',
                   'currently alpha and required for simulating server failure',
                   default=False,
                   action='store_true')
+argp.add_argument(
+    '--clean_only',
+    help=
+    'If this flag is presented, the script will clean-up resources with the given --gcp_suffix and exit.',
+    default=False,
+    action='store_true')
 args = argp.parse_args()
 
 if args.verbose:
@@ -2994,8 +3000,9 @@ try:
     instance_group_name = _BASE_INSTANCE_GROUP_NAME + gcp_suffix
     same_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-same-zone' + gcp_suffix
     secondary_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-secondary-zone' + gcp_suffix
-    if args.use_existing_gcp_resources:
-        logger.info('Reusing existing GCP resources')
+    if args.clean_only or args.use_existing_gcp_resources:
+        if args.use_existing_gcp_resources:
+            logger.info('Reusing existing GCP resources')
         get_health_check(gcp, health_check_name)
         try:
             get_health_check_firewall_rule(gcp, firewall_name)
@@ -3016,6 +3023,11 @@ try:
             gcp, args.zone, same_zone_instance_group_name)
         secondary_zone_instance_group = get_instance_group(
             gcp, args.secondary_zone, secondary_zone_instance_group_name)
+        if args.clean_only:
+            # This run has been instructed to clean-up resources
+            logger.info('Cleaning up GCP resources. This may take some time.')
+            clean_up(gcp)
+            sys.exit(0)
     else:
         create_health_check_firewall_rule(gcp, firewall_name)
         backend_service = add_backend_service(gcp, backend_service_name)
