@@ -86,7 +86,8 @@ def remove_relative_resources_run_xds_tests(suffix: str):
     """Removing GCP resources created by run_xds_tests.py."""
     logging.info('Removing run_xds_tests.py resources with suffix [%s]', suffix)
     cmds = [
-        sys.executable, RUN_XDS_TESTS, '--clean_only', '--gcp_suffix', suffix
+        sys.executable, RUN_XDS_TESTS, '--clean_only',
+        f'--gcp_suffix="{suffix}"', '--verbose'
     ]
     if args.dry_run:
         logging.debug('> Skipped: %s', " ".join(cmds))
@@ -101,19 +102,13 @@ def remove_relative_resources_psm_sec(prefix: str):
         sys.executable,
         '-m',
         'bin.run_td_setup',
-        '--cmd',
-        'cleanup',
-        '--flagfile',
-        'config/grpc-testing.cfg',
-        '--namespace',
-        prefix,
+        '--cmd=cleanup',
+        '--flagfile=config/grpc-testing.cfg',
+        f'--namespace={prefix}',
         # Following arguments doesn't matter
-        '--kube_context',
-        'DUMMY_DOES_MATTER',
-        '--server_image',
-        'DUMMY_DOES_MATTER',
-        '--client_image',
-        'DUMMY_DOES_MATTER'
+        '--kube_context=DUMMY_DOES_MATTER',
+        '--server_image=DUMMY_DOES_MATTER',
+        '--client_image=DUMMY_DOES_MATTER'
     ]
     if args.dry_run:
         logging.debug('> Skipped: %s', " ".join(cmds))

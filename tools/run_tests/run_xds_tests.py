@@ -14,6 +14,7 @@
 # limitations under the License.
 """Run xDS integration tests on GCP using Traffic Director."""
 
+import functools
 import argparse
 import datetime
 import googleapiclient.discovery
@@ -2901,6 +2902,18 @@ def get_instance_names(gcp, instance_group):
     return instance_names
 
 
+def http_error_shield(f):
+
+    @functools.wraps(f)
+    def wrapped(*args, **kwargs):
+        try:
+            f(*args, **kwargs)
+        except googleapiclient.errors.HttpError as http_error:
+            logging.info('%s: %s', type(http_error), http_error)
+
+    return wrapped
+
+
 def clean_up(gcp):
     if gcp.global_forwarding_rule:
         delete_global_forwarding_rule(gcp)
@@ -2969,7 +2982,7 @@ try:
     gcp = GcpState(compute, alpha_compute, args.project_id, args.project_num)
     gcp_suffix = args.gcp_suffix
     health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
-    if not args.use_existing_gcp_resources:
+    if not args.clean_only and not args.use_existing_gcp_resources:
         if args.keep_gcp_resources:
             # Auto-generating a unique suffix in case of conflict should not be
             # combined with --keep_gcp_resources, as the suffix actually used
@@ -3000,9 +3013,30 @@ try:
     instance_group_name = _BASE_INSTANCE_GROUP_NAME + gcp_suffix
     same_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-same-zone' + gcp_suffix
     secondary_zone_instance_group_name = _BASE_INSTANCE_GROUP_NAME + '-secondary-zone' + gcp_suffix
-    if args.clean_only or args.use_existing_gcp_resources:
-        if args.use_existing_gcp_resources:
-            logger.info('Reusing existing GCP resources')
+
+    if args.clean_only:
+        # This run has been instructed to clean-up resources
+        logger.info('Cleaning up GCP resources. This may take some time.')
+        http_error_shield(get_health_check)(gcp, health_check_name)
+        http_error_shield(get_health_check_firewall_rule)(gcp, firewall_name)
+        http_error_shield(get_backend_service)(gcp, backend_service_name)
+        http_error_shield(get_backend_service)(gcp,
+                                               alternate_backend_service_name)
+        http_error_shield(get_url_map)(gcp, url_map_name)
+        http_error_shield(get_target_proxy)(gcp, target_proxy_name)
+        http_error_shield(get_global_forwarding_rule)(gcp, forwarding_rule_name)
+        http_error_shield(get_instance_template)(gcp, template_name)
+        http_error_shield(get_instance_group)(gcp, args.zone,
+                                              instance_group_name)
+        http_error_shield(get_instance_group)(gcp, args.zone,
+                                              same_zone_instance_group_name)
+        http_error_shield(get_instance_group)(
+            gcp, args.secondary_zone, secondary_zone_instance_group_name)
+        clean_up(gcp)
+        sys.exit(0)
+
+    if args.use_existing_gcp_resources:
+        logger.info('Reusing existing GCP resources')
         get_health_check(gcp, health_check_name)
         try:
             get_health_check_firewall_rule(gcp, firewall_name)
@@ -3023,11 +3057,6 @@ try:
             gcp, args.zone, same_zone_instance_group_name)
         secondary_zone_instance_group = get_instance_group(
             gcp, args.secondary_zone, secondary_zone_instance_group_name)
-        if args.clean_only:
-            # This run has been instructed to clean-up resources
-            logger.info('Cleaning up GCP resources. This may take some time.')
-            clean_up(gcp)
-            sys.exit(0)
     else:
         create_health_check_firewall_rule(gcp, firewall_name)
         backend_service = add_backend_service(gcp, backend_service_name)

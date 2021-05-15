@@ -49,6 +49,9 @@ coverage
 .run_tests_cache
 .preprocessed_build
 
+# generated Python files for run_xds_tests.py
+tools/run_tests/src
+
 # emacs temp files
 *~
 
