@@ -24,3 +24,6 @@
 --debug_use_port_forwarding
 # (convenience) Allow to set always known flags
 --undefok=private_api_key_secret_name
+
+# Ensures the allow health check firewall exists before test case runs
+--ensure_firewall
