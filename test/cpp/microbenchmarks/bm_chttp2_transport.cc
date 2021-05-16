@@ -565,7 +565,6 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   grpc_transport_stream_op_batch_payload op_payload(nullptr);
   grpc_transport_stream_op_batch op;
   grpc_core::OrphanablePtr<grpc_core::ByteStream> recv_stream;
-  bool recv_error = false;
   grpc_slice incoming_data = CreateIncomingDataSlice(state.range(0), 16384);
 
   auto reset_op = [&]() {
@@ -607,7 +606,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
         op.on_complete = do_nothing.get();
         op.recv_message = true;
         op.payload->recv_message.recv_message = &recv_stream;
-        op.payload->recv_message.recv_message_error = &recv_error;
+        op.payload->recv_message.call_failed_before_recv_message = nullptr;
         op.payload->recv_message.recv_message_ready = drain_start.get();
         s->Op(&op);
         f.PushInput(grpc_slice_ref(incoming_data));

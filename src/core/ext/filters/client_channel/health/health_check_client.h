@@ -124,18 +124,17 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
 
     // recv_message
     OrphanablePtr<ByteStream> recv_message_;
-    bool recv_message_error_;
     grpc_closure recv_message_ready_;
     grpc_slice_buffer recv_message_buffer_;
     Atomic<bool> seen_response_{false};
+
+    // True if the cancel_stream batch has been started.
+    Atomic<bool> cancelled_{false};
 
     // recv_trailing_metadata
     grpc_metadata_batch recv_trailing_metadata_;
     grpc_transport_stream_stats collect_stats_;
     grpc_closure recv_trailing_metadata_ready_;
-
-    // True if the cancel_stream batch has been started.
-    Atomic<bool> cancelled_{false};
 
     // Closure for call stack destruction.
     grpc_closure after_call_stack_destruction_;

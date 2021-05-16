@@ -370,7 +370,6 @@ class RetryFilter::CallData {
     // For intercepting recv_message.
     grpc_closure recv_message_ready_;
     OrphanablePtr<ByteStream> recv_message_;
-    bool recv_message_errored_ = false;
     // For intercepting recv_trailing_metadata.
     grpc_metadata_batch recv_trailing_metadata_;
     grpc_transport_stream_stats collect_stats_;
@@ -1176,8 +1175,6 @@ void RetryFilter::CallData::CallAttempt::BatchData::InvokeRecvMessageCallback(
   // Return payload.
   *pending->batch->payload->recv_message.recv_message =
       std::move(call_attempt->recv_message_);
-  *pending->batch->payload->recv_message.recv_message_error =
-      call_attempt->recv_message_errored_;
   // Update bookkeeping.
   // Note: Need to do this before invoking the callback, since invoking
   // the callback will result in yielding the call combiner.
@@ -1653,8 +1650,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
   ++call_attempt_->started_recv_message_count_;
   batch_.recv_message = true;
   batch_.payload->recv_message.recv_message = &call_attempt_->recv_message_;
-  batch_.payload->recv_message.recv_message_error =
-      &call_attempt_->recv_message_errored_;
+  batch_.payload->recv_message.call_failed_before_recv_message = nullptr;
   GRPC_CLOSURE_INIT(&call_attempt_->recv_message_ready_, RecvMessageReady, this,
                     grpc_schedule_on_exec_ctx);
   batch_.payload->recv_message.recv_message_ready =

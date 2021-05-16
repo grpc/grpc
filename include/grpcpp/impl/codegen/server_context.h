@@ -526,9 +526,10 @@ class ServerContextBase {
   typename std::aligned_storage<sizeof(Reactor), alignof(Reactor)>::type
       default_reactor_;
   std::atomic_bool default_reactor_used_{false};
-  std::unique_ptr<TestServerCallbackUnary> test_unary_;
 
   std::atomic_bool marked_cancelled_{false};
+
+  std::unique_ptr<TestServerCallbackUnary> test_unary_;
 };
 
 /// A ServerContext or CallbackServerContext allows the code implementing a

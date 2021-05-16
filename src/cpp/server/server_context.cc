@@ -326,7 +326,7 @@ void ServerContextBase::TryCancel() const {
 }
 
 void ServerContextBase::MaybeMarkCancelledOnRead() {
-  if (grpc_call_recv_message_error(call_.call)) {
+  if (grpc_call_failed_before_recv_message(call_.call)) {
     marked_cancelled_.store(true, std::memory_order_release);
   }
 }
