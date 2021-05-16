@@ -722,6 +722,7 @@ grpc_cc_library(
     name = "promise",
     language = "c++",
     public_hdrs = [
+        "src/core/lib/promise/adaptor.h",
         "src/core/lib/promise/join.h",
         "src/core/lib/promise/poll.h",
         "src/core/lib/promise/promise.h",

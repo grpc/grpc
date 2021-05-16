@@ -17,6 +17,7 @@
 
 #include "absl/status/statusor.h"
 #include "absl/types/variant.h"
+#include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -51,6 +52,17 @@ class State<F> {
 template <typename Next, typename T>
 struct NextResultTraits;
 
+template <typename T>
+struct NextArg;
+template <typename T>
+struct NextArg<absl::StatusOr<T>> {
+  using Type = T;
+};
+template <>
+struct NextArg<absl::Status> {
+  using Type = void;
+};
+
 template <typename Next, typename T>
 auto CallNext(Next* next, absl::StatusOr<T>* status)
     -> decltype((*next)(std::move(**status))) {
@@ -79,8 +91,10 @@ class State<F, Next, Nexts...> {
       : f_(std::move(f)), next_(std::move(next)), nexts_(std::move(nexts)...) {}
 
   using FResult = typename decltype(std::declval<F>()())::Type;
-  using NextResult = decltype(
-      CallNext(static_cast<Next*>(nullptr), static_cast<FResult*>(nullptr)));
+  using NextFactory =
+      adaptor_detail::Factory<typename NextArg<FResult>::Type, Next>;
+  using NextResult = decltype(CallNext(static_cast<NextFactory*>(nullptr),
+                                       static_cast<FResult*>(nullptr)));
   using NextState = State<NextResult, Nexts...>;
   using FinalState = typename NextState::FinalState;
   using StatesList =
@@ -105,7 +119,7 @@ class State<F, Next, Nexts...> {
 
  private:
   F f_;
-  Next next_;
+  NextFactory next_;
   std::tuple<Nexts...> nexts_;
 };
 

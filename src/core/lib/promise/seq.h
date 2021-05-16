@@ -16,6 +16,7 @@
 #define GRPC_CORE_LIB_PROMISE_SEQ_H
 
 #include "absl/types/variant.h"
+#include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -54,7 +55,9 @@ class State<F, Next, Nexts...> {
       : f_(std::move(f)), next_(std::move(next)), nexts_(std::move(nexts)...) {}
 
   using FResult = typename decltype(std::declval<F>()())::Type;
-  using NextResult = decltype(std::declval<Next>()(std::declval<FResult>()));
+  using NextFactory = adaptor_detail::Factory<FResult, Next>;
+  using NextResult =
+      decltype(std::declval<NextFactory>()(std::declval<FResult>()));
   using NextState = State<NextResult, Nexts...>;
   using FinalState = typename NextState::FinalState;
   using StatesList =
@@ -73,7 +76,7 @@ class State<F, Next, Nexts...> {
 
  private:
   F f_;
-  Next next_;
+  NextFactory next_;
   std::tuple<Nexts...> nexts_;
 };
 
