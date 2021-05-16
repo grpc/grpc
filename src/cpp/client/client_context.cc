@@ -181,9 +181,9 @@ void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {
 }
 
 bool ClientContext::trailers_only() const {
-  return initial_metadata_received_ &&
-         recv_initial_metadata_.arr()->count == 0 &&
-         grpc_call_is_trailers_only(call_);
+  bool result = initial_metadata_received_ && grpc_call_is_trailers_only(call_);
+  GPR_DEBUG_ASSERT(!result || recv_initial_metadata_.arr()->count == 0);
+  return result;
 }
 
 }  // namespace grpc
