@@ -82,7 +82,7 @@ deleteImages() {
 trap deleteImages EXIT
 
 # Build and push prebuilt images for running tests.
-../test-infra/bin/prepare_prebuilt_workers \
+time ../test-infra/bin/prepare_prebuilt_workers \
     -l "cxx:${GRPC_CORE_GITREF}" \
     -l "csharp:${GRPC_CORE_GITREF}" \
     -l "go:${GRPC_GO_GITREF}" \
@@ -94,7 +94,7 @@ trap deleteImages EXIT
     -r "${ROOT_DIRECTORY_OF_DOCKERFILES}"
 
 # Run tests.
-../test-infra/bin/runner \
+time ../test-infra/bin/runner \
     -i ../grpc/loadtest_with_prebuilt_workers_workers-8core.yaml \
     -i ../grpc/loadtest_with_prebuilt_workers_workers-32core.yaml \
     -c workers-8core:2 -c workers-32core:2
