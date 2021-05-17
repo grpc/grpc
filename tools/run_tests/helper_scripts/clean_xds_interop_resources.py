@@ -119,19 +119,19 @@ def remove_relative_resources_psm_sec(prefix: str):
 
 
 def check_one_type_of_gcp_resources(list_cmd: List[str],
-                                    old_framework_residual_search: str = '',
-                                    new_framework_residual_search: str = ''):
+                                    run_xds_tests_residual_search: str = '',
+                                    psm_sec_tests_residual_search: str = ''):
     logging.info('Checking GCP resources with %s or %s',
-                 old_framework_residual_search, new_framework_residual_search)
+                 run_xds_tests_residual_search, psm_sec_tests_residual_search)
     for resource in exec_gcloud(*list_cmd):
-        if old_framework_residual_search:
-            result = re.search(old_framework_residual_search, resource['name'])
+        if run_xds_tests_residual_search:
+            result = re.search(run_xds_tests_residual_search, resource['name'])
             if result is not None:
                 remove_relative_resources_run_xds_tests(result.group(1))
                 continue
 
-        if new_framework_residual_search:
-            result = re.search(new_framework_residual_search, resource['name'])
+        if psm_sec_tests_residual_search:
+            result = re.search(psm_sec_tests_residual_search, resource['name'])
             if result is not None:
                 remove_relative_resources_psm_sec(result.group(1))
                 continue
@@ -140,23 +140,16 @@ def check_one_type_of_gcp_resources(list_cmd: List[str],
 def check_costly_gcp_resources() -> None:
     check_one_type_of_gcp_resources(
         ['compute', 'forwarding-rules', 'list'],
-        old_framework_residual_search=r'^test-forwarding-rule(.*)$',
-        new_framework_residual_search=r'^(.+?)-forwarding-rule$')
-    check_one_type_of_gcp_resources(
-        ['compute', 'target-http-proxies', 'list'],
-        old_framework_residual_search=r'^test-target-proxy(.*)$')
-    check_one_type_of_gcp_resources(
-        ['compute', 'target-grpc-proxies', 'list'],
-        old_framework_residual_search=r'^test-target-proxy(.*)$',
-        new_framework_residual_search=r'^(.+?)-target-proxy$')
+        run_xds_tests_residual_search=r'^test-forwarding-rule(.*)$',
+        psm_sec_tests_residual_search=r'^(.+?)-forwarding-rule$')
     check_one_type_of_gcp_resources(
         ['compute', 'url-maps', 'list'],
-        old_framework_residual_search=r'^test-map(.*)$',
-        new_framework_residual_search=r'^(.+?)-url-map$')
+        run_xds_tests_residual_search=r'^test-map(.*)$',
+        psm_sec_tests_residual_search=r'^(.+?)-url-map$')
     check_one_type_of_gcp_resources(
         ['compute', 'backend-services', 'list'],
-        old_framework_residual_search=r'^test-backend-service(.*)$',
-        new_framework_residual_search=r'^(.+?)-backend-service$')
+        run_xds_tests_residual_search=r'^test-backend-service(.*)$',
+        psm_sec_tests_residual_search=r'^(.+?)-backend-service$')
 
 
 def main():
