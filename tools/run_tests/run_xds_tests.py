@@ -216,6 +216,7 @@ _WAIT_FOR_URL_MAP_PATCH_SEC = 600
 # connection to hang for a long period of time. So, we want to extend the stats
 # wait time to be the same as urlMap patch time.
 _WAIT_FOR_STATS_SEC = _WAIT_FOR_URL_MAP_PATCH_SEC
+_WAIT_FOR_VALID_CONFIG_SEC = _WAIT_FOR_URL_MAP_PATCH_SEC
 
 _DEFAULT_SERVICE_PORT = 80
 _WAIT_FOR_BACKEND_SEC = args.wait_for_backend_sec
