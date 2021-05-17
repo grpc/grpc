@@ -54,11 +54,12 @@ popd
 # Build test configurations.
 buildConfigs() {
     local pool="$1"
-    shift
+    local table="$2"
+    shift 2
     tools/run_tests/performance/loadtest_config.py "$@" \
         -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_all_languages.yaml \
         -s client_pool="${pool}" -s server_pool="${pool}" \
-        -s big_query_table=e2e_benchmarks.experimental_results \
+        -s big_query_table="${table}" \
         -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
         -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
@@ -68,9 +69,9 @@ buildConfigs() {
         -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-buildConfigs workers-8core -l c++ -l csharp -l go -l java -l python -l ruby
+buildConfigs workers-8core e2e_benchmarks.experimental_results -l c++ -l csharp -l go -l java -l python -l ruby
 
-buildConfigs workers-32core -l c++ -l csharp -l go -l java
+buildConfigs workers-32core e2e_benchmarks.experimental_results_32core -l c++ -l csharp -l go -l java
 
 # Delete prebuilt images on exit.
 deleteImages() {
