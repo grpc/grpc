@@ -118,44 +118,21 @@ def remove_relative_resources_psm_sec(prefix: str):
                                   'xds_k8s_test_driver'))
 
 
-def check_one_type_of_gcp_resources(list_cmd: List[str],
-                                    run_xds_tests_residual_search: str = '',
-                                    psm_sec_tests_residual_search: str = ''):
-    logging.info('Checking GCP resources with %s or %s',
-                 run_xds_tests_residual_search, psm_sec_tests_residual_search)
-    for resource in exec_gcloud(*list_cmd):
-        if run_xds_tests_residual_search:
-            result = re.search(run_xds_tests_residual_search, resource['name'])
-            if result is not None:
-                remove_relative_resources_run_xds_tests(result.group(1))
-                continue
-
-        if psm_sec_tests_residual_search:
-            result = re.search(psm_sec_tests_residual_search, resource['name'])
-            if result is not None:
-                remove_relative_resources_psm_sec(result.group(1))
-                continue
-
-
-def check_costly_gcp_resources() -> None:
-    check_one_type_of_gcp_resources(
-        ['compute', 'forwarding-rules', 'list'],
-        run_xds_tests_residual_search=r'^test-forwarding-rule(.*)$',
-        psm_sec_tests_residual_search=r'^(.+?)-forwarding-rule$')
-    check_one_type_of_gcp_resources(
-        ['compute', 'url-maps', 'list'],
-        run_xds_tests_residual_search=r'^test-map(.*)$',
-        psm_sec_tests_residual_search=r'^(.+?)-url-map$')
-    check_one_type_of_gcp_resources(
-        ['compute', 'backend-services', 'list'],
-        run_xds_tests_residual_search=r'^test-backend-service(.*)$',
-        psm_sec_tests_residual_search=r'^(.+?)-backend-service$')
-
-
 def main():
     logging.info('Cleaning up costly resources created before %s',
                  get_expire_timestamp())
-    check_costly_gcp_resources()
+    # Url-map as a resource controls target-proxy, forwarding-rule, and connects
+    # backend services.
+    for resource in exec_gcloud('compute', 'url-maps', 'list'):
+        result = re.search(r'^test-map(.*)$', resource['name'])
+        if result is not None:
+            remove_relative_resources_run_xds_tests(result.group(1))
+            continue
+
+        result = re.search(r'^(.+?)-url-map$', resource['name'])
+        if result is not None:
+            remove_relative_resources_psm_sec(result.group(1))
+            continue
 
 
 if __name__ == "__main__":
