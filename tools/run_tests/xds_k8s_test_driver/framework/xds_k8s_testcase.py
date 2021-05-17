@@ -164,7 +164,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
             'listener_config',
             'cluster_config',
             'route_config',
-            'endpoint_config'
+            'endpoint_config',
         ])
         for xds_config in config.xds_config:
             seen.add(xds_config.WhichOneof('per_xds_config'))
