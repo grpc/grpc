@@ -161,8 +161,10 @@ class XdsKubernetesTestCase(absltest.TestCase):
         self.assertIsNotNone(config)
         seen = set()
         want = frozenset([
-            'listener_config', 'cluster_config', 'route_config',
-            'endpoint_config',
+            'listener_config',
+            'cluster_config',
+            'route_config',
+            'endpoint_config'
         ])
         for xds_config in config.xds_config:
             seen.add(xds_config.WhichOneof('per_xds_config'))
