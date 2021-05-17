@@ -257,13 +257,11 @@ include(cmake/benchmark.cmake)
 include(cmake/cares.cmake)
 include(cmake/protobuf.cmake)
 include(cmake/re2.cmake)
+include(cmake/s2a-core.cmake)
 include(cmake/ssl.cmake)
 include(cmake/upb.cmake)
 include(cmake/xxhash.cmake)
 include(cmake/zlib.cmake)
-
-# Must be included after ssl.cmake and upb.cmake.
-include(cmake/s2a-core.cmake)
 
 if(_gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
   set(_gRPC_ALLTARGETS_LIBRARIES ${CMAKE_DL_LIBS} m pthread)
@@ -3886,6 +3884,7 @@ target_include_directories(s2a_core
     ${_gRPC_UPB_INCLUDE_DIR}
     ${_gRPC_XXHASH_INCLUDE_DIR}
     ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/abseil-cpp
 )
 target_link_libraries(s2a_core
   ${_gRPC_ALLTARGETS_LIBRARIES}
