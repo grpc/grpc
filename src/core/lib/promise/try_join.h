@@ -30,7 +30,7 @@ T IntoResult(absl::StatusOr<T>* status) {
   return std::move(**status);
 }
 
-Empty IntoResult(absl::Status* status) { return Empty{}; }
+inline Empty IntoResult(absl::Status* status) { return Empty{}; }
 
 // Stores either a promise (if uncompleted) or its result (if completed) so
 // that polling can occur after the promise is completed.
@@ -40,7 +40,7 @@ class Fused {
   using PromiseResult = typename decltype(std::declval<Promise>()())::Type;
   using Result = decltype(IntoResult(static_cast<PromiseResult*>(nullptr)));
 
-  Fused(Promise promise) : state_(std::move(promise)) {}
+  explicit Fused(Promise promise) : state_(std::move(promise)) {}
 
   // Poll the underlying promise if we're still executing.
   // Returns error, or Ok(true) if a result is ready, or Ok(false) if pending.
@@ -122,7 +122,7 @@ struct PollAll<Promise> {
 template <typename... Promises>
 class TryJoin {
  public:
-  TryJoin(Promises... promises)
+  explicit TryJoin(Promises... promises)
       : state_(Fused<Promises>(std::move(promises))...) {}
 
   using Tuple = std::tuple<typename Fused<Promises>::Result...>;

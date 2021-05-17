@@ -37,7 +37,7 @@ class State;
 template <typename F>
 class State<F> {
  public:
-  State(F f) : f_(std::move(f)) {}
+  explicit State(F f) : f_(std::move(f)) {}
   using Result = typename decltype(std::declval<F>()())::Type;
 
   using FinalState = State<F>;
@@ -65,13 +65,13 @@ struct NextArg<absl::Status> {
 
 template <typename Next, typename T>
 auto CallNext(Next* next, absl::StatusOr<T>* status)
-    -> decltype((*next)(std::move(**status))) {
-  return (*next)(std::move(**status));
+    -> decltype(next->Once(std::move(**status))) {
+  return next->Once(std::move(**status));
 }
 
 template <typename Next>
-auto CallNext(Next* next, absl::Status* status) -> decltype((*next)()) {
-  return (*next)();
+auto CallNext(Next* next, absl::Status* status) -> decltype(next->Once()) {
+  return next->Once();
 }
 
 template <typename Result>
@@ -174,7 +174,7 @@ class TrySeq {
   };
 
  public:
-  TrySeq(Functors... functors) : state_(InitialState(std::move(functors)...)) {}
+  explicit TrySeq(Functors... functors) : state_(InitialState(std::move(functors)...)) {}
 
   Poll<Result> operator()() {
     return absl::visit(CallPoll<false>{this}, state_);

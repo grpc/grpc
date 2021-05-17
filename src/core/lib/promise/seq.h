@@ -36,7 +36,7 @@ class State;
 template <typename F>
 class State<F> {
  public:
-  State(F f) : f_(std::move(f)) {}
+  explicit State(F f) : f_(std::move(f)) {}
   using Result = typename decltype(std::declval<F>()())::Type;
 
   using FinalState = State<F>;
@@ -57,7 +57,7 @@ class State<F, Next, Nexts...> {
   using FResult = typename decltype(std::declval<F>()())::Type;
   using NextFactory = adaptor_detail::Factory<FResult, Next>;
   using NextResult =
-      decltype(std::declval<NextFactory>()(std::declval<FResult>()));
+      decltype(std::declval<NextFactory>().Once(std::declval<FResult>()));
   using NextState = State<NextResult, Nexts...>;
   using FinalState = typename NextState::FinalState;
   using StatesList =
@@ -65,7 +65,7 @@ class State<F, Next, Nexts...> {
 
   Poll<NextState> operator()() {
     return f_().Map([this](FResult& r) {
-      auto next_f = next_(std::move(r));
+      auto next_f = next_.Once(std::move(r));
       return absl::apply(
           [&next_f](Nexts&... nexts) {
             return NextState(std::move(next_f), std::move(nexts)...);
@@ -128,7 +128,7 @@ class Seq {
   };
 
  public:
-  Seq(Functors... functors) : state_(InitialState(std::move(functors)...)) {}
+  explicit Seq(Functors... functors) : state_(InitialState(std::move(functors)...)) {}
 
   Poll<Result> operator()() {
     return absl::visit(CallPoll<false>{this}, state_);

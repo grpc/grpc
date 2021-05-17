@@ -29,7 +29,7 @@ class Race;
 template <typename Promise, typename... Promises>
 class Race<Promise, Promises...> {
  public:
-  Race(Promise promise, Promises... promises)
+  explicit Race(Promise promise, Promises... promises)
       : promise_(std::move(promise)), next_(std::move(promises)...) {}
 
   using Result = decltype(std::declval<Promise>()());
@@ -54,7 +54,7 @@ class Race<Promise, Promises...> {
 template <typename Promise>
 class Race<Promise> {
  public:
-  Race(Promise promise) : promise_(std::move(promise)) {}
+  explicit Race(Promise promise) : promise_(std::move(promise)) {}
   using Result = decltype(std::declval<Promise>()());
   Result operator()() { return promise_(); }
 

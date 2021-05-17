@@ -723,6 +723,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = [
         "src/core/lib/promise/adaptor.h",
+        "src/core/lib/promise/if.h",
         "src/core/lib/promise/join.h",
         "src/core/lib/promise/poll.h",
         "src/core/lib/promise/promise.h",
@@ -730,6 +731,7 @@ grpc_cc_library(
         "src/core/lib/promise/seq.h",
         "src/core/lib/promise/try_join.h",
         "src/core/lib/promise/try_seq.h",
+        "src/core/lib/promise/while.h",
     ],
     external_deps = [
         "absl/status",

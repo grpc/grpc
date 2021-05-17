@@ -51,9 +51,10 @@ class Factory<Arg, F,
     Arg arg_;
   };
 
-  Promise operator()(Arg arg) { return Promise(std::move(f_), std::move(arg)); }
+  Promise Once(Arg arg) { return Promise(std::move(f_), std::move(arg)); }
+  Promise Repeated(Arg arg) { return Promise(f_, std::move(arg)); }
 
-  Factory(F f) : f_(std::move(f)) {}
+  explicit Factory(F f) : f_(std::move(f)) {}
 
  private:
   F f_;
@@ -65,8 +66,9 @@ class Factory<Arg, F,
                   IsPoll<decltype(std::declval<F>()())>::value>::type> {
  public:
   using Promise = F;
-  Promise operator()(Arg arg) { return std::move(f_); }
-  Factory(F f) : f_(std::move(f)) {}
+  Promise Once(Arg arg) { return std::move(f_); }
+  Promise Repeated(Arg arg) { return f_; }
+  explicit Factory(F f) : f_(std::move(f)) {}
 
  private:
   F f_;
@@ -78,8 +80,9 @@ class Factory<void, F,
                   IsPoll<decltype(std::declval<F>()())>::value>::type> {
  public:
   using Promise = F;
-  Promise operator()() { return std::move(f_); }
-  Factory(F f) : f_(std::move(f)) {}
+  Promise Once() { return std::move(f_); }
+  Promise Repeated() { return f_; }
+  explicit Factory(F f) : f_(std::move(f)) {}
 
  private:
   F f_;
@@ -91,8 +94,9 @@ class Factory<Arg, F,
                   std::declval<F>()(std::declval<Arg>())())>::value>::type> {
  public:
   using Promise = decltype(std::declval<F>()(std::declval<Arg>()));
-  Promise operator()(Arg arg) { return f_(std::move(arg)); }
-  Factory(F f) : f_(std::move(f)) {}
+  Promise Once(Arg arg) { return f_(std::move(arg)); }
+  Promise Repeated(Arg arg) { return f_(std::move(arg)); }
+  explicit Factory(F f) : f_(std::move(f)) {}
 
  private:
   F f_;
@@ -104,8 +108,9 @@ class Factory<Arg, F,
                   IsPoll<decltype(std::declval<F>()()())>::value>::type> {
  public:
   using Promise = decltype(std::declval<F>()());
-  Promise operator()(Arg arg) { return f_(); }
-  Factory(F f) : f_(std::move(f)) {}
+  Promise Once(Arg arg) { return f_(); }
+  Promise Repeated(Arg arg) { return f_(); }
+  explicit Factory(F f) : f_(std::move(f)) {}
 
  private:
   F f_;
@@ -117,8 +122,9 @@ class Factory<void, F,
                   IsPoll<decltype(std::declval<F>()()())>::value>::type> {
  public:
   using Promise = decltype(std::declval<F>()());
-  Promise operator()() { return f_(); }
-  Factory(F f) : f_(std::move(f)) {}
+  Promise Once() { return f_(); }
+  Promise Repeated() { return f_(); }
+  explicit Factory(F f) : f_(std::move(f)) {}
 
  private:
   F f_;

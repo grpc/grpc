@@ -35,7 +35,13 @@ class Poll {
   absl::optional<T> value_;
 
  public:
+  // Disable clang-tidy lint for explicit construction here: the pending type is
+  // intended to make it easy to construct an arbitrarily typed Poll instance
+  // based on context and having this be an implicit constructor greatly
+  // increases the ergonomics of code using this library.
+  // NOLINTNEXTLINE(google-explicit-constructor)
   Poll(Pending) : value_() {}
+  // NOLINTNEXTLINE(google-explicit-constructor)
   Poll(T value) : value_(std::move(value)) {}
 
   using Type = T;
@@ -74,6 +80,10 @@ class Poll {
     }
   }
 };
+
+// Add a Poll<Pending> instance to make the constructors for Poll safer.
+template <>
+class Poll<Pending>;
 
 // Helper to return a Poll<T> of some value when ready.
 template <typename T>

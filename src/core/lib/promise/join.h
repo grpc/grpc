@@ -29,7 +29,7 @@ class Fused {
  public:
   using Result = typename decltype(std::declval<Functor>()())::Type;
 
-  Fused(Functor f) : f_(std::move(f)) {}
+  explicit Fused(Functor f) : f_(std::move(f)) {}
 
   // Returns true if the promise is completed.
   bool Poll() { return absl::visit(CallPoll{this}, f_); }
@@ -80,7 +80,7 @@ struct PollAll<> {
 template <typename... Promise>
 class Join {
  public:
-  Join(Promise... promises) : state_(Fused<Promise>(std::move(promises))...) {}
+  explicit Join(Promise... promises) : state_(Fused<Promise>(std::move(promises))...) {}
 
   Poll<std::tuple<typename Fused<Promise>::Result...>> operator()() {
     // Check if everything is ready
