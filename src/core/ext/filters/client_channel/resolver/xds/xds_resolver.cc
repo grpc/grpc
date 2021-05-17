@@ -682,7 +682,7 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       // therefore not be evenly distributed.
       uint32_t upper = rand();
       uint32_t lower = rand();
-      hash = ((uint64_t)upper << 32) | lower;
+      hash = (static_cast<uint64_t>(upper) << 32) | lower;
     }
     CallConfig call_config;
     if (method_config != nullptr) {
