@@ -16,7 +16,7 @@ licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
 
-load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_exec_properties_dict")
+load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_exec_properties_dict", "merge_dicts")
 
 alias(
     name = "rbe_windows",
@@ -30,14 +30,19 @@ platform(
         "@bazel_tools//platforms:x86_64",
         "@bazel_tools//platforms:windows",
     ],
-    exec_properties = create_exec_properties_dict(
-        # See rbe_win2019/Dockerfile for image details
-        container_image = "docker://gcr.io/grpc-testing/rbe_windows2019_withdbg_toolchain@sha256:7b04ee7e29f942adbf4f70edd2ec4ba20a3e7237e1b54f5cae4b239c6ca41105",
-        
-        # Use a different machine type than used on linux to avoid accidentally scheduling linux jobs on windows workers and vice versa on older release branches
-        gce_machine_type = "n1-standard-2",
-        os_family = "Windows",
-        # labels only supported starting from https://github.com/bazelbuild/bazel-toolchains/pull/748
-        #labels = {"os": "windows_2019"},
+    exec_properties = merge_dicts(
+        create_exec_properties_dict(
+            # See rbe_win2019/Dockerfile for image details
+            container_image = "docker://gcr.io/grpc-testing/rbe_windows2019_withdbg_toolchain@sha256:7b04ee7e29f942adbf4f70edd2ec4ba20a3e7237e1b54f5cae4b239c6ca41105",
+            os_family = "Windows",
+        ),
+        # TODO(jtattermusch): specifying 'labels = {"abc": "xyz"}' in create_exec_properties_dict
+        # is not possible without https://github.com/bazelbuild/bazel-toolchains/pull/748
+        # and currently the toolchain we're using is too old for that. To be able to select worker
+        # pools through labels, we use a workaround and populate the corresponding label values
+        # manually (see create_exec_properties_dict logic for how labels get transformed)
+        # Remove this workaround once we transition to a new-enough bazel toolchain.
+        # The next line corresponds to 'labels = {"os": "windows_2019", "machine_size": "small"}'
+        {"label:os": "windows_2019", "label:machine_size": "small"}
     ),
 )
