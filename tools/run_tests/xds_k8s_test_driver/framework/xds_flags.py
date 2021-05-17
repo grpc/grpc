@@ -30,6 +30,10 @@ XDS_SERVER_URI = flags.DEFINE_string(
     "xds_server_uri",
     default=None,
     help="Override Traffic Director server uri, for testing")
+ENSURE_FIREWALL = flags.DEFINE_bool(
+    "ensure_firewall",
+    default=False,
+    help="Ensure the allow-health-check firewall exists before each test case")
 
 # Test server
 SERVER_NAME = flags.DEFINE_string("server_name",

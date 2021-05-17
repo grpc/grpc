@@ -16,6 +16,8 @@ from typing import Optional, Set
 
 from framework.infrastructure import gcp
 
+from absl import flags
+
 logger = logging.getLogger(__name__)
 
 # Type aliases
@@ -36,6 +38,11 @@ ClientTlsPolicy = _NetworkSecurityV1Alpha1.ClientTlsPolicy
 # Network Services
 _NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
 EndpointConfigSelector = _NetworkServicesV1Alpha1.EndpointConfigSelector
+
+_FIREWALL_SOURCE_RANGE = flags.DEFINE_list(
+    "firewall_source_range",
+    default=['35.191.0.0/16', '130.211.0.0/22'],
+    help="Update the source range of the firewall rule.")
 
 
 class TrafficDirectorManager:
@@ -292,13 +299,19 @@ class TrafficDirectorManager:
         self.compute.delete_forwarding_rule(name)
         self.forwarding_rule = None
 
-    def create_firewall_rule(self, force=False):
-        name = self._ns_name(self.FIREWALL_RULE_NAME)
+    def create_firewall_rule(self,
+                             force=False,
+                             allowed_ports: List[str] = ['8080-8100']):
+        if force:
+            name = self._ns_name(self.FIREWALL_RULE_NAME)
+        elif self.firewall_rule:
+            name = self.firewall_rule.name
+        else:
+            return
         logging.info('Creating firewall rule "%s" in network "%s"', name,
                      self.network)
         resource = self.compute.create_firewall_rule(
-            name, self.network_url, ['35.191.0.0/16', '130.211.0.0/22'],
-            ['8080-8100'])
+            name, self.network_url, _FIREWALL_SOURCE_RANGE.value, allowed_ports)
         self.firewall_rule = resource
 
     def delete_firewall_rule(self, force=False):

@@ -33,10 +33,6 @@ from framework.test_app import client_app
 from framework.test_app import server_app
 
 logger = logging.getLogger(__name__)
-_ENSURE_FIREWALL = flags.DEFINE_bool(
-    "ensure_firewall",
-    default=False,
-    help="Ensure the allow-health-check firewall exists before each test case")
 _FORCE_CLEANUP = flags.DEFINE_bool(
     "force_cleanup",
     default=False,
@@ -270,8 +266,9 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             network=self.network)
 
         # Ensures the firewall exist
-        if _ENSURE_FIREWALL.value:
-            self.td.create_firewall_rule()
+        if xds_flags.ENSURE_FIREWALL.value:
+            self.td.create_firewall_rule(
+                allowed_ports=[str(self.server_maintenance_port)])
 
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(
