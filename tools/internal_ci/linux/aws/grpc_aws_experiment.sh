@@ -96,7 +96,7 @@ echo "Copying workspace to remote instance..."
 # use rsync over ssh since it's much faster than scp
 time rsync -e "ssh -i ~/.ssh/temp_client_key" -a github/grpc ubuntu@$IP:~/workspace
 echo "Beginning CI workload..."
-ssh -i ~/.ssh/temp_client_key ubuntu@$IP "uname -a; cd ~/workspace; ls -l; bash grpc/tools/internal_ci/linux/$WORKLOAD" || REMOTE_SCRIPT_EXITCODE=$?
+ssh -i ~/.ssh/temp_client_key ubuntu@$IP "uname -a; cd ~/workspace; ls -l; bash grpc/tools/internal_ci/linux/aws/$WORKLOAD" || REMOTE_SCRIPT_EXITCODE=$?
 
 # Regardless of the remote script's result (success or failure), initiate shutdown of AWS instance a minute from now.
 # The small delay is useful to make sure the ssh session doesn't hang up on us if shutdown happens too quickly.
