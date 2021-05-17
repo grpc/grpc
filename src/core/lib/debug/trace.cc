@@ -49,21 +49,21 @@ bool TraceFlagList::Set(const char* name, bool enabled) {
     for (auto t = root_tracer_; t != nullptr; t = t->next_tracer_) {
       if (strstr(t->name_, "refcount") != nullptr) {
         t->set_enabled(enabled);
+        return true;
       }
     }
+  } else if (0 == strcmp(name, "")) {
+    return true;
   } else {
-    bool found = false;
-    for (auto t = root_tracer_; t != nullptr; t = t->next_tracer_) {
+    for (auto t = root_tracer_; t != nullptr || found; t = t->next_tracer_) {
       if (0 == strcmp(name, t->name_)) {
         t->set_enabled(enabled);
-        found = true;
+        return true;
       }
     }
     // check for unknowns, but ignore "", to allow to GRPC_TRACE=
-    if (!found && 0 != strcmp(name, "")) {
-      gpr_log(GPR_ERROR, "Unknown trace var: '%s'", name);
-      return false; /* early return */
-    }
+    gpr_log(GPR_ERROR, "Unknown trace var: '%s'", name);
+    return false; /* early return */
   }
   return true;
 }
