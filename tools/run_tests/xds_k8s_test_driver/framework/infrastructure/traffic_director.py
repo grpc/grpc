@@ -14,9 +14,8 @@
 import logging
 from typing import Optional, Set
 
+from framework import xds_flags
 from framework.infrastructure import gcp
-
-from absl import flags
 
 logger = logging.getLogger(__name__)
 
@@ -38,11 +37,6 @@ ClientTlsPolicy = _NetworkSecurityV1Alpha1.ClientTlsPolicy
 # Network Services
 _NetworkServicesV1Alpha1 = gcp.network_services.NetworkServicesV1Alpha1
 EndpointConfigSelector = _NetworkServicesV1Alpha1.EndpointConfigSelector
-
-_FIREWALL_SOURCE_RANGE = flags.DEFINE_list(
-    "firewall_source_range",
-    default=['35.191.0.0/16', '130.211.0.0/22'],
-    help="Update the source range of the firewall rule.")
 
 
 class TrafficDirectorManager:
@@ -311,7 +305,8 @@ class TrafficDirectorManager:
         logging.info('Creating firewall rule "%s" in network "%s"', name,
                      self.network)
         resource = self.compute.create_firewall_rule(
-            name, self.network_url, _FIREWALL_SOURCE_RANGE.value, allowed_ports)
+            name, self.network_url, xds_flags.FIREWALL_SOURCE_RANGE.value,
+            allowed_ports)
         self.firewall_rule = resource
 
     def delete_firewall_rule(self, force=False):

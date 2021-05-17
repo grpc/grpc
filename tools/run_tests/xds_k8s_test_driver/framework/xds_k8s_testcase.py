@@ -108,6 +108,11 @@ class XdsKubernetesTestCase(absltest.TestCase):
         self.client_runner = None
         self.td = None
 
+        # Ensures the firewall exist
+        if xds_flags.ENSURE_FIREWALL.value:
+            self.td.create_firewall_rule(
+                allowed_ports=[str(self.server_maintenance_port)])
+
     @classmethod
     def tearDownClass(cls):
         cls.k8s_api_manager.close()
@@ -264,11 +269,6 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             project=self.project,
             resource_prefix=self.namespace,
             network=self.network)
-
-        # Ensures the firewall exist
-        if xds_flags.ENSURE_FIREWALL.value:
-            self.td.create_firewall_rule(
-                allowed_ports=[str(self.server_maintenance_port)])
 
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(

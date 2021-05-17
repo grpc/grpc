@@ -34,6 +34,10 @@ ENSURE_FIREWALL = flags.DEFINE_bool(
     "ensure_firewall",
     default=False,
     help="Ensure the allow-health-check firewall exists before each test case")
+FIREWALL_SOURCE_RANGE = flags.DEFINE_list(
+    "firewall_source_range",
+    default=['35.191.0.0/16', '130.211.0.0/22'],
+    help="Update the source range of the firewall rule.")
 
 # Test server
 SERVER_NAME = flags.DEFINE_string("server_name",
