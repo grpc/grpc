@@ -29,6 +29,9 @@ gcloud config set project grpc-testing
 gcloud container clusters get-credentials benchmarks-prod \
     --zone us-central1-b --project grpc-testing
 
+# List pods that may be left over from a previous run.
+kubectl get pods | grep -v Completed
+
 # Set up environment variables.
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/${KOKORO_BUILD_INITIATOR}"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
