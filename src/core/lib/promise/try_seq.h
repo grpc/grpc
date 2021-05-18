@@ -174,7 +174,8 @@ class TrySeq {
   };
 
  public:
-  explicit TrySeq(Functors... functors) : state_(InitialState(std::move(functors)...)) {}
+  explicit TrySeq(Functors... functors)
+      : state_(InitialState(std::move(functors)...)) {}
 
   Poll<Result> operator()() {
     return absl::visit(CallPoll<false>{this}, state_);

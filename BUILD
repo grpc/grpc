@@ -722,6 +722,7 @@ grpc_cc_library(
     name = "promise",
     language = "c++",
     public_hdrs = [
+        "src/core/lib/promise/activity.h",
         "src/core/lib/promise/adaptor.h",
         "src/core/lib/promise/if.h",
         "src/core/lib/promise/join.h",
@@ -733,12 +734,18 @@ grpc_cc_library(
         "src/core/lib/promise/try_seq.h",
         "src/core/lib/promise/while.h",
     ],
+    srcs = [
+        "src/core/lib/promise/activity.cc"
+    ],
     external_deps = [
         "absl/status",
         "absl/status:statusor",
         "absl/types:optional",
         "absl/types:variant",
-    ]
+        "absl/synchronization",
+	"absl/container:flat_hash_set",
+	"absl/container:inlined_vector",
+    ],
 )
 
 grpc_cc_library(

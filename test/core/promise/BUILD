@@ -15,6 +15,15 @@
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
 grpc_cc_test(
+    name = "activity_test",
+    srcs = ["activity_test.cc"],
+    language = "c++",
+    uses_polling = False,
+    deps = ["//:promise"],
+    external_deps = ["gtest"],
+)
+
+grpc_cc_test(
     name = "if_test",
     srcs = ["if_test.cc"],
     language = "c++",

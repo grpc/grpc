@@ -67,7 +67,9 @@ struct PollAll;
 template <typename Promise, typename... Promises>
 struct PollAll<Promise, Promises...> {
   static bool Poll(Fused<Promise>& p, Fused<Promises>&... next) {
-    return p.Poll() && PollAll<Promises...>::Poll(next...);
+    const bool a = p.Poll();
+    const bool b = PollAll<Promises...>::Poll(next...);
+    return a && b;
   }
 };
 
@@ -80,7 +82,8 @@ struct PollAll<> {
 template <typename... Promise>
 class Join {
  public:
-  explicit Join(Promise... promises) : state_(Fused<Promise>(std::move(promises))...) {}
+  explicit Join(Promise... promises)
+      : state_(Fused<Promise>(std::move(promises))...) {}
 
   Poll<std::tuple<typename Fused<Promise>::Result...>> operator()() {
     // Check if everything is ready

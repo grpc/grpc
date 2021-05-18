@@ -128,7 +128,8 @@ class Seq {
   };
 
  public:
-  explicit Seq(Functors... functors) : state_(InitialState(std::move(functors)...)) {}
+  explicit Seq(Functors... functors)
+      : state_(InitialState(std::move(functors)...)) {}
 
   Poll<Result> operator()() {
     return absl::visit(CallPoll<false>{this}, state_);
