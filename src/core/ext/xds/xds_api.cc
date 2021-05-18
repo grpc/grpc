@@ -833,18 +833,19 @@ bool IsEds(absl::string_view type_url) {
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
 // will be appended to the user agent name reported to the xDS server.
 #ifdef GRPC_XDS_USER_AGENT_NAME_SUFFIX
-#define _GRPC_XDS_USER_AGENT_NAME_SUFFIX " " GRPC_XDS_USER_AGENT_NAME_SUFFIX
+#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING \
+  " " GRPC_XDS_USER_AGENT_NAME_SUFFIX
 #else
-#define _GRPC_XDS_USER_AGENT_NAME_SUFFIX ""
+#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING ""
 #endif
 
 // If gRPC is built with -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="...", that string
 // will be appended to the user agent version reported to the xDS server.
 #ifdef GRPC_XDS_USER_AGENT_VERSION_SUFFIX
-#define _GRPC_XDS_USER_AGENT_VERSION_SUFFIX \
+#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING \
   " " GRPC_XDS_USER_AGENT_VERSION_SUFFIX
 #else
-#define _GRPC_XDS_USER_AGENT_VERSION_SUFFIX ""
+#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING ""
 #endif
 
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
@@ -854,13 +855,14 @@ XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
       node_(node),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
                                   grpc_version_string(),
-                                  _GRPC_XDS_USER_AGENT_NAME_SUFFIX,
-                                  _GRPC_XDS_USER_AGENT_VERSION_SUFFIX)),
+                                  GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
+                                  GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)),
       user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
-                                    _GRPC_XDS_USER_AGENT_NAME_SUFFIX)),
-      user_agent_version_(absl::StrCat("C-core ", grpc_version_string(),
-                                       _GRPC_XDS_USER_AGENT_NAME_SUFFIX,
-                                       _GRPC_XDS_USER_AGENT_VERSION_SUFFIX)) {
+                                    GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING)),
+      user_agent_version_(
+          absl::StrCat("C-core ", grpc_version_string(),
+                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
+                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)) {
   // Populate upb symtab with xDS proto messages that we want to print
   // properly in logs.
   // Note: This won't actually work properly until upb adds support for
