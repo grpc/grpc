@@ -33,7 +33,12 @@ gcloud container clusters get-credentials benchmarks-prod \
 kubectl get pods | grep -v Completed
 
 # Set up environment variables.
-PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/${KOKORO_BUILD_INITIATOR}"
+# BEGIN differentiate experimental configuration from master configuration.
+LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
+BIGQUERY_TABLE_8CORE=e2e_benchmarks.ci_master_results_8core
+BIGQUERY_TABLE_32CORE=e2e_benchmarks.ci_master_results_32core
+# END differentiate experimental configuration from master configuration.
+PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/${LOAD_TEST_PREFIX}"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
 ROOT_DIRECTORY_OF_DOCKERFILES="../test-infra/containers/pre_built_workers/"
 # Prebuilt workers for core languages are always built from grpc/grpc.
@@ -66,15 +71,15 @@ buildConfigs() {
         -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
         -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
-        --prefix="${KOKORO_BUILD_INITIATOR}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
+        --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
         --allow_client_language=c++ --allow_server_language=c++ \
         -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
 # Use the "official" BQ tables so that the measurements will show up in the "official" public dashboard.
-buildConfigs workers-8core e2e_benchmarks.ci_master_results_8core -l c++ -l csharp -l go -l java -l python -l ruby
-buildConfigs workers-32core e2e_benchmarks.ci_master_results_32core -l c++ -l csharp -l go -l java
+buildConfigs workers-8core "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l python -l ruby
+buildConfigs workers-32core "${BIGQUERY_TABLE_32CORE}" -l c++ -l csharp -l go -l java
 
 # Delete prebuilt images on exit.
 deleteImages() {
