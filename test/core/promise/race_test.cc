@@ -19,7 +19,7 @@ namespace grpc_core {
 
 Poll<int> instant() { return ready(1); }
 
-Poll<int> never() { return PENDING; }
+Poll<int> never() { return kPending; }
 
 TEST(RaceTest, Race1) { EXPECT_EQ(Race(instant)().take(), 1); }
 TEST(RaceTest, Race2A) { EXPECT_EQ(Race(instant, never)().take(), 1); }

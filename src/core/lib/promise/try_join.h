@@ -151,7 +151,7 @@ class TryJoin {
           state_);
     }
     // Keep pending!
-    return PENDING;
+    return kPending;
   }
 
  private:

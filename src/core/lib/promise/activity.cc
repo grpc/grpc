@@ -82,7 +82,7 @@ class Activity::Handle {
 // Set the current activity at construction, clean it up at destruction.
 class Activity::ScopedActivity {
  public:
-  ScopedActivity(Activity* activity) {
+  explicit ScopedActivity(Activity* activity) {
     assert(g_current_activity_ == nullptr);
     g_current_activity_ = activity;
   }
@@ -150,7 +150,7 @@ void Activity::Wakeup() {
 }
 
 void Activity::Step() {
-  Poll<absl::Status> result = PENDING;
+  Poll<absl::Status> result = kPending;
   {
     // Poll the promise until things settle out under a lock.
     absl::MutexLock lock(&mu_);
@@ -167,7 +167,7 @@ void Activity::Step() {
 Poll<absl::Status> Activity::RunLoop() {
   if (done_) {
     // We might get some spurious wakeups after finishing.
-    return PENDING;
+    return kPending;
   }
   // Set g_current_activity_ until we return.
   ScopedActivity scoped_activity(this);
@@ -185,7 +185,7 @@ Poll<absl::Status> Activity::RunLoop() {
     }
     // Continue looping til no wakeups occur.
   } while (got_wakeup_during_run_);
-  return PENDING;
+  return kPending;
 }
 
 void Activity::Cancel() {
@@ -224,7 +224,7 @@ Pending WaitSet::pending() {
     // If it was already there, we can drop it immediately.
     h->Unref();
   }
-  return PENDING;
+  return kPending;
 }
 
 void WaitSet::WakeAllAndUnlock() {
@@ -250,14 +250,14 @@ Pending SingleWaiter::pending() {
   assert(Activity::g_current_activity_);
   Activity::g_current_activity_->mu_.AssertHeld();
   if (waiter_ == Activity::g_current_activity_) {
-    return PENDING;
+    return kPending;
   }
   if (waiter_ != nullptr) {
     waiter_->Unref();
   }
   waiter_ = Activity::g_current_activity_;
   waiter_->Ref();
-  return PENDING;
+  return kPending;
 }
 
 void SingleWaiter::WakeAndUnlock() {

@@ -32,6 +32,8 @@ class MockCallbackScheduler : public CallbackScheduler {
   MOCK_METHOD(void, Schedule, (std::function<void()>));
 };
 
+// A simple Barrier type: stalls progress until it is 'cleared'.
+// This variant supports multiple waiters.
 class Barrier {
  public:
   struct Result {};
@@ -58,6 +60,8 @@ class Barrier {
   bool cleared_ GUARDED_BY(wait_set_.mu()) = false;
 };
 
+// A simple Barrier type: stalls progress until it is 'cleared'.
+// This variant supports only a single waiter.
 class SingleBarrier {
  public:
   struct Result {};
@@ -106,7 +110,7 @@ TEST(ActivityTest, DropImmediately) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::CancelledError()));
   ActivityFromPromiseFactory(
-      [] { return []() -> Poll<absl::Status> { return PENDING; }; },
+      [] { return []() -> Poll<absl::Status> { return kPending; }; },
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
       nullptr);
 }
@@ -114,7 +118,7 @@ TEST(ActivityTest, DropImmediately) {
 TEST(ActivityTest, Cancel) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   auto activity = ActivityFromPromiseFactory(
-      [] { return []() -> Poll<absl::Status> { return PENDING; }; },
+      [] { return []() -> Poll<absl::Status> { return kPending; }; },
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
       nullptr);
   EXPECT_CALL(on_done, Call(absl::CancelledError()));

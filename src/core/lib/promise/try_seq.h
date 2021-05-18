@@ -114,7 +114,7 @@ class State<F, Next, Nexts...> {
       }
       return ready(StatusFrom<PollResult>(result));
     }
-    return PENDING;
+    return kPending;
   }
 
  private:
@@ -155,7 +155,7 @@ class TrySeq {
         if (kSetState) {
           seq->state_.template emplace<State>(std::move(state));
         }
-        return PENDING;
+        return kPending;
       }
     }
 
@@ -168,7 +168,7 @@ class TrySeq {
         if (kSetState) {
           seq->state_.template emplace<FinalState>(std::move(final_state));
         }
-        return PENDING;
+        return kPending;
       }
     }
   };

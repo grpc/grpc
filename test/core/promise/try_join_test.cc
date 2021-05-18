@@ -42,7 +42,7 @@ absl::StatusOr<std::tuple<T...>> fail() {
 
 template <typename T>
 P<T> pending() {
-  return []() -> Poll<absl::StatusOr<T>> { return PENDING; };
+  return []() -> Poll<absl::StatusOr<T>> { return kPending; };
 }
 
 TEST(TryJoinTest, Join1) { EXPECT_EQ(TryJoin(instant_ok(1))().take(), ok(1)); }

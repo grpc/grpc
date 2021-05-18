@@ -99,7 +99,7 @@ class Join {
           },
           state_);
     } else {
-      return PENDING;
+      return kPending;
     }
   }
 

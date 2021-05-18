@@ -109,7 +109,7 @@ class Seq {
         if (kSetState) {
           seq->state_.template emplace<State>(std::move(state));
         }
-        return PENDING;
+        return kPending;
       }
     }
 
@@ -122,7 +122,7 @@ class Seq {
         if (kSetState) {
           seq->state_.template emplace<FinalState>(std::move(final_state));
         }
-        return PENDING;
+        return kPending;
       }
     }
   };

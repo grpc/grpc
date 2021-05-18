@@ -198,7 +198,7 @@ ActivityPtr ActivityFromPromiseFactory(
 // Typically the external state should be guarded by mu(), and a call to
 // WakeAllAndUnlock should be made when the state changes.
 // Promises should bottom out polling inside pending(), which will register for
-// wakeup and return PENDING.
+// wakeup and return kPending.
 // Queues handles to Activities, and not Activities themselves, meaning that if
 // an Activity is destroyed prior to wakeup we end up holding only a small
 // amount of memory (around 16 bytes + malloc overhead) until the next wakeup
@@ -209,7 +209,7 @@ class WaitSet final {
   ~WaitSet();
   WaitSet(const WaitSet&) = delete;
   WaitSet& operator=(const WaitSet&) = delete;
-  // Register for wakeup, return PENDING. If state is not ready to proceed,
+  // Register for wakeup, return kPending. If state is not ready to proceed,
   // Promises should bottom out here.
   Pending pending() EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Wake all activities that have called pending() since the last
@@ -232,7 +232,7 @@ class SingleWaiter final {
   ~SingleWaiter();
   SingleWaiter(const SingleWaiter&) = delete;
   SingleWaiter& operator=(const SingleWaiter&) = delete;
-  // Register for wakeup, return PENDING. If state is not ready to proceed,
+  // Register for wakeup, return kPending. If state is not ready to proceed,
   // Promises should bottom out here.
   Pending pending() EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // Wake the activity that called pending() after the last WakeAllAndUnlock().

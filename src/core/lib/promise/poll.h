@@ -20,9 +20,9 @@
 namespace grpc_core {
 
 // A type that signals a Promise is still pending and not yet completed.
-// Allows writing 'return PENDING' and with automatic conversions gets upgraded
+// Allows writing 'return kPending' and with automatic conversions gets upgraded
 // to a Poll<> object.
-enum Pending { PENDING };
+enum Pending { kPending };
 
 // The result of polling a Promise once.
 //
@@ -30,11 +30,9 @@ enum Pending { PENDING };
 // indicating that the Promise has completed AND should not be polled again.
 template <typename T>
 class Poll {
- private:
-  // Empty if pending, result if not.
-  absl::optional<T> value_;
-
  public:
+  using Type = T;
+
   // Disable clang-tidy lint for explicit construction here: the pending type is
   // intended to make it easy to construct an arbitrarily typed Poll instance
   // based on context and having this be an implicit constructor greatly
@@ -43,8 +41,6 @@ class Poll {
   Poll(Pending) : value_() {}
   // NOLINTNEXTLINE(google-explicit-constructor)
   Poll(T value) : value_(std::move(value)) {}
-
-  using Type = T;
 
   // Was the poll pending?
   bool pending() const { return !ready(); }
@@ -55,12 +51,12 @@ class Poll {
   //   returning a ready with the result of f.
   // If the poll was pending, returns pending.
   template <class F>
-  auto Map(F f) -> Poll<decltype(f(this->value_.value()))> {
+  auto Map(F f) -> Poll<decltype(f(std::declval<T&>()))> {
     using Result = decltype(f(value_.value()));
     if (auto* p = get_ready()) {
       return Poll<Result>(std::move(f(*p)));
     } else {
-      return Poll<Result>(PENDING);
+      return Poll<Result>(kPending);
     }
   }
 
@@ -79,6 +75,10 @@ class Poll {
       return nullptr;
     }
   }
+
+ private:
+  // Empty if pending, result if not.
+  absl::optional<T> value_;
 };
 
 // Add a Poll<Pending> instance to make the constructors for Poll safer.
