@@ -241,7 +241,7 @@ twice:
 $ ./tools/run_tests/performance/loadtest_config.py -l go -l java \
     -t ./tools/run_tests/performance/templates/loadtest_template_basic_all_languages.yaml \
     -s client_pool=workers-8core -s server_pool=workers-8core \
-    -s big_query_table=grpc-testing.e2e_benchmarks.experimental_results \
+    -s big_query_table=e2e_benchmarks.experimental_results \
     -s timeout_seconds=3600 --category=scalable \
     -d --allow_client_language=c++ --allow_server_language=c++ \
     --runs_per_test=2 -o ./loadtest.yaml
