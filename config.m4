@@ -1025,6 +1025,48 @@ if test "$PHP_GRPC" != "no"; then
     third_party/re2/util/pcre.cc \
     third_party/re2/util/rune.cc \
     third_party/re2/util/strutil.cc \
+    third_party/s2a-core/src/crypto/aes_gcm_crypter.cc \
+    third_party/s2a-core/src/crypto/chacha_poly_crypter_boringssl.cc \
+    third_party/s2a-core/src/crypto/chacha_poly_crypter_openssl.cc \
+    third_party/s2a-core/src/crypto/hkdf.cc \
+    third_party/s2a-core/src/crypto/hkdf.h \
+    third_party/s2a-core/src/crypto/s2a_aead_constants.h \
+    third_party/s2a-core/src/crypto/s2a_aead_crypter.cc \
+    third_party/s2a-core/src/crypto/s2a_aead_crypter.h \
+    third_party/s2a-core/src/crypto/s2a_aead_crypter_test_util.cc \
+    third_party/s2a-core/src/crypto/s2a_aead_crypter_test_util.h \
+    third_party/s2a-core/src/crypto/s2a_aead_crypter_util.cc \
+    third_party/s2a-core/src/crypto/s2a_aead_crypter_util.h \
+    third_party/s2a-core/src/frame_protector/s2a_frame_protector.cc \
+    third_party/s2a-core/src/handshaker/s2a_context.cc \
+    third_party/s2a-core/src/handshaker/s2a_proxy.cc \
+    third_party/s2a-core/src/handshaker/s2a_proxy_test_util.cc \
+    third_party/s2a-core/src/handshaker/s2a_proxy_test_util.h \
+    third_party/s2a-core/src/handshaker/s2a_util.cc \
+    third_party/s2a-core/src/handshaker/s2a_util.h \
+    third_party/s2a-core/src/options/s2a_options.cc \
+    third_party/s2a-core/src/proto/upb-generated/proto/common.upb.c \
+    third_party/s2a-core/src/proto/upb-generated/proto/common.upb.h \
+    third_party/s2a-core/src/proto/upb-generated/proto/s2a.upb.c \
+    third_party/s2a-core/src/proto/upb-generated/proto/s2a.upb.h \
+    third_party/s2a-core/src/proto/upb-generated/proto/s2a_context.upb.c \
+    third_party/s2a-core/src/proto/upb-generated/proto/s2a_context.upb.h \
+    third_party/s2a-core/src/record_protocol/handshake_message_handler.cc \
+    third_party/s2a-core/src/record_protocol/handshake_message_handler.h \
+    third_party/s2a-core/src/record_protocol/s2a_crypter.cc \
+    third_party/s2a-core/src/record_protocol/s2a_crypter.h \
+    third_party/s2a-core/src/record_protocol/s2a_crypter_util.cc \
+    third_party/s2a-core/src/record_protocol/s2a_crypter_util.h \
+    third_party/s2a-core/src/record_protocol/s2a_half_connection.cc \
+    third_party/s2a-core/src/record_protocol/s2a_half_connection.h \
+    third_party/s2a-core/src/record_protocol/s2a_ticket_sender.h \
+    third_party/s2a-core/src/record_protocol/s2a_upb_ticket_sender.cc \
+    third_party/s2a-core/src/test_util/s2a_test_data.h \
+    third_party/s2a-core/src/test_util/s2a_test_util.h \
+    third_party/s2a-core/src/token_manager/fake_access_token_manager.cc \
+    third_party/s2a-core/src/token_manager/fake_access_token_manager.h \
+    third_party/s2a-core/src/token_manager/single_token_access_token_manager.cc \
+    third_party/s2a-core/src/token_manager/single_token_access_token_manager.h \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/decode_fast.c \
     third_party/upb/upb/def.c \
@@ -1269,5 +1311,13 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl-with-bazel/src/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/re2)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/re2/util)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a-core/src/crypto)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a-core/src/frame_protector)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a-core/src/handshaker)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a-core/src/options)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a-core/src/proto/upb-generated/proto)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a-core/src/record_protocol)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a-core/src/test_util)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/s2a-core/src/token_manager)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
 fi
