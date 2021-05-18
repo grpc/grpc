@@ -2238,6 +2238,34 @@ def test_csds(gcp, original_backend_service, instance_group, server_uri):
                        test_csds_timeout_s)
 
 
+def maybe_write_sponge_properties():
+    """Writing test infos to enable more advanced testgrid searches."""
+    if 'KOKORO_ARTIFACTS_DIR' not in os.environ:
+        return
+
+    project_root = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                '../..')
+    git_origin_url = subprocess.getoutput('git -C "%s" remote get-url origin' %
+                                          project_root)
+    git_commit_short = subprocess.getoutput(
+        'git -C "%s" rev-parse --short HEAD' % project_root)
+
+    properties = [
+        # Technically, 'TESTS_FORMAT_VERSION' is not required for run_xds_tests.
+        # We keep it here so one day we may merge the process of writing sponge
+        # properties.
+        'TESTS_FORMAT_VERSION,2',
+        'TESTGRID_EXCLUDE,%s' % os.environ.get('TESTGRID_EXCLUDE', 0),
+        'GIT_ORIGIN_URL,%s' % git_origin_url,
+        'GIT_COMMIT_SHORT,%s' % git_commit_short,
+    ]
+    logger.info('Writing Sponge configs: %s', properties)
+    with open(
+            os.path.join(os.environ['KOKORO_ARTIFACTS_DIR'],
+                         "custom_sponge_config.csv")) as f:
+        f.writelines(properties)
+
+
 def set_validate_for_proxyless(gcp, validate_for_proxyless):
     if not gcp.alpha_compute:
         logger.debug(
@@ -2954,6 +2982,7 @@ class GcpState(object):
         self.instance_groups = []
 
 
+maybe_write_sponge_properties()
 alpha_compute = None
 if args.compute_discovery_document:
     with open(args.compute_discovery_document, 'r') as discovery_doc:
