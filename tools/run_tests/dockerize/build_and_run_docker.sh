@@ -59,6 +59,7 @@ docker run \
   -e "KOKORO_BUILD_URL=$KOKORO_BUILD_URL" \
   -e "KOKORO_JOB_NAME=$KOKORO_JOB_NAME" \
   -e "KOKORO_ARTIFACTS_DIR=$KOKORO_ARTIFACTS_DIR" \
+  -e "KOKORO_GITHUB_COMMIT_URL=$KOKORO_GITHUB_COMMIT_URL" \
   -v "$git_root:/var/local/jenkins/grpc:ro" \
   -v "$KOKORO_ARTIFACTS_DIR:$KOKORO_ARTIFACTS_DIR" \
   -w /var/local/git/grpc \
