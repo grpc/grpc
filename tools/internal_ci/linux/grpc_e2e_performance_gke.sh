@@ -52,8 +52,7 @@ fi
 GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/grpc-go.git master | cut -f1)"
 GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
 # Prebuilt driver comes from the latest test-infra release.
-LATEST_TEST_INFRA_RELEASE="$(curl -s https://api.github.com/repos/grpc/test-infra/releases | jq '.[0].tag_name')"
-LATEST_TEST_INFRA_RELEASE="$(tr -d '"' ${LATEST_TEST_INFRA_RELEASE})"
+LATEST_TEST_INFRA_RELEASE="$(curl -s https://api.github.com/repos/grpc/test-infra/releases | jq '.[0].tag_name' | tr -d '"')"
 DRIVER_IMAGE="gcr.io/grpc-testing/e2etest/driver:${LATEST_TEST_INFRA_RELEASE}"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
