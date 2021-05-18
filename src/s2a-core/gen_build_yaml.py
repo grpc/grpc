@@ -37,12 +37,12 @@ out['libs'] = [{
             src_file
             for src_file in glob.glob('third_party/s2a-core/src/**/*.cc')
             if not os.path.basename(src_file).endswith('_test.cc')
-        ] + glob.glob('third_party/s2a-core/src/**/*.h') + glob.glob(
-            'third_party/s2a-core/src/proto/upb-generated/proto/*.c') +
-               glob.glob(
-                   'third_party/s2a-core/src/proto/upb-generated/proto/*.h')),
+        ] + glob.glob('third_party/s2a-core/src/proto/upb-generated/proto/*.c')),
     'headers':
-        sorted(glob.glob('third_party/s2a-core/include/*.h')),
+        sorted(
+            glob.glob('third_party/s2a-core/include/*.h') +
+            glob.glob('third_party/s2a-core/src/**/*.h') +
+            glob.glob('third_party/s2a-core/src/proto/upb-generated/proto/*.h')),
 }]
 
 print(yaml.dump(out))
