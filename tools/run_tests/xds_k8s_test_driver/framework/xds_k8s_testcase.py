@@ -190,7 +190,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
     def setUpClass(cls):
         super().setUpClass()
         if cls.server_maintenance_port is None:
-            cls.server_maintenance_port = cls.server_port
+            cls.server_maintenance_port = server_app.KubernetesServerRunner.DEFAULT_MAINTENANCE_PORT
 
     def setUp(self):
         super().setUp()
