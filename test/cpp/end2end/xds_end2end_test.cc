@@ -3175,6 +3175,48 @@ TEST_P(XdsResolverOnlyTest, CircuitBreakingMultipleChannelsShareCallCounter) {
             backends_[0]->backend_service()->request_count());
 }
 
+TEST_P(XdsResolverOnlyTest, ClusterChangeAfterAdsCallFails) {
+  const char* kNewEdsResourceName = "new_eds_resource_name";
+  // Populate EDS resources.
+  AdsServiceImpl::EdsResourceArgs args({
+      {"locality0", CreateEndpointsForBackends(0, 1)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(BuildEdsResource(args));
+  SetNextResolutionForLbChannelAllBalancers();
+  // Check that the channel is working.
+  CheckRpcSendOk();
+  // Stop and restart the balancer.
+  balancers_[0]->Shutdown();
+  balancers_[0]->Start();
+  // Create new EDS resource.
+  AdsServiceImpl::EdsResourceArgs args2({
+      {"locality0", CreateEndpointsForBackends(1, 2)},
+  });
+  balancers_[0]->ads_service()->SetEdsResource(
+      BuildEdsResource(args2, kNewEdsResourceName));
+  // Change CDS resource to point to new EDS resource.
+  auto cluster = default_cluster_;
+  cluster.mutable_eds_cluster_config()->set_service_name(kNewEdsResourceName);
+  balancers_[0]->ads_service()->SetCdsResource(cluster);
+  // Make sure client sees the change.
+  // TODO(roth): This should not be allowing errors.  The errors are
+  // being caused by a bug that triggers in the following situation:
+  //
+  // 1. xDS call fails.
+  // 2. When xDS call is restarted, the server sends the updated CDS
+  //    resource that points to the new EDS resource name.
+  // 3. When the client receives the CDS update, it does two things:
+  //    - Sends the update to the CDS LB policy, which creates a new
+  //      xds_cluster_resolver policy using the new EDS service name.
+  //    - Notices that the CDS update no longer refers to the old EDS
+  //      service name, so removes that resource, notifying the old
+  //      xds_cluster_resolver policy that the resource no longer exists.
+  //
+  // Need to figure out a way to fix this bug, and then change this to
+  // not allow failures.
+  WaitForBackend(1, WaitForBackendOptions().set_allow_failures(true));
+}
+
 using GlobalXdsClientTest = BasicTest;
 
 TEST_P(GlobalXdsClientTest, MultipleChannelsShareXdsClient) {

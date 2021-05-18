@@ -824,7 +824,8 @@ void XdsResolver::OnError(grpc_error_handle error) {
   gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s",
           this, grpc_error_std_string(error).c_str());
   Result result;
-  result.args = grpc_channel_args_copy(args_);
+  grpc_arg new_arg = xds_client_->MakeChannelArg();
+  result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
   result.service_config_error = error;
   result_handler_->ReturnResult(std::move(result));
 }
