@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import Optional, Set
+from typing import List, Optional, Set
 
 from framework import xds_flags
 from framework.infrastructure import gcp
@@ -295,8 +295,9 @@ class TrafficDirectorManager:
 
     def create_firewall_rule(self, allowed_ports: List[str]):
         name = self._ns_name(self.FIREWALL_RULE_NAME)
-        logging.info('Creating firewall rule "%s" in network "%s"', name,
-                     self.network)
+        logging.info(
+            'Creating firewall rule "%s" in network "%s" with allowed ports %s',
+            name, self.network, allowed_ports)
         resource = self.compute.create_firewall_rule(
             name, self.network_url, xds_flags.FIREWALL_SOURCE_RANGE.value,
             allowed_ports)

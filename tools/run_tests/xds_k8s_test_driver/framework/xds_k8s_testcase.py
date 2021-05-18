@@ -186,6 +186,12 @@ class XdsKubernetesTestCase(absltest.TestCase):
 
 class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if cls.server_maintenance_port is None:
+            cls.server_maintenance_port = cls.server_port
+
     def setUp(self):
         super().setUp()
 
