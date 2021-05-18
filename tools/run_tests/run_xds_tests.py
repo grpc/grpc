@@ -2262,8 +2262,9 @@ def maybe_write_sponge_properties():
     logger.info('Writing Sponge configs: %s', properties)
     with open(
             os.path.join(os.environ['KOKORO_ARTIFACTS_DIR'],
-                         "custom_sponge_config.csv")) as f:
-        f.writelines(properties)
+                         "custom_sponge_config.csv"), 'w') as f:
+        f.write("\n".join(properties))
+        f.write("\n")
 
 
 def set_validate_for_proxyless(gcp, validate_for_proxyless):
