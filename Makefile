@@ -592,9 +592,9 @@ RE2_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libre2.a
 
 # Setup s2a-core dependency
 
-S2A_CORE_DEP = $(LIBDIR)/$(CONFIG)/libs2a-core.a
+S2A_CORE_DEP = $(LIBDIR)/$(CONFIG)/libs2a_core.a
 S2A_CORE_MERGE_OBJS = $(LIBS2A_CORE_OBJS)
-S2A_CORE_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libs2a-core.a
+S2A_CORE_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libs2a_core.a
 
 # Setup upb dependency
 

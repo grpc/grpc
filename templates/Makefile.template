@@ -455,9 +455,9 @@
 
   # Setup s2a-core dependency
 
-  S2A_CORE_DEP = $(LIBDIR)/$(CONFIG)/libs2a-core.a
+  S2A_CORE_DEP = $(LIBDIR)/$(CONFIG)/libs2a_core.a
   S2A_CORE_MERGE_OBJS = $(LIBS2A_CORE_OBJS)
-  S2A_CORE_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libs2a-core.a
+  S2A_CORE_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libs2a_core.a
 
   # Setup upb dependency
 
@@ -919,7 +919,7 @@
   ## The else here corresponds to the if secure earlier.
   % else:
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name not in ['z', 'ares', 'address_sorting', 're2', 's2a-core', 'upb', 'grpc_abseil']:
+  % if lib.name not in ['z', 'ares', 'address_sorting', 're2', 's2a_core', 'upb', 'grpc_abseil']:
   $(ZLIB_DEP) \
   $(CARES_DEP) \
   $(ADDRESS_SORTING_DEP) \
