@@ -680,8 +680,9 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       // We cannot directly use the result of rand() as the hash value,
       // since it is a 32-bit number and not a 64-bit number and will
       // therefore not be evenly distributed.
-      std::string rand_str = absl::StrCat(rand());
-      hash = XXH64(rand_str.c_str(), rand_str.length(), 0);
+      uint32_t upper = rand();
+      uint32_t lower = rand();
+      hash = (static_cast<uint64_t>(upper) << 32) | lower;
     }
     CallConfig call_config;
     if (method_config != nullptr) {
