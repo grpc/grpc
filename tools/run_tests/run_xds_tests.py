@@ -214,10 +214,6 @@ args = argp.parse_args()
 if args.verbose:
     logger.setLevel(logging.DEBUG)
 
-CLIENT_HOSTS = []
-if args.client_hosts:
-    CLIENT_HOSTS = args.client_hosts.split(',')
-
 # Each of the config propagation in the control plane should finish within 600s.
 # Otherwise, it indicates a bug in the control plane. The config propagation
 # includes all kinds of traffic config update, like updating urlMap, creating
