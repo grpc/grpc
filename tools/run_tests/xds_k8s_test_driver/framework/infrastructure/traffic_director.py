@@ -71,6 +71,7 @@ class TrafficDirectorManager:
         # TODO(sergiitk): remove this flag once backend service resource loaded
         self.backend_service_protocol: Optional[BackendServiceProtocol] = None
         self.url_map: Optional[GcpResource] = None
+        self.firewall_rule: Optional[GcpResource] = None
         self.target_proxy: Optional[GcpResource] = None
         # TODO(sergiitk): remove this flag once target proxy resource loaded
         self.target_proxy_is_http: bool = False
