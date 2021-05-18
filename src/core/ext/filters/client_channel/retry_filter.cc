@@ -324,16 +324,15 @@ class RetryFilter::CallData {
       explicit AttemptDispatchController(CallAttempt* call_attempt)
           : call_attempt_(call_attempt) {}
 
-      bool ShouldRetry() override {
-        return false;
-      }
+      bool ShouldRetry() override { return false; }
 
       void Commit() override {
         call_attempt_->lb_call_committed_ = true;
         auto* calld = call_attempt_->calld_;
         if (calld->retry_committed_) {
           auto* service_config_call_data = static_cast<ServiceConfigCallData*>(
-              calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA].value);
+              calld->call_context_[GRPC_CONTEXT_SERVICE_CONFIG_CALL_DATA]
+                  .value);
           service_config_call_data->call_dispatch_controller()->Commit();
         }
       }

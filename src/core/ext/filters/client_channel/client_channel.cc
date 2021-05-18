@@ -1926,7 +1926,8 @@ void ClientChannel::CallData::StartTransportStreamOpBatch(
   // in case we wind up failing the call before we get down to the retry
   // or LB call layer.
   if (batch->recv_trailing_metadata) {
-    calld->InjectRecvTrailingMetadataReadyForConfigSelectorCommitCallback(batch);
+    calld->InjectRecvTrailingMetadataReadyForConfigSelectorCommitCallback(
+        batch);
   }
   // If we've previously been cancelled, immediately fail any new batches.
   if (GPR_UNLIKELY(calld->cancel_error_ != GRPC_ERROR_NONE)) {

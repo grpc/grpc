@@ -50,8 +50,6 @@ class ConfigSelector : public RefCounted<ConfigSelector> {
   // An interface to be used by the channel when dispatching calls.
   class CallDispatchController : public DualRefCounted<CallDispatchController> {
    public:
-    virtual ~CallDispatchController() = default;
-
     // Called by the channel to decide if it should retry the call upon a
     // failure.
     virtual bool ShouldRetry() = 0;
