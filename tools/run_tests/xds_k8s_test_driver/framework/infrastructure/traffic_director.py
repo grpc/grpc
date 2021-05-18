@@ -115,7 +115,6 @@ class TrafficDirectorManager:
         self.delete_url_map(force=force)
         self.delete_backend_service(force=force)
         self.delete_health_check(force=force)
-        self.delete_firewall_rule(force=force)
 
     def _ns_name(self, name):
         return f'{self.resource_prefix}-{name}'
@@ -304,6 +303,7 @@ class TrafficDirectorManager:
         self.firewall_rule = resource
 
     def delete_firewall_rule(self, force=False):
+        """The firewall rule won't be automatically removed."""
         if force:
             name = self._ns_name(self.FIREWALL_RULE_NAME)
         elif self.firewall_rule:

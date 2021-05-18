@@ -205,7 +205,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
         # Ensures the firewall exist
         if self.ensure_firewall:
             self.td.create_firewall_rule(
-                allowed_ports=[str(self.server_maintenance_port)])
+                allowed_ports=xds_flags.FIREWALL_ALLOWED_PORTS.value)
 
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(
@@ -280,7 +280,7 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         # Ensures the firewall exist
         if self.ensure_firewall:
             self.td.create_firewall_rule(
-                allowed_ports=[str(self.server_maintenance_port)])
+                allowed_ports=xds_flags.FIREWALL_ALLOWED_PORTS.value)
 
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(

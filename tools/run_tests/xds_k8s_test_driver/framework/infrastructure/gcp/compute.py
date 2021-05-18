@@ -82,7 +82,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
 
     def create_firewall_rule(self, name: str, network_url: str,
                              source_ranges: List[str],
-                             ports: List[str]) -> None:
+                             ports: List[str]) -> Optional[GcpResource]:
         try:
             return self._insert_resource(
                 self.api.firewalls(), {
@@ -101,7 +101,7 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
             # TODO(lidiz) use status_code() when we upgrade googleapiclient
             if http_error.resp.status == 409:
                 logger.debug('Firewall rule %s already existed', name)
-                pass
+                return
             else:
                 raise
 
