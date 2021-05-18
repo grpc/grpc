@@ -35,11 +35,8 @@ kubectl get pods | grep -v Completed
 # Set up environment variables.
 # BEGIN differentiate experimental configuration from master configuration.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
-if [[ "${KOKORO_BUILD_INITIATOR}" == kokoro ]]; then
-    LOAD_TEST_PREFIX=kokoro-test
-fi
-BIGQUERY_TABLE_8CORE=e2e_benchmarks.experimental_results
-BIGQUERY_TABLE_32CORE=e2e_benchmarks.experimental_results_32core
+BIGQUERY_TABLE_8CORE=e2e_benchmarks.ci_master_results_8core
+BIGQUERY_TABLE_32CORE=e2e_benchmarks.ci_master_results_32core
 # END differentiate experimental configuration from master configuration.
 PREBUILT_IMAGE_PREFIX="gcr.io/grpc-testing/e2etesting/pre_built_workers/${LOAD_TEST_PREFIX}"
 UNIQUE_IDENTIFIER="$(date +%Y%m%d%H%M%S)"
@@ -80,8 +77,8 @@ buildConfigs() {
         -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
+# Use the "official" BQ tables so that the measurements will show up in the "official" public dashboard.
 buildConfigs workers-8core "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l python -l ruby
-
 buildConfigs workers-32core "${BIGQUERY_TABLE_32CORE}" -l c++ -l csharp -l go -l java
 
 # Delete prebuilt images on exit.
