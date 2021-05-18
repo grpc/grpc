@@ -37,7 +37,8 @@ struct grpc_deadline_state {
   grpc_call_stack* call_stack;
   grpc_core::CallCombiner* call_combiner;
   grpc_core::Arena* arena;
-  grpc_core::TimerState* timer_state = nullptr;
+  grpc_core::Mutex cancel_mu;
+  grpc_core::TimerState* timer_state ABSL_GUARDED_BY(cancel_mu) = nullptr;
   // Closure to invoke when we receive trailing metadata.
   // We use this to cancel the timer.
   grpc_closure recv_trailing_metadata_ready;
@@ -73,6 +74,9 @@ void grpc_deadline_state_reset(grpc_call_element* elem,
 // Note: Must be called while holding the call combiner.
 void grpc_deadline_state_client_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op);
+
+// To be called from the client-side filter's cancel_call() method.
+void grpc_deadline_state_client_cancel_call(grpc_call_element* elem);
 
 // Should deadline checking be performed (according to channel args)
 bool grpc_deadline_checking_enabled(const grpc_channel_args* args);

@@ -1404,11 +1404,6 @@ static void perform_stream_op_locked(void* stream_op,
     on_complete->error_data.error = GRPC_ERROR_NONE;
   }
 
-  if (op->cancel_stream) {
-    GRPC_STATS_INC_HTTP2_OP_CANCEL();
-    grpc_chttp2_cancel_stream(t, s, op_payload->cancel_stream.cancel_error);
-  }
-
   if (op->send_initial_metadata) {
     if (t->is_client && t->channelz_socket != nullptr) {
       t->channelz_socket->RecordStreamStartedFromLocal();
@@ -1650,6 +1645,26 @@ static void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
   t->combiner->Run(GRPC_CLOSURE_INIT(&op->handler_private.closure,
                                      perform_stream_op_locked, op, nullptr),
                    GRPC_ERROR_NONE);
+}
+
+static void cancel_stream_locked(void* arg, grpc_error_handle error) {
+  auto* s = reinterpret_cast<grpc_chttp2_stream*>(arg);
+  grpc_chttp2_transport* t = s->t;
+  grpc_chttp2_cancel_stream(t, s, GRPC_ERROR_REF(error));
+  GRPC_CHTTP2_STREAM_UNREF(s, "cancel_stream");
+}
+
+static void cancel_stream(grpc_transport* gt, grpc_stream* gs,
+                          grpc_error_handle error) {
+  auto* t = reinterpret_cast<grpc_chttp2_transport*>(gt);
+  auto* s = reinterpret_cast<grpc_chttp2_stream*>(gs);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+    gpr_log(GPR_INFO, "cancel_stream: %p %s", s,
+            grpc_error_std_string(error).c_str());
+  }
+  GRPC_CHTTP2_STREAM_REF(s, "cancel_stream");
+  t->combiner->Run(GRPC_CLOSURE_CREATE(cancel_stream_locked, s, nullptr),
+                   error);
 }
 
 static void cancel_pings(grpc_chttp2_transport* t, grpc_error_handle error) {
@@ -3314,6 +3329,7 @@ static const grpc_transport_vtable vtable = {sizeof(grpc_chttp2_stream),
                                              set_pollset_set,
                                              perform_stream_op,
                                              perform_transport_op,
+                                             cancel_stream,
                                              destroy_stream,
                                              destroy_transport,
                                              chttp2_get_endpoint};

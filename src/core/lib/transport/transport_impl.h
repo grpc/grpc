@@ -51,6 +51,10 @@ typedef struct grpc_transport_vtable {
   /* implementation of grpc_transport_perform_op */
   void (*perform_op)(grpc_transport* self, grpc_transport_op* op);
 
+  /* implementation of grpc_transport_cancel_stream */
+  void (*cancel_stream)(grpc_transport* self, grpc_stream* stream,
+                        grpc_error_handle error);
+
   /* implementation of grpc_transport_destroy_stream */
   void (*destroy_stream)(grpc_transport* self, grpc_stream* stream,
                          grpc_closure* then_schedule_closure);

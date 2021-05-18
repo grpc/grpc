@@ -59,21 +59,14 @@ static void run_in_call_combiner(void* arg, grpc_error_handle error) {
                            GRPC_ERROR_REF(error), state->reason);
 }
 
-static void run_cancel_in_call_combiner(void* arg, grpc_error_handle error) {
-  run_in_call_combiner(arg, error);
-  gpr_free(arg);
-}
-
 static void intercept_callback(call_data* calld, callback_state* state,
-                               bool free_when_done, const char* reason,
+                               const char* reason,
                                grpc_closure** original_closure) {
   state->original_closure = *original_closure;
   state->call_combiner = calld->call_combiner;
   state->reason = reason;
-  *original_closure = GRPC_CLOSURE_INIT(
-      &state->closure,
-      free_when_done ? run_cancel_in_call_combiner : run_in_call_combiner,
-      state, grpc_schedule_on_exec_ctx);
+  *original_closure = GRPC_CLOSURE_INIT(&state->closure, run_in_call_combiner,
+                                        state, grpc_schedule_on_exec_ctx);
 }
 
 static callback_state* get_state_for_batch(
@@ -106,37 +99,35 @@ static void connected_channel_start_transport_stream_op_batch(
   if (batch->recv_initial_metadata) {
     callback_state* state = &calld->recv_initial_metadata_ready;
     intercept_callback(
-        calld, state, false, "recv_initial_metadata_ready",
+        calld, state, "recv_initial_metadata_ready",
         &batch->payload->recv_initial_metadata.recv_initial_metadata_ready);
   }
   if (batch->recv_message) {
     callback_state* state = &calld->recv_message_ready;
-    intercept_callback(calld, state, false, "recv_message_ready",
+    intercept_callback(calld, state, "recv_message_ready",
                        &batch->payload->recv_message.recv_message_ready);
   }
   if (batch->recv_trailing_metadata) {
     callback_state* state = &calld->recv_trailing_metadata_ready;
     intercept_callback(
-        calld, state, false, "recv_trailing_metadata_ready",
+        calld, state, "recv_trailing_metadata_ready",
         &batch->payload->recv_trailing_metadata.recv_trailing_metadata_ready);
   }
-  if (batch->cancel_stream) {
-    // There can be more than one cancellation batch in flight at any
-    // given time, so we can't just pick out a fixed index into
-    // calld->on_complete like we can for the other ops.  However,
-    // cancellation isn't in the fast path, so we just allocate a new
-    // closure for each one.
-    callback_state* state =
-        static_cast<callback_state*>(gpr_malloc(sizeof(*state)));
-    intercept_callback(calld, state, true, "on_complete (cancel_stream)",
-                       &batch->on_complete);
-  } else if (batch->on_complete != nullptr) {
+  if (batch->on_complete != nullptr) {
     callback_state* state = get_state_for_batch(calld, batch);
-    intercept_callback(calld, state, false, "on_complete", &batch->on_complete);
+    intercept_callback(calld, state, "on_complete", &batch->on_complete);
   }
   grpc_transport_perform_stream_op(
       chand->transport, TRANSPORT_STREAM_FROM_CALL_DATA(calld), batch);
   GRPC_CALL_COMBINER_STOP(calld->call_combiner, "passed batch to transport");
+}
+
+static void connected_channel_cancel_call(grpc_call_element* elem,
+                                          grpc_error* error) {
+  auto* chand = static_cast<channel_data*>(elem->channel_data);
+  auto* calld = static_cast<call_data*>(elem->call_data);
+  grpc_transport_cancel_stream(chand->transport,
+                               TRANSPORT_STREAM_FROM_CALL_DATA(calld), error);
 }
 
 static void connected_channel_start_transport_op(grpc_channel_element* elem,
@@ -207,6 +198,7 @@ const grpc_channel_filter grpc_connected_filter = {
     connected_channel_init_call_elem,
     set_pollset_or_pollset_set,
     connected_channel_destroy_call_elem,
+    connected_channel_cancel_call,
     sizeof(channel_data),
     connected_channel_init_channel_elem,
     connected_channel_destroy_channel_elem,

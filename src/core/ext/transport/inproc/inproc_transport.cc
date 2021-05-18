@@ -977,12 +977,7 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                                     nullptr, grpc_schedule_on_exec_ctx);
   }
 
-  if (op->cancel_stream) {
-    // Call cancel_stream_locked without ref'ing the cancel_error because
-    // this function is responsible to make sure that that field gets unref'ed
-    cancel_stream_locked(s, op->payload->cancel_stream.cancel_error);
-    // this op can complete without an error
-  } else if (s->cancel_self_error != GRPC_ERROR_NONE) {
+  if (s->cancel_self_error != GRPC_ERROR_NONE) {
     // already self-canceled so still give it an error
     error = GRPC_ERROR_REF(s->cancel_self_error);
   } else {
@@ -1181,6 +1176,17 @@ void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   gpr_mu_unlock(&t->mu->mu);
 }
 
+void cancel_stream(grpc_transport* gt, grpc_stream* gs,
+                   grpc_error_handle error) {
+  INPROC_LOG(GPR_INFO, "cancel_stream %p %s", gs,
+             grpc_error_std_string(error).c_str());
+  inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
+  inproc_stream* s = reinterpret_cast<inproc_stream*>(gs);
+  gpr_mu_lock(&t->mu->mu);
+  cancel_stream_locked(s, error);
+  gpr_mu_unlock(&t->mu->mu);
+}
+
 void destroy_stream(grpc_transport* gt, grpc_stream* gs,
                     grpc_closure* then_schedule_closure) {
   INPROC_LOG(GPR_INFO, "destroy_stream %p %p", gs, then_schedule_closure);
@@ -1223,8 +1229,8 @@ grpc_endpoint* get_endpoint(grpc_transport* /*t*/) { return nullptr; }
 const grpc_transport_vtable inproc_vtable = {
     sizeof(inproc_stream), "inproc",        init_stream,
     set_pollset,           set_pollset_set, perform_stream_op,
-    perform_transport_op,  destroy_stream,  destroy_transport,
-    get_endpoint};
+    perform_transport_op,  cancel_stream,   destroy_stream,
+    destroy_transport,     get_endpoint};
 
 /*******************************************************************************
  * Main inproc transport functions

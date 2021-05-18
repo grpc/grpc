@@ -388,6 +388,7 @@ class ClientChannel::LoadBalancedCall
   ~LoadBalancedCall() override;
 
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
+  void Cancel(grpc_error* error);
 
   // Invoked by channel for queued LB picks when the picker is updated.
   static void PickSubchannel(void* arg, grpc_error_handle error);
@@ -405,7 +406,6 @@ class ClientChannel::LoadBalancedCall
   }
 
  private:
-  class LbQueuedCallCanceller;
   class Metadata;
   class LbCallState;
 
@@ -462,14 +462,10 @@ class ClientChannel::LoadBalancedCall
   gpr_cycle_counter call_start_time_;
   grpc_millis deadline_;
   Arena* arena_;
-  grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
   grpc_polling_entity* pollent_;
   grpc_closure* on_call_destruction_complete_;
-
-  // Set when we get a cancel_stream op.
-  grpc_error_handle cancel_error_ = GRPC_ERROR_NONE;
 
   // Set when we fail inside the LB call.
   grpc_error_handle failure_error_ = GRPC_ERROR_NONE;
@@ -481,8 +477,6 @@ class ClientChannel::LoadBalancedCall
       ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_);
   bool queued_pending_lb_pick_ ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) =
       false;
-  LbQueuedCallCanceller* lb_call_canceller_
-      ABSL_GUARDED_BY(&ClientChannel::data_plane_mu_) = nullptr;
 
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
@@ -491,6 +485,20 @@ class ClientChannel::LoadBalancedCall
       lb_recv_trailing_metadata_ready_;
 
   RefCountedPtr<SubchannelCall> subchannel_call_;
+
+  // Mutex guarding cancellation.
+  //
+  // Note that subchannel_call_ itself is not guarded by this mutex, because we
+  // only need to guard the *creation* of the subchannel call.  If Cancel()
+  // runs before subchannel_call_ is set, then cancel_error_ will be set, in
+  // which case subchannel_call_ will not be created; if Cancel() runs after
+  // subchannel_call_ is set, it will propagate the cancellation down to
+  // subchannel_call_.
+  //
+  // This mutex should not cause contention *except* when a cancellation
+  // is occurring.
+  Mutex cancel_mu_;
+  grpc_error_handle cancel_error_ ABSL_GUARDED_BY(cancel_mu_) = GRPC_ERROR_NONE;
 
   // For intercepting recv_trailing_metadata_ready for the LB policy.
   grpc_metadata_batch* recv_trailing_metadata_ = nullptr;

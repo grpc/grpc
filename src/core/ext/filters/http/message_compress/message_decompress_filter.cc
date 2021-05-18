@@ -385,15 +385,12 @@ void DecompressDestroyChannelElem(grpc_channel_element* elem) {
 }  // namespace
 
 const grpc_channel_filter MessageDecompressFilter = {
-    DecompressStartTransportStreamOpBatch,
-    grpc_channel_next_op,
-    sizeof(CallData),
-    DecompressInitCallElem,
+    DecompressStartTransportStreamOpBatch, grpc_channel_next_op,
+    sizeof(CallData), DecompressInitCallElem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     DecompressDestroyCallElem,
-    sizeof(ChannelData),
-    DecompressInitChannelElem,
-    DecompressDestroyChannelElem,
-    grpc_channel_next_get_info,
-    "message_decompress"};
+    // TODO(roth): This filter needs to support cancellation.
+    grpc_call_cancel_next_filter, sizeof(ChannelData),
+    DecompressInitChannelElem, DecompressDestroyChannelElem,
+    grpc_channel_next_get_info, "message_decompress"};
 }  // namespace grpc_core

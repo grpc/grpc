@@ -106,12 +106,6 @@ std::string grpc_transport_stream_op_batch_string(
     out.push_back(" RECV_TRAILING_METADATA");
   }
 
-  if (op->cancel_stream) {
-    out.push_back(absl::StrCat(
-        " CANCEL:",
-        grpc_error_std_string(op->payload->cancel_stream.cancel_error)));
-  }
-
   return absl::StrJoin(out, "");
 }
 

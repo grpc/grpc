@@ -106,7 +106,8 @@ struct grpc_call_final_info {
    Members are laid out in approximate frequency of use order. */
 struct grpc_channel_filter {
   /* Called to eg. send/receive data on a call.
-     See grpc_call_next_op on how to call the next element in the stack */
+     This will always be called while holding the call combiner.
+     See grpc_call_next_op on how to call the next element in the stack. */
   void (*start_transport_stream_op_batch)(grpc_call_element* elem,
                                           grpc_transport_stream_op_batch* op);
   /* Called to handle channel level operations - e.g. new calls, or transport
@@ -138,6 +139,13 @@ struct grpc_channel_filter {
   void (*destroy_call_elem)(grpc_call_element* elem,
                             const grpc_call_final_info* final_info,
                             grpc_closure* then_schedule_closure);
+
+  // Cancels a call.  Filters should use this to cancel any async work
+  // that they may be doing and fail any transport stream op batches that
+  // are currently under their control.
+  // Use grpc_call_cancel_next_filter() to delegate to the next filter
+  // in the stack.
+  void (*cancel_call)(grpc_call_element* elem, grpc_error* error);
 
   /* sizeof(per channel data) */
   size_t sizeof_channel_data;
@@ -283,6 +291,9 @@ void grpc_call_stack_ignore_set_pollset_or_pollset_set(
 /* Call the next operation in a call stack */
 void grpc_call_next_op(grpc_call_element* elem,
                        grpc_transport_stream_op_batch* op);
+// Cancel the next filter in the call stack.
+void grpc_call_cancel_next_filter(grpc_call_element* elem,
+                                  grpc_error_handle error);
 /* Call the next operation (depending on call directionality) in a channel
    stack */
 void grpc_channel_next_op(grpc_channel_element* elem, grpc_transport_op* op);
@@ -306,6 +317,17 @@ extern grpc_core::TraceFlag grpc_trace_channel;
   do {                                                 \
     if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) { \
       grpc_call_log_op(sev, elem, op);                 \
+    }                                                  \
+  } while (0)
+
+// Does NOT take ownership of error.
+void grpc_call_log_cancel(const char* file, int line, gpr_log_severity severity,
+                          grpc_call_element* elem, grpc_error_handle error);
+
+#define GRPC_CALL_LOG_CANCEL(sev, elem, error)         \
+  do {                                                 \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_channel)) { \
+      grpc_call_log_cancel(sev, elem, error);          \
     }                                                  \
   } while (0)
 

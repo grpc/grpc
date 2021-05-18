@@ -79,8 +79,6 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
     static void RecvMessageReady(void* arg, grpc_error_handle error);
     static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
-    static void StartCancel(void* arg, grpc_error_handle error);
-    static void OnCancelComplete(void* arg, grpc_error_handle error);
 
     static void OnByteStreamNext(void* arg, grpc_error_handle error);
     void ContinueReadingRecvMessage();
@@ -133,7 +131,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     grpc_transport_stream_stats collect_stats_;
     grpc_closure recv_trailing_metadata_ready_;
 
-    // True if the cancel_stream batch has been started.
+    // True if the call has been cancelled.
     Atomic<bool> cancelled_{false};
 
     // Closure for call stack destruction.

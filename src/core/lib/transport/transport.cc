@@ -159,6 +159,12 @@ void grpc_transport_set_pops(grpc_transport* transport, grpc_stream* stream,
   }
 }
 
+void grpc_transport_cancel_stream(grpc_transport* transport,
+                                  grpc_stream* stream,
+                                  grpc_error_handle error) {
+  transport->vtable->cancel_stream(transport, stream, error);
+}
+
 void grpc_transport_destroy_stream(grpc_transport* transport,
                                    grpc_stream* stream,
                                    grpc_closure* then_schedule_closure) {
@@ -173,7 +179,7 @@ grpc_endpoint* grpc_transport_get_endpoint(grpc_transport* transport) {
 // "Supercalifragilisticexpialidocious":
 //
 // grpc_transport_stream_op_batch_finish_with_failure
-// is a function that must always unref cancel_error
+// is a function that must always unref error
 // though it lives in lib, it handles transport stream ops sure
 // it's grpc_transport_stream_op_batch_finish_with_failure
 void grpc_transport_stream_op_batch_finish_with_failure(
@@ -181,9 +187,6 @@ void grpc_transport_stream_op_batch_finish_with_failure(
     grpc_core::CallCombiner* call_combiner) {
   if (batch->send_message) {
     batch->payload->send_message.send_message.reset();
-  }
-  if (batch->cancel_stream) {
-    GRPC_ERROR_UNREF(batch->payload->cancel_stream.cancel_error);
   }
   // Construct a list of closures to execute.
   grpc_core::CallCombinerClosureList closures;
