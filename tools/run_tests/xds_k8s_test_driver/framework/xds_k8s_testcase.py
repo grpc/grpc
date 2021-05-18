@@ -69,6 +69,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.td_bootstrap_image = xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value
         cls.xds_server_uri = xds_flags.XDS_SERVER_URI.value
         cls.ensure_firewall = xds_flags.ENSURE_FIREWALL.value
+        cls.firewall_allowed_ports = xds_flags.FIREWALL_ALLOWED_PORTS.value
 
         # Base namespace
         # TODO(sergiitk): generate for each test
@@ -205,7 +206,7 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
         # Ensures the firewall exist
         if self.ensure_firewall:
             self.td.create_firewall_rule(
-                allowed_ports=xds_flags.FIREWALL_ALLOWED_PORTS.value)
+                allowed_ports=self.firewall_allowed_ports)
 
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(
@@ -280,7 +281,7 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
         # Ensures the firewall exist
         if self.ensure_firewall:
             self.td.create_firewall_rule(
-                allowed_ports=xds_flags.FIREWALL_ALLOWED_PORTS.value)
+                allowed_ports=self.firewall_allowed_ports)
 
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(
