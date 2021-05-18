@@ -39,7 +39,9 @@ namespace grpc_core {
 TraceFlag* TraceFlagList::root_tracer_ = nullptr;
 
 bool TraceFlagList::Set(const char* name, bool enabled) {
-  if (0 == strcmp(name, "all")) {
+  if (0 == strlen(name)) {
+    gpr_log(GPR_DEBUG, "No trace flags are changed");
+  } else if (0 == strcmp(name, "all")) {
     for (auto t = root_tracer_; t != nullptr; t = t->next_tracer_) {
       t->set_enabled(enabled);
     }
@@ -49,11 +51,9 @@ bool TraceFlagList::Set(const char* name, bool enabled) {
     for (auto t = root_tracer_; t != nullptr; t = t->next_tracer_) {
       if (strstr(t->name_, "refcount") != nullptr) {
         t->set_enabled(enabled);
-        return true;
+        break;
       }
     }
-  } else if (0 == strcmp(name, "")) {
-    return true;
   } else {
     for (auto t = root_tracer_; t != nullptr || found; t = t->next_tracer_) {
       if (0 == strcmp(name, t->name_)) {
