@@ -2004,7 +2004,23 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
   } else {
     SSL_CTX_set_verify(ssl_context, SSL_VERIFY_PEER, nullptr);
   }
-  /* TODO(jboeuf): Add revocation verification. */
+
+  #if OPENSSL_VERSION_NUMBER >= 0x10100000
+  if (options->crl_directory != nullptr) {
+    gpr_log(GPR_INFO, "enabling server side CRL checking.");
+    X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
+    if (!X509_STORE_load_locations(cert_store, nullptr,
+                                   options->crl_directory)) {
+      gpr_log(GPR_ERROR, "Failed to load CRL File from directory.");
+    } else {
+      X509_STORE_set_verify_cb(cert_store, verify_cb);
+      X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+      X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK);
+
+      gpr_log(GPR_INFO, "enabled server side CRL checking.");
+    }
+  }
+  #endif
 
   *factory = impl;
   return TSI_OK;
@@ -2166,7 +2182,23 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
                              nullptr);
           break;
       }
-      /* TODO(jboeuf): Add revocation verification. */
+
+      #if OPENSSL_VERSION_NUMBER >= 0x10100000
+      if (options->crl_directory != nullptr) {
+        gpr_log(GPR_INFO, "enabling client CRL checking.");
+        X509_STORE* cert_store = SSL_CTX_get_cert_store(impl->ssl_contexts[i]);
+        if (!X509_STORE_load_locations(cert_store, nullptr,
+                                       options->crl_directory)) {
+          gpr_log(GPR_ERROR, "Failed to load CRL File from directory.");
+        } else {
+          X509_STORE_set_verify_cb(cert_store, verify_cb);
+          X509_VERIFY_PARAM* param = X509_STORE_get0_param(cert_store);
+          X509_VERIFY_PARAM_set_flags(param, X509_V_FLAG_CRL_CHECK);
+
+          gpr_log(GPR_INFO, "enabled client CRL checking.");
+        }
+      }
+      #endif
 
       result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
           options->pem_key_cert_pairs[i].cert_chain,
