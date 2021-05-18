@@ -293,15 +293,8 @@ class TrafficDirectorManager:
         self.compute.delete_forwarding_rule(name)
         self.forwarding_rule = None
 
-    def create_firewall_rule(self,
-                             force=False,
-                             allowed_ports: List[str] = ['8080-8100']):
-        if force:
-            name = self._ns_name(self.FIREWALL_RULE_NAME)
-        elif self.firewall_rule:
-            name = self.firewall_rule.name
-        else:
-            return
+    def create_firewall_rule(self, allowed_ports: List[str]):
+        name = self._ns_name(self.FIREWALL_RULE_NAME)
         logging.info('Creating firewall rule "%s" in network "%s"', name,
                      self.network)
         resource = self.compute.create_firewall_rule(

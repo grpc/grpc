@@ -68,6 +68,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
         cls.gcp_service_account: str = xds_k8s_flags.GCP_SERVICE_ACCOUNT.value
         cls.td_bootstrap_image = xds_k8s_flags.TD_BOOTSTRAP_IMAGE.value
         cls.xds_server_uri = xds_flags.XDS_SERVER_URI.value
+        cls.ensure_firewall = xds_flags.ENSURE_FIREWALL.value
 
         # Base namespace
         # TODO(sergiitk): generate for each test
@@ -107,11 +108,6 @@ class XdsKubernetesTestCase(absltest.TestCase):
         self.server_runner = None
         self.client_runner = None
         self.td = None
-
-        # Ensures the firewall exist
-        if xds_flags.ENSURE_FIREWALL.value:
-            self.td.create_firewall_rule(
-                allowed_ports=[str(self.server_maintenance_port)])
 
     @classmethod
     def tearDownClass(cls):
@@ -200,6 +196,11 @@ class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
             resource_prefix=self.namespace,
             network=self.network)
 
+        # Ensures the firewall exist
+        if self.ensure_firewall:
+            self.td.create_firewall_rule(
+                allowed_ports=[str(self.server_maintenance_port)])
+
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(
             k8s.KubernetesNamespace(self.k8s_api_manager,
@@ -269,6 +270,11 @@ class SecurityXdsKubernetesTestCase(XdsKubernetesTestCase):
             project=self.project,
             resource_prefix=self.namespace,
             network=self.network)
+
+        # Ensures the firewall exist
+        if self.ensure_firewall:
+            self.td.create_firewall_rule(
+                allowed_ports=[str(self.server_maintenance_port)])
 
         # Test Server Runner
         self.server_runner = server_app.KubernetesServerRunner(
