@@ -115,6 +115,6 @@ time ../test-infra/bin/prepare_prebuilt_workers \
 
 # Run tests.
 time ../test-infra/bin/runner \
-    -i ../grpc/loadtest_with_prebuilt_workers_workers-8core.yaml \
-    -i ../grpc/loadtest_with_prebuilt_workers_workers-32core.yaml \
-    -c workers-8core:2 -c workers-32core:2
+    -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
+    -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
+    -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2"
