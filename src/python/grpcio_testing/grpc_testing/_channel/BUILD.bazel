@@ -1,0 +1,57 @@
+package(default_visibility = ["//src/python/grpcio_testing/grpc_testing:__subpackages__"])
+
+py_library(
+    name = "channel_rpc",
+    srcs = ["_channel_rpc.py"],
+)
+
+py_library(
+    name = "channel_state",
+    srcs = ["_channel_state.py"],
+    deps = [
+        ":channel"
+    ]
+)
+
+py_library(
+    name = "channel",
+    srcs = ["_channel.py"],
+    deps = [
+        ":channel_rpc",
+        ":multi_callable",
+    ]
+)
+
+py_library(
+    name = "invocation",
+    srcs = ["_invocation.py"],
+)
+
+py_library(
+    name = "multi_callable",
+    srcs = ["_multi_callable.py"],
+    deps = [
+        ":invocation",
+    ]
+)
+
+py_library(
+    name = "rpc_state",
+    srcs = ["_rpc_state.py"],
+)
+
+py_library(
+    name = "_channel",
+    srcs = ["__init__.py"],
+    imports = ["../"],
+    deps = [
+        ":channel_rpc",
+        ":channel_state",
+        ":channel",
+        ":invocation",
+        ":multi_callable",
+        ":rpc_state",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_testing/grpc_testing:common",
+    ],
+)

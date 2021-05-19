@@ -1,0 +1,25 @@
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "common",
+    srcs = ["_common.py"],
+)
+
+py_library(
+    name = "time",
+    srcs = ["_time.py"],
+)
+
+py_library(
+    name = "grpcio_testing",
+    srcs = ["__init__.py"],
+    imports = ["../"],
+    deps = [
+        ":common",
+        ":time",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_testing/grpc_testing/_channel",
+        "//src/python/grpcio_testing/grpc_testing/_server",
+        "@six//:six",
+    ],
+)

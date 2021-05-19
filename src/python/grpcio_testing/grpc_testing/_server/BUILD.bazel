@@ -1,0 +1,53 @@
+package(default_visibility = ["//src/python/grpcio_testing/grpc_testing:__subpackages__"])
+
+py_library(
+    name = "handler",
+    srcs = ["_handler.py"],
+)
+
+py_library(
+    name = "rpc",
+    srcs = ["_rpc.py"],
+)
+
+py_library(
+    name = "server_rpc",
+    srcs = ["_server_rpc.py"],
+)
+
+py_library(
+    name = "server",
+    srcs = ["_server.py"],
+    deps = [
+        ":rpc",
+        ":server_rpc",
+        ":service",
+        ":servicer_context",
+    ],
+)
+
+py_library(
+    name = "service",
+    srcs = ["_service.py"],
+)
+
+py_library(
+    name = "servicer_context",
+    srcs = ["_servicer_context.py"],
+)
+
+py_library(
+    name = "_server",
+    srcs = ["__init__.py"],
+    imports = ["../"],
+    deps = [
+        ":handler",
+        ":rpc",
+        ":server_rpc",
+        ":server",
+        ":service",
+        ":servicer_context",
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_testing/grpc_testing:common",
+    ],
+)
