@@ -253,7 +253,7 @@ ChannelArguments ServerBuilder::BuildChannelArgs() {
     plugin->UpdateServerBuilder(this);
     plugin->UpdateChannelArguments(&args);
   }
-  if (authorization_provider_) {
+  if (authorization_provider_ != nullptr) {
     args.SetPointer(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
                     authorization_provider_->c_provider());
   }
