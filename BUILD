@@ -733,6 +733,7 @@ grpc_cc_library(
         "src/core/lib/promise/try_join.h",
         "src/core/lib/promise/try_seq.h",
         "src/core/lib/promise/while.h",
+        "src/core/lib/promise/observable.h",
     ],
     srcs = [
         "src/core/lib/promise/activity.cc"
