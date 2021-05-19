@@ -2242,20 +2242,19 @@ def maybe_write_sponge_properties():
     """Writing test infos to enable more advanced testgrid searches."""
     if 'KOKORO_ARTIFACTS_DIR' not in os.environ:
         return
-    if 'KOKORO_GITHUB_COMMIT_URL' not in os.environ:
+    if 'GIT_ORIGIN_URL' not in os.environ:
         return
-    # Commit url example:
-    # KOKORO_GITHUB_COMMIT_URL="https://github.com/lidizheng/grpc/commit/e38cbb245a69b3112bb65b164ce2ca6b2dff0d7b"
-    tokens = os.environ['KOKORO_GITHUB_COMMIT_URL'].split('/commit/')
-    git_origin_url = tokens[0] + '.git'
-    git_commit_short = tokens[1][:10]
+    project_root = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                '../..')
+    git_commit_short = subprocess.getoutput(
+        'git -C "%s" rev-parse --short HEAD' % project_root)
     properties = [
         # Technically, 'TESTS_FORMAT_VERSION' is not required for run_xds_tests.
         # We keep it here so one day we may merge the process of writing sponge
         # properties.
         'TESTS_FORMAT_VERSION,2',
         'TESTGRID_EXCLUDE,%s' % os.environ.get('TESTGRID_EXCLUDE', 0),
-        'GIT_ORIGIN_URL,%s' % git_origin_url,
+        'GIT_ORIGIN_URL,%s' % os.environ['GIT_ORIGIN_URL'],
         'GIT_COMMIT_SHORT,%s' % git_commit_short,
     ]
     logger.info('Writing Sponge configs: %s', properties)
