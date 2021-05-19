@@ -170,6 +170,8 @@ struct grpc_call {
   bool destroy_called = false;
   /** flag indicating that cancellation is inherited */
   bool cancellation_is_inherited = false;
+  // Trailers-only response status
+  bool is_trailers_only = false;
   /** which ops are in-flight */
   bool sent_initial_metadata = false;
   bool sending_message = false;
@@ -191,9 +193,6 @@ struct grpc_call {
   grpc_metadata_array* buffered_metadata[2] = {};
 
   grpc_metadata compression_md;
-
-  // Trailers-only response status
-  bool is_trailers_only = false;
 
   // A char* indicating the peer name.
   gpr_atm peer_string = 0;
