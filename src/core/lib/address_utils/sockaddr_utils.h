@@ -77,7 +77,11 @@ std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
 /* Returns the URI scheme corresponding to \a addr */
 const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* addr);
 
-/* Strips the URI scheme corresponding to \a addr */
+/// Strips the URI scheme prefix from \a addr, if present.
+///
+/// If the URI string begins with a scheme, this function returns a pointer to
+/// the character immediately following the scheme in the URI string. Otherwise,
+/// \a addr itself is returned.
 const char* grpc_sockaddr_string_strip_uri_scheme(const char* addr);
 
 int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr);
