@@ -109,6 +109,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
       }
     }
   }
+  GRPC_ERROR_UNREF(error);
   if (!is_endpoint_local) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Endpoint is neither UDS or TCP loopback address.");
