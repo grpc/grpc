@@ -50,13 +50,14 @@ namespace experimental {
 // Contains the verification-related information associated with a connection
 // request. Users should not directly create or destroy this request object, but
 // shall interact with it through CertificateVerifier's Verify() and Cancel().
-// The object of this class should not outlive the underlying c object.
 class TlsCustomVerificationCheckRequest {
  public:
   explicit TlsCustomVerificationCheckRequest(
       grpc_tls_custom_verification_check_request* request);
   ~TlsCustomVerificationCheckRequest() {}
 
+  // TODO(ZhenLian): change the return type to absl::string_view if we wind up
+  // being able to use absl in the C++ API before de-experimentalizing this API.
   const std::string target_name() const;
   const std::string peer_cert() const;
   const std::string peer_cert_full_chain() const;
@@ -74,12 +75,12 @@ class TlsCustomVerificationCheckRequest {
 
 // The base class of all internal verifier implementations, and the ultimate
 // class that all external verifiers will eventually be transformed into.
-// - If you are a gRPC contributor and want to add an internal gRPC verifier,
-//   simply add your new verifier by extending this base class, like
-//   |HostNameCertificateVerifier|.
-// - If you are a gRPC user and want to add a custom external verifier, create
-//   your new verifier by extending |ExternalCertificateVerifier| as the base
-//   class, and transform it to this class by using Create() method.
+// - For gRPC users, please do not extend this class directly. Extends
+//   ExternalCertificateVerifier to implement customized verifiers.
+// - Though can't extend this class directly, users can use the existing
+//   implementation of its subclass(e.g. HostNameCertificateVerifier)
+//   to achieve composition, inside the Verify() and Cancel() function of the
+//   new custom verifier.
 class CertificateVerifier {
  public:
   CertificateVerifier(grpc_tls_certificate_verifier* v) : verifier_(v) {}
@@ -89,10 +90,9 @@ class CertificateVerifier {
   // Verifies a connection request, based on the logic specified in an internal
   // verifier. The check on each internal verifier could be either synchronous
   // or asynchronous, and we will need to use return value to know.
-  // Internally we invoke the verify() function of the c verifier object.
   // One typical usage of this function is to compose external verifiers with
   // internal verifiers. For example, users can compose their verifiers with a
-  // |HostNameCertificateVerifier|. See "tls_test_utils.h" for some examples.
+  // |HostNameCertificateVerifier|.
   //
   // request: the verification information associated with this request
   // callback: This will only take effect if the verifier is asynchronous.
@@ -108,13 +108,9 @@ class CertificateVerifier {
               std::function<void(grpc::Status)> callback,
               grpc::Status* sync_status);
 
-  // Cancels a connection request. This is usually used to cleans up the
-  // caller-specified resources when the verifier is still running but the whole
-  // connection got cancelled.
-  // This could happen when the verifier is doing some async operations, and the
-  // whole handshaker object got destroyed because of connection time limit is
-  // reached, or any other reasons. In such cases, function implementers might
-  // want to be notified, and properly clean up some resources.
+  // Cancels a verification request previously started via Verify().
+  // Used when the connection attempt times out or is cancelled while an async
+  // verification request is pending.
   //
   // request: the verification information associated with this request
   void Cancel(TlsCustomVerificationCheckRequest* request);
@@ -131,20 +127,22 @@ class CertificateVerifier {
   grpc::internal::Mutex mu_;
   std::map<grpc_tls_custom_verification_check_request*,
            std::function<void(grpc::Status)>>
-      request_map_;
+      request_map_ ABSL_GUARDED_BY(mu_);
 };
 
 // The base class of all external, user-specified verifiers. Users should
-// inherit this class if a custom verifier is expected to be used.
+// inherit this class to implement a custom verifier.
+// Note that while implementing the custom verifier that extends this class, it
+// is possible to compose an existing ExternalCertificateVerifier or
+// CertificateVerifier, inside the Verify() and Cancel() function of the new
+// custom verifier.
 class ExternalCertificateVerifier {
  public:
   // A factory method for creating a |CertificateVerifier| from this class. All
   // the user-implemented verifiers should use this function to be converted to
   // verifiers compatible with |TlsCredentialsOptions|.
-  // Subclass is created here, but it will be destroyed when the core
-  // ExternalCertificateVerifier is destroyed. The reason is we need to access
-  // Subclass when invoking the user-specified callbacks, and hence we need to
-  // bind its lifetime to the core objects.
+  // The resulting CertificateVerifier takes ownership of the newly instantiated
+  // Subclass.
   template <typename Subclass, typename... Args>
   static std::shared_ptr<CertificateVerifier> Create(Args&&... args) {
     auto* external_verifier = new Subclass(std::forward<Args>(args)...);
@@ -155,7 +153,7 @@ class ExternalCertificateVerifier {
 
   // The verification logic that will be performed after the TLS handshake
   // completes. Implementers can choose to do their checks synchronously or
-  // asynchronously, and return different values.
+  // asynchronously.
   //
   // request: the verification information associated with this request
   // callback: This should only be used if your check is done asynchronously.
@@ -173,12 +171,11 @@ class ExternalCertificateVerifier {
                       std::function<void(grpc::Status)> callback,
                       grpc::Status* sync_status) = 0;
 
-  // The cancellation logic that will be performed when the verifier is still
-  // running but the whole connection got cancelled.
-  // This could happen when the verifier is doing some async operations, and the
-  // whole handshaker object got destroyed because of connection time limit is
-  // reached, or any other reasons. In such cases, function implementers might
-  // want to be notified, and properly clean up some resources.
+  // Cancels a verification request previously started via Verify().
+  // Used when the connection attempt times out or is cancelled while an async
+  // verification request is pending. The implementation should abort whatever
+  // async operation it is waiting for and quickly invoke the callback that was
+  // passed to Verify() with a status indicating the cancellation.
   //
   // request: the verification information associated with this request
   virtual void Cancel(TlsCustomVerificationCheckRequest* request) = 0;
@@ -191,8 +188,8 @@ class ExternalCertificateVerifier {
  private:
   struct AsyncRequestState {
     AsyncRequestState(grpc_tls_on_custom_verification_check_done_cb cb,
-                         void* arg,
-                         grpc_tls_custom_verification_check_request* request)
+                      void* arg,
+                      grpc_tls_custom_verification_check_request* request)
         : callback(cb), callback_arg(arg), cpp_request(request) {}
 
     grpc_tls_on_custom_verification_check_done_cb callback;
@@ -216,7 +213,7 @@ class ExternalCertificateVerifier {
   grpc_tls_certificate_verifier_external* base_ = nullptr;
   grpc::internal::Mutex mu_;
   std::map<grpc_tls_custom_verification_check_request*, AsyncRequestState>
-      request_map_;
+      request_map_ ABSL_GUARDED_BY(mu_);
 };
 
 class HostNameCertificateVerifier : public CertificateVerifier {
