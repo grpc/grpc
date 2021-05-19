@@ -2244,10 +2244,8 @@ def maybe_write_sponge_properties():
         return
     if 'GIT_ORIGIN_URL' not in os.environ:
         return
-    project_root = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                '../..')
-    git_commit_short = subprocess.getoutput(
-        'git -C "%s" rev-parse --short HEAD' % project_root)
+    if 'GIT_COMMIT_SHORT' not in os.environ:
+        return
     properties = [
         # Technically, 'TESTS_FORMAT_VERSION' is not required for run_xds_tests.
         # We keep it here so one day we may merge the process of writing sponge
@@ -2255,7 +2253,7 @@ def maybe_write_sponge_properties():
         'TESTS_FORMAT_VERSION,2',
         'TESTGRID_EXCLUDE,%s' % os.environ.get('TESTGRID_EXCLUDE', 0),
         'GIT_ORIGIN_URL,%s' % os.environ['GIT_ORIGIN_URL'],
-        'GIT_COMMIT_SHORT,%s' % git_commit_short,
+        'GIT_COMMIT_SHORT,%s' % os.environ['GIT_COMMIT_SHORT'],
     ]
     logger.info('Writing Sponge configs: %s', properties)
     with open(

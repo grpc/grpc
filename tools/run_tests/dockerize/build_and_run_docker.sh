@@ -60,8 +60,7 @@ docker run \
   -e "KOKORO_JOB_NAME=$KOKORO_JOB_NAME" \
   -e "KOKORO_ARTIFACTS_DIR=$KOKORO_ARTIFACTS_DIR" \
   -e "GIT_ORIGIN_URL=$(git -C $git_root remote get-url origin)" \
-  # This environment variable is used by run_xds_tests and PSM Sec to prevent
-  # certain run from appearing on the Testgrid.
+  -e "GIT_COMMIT_SHORT=$(git -C $git_root rev-parse --short HEAD)" \
   -e "TESTGRID_EXCLUDE=$TESTGRID_EXCLUDE" \
   -v "$git_root:/var/local/jenkins/grpc:ro" \
   -v "$KOKORO_ARTIFACTS_DIR:$KOKORO_ARTIFACTS_DIR" \
