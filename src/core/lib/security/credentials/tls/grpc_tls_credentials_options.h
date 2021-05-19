@@ -125,6 +125,7 @@ struct grpc_tls_credentials_options
   const std::string& root_cert_name() { return root_cert_name_; }
   bool watch_identity_pair() { return watch_identity_pair_; }
   const std::string& identity_cert_name() { return identity_cert_name_; }
+  const std::string& crl_directory() {return crl_directory_; }
 
   // Setters for member fields.
   void set_cert_request_type(
