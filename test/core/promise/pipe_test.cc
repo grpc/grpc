@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include "absl/memory/memory.h"
 #include "src/core/lib/promise/pipe.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -61,8 +62,8 @@ TEST(PipeTest, CanSeeClosedOnSend) {
   Pipe<int> pipe;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   auto sender = std::move(pipe.sender);
-  auto receiver = std::unique_ptr<PipeReceiver<int>>(
-      new PipeReceiver<int>(std::move(pipe.receiver)));
+  auto receiver = absl::make_unique<PipeReceiver<int>>(
+      std::move(pipe.receiver));
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   ActivityFromPromiseFactory(
       [&sender, &receiver] {
@@ -84,8 +85,8 @@ TEST(PipeTest, CanSeeClosedOnSend) {
 TEST(PipeTest, CanSeeClosedOnReceive) {
   Pipe<int> pipe;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
-  auto sender = std::unique_ptr<PipeSender<int>>(
-      new PipeSender<int>(std::move(pipe.sender)));
+  auto sender = absl::make_unique<PipeSender<int>>(
+      std::move(pipe.sender));
   auto receiver = std::move(pipe.receiver);
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   ActivityFromPromiseFactory(

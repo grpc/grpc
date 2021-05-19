@@ -187,7 +187,7 @@ class Next {
 
  private:
   friend class PipeReceiver<T>;
-  Next(PipeReceiver<T>* receiver) : receiver_(receiver) {}
+  explicit Next(PipeReceiver<T>* receiver) : receiver_(receiver) {}
   PipeReceiver<T>* receiver_;
 };
 
