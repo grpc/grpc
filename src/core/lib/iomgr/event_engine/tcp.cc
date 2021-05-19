@@ -148,6 +148,8 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
             (*server)->on_accept_internal((*server)->on_accept_internal_arg,
                                           &iomgr_endpoint->base, nullptr,
                                           acceptor);
+            exec_ctx.Flush();
+            pollset_ee_broadcast_event();
           },
           GrpcClosureToCallback(shutdown_complete), ca,
           SliceAllocatorFactory(rq));
