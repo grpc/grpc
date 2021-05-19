@@ -23,6 +23,8 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "absl/strings/match.h"
+
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -72,11 +74,15 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
                       grpc_local_connect_type type) {
   grpc_resolved_address resolved_addr;
   bool is_endpoint_local = false;
+  std::string local_addr(grpc_endpoint_get_local_address(ep));
+  // UDS may not have local addresses, so we rely on the URI scheme.
+  if (absl::StartsWith(local_addr, "unix")) {
+    is_endpoint_local = true;
+  }
   grpc_error_handle error = grpc_string_to_sockaddr(
-      &resolved_addr,
-      grpc_uri_to_addr_string(grpc_endpoint_get_local_address(ep)).c_str(),
+      &resolved_addr, grpc_uri_to_addr_string(local_addr).c_str(),
       /* port does not matter here */ 0);
-  if (error == GRPC_ERROR_NONE) {
+  if (!is_endpoint_local && error == GRPC_ERROR_NONE) {
     grpc_resolved_address addr_normalized;
     grpc_resolved_address* addr =
         grpc_sockaddr_is_v4mapped(&resolved_addr, &addr_normalized)
