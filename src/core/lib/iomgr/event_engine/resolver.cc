@@ -25,12 +25,12 @@
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace {
 using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 /// A fire-and-forget class representing an individual DNS request.
 ///
@@ -78,8 +78,7 @@ void resolve_address(const char* addr, const char* default_port,
                      grpc_pollset_set* /* interested_parties */,
                      grpc_closure* on_done,
                      grpc_resolved_addresses** addresses) {
-  std::shared_ptr<EventEngine> event_engine = GetDefaultEventEngine();
-  auto dns_resolver = event_engine->GetDNSResolver();
+  auto dns_resolver = g_event_engine->GetDNSResolver();
   if (!dns_resolver.ok()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done,
                             absl_status_to_grpc_error(dns_resolver.status()));

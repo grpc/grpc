@@ -109,6 +109,8 @@ class uvListener final
   uvTCPlistener* uvTCP_ = nullptr;
 };
 
+// this class is only a tiny temporary shell around the engine itself,
+// and doesn't hold any state of its own
 class uvDNSResolver final
     : public grpc_event_engine::experimental::EventEngine::DNSResolver {
  public:
@@ -138,6 +140,11 @@ class uvDNSResolver final
   uvEngine* engine_;
 };
 
+// the uv endpoint, a bit like the listener, is the wrapper around uvTCP,
+// and doesn't have anything of its own beyond the uvTCP pointer, and
+// the connect request data; the connect request data will be used
+// before it's converted into a unique_ptr so it's fine to be stored
+// there instead of the uvTCP class
 class uvEndpoint final
     : public grpc_event_engine::experimental::EventEngine::Endpoint {
  public:
@@ -248,6 +255,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     while (uv_run(&loop_, UV_RUN_ONCE) != 0) {
       ctx.Flush();
     }
+    shutdown_ = true;
     on_shutdown_complete_(absl::OkStatus());
   }
 
@@ -288,12 +296,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     return e->Connect(this, std::move(on_connect), addr);
   }
 
-  virtual ~uvEngine() override final {
-    // still a bit non-obvious what to do here; probably check if
-    // the shutdown happened, and assert on it ?
-
-    // abort();
-  }
+  virtual ~uvEngine() override final { GPR_ASSERT(shutdown_); }
 
   virtual absl::StatusOr<std::unique_ptr<
       grpc_event_engine::experimental::EventEngine::DNSResolver>>
@@ -326,6 +329,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
   std::unordered_map<intptr_t, uvTask*> taskMap_;
   std::unordered_map<intptr_t, uvLookupTask*> lookupTaskMap_;
   grpc_event_engine::experimental::EventEngine::Callback on_shutdown_complete_;
+  bool shutdown_ = false;
 };
 
 absl::Status uvEndpoint::Connect(
@@ -468,11 +472,8 @@ absl::Status uvListener::Start() {
 }
 
 std::shared_ptr<grpc_event_engine::experimental::EventEngine>
-grpc_event_engine::experimental::GetDefaultEventEngine() {
-  // hmmm...
-  static std::shared_ptr<grpc_event_engine::experimental::EventEngine> engine =
-      std::make_shared<uvEngine>();
-  return engine;
+grpc_event_engine::experimental::DefaultEventEngineFactory() {
+  return std::make_shared<uvEngine>();
 }
 
 class uvTask {

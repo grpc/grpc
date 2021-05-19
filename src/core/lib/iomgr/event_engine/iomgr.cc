@@ -32,8 +32,6 @@ extern grpc_address_resolver_vtable grpc_event_engine_resolver_vtable;
 
 namespace {
 
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
-
 // The default EventEngine is lazily instantiated via
 // `grpc_event_engine::experimental::GetDefaultEventEngine()`
 void iomgr_platform_init(void) {}
@@ -42,20 +40,7 @@ void iomgr_platform_flush(void) {
   // TODO(hork): Do we need EventEngine::Flush??
 }
 
-void iomgr_platform_shutdown(void) {
-  grpc_core::CondVar shutdown_evt;
-  grpc_core::Mutex mu;
-  GetDefaultEventEngine()->Shutdown([&shutdown_evt, &mu](absl::Status result) {
-    grpc_core::MutexLock lock(&mu);
-    if (!result.ok()) {
-      gpr_log(GPR_ERROR, "Failed to shut down EventEngine iomgr. Reason: %s",
-              result.ToString().c_str());
-    }
-    shutdown_evt.Signal();
-  });
-  grpc_core::MutexLock lock(&mu);
-  shutdown_evt.Wait(&mu);
-}
+void iomgr_platform_shutdown(void) {}
 
 void iomgr_platform_shutdown_background_closure(void) {}
 

@@ -19,30 +19,28 @@
 
 #include "src/core/lib/iomgr/event_engine/closure.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace {
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 
 void timer_init(grpc_timer* timer, grpc_millis deadline,
                 grpc_closure* closure) {
   // Note: post-iomgr, callers will find their own EventEngine
-  std::shared_ptr<EventEngine> engine = GetDefaultEventEngine();
   // TODO(hork): EventEngine and gRPC need to use the same clock type for
   // deadlines.
   timer->ee_task_handle =
-      engine->RunAt(grpc_core::ToAbslTime(
-                        grpc_millis_to_timespec(deadline, GPR_CLOCK_REALTIME)),
-                    GrpcClosureToCallback(closure), {});
+      g_event_engine->RunAt(grpc_core::ToAbslTime(grpc_millis_to_timespec(
+                                deadline, GPR_CLOCK_REALTIME)),
+                            GrpcClosureToCallback(closure), {});
 }
 
 void timer_cancel(grpc_timer* timer) {
   // Note: post-iomgr, callers will find their own EventEngine
-  std::shared_ptr<EventEngine> engine = GetDefaultEventEngine();
   auto handle = timer->ee_task_handle;
-  engine->TryCancel(handle);
+  g_event_engine->TryCancel(handle);
 }
 
 /* Internal API */

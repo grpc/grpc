@@ -324,11 +324,7 @@ class EventEngine {
   virtual void Shutdown(Callback on_shutdown_complete) = 0;
 };
 
-/// Lazily instantiate and return a default global EventEngine instance if no
-/// custom instance is provided. If a custom EventEngine is provided for every
-/// channel/server via ChannelArgs, this method should never be called, and the
-/// default instance will never be instantiated.
-std::shared_ptr<EventEngine> GetDefaultEventEngine();
+std::shared_ptr<EventEngine> DefaultEventEngineFactory();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine

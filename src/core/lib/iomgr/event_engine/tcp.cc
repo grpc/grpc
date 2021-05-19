@@ -25,6 +25,7 @@
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
+#include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/error_utils.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
@@ -32,7 +33,6 @@ extern grpc_core::TraceFlag grpc_tcp_trace;
 namespace {
 using ::grpc_event_engine::experimental::ChannelArgs;
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 using ::grpc_event_engine::experimental::GrpcClosureToCallback;
 using ::grpc_event_engine::experimental::SliceAllocator;
 using ::grpc_event_engine::experimental::SliceAllocatorFactory;
@@ -74,23 +74,22 @@ namespace {
 // EventEngine directly, closures will be replaced with EE callback types.
 EventEngine::OnConnectCallback GrpcClosureToOnConnectCallback(
     grpc_closure* closure, grpc_endpoint** endpoint_ptr) {
-  return
-      [closure, endpoint_ptr](
-          absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
-        grpc_core::ExecCtx exec_ctx;
-        if (endpoint.ok()) {
-          auto* grpc_endpoint_out =
-              reinterpret_cast<grpc_event_engine_endpoint*>(*endpoint_ptr);
-          grpc_endpoint_out->endpoint = std::move(*endpoint);
-        } else {
-          grpc_endpoint_destroy(*endpoint_ptr);
-          *endpoint_ptr = nullptr;
-        }
-        grpc_core::Closure::Run(DEBUG_LOCATION, closure,
-                                absl_status_to_grpc_error(endpoint.status()));
-        exec_ctx.Flush();
-        pollset_ee_broadcast_event();
-      };
+  return [closure, endpoint_ptr](
+             absl::StatusOr<std::unique_ptr<EventEngine::Endpoint>> endpoint) {
+    grpc_core::ExecCtx exec_ctx;
+    if (endpoint.ok()) {
+      auto* grpc_endpoint_out =
+          reinterpret_cast<grpc_event_engine_endpoint*>(*endpoint_ptr);
+      grpc_endpoint_out->endpoint = std::move(*endpoint);
+    } else {
+      grpc_endpoint_destroy(*endpoint_ptr);
+      *endpoint_ptr = nullptr;
+    }
+    grpc_core::Closure::Run(DEBUG_LOCATION, closure,
+                            absl_status_to_grpc_error(endpoint.status()));
+    exec_ctx.Flush();
+    pollset_ee_broadcast_event();
+  };
 }
 
 /// Note: this method does not take ownership of any pointer arguments.
@@ -109,11 +108,10 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
                                   addr->len);
   absl::Time ee_deadline = grpc_core::ToAbslTime(
       grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
-  std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
   // TODO(hork): Convert channel_args to ChannelArgs
   ChannelArgs ca;
-  absl::Status connected =
-      ee->Connect(ee_on_connect, ra, ca, std::move(sa), ee_deadline);
+  absl::Status connected = g_event_engine->Connect(ee_on_connect, ra, ca,
+                                                   std::move(sa), ee_deadline);
   if (!connected.ok()) {
     // EventEngine failed to start an asynchronous connect.
     grpc_endpoint_destroy(*endpoint);
@@ -126,7 +124,6 @@ void tcp_connect(grpc_closure* on_connect, grpc_endpoint** endpoint,
 grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
                               const grpc_channel_args* args,
                               grpc_tcp_server** server) {
-  std::shared_ptr<EventEngine> ee = GetDefaultEventEngine();
   // TODO(hork): Convert channel_args to ChannelArgs
   ChannelArgs ca;
   grpc_resource_quota* rq = grpc_resource_quota_from_channel_args(args);
@@ -134,7 +131,7 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
     rq = grpc_resource_quota_create(nullptr);
   }
   absl::StatusOr<std::unique_ptr<EventEngine::Listener>> listener =
-      ee->CreateListener(
+      g_event_engine->CreateListener(
           [server](std::unique_ptr<EventEngine::Endpoint> ee_endpoint) {
             grpc_core::ExecCtx exec_ctx;
             GPR_ASSERT((*server)->on_accept_internal != nullptr);
@@ -156,7 +153,7 @@ grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   if (!listener.ok()) {
     return absl_status_to_grpc_error(listener.status());
   }
-  *server = new grpc_tcp_server(std::move(*listener), std::move(ee), rq);
+  *server = new grpc_tcp_server(std::move(*listener), g_event_engine, rq);
   return GRPC_ERROR_NONE;
 }
 
