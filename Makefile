@@ -1523,6 +1523,7 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/ssl/ssl_credentials.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc \
     src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc \
+    src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc \
     src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc \
     src/core/lib/security/credentials/tls/tls_credentials.cc \
     src/core/lib/security/credentials/tls/tls_utils.cc \
@@ -2940,6 +2941,7 @@ src/core/lib/security/credentials/plugin/plugin_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/ssl/ssl_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_certificate_distributor.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_certificate_provider.cc: $(OPENSSL_DEP)
+src/core/lib/security/credentials/tls/grpc_tls_certificate_verifier.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/grpc_tls_credentials_options.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/tls_credentials.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/tls/tls_utils.cc: $(OPENSSL_DEP)
