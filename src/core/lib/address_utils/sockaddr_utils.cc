@@ -26,7 +26,6 @@
 
 #include <string>
 
-#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_split.h"
@@ -260,8 +259,17 @@ std::string grpc_uri_to_addr_string(absl::string_view addr) {
     gpr_log(GPR_ERROR, "Could not parse URI string: %s", addr.data());
     return "";
   }
-  std::pair<std::string, std::string> pair = absl::StrSplit(uri->path(), ":");
-  return pair.first;
+  // Due to the non-standard-compliant URI format used in gRPC-core (see
+  // https://github.com/grpc/grpc/blob/master/doc/naming.md#name-syntax), the
+  // address may either be the authority or the path.
+  std::string authority =
+      uri->authority() == "" ? uri->path() : uri->authority();
+  std::string host;
+  std::string port;
+  if (!grpc_core::SplitHostPort(authority, &host, &port)) {
+    gpr_log(GPR_ERROR, "Could not split host:port on %s", authority.c_str());
+  }
+  return host;
 }
 
 int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr) {

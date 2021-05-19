@@ -72,9 +72,9 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
                       grpc_local_connect_type type) {
   grpc_resolved_address resolved_addr;
   bool is_endpoint_local = false;
-  std::string local_addr = std::string(grpc_endpoint_get_local_address(ep));
   grpc_error_handle error = grpc_string_to_sockaddr(
-      &resolved_addr, grpc_uri_to_addr_string(local_addr).c_str(),
+      &resolved_addr,
+      grpc_uri_to_addr_string(grpc_endpoint_get_local_address(ep)).c_str(),
       /* port does not matter here */ 0);
   if (error == GRPC_ERROR_NONE) {
     grpc_resolved_address addr_normalized;
