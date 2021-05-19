@@ -43,8 +43,8 @@ py_library(
     deps = [
         ":handler",
         ":rpc",
-        ":server_rpc",
         ":server",
+        ":server_rpc",
         ":service",
         ":servicer_context",
         "//src/python/grpcio/grpc:grpcio",

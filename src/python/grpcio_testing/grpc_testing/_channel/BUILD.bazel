@@ -9,8 +9,8 @@ py_library(
     name = "channel_state",
     srcs = ["_channel_state.py"],
     deps = [
-        ":channel"
-    ]
+        ":channel",
+    ],
 )
 
 py_library(
@@ -19,7 +19,7 @@ py_library(
     deps = [
         ":channel_rpc",
         ":multi_callable",
-    ]
+    ],
 )
 
 py_library(
@@ -32,7 +32,7 @@ py_library(
     srcs = ["_multi_callable.py"],
     deps = [
         ":invocation",
-    ]
+    ],
 )
 
 py_library(
@@ -45,9 +45,9 @@ py_library(
     srcs = ["__init__.py"],
     imports = ["../"],
     deps = [
+        ":channel",
         ":channel_rpc",
         ":channel_state",
-        ":channel",
         ":invocation",
         ":multi_callable",
         ":rpc_state",

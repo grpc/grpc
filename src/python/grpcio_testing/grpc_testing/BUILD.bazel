@@ -20,6 +20,6 @@ py_library(
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_testing/grpc_testing/_channel",
         "//src/python/grpcio_testing/grpc_testing/_server",
-        "@six//:six",
+        "@six",
     ],
 )
