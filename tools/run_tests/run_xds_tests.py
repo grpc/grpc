@@ -1437,6 +1437,31 @@ def test_circuit_breaking(gcp, original_backend_service, instance_group,
         set_validate_for_proxyless(gcp, True)
 
 
+def maybe_write_sponge_properties():
+    """Writing test infos to enable more advanced testgrid searches."""
+    if 'KOKORO_ARTIFACTS_DIR' not in os.environ:
+        return
+    if 'GIT_ORIGIN_URL' not in os.environ:
+        return
+    if 'GIT_COMMIT_SHORT' not in os.environ:
+        return
+    properties = [
+        # Technically, 'TESTS_FORMAT_VERSION' is not required for run_xds_tests.
+        # We keep it here so one day we may merge the process of writing sponge
+        # properties.
+        'TESTS_FORMAT_VERSION,2',
+        'TESTGRID_EXCLUDE,%s' % os.environ.get('TESTGRID_EXCLUDE', 0),
+        'GIT_ORIGIN_URL,%s' % os.environ['GIT_ORIGIN_URL'],
+        'GIT_COMMIT_SHORT,%s' % os.environ['GIT_COMMIT_SHORT'],
+    ]
+    logger.info('Writing Sponge configs: %s', properties)
+    with open(
+            os.path.join(os.environ['KOKORO_ARTIFACTS_DIR'],
+                         "custom_sponge_config.csv"), 'w') as f:
+        f.write("\n".join(properties))
+        f.write("\n")
+
+
 def set_validate_for_proxyless(gcp, validate_for_proxyless):
     if not gcp.alpha_compute:
         logger.debug(
@@ -2132,6 +2157,7 @@ class GcpState(object):
         self.instance_groups = []
 
 
+maybe_write_sponge_properties()
 alpha_compute = None
 if args.compute_discovery_document:
     with open(args.compute_discovery_document, 'r') as discovery_doc:
