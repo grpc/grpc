@@ -26,6 +26,7 @@
 
 #include <string>
 
+#include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 
@@ -249,6 +250,14 @@ const char* grpc_sockaddr_get_uri_scheme(
       return "unix";
   }
   return nullptr;
+}
+
+const char* grpc_sockaddr_string_strip_uri_scheme(const char* addr) {
+  if (absl::StartsWith(addr, "ipv4:") || absl::StartsWith(addr, "ipv6:") ||
+      absl::StartsWith(addr, "unix:")) {
+    return addr + 5;
+  }
+  return addr;
 }
 
 int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr) {

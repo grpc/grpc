@@ -70,13 +70,13 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
                       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                       grpc_closure* on_peer_checked,
                       grpc_local_connect_type type) {
-  int fd = grpc_endpoint_get_fd(ep);
   grpc_resolved_address resolved_addr;
-  memset(&resolved_addr, 0, sizeof(resolved_addr));
-  resolved_addr.len = GRPC_MAX_SOCKADDR_SIZE;
   bool is_endpoint_local = false;
-  if (getsockname(fd, reinterpret_cast<grpc_sockaddr*>(resolved_addr.addr),
-                  &resolved_addr.len) == 0) {
+  std::string local_addr = std::string(grpc_endpoint_get_local_address(ep));
+  grpc_error_handle error = grpc_string_to_sockaddr(
+      &resolved_addr, grpc_sockaddr_string_strip_uri_scheme(local_addr.c_str()),
+      /* port does not matter here */ 0);
+  if (error == GRPC_ERROR_NONE) {
     grpc_resolved_address addr_normalized;
     grpc_resolved_address* addr =
         grpc_sockaddr_is_v4mapped(&resolved_addr, &addr_normalized)
@@ -103,7 +103,6 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
       }
     }
   }
-  grpc_error_handle error = GRPC_ERROR_NONE;
   if (!is_endpoint_local) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Endpoint is neither UDS or TCP loopback address.");

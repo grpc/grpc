@@ -77,6 +77,9 @@ std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
 /* Returns the URI scheme corresponding to \a addr */
 const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* addr);
 
+/* Strips the URI scheme corresponding to \a addr */
+const char* grpc_sockaddr_string_strip_uri_scheme(const char* addr);
+
 int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr);
 
 std::string grpc_sockaddr_get_packed_host(
