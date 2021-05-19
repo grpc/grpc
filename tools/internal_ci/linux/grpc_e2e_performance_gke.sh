@@ -60,7 +60,7 @@ DRIVER_IMAGE="gcr.io/grpc-testing/e2etest/driver:${LATEST_TEST_INFRA_RELEASE}"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-8core-ci
-WORKER_POOL_32CORE=worker-32core-ci
+WORKER_POOL_32CORE=workers-32core-ci
 
 # Clone test-infra repository to one upper level directory than grpc.
 pushd ..
