@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import Optional, Set
+from typing import List, Optional, Set
 
+from framework import xds_flags
 from framework.infrastructure import gcp
 
 logger = logging.getLogger(__name__)
@@ -46,6 +47,7 @@ class TrafficDirectorManager:
     URL_MAP_PATH_MATCHER_NAME = "path-matcher"
     TARGET_PROXY_NAME = "target-proxy"
     FORWARDING_RULE_NAME = "forwarding-rule"
+    FIREWALL_RULE_NAME = "allow-health-checks"
 
     def __init__(
         self,
@@ -69,6 +71,7 @@ class TrafficDirectorManager:
         # TODO(sergiitk): remove this flag once backend service resource loaded
         self.backend_service_protocol: Optional[BackendServiceProtocol] = None
         self.url_map: Optional[GcpResource] = None
+        self.firewall_rule: Optional[GcpResource] = None
         self.target_proxy: Optional[GcpResource] = None
         # TODO(sergiitk): remove this flag once target proxy resource loaded
         self.target_proxy_is_http: bool = False
@@ -289,6 +292,28 @@ class TrafficDirectorManager:
         logger.info('Deleting Forwarding rule "%s"', name)
         self.compute.delete_forwarding_rule(name)
         self.forwarding_rule = None
+
+    def create_firewall_rule(self, allowed_ports: List[str]):
+        name = self._ns_name(self.FIREWALL_RULE_NAME)
+        logging.info(
+            'Creating firewall rule "%s" in network "%s" with allowed ports %s',
+            name, self.network, allowed_ports)
+        resource = self.compute.create_firewall_rule(
+            name, self.network_url, xds_flags.FIREWALL_SOURCE_RANGE.value,
+            allowed_ports)
+        self.firewall_rule = resource
+
+    def delete_firewall_rule(self, force=False):
+        """The firewall rule won't be automatically removed."""
+        if force:
+            name = self._ns_name(self.FIREWALL_RULE_NAME)
+        elif self.firewall_rule:
+            name = self.firewall_rule.name
+        else:
+            return
+        logger.info('Deleting Firewall Rule "%s"', name)
+        self.compute.delete_firewall_rule(name)
+        self.firewall_rule = None
 
 
 class TrafficDirectorSecureManager(TrafficDirectorManager):

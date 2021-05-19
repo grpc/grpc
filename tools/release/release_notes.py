@@ -32,7 +32,7 @@ import json
 
 content_header = """Draft Release Notes For {version}
 --
-Final release notes will be generated from the PR titles that have *"release notes:yes"* label. If you have any additional notes please add them below. These will be appended to auto generated release notes. Previous releases notes are [here](https://github.com/grpc/grpc/releases).
+Final release notes will be generated from the PR titles that have *"release notes:yes"* label. If you have any additional notes please add them below. These will be appended to auto generated release notes. Previous release notes are [here](https://github.com/grpc/grpc/releases).
 
 **Also, look at the PRs listed below against your name.** Please apply the missing labels and make necessary corrections (like fixing the title) to the PR in Github. Final release notes will be generated just before the release on {date}.
 
