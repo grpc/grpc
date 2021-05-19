@@ -680,8 +680,9 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       // We cannot directly use the result of rand() as the hash value,
       // since it is a 32-bit number and not a 64-bit number and will
       // therefore not be evenly distributed.
-      std::string rand_str = absl::StrCat(rand());
-      hash = XXH64(rand_str.c_str(), rand_str.length(), 0);
+      uint32_t upper = rand();
+      uint32_t lower = rand();
+      hash = (static_cast<uint64_t>(upper) << 32) | lower;
     }
     CallConfig call_config;
     if (method_config != nullptr) {
@@ -838,7 +839,8 @@ void XdsResolver::OnError(grpc_error_handle error) {
   gpr_log(GPR_ERROR, "[xds_resolver %p] received error from XdsClient: %s",
           this, grpc_error_std_string(error).c_str());
   Result result;
-  result.args = grpc_channel_args_copy(args_);
+  grpc_arg new_arg = xds_client_->MakeChannelArg();
+  result.args = grpc_channel_args_copy_and_add(args_, &new_arg, 1);
   result.service_config_error = error;
   result_handler_->ReturnResult(std::move(result));
 }

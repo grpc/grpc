@@ -77,6 +77,10 @@ spec:
         image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
   results:
     bigQueryTable: ${big_query_table}
+  drivers:
+    - language: cxx
+      image: ${driver_image}
+      pool: ${driver_pool}
   servers:
     - language: csharp
       pool: ${server_pool}
