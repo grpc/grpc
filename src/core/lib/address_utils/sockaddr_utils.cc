@@ -263,7 +263,7 @@ std::string grpc_uri_to_addr_string(absl::string_view addr) {
   // https://github.com/grpc/grpc/blob/master/doc/naming.md#name-syntax), the
   // address may either be the authority or the path.
   std::string authority =
-      uri->authority() == "" ? uri->path() : uri->authority();
+      uri->authority().empty() ? uri->path() : uri->authority();
   std::string host;
   std::string port;
   if (!grpc_core::SplitHostPort(authority, &host, &port)) {
