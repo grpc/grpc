@@ -1148,6 +1148,31 @@ def test_header_matching(gcp, original_backend_service, instance_group,
         patch_backend_instances(gcp, alternate_backend_service, [])
 
 
+def maybe_write_sponge_properties():
+    """Writing test infos to enable more advanced testgrid searches."""
+    if 'KOKORO_ARTIFACTS_DIR' not in os.environ:
+        return
+    if 'GIT_ORIGIN_URL' not in os.environ:
+        return
+    if 'GIT_COMMIT_SHORT' not in os.environ:
+        return
+    properties = [
+        # Technically, 'TESTS_FORMAT_VERSION' is not required for run_xds_tests.
+        # We keep it here so one day we may merge the process of writing sponge
+        # properties.
+        'TESTS_FORMAT_VERSION,2',
+        'TESTGRID_EXCLUDE,%s' % os.environ.get('TESTGRID_EXCLUDE', 0),
+        'GIT_ORIGIN_URL,%s' % os.environ['GIT_ORIGIN_URL'],
+        'GIT_COMMIT_SHORT,%s' % os.environ['GIT_COMMIT_SHORT'],
+    ]
+    logger.info('Writing Sponge configs: %s', properties)
+    with open(
+            os.path.join(os.environ['KOKORO_ARTIFACTS_DIR'],
+                         "custom_sponge_config.csv"), 'w') as f:
+        f.write("\n".join(properties))
+        f.write("\n")
+
+
 def get_serving_status(instance, service_port):
     with grpc.insecure_channel('%s:%d' % (instance, service_port)) as channel:
         health_stub = health_pb2_grpc.HealthStub(channel)
@@ -1823,6 +1848,7 @@ class GcpState(object):
         self.instance_groups = []
 
 
+maybe_write_sponge_properties()
 alpha_compute = None
 if args.compute_discovery_document:
     with open(args.compute_discovery_document, 'r') as discovery_doc:
