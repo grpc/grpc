@@ -255,7 +255,7 @@ ChannelArguments ServerBuilder::BuildChannelArgs() {
   }
   if (authorization_provider_) {
     args.SetPointer(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
-                    authorization_provider_.release());
+                    authorization_provider_->c_provider());
   }
   return args;
 }
@@ -458,9 +458,9 @@ ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
 }
 
 void ServerBuilder::SetAuthorizationPolicyProvider(
-    std::unique_ptr<experimental::AuthorizationPolicyProviderInterface>
+    std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
         provider) {
-  authorization_provider_ = std::move(provider);
+  authorization_provider_ = provider;
 }
 
 }  // namespace grpc

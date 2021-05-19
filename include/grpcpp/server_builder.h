@@ -259,7 +259,7 @@ class ServerBuilder {
   /// Sets server authorization policy provider in
   /// GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER channel argument.
   void SetAuthorizationPolicyProvider(
-      std::unique_ptr<experimental::AuthorizationPolicyProviderInterface>
+      std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
           provider);
 
   /// NOTE: class experimental_type is not part of the public API of this class.
@@ -427,7 +427,7 @@ class ServerBuilder {
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
   grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
-  std::unique_ptr<experimental::AuthorizationPolicyProviderInterface>
+  std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
       authorization_provider_;
 };
 
