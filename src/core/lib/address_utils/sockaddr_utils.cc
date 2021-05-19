@@ -29,6 +29,7 @@
 #include "absl/strings/match.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_split.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -38,6 +39,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
                                           0, 0, 0, 0, 0xff, 0xff};
@@ -252,12 +254,14 @@ const char* grpc_sockaddr_get_uri_scheme(
   return nullptr;
 }
 
-const char* grpc_sockaddr_string_strip_uri_scheme(const char* addr) {
-  if (absl::StartsWith(addr, "ipv4:") || absl::StartsWith(addr, "ipv6:") ||
-      absl::StartsWith(addr, "unix:")) {
-    return addr + 5;
+std::string grpc_uri_to_addr_string(absl::string_view addr) {
+  auto uri = grpc_core::URI::Parse(addr);
+  if (!uri.ok()) {
+    gpr_log(GPR_ERROR, "Could not parse URI string: %s", addr.data());
+    return "";
   }
-  return addr;
+  std::pair<std::string, std::string> pair = absl::StrSplit(uri->path(), ":");
+  return pair.first;
 }
 
 int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr) {
