@@ -98,7 +98,7 @@ class HostNameCertificateVerifier : public grpc_tls_certificate_verifier {
   bool Verify(grpc_tls_custom_verification_check_request* request,
               std::function<void(absl::Status)> callback,
               absl::Status* sync_status) override;
-  void Cancel(grpc_tls_custom_verification_check_request* request) override {}
+  void Cancel(grpc_tls_custom_verification_check_request*) override {}
 };
 
 }  // namespace grpc_core
