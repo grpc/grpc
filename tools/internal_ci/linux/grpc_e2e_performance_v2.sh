@@ -40,7 +40,7 @@ kubectl get pods --no-headers | grep -v Completed | cut -f1 -d' ' \
     | xargs -r kubectl get loadtest --no-headers \
     | (while read -a words; do annotations=(
         $(kubectl get loadtest "${words[0]}" --no-headers -o jsonpath='{.metadata.annotations.pool}{" "}{.metadata.annotations.scenario}{" "}{.metadata.annotations.uniquifier}')
-        ); echo "${words[1]} {\"pool\":\"${annotations[0]}\",\"scenario\":${annotations[1]}\",\"uniquifier\":\"${annotations[2]}\"}"; done) \
+        ); echo "${words[1]} {\"pool\":\"${annotations[0]}\",\"scenario\":\"${annotations[1]}\",\"uniquifier\":\"${annotations[2]}\"}"; done) \
     | sort
 
 # Set up environment variables.
