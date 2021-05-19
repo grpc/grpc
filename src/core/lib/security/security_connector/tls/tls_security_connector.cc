@@ -55,9 +55,12 @@ char* CopyCoreString(char* src, size_t length) {
 }
 
 void PendingVerifierRequestInit(
-    tsi_peer peer, grpc_tls_custom_verification_check_request* request) {
+    const char* target_name, tsi_peer peer,
+    grpc_tls_custom_verification_check_request* request) {
   GPR_ASSERT(request != nullptr);
-  request->target_name = nullptr;
+  // The verifier holds a ref to the security connector, so it's fine to
+  // directly point this to the name cached in the security connector.
+  request->target_name = target_name;
   // TODO(ZhenLian): avoid the copy when the underlying core implementation used
   // the null-terminating string.
   bool has_common_name = false;
@@ -369,12 +372,13 @@ void TlsChannelSecurityConnector::cancel_check_peer(
   }
   auto* verifier = options_->certificate_verifier();
   if (verifier != nullptr) {
-    ChannelPendingVerifierRequest* pending_verifier_request = nullptr;
+    grpc_tls_custom_verification_check_request* pending_verifier_request =
+        nullptr;
     {
       MutexLock lock(&verifier_request_map_mu_);
       auto it = pending_verifier_requests_.find(on_peer_checked);
       if (it != pending_verifier_requests_.end()) {
-        pending_verifier_request = it->second;
+        pending_verifier_request = it->second->request();
       } else {
         gpr_log(GPR_INFO,
                 "TlsChannelSecurityConnector::cancel_check_peer: no "
@@ -382,14 +386,7 @@ void TlsChannelSecurityConnector::cancel_check_peer(
       }
     }
     if (pending_verifier_request != nullptr) {
-      grpc_tls_custom_verification_check_request* request = nullptr;
-      {
-        MutexLock lock(&verifier_request_map_mu_);
-        request = pending_verifier_request->request();
-      }
-      if (request != nullptr) {
-        verifier->Cancel(request);
-      }
+      verifier->Cancel(pending_verifier_request);
     }
   }
 }
@@ -468,11 +465,7 @@ TlsChannelSecurityConnector::ChannelPendingVerifierRequest::
         grpc_closure* on_peer_checked, tsi_peer peer, const char* target_name)
     : security_connector_(std::move(security_connector)),
       on_peer_checked_(on_peer_checked) {
-  PendingVerifierRequestInit(std::move(peer), &request_);
-  // We can pass a pointer of the string cached in security connector directly
-  // because the verifier holds a ref to the security connector until this
-  // verification request is completed.
-  request_.target_name = target_name;
+  PendingVerifierRequestInit(target_name, std::move(peer), &request_);
   tsi_peer_destruct(&peer);
 }
 
@@ -658,12 +651,13 @@ void TlsServerSecurityConnector::cancel_check_peer(
   }
   auto* verifier = options_->certificate_verifier();
   if (verifier != nullptr) {
-    ServerPendingVerifierRequest* pending_verifier_request = nullptr;
+    grpc_tls_custom_verification_check_request* pending_verifier_request =
+        nullptr;
     {
       MutexLock lock(&verifier_request_map_mu_);
       auto it = pending_verifier_requests_.find(on_peer_checked);
       if (it != pending_verifier_requests_.end()) {
-        pending_verifier_request = it->second;
+        pending_verifier_request = it->second->request();
       } else {
         gpr_log(GPR_INFO,
                 "TlsServerSecurityConnector::cancel_check_peer: no "
@@ -671,14 +665,7 @@ void TlsServerSecurityConnector::cancel_check_peer(
       }
     }
     if (pending_verifier_request != nullptr) {
-      grpc_tls_custom_verification_check_request* request = nullptr;
-      {
-        MutexLock lock(&verifier_request_map_mu_);
-        request = pending_verifier_request->request();
-      }
-      if (request != nullptr) {
-        verifier->Cancel(request);
-      }
+      verifier->Cancel(pending_verifier_request);
     }
   }
 }
@@ -743,7 +730,7 @@ TlsServerSecurityConnector::ServerPendingVerifierRequest::
         grpc_closure* on_peer_checked, tsi_peer peer)
     : security_connector_(std::move(security_connector)),
       on_peer_checked_(on_peer_checked) {
-  PendingVerifierRequestInit(std::move(peer), &request_);
+  PendingVerifierRequestInit(nullptr, std::move(peer), &request_);
   tsi_peer_destruct(&peer);
 }
 

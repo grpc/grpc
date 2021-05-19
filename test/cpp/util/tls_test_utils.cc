@@ -28,114 +28,68 @@ namespace testing {
 bool SyncCertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
                                      std::function<void(grpc::Status)> callback,
                                      grpc::Status* sync_status) {
-  bool is_done = hostname_verifier_->Verify(
-      request,
-      [this, callback](grpc::Status async_status) {
-        AdditionalSyncCheck(success_, &async_status);
-        callback(async_status);
-      },
-      sync_status);
-  if (is_done) {
-    AdditionalSyncCheck(success_, sync_status);
+  if (!success_) {
+    *sync_status = grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
+                                "SyncCertificateVerifier failed");
+  } else {
+    *sync_status = grpc::Status(grpc::StatusCode::OK, "");
   }
-  return is_done;
+  return true;
 }
 
-void SyncCertificateVerifier::AdditionalSyncCheck(bool success,
-                                                  grpc::Status* sync_status) {
-  if (!success) {
-    if (!sync_status->ok()) {
-      *sync_status =
-          grpc::Status(sync_status->error_code(),
-                       "SyncCertificateVerifier is marked unsuccessful: " +
-                           sync_status->error_message());
-    } else {
-      *sync_status =
-          grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
-                       "SyncCertificateVerifier is marked unsuccessful");
-    }
-  }
+AsyncCertificateVerifier::AsyncCertificateVerifier(bool success)
+    : success_(success),
+      thread_("AsyncCertificateVerifierWorkerThread", WorkerThread, this) {
+  thread_.Start();
 }
 
 AsyncCertificateVerifier::~AsyncCertificateVerifier() {
-  while (true) {
-    if (request_map_.empty()) {
-      break;
-    }
-    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+  // Tell the thread to shut down.
+  {
+    internal::MutexLock lock(&mu_);
+    queue_.push_back(Request{nullptr, nullptr, true});
   }
+  // Wait for thread to exit.
+  thread_.Join();
 }
 
 bool AsyncCertificateVerifier::Verify(
     TlsCustomVerificationCheckRequest* request,
     std::function<void(grpc::Status)> callback, grpc::Status* sync_status) {
-  {
-    const std::lock_guard<std::mutex> lock(mu_);
-    request_map_.emplace(request, std::move(callback));
-  }
-  ThreadArgs* thread_args = new ThreadArgs();
-  thread_args->self = this;
-  thread_args->request = request;
-  bool is_done = hostname_verifier_->Verify(
-      request,
-      [thread_args](grpc::Status async_status) {
-        thread_args->status = async_status;
-        grpc_core::Thread thread = grpc_core::Thread(
-            "AsyncCertificateVerifierThread", AdditionalAsyncCheck, thread_args,
-            nullptr, grpc_core::Thread::Options().set_joinable(false));
-        thread.Start();
-      },
-      sync_status);
-  if (is_done) {
-    thread_args->status = *sync_status;
-    grpc_core::Thread thread = grpc_core::Thread(
-        "AsyncCertificateVerifierThread", AdditionalAsyncCheck, thread_args,
-        nullptr, grpc_core::Thread::Options().set_joinable(false));
-    thread.Start();
-  }
-  // Our additional check is async here, so the composed check would anyways be
-  // an async operation.
-  return false;
+  internal::MutexLock lock(&mu_);
+  queue_.push_back(Request{request, std::move(callback), false});
+  return false;  // Asynchronous call
 }
 
-void AsyncCertificateVerifier::AdditionalAsyncCheck(void* arg) {
-  auto* thread_args = static_cast<ThreadArgs*>(arg);
-  auto* self = thread_args->self;
-  auto* request = thread_args->request;
-  std::function<void(grpc::Status)> callback;
-  {
-    const std::lock_guard<std::mutex> lock(self->mu_);
-    auto it = self->request_map_.find(request);
-    if (it != self->request_map_.end()) {
-      callback = std::move(it->second);
-    }
-  }
-  if (callback != nullptr) {
-    grpc::Status return_status;
-    if (!self->success_) {
-      if (!thread_args->status.ok()) {
-        return_status =
-            grpc::Status(thread_args->status.error_code(),
-                         "AsyncCertificateVerifier is marked unsuccessful: " +
-                             thread_args->status.error_message());
-      } else {
-        return_status =
-            grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
-                         "AsyncCertificateVerifier is marked unsuccessful");
+void AsyncCertificateVerifier::WorkerThread(void* arg) {
+  auto* self = static_cast<AsyncCertificateVerifier*>(arg);
+  while (true) {
+    // Check queue for work.
+    bool got_request = false;
+    Request request;
+    {
+      internal::MutexLock lock(&self->mu_);
+      if (!self->queue_.empty()) {
+        got_request = true;
+        request = self->queue_.front();
+        self->queue_.pop_front();
       }
-    } else {
-      return_status = thread_args->status;
     }
-    callback(return_status);
-  }
-  {
-    const std::lock_guard<std::mutex> lock(self->mu_);
-    auto it = self->request_map_.find(request);
-    if (it != self->request_map_.end()) {
-      self->request_map_.erase(it);
+    // If nothing found in the queue, sleep for a bit and try again.
+    if (!got_request) {
+      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+      continue;
     }
+    // If we're being told to shut down, return.
+    if (request.shutdown) return;
+    auto return_status = grpc::Status(grpc::StatusCode::OK, "");
+    // Process the request.
+    if (!self->success_) {
+      return_status = grpc::Status(grpc::StatusCode::UNAUTHENTICATED,
+                                   "AsyncCertificateVerifier failed");
+    }
+    request.callback(return_status);
   }
-  delete thread_args;
 }
 
 }  // namespace testing
