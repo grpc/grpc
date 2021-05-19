@@ -225,6 +225,7 @@ struct grpc_call {
   grpc_core::ManualConstructor<grpc_core::SliceBufferByteStream> sending_stream;
 
   grpc_core::OrphanablePtr<grpc_core::ByteStream> receiving_stream;
+  bool call_failed_before_recv_message = false;
   grpc_byte_buffer** receiving_buffer = nullptr;
   grpc_slice receiving_slice = grpc_empty_slice();
   grpc_closure receiving_slice_ready;
@@ -1850,6 +1851,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         stream_op->recv_message = true;
         call->receiving_buffer = op->data.recv_message.recv_message;
         stream_op_payload->recv_message.recv_message = &call->receiving_stream;
+        stream_op_payload->recv_message.call_failed_before_recv_message =
+            &call->call_failed_before_recv_message;
         GRPC_CLOSURE_INIT(&call->receiving_stream_ready,
                           receiving_stream_ready_in_call_combiner, bctl,
                           grpc_schedule_on_exec_ctx);
@@ -2021,6 +2024,10 @@ grpc_compression_algorithm grpc_call_compression_for_level(
 
 bool grpc_call_is_trailers_only(const grpc_call* call) {
   return call->is_trailers_only;
+}
+
+bool grpc_call_failed_before_recv_message(grpc_call* c) {
+  return c->call_failed_before_recv_message;
 }
 
 const char* grpc_call_error_to_string(grpc_call_error error) {

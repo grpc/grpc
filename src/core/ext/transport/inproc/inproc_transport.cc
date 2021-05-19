@@ -487,6 +487,11 @@ void fail_helper_locked(inproc_stream* s, grpc_error_handle error) {
   if (s->recv_message_op) {
     INPROC_LOG(GPR_INFO, "fail_helper %p scheduling message-ready %s", s,
                grpc_error_std_string(error).c_str());
+    if (s->recv_message_op->payload->recv_message
+            .call_failed_before_recv_message != nullptr) {
+      *s->recv_message_op->payload->recv_message
+           .call_failed_before_recv_message = true;
+    }
     grpc_core::ExecCtx::Run(
         DEBUG_LOCATION,
         s->recv_message_op->payload->recv_message.recv_message_ready,
