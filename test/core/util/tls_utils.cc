@@ -83,7 +83,7 @@ int SyncExternalVerifier::Verify(
     return true;  // Synchronous call
   }
   *sync_status = GRPC_STATUS_UNAUTHENTICATED;
-  *sync_error_details = gpr_strdup("SyncExternalVerifierBadVerify failed");
+  *sync_error_details = gpr_strdup("SyncExternalVerifier failed");
   return true;  // Synchronous call
 }
 
@@ -146,7 +146,7 @@ void AsyncExternalVerifier::WorkerThread(void* arg) {
     } else {
       request.callback(request.request, request.callback_arg,
                        GRPC_STATUS_UNAUTHENTICATED,
-                       "AsyncExternalVerifierBadVerify failed");
+                       "AsyncExternalVerifier failed");
     }
   }
 }
