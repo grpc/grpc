@@ -362,10 +362,9 @@ static grpc_error_handle tcp_server_add_port(grpc_tcp_server* s,
     for (sp = s->head; sp; sp = sp->next) {
       socket = sp->socket;
       sockname_temp.len = GRPC_MAX_SOCKADDR_SIZE;
-      if (nullptr == grpc_custom_socket_vtable->getsockname(
-                         socket,
-                         reinterpret_cast<grpc_sockaddr*>(&sockname_temp.addr),
-                         reinterpret_cast<int*>(&sockname_temp.len))) {
+      if (grpc_custom_socket_vtable->getsockname(
+              socket, reinterpret_cast<grpc_sockaddr*>(&sockname_temp.addr),
+              reinterpret_cast<int*>(&sockname_temp.len)) == GRPC_ERROR_NONE) {
         *port = grpc_sockaddr_get_port(&sockname_temp);
         if (*port > 0) {
           allocated_addr = static_cast<grpc_resolved_address*>(

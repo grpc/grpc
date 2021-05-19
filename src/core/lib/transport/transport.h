@@ -295,6 +295,8 @@ struct grpc_transport_stream_op_batch_payload {
     // containing a received message.
     // Will be NULL if trailing metadata is received instead of a message.
     grpc_core::OrphanablePtr<grpc_core::ByteStream>* recv_message = nullptr;
+    // Was this recv_message failed for reasons other than a clean end-of-stream
+    bool* call_failed_before_recv_message = nullptr;
     /** Should be enqueued when one message is ready to be processed. */
     grpc_closure* recv_message_ready = nullptr;
   } recv_message;
