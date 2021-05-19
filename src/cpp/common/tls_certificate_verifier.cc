@@ -167,6 +167,7 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
     internal::MutexLock lock(&self->mu_);
     auto pair = self->request_map_.emplace(
         request, AsyncRequestState(callback, callback_arg, request));
+    GPR_ASSERT(pair.second);
     cpp_request = &pair.first->second.cpp_request;
   }
   grpc::Status sync_current_verifier_status;
@@ -181,23 +182,13 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
           if (it != self->request_map_.end()) {
             callback = it->second.callback;
             callback_arg = it->second.callback_arg;
-            // Question: would it be better if we erase this after the callback
-            // is invoked? I know it probably doesn't make any difference under
-            // current implementation, but just worrying that it may cause
-            // confusions if later we want to do something in the callback while
-            // still hoping the entry in the map to be accessible.
-            // I might think too much, but this comes to me when trying to debug
-            // an issue in C++ tests.
             self->request_map_.erase(it);
           }
         }
         if (callback != nullptr) {
-          grpc_status_code return_status =
-              static_cast<grpc_status_code>(status.error_code());
-          char* return_error_details =
-              gpr_strdup(status.error_message().c_str());
-          callback(request, callback_arg, return_status, return_error_details);
-          gpr_free(return_error_details);
+          callback(request, callback_arg,
+                   static_cast<grpc_status_code>(status.error_code()),
+                   status.error_message().c_str());
         }
       },
       &sync_current_verifier_status);

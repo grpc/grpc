@@ -17,9 +17,13 @@
 #ifndef GRPC_TEST_CPP_UTIL_TLS_TEST_UTILS_H
 #define GRPC_TEST_CPP_UTIL_TLS_TEST_UTILS_H
 
+#include <deque>
+
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpcpp/security/server_credentials.h>
+
+#include "src/core/lib/gprpp/thd.h"
 
 namespace {
 
@@ -35,10 +39,7 @@ namespace testing {
 
 class SyncCertificateVerifier : public ExternalCertificateVerifier {
  public:
-  SyncCertificateVerifier(bool success)
-      : ExternalCertificateVerifier(),
-        success_(success),
-        hostname_verifier_(std::make_shared<HostNameCertificateVerifier>()) {}
+  explicit SyncCertificateVerifier(bool success) : success_(success) {}
 
   bool Verify(TlsCustomVerificationCheckRequest* request,
               std::function<void(grpc::Status)> callback,
@@ -47,18 +48,12 @@ class SyncCertificateVerifier : public ExternalCertificateVerifier {
   void Cancel(TlsCustomVerificationCheckRequest* request) override {}
 
  private:
-  void AdditionalSyncCheck(bool success, grpc::Status* sync_status);
-
   bool success_ = false;
-  std::shared_ptr<HostNameCertificateVerifier> hostname_verifier_;
 };
 
 class AsyncCertificateVerifier : public ExternalCertificateVerifier {
  public:
-  AsyncCertificateVerifier(bool success)
-      : ExternalCertificateVerifier(),
-        success_(success),
-        hostname_verifier_(std::make_shared<HostNameCertificateVerifier>()) {}
+  explicit AsyncCertificateVerifier(bool success);
 
   ~AsyncCertificateVerifier();
 
@@ -69,25 +64,22 @@ class AsyncCertificateVerifier : public ExternalCertificateVerifier {
   void Cancel(TlsCustomVerificationCheckRequest* request) override {}
 
  private:
-  struct ThreadArgs {
-    AsyncCertificateVerifier* self = nullptr;
-    TlsCustomVerificationCheckRequest* request = nullptr;
-    // We don't use a pointer but force a copy here, because the original status
-    // could go away.
-    grpc::Status status;
+  // A request to pass to the worker thread.
+  struct Request {
+    TlsCustomVerificationCheckRequest* request;
+    std::function<void(grpc::Status)> callback;
+    bool shutdown;  // If true, thread will exit.
   };
 
-  static void AdditionalAsyncCheck(void* arg);
+  static void WorkerThread(void* arg);
 
   bool success_ = false;
-  std::shared_ptr<HostNameCertificateVerifier> hostname_verifier_;
-  std::mutex mu_;
-  std::map<TlsCustomVerificationCheckRequest*,
-           std::function<void(grpc::Status)>>
-      request_map_;
+  grpc_core::Thread thread_;
+  grpc::internal::Mutex mu_;
+  std::deque<Request> queue_ ABSL_GUARDED_BY(mu_);
 };
 
 }  // namespace testing
 }  // namespace grpc
 
-#endif  // GRPC_TEST_CPP_UTIL_TEST_CONFIG_H
+#endif  // GRPC_TEST_CPP_UTIL_TLS_TEST_UTILS_H

@@ -57,7 +57,8 @@ TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierSucceeds) {
   absl::Status sync_status;
   EXPECT_TRUE(core_external_verifier.Verify(
       &request_, [](absl::Status) {}, &sync_status));
-  EXPECT_TRUE(sync_status.ok());
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.code() << " " << sync_status.message();
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierFails) {
@@ -68,7 +69,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, SyncExternalVerifierFails) {
       &request_, [](absl::Status) {}, &sync_status));
   EXPECT_EQ(sync_status.code(), absl::StatusCode::kUnauthenticated);
   EXPECT_EQ(sync_status.ToString(),
-            "UNAUTHENTICATED: SyncExternalVerifierBadVerify failed");
+            "UNAUTHENTICATED: SyncExternalVerifier failed");
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierSucceeds) {
@@ -79,7 +80,8 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierSucceeds) {
       &request_,
       [](absl::Status async_status) {
         gpr_log(GPR_INFO, "Callback is invoked.");
-        EXPECT_TRUE(async_status.ok());
+        EXPECT_TRUE(async_status.ok())
+            << async_status.code() << " " << async_status.message();
       },
       &sync_status));
 }
@@ -94,7 +96,7 @@ TEST_F(GrpcTlsCertificateVerifierTest, AsyncExternalVerifierFails) {
         gpr_log(GPR_INFO, "Callback is invoked.");
         EXPECT_EQ(async_status.code(), absl::StatusCode::kUnauthenticated);
         EXPECT_EQ(async_status.ToString(),
-                  "UNAUTHENTICATED: AsyncExternalVerifierBadVerify failed");
+                  "UNAUTHENTICATED: AsyncExternalVerifier failed");
       },
       &sync_status));
 }
@@ -126,7 +128,8 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierDNSExactCheckSucceeds) {
   request_.peer_info.san_names.dns_names_size = 1;
   EXPECT_TRUE(hostname_certificate_verifier_.Verify(
       &request_, [](absl::Status) {}, &sync_status));
-  EXPECT_TRUE(sync_status.ok());
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.code() << " " << sync_status.message();
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest,
@@ -138,7 +141,8 @@ TEST_F(GrpcTlsCertificateVerifierTest,
   request_.peer_info.san_names.dns_names_size = 1;
   EXPECT_TRUE(hostname_certificate_verifier_.Verify(
       &request_, [](absl::Status) {}, &sync_status));
-  EXPECT_TRUE(sync_status.ok());
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.code() << " " << sync_status.message();
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest,
@@ -150,7 +154,8 @@ TEST_F(GrpcTlsCertificateVerifierTest,
   request_.peer_info.san_names.dns_names_size = 1;
   EXPECT_TRUE(hostname_certificate_verifier_.Verify(
       &request_, [](absl::Status) {}, &sync_status));
-  EXPECT_TRUE(sync_status.ok());
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.code() << " " << sync_status.message();
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest,
@@ -188,7 +193,8 @@ TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierIpCheckSucceeds) {
   request_.peer_info.san_names.ip_names_size = 1;
   EXPECT_TRUE(hostname_certificate_verifier_.Verify(
       &request_, [](absl::Status) {}, &sync_status));
-  EXPECT_TRUE(sync_status.ok());
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.code() << " " << sync_status.message();
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierIpCheckFails) {
@@ -211,7 +217,8 @@ TEST_F(GrpcTlsCertificateVerifierTest,
   request_.peer_info.common_name = "foo.com";
   EXPECT_TRUE(hostname_certificate_verifier_.Verify(
       &request_, [](absl::Status) {}, &sync_status));
-  EXPECT_TRUE(sync_status.ok());
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.code() << " " << sync_status.message();
 }
 
 TEST_F(GrpcTlsCertificateVerifierTest, HostnameVerifierCommonNameCheckFails) {

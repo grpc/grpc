@@ -38,134 +38,76 @@ namespace {
 
 TEST(TlsCertificateVerifierTest, SyncCertificateVerifierSucceeds) {
   grpc_tls_custom_verification_check_request request;
-  memset(&request, 0, sizeof(request));
-  request.target_name = "foo.bar.com";
-  request.peer_info.common_name = "foo.bar.com";
   auto verifier =
       ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
   TlsCustomVerificationCheckRequest cpp_request(&request);
-  std::function<void(grpc::Status)> empty_callback;
   grpc::Status sync_status;
-  verifier->Verify(&cpp_request, empty_callback, &sync_status);
-  EXPECT_TRUE(sync_status.ok());
+  verifier->Verify(&cpp_request, nullptr, &sync_status);
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.error_code() << " " << sync_status.error_message();
 }
 
-TEST(TlsCertificateVerifierTest,
-     SyncCertificateVerifierFailsOnHostNameVerifier) {
+TEST(TlsCertificateVerifierTest, SyncCertificateVerifierFails) {
   grpc_tls_custom_verification_check_request request;
-  memset(&request, 0, sizeof(request));
-  request.target_name = "foo.bar.com";
-  request.peer_info.common_name = "foo.baz.com";
-  auto verifier =
-      ExternalCertificateVerifier::Create<SyncCertificateVerifier>(true);
-  TlsCustomVerificationCheckRequest cpp_request(&request);
-  std::function<void(grpc::Status)> empty_callback;
-  grpc::Status sync_status;
-  verifier->Verify(&cpp_request, empty_callback, &sync_status);
-  EXPECT_FALSE(sync_status.ok());
-  EXPECT_EQ(sync_status.error_message(), "Hostname Verification Check failed.");
-}
-
-TEST(TlsCertificateVerifierTest,
-     SyncCertificateVerifierFailsOnAdditionalCheck) {
-  grpc_tls_custom_verification_check_request request;
-  memset(&request, 0, sizeof(request));
-  request.target_name = "foo.bar.com";
-  request.peer_info.common_name = "foo.bar.com";
   auto verifier =
       ExternalCertificateVerifier::Create<SyncCertificateVerifier>(false);
   TlsCustomVerificationCheckRequest cpp_request(&request);
-  std::function<void(grpc::Status)> empty_callback;
   grpc::Status sync_status;
-  verifier->Verify(&cpp_request, empty_callback, &sync_status);
-  EXPECT_FALSE(sync_status.ok());
-  EXPECT_EQ(sync_status.error_message(),
-            "SyncCertificateVerifier is marked unsuccessful");
-}
-
-TEST(TlsCertificateVerifierTest,
-     SyncCertificateVerifierFailsOnHostnameAndAdditionalCheck) {
-  grpc_tls_custom_verification_check_request request;
-  memset(&request, 0, sizeof(request));
-  request.target_name = "foo.bar.com";
-  request.peer_info.common_name = "foo.baz.com";
-  auto verifier =
-      ExternalCertificateVerifier::Create<SyncCertificateVerifier>(false);
-  TlsCustomVerificationCheckRequest cpp_request(&request);
-  std::function<void(grpc::Status)> empty_callback;
-  grpc::Status sync_status;
-  verifier->Verify(&cpp_request, empty_callback, &sync_status);
-  EXPECT_FALSE(sync_status.ok());
-  EXPECT_EQ(sync_status.error_message(),
-            "SyncCertificateVerifier is marked unsuccessful: Hostname "
-            "Verification Check failed.");
+  verifier->Verify(&cpp_request, nullptr, &sync_status);
+  EXPECT_EQ(sync_status.error_code(), grpc::StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(sync_status.error_message(), "SyncCertificateVerifier failed");
 }
 
 TEST(TlsCertificateVerifierTest, AsyncCertificateVerifierSucceeds) {
   grpc_tls_custom_verification_check_request request;
-  memset(&request, 0, sizeof(request));
-  request.target_name = "foo.bar.com";
-  request.peer_info.common_name = "foo.bar.com";
   auto verifier =
       ExternalCertificateVerifier::Create<AsyncCertificateVerifier>(true);
   TlsCustomVerificationCheckRequest cpp_request(&request);
   std::function<void(grpc::Status)> callback = [](grpc::Status async_status) {
-    EXPECT_TRUE(async_status.ok());
+    EXPECT_TRUE(async_status.ok())
+        << async_status.error_code() << " " << async_status.error_message();
   };
   grpc::Status sync_status;
   EXPECT_FALSE(verifier->Verify(&cpp_request, callback, &sync_status));
 }
 
-TEST(TlsCertificateVerifierTest,
-     AsyncCertificateVerifierFailsOnHostnameVerifier) {
+TEST(TlsCertificateVerifierTest, AsyncCertificateVerifierFails) {
   grpc_tls_custom_verification_check_request request;
-  memset(&request, 0, sizeof(request));
-  request.target_name = "foo.bar.com";
-  request.peer_info.common_name = "foo.baz.com";
   auto verifier =
-      ExternalCertificateVerifier::Create<AsyncCertificateVerifier>(true);
+      ExternalCertificateVerifier::Create<AsyncCertificateVerifier>(false);
   TlsCustomVerificationCheckRequest cpp_request(&request);
   std::function<void(grpc::Status)> callback = [](grpc::Status async_status) {
-    EXPECT_EQ(async_status.error_message(),
-              "Hostname Verification Check failed.");
+    EXPECT_EQ(async_status.error_code(), grpc::StatusCode::UNAUTHENTICATED);
+    EXPECT_EQ(async_status.error_message(), "AsyncCertificateVerifier failed");
   };
   grpc::Status sync_status;
   EXPECT_FALSE(verifier->Verify(&cpp_request, callback, &sync_status));
 }
 
-TEST(TlsCertificateVerifierTest,
-     AsyncCertificateVerifierFailsOnAdditionalCheck) {
+TEST(TlsCertificateVerifierTest, HostNameCertificateVerifierSucceeds) {
   grpc_tls_custom_verification_check_request request;
   memset(&request, 0, sizeof(request));
   request.target_name = "foo.bar.com";
   request.peer_info.common_name = "foo.bar.com";
-  auto verifier =
-      ExternalCertificateVerifier::Create<AsyncCertificateVerifier>(false);
+  auto verifier = std::make_shared<HostNameCertificateVerifier>();
   TlsCustomVerificationCheckRequest cpp_request(&request);
-  std::function<void(grpc::Status)> callback = [](grpc::Status async_status) {
-    EXPECT_EQ(async_status.error_message(),
-              "AsyncCertificateVerifier is marked unsuccessful");
-  };
   grpc::Status sync_status;
-  EXPECT_FALSE(verifier->Verify(&cpp_request, callback, &sync_status));
+  verifier->Verify(&cpp_request, nullptr, &sync_status);
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.error_code() << " " << sync_status.error_message();
 }
 
-TEST(TlsCertificateVerifierTest,
-     AsyncCertificateVerifierFailsOnHostnameAndAdditionalCheck) {
+TEST(TlsCertificateVerifierTest, HostNameCertificateVerifierFails) {
   grpc_tls_custom_verification_check_request request;
   memset(&request, 0, sizeof(request));
   request.target_name = "foo.bar.com";
   request.peer_info.common_name = "foo.baz.com";
-  auto verifier =
-      ExternalCertificateVerifier::Create<AsyncCertificateVerifier>(false);
+  auto verifier = std::make_shared<HostNameCertificateVerifier>();
   TlsCustomVerificationCheckRequest cpp_request(&request);
-  std::function<void(grpc::Status)> callback = [](grpc::Status async_status) {
-    EXPECT_EQ(async_status.error_message(),
-              "AsyncCertificateVerifier is marked unsuccessful: Hostname "
-              "Verification Check failed.");
-  };
   grpc::Status sync_status;
-  EXPECT_FALSE(verifier->Verify(&cpp_request, callback, &sync_status));
+  verifier->Verify(&cpp_request, nullptr, &sync_status);
+  EXPECT_EQ(sync_status.error_code(), grpc::StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(sync_status.error_message(), "Hostname Verification Check failed.");
 }
 
 TEST(TlsCertificateVerifierTest,
@@ -179,10 +121,10 @@ TEST(TlsCertificateVerifierTest,
   request.peer_info.san_names.dns_names_size = 1;
   auto verifier = std::make_shared<HostNameCertificateVerifier>();
   TlsCustomVerificationCheckRequest cpp_request(&request);
-  std::function<void(grpc::Status)> empty_callback;
   grpc::Status sync_status;
-  verifier->Verify(&cpp_request, empty_callback, &sync_status);
-  EXPECT_TRUE(sync_status.ok());
+  verifier->Verify(&cpp_request, nullptr, &sync_status);
+  EXPECT_TRUE(sync_status.ok())
+      << sync_status.error_code() << " " << sync_status.error_message();
 }
 
 TEST(TlsCertificateVerifierTest,
@@ -196,10 +138,10 @@ TEST(TlsCertificateVerifierTest,
   request.peer_info.san_names.dns_names_size = 1;
   auto verifier = std::make_shared<HostNameCertificateVerifier>();
   TlsCustomVerificationCheckRequest cpp_request(&request);
-  std::function<void(grpc::Status)> empty_callback;
   grpc::Status sync_status;
-  verifier->Verify(&cpp_request, empty_callback, &sync_status);
-  EXPECT_FALSE(sync_status.ok());
+  verifier->Verify(&cpp_request, nullptr, &sync_status);
+  EXPECT_EQ(sync_status.error_code(), grpc::StatusCode::UNAUTHENTICATED);
+  EXPECT_EQ(sync_status.error_message(), "Hostname Verification Check failed.");
 }
 
 }  // namespace
