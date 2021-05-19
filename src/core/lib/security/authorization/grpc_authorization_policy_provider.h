@@ -21,12 +21,12 @@
 
 #include "absl/status/statusor.h"
 
-#include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/dual_ref_counted.h"
 #include "src/core/lib/security/authorization/authorization_engine.h"
 #include "src/core/lib/security/authorization/rbac_translator.h"
 
 struct grpc_authorization_policy_provider
-    : public grpc_core::RefCounted<grpc_authorization_policy_provider> {
+    : public grpc_core::DualRefCounted<grpc_authorization_policy_provider> {
  public:
   virtual grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine>
   allow_engine() const = 0;
@@ -54,6 +54,8 @@ class StaticDataAuthorizationPolicyProvider
   RefCountedPtr<AuthorizationEngine> deny_engine() const override {
     return deny_engine_;
   }
+
+  void Orphan() override {}
 
  private:
   RefCountedPtr<AuthorizationEngine> allow_engine_;

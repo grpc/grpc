@@ -33,6 +33,7 @@
 #include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/server_builder_option.h>
 #include <grpcpp/impl/server_builder_plugin.h>
+#include <grpcpp/security/authorization_policy_provider.h>
 #include <grpcpp/server.h>
 #include <grpcpp/support/config.h>
 
@@ -255,6 +256,12 @@ class ServerBuilder {
   /// doc/workarounds.md.
   ServerBuilder& EnableWorkaround(grpc_workaround_list id);
 
+  /// Sets server authorization policy provider in
+  /// GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER channel argument.
+  void SetAuthorizationPolicyProvider(
+      std::unique_ptr<experimental::AuthorizationPolicyProviderInterface>
+          provider);
+
   /// NOTE: class experimental_type is not part of the public API of this class.
   /// TODO(yashykt): Integrate into public API when this is no longer
   /// experimental.
@@ -420,6 +427,8 @@ class ServerBuilder {
   std::vector<std::shared_ptr<grpc::internal::ExternalConnectionAcceptorImpl>>
       acceptors_;
   grpc_server_config_fetcher* server_config_fetcher_ = nullptr;
+  std::unique_ptr<experimental::AuthorizationPolicyProviderInterface>
+      authorization_provider_;
 };
 
 }  // namespace grpc

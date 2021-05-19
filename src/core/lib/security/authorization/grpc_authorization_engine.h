@@ -36,7 +36,7 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
   // Builds GrpcAuthorizationEngine with allow/deny RBAC policy.
   explicit GrpcAuthorizationEngine(Rbac policy);
 
-  Rbac::Action GetType() { return action_; }
+  Rbac::Action GetAction() { return action_; }
 
   // Evaluates incoming request against RBAC policy and makes a decision to
   // whether allow/deny this request.

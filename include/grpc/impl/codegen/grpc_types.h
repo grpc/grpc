@@ -503,6 +503,11 @@ typedef enum grpc_call_error {
 /** Signal that the initial metadata should be corked */
 #define GRPC_INITIAL_METADATA_CORKED (0x00000100u)
 
+/** Channel argument for grpc_authorization_policy_provider. If present, enables
+    gRPC authorization check. */
+#define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER \
+  "grpc.authorization_policy_provider"
+
 /** Mask of all valid flags */
 #define GRPC_INITIAL_METADATA_USED_MASK                  \
   (GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST |            \

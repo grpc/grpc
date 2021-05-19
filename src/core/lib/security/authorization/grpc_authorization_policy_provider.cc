@@ -40,7 +40,7 @@ StaticDataAuthorizationPolicyProvider::StaticDataAuthorizationPolicyProvider(
 
 }  // namespace grpc_core
 
-/** Wrapper APIs declared in grpc_security.h **/
+// Wrapper APIs declared in grpc_security.h
 
 grpc_authorization_policy_provider*
 grpc_authorization_policy_provider_static_data_create(
@@ -57,10 +57,10 @@ grpc_authorization_policy_provider_static_data_create(
   }
   *code = GRPC_STATUS_OK;
   *error_details = nullptr;
-  return (*provider_or).release();
+  return provider_or->release();
 }
 
 void grpc_authorization_policy_provider_release(
     grpc_authorization_policy_provider* provider) {
-  if (provider) provider->Unref();
+  if (provider != nullptr) provider->Unref();
 }

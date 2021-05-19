@@ -38,7 +38,7 @@ class AuthorizationPolicyProviderInterface {
 class StaticDataAuthorizationPolicyProvider
     : public AuthorizationPolicyProviderInterface {
  public:
-  static std::unique_ptr<StaticDataAuthorizationPolicyProvider> Create(
+  static std::shared_ptr<StaticDataAuthorizationPolicyProvider> Create(
       const std::string& authz_policy, grpc::Status* status);
 
   ~StaticDataAuthorizationPolicyProvider() override;

@@ -253,6 +253,10 @@ ChannelArguments ServerBuilder::BuildChannelArgs() {
     plugin->UpdateServerBuilder(this);
     plugin->UpdateChannelArguments(&args);
   }
+  if (authorization_provider_) {
+    args.SetPointer(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
+                    authorization_provider_.release());
+  }
   return args;
 }
 
@@ -451,6 +455,12 @@ ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
       gpr_log(GPR_ERROR, "Workaround %u does not exist or is obsolete.", id);
       return *this;
   }
+}
+
+void ServerBuilder::SetAuthorizationPolicyProvider(
+    std::unique_ptr<experimental::AuthorizationPolicyProviderInterface>
+        provider) {
+  authorization_provider_ = std::move(provider);
 }
 
 }  // namespace grpc

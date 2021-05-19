@@ -19,7 +19,7 @@
 namespace grpc {
 namespace experimental {
 
-std::unique_ptr<StaticDataAuthorizationPolicyProvider>
+std::shared_ptr<StaticDataAuthorizationPolicyProvider>
 StaticDataAuthorizationPolicyProvider::Create(const std::string& authz_policy,
                                               grpc::Status* status) {
   grpc_status_code code;
@@ -33,7 +33,7 @@ StaticDataAuthorizationPolicyProvider::Create(const std::string& authz_policy,
     return nullptr;
   }
   *status = grpc::Status();
-  return std::unique_ptr<StaticDataAuthorizationPolicyProvider>(
+  return std::shared_ptr<StaticDataAuthorizationPolicyProvider>(
       new StaticDataAuthorizationPolicyProvider(provider));
 }
 

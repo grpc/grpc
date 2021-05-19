@@ -2461,6 +2461,7 @@ grpc_cc_library(
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc_health_upb",
+        "grpc++_authorization_provider",
     ],
 )
 
@@ -2479,6 +2480,7 @@ grpc_cc_library(
         "grpc++_codegen_base_src",
         "grpc_health_upb",
         "grpc_unsecure",
+        "grpc++_authorization_provider",
     ],
 )
 
