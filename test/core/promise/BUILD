@@ -51,6 +51,15 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "pipe_test",
+    srcs = ["pipe_test.cc"],
+    language = "c++",
+    uses_polling = False,
+    deps = ["//:promise"],
+    external_deps = ["gtest"],
+)
+
+grpc_cc_test(
     name = "promise_test",
     srcs = ["promise_test.cc"],
     language = "c++",

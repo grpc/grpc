@@ -31,6 +31,7 @@ class CallbackScheduler {
 
 class WaitSet;
 class SingleWaiter;
+class IntraActivityWaiter;
 
 // An Activity tracks execution of a single promise.
 // It executes the promise under a mutex.
@@ -68,6 +69,7 @@ class Activity {
  private:
   friend class WaitSet;
   friend class SingleWaiter;
+  friend class IntraActivityWaiter;
   class ScopedActivity;
   class Handle;
 
@@ -245,6 +247,29 @@ class SingleWaiter final {
   Activity* waiter_ GUARDED_BY(mu_) = nullptr;
 
   void Wakeup(Activity* activity);
+};
+
+// Helper type to track wakeups between objects in the same activity.
+// Can be fairly fast as no ref counting or locking needs to occur.
+class IntraActivityWaiter {
+ public:
+  // Register for wakeup, return kPending. If state is not ready to proceed,
+  // Promises should bottom out here.
+  Pending pending() {
+    waiting_ = true;
+    return kPending;
+  }
+  // Wake the activity
+  void Wake() {
+    if (waiting_) {
+      waiting_ = false;
+      Activity::g_current_activity_->mu_.AssertHeld();
+      Activity::g_current_activity_->got_wakeup_during_run_ = true;
+    }
+  }
+
+ private:
+  bool waiting_ = false;
 };
 
 }  // namespace grpc_core
