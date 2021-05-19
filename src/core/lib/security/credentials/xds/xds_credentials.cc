@@ -69,7 +69,7 @@ class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
       : xds_certificate_provider_(std::move(xds_certificate_provider)),
         cluster_name_(std::move(cluster_name)) {}
   bool Verify(grpc_tls_custom_verification_check_request* request,
-              std::function<void(absl::Status)> callback,
+              std::function<void(absl::Status)>,
               absl::Status* sync_status) override {
     GPR_ASSERT(request != nullptr);
     if (!XdsVerifySubjectAlternativeNames(
@@ -86,7 +86,7 @@ class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
     }
     return false; /* synchronous check */
   }
-  void Cancel(grpc_tls_custom_verification_check_request* request) override {}
+  void Cancel(grpc_tls_custom_verification_check_request*) override {}
 
  private:
   RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
