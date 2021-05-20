@@ -28,7 +28,7 @@ git submodule update --init
 # Build protoc and grpc_cpp_plugin. Codegen is not cross-compiled to Android
 mkdir -p cmake/build
 pushd cmake/build
-cmake -DgRPC_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ../..
+cmake -DgRPC_BUILD_TESTS=OFF ../..
 make protoc grpc_cpp_plugin -j2
 popd
 
