@@ -26,7 +26,8 @@ namespace grpc_core {
 template <typename T>
 using Promise = std::function<Poll<T>()>;
 
-// Helper to execute a promise immediately or fail
+// Helper to execute a promise immediately and return either the result or
+// nothing.
 template <typename Promise>
 auto NowOrNever(Promise promise)
     -> absl::optional<typename decltype(promise())::Type> {
