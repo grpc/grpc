@@ -33,8 +33,10 @@ gcloud container clusters get-credentials benchmarks-prod \
 kubectl get pods | grep -v Completed
 
 # Set up environment variables.
-# BEGIN differentiate experimental configuration from master configuration.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
+# BEGIN differentiate experimental configuration from master configuration.
+# Use the "official" BQ tables so that the measurements will show up in the
+# "official" public dashboard.
 BIGQUERY_TABLE_8CORE=e2e_benchmarks.ci_master_results_8core
 BIGQUERY_TABLE_32CORE=e2e_benchmarks.ci_master_results_32core
 # END differentiate experimental configuration from master configuration.
@@ -49,6 +51,16 @@ else
 fi
 GRPC_GO_GITREF="$(git ls-remote https://github.com/grpc/grpc-go.git master | cut -f1)"
 GRPC_JAVA_GITREF="$(git ls-remote https://github.com/grpc/grpc-java.git master | cut -f1)"
+# Prebuilt driver comes from the latest test-infra release.
+LATEST_TEST_INFRA_RELEASE="$(curl -s https://api.github.com/repos/grpc/test-infra/releases | jq '.[0].tag_name' | tr -d '"')"
+if [[ -z "${LATEST_TEST_INFRA_RELEASE}" ]]; then
+    exit 1
+fi
+DRIVER_IMAGE="gcr.io/grpc-testing/e2etest/driver:${LATEST_TEST_INFRA_RELEASE}"
+# Kokoro jobs run on dedicated pools.
+DRIVER_POOL=drivers-ci
+WORKER_POOL_8CORE=workers-8core-ci
+WORKER_POOL_32CORE=workers-32core-ci
 
 # Clone test-infra repository to one upper level directory than grpc.
 pushd ..
@@ -66,9 +78,9 @@ buildConfigs() {
     shift 2
     tools/run_tests/performance/loadtest_config.py "$@" \
         -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_all_languages.yaml \
+        -s driver_pool="${DRIVER_POOL}" -s driver_image="${DRIVER_IMAGE}" \
         -s client_pool="${pool}" -s server_pool="${pool}" \
-        -s big_query_table="${table}" \
-        -s timeout_seconds=900 \
+        -s big_query_table="${table}" -s timeout_seconds=900 \
         -s prebuilt_image_prefix="${PREBUILT_IMAGE_PREFIX}" \
         -s prebuilt_image_tag="${UNIQUE_IDENTIFIER}" \
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
@@ -77,9 +89,8 @@ buildConfigs() {
         -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
-# Use the "official" BQ tables so that the measurements will show up in the "official" public dashboard.
-buildConfigs workers-8core "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l python -l ruby
-buildConfigs workers-32core "${BIGQUERY_TABLE_32CORE}" -l c++ -l csharp -l go -l java
+buildConfigs "${WORKER_POOL_8CORE}" "${BIGQUERY_TABLE_8CORE}" -l c++ -l csharp -l go -l java -l python -l ruby
+buildConfigs "${WORKER_POOL_32CORE}" "${BIGQUERY_TABLE_32CORE}" -l c++ -l csharp -l go -l java
 
 # Delete prebuilt images on exit.
 deleteImages() {
@@ -104,6 +115,6 @@ time ../test-infra/bin/prepare_prebuilt_workers \
 
 # Run tests.
 time ../test-infra/bin/runner \
-    -i ../grpc/loadtest_with_prebuilt_workers_workers-8core.yaml \
-    -i ../grpc/loadtest_with_prebuilt_workers_workers-32core.yaml \
-    -c workers-8core:2 -c workers-32core:2
+    -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_8CORE}.yaml" \
+    -i "../grpc/loadtest_with_prebuilt_workers_${WORKER_POOL_32CORE}.yaml" \
+    -c "${WORKER_POOL_8CORE}:2" -c "${WORKER_POOL_32CORE}:2"

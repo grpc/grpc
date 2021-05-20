@@ -1582,6 +1582,8 @@ static void perform_stream_op_locked(void* stream_op,
     GPR_ASSERT(!s->pending_byte_stream);
     s->recv_message_ready = op_payload->recv_message.recv_message_ready;
     s->recv_message = op_payload->recv_message.recv_message;
+    s->call_failed_before_recv_message =
+        op_payload->recv_message.call_failed_before_recv_message;
     if (s->id != 0) {
       if (!s->read_closed) {
         before = s->frame_storage.length +
@@ -1947,6 +1949,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
       null_then_sched_closure(&s->recv_message_ready);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
       *s->recv_message = nullptr;
+      if (s->call_failed_before_recv_message != nullptr) {
+        *s->call_failed_before_recv_message =
+            (s->published_metadata[1] != GRPC_METADATA_PUBLISHED_AT_CLOSE);
+      }
       null_then_sched_closure(&s->recv_message_ready);
     }
     GRPC_ERROR_UNREF(error);

@@ -606,6 +606,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
         op.on_complete = do_nothing.get();
         op.recv_message = true;
         op.payload->recv_message.recv_message = &recv_stream;
+        op.payload->recv_message.call_failed_before_recv_message = nullptr;
         op.payload->recv_message.recv_message_ready = drain_start.get();
         s->Op(&op);
         f.PushInput(grpc_slice_ref(incoming_data));
