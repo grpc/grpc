@@ -37,8 +37,19 @@ grpc_socket_mutator* grpc_socket_mutator_ref(grpc_socket_mutator* mutator) {
   return mutator;
 }
 
-bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd) {
-  return mutator->vtable->mutate_fd(fd, mutator);
+bool grpc_socket_mutator_mutate_fd(grpc_socket_mutator* mutator, int fd,
+                                   grpc_fd_usage usage) {
+  if (mutator->vtable->mutate_fd_2 != nullptr) {
+    grpc_mutate_socket_info info{fd, usage};
+    return mutator->vtable->mutate_fd_2(&info, mutator);
+  }
+  switch (usage) {
+    case GRPC_FD_SERVER_CONNECTION_USAGE:
+      return true;
+    case GRPC_FD_CLIENT_CONNECTION_USAGE:
+    case GRPC_FD_SERVER_LISTENER_USAGE:
+      return mutator->vtable->mutate_fd(fd, mutator);
+  }
 }
 
 int grpc_socket_mutator_compare(grpc_socket_mutator* a,
