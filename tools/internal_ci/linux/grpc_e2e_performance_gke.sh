@@ -32,16 +32,8 @@ gcloud container clusters get-credentials benchmarks-prod \
 # List pods that may be left over from a previous run.
 kubectl get pods | grep -v Completed
 
-# List annotations of tests that have running pods and are in Errored state.
-# Expression is intended to work across versions of kubectl.
-kubectl get pods --no-headers | grep -v Completed | cut -f1 -d' ' \
-    | (while read f;  do echo $(kubectl get pod "$f" --no-headers -o jsonpath='{.metadata.ownerReferences[0].name}'); done) \
-    | (while read f; do state=$(kubectl get loadtest "$f" --no-headers -o  jsonpath='{.status.state}'); if [[ "${state}" == Errored ]]; then echo "$f"; fi; done) \
-    | xargs -r kubectl get loadtest --no-headers \
-    | (while read -a words; do annotations=(
-        $(kubectl get loadtest "${words[0]}" --no-headers -o jsonpath='{.metadata.annotations.pool}{" "}{.metadata.annotations.scenario}{" "}{.metadata.annotations.uniquifier}')
-        ); echo "${words[1]} {\"pool\":\"${annotations[0]}\",\"scenario\":\"${annotations[1]}\",\"uniquifier\":\"${annotations[2]}\"}"; done) \
-    | sort
+# List and delete tests that have running pods and are in errored state.
+source tools/internal_ci/helper_scripts/delete_leftover_loadtests.sh
 
 # Set up environment variables.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
