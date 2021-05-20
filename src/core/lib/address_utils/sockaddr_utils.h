@@ -77,14 +77,6 @@ std::string grpc_sockaddr_to_uri(const grpc_resolved_address* addr);
 /* Returns the URI scheme corresponding to \a addr */
 const char* grpc_sockaddr_get_uri_scheme(const grpc_resolved_address* addr);
 
-/// Strips the URI scheme and port from \a addr, if present.
-///
-/// This method works with the output of `grpc_sockaddr_to_uri`. If the URI
-/// string begins with a scheme, or ends with a port, this function returns a
-/// modified version of \a addr without those URI components. Otherwise, a copy
-/// of \a addr is returned.
-std::string grpc_uri_to_addr_string(absl::string_view addr);
-
 int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr);
 
 std::string grpc_sockaddr_get_packed_host(

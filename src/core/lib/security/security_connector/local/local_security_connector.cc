@@ -23,14 +23,13 @@
 #include <stdbool.h>
 #include <string.h>
 
-#include "absl/strings/match.h"
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/lib/address_utils/parse_address.h"
 #include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -42,6 +41,7 @@
 #include "src/core/lib/security/credentials/local/local_credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/tsi/local_transport_security.h"
+#include "src/core/lib/uri/uri_parser.h"
 
 #define GRPC_UDS_URI_PATTERN "unix:"
 #define GRPC_LOCAL_TRANSPORT_SECURITY_TYPE "local"
@@ -74,15 +74,12 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
                       grpc_local_connect_type type) {
   grpc_resolved_address resolved_addr;
   bool is_endpoint_local = false;
-  std::string local_addr(grpc_endpoint_get_local_address(ep));
-  // UDS may not have local addresses, so we rely on the URI scheme.
-  if (absl::StartsWith(local_addr, "unix")) {
-    is_endpoint_local = true;
-  }
-  grpc_error_handle error = grpc_string_to_sockaddr(
-      &resolved_addr, grpc_uri_to_addr_string(local_addr).c_str(),
-      /* port does not matter here */ 0);
-  if (!is_endpoint_local && error == GRPC_ERROR_NONE) {
+  absl::string_view local_addr = grpc_endpoint_get_local_address(ep);
+  absl::StatusOr<grpc_core::URI> uri = grpc_core::URI::Parse(local_addr);
+  if (!uri.ok() || !grpc_parse_uri(*uri, &resolved_addr)) {
+    gpr_log(GPR_ERROR, "Could not parse endpoint address: %s",
+            std::string(local_addr.data(), local_addr.size()).c_str());
+  } else {
     grpc_resolved_address addr_normalized;
     grpc_resolved_address* addr =
         grpc_sockaddr_is_v4mapped(&resolved_addr, &addr_normalized)
@@ -109,7 +106,7 @@ void local_check_peer(tsi_peer peer, grpc_endpoint* ep,
       }
     }
   }
-  GRPC_ERROR_UNREF(error);
+  grpc_error_handle error;
   if (!is_endpoint_local) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Endpoint is neither UDS or TCP loopback address.");

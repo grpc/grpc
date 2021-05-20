@@ -28,7 +28,6 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
-#include "absl/strings/str_split.h"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -38,7 +37,6 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
-#include "src/core/lib/uri/uri_parser.h"
 
 static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
                                           0, 0, 0, 0, 0xff, 0xff};
@@ -251,25 +249,6 @@ const char* grpc_sockaddr_get_uri_scheme(
       return "unix";
   }
   return nullptr;
-}
-
-std::string grpc_uri_to_addr_string(absl::string_view addr) {
-  auto uri = grpc_core::URI::Parse(addr);
-  if (!uri.ok()) {
-    gpr_log(GPR_ERROR, "Could not parse URI string: %s", addr.data());
-    return "";
-  }
-  // Due to the non-standard-compliant URI format used in gRPC-core (see
-  // https://github.com/grpc/grpc/blob/master/doc/naming.md#name-syntax), the
-  // address may either be the authority or the path.
-  std::string authority =
-      uri->authority().empty() ? uri->path() : uri->authority();
-  std::string host;
-  std::string port;
-  if (!grpc_core::SplitHostPort(authority, &host, &port)) {
-    gpr_log(GPR_ERROR, "Could not split host:port on %s", authority.c_str());
-  }
-  return host;
 }
 
 int grpc_sockaddr_get_family(const grpc_resolved_address* resolved_addr) {
