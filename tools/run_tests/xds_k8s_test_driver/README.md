@@ -35,7 +35,7 @@ changes to this codebase at the moment.
 
 #### Configure GKE cluster access
 
-```sh
+```shell
 # Update gloud sdk
 gcloud -q components update
 
@@ -48,7 +48,7 @@ KUBE_CONTEXT="$(kubectl config current-context)"
 
 #### Install python dependencies
 
-```sh
+```shell
 # Create python virtual environment
 python3.6 -m venv venv
 
@@ -80,10 +80,10 @@ every single one of them. It is triggered nightly and per-release. For example,
 the commit we are using below (`d22f93e1ade22a1e026b57210f6fc21f7a3ca0cf`) comes
 from branch `v1.37.x` in `grpc-java` repo.
 
-```sh
+```shell
 # Help
 python -m tests.baseline_test --help
-python -m tests.baseline_test --helpful
+python -m tests.baseline_test --helpfull
 
 # Run on grpc-testing cluster
 python -m tests.baseline_test \
@@ -94,10 +94,10 @@ python -m tests.baseline_test \
 ```
 
 ### xDS Security Tests
-```sh
+```shell
 # Help
 python -m tests.security_test --help
-python -m tests.security_test --helpful
+python -m tests.security_test --helpfull
 
 # Run on grpc-testing cluster
 python -m tests.security_test \
@@ -108,7 +108,6 @@ python -m tests.security_test \
 ```
 
 ### Test namespace
-
 It's possible to run multiple xDS interop test workloads in the same project.
 But we need to ensure the name of the global resources won't conflict. This can
 be solved by supplying `--namespace` and `--server_xds_port`. The xDS port needs
@@ -125,22 +124,199 @@ python3 -m tests.baseline_test \
   --server_xds_port="$(($RANDOM%1000 + 34567))"
 ```
 
+## Local development
+This test driver allows running tests locally against remote GKE clusters, right
+from your dev environment. You need:
+
+1. Follow [installation](#installation) instructions
+2. Authenticated `gcloud`
+3. `kubectl` context (see [Configure GKE cluster access](#configure-gke-cluster-access))
+4. Run tests with `--debug_use_port_forwarding` argument. The test driver 
+   will automatically start and stop port forwarding using
+   `kubectl` subprocesses. (experimental)
+
 ### Setup test configuration
 
 There are many arguments to be passed into the test run. You can save the
-arguments to a config file for your development environment. Please take a look
-at
-https://github.com/grpc/grpc/blob/master/tools/run_tests/xds_k8s_test_driver/config/local-dev.cfg.example.
-You can create your own config by:
+arguments to a config file ("flagfile") for your development environment.
+Use [`config/local-dev.cfg.example`](https://github.com/grpc/grpc/blob/master/tools/run_tests/xds_k8s_test_driver/config/local-dev.cfg.example)
+as a starting point:
 
 ```shell
 cp config/local-dev.cfg.example config/local-dev.cfg
 ```
 
-### Clean-up resources
+Learn more about flagfiles in [abseil documentation](https://abseil.io/docs/python/guides/flags#a-note-about---flagfile).
+
+### Helper scripts
+You can use interop xds-k8s [`bin/`](https://github.com/grpc/grpc/tree/master/tools/run_tests/xds_k8s_test_driver/bin)
+scripts to configure TD, start k8s instances step-by-step, and keep them alive
+for as long as you need. 
+
+* To run helper scripts using local config:
+  * `python -m bin.script_name --flagfile=config/local-dev.cfg`
+  * `./run.sh bin/script_name.py` automatically appends the flagfile
+* Use `--help` to see script-specific argument
+* Use `--helpfull` to see all available argument
+
+#### Overview
+```shell
+# Helper tool to configure Traffic Director with different security options
+python -m bin.run_td_setup --help
+
+# Helper tools to run the test server, client (with or without security)
+python -m bin.run_test_server --help
+python -m bin.run_test_client --help
+
+# Helper tool to verify different security configurations via channelz
+python -m bin.run_channelz --help
+```
+
+#### `./run.sh` helper
+Use `./run.sh` to execute helper scripts and tests with `config/local-dev.cfg`.
+
+```sh
+USAGE: ./run.sh script_path [arguments]
+   script_path: path to python script to execute, relative to driver root folder
+   arguments ...: arguments passed to program in sys.argv
+
+ENVIRONMENT:
+   XDS_K8S_CONFIG: file path to the config flagfile, relative to
+                   driver root folder. Default: config/local-dev.cfg
+                   Will be appended as --flagfile="config_absolute_path" argument
+   XDS_K8S_DRIVER_VENV_DIR: the path to python virtual environment directory
+                            Default: $XDS_K8S_DRIVER_DIR/venv
+DESCRIPTION:
+This tool performs the following:
+1) Ensures python virtual env installed and activated
+2) Exports test driver root in PYTHONPATH
+3) Automatically appends --flagfile="\$XDS_K8S_CONFIG" argument
+
+EXAMPLES:
+./run.sh bin/run_td_setup.py --help
+./run.sh bin/run_td_setup.py --helpfull
+XDS_K8S_CONFIG=./path-to-flagfile.cfg ./run.sh bin/run_td_setup.py --namespace=override-namespace
+./run.sh tests/baseline_test.py
+./run.sh tests/security_test.py --verbosity=1 --logger_levels=__main__:DEBUG,framework:DEBUG
+./run.sh tests/security_test.py SecurityTest.test_mtls --nocheck_local_certs
+```
+
+### Regular workflow
+```shell
+# Setup Traffic Director
+./run.sh bin/run_td_setup.py
+
+# Start test server
+./run.sh bin/run_test_server.py
+
+# Add test server to the backend service
+./run.sh bin/run_td_setup.py --cmd=backends-add
+
+# Start test client
+./run.sh bin/run_test_client.py
+```
+
+### Secure workflow
+```shell
+# Setup Traffic Director in mtls. See --help for all options
+./run.sh bin/run_td_setup.py --security=mtls
+
+# Start test server in a secure mode
+./run.sh bin/run_test_server.py --secure
+
+# Add test server to the backend service
+./run.sh bin/run_td_setup.py --cmd=backends-add
+
+# Start test client in a secure more --secure
+./run.sh bin/run_test_client.py --secure
+```
+
+### Sending RPCs
+#### Start port forwarding
+```shell
+# Client: all services always on port 8079
+kubectl port-forward deployment.apps/psm-grpc-client 8079
+
+# Server regular mode: all grpc services on port 8079
+kubectl port-forward deployment.apps/psm-grpc-server 8080
+# OR
+# Server secure mode: TestServiceImpl is on 8080, 
+kubectl port-forward deployment.apps/psm-grpc-server 8080
+# everything else (channelz, healthcheck, CSDS) on 8081
+kubectl port-forward deployment.apps/psm-grpc-server 8081
+```
+
+#### Send RPCs with grpccurl
+```shell
+# 8081 if security enabled
+export SERVER_ADMIN_PORT=8080
+
+# List server services using reflection
+grpcurl --plaintext 127.0.0.1:$SERVER_ADMIN_PORT list
+# List client services using reflection
+grpcurl --plaintext 127.0.0.1:8079 list
+
+# List channels via channelz
+grpcurl --plaintext 127.0.0.1:$SERVER_ADMIN_PORT grpc.channelz.v1.Channelz.GetTopChannels
+grpcurl --plaintext 127.0.0.1:8079 grpc.channelz.v1.Channelz.GetTopChannels
+
+# Send GetClientStats to the client
+grpcurl --plaintext -d '{"num_rpcs": 10, "timeout_sec": 30}' 127.0.0.1:8079 \
+  grpc.testing.LoadBalancerStatsService.GetClientStats
+```
+
+### Cleanup
+First, make sure to stop port forwarding, if any.
+
+#### Regular cleanup
+```shell
+# Cleanup TD resources
+./run.sh bin/run_td_setup.py --cmd=cleanup
+# Stop test client
+./run.sh bin/run_test_client.py --cmd=cleanup
+# Stop test server, and remove the namespace
+./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace
+
+# Full cleanup (run all commands above)
+./bin/cleanup.sh
+```
+
+#### Security cleanup
+```shell
+# Cleanup TD resources, with security
+./run.sh bin/run_td_setup.py --cmd=cleanup --security=mtls
+# Stop test client (secure)
+./run.sh bin/run_test_client.py --cmd=cleanup --secure
+# Stop test server (secure), and remove the namespace
+./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace --secure
+
+# Full security-specific cleanup (run all commands above)
+./bin/cleanup.sh --secure
+```
+
+#### Partial cleanup
+You can run commands above to stop/start, create/delete resources however you want.
+Generally, it's better to remove resources in the opposite order of their creation.
+
+In addition, here's some other helpful partial cleanup commands:
 
 ```shell
-python -m bin.run_td_setup --cmd=cleanup --flagfile=config/local-dev.cfg && \
-python -m bin.run_test_client --cmd=cleanup --flagfile=config/local-dev.cfg && \
-python -m bin.run_test_server --cmd=cleanup --cleanup_namespace --flagfile=config/local-dev.cfg
+# Remove all backends from the backend services
+./run.sh bin/run_td_setup.py --cmd=backends-cleanup
+
+# Stop the server, but keep the namespace
+./run.sh bin/run_test_server.py --cmd=cleanup --nocleanup_namespace
 ```
+
+### Known errors
+#### Error forwarding port
+If you stopped a test with `ctrl+c`, while using `--debug_use_port_forwarding`,
+you might see an error like this:
+
+> `framework.infrastructure.k8s.PortForwardingError: Error forwarding port, unexpected output Unable to listen on port 8081: Listeners failed to create with the following errors: [unable to create listener: Error listen tcp4 127.0.0.1:8081: bind: address already in use]`
+
+Unless you're running `kubectl port-forward` manually, it's likely that `ctrl+c`
+interrupted python before it could clean up subprocesses.
+
+You can do `ps aux | grep port-forward` and then kill the processes by id,
+or with `killall kubectl`
