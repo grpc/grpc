@@ -597,7 +597,9 @@ absl::Status uvListener::Start() {
     }
   });
   auto status = ret.get_future().get();
-  return status;
+  // until we can handle "SO_REUSEPORT", always return OkStatus.
+  // return status;
+  return absl::OkStatus();
 }
 
 std::shared_ptr<grpc_event_engine::experimental::EventEngine>
