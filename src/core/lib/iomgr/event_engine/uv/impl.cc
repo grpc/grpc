@@ -8,6 +8,7 @@
 #include "absl/strings/str_format.h"
 
 #include "grpc/event_engine/event_engine.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -478,6 +479,13 @@ uvListener::~uvListener() {
 
 absl::StatusOr<int> uvListener::Bind(
     const grpc_event_engine::experimental::EventEngine::ResolvedAddress& addr) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    grpc_resolved_address grpcaddr;
+    grpcaddr.len = addr.size();
+    memcpy(grpcaddr.addr, addr.address(), grpcaddr.len);
+    gpr_log(GPR_DEBUG, "EE::UV::uvListener::Bind@%p to %s", this,
+            grpc_sockaddr_to_uri(&grpcaddr).c_str());
+  }
   std::promise<absl::StatusOr<int>> p;
   getEngine()->schedule([this, &p, &addr](uvEngine* engine) {
     int r = uv_tcp_bind(&uvTCP_->tcp_, addr.address(), 0 /* flags */);
