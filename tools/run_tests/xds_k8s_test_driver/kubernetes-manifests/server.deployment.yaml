@@ -26,11 +26,6 @@ spec:
           - "--port=${test_port}"
         ports:
           - containerPort: ${test_port}
-        env:
-          - name: GRPC_VERBOSITY
-            value: "DEBUG"
-          - name: GRPC_TRACE
-            value: "xds_client,xds_resolver,xds_cluster_manager_lb,cds_lb,xds_cluster_resolver_lb,priority_lb,xds_cluster_impl_lb,weighted_target_lb"
         resources:
           limits:
             cpu: 800m
