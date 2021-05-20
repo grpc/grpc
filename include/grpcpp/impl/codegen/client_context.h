@@ -493,8 +493,6 @@ class ClientContext {
       const grpc::ServerContextBase& server_context,
       PropagationOptions options);
 
-  bool trailers_only() const;
-
   bool initial_metadata_received_;
   bool wait_for_ready_;
   bool wait_for_ready_explicitly_set_;
