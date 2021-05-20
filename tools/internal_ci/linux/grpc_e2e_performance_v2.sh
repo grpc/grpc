@@ -35,7 +35,7 @@ kubectl get pods | grep -v Completed
 # List annotations of tests that have running pods and are in Errored state.
 # Expression is intended to work across versions of kubectl.
 kubectl get pods --no-headers | grep -v Completed | cut -f1 -d' ' \
-    | (while read f;  do echo $(kubectl get pod "$f" --no-headers -o jsonpath='{.metadata.labels.loadtest}'); done) \
+    | (while read f;  do echo $(kubectl get pod "$f" --no-headers -o jsonpath='{.metadata.ownerReferences[0].name}'); done) \
     | (while read f; do state=$(kubectl get loadtest "$f" --no-headers -o  jsonpath='{.status.state}'); if [[ "${state}" == Errored ]]; then echo "$f"; fi; done) \
     | xargs -r kubectl get loadtest --no-headers \
     | (while read -a words; do annotations=(
