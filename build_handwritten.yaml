@@ -16,7 +16,7 @@ settings:
   csharp_major_version: 2
   g_stands_for: guadalupe_river_park_conservancy
   protobuf_version: 3.15.8
-  version: 1.38.0-pre1
+  version: 1.38.0
 targets:
 - name: check_epollexclusive
   build: tool
