@@ -81,6 +81,12 @@ if [ -z "$IP" ]; then
     exit 1
 fi
 
+# test DescribeInstanceAttribute, should be blocked:
+aws ec2 describe-instance-attribute \
+    --attribute userData \
+    --instance-id=$ID \
+    --region us-east-2
+
 SERVER_HOST_KEY_ENTRY="$IP $SERVER_HOST_KEY_ENTRY"
 echo $SERVER_HOST_KEY_ENTRY >> ~/.ssh/known_hosts
 
