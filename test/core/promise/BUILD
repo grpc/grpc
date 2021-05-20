@@ -42,6 +42,15 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "for_each_test",
+    srcs = ["for_each_test.cc"],
+    language = "c++",
+    uses_polling = False,
+    deps = ["//:promise"],
+    external_deps = ["gtest"],
+)
+
+grpc_cc_test(
     name = "observable_test",
     srcs = ["observable_test.cc"],
     language = "c++",

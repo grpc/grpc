@@ -48,25 +48,42 @@ class PipeSender {
   PipeSender& operator=(const PipeSender&) = delete;
 
   PipeSender(PipeSender&& other) noexcept
-      : receiver_(other.receiver_), pending_(std::move(other.pending_)) {
+      : receiver_(other.receiver_), push_(other.push_) {
     if (receiver_ != nullptr) {
       receiver_->sender_ = this;
       other.receiver_ = nullptr;
+    }
+    if (push_ != nullptr) {
+      push_->sender_ = this;
+      other.push_ = nullptr;
     }
   }
   PipeSender& operator=(PipeSender&& other) noexcept {
+    if (receiver_ != nullptr) {
+      receiver_->sender_ = nullptr;
+    }
+    if (push_ != nullptr) {
+      push_->sender_ = nullptr;
+    }
     receiver_ = other.receiver_;
-    pending_ = std::move(other.pending_);
     if (receiver_ != nullptr) {
       receiver_->sender_ = this;
       other.receiver_ = nullptr;
     }
+    if (push_ != nullptr) {
+      push_->sender_ = this;
+      other.push_ = nullptr;
+    }
     return *this;
   }
+
   ~PipeSender() {
     if (receiver_ != nullptr) {
-      waiting_to_receive_.Wake();
+      receiver_->waiting_to_receive_.Wake();
       receiver_->sender_ = nullptr;
+    }
+    if (push_ != nullptr) {
+      push_->sender_ = nullptr;
     }
   }
 
@@ -83,9 +100,7 @@ class PipeSender {
   friend class pipe_detail::Push<T>;
   explicit PipeSender(PipeReceiver<T>* receiver) : receiver_(receiver) {}
   PipeReceiver<T>* receiver_;
-  absl::optional<T> pending_;
-  IntraActivityWaiter waiting_to_send_;
-  IntraActivityWaiter waiting_to_receive_;
+  pipe_detail::Push<T>* push_ = nullptr;
 };
 
 // Receive end of a Pipe.
@@ -95,24 +110,50 @@ class PipeReceiver {
   PipeReceiver(const PipeReceiver&) = delete;
   PipeReceiver& operator=(const PipeReceiver&) = delete;
 
-  PipeReceiver(PipeReceiver&& other) noexcept : sender_(other.sender_) {
+  PipeReceiver(PipeReceiver&& other) noexcept
+      : sender_(other.sender_),
+        next_(other.next_),
+        pending_(std::move(other.pending_)),
+        waiting_to_send_(std::move(other.waiting_to_send_)),
+        waiting_to_receive_(other.waiting_to_receive_) {
     if (sender_ != nullptr) {
       sender_->receiver_ = this;
       other.sender_ = nullptr;
     }
+    if (next_ != nullptr) {
+      next_->receiver_ = this;
+      other.next_ = nullptr;
+    }
   }
   PipeReceiver& operator=(PipeReceiver&& other) noexcept {
+    if (sender_ != nullptr) {
+      sender_->receiver_ = nullptr;
+    }
+    if (next_ != nullptr) {
+      next_->receiver_ = nullptr;
+    }
     sender_ = other.sender_;
+    next_ = other.next_;
+    pending_ = std::move(other.pending_);
+    waiting_to_send_ = std::move(other.waiting_to_send_);
+    waiting_to_receive_ = std::move(other.waiting_to_receive_);
     if (sender_ != nullptr) {
       sender_->receiver_ = this;
       other.sender_ = nullptr;
+    }
+    if (next_ != nullptr) {
+      next_->receiver_ = this;
+      other.next_ = nullptr;
     }
     return *this;
   }
   ~PipeReceiver() {
+    waiting_to_send_.Wake();
     if (sender_ != nullptr) {
-      sender_->waiting_to_send_.Wake();
       sender_->receiver_ = nullptr;
+    }
+    if (next_ != nullptr) {
+      next_->receiver_ = nullptr;
     }
   }
 
@@ -127,8 +168,13 @@ class PipeReceiver {
   friend struct Pipe<T>;
   friend class PipeSender<T>;
   friend class pipe_detail::Next<T>;
+  friend class pipe_detail::Push<T>;
   explicit PipeReceiver(PipeSender<T>* sender) : sender_(sender) {}
   PipeSender<T>* sender_;
+  pipe_detail::Next<T>* next_ = nullptr;
+  absl::optional<T> pending_;
+  IntraActivityWaiter waiting_to_send_;
+  IntraActivityWaiter waiting_to_receive_;
 };
 
 namespace pipe_detail {
@@ -139,25 +185,55 @@ class Push {
  public:
   Push(const Push&) = delete;
   Push& operator=(const Push&) = delete;
-  Push(Push&&) noexcept = default;
-  Push& operator=(Push&&) noexcept = default;
+  Push(Push&& other) noexcept
+      : sender_(other.sender_), push_(std::move(other.push_)) {
+    if (sender_ != nullptr) {
+      sender_->push_ = this;
+      other.sender_ = nullptr;
+    }
+  }
+  Push& operator=(Push&& other) noexcept {
+    if (sender_ != nullptr) {
+      sender_->push_ = nullptr;
+    }
+    sender_ = other.sender_;
+    push_ = std::move(other.push_);
+    if (sender_ != nullptr) {
+      sender_->push_ = this;
+      other.sender_ = nullptr;
+    }
+    return *this;
+  }
+
+  ~Push() {
+    if (sender_ != nullptr) {
+      assert(sender_->push_ == this);
+      sender_->push_ = nullptr;
+    }
+  }
 
   Poll<bool> operator()() {
-    if (sender_->receiver_ == nullptr) {
+    auto* receiver = sender_->receiver_;
+    if (receiver == nullptr) {
       return ready(false);
     }
-    if (sender_->pending_.has_value()) {
-      return sender_->waiting_to_send_.pending();
+    if (receiver->pending_.has_value()) {
+      return receiver->waiting_to_send_.pending();
     }
-    sender_->pending_ = std::move(push_);
-    sender_->waiting_to_receive_.Wake();
+    receiver->pending_ = std::move(push_);
+    receiver->waiting_to_receive_.Wake();
+    sender_->push_ = nullptr;
+    sender_ = nullptr;
     return ready(true);
   }
 
  private:
   friend class PipeSender<T>;
   Push(PipeSender<T>* sender, T push)
-      : sender_(sender), push_(std::move(push)) {}
+      : sender_(sender), push_(std::move(push)) {
+    assert(sender_->push_ == nullptr);
+    sender_->push_ = this;
+  }
   PipeSender<T>* sender_;
   T push_;
 };
@@ -168,26 +244,52 @@ class Next {
  public:
   Next(const Next&) = delete;
   Next& operator=(const Next&) = delete;
-  Next(Next&&) noexcept = default;
-  Next& operator=(Next&&) noexcept = default;
+  Next(Next&& other) noexcept : receiver_(other.receiver_) {
+    if (receiver_ != nullptr) {
+      receiver_->next_ = this;
+      other.receiver_ = nullptr;
+    }
+  }
+  Next& operator=(Next&& other) noexcept {
+    if (receiver_ != nullptr) {
+      receiver_->next_ = nullptr;
+    }
+    receiver_ = other.receiver_;
+    if (receiver_ != nullptr) {
+      receiver_->next_ = this;
+      other.receiver_ = nullptr;
+    }
+    return *this;
+  }
+
+  ~Next() {
+    if (receiver_ != nullptr) {
+      assert(receiver_->next_ == this);
+      receiver_->next_ = nullptr;
+    }
+  }
 
   Poll<absl::optional<T>> operator()() {
-    auto* sender = receiver_->sender_;
-    if (sender == nullptr) {
-      return ready(absl::optional<T>());
-    }
-    if (sender->pending_.has_value()) {
-      auto result = ready(absl::optional<T>(std::move(*sender->pending_)));
-      sender->pending_.reset();
-      sender->waiting_to_send_.Wake();
+    if (receiver_->pending_.has_value()) {
+      auto result = ready(absl::optional<T>(std::move(*receiver_->pending_)));
+      receiver_->pending_.reset();
+      receiver_->waiting_to_send_.Wake();
+      receiver_->next_ = nullptr;
+      receiver_ = nullptr;
       return result;
     }
-    return sender->waiting_to_receive_.pending();
+    if (receiver_->sender_ == nullptr) {
+      return ready(absl::optional<T>());
+    }
+    return receiver_->waiting_to_receive_.pending();
   }
 
  private:
   friend class PipeReceiver<T>;
-  explicit Next(PipeReceiver<T>* receiver) : receiver_(receiver) {}
+  explicit Next(PipeReceiver<T>* receiver) : receiver_(receiver) {
+    assert(receiver_->next_ == nullptr);
+    receiver_->next_ = this;
+  }
   PipeReceiver<T>* receiver_;
 };
 

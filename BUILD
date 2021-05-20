@@ -728,6 +728,7 @@ grpc_cc_library(
         "src/core/lib/promise/join.h",
         "src/core/lib/promise/poll.h",
         "src/core/lib/promise/promise.h",
+        "src/core/lib/promise/for_each.h",
         "src/core/lib/promise/race.h",
         "src/core/lib/promise/seq.h",
         "src/core/lib/promise/try_join.h",
@@ -735,6 +736,7 @@ grpc_cc_library(
         "src/core/lib/promise/while.h",
         "src/core/lib/promise/observable.h",
         "src/core/lib/promise/pipe.h",
+        "src/core/lib/promise/map.h"
     ],
     srcs = [
         "src/core/lib/promise/activity.cc"

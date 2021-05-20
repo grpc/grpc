@@ -26,6 +26,17 @@ namespace grpc_core {
 template <typename T>
 using Promise = std::function<Poll<T>()>;
 
+// Helper to execute a promise immediately or fail
+template <typename Promise>
+auto NowOrNever(Promise promise)
+    -> absl::optional<typename decltype(promise())::Type> {
+  auto r = promise();
+  if (auto* p = r.get_ready()) {
+    return std::move(*p);
+  }
+  return {};
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_PROMISE_PROMISE_H

@@ -12,11 +12,12 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "absl/memory/memory.h"
 #include "src/core/lib/promise/pipe.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/memory/memory.h"
 #include "src/core/lib/promise/join.h"
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 
 using testing::MockFunction;
@@ -62,19 +63,20 @@ TEST(PipeTest, CanSeeClosedOnSend) {
   Pipe<int> pipe;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   auto sender = std::move(pipe.sender);
-  auto receiver = absl::make_unique<PipeReceiver<int>>(
-      std::move(pipe.receiver));
+  auto receiver =
+      absl::make_unique<PipeReceiver<int>>(std::move(pipe.receiver));
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  EXPECT_TRUE(NowOrNever(sender.Push(42)).has_value());
   ActivityFromPromiseFactory(
       [&sender, &receiver] {
-        return Seq(Join(sender.Push(42), sender.Push(43),
+        return Seq(Join(sender.Push(43),
                         [&receiver] {
                           receiver.reset();
                           return ready(absl::OkStatus());
                         }),
-                   [](std::tuple<bool, bool, absl::Status> result) {
+                   [](std::tuple<bool, absl::Status> result) {
                      EXPECT_EQ(result,
-                               std::make_tuple(true, false, absl::OkStatus()));
+                               std::make_tuple(false, absl::OkStatus()));
                      return ready(absl::OkStatus());
                    });
       },
@@ -85,8 +87,7 @@ TEST(PipeTest, CanSeeClosedOnSend) {
 TEST(PipeTest, CanSeeClosedOnReceive) {
   Pipe<int> pipe;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
-  auto sender = absl::make_unique<PipeSender<int>>(
-      std::move(pipe.sender));
+  auto sender = absl::make_unique<PipeSender<int>>(std::move(pipe.sender));
   auto receiver = std::move(pipe.receiver);
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   ActivityFromPromiseFactory(

@@ -12,6 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#ifndef GRPC_CORE_LIB_PROMISE_ACTIVITY_H
+#define GRPC_CORE_LIB_PROMISE_ACTIVITY_H
+
 #include <functional>
 #include "absl/container/flat_hash_set.h"
 #include "absl/container/inlined_vector.h"
@@ -273,3 +276,5 @@ class IntraActivityWaiter {
 };
 
 }  // namespace grpc_core
+
+#endif
