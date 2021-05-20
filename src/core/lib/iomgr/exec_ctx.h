@@ -122,6 +122,7 @@ class ExecCtx {
 
   /** Destructor */
   virtual ~ExecCtx() {
+    GPR_DEBUG_ASSERT(Get() == this);
     flags_ |= GRPC_EXEC_CTX_FLAG_IS_FINISHED;
     Flush();
     Set(last_exec_ctx_);
