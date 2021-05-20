@@ -5,6 +5,8 @@
 #include <future>
 #include <unordered_map>
 
+#include "absl/strings/str_format.h"
+
 #include "grpc/event_engine/event_engine.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/mpscq.h"
@@ -12,6 +14,34 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/socket_utils.h"
+
+extern grpc_core::TraceFlag grpc_tcp_trace;
+
+static void hexdump(const std::string& prefix, const uint8_t* data,
+                    size_t size) {
+  char ascii[17];
+  ascii[16] = 0;
+  for (unsigned p = 0; p < 16; p++) ascii[p] = ' ';
+  std::string line;
+  for (size_t i = 0; i < size; i++) {
+    uint8_t d = data[i];
+    if (i % 16 == 0) {
+      line = prefix + absl::StrFormat(" %08x  |", i);
+    }
+    line += absl::StrFormat("%02X ", d);
+    ascii[i % 16] = isprint(d) ? d : '.';
+    size_t n = i + 1;
+    if (((n % 8) == 0) || (n == size)) {
+      line += " ";
+      if (((n % 16) != 0) || (n != size)) continue;
+      if (n == size) {
+        n %= 16;
+        for (unsigned p = n; p < 16; p++) line += "   ";
+      }
+      gpr_log(GPR_DEBUG, "%s|   %s", line.c_str(), ascii);
+    }
+  }
+}
 
 class uvEngine;
 class uvTask;
@@ -26,6 +56,10 @@ class uvTCPbase {
   virtual ~uvTCPbase() = default;
   static void uvCloseCB(uv_handle_t* handle) {
     uvTCPbase* tcp = reinterpret_cast<uvTCPbase*>(handle->data);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvTCPbase:%p close CB, callbacks pending: %i",
+              tcp, tcp->to_close_ - 1);
+    }
     if (--tcp->to_close_ == 0) {
       delete tcp;
     }
@@ -49,7 +83,11 @@ class uvTCPlistener final : public uvTCPbase {
       : on_accept_(std::move(on_accept)),
         on_shutdown_(std::move(on_shutdown)),
         args_(args),
-        slice_allocator_factory_(std::move(slice_allocator_factory)) {}
+        slice_allocator_factory_(std::move(slice_allocator_factory)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvTCPlistener:%p created", this);
+    }
+  }
   virtual ~uvTCPlistener() = default;
   grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
       on_accept_;
@@ -150,7 +188,11 @@ class uvEndpoint final
  public:
   uvEndpoint(const grpc_event_engine::experimental::ChannelArgs& args,
              grpc_event_engine::experimental::SliceAllocator slice_allocator)
-      : uvTCP_(new uvTCP(args, std::move(slice_allocator))) {}
+      : uvTCP_(new uvTCP(args, std::move(slice_allocator))) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvEndpoint:%p created", this);
+    }
+  }
   virtual ~uvEndpoint() override final;
   virtual void* GetResourceUser() override final {
     return uvTCP_->slice_allocator_.GetResourceUser();
@@ -169,9 +211,14 @@ class uvEndpoint final
               reinterpret_cast<sockaddr*>(&addr), namelen);
           return ret;
         };
-    populate(uv_tcp_getsockname, &uvTCP_->local_address_);
-    populate(uv_tcp_getpeername, &uvTCP_->peer_address_);
-    return 0;
+    int r = 0;
+    r |= populate(uv_tcp_getsockname, &uvTCP_->local_address_);
+    r |= populate(uv_tcp_getpeername, &uvTCP_->peer_address_);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvEndpoint@%p::populateAddresses, r=%d", this,
+              r);
+    }
+    return r;
   }
 
   virtual void Read(
@@ -238,15 +285,18 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
   }
 
   void thread() {
-    if (uv_loop_init(&loop_) != 0) {
-      ready_.set_value(false);
-      return;
-    }
+    int r = 0;
+    r = uv_loop_init(&loop_);
     loop_.data = this;
-    if (uv_async_init(&loop_, &kicker_, [](uv_async_t* async) {
-          uvEngine* engine = reinterpret_cast<uvEngine*>(async->loop->data);
-          engine->kicker();
-        }) != 0) {
+    r |= uv_async_init(&loop_, &kicker_, [](uv_async_t* async) {
+      uvEngine* engine = reinterpret_cast<uvEngine*>(async->loop->data);
+      engine->kicker();
+    });
+    if (r != 0) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        gpr_log(GPR_ERROR, "EE::UV::uvEngine::thread@%p, failed to start: %i",
+                this, r);
+      }
       ready_.set_value(false);
       return;
     }
@@ -256,11 +306,17 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
       ctx.Flush();
     }
     shutdown_ = true;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvEngine::thread@%p, shutting down", this);
+    }
     on_shutdown_complete_(absl::OkStatus());
   }
 
   uvEngine() {
     bool success = false;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvEngine:%p created", this);
+    }
     grpc_core::Thread::Options options;
     options.set_joinable(false);
     thread_ = grpc_core::Thread(
@@ -283,6 +339,10 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
           slice_allocator_factory) override final {
     std::unique_ptr<uvListener> ret = absl::make_unique<uvListener>(
         on_accept, on_shutdown, args, std::move(slice_allocator_factory));
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvEngine::CreateListener@%p, created %p",
+              this, ret.get());
+    }
     ret->init(this);
     return std::move(ret);
   }
@@ -293,6 +353,9 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
       grpc_event_engine::experimental::SliceAllocator slice_allocator,
       absl::Time deadline) override final {
     uvEndpoint* e = new uvEndpoint(args, std::move(slice_allocator));
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvEngine::Connect@%p, created %p", this, e);
+    }
     return e->Connect(this, std::move(on_connect), addr);
   }
 
@@ -310,6 +373,9 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
   virtual void TryCancel(TaskHandle handle) override final;
 
   virtual void Shutdown(Callback on_shutdown_complete) override final {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvEngine::Shutdown@%p", this);
+    }
     on_shutdown_complete_ = on_shutdown_complete;
     schedule([](uvEngine* engine) {
       uv_unref(reinterpret_cast<uv_handle_t*>(&engine->kicker_));
@@ -340,22 +406,34 @@ absl::Status uvEndpoint::Connect(
   engine->schedule([addr, this](uvEngine* engine) {
     int r;
     r = init(engine);
-    r = uv_tcp_connect(&connect_, &uvTCP_->tcp_, addr.address(),
-                       [](uv_connect_t* req, int status) {
-                         uvEndpoint* epRaw =
-                             reinterpret_cast<uvEndpoint*>(req->data);
-                         std::unique_ptr<uvEndpoint> ep(epRaw);
-                         auto on_connect = std::move(ep->on_connect_);
-                         if (status == 0) {
-                           ep->populateAddressesUnsafe();
-                           on_connect(std::move(ep));
-                         } else {
-                           on_connect(absl::UnknownError(
-                               "uv_tcp_connect gave us an asynchronous error"));
-                         }
-                       });
+    r = uv_tcp_connect(
+        &connect_, &uvTCP_->tcp_, addr.address(),
+        [](uv_connect_t* req, int status) {
+          uvEndpoint* epRaw = reinterpret_cast<uvEndpoint*>(req->data);
+          std::unique_ptr<uvEndpoint> ep(epRaw);
+          auto on_connect = std::move(ep->on_connect_);
+          if (status == 0) {
+            ep->populateAddressesUnsafe();
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+              gpr_log(GPR_DEBUG, "EE::UV::uvEndpoint::Connect@%p, success",
+                      epRaw);
+            }
+            on_connect(std::move(ep));
+          } else {
+            if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+              gpr_log(GPR_INFO, "EE::UV::uvEndpoint::Connect@%p, failed: %i",
+                      epRaw, status);
+            }
+            on_connect(absl::UnknownError(
+                "uv_tcp_connect gave us an asynchronous error"));
+          }
+        });
     if (r != 0) {
       auto on_connect = std::move(on_connect_);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        gpr_log(GPR_INFO, "EE::UV::uvEndpoint::Connect@%p, failed: %i", this,
+                r);
+      }
       delete this;
       on_connect(absl::UnknownError("uv_tcp_connect gave us an error"));
     }
@@ -411,6 +489,11 @@ absl::StatusOr<int> uvListener::Bind(
       case 0:
         break;
       default:
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+          gpr_log(GPR_INFO,
+                  "EE::UV::uvListener::Bind@%p, uv_tcp_bind failed: %i", this,
+                  r);
+        }
         p.set_value(absl::InvalidArgumentError(
             "uv_tcp_bind returned an error code we don't know about"));
         return;
@@ -427,6 +510,11 @@ absl::StatusOr<int> uvListener::Bind(
       case 0:
         break;
       default:
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+          gpr_log(GPR_INFO,
+                  "EE::UV::uvListener::Bind@%p, uv_tcp_getsockname failed: %i",
+                  this, r);
+        }
         p.set_value(absl::UnknownError(
             "uv_tcp_getsockname returned an error code we don't know about"));
         return;
@@ -443,32 +531,65 @@ absl::StatusOr<int> uvListener::Bind(
         break;
       }
       default:
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+          gpr_log(GPR_INFO,
+                  "EE::UV::uvListener::Bind@%p, unknown addr family: %i", this,
+                  boundAddr.ss_family);
+        }
         p.set_value(absl::InvalidArgumentError(
             "returned socket address in :Bind is neither IPv4 nor IPv6"));
-        break;
+        return;
+    }
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvListener::Bind@%p, success", this);
     }
   });
   return p.get_future().get();
 }
 
 absl::Status uvListener::Start() {
-  getEngine()->schedule([this](uvEngine* engine) {
-    uv_listen(reinterpret_cast<uv_stream_t*>(&uvTCP_->tcp_), 42,
-              [](uv_stream_t* server, int status) {
-                if (status < 0) return;
-                uvTCPlistener* l = static_cast<uvTCPlistener*>(server->data);
-                std::unique_ptr<uvEndpoint> e = absl::make_unique<uvEndpoint>(
-                    l->args_,
-                    l->slice_allocator_factory_.CreateSliceAllocator("foo"));
-                uvEngine* engine = static_cast<uvEngine*>(server->loop->data);
-                e->init(engine);
-                uv_accept(server,
-                          reinterpret_cast<uv_stream_t*>(&e->uvTCP_->tcp_));
-                e->populateAddressesUnsafe();
-                l->on_accept_(std::move(e));
-              });
+  std::promise<absl::Status> ret;
+  getEngine()->schedule([this, &ret](uvEngine* engine) {
+    int r;
+    r = uv_listen(
+        reinterpret_cast<uv_stream_t*>(&uvTCP_->tcp_), 42,
+        [](uv_stream_t* server, int status) {
+          if (status < 0) return;
+          uvTCPlistener* l = static_cast<uvTCPlistener*>(server->data);
+          std::unique_ptr<uvEndpoint> e = absl::make_unique<uvEndpoint>(
+              l->args_,
+              l->slice_allocator_factory_.CreateSliceAllocator("foo"));
+          uvEngine* engine = static_cast<uvEngine*>(server->loop->data);
+          e->init(engine);
+          int r;
+          r = uv_accept(server,
+                        reinterpret_cast<uv_stream_t*>(&e->uvTCP_->tcp_));
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+            gpr_log(
+                GPR_DEBUG,
+                "EE::UV::uvListener::Start@%p, accepting new connection: %i", l,
+                r);
+          }
+          if (r == 0) {
+            e->populateAddressesUnsafe();
+            l->on_accept_(std::move(e));
+          }
+        });
+    if (r == 0) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        gpr_log(GPR_DEBUG, "EE::UV::uvListener::Start@%p, success", this);
+      }
+      ret.set_value(absl::OkStatus());
+    } else {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        gpr_log(GPR_INFO, "EE::UV::uvListener::Start@%p, failure: %i", this, r);
+      }
+      ret.set_value(absl::UnknownError(
+          "uv_listen returned an error code we don't know about"));
+    }
   });
-  return absl::OkStatus();
+  auto status = ret.get_future().get();
+  return status;
 }
 
 std::shared_ptr<grpc_event_engine::experimental::EventEngine>
@@ -479,11 +600,14 @@ grpc_event_engine::experimental::DefaultEventEngineFactory() {
 class uvTask {
  public:
   uvTask(uvEngine* engine) : key_(engine->taskKey_.fetch_add(1)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvTask@%p, created: key = %" PRIiPTR, this,
+              key_);
+    }
     timer_.data = this;
   }
   grpc_event_engine::experimental::EventEngine::Callback fn_;
   uv_timer_t timer_;
-  bool done_ = false;
   const intptr_t key_;
   void cancel() {
     uv_timer_stop(&timer_);
@@ -513,6 +637,10 @@ uvEngine::TaskHandle uvEngine::RunAt(absl::Time when, Callback fn,
         &task->timer_,
         [](uv_timer_t* timer) {
           uvTask* task = reinterpret_cast<uvTask*>(timer->data);
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+            gpr_log(GPR_DEBUG, "EE::UV::uvTask@%p, triggered: key = %" PRIiPTR,
+                    task, task->key_);
+          }
           task->cancel();
           task->fn_(absl::OkStatus());
         },
@@ -525,6 +653,10 @@ void uvEngine::TryCancel(TaskHandle handle) {
   schedule([handle](uvEngine* engine) {
     auto it = engine->taskMap_.find(handle.key);
     if (it == engine->taskMap_.end()) return;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvTask@%p, cancelled: key = %" PRIiPTR,
+              it->second, it->second->key_);
+    }
     it->second->cancel();
   });
 }
@@ -677,6 +809,11 @@ void uvEndpoint::Write(
   uvTCP_->on_writable_ = std::move(on_writable);
   for (size_t i = 0; i < count; i++) {
     grpc_event_engine::experimental::Slice slice = data->ref(i);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      std::string prefix =
+          absl::StrFormat("EE::UV::uvEndpoint::Write@%p", this);
+      hexdump(prefix, slice.begin(), slice.size());
+    }
     uvTCP_->write_bufs_[i].base =
         reinterpret_cast<char*>(const_cast<uint8_t*>(slice.begin()));
     uvTCP_->write_bufs_[i].len = slice.size();
@@ -742,6 +879,10 @@ void uvEndpoint::Read(
             return;
           }
           grpc_event_engine::experimental::Slice slice(tcp->read_buf_, nread);
+          if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+            std::string prefix = absl::StrFormat("EE::UV::uvEndpoint::onRead");
+            hexdump(prefix, slice.begin(), slice.size());
+          }
           tcp->read_sb_->add(slice);
           on_read(absl::OkStatus());
           memset(tcp->read_buf_, 0, buf->len);
