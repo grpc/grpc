@@ -22,24 +22,33 @@ static void hexdump(const std::string& prefix, const uint8_t* data,
                     size_t size) {
   char ascii[17];
   ascii[16] = 0;
-  for (unsigned p = 0; p < 16; p++) ascii[p] = ' ';
+  memset(ascii, ' ', 16);
   std::string line;
+  size_t beginning;
   for (size_t i = 0; i < size; i++) {
-    uint8_t d = data[i];
     if (i % 16 == 0) {
-      line = prefix + absl::StrFormat(" %08x  |", i);
+      line = "";
+      beginning = i;
     }
+    uint8_t d = data[i];
     line += absl::StrFormat("%02X ", d);
     ascii[i % 16] = isprint(d) ? d : '.';
     size_t n = i + 1;
     if (((n % 8) == 0) || (n == size)) {
       line += " ";
-      if (((n % 16) != 0) || (n != size)) continue;
+      if (((n % 16) != 0) && (n != size)) continue;
       if (n == size) {
         n %= 16;
-        for (unsigned p = n; p < 16; p++) line += "   ";
+        for (unsigned p = n; (n != 0) && (p < 16); p++) {
+          line += "   ";
+          ascii[p] = ' ';
+        }
+        if (n < 8) {
+          line += " ";
+        }
       }
-      gpr_log(GPR_DEBUG, "%s|   %s", line.c_str(), ascii);
+      gpr_log(GPR_DEBUG, "%s %04zX  | %s| %s |", prefix.c_str(), beginning,
+              line.c_str(), ascii);
     }
   }
 }
