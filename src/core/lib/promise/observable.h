@@ -126,7 +126,7 @@ class Observer {
   Observer& operator=(const Observer&) = delete;
   Observer(Observer&& other) noexcept
       : version_seen_(other.version_seen_), state_(std::move(other.state_)) {}
-  Observer& operator=(const Observer&& other) noexcept {
+  Observer& operator=(Observer&& other) noexcept {
     version_seen_ = other.version_seen_;
     state_ = std::move(other.state_);
     return *this;

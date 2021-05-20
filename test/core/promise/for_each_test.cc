@@ -44,7 +44,6 @@ TEST(ForEachTest, SendThriceWithPipe) {
                             }),
                         ForEach(std::move(pipe.receiver),
                                 [&num_received](int i) {
-                                  printf("GOT: %d\n", i);
                                   num_received++;
                                   EXPECT_EQ(num_received, i);
                                   return ready(absl::OkStatus());
