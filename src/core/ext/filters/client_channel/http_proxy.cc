@@ -107,6 +107,17 @@ done:
   return proxy_name;
 }
 
+// Adds the default port (443) if target does not contain a port.
+std::string MaybeAddDefaultPort(absl::string_view target) {
+  absl::string_view host;
+  absl::string_view port;
+  SplitHostPort(target, &host, &port);
+  if (port.empty()) {
+    return JoinHostPort(host, 443);
+  }
+  return std::string(target);
+}
+
 class HttpProxyMapper : public ProxyMapperInterface {
  public:
   bool MapName(const char* server_uri, const grpc_channel_args* args,
@@ -176,7 +187,8 @@ class HttpProxyMapper : public ProxyMapperInterface {
     grpc_arg args_to_add[2];
     args_to_add[0] = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER),
-        const_cast<char*>(absl::StripPrefix(uri->path(), "/").data()));
+        const_cast<char*>(
+            MaybeAddDefaultPort(absl::StripPrefix(uri->path(), "/")).data()));
     if (user_cred != nullptr) {
       /* Use base64 encoding for user credentials as stated in RFC 7617 */
       char* encoded_user_cred =
