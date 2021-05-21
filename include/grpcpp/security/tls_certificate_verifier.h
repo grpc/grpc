@@ -75,24 +75,23 @@ class TlsCustomVerificationCheckRequest {
 
 // The base class of all internal verifier implementations, and the ultimate
 // class that all external verifiers will eventually be transformed into.
-// - For gRPC users, please do not extend this class directly. Extends
-//   ExternalCertificateVerifier to implement customized verifiers.
-// - Though can't extend this class directly, users can use the existing
-//   implementation of its subclass(e.g. HostNameCertificateVerifier)
-//   to achieve composition, inside the Verify() and Cancel() function of the
-//   new custom verifier.
+// To implement a custom verifier, do not extend this class; instead,
+// implement a subclass of ExternalCertificateVerifier. Note that custom
+// verifier implementations can compose their functionality with existing
+// implementations of this interface, such as HostnameVerifier, by delegating
+// to an instance of that class.
 class CertificateVerifier {
  public:
-  CertificateVerifier(grpc_tls_certificate_verifier* v) : verifier_(v) {}
+  CertificateVerifier(grpc_tls_certificate_verifier* v) : verifier_(v) {
+    gpr_log(GPR_ERROR,
+            "inside CPP CertificateVerifier::CertificateVerifier() is called");
+  }
 
   ~CertificateVerifier();
 
   // Verifies a connection request, based on the logic specified in an internal
   // verifier. The check on each internal verifier could be either synchronous
   // or asynchronous, and we will need to use return value to know.
-  // One typical usage of this function is to compose external verifiers with
-  // internal verifiers. For example, users can compose their verifiers with a
-  // |HostNameCertificateVerifier|.
   //
   // request: the verification information associated with this request
   // callback: This will only take effect if the verifier is asynchronous.
@@ -145,6 +144,7 @@ class ExternalCertificateVerifier {
   // Subclass.
   template <typename Subclass, typename... Args>
   static std::shared_ptr<CertificateVerifier> Create(Args&&... args) {
+    gpr_log(GPR_ERROR, "inside CPP Create(Args&&... args) is called");
     auto* external_verifier = new Subclass(std::forward<Args>(args)...);
     return std::make_shared<CertificateVerifier>(
         grpc_tls_certificate_verifier_external_create(

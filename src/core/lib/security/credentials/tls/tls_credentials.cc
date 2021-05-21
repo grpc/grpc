@@ -45,11 +45,11 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
   // indicate callers are doing something wrong with the API.
   if (is_client && options->cert_request_type() !=
                        GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE) {
-    gpr_log(GPR_INFO,
+    gpr_log(GPR_ERROR,
             "Client's credentials options should not set cert_request_type.");
   }
   if (!is_client && options->verify_server_cert() != true) {
-    gpr_log(GPR_INFO,
+    gpr_log(GPR_ERROR,
             "Server's credentials options should not set verify_server_cert.");
   }
   // In the following conditions, there could be severe security issues.
@@ -57,7 +57,7 @@ bool CredentialOptionSanityCheck(grpc_tls_credentials_options* options,
     // If no verifier is specified on the client side, use the hostname verifier
     // as default. Users who want to bypass all the verifier check should
     // implement a dummy external verifier instead.
-    gpr_log(GPR_INFO,
+    gpr_log(GPR_ERROR,
             "No verifier specified on the client side. Using default hostname "
             "verifier");
     grpc_tls_certificate_verifier* hostname_verifier =

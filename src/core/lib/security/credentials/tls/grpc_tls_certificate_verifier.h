@@ -37,7 +37,8 @@
 struct grpc_tls_certificate_verifier
     : public grpc_core::RefCounted<grpc_tls_certificate_verifier> {
  public:
-  grpc_tls_certificate_verifier() = default;
+  /*grpc_tls_certificate_verifier() = default;*/
+  grpc_tls_certificate_verifier() : RefCounted("core cert verifier") {}
 
   virtual ~grpc_tls_certificate_verifier() = default;
   // Verifies the specific request. It can be processed in sync or async mode.
@@ -62,9 +63,12 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
  public:
   explicit ExternalCertificateVerifier(
       grpc_tls_certificate_verifier_external* external_verifier)
-      : external_verifier_(external_verifier) {}
+      : external_verifier_(external_verifier) {
+    gpr_log(GPR_ERROR, "inside Core ExternalCertificateVerifier() is called");
+  }
 
   ~ExternalCertificateVerifier() {
+    gpr_log(GPR_ERROR, "inside Core ~ExternalCertificateVerifier() is called");
     if (external_verifier_->destruct != nullptr) {
       external_verifier_->destruct(external_verifier_->user_data);
     }

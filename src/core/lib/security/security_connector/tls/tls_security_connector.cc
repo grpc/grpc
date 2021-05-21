@@ -262,6 +262,8 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
       overridden_target_name_(
           overridden_target_name == nullptr ? "" : overridden_target_name),
       ssl_session_cache_(ssl_session_cache) {
+  gpr_log(GPR_ERROR,
+          "TlsChannelSecurityConnector::TlsChannelSecurityConnector is called");
   if (ssl_session_cache_ != nullptr) {
     tsi_ssl_session_cache_ref(ssl_session_cache_);
   }
@@ -300,6 +302,9 @@ TlsChannelSecurityConnector::TlsChannelSecurityConnector(
 }
 
 TlsChannelSecurityConnector::~TlsChannelSecurityConnector() {
+  gpr_log(
+      GPR_ERROR,
+      "TlsChannelSecurityConnector::~TlsChannelSecurityConnector() is called");
   if (ssl_session_cache_ != nullptr) {
     tsi_ssl_session_cache_unref(ssl_session_cache_);
   }
@@ -345,6 +350,7 @@ void TlsChannelSecurityConnector::check_peer(
     tsi_peer peer, grpc_endpoint* /*ep*/,
     RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
+  gpr_log(GPR_ERROR, "inside TlsChannelSecurityConnector::check_peer");
   const char* target_name = overridden_target_name_.empty()
                                 ? target_name_.c_str()
                                 : overridden_target_name_.c_str();
@@ -364,6 +370,20 @@ void TlsChannelSecurityConnector::check_peer(
     pending_verifier_requests_.emplace(on_peer_checked, pending_request);
   }
   pending_request->Start();
+  gpr_log(GPR_ERROR, "out TlsChannelSecurityConnector::check_peer");
+  /*const char* target_name = overridden_target_name_.empty()
+                                ? target_name_.c_str()
+                                : overridden_target_name_.c_str();
+  grpc_error_handle error = grpc_ssl_check_alpn(&peer);
+  if (error != GRPC_ERROR_NONE) {
+    ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+    tsi_peer_destruct(&peer);
+    return;
+  }
+  *auth_context =
+      grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
+  tsi_peer_destruct(&peer);
+  ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);*/
 }
 
 void TlsChannelSecurityConnector::cancel_check_peer(
@@ -412,9 +432,10 @@ bool TlsChannelSecurityConnector::check_call_host(
     absl::string_view host, grpc_auth_context* auth_context,
     grpc_closure* /*on_call_host_checked*/, grpc_error_handle* error) {
   // Question: shall we apply the verifier logic here as well?
-  return grpc_ssl_check_call_host(host, target_name_.c_str(),
+  /*return grpc_ssl_check_call_host(host, target_name_.c_str(),
                                   overridden_target_name_.c_str(), auth_context,
-                                  error);
+                                  error);*/
+  return true;
 }
 
 void TlsChannelSecurityConnector::cancel_check_call_host(
@@ -477,9 +498,16 @@ TlsChannelSecurityConnector::ChannelPendingVerifierRequest::
 TlsChannelSecurityConnector::ChannelPendingVerifierRequest::
     ~ChannelPendingVerifierRequest() {
   PendingVerifierRequestDestroy(&request_);
+  gpr_log(GPR_ERROR,
+          "TlsChannelSecurityConnector::ChannelPendingVerifierRequest::~"
+          "ChannelPendingVerifierRequest() is called");
 }
 
 void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::Start() {
+  gpr_log(
+      GPR_ERROR,
+      "inside "
+      "TlsChannelSecurityConnector::ChannelPendingVerifierRequest::Start()");
   absl::Status sync_status;
   grpc_tls_certificate_verifier* verifier =
       security_connector_->options_->certificate_verifier();
@@ -491,10 +519,18 @@ void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::Start() {
   if (is_done) {
     OnVerifyDone(false, sync_status);
   }
+  gpr_log(
+      GPR_ERROR,
+      "out  "
+      "TlsChannelSecurityConnector::ChannelPendingVerifierRequest::Start()");
 }
 
 void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::OnVerifyDone(
     bool run_callback_inline, absl::Status status) {
+  gpr_log(GPR_ERROR,
+          "inside "
+          "TlsChannelSecurityConnector::ChannelPendingVerifierRequest::"
+          "OnVerifyDone");
   {
     MutexLock lock(&security_connector_->verifier_request_map_mu_);
     security_connector_->pending_verifier_requests_.erase(on_peer_checked_);
@@ -512,6 +548,10 @@ void TlsChannelSecurityConnector::ChannelPendingVerifierRequest::OnVerifyDone(
     ExecCtx::Run(DEBUG_LOCATION, on_peer_checked_, error);
   }
   delete this;
+  gpr_log(GPR_ERROR,
+          "out "
+          "TlsChannelSecurityConnector::ChannelPendingVerifierRequest::"
+          "OnVerifyDone");
 }
 
 // TODO(ZhenLian): implement the logic to signal waiting handshakers once
@@ -642,13 +682,19 @@ void TlsServerSecurityConnector::check_peer(
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  auto* pending_request =
-      new ServerPendingVerifierRequest(Ref(), on_peer_checked, peer);
-  {
-    MutexLock lock(&verifier_request_map_mu_);
-    pending_verifier_requests_.emplace(on_peer_checked, pending_request);
+  if (options_->certificate_verifier() != nullptr) {
+    auto* pending_request =
+        new ServerPendingVerifierRequest(Ref(), on_peer_checked, peer);
+    {
+      MutexLock lock(&verifier_request_map_mu_);
+      pending_verifier_requests_.emplace(on_peer_checked, pending_request);
+    }
+    pending_request->Start();
+  } else {
+    tsi_peer_destruct(&peer);
+    // ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
+    ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   }
-  pending_request->Start();
 }
 
 void TlsServerSecurityConnector::cancel_check_peer(
@@ -751,16 +797,24 @@ TlsServerSecurityConnector::ServerPendingVerifierRequest::
 }
 
 void TlsServerSecurityConnector::ServerPendingVerifierRequest::Start() {
+  gpr_log(
+      GPR_ERROR,
+      "inside TlsServerSecurityConnector::ServerPendingVerifierRequest::Start");
   absl::Status sync_status;
   grpc_tls_certificate_verifier* verifier =
       security_connector_->options_->certificate_verifier();
+  gpr_log(GPR_ERROR, "1");
   bool is_done = verifier->Verify(
       &request_,
       absl::bind_front(&ServerPendingVerifierRequest::OnVerifyDone, this, true),
       &sync_status);
+  gpr_log(GPR_ERROR, "2");
   if (is_done) {
     OnVerifyDone(false, sync_status);
   }
+  gpr_log(
+      GPR_ERROR,
+      "inside TlsServerSecurityConnector::ServerPendingVerifierRequest::Start");
 }
 
 void TlsServerSecurityConnector::ServerPendingVerifierRequest::OnVerifyDone(
