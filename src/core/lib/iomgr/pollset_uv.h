@@ -19,6 +19,8 @@
 #ifndef GRPC_CORE_LIB_IOMGR_POLLSET_UV_H
 #define GRPC_CORE_LIB_IOMGR_POLLSET_UV_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/error.h"
 
 extern int grpc_pollset_work_run_loop;
