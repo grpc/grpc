@@ -68,6 +68,7 @@ class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
       std::string cluster_name)
       : xds_certificate_provider_(std::move(xds_certificate_provider)),
         cluster_name_(std::move(cluster_name)) {}
+
   bool Verify(grpc_tls_custom_verification_check_request* request,
               std::function<void(absl::Status)>,
               absl::Status* sync_status) override {
@@ -79,12 +80,16 @@ class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
         !XdsVerifySubjectAlternativeNames(
             request->peer_info.san_names.ip_names,
             request->peer_info.san_names.ip_names_size,
+            xds_certificate_provider_->GetSanMatchers(cluster_name_)) &&
+        !XdsVerifySubjectAlternativeNames(
+            request->peer_info.san_names.dns_names,
+            request->peer_info.san_names.dns_names_size,
             xds_certificate_provider_->GetSanMatchers(cluster_name_))) {
       *sync_status = absl::Status(
           absl::StatusCode::kUnauthenticated,
           "SANs from certificate did not match SANs from xDS control plane");
     }
-    return false; /* synchronous check */
+    return true; /* synchronous check */
   }
   void Cancel(grpc_tls_custom_verification_check_request*) override {}
 
