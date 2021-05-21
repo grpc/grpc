@@ -2017,7 +2017,7 @@ grpc_compression_algorithm grpc_call_compression_for_level(
   return algo;
 }
 
-bool grpc_call_failed_before_recv_message(grpc_call* c) {
+bool grpc_call_failed_before_recv_message(const grpc_call* c) {
   return c->call_failed_before_recv_message;
 }
 
