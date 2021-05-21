@@ -631,13 +631,18 @@ void TlsServerSecurityConnector::check_peer(
   }
   *auth_context =
       grpc_ssl_peer_to_auth_context(&peer, GRPC_TLS_TRANSPORT_SECURITY_TYPE);
-  auto* pending_request =
-      new ServerPendingVerifierRequest(Ref(), on_peer_checked, peer);
-  {
-    MutexLock lock(&verifier_request_map_mu_);
-    pending_verifier_requests_.emplace(on_peer_checked, pending_request);
+  if (options_->certificate_verifier() != nullptr) {
+    auto* pending_request =
+        new ServerPendingVerifierRequest(Ref(), on_peer_checked, peer);
+    {
+      MutexLock lock(&verifier_request_map_mu_);
+      pending_verifier_requests_.emplace(on_peer_checked, pending_request);
+    }
+    pending_request->Start();
+  } else {
+    tsi_peer_destruct(&peer);
+    ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   }
-  pending_request->Start();
 }
 
 void TlsServerSecurityConnector::cancel_check_peer(
