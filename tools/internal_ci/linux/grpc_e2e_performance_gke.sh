@@ -73,6 +73,7 @@ go build -o bin/delete_prebuilt_workers tools/delete_prebuilt_workers/delete_pre
 popd
 
 # Build test configurations.
+# TODO: Remove regex filter when test no longer generates zombie pods.
 buildConfigs() {
     local pool="$1"
     local table="$2"
@@ -87,6 +88,7 @@ buildConfigs() {
         --prefix="${LOAD_TEST_PREFIX}" -u "${UNIQUE_IDENTIFIER}" -u "${pool}" \
         -a pool="${pool}" --category=scalable \
         --allow_client_language=c++ --allow_server_language=c++ \
+        -r '^(?!cpp_protobuf_async_streaming_from_server_qps_unconstrained_secure).' \
         -o "./loadtest_with_prebuilt_workers_${pool}.yaml"
 }
 
