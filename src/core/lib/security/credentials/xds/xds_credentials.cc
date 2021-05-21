@@ -66,30 +66,38 @@ class XdsCertificateVerifier : public grpc_tls_certificate_verifier {
   XdsCertificateVerifier(
       RefCountedPtr<XdsCertificateProvider> xds_certificate_provider,
       std::string cluster_name)
-      : xds_certificate_provider_(std::move(xds_certificate_provider)),
-        cluster_name_(std::move(cluster_name)) {}
+      : cluster_name_(std::move(cluster_name)) {
+    gpr_log(GPR_ERROR, "XdsCertificateVerifier ctor is called");
+    xds_matcher_ = xds_certificate_provider->GetSanMatchers(cluster_name_);
+  }
+
+  ~XdsCertificateVerifier() {
+    gpr_log(GPR_ERROR, "XdsCertificateVerifier dtor is called");
+  }
+
   bool Verify(grpc_tls_custom_verification_check_request* request,
               std::function<void(absl::Status)>,
               absl::Status* sync_status) override {
+    gpr_log(GPR_ERROR, "XdsCertificateVerifier::Verify: is called");
     GPR_ASSERT(request != nullptr);
     if (!XdsVerifySubjectAlternativeNames(
             request->peer_info.san_names.uri_names,
-            request->peer_info.san_names.uri_names_size,
-            xds_certificate_provider_->GetSanMatchers(cluster_name_)) &&
+            request->peer_info.san_names.uri_names_size, xds_matcher_) &&
         !XdsVerifySubjectAlternativeNames(
             request->peer_info.san_names.ip_names,
-            request->peer_info.san_names.ip_names_size,
-            xds_certificate_provider_->GetSanMatchers(cluster_name_))) {
+            request->peer_info.san_names.ip_names_size, xds_matcher_)) {
       *sync_status = absl::Status(
           absl::StatusCode::kUnauthenticated,
           "SANs from certificate did not match SANs from xDS control plane");
     }
-    return false; /* synchronous check */
+    gpr_log(GPR_ERROR, "XdsCertificateVerifier::Verify out");
+    return true; /* synchronous check */
   }
   void Cancel(grpc_tls_custom_verification_check_request*) override {}
 
  private:
-  RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;
+  /*RefCountedPtr<XdsCertificateProvider> xds_certificate_provider_;*/
+  std::vector<StringMatcher> xds_matcher_;
   std::string cluster_name_;
 };
 

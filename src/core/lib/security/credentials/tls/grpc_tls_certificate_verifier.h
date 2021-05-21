@@ -62,9 +62,12 @@ class ExternalCertificateVerifier : public grpc_tls_certificate_verifier {
  public:
   explicit ExternalCertificateVerifier(
       grpc_tls_certificate_verifier_external* external_verifier)
-      : external_verifier_(external_verifier) {}
+      : external_verifier_(external_verifier) {
+    gpr_log(GPR_ERROR, "inside Core ExternalCertificateVerifier() is called");
+  }
 
   ~ExternalCertificateVerifier() {
+    gpr_log(GPR_ERROR, "inside Core ~ExternalCertificateVerifier() is called");
     if (external_verifier_->destruct != nullptr) {
       external_verifier_->destruct(external_verifier_->user_data);
     }

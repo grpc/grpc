@@ -34,6 +34,8 @@ bool SyncCertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
   } else {
     *sync_status = grpc::Status(grpc::StatusCode::OK, "");
   }
+  gpr_log(GPR_ERROR,
+          "inside CPP SyncCertificateVerifier::Verify(): is_done: %d", true);
   return true;
 }
 

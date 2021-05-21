@@ -89,6 +89,8 @@ std::vector<std::string> TlsCustomVerificationCheckRequest::ip_names() const {
 }
 
 CertificateVerifier::~CertificateVerifier() {
+  gpr_log(GPR_ERROR,
+          "inside CPP CertificateVerifier::~CertificateVerifier() is called");
   grpc_tls_certificate_verifier_release(verifier_);
 }
 
@@ -106,6 +108,8 @@ bool CertificateVerifier::Verify(TlsCustomVerificationCheckRequest* request,
   bool is_done = grpc_tls_certificate_verifier_verify(
       verifier_, request->c_request(), &AsyncCheckDone, this, &status_code,
       &error_details);
+  gpr_log(GPR_ERROR, "inside CPP CertificateVerifier::Verify(): is_done: %d",
+          is_done);
   if (is_done) {
     if (status_code != GRPC_STATUS_OK) {
       *sync_status = grpc::Status(static_cast<grpc::StatusCode>(status_code),
@@ -148,6 +152,10 @@ void CertificateVerifier::AsyncCheckDone(
 }
 
 ExternalCertificateVerifier::ExternalCertificateVerifier() {
+  gpr_log(
+      GPR_ERROR,
+      "inside CPP ExternalCertificateVerifier::ExternalCertificateVerifier() "
+      "is called");
   base_ = new grpc_tls_certificate_verifier_external();
   base_->user_data = this;
   base_->verify = VerifyInCoreExternalVerifier;
@@ -155,7 +163,13 @@ ExternalCertificateVerifier::ExternalCertificateVerifier() {
   base_->destruct = DestructInCoreExternalVerifier;
 }
 
-ExternalCertificateVerifier::~ExternalCertificateVerifier() { delete base_; }
+ExternalCertificateVerifier::~ExternalCertificateVerifier() {
+  gpr_log(
+      GPR_ERROR,
+      "inside CPP ExternalCertificateVerifier::~ExternalCertificateVerifier() "
+      "is called");
+  delete base_;
+}
 
 int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
     void* user_data, grpc_tls_custom_verification_check_request* request,
@@ -192,6 +206,11 @@ int ExternalCertificateVerifier::VerifyInCoreExternalVerifier(
         }
       },
       &sync_current_verifier_status);
+  gpr_log(
+      GPR_ERROR,
+      "inside CPP ExternalCertificateVerifier::VerifyInCoreExternalVerifier(): "
+      "is_done: %d",
+      is_done);
   if (is_done) {
     if (!sync_current_verifier_status.ok()) {
       *sync_status = static_cast<grpc_status_code>(
@@ -223,6 +242,10 @@ void ExternalCertificateVerifier::CancelInCoreExternalVerifier(
 
 void ExternalCertificateVerifier::DestructInCoreExternalVerifier(
     void* user_data) {
+  gpr_log(GPR_ERROR,
+          "inside CPP "
+          "ExternalCertificateVerifier::DestructInCoreExternalVerifier() is "
+          "called");
   auto* self = static_cast<ExternalCertificateVerifier*>(user_data);
   delete self;
 }

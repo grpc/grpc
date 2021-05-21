@@ -83,7 +83,10 @@ class TlsCustomVerificationCheckRequest {
 //   new custom verifier.
 class CertificateVerifier {
  public:
-  CertificateVerifier(grpc_tls_certificate_verifier* v) : verifier_(v) {}
+  CertificateVerifier(grpc_tls_certificate_verifier* v) : verifier_(v) {
+    gpr_log(GPR_ERROR,
+            "inside CPP CertificateVerifier::CertificateVerifier() is called");
+  }
 
   ~CertificateVerifier();
 
@@ -145,6 +148,7 @@ class ExternalCertificateVerifier {
   // Subclass.
   template <typename Subclass, typename... Args>
   static std::shared_ptr<CertificateVerifier> Create(Args&&... args) {
+    gpr_log(GPR_ERROR, "inside CPP Create(Args&&... args) is called");
     auto* external_verifier = new Subclass(std::forward<Args>(args)...);
     return std::make_shared<CertificateVerifier>(
         grpc_tls_certificate_verifier_external_create(

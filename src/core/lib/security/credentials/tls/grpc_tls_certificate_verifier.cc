@@ -44,6 +44,9 @@ bool ExternalCertificateVerifier::Verify(
   bool is_done = external_verifier_->verify(external_verifier_->user_data,
                                             request, &OnVerifyDone, this,
                                             &status_code, &error_details);
+  gpr_log(GPR_ERROR,
+          "inside core ExternalCertificateVerifier::Verify(): is_done: %d",
+          is_done);
   if (is_done) {
     if (status_code != GRPC_STATUS_OK) {
       *sync_status = absl::Status(static_cast<absl::StatusCode>(status_code),
@@ -82,7 +85,7 @@ void ExternalCertificateVerifier::OnVerifyDone(
 
 bool HostNameCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
-    std::function<void(absl::Status)> callback, absl::Status* sync_status) {
+    std::function<void(absl::Status)>, absl::Status* sync_status) {
   GPR_ASSERT(request != nullptr);
   // Extract the target name, and remove its port.
   const char* target_name = request->target_name;
@@ -109,7 +112,7 @@ bool HostNameCertificateVerifier::Verify(
   char** dns_names = request->peer_info.san_names.dns_names;
   size_t dns_names_size = request->peer_info.san_names.dns_names_size;
   if (dns_names != nullptr && dns_names_size > 0) {
-    for (int i = 0; i < dns_names_size; ++i) {
+    for (size_t i = 0; i < dns_names_size; ++i) {
       const char* dns_name = dns_names[i];
       // We are using the target name sent from the client as a matcher to match
       // against identity name on the peer cert.
@@ -122,7 +125,7 @@ bool HostNameCertificateVerifier::Verify(
   char** ip_names = request->peer_info.san_names.ip_names;
   size_t ip_names_size = request->peer_info.san_names.ip_names_size;
   if (ip_names != nullptr && ip_names_size > 0) {
-    for (int i = 0; i < ip_names_size; ++i) {
+    for (size_t i = 0; i < ip_names_size; ++i) {
       const char* ip_name = ip_names[i];
       if (target_host == ip_name) {
         return true;  // synchronous check
@@ -167,6 +170,9 @@ int grpc_tls_certificate_verifier_verify(
       };
   absl::Status sync_status_cpp;
   bool is_done = verifier->Verify(request, async_cb, &sync_status_cpp);
+  gpr_log(GPR_ERROR,
+          "inside core int grpc_tls_certificate_verifier_verify(): is_done: %d",
+          is_done);
   if (is_done) {
     if (!sync_status_cpp.ok()) {
       *sync_status = static_cast<grpc_status_code>(sync_status_cpp.code());
@@ -186,6 +192,9 @@ void grpc_tls_certificate_verifier_cancel(
 
 grpc_tls_certificate_verifier* grpc_tls_certificate_verifier_external_create(
     grpc_tls_certificate_verifier_external* external_verifier) {
+  gpr_log(
+      GPR_ERROR,
+      "inside Core grpc_tls_certificate_verifier_external_create() is called");
   grpc_core::ExecCtx exec_ctx;
   return new grpc_core::ExternalCertificateVerifier(external_verifier);
 }
@@ -198,6 +207,8 @@ grpc_tls_certificate_verifier_host_name_create() {
 
 void grpc_tls_certificate_verifier_release(
     grpc_tls_certificate_verifier* verifier) {
+  gpr_log(GPR_ERROR,
+          "inside Core grpc_tls_certificate_verifier_release() is called");
   GRPC_API_TRACE("grpc_tls_certificate_verifier_release(verifier=%p)", 1,
                  (verifier));
   grpc_core::ExecCtx exec_ctx;
