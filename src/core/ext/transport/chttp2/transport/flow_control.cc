@@ -33,6 +33,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/ext/transport/chttp2/transport/internal.h"
+#include "src/core/ext/transport/chttp2/transport/stream_map.h"
 #include "src/core/lib/gpr/string.h"
 
 grpc_core::TraceFlag grpc_flowctl_trace(false, "flowctl");
@@ -46,6 +47,7 @@ TestOnlyTransportTargetWindowEstimatesMocker*
 namespace {
 
 static constexpr const int kTracePadding = 30;
+static constexpr const uint32_t kMinInitialWindowSize = 128;
 static constexpr const uint32_t kMaxWindowUpdateSize = (1u << 31) - 1;
 
 static char* fmt_int64_diff_str(int64_t old_val, int64_t new_val) {
@@ -174,7 +176,7 @@ TransportFlowControlDisabled::TransportFlowControlDisabled(
       kMaxWindow;
 }
 
-TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
+TransportFlowControl::TransportFlowControl(grpc_chttp2_transport* t,
                                            bool enable_bdp_probe)
     : t_(t),
       enable_bdp_probe_(enable_bdp_probe),
@@ -351,6 +353,33 @@ FlowControlAction::Urgency TransportFlowControl::DeltaUrgency(
   }
 }
 
+namespace {
+
+struct WindowDelta {
+  int64_t min = 0;
+  int64_t max = 0;
+};
+
+void StreamLocalWindowDeltaCallback(void* user_data, uint32_t /*key*/,
+                                    void* stream) {
+  WindowDelta* delta = static_cast<WindowDelta*>(user_data);
+  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(stream);
+  delta->min = GPR_MIN(delta->min, s->flow_control->local_window_delta());
+  delta->max = GPR_MAX(delta->max, s->flow_control->local_window_delta());
+}
+
+// Loops over all streams in the transport and returns WindowDelta where max has
+// the highest window delta from all the streams and min has the lowest window
+// delta. Min has a ceiling of 0, while max has a floor of 0.
+WindowDelta ComputeLocalWindowDeltaBoundaries(grpc_chttp2_transport* t) {
+  WindowDelta delta;
+  grpc_chttp2_stream_map_for_each(&t->stream_map,
+                                  StreamLocalWindowDeltaCallback, &delta);
+  return delta;
+}
+
+}  // namespace
+
 FlowControlAction TransportFlowControl::PeriodicUpdate() {
   FlowControlAction action;
   if (enable_bdp_probe_) {
@@ -365,10 +394,16 @@ FlowControlAction TransportFlowControl::PeriodicUpdate() {
                    ->ComputeNextTargetInitialWindowSizeFromPeriodicUpdate(
                        target_initial_window_size_ /* current target */);
     }
-    // Though initial window 'could' drop to 0, we keep the floor at 128
-    target_initial_window_size_ =
-        static_cast<int32_t> GPR_CLAMP(target, 128, INT32_MAX);
-
+    // Though initial window 'could' drop to 0, we keep the floor at a size such
+    // that the flow control window for any particular stream does not go
+    // negative. We also limit the initial window size such that the flow
+    // control window for any stream does not go beyond the spec max of 2^31-1.
+    WindowDelta delta = ComputeLocalWindowDeltaBoundaries(t_);
+    GPR_ASSERT(delta.min <= 0);
+    GPR_ASSERT(delta.max <= (kMaxWindowUpdateSize - kMinInitialWindowSize));
+    target_initial_window_size_ = static_cast<int32_t> GPR_MIN(
+        GPR_MAX(target, kMinInitialWindowSize - delta.min),
+        kMaxWindowUpdateSize - delta.max);
     action.set_send_initial_window_update(
         DeltaUrgency(target_initial_window_size_,
                      GRPC_CHTTP2_SETTINGS_INITIAL_WINDOW_SIZE),
