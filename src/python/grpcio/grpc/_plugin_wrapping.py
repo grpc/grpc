@@ -68,6 +68,7 @@ class _Plugin(object):
 
     def __init__(self, metadata_plugin):
         self._metadata_plugin = metadata_plugin
+        self._stored_ctx = None
 
         try:
             import contextvars  # pylint: disable=wrong-import-position
@@ -77,7 +78,7 @@ class _Plugin(object):
             self._stored_ctx = contextvars.copy_context()
         except ImportError:
             # Support versions predating contextvars.
-            self._stored_ctx = None
+            pass
 
     def __call__(self, service_url, method_name, callback):
         context = _AuthMetadataContext(_common.decode(service_url),
