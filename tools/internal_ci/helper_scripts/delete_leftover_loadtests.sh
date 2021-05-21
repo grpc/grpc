@@ -12,27 +12,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# BEGIN ignore errors.
-set +e
 
-# Find tests that have running pods and are in Errored state.
-kubectl get pods --no-headers | grep -v Completed | cut -f1 -d' ' \
-    | (while read f;  do echo $(kubectl get pod "$f" --no-headers -o jsonpath='{.metadata.ownerReferences[0].name}'); done) \
-    | (while read f; do state=$(kubectl get loadtest "$f" --no-headers -o  jsonpath='{.status.state}'); if [[ "${state}" == Errored ]]; then echo "$f"; fi; done) \
-    | sort > leftovertests.txt
+set -ex
 
-# List annotations of tests that have running pods and are in Errored state.
-# Expression is intended to work across versions of kubectl.
-cat leftovertests.txt \
-    | xargs -r kubectl get loadtest --no-headers \
-    | (while read -a words; do annotations=(
-        $(kubectl get loadtest "${words[0]}" --no-headers -o jsonpath='{.metadata.annotations.pool}{" "}{.metadata.annotations.scenario}{" "}{.metadata.annotations.uniquifier}')
-        ); echo "${words[1]} {\"pool\":\"${annotations[0]}\",\"scenario\":\"${annotations[1]}\",\"uniquifier\":\"${annotations[2]}\"}"; done) \
-    | sort
+echo "BEGIN Listing and deleting leftover tests."
 
-# END ignore errors.
-set -e
+# Find tests that have running pods and are in Errored state, and delete them.
+kubectl get pods --no-headers -o jsonpath='{range .items[*]}{.metadata.ownerReferences[0].name}{" "}{.status.phase}{"\n"}{end}' \
+    | grep Running \
+    | cut -f1 -d' ' \
+    | sort -u \
+    | xargs -r kubectl get loadtest --no-headers -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.state}{" "}{.metadata.annotations.pool}{" "}{.metadata.annotations.scenario}{"\n"}{end}' \
+    | grep Errored \
+    | tee leftovertests.txt \
+    | cut -f1 -d' ' \
+    | xargs -r kubectl delete loadtest
 
-# Delete tests that have running pods and are in Errored state.
-# This is a workaround for the accumulation of leftover tests.
-uniq leftovertests.txt | xargs -r kubectl delete loadtest
+cat leftovertests.txt
+
+echo "END Listing and deleting leftover tests."

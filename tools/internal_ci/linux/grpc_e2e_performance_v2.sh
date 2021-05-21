@@ -29,9 +29,6 @@ gcloud config set project grpc-testing
 gcloud container clusters get-credentials benchmarks-prod \
     --zone us-central1-b --project grpc-testing
 
-# List pods that may be left over from a previous run.
-kubectl get pods | grep -v Completed
-
 # List and delete tests that have running pods and are in errored state.
 source tools/internal_ci/helper_scripts/delete_leftover_loadtests.sh
 
