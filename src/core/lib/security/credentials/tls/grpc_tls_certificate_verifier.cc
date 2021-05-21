@@ -82,7 +82,7 @@ void ExternalCertificateVerifier::OnVerifyDone(
 
 bool HostNameCertificateVerifier::Verify(
     grpc_tls_custom_verification_check_request* request,
-    std::function<void(absl::Status)> callback, absl::Status* sync_status) {
+    std::function<void(absl::Status)>, absl::Status* sync_status) {
   GPR_ASSERT(request != nullptr);
   // Extract the target name, and remove its port.
   const char* target_name = request->target_name;
@@ -109,7 +109,7 @@ bool HostNameCertificateVerifier::Verify(
   char** dns_names = request->peer_info.san_names.dns_names;
   size_t dns_names_size = request->peer_info.san_names.dns_names_size;
   if (dns_names != nullptr && dns_names_size > 0) {
-    for (int i = 0; i < dns_names_size; ++i) {
+    for (size_t i = 0; i < dns_names_size; ++i) {
       const char* dns_name = dns_names[i];
       // We are using the target name sent from the client as a matcher to match
       // against identity name on the peer cert.
@@ -122,7 +122,7 @@ bool HostNameCertificateVerifier::Verify(
   char** ip_names = request->peer_info.san_names.ip_names;
   size_t ip_names_size = request->peer_info.san_names.ip_names_size;
   if (ip_names != nullptr && ip_names_size > 0) {
-    for (int i = 0; i < ip_names_size; ++i) {
+    for (size_t i = 0; i < ip_names_size; ++i) {
       const char* ip_name = ip_names[i];
       if (target_host == ip_name) {
         return true;  // synchronous check
