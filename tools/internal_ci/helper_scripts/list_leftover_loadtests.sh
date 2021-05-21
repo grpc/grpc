@@ -15,20 +15,14 @@
 
 set -ex
 
-echo "BEGIN Listing and deleting leftover tests."
+echo "BEGIN Listing leftover tests."
 
-# Find tests that have running pods and are in Errored state, and delete them.
+# Find tests that have running pods and are in Errored state.
 kubectl get pods --no-headers -o jsonpath='{range .items[*]}{.metadata.ownerReferences[0].name}{" "}{.status.phase}{"\n"}{end}' \
     | grep Running \
     | cut -f1 -d' ' \
     | sort -u \
     | xargs -r kubectl get loadtest --no-headers -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.state}{" "}{.metadata.annotations.pool}{" "}{.metadata.annotations.scenario}{"\n"}{end}' \
-    | grep Errored \
-    | tee leftovertests.txt \
-    | cut -f1 -d' ' \
-    | xargs -r kubectl delete loadtest
+    | grep Errored
 
-# Show collected information about deleted tests.
-cat leftovertests.txt
-
-echo "END Listing and deleting leftover tests."
+echo "END Listing leftover tests."
