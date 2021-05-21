@@ -2026,7 +2026,7 @@ bool grpc_call_is_trailers_only(const grpc_call* call) {
   return call->is_trailers_only;
 }
 
-bool grpc_call_failed_before_recv_message(grpc_call* c) {
+bool grpc_call_failed_before_recv_message(const grpc_call* c) {
   return c->call_failed_before_recv_message;
 }
 
