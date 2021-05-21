@@ -28,6 +28,7 @@ kubectl get pods --no-headers -o jsonpath='{range .items[*]}{.metadata.ownerRefe
     | cut -f1 -d' ' \
     | xargs -r kubectl delete loadtest
 
+# Show collected information about deleted tests.
 cat leftovertests.txt
 
 echo "END Listing and deleting leftover tests."
