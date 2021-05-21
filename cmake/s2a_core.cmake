@@ -12,9 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+set(S2A_CORE_ABSL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/abseil-cpp")
+set(S2A_CORE_SSL_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl-with-bazel")
 if(gRPC_S2A_CORE_PROVIDER STREQUAL "module")
   if(NOT S2A_CORE_ROOT_DIR)
-    set(S2A_CORE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/s2a_core)
+    set(S2A_CORE_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/s2a_core")
   endif()
   if(EXISTS "${S2A_CORE_ROOT_DIR}/CMakeLists.txt")
     include_directories("${S2A_CORE_ROOT_DIR}")
