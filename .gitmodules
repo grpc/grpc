@@ -49,6 +49,6 @@
 [submodule "third_party/opencensus-proto"]
 	path = third_party/opencensus-proto
 	url = https://github.com/census-instrumentation/opencensus-proto.git
-[submodule "third_party/s2a-core"]
+[submodule "third_party/s2a_core"]
 	path = third_party/s2a_core
 	url = https://github.com/google/s2a-core.git
