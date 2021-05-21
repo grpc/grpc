@@ -3288,6 +3288,6 @@ finally:
         if 'load_report_based_failover' in failed_tests:
             # TODO(b/181361235) Temporarily preserve resources after failure
             logger.info('Skipping clean up due to b/181361235')
-            return
-        logger.info('Cleaning up GCP resources. This may take some time.')
-        clean_up(gcp)
+        else:
+            logger.info('Cleaning up GCP resources. This may take some time.')
+            clean_up(gcp)
