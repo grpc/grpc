@@ -57,9 +57,9 @@ cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 
-@rem Install s2a-core
-mkdir third_party\s2a-core\cmake\build
-pushd third_party\s2a-core\cmake\build
+@rem Install s2a_core
+mkdir third_party\s2a_core\cmake\build
+pushd third_party\s2a_core\cmake\build
 cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
 cmake --build . --config Release --target install || goto :error
 popd

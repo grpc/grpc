@@ -12,21 +12,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# The CMakeLists.txt for re2 doesn't propagate include directories
-# transitively so `_gRPC_RE2_INCLUDE_DIR` should be set for gRPC
-# to find header files.
-
 if(gRPC_S2A_CORE_PROVIDER STREQUAL "module")
   if(NOT S2A_CORE_ROOT_DIR)
-    set(S2A_CORE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/s2a-core)
+    set(S2A_CORE_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/s2a_core)
   endif()
   if(EXISTS "${S2A_CORE_ROOT_DIR}/CMakeLists.txt")
     include_directories("${S2A_CORE_ROOT_DIR}")
-    add_subdirectory(${S2A_CORE_ROOT_DIR} third_party/s2a-core)
+    add_subdirectory(${S2A_CORE_ROOT_DIR} third_party/s2a_core)
 
     if(TARGET s2a_core)
       set(_gRPC_S2A_CORE_LIBRARIES s2a_core)
-      set(_gRPC_S2A_CORE_INCLUDE_DIR "${S2A_CORE_ROOT_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/third_party/s2a-core")
+      set(_gRPC_S2A_CORE_INCLUDE_DIR "${S2A_CORE_ROOT_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/third_party/s2a_core")
       if(gRPC_INSTALL AND _gRPC_INSTALL_SUPPORTED_FROM_MODULE)
         install(TARGETS s2a_core EXPORT gRPCTargets
           RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}

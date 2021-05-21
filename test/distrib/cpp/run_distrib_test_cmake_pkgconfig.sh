@@ -48,9 +48,9 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
 make -j4 install
 popd
 
-# Install s2a-core
-mkdir -p "third_party/s2a-core/cmake/build"
-pushd "third_party/s2a-core/cmake/build"
+# Install s2a_core
+mkdir -p "third_party/s2a_core/cmake/build"
+pushd "third_party/s2a_core/cmake/build"
 cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
 make -j4 install
 popd

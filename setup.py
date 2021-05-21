@@ -66,7 +66,7 @@ if 'linux' in sys.platform:
 if 'openbsd' in sys.platform:
     CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
 RE2_INCLUDE = (os.path.join('third_party', 're2'),)
-S2A_CORE_INCLUDE = (os.path.join('third_party', 's2a-core'),)
+S2A_CORE_INCLUDE = (os.path.join('third_party', 's2a_core'),)
 SSL_INCLUDE = (os.path.join('third_party', 'boringssl-with-bazel', 'src',
                             'include'),)
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
@@ -155,8 +155,8 @@ BUILD_WITH_SYSTEM_CARES = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_CARES',
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_RE2 = _env_bool_value('GRPC_PYTHON_BUILD_SYSTEM_RE2', 'False')
 
-# Export this variable to use the system installation of s2a-core. You need to
-# have the header files installed (in /usr/include/s2a-core) and during
+# Export this variable to use the system installation of s2a_core. You need to
+# have the header files installed (in /usr/include/s2a_core) and during
 # runtime, the shared library must be installed
 BUILD_WITH_SYSTEM_S2A_CORE = _env_bool_value(
     'GRPC_PYTHON_BUILD_SYSTEM_S2A_CORE', 'False')
@@ -304,9 +304,9 @@ if BUILD_WITH_SYSTEM_RE2:
     RE2_INCLUDE = (os.path.join('/usr', 'include', 're2'),)
 
 if BUILD_WITH_SYSTEM_S2A_CORE:
-    CORE_C_FILES = filter(lambda x: 'third_party/s2a-core' not in x,
+    CORE_C_FILES = filter(lambda x: 'third_party/s2a_core' not in x,
                           CORE_C_FILES)
-    S2A_CORE_INCLUDE = (os.path.join('/usr', 'include', 's2a-core'),)
+    S2A_CORE_INCLUDE = (os.path.join('/usr', 'include', 's2a_core'),)
 
 EXTENSION_INCLUDE_DIRECTORIES = ((PYTHON_STEM,) + CORE_INCLUDE + ABSL_INCLUDE +
                                  ADDRESS_SORTING_INCLUDE + CARES_INCLUDE +
@@ -338,7 +338,7 @@ if BUILD_WITH_SYSTEM_CARES:
 if BUILD_WITH_SYSTEM_RE2:
     EXTENSION_LIBRARIES += ('re2',)
 if BUILD_WITH_SYSTEM_S2A_CORE:
-    EXTENSION_LIBRARIES += ('s2a-core',)
+    EXTENSION_LIBRARIES += ('s2a_core',)
 
 DEFINE_MACROS = (('_WIN32_WINNT', 0x600),)
 asm_files = []

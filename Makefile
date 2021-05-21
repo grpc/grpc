@@ -371,7 +371,7 @@ CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
 endif
 CFLAGS += -g
-CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2 -Ithird_party/s2a-core -Ithird_party/upb -Isrc/core/ext/upb-generated -Isrc/core/ext/upbdefs-generated -Ithird_party/xxhash
+CPPFLAGS += -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/abseil-cpp -Ithird_party/re2 -Ithird_party/s2a_core -Ithird_party/upb -Isrc/core/ext/upb-generated -Isrc/core/ext/upbdefs-generated -Ithird_party/xxhash
 COREFLAGS += -fno-exceptions
 LDFLAGS += -g
 
@@ -590,7 +590,7 @@ RE2_DEP = $(LIBDIR)/$(CONFIG)/libre2.a
 RE2_MERGE_OBJS = $(LIBRE2_OBJS)
 RE2_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libre2.a
 
-# Setup s2a-core dependency
+# Setup s2a_core dependency
 
 S2A_CORE_DEP = $(LIBDIR)/$(CONFIG)/libs2a_core.a
 S2A_CORE_MERGE_OBJS = $(LIBS2A_CORE_OBJS)

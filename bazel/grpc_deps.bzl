@@ -152,7 +152,7 @@ def grpc_deps():
     )
 
     native.bind(
-        name = "s2a-core",
+        name = "s2a_core",
         actual = "@s2a_core//:s2a_core",
     )
 

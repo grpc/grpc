@@ -21,7 +21,7 @@ gen_build_yaml_dirs="  \
   src/benchmark        \
   src/proto            \
   src/re2              \
-  src/s2a-core         \
+  src/s2a_core         \
   src/upb              \
   src/zlib             \
   src/c-ares           \

@@ -78,7 +78,7 @@ set_property(CACHE gRPC_CARES_PROVIDER PROPERTY STRINGS "module" "package")
 set(gRPC_RE2_PROVIDER "module" CACHE STRING "Provider of re2 library")
 set_property(CACHE gRPC_RE2_PROVIDER PROPERTY STRINGS "module" "package")
 
-set(gRPC_S2A_CORE_PROVIDER "module" CACHE STRING "Provider of s2a-core library")
+set(gRPC_S2A_CORE_PROVIDER "module" CACHE STRING "Provider of s2a_core library")
 set_property(CACHE gRPC_S2A_CORE_PROVIDER PROPERTY STRINGS "module" "package")
 
 set(gRPC_SSL_PROVIDER "module" CACHE STRING "Provider of ssl library")
@@ -257,7 +257,7 @@ include(cmake/benchmark.cmake)
 include(cmake/cares.cmake)
 include(cmake/protobuf.cmake)
 include(cmake/re2.cmake)
-include(cmake/s2a-core.cmake)
+include(cmake/s2a_core.cmake)
 include(cmake/ssl.cmake)
 include(cmake/upb.cmake)
 include(cmake/xxhash.cmake)
@@ -3807,70 +3807,6 @@ if(gRPC_INSTALL AND NOT gRPC_USE_PROTO_LITE)
     ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
   )
 endif()
-
-endif()
-if(gRPC_BUILD_TESTS)
-
-add_library(s2a_core
-  third_party/s2a-core/src/crypto/aes_gcm_crypter.cc
-  third_party/s2a-core/src/crypto/chacha_poly_crypter_boringssl.cc
-  third_party/s2a-core/src/crypto/chacha_poly_crypter_openssl.cc
-  third_party/s2a-core/src/crypto/hkdf.cc
-  third_party/s2a-core/src/crypto/s2a_aead_crypter.cc
-  third_party/s2a-core/src/crypto/s2a_aead_crypter_test_util.cc
-  third_party/s2a-core/src/crypto/s2a_aead_crypter_util.cc
-  third_party/s2a-core/src/frame_protector/s2a_frame_protector.cc
-  third_party/s2a-core/src/handshaker/s2a_context.cc
-  third_party/s2a-core/src/handshaker/s2a_proxy.cc
-  third_party/s2a-core/src/handshaker/s2a_proxy_test_util.cc
-  third_party/s2a-core/src/handshaker/s2a_util.cc
-  third_party/s2a-core/src/options/s2a_options.cc
-  third_party/s2a-core/src/proto/upb-generated/proto/common.upb.c
-  third_party/s2a-core/src/proto/upb-generated/proto/s2a.upb.c
-  third_party/s2a-core/src/proto/upb-generated/proto/s2a_context.upb.c
-  third_party/s2a-core/src/record_protocol/handshake_message_handler.cc
-  third_party/s2a-core/src/record_protocol/s2a_crypter.cc
-  third_party/s2a-core/src/record_protocol/s2a_crypter_util.cc
-  third_party/s2a-core/src/record_protocol/s2a_half_connection.cc
-  third_party/s2a-core/src/record_protocol/s2a_upb_ticket_sender.cc
-  third_party/s2a-core/src/token_manager/fake_access_token_manager.cc
-  third_party/s2a-core/src/token_manager/single_token_access_token_manager.cc
-)
-
-set_target_properties(s2a_core PROPERTIES
-  VERSION ${gRPC_CORE_VERSION}
-  SOVERSION ${gRPC_CORE_SOVERSION}
-)
-
-if(WIN32 AND MSVC)
-  set_target_properties(s2a_core PROPERTIES COMPILE_PDB_NAME "s2a_core"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  )
-  if(gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/s2a_core.pdb
-      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
-    )
-  endif()
-endif()
-
-target_include_directories(s2a_core
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-    ${_gRPC_RE2_INCLUDE_DIR}
-    ${_gRPC_SSL_INCLUDE_DIR}
-    ${_gRPC_UPB_GENERATED_DIR}
-    ${_gRPC_UPB_GRPC_GENERATED_DIR}
-    ${_gRPC_UPB_INCLUDE_DIR}
-    ${_gRPC_XXHASH_INCLUDE_DIR}
-    ${_gRPC_ZLIB_INCLUDE_DIR}
-    third_party/abseil-cpp
-)
-target_link_libraries(s2a_core
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-)
-
 
 endif()
 
