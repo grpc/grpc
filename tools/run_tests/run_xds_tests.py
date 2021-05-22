@@ -3059,6 +3059,7 @@ try:
 
     wait_for_healthy_backends(gcp, backend_service, instance_group)
 
+    failed_tests = []
     if args.test_case:
         client_env = dict(os.environ)
         if original_grpc_trace:
@@ -3091,7 +3092,6 @@ try:
         client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
         client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
         test_results = {}
-        failed_tests = []
         for test_case in args.test_case:
             if test_case in _V3_TEST_CASES and not args.xds_v3_support:
                 logger.info('skipping test %s due to missing v3 support',
@@ -3182,9 +3182,15 @@ try:
                     test_gentle_failover(gcp, backend_service, instance_group,
                                          secondary_zone_instance_group)
                 elif test_case == 'load_report_based_failover':
-                    test_load_report_based_failover(
-                        gcp, backend_service, instance_group,
-                        secondary_zone_instance_group)
+                    try:
+                        test_load_report_based_failover(
+                            gcp, backend_service, instance_group,
+                            secondary_zone_instance_group)
+                    except:
+                        # TODO(b/181361235) Temporarily preserve resources after
+                        # failure
+                        logger.info('Aborting test suite (b/181361235)')
+                        sys.exit(1)
                 elif test_case == 'ping_pong':
                     test_ping_pong(gcp, backend_service, instance_group)
                 elif test_case == 'remove_instance_group':
@@ -3279,5 +3285,9 @@ try:
             sys.exit(1)
 finally:
     if not args.keep_gcp_resources:
-        logger.info('Cleaning up GCP resources. This may take some time.')
-        clean_up(gcp)
+        if 'load_report_based_failover' in failed_tests:
+            # TODO(b/181361235) Temporarily preserve resources after failure
+            logger.info('Skipping clean up due to b/181361235')
+        else:
+            logger.info('Cleaning up GCP resources. This may take some time.')
+            clean_up(gcp)
