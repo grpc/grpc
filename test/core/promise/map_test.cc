@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#include "src/core/lib/promise/promise.h"
 #include <gtest/gtest.h>
+#include "src/core/lib/promise/promise.h"
 
 namespace grpc_core {
 

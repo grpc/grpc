@@ -123,6 +123,15 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "visitor_test",
+    srcs = ["visitor_test.cc"],
+    language = "c++",
+    uses_polling = False,
+    deps = ["//:promise"],
+    external_deps = ["gtest"],
+)
+
+grpc_cc_test(
     name = "while_test",
     srcs = ["while_test.cc"],
     language = "c++",
