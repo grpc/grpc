@@ -3190,7 +3190,7 @@ try:
                     except:
                         # TODO(b/181361235) Temporarily preserve resources after
                         # failure
-                        logger.info('Aborting test suite (b/181361235)')
+                        logger.exception('Aborting test suite (b/181361235)')
                         skip_cleanup_to_debug_failure = True
                         sys.exit(1)
                 elif test_case == 'ping_pong':
