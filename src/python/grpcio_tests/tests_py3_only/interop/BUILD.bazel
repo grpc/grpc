@@ -8,6 +8,7 @@ py_binary(
         "//src/proto/grpc/testing:py_test_proto",
         "//src/proto/grpc/testing:test_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_admin/grpc_admin",
         "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
     ],
 )
