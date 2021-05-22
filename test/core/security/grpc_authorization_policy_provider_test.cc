@@ -39,11 +39,11 @@ TEST(AuthorizationPolicyProviderTest, StaticDataInitializationSuccessful) {
   auto* allow_engine =
       dynamic_cast<GrpcAuthorizationEngine*>((*provider)->allow_engine().get());
   ASSERT_NE(allow_engine, nullptr);
-  EXPECT_EQ(allow_engine->GetAction(), Rbac::Action::kAllow);
+  EXPECT_EQ(allow_engine->action(), Rbac::Action::kAllow);
   auto* deny_engine =
       dynamic_cast<GrpcAuthorizationEngine*>((*provider)->deny_engine().get());
   ASSERT_NE(deny_engine, nullptr);
-  EXPECT_EQ(deny_engine->GetAction(), Rbac::Action::kDeny);
+  EXPECT_EQ(deny_engine->action(), Rbac::Action::kDeny);
 }
 
 TEST(AuthorizationPolicyProviderTest,

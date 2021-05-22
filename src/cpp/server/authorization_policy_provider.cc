@@ -33,8 +33,7 @@ StaticDataAuthorizationPolicyProvider::Create(const std::string& authz_policy,
     return nullptr;
   }
   *status = grpc::Status();
-  return std::shared_ptr<StaticDataAuthorizationPolicyProvider>(
-      new StaticDataAuthorizationPolicyProvider(provider));
+  return std::make_shared<StaticDataAuthorizationPolicyProvider>(provider);
 }
 
 StaticDataAuthorizationPolicyProvider::

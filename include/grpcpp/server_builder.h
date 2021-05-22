@@ -256,12 +256,6 @@ class ServerBuilder {
   /// doc/workarounds.md.
   ServerBuilder& EnableWorkaround(grpc_workaround_list id);
 
-  /// Sets server authorization policy provider in
-  /// GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER channel argument.
-  void SetAuthorizationPolicyProvider(
-      std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
-          provider);
-
   /// NOTE: class experimental_type is not part of the public API of this class.
   /// TODO(yashykt): Integrate into public API when this is no longer
   /// experimental.
@@ -301,6 +295,12 @@ class ServerBuilder {
     std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
     AddExternalConnectionAcceptor(ExternalConnectionType type,
                                   std::shared_ptr<ServerCredentials> creds);
+
+    /// Sets server authorization policy provider in
+    /// GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER channel argument.
+    void SetAuthorizationPolicyProvider(
+        std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+            provider);
 
    private:
     ServerBuilder* builder_;

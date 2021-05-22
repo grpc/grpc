@@ -41,6 +41,10 @@ class StaticDataAuthorizationPolicyProvider
   static std::shared_ptr<StaticDataAuthorizationPolicyProvider> Create(
       const std::string& authz_policy, grpc::Status* status);
 
+  explicit StaticDataAuthorizationPolicyProvider(
+      grpc_authorization_policy_provider* provider)
+      : c_provider_(provider) {}
+
   ~StaticDataAuthorizationPolicyProvider() override;
 
   grpc_authorization_policy_provider* c_provider() override {
@@ -48,10 +52,6 @@ class StaticDataAuthorizationPolicyProvider
   }
 
  private:
-  explicit StaticDataAuthorizationPolicyProvider(
-      grpc_authorization_policy_provider* provider)
-      : c_provider_(provider) {}
-
   grpc_authorization_policy_provider* c_provider_ = nullptr;
 };
 

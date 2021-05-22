@@ -149,6 +149,12 @@ ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
   return builder_->acceptors_.back()->GetAcceptor();
 }
 
+void ServerBuilder::experimental_type::SetAuthorizationPolicyProvider(
+    std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+        provider) {
+  builder_->authorization_provider_ = std::move(provider);
+}
+
 ServerBuilder& ServerBuilder::SetOption(
     std::unique_ptr<ServerBuilderOption> option) {
   options_.push_back(std::move(option));
@@ -455,12 +461,6 @@ ServerBuilder& ServerBuilder::EnableWorkaround(grpc_workaround_list id) {
       gpr_log(GPR_ERROR, "Workaround %u does not exist or is obsolete.", id);
       return *this;
   }
-}
-
-void ServerBuilder::SetAuthorizationPolicyProvider(
-    std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
-        provider) {
-  authorization_provider_ = provider;
 }
 
 }  // namespace grpc

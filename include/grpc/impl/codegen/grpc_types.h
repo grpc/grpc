@@ -428,6 +428,10 @@ typedef struct {
 #define GRPC_ARG_CHANNEL_POOL_DOMAIN "grpc.channel_pooling_domain"
 /** gRPC Objective-C channel pooling id. */
 #define GRPC_ARG_CHANNEL_ID "grpc.channel_id"
+/** Channel argument for grpc_authorization_policy_provider. If present, enables
+    gRPC authorization check. */
+#define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER \
+  "grpc.authorization_policy_provider"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a
@@ -502,11 +506,6 @@ typedef enum grpc_call_error {
 #define GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET (0x00000080u)
 /** Signal that the initial metadata should be corked */
 #define GRPC_INITIAL_METADATA_CORKED (0x00000100u)
-
-/** Channel argument for grpc_authorization_policy_provider. If present, enables
-    gRPC authorization check. */
-#define GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER \
-  "grpc.authorization_policy_provider"
 
 /** Mask of all valid flags */
 #define GRPC_INITIAL_METADATA_USED_MASK                  \
