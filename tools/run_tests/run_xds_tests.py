@@ -2969,6 +2969,7 @@ else:
         alpha_compute = googleapiclient.discovery.build('compute', 'alpha')
 
 try:
+    skip_cleanup_to_debug_failure = False
     gcp = GcpState(compute, alpha_compute, args.project_id, args.project_num)
     gcp_suffix = args.gcp_suffix
     health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
@@ -3060,7 +3061,6 @@ try:
     wait_for_healthy_backends(gcp, backend_service, instance_group)
 
     failed_tests = []
-    skip_cleanup_to_debug_failure = False
     if args.test_case:
         client_env = dict(os.environ)
         if original_grpc_trace:
