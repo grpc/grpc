@@ -724,27 +724,23 @@ def test_load_report_based_failover(gcp, backend_service,
                                     primary_instance_group,
                                     secondary_instance_group):
     logger.info('Running test_load_report_based_failover')
-    patch_backend_service(
-        gcp, backend_service,
-        [primary_instance_group, secondary_instance_group])
+    patch_backend_service(gcp, backend_service,
+                          [primary_instance_group, secondary_instance_group])
     primary_instance_names = get_instance_names(gcp, primary_instance_group)
-    secondary_instance_names = get_instance_names(gcp,
-                                                  secondary_instance_group)
+    secondary_instance_names = get_instance_names(gcp, secondary_instance_group)
     wait_for_healthy_backends(gcp, backend_service, primary_instance_group)
-    wait_for_healthy_backends(gcp, backend_service,
-                              secondary_instance_group)
+    wait_for_healthy_backends(gcp, backend_service, secondary_instance_group)
     wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
                                              _WAIT_FOR_STATS_SEC)
     # Set primary locality's balance mode to RATE, and RPS to 20% of the
     # client's QPS. The secondary locality will be used.
     max_rate = int(args.qps * 1 / 5)
-    logger.info('Patching backend service to RATE with %d max_rate',
-                max_rate)
-    patch_backend_service(
-        gcp,
-        backend_service, [primary_instance_group, secondary_instance_group],
-        balancing_mode='RATE',
-        max_rate=max_rate)
+    logger.info('Patching backend service to RATE with %d max_rate', max_rate)
+    patch_backend_service(gcp,
+                          backend_service,
+                          [primary_instance_group, secondary_instance_group],
+                          balancing_mode='RATE',
+                          max_rate=max_rate)
     wait_until_all_rpcs_go_to_given_backends(
         primary_instance_names + secondary_instance_names,
         _WAIT_FOR_BACKEND_SEC)
@@ -752,17 +748,16 @@ def test_load_report_based_failover(gcp, backend_service,
     # Set primary locality's balance mode to RATE, and RPS to 120% of the
     # client's QPS. Only the primary locality will be used.
     max_rate = int(args.qps * 6 / 5)
-    logger.info('Patching backend service to RATE with %d max_rate',
-                max_rate)
-    patch_backend_service(
-        gcp,
-        backend_service, [primary_instance_group, secondary_instance_group],
-        balancing_mode='RATE',
-        max_rate=max_rate)
+    logger.info('Patching backend service to RATE with %d max_rate', max_rate)
+    patch_backend_service(gcp,
+                          backend_service,
+                          [primary_instance_group, secondary_instance_group],
+                          balancing_mode='RATE',
+                          max_rate=max_rate)
     wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
                                              _WAIT_FOR_BACKEND_SEC)
     logger.info("success")
-    
+
     # TODO(b/181361235) Move cleanup to a finally block once failure has been
     # reproduced.
     patch_backend_service(gcp, backend_service, [primary_instance_group])
@@ -3283,9 +3278,8 @@ finally:
     if not os.path.exists(_TEST_LOG_BASE_DIR):
         os.makedirs(_TEST_LOG_BASE_DIR)
     report_utils.render_junit_xml_report(test_results,
-                                         os.path.join(
-                                             _TEST_LOG_BASE_DIR,
-                                             _SPONGE_XML_NAME),
+                                         os.path.join(_TEST_LOG_BASE_DIR,
+                                                      _SPONGE_XML_NAME),
                                          suite_name='xds_tests',
                                          multi_target=True)
     if not args.keep_gcp_resources:
