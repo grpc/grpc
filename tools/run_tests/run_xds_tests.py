@@ -3060,6 +3060,7 @@ try:
     wait_for_healthy_backends(gcp, backend_service, instance_group)
 
     failed_tests = []
+    skip_cleanup_to_debug_failure = False
     if args.test_case:
         client_env = dict(os.environ)
         if original_grpc_trace:
@@ -3189,7 +3190,8 @@ try:
                     except:
                         # TODO(b/181361235) Temporarily preserve resources after
                         # failure
-                        logger.info('Aborting test suite (b/181361235)')
+                        logger.exception('Aborting test suite (b/181361235)')
+                        skip_cleanup_to_debug_failure = True
                         sys.exit(1)
                 elif test_case == 'ping_pong':
                     test_ping_pong(gcp, backend_service, instance_group)
@@ -3285,7 +3287,7 @@ try:
             sys.exit(1)
 finally:
     if not args.keep_gcp_resources:
-        if 'load_report_based_failover' in failed_tests:
+        if skip_cleanup_to_debug_failure:
             # TODO(b/181361235) Temporarily preserve resources after failure
             logger.info('Skipping clean up due to b/181361235')
         else:
