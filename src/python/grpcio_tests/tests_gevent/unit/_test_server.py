@@ -18,13 +18,16 @@ import grpc
 import gevent
 from typing import Any, Tuple
 
-UNARY_CALL_WITH_SLEEP_VALUE = 0.2
+LONG_UNARY_CALL_WITH_SLEEP_VALUE = 1
 
 
 class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 
+    def UnaryCall(self, request, context):
+        return messages_pb2.SimpleResponse()
+
     def UnaryCallWithSleep(self, unused_request, unused_context):
-        gevent.sleep(UNARY_CALL_WITH_SLEEP_VALUE)
+        gevent.sleep(LONG_UNARY_CALL_WITH_SLEEP_VALUE)
         return messages_pb2.SimpleResponse()
 
 
