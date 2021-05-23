@@ -1394,6 +1394,7 @@
         'grpc',
       ],
       'sources': [
+        'src/core/lib/security/authorization/authorization_policy_provider_vtable.cc',
         'src/cpp/client/channel_cc.cc',
         'src/cpp/client/client_callback.cc',
         'src/cpp/client/client_context.cc',
@@ -1527,6 +1528,7 @@
         'grpc_unsecure',
       ],
       'sources': [
+        'src/core/lib/security/authorization/authorization_policy_provider_vtable.cc',
         'src/cpp/client/channel_cc.cc',
         'src/cpp/client/client_callback.cc',
         'src/cpp/client/client_context.cc',

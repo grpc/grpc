@@ -260,8 +260,9 @@ ChannelArguments ServerBuilder::BuildChannelArgs() {
     plugin->UpdateChannelArguments(&args);
   }
   if (authorization_provider_ != nullptr) {
-    args.SetPointer(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
-                    authorization_provider_->c_provider());
+    args.SetPointerWithVtable(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
+                              authorization_provider_->c_provider(),
+                              grpc_authorization_policy_provider_arg_vtable());
   }
   return args;
 }

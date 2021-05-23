@@ -107,6 +107,7 @@ grpc_channelz_get_server_sockets_type grpc_channelz_get_server_sockets_import;
 grpc_channelz_get_channel_type grpc_channelz_get_channel_import;
 grpc_channelz_get_subchannel_type grpc_channelz_get_subchannel_import;
 grpc_channelz_get_socket_type grpc_channelz_get_socket_import;
+grpc_authorization_policy_provider_arg_vtable_type grpc_authorization_policy_provider_arg_vtable_import;
 grpc_insecure_channel_create_from_fd_type grpc_insecure_channel_create_from_fd_import;
 grpc_server_add_insecure_channel_from_fd_type grpc_server_add_insecure_channel_from_fd_import;
 grpc_auth_property_iterator_next_type grpc_auth_property_iterator_next_import;
@@ -394,6 +395,7 @@ void grpc_rb_load_imports(HMODULE library) {
   grpc_channelz_get_channel_import = (grpc_channelz_get_channel_type) GetProcAddress(library, "grpc_channelz_get_channel");
   grpc_channelz_get_subchannel_import = (grpc_channelz_get_subchannel_type) GetProcAddress(library, "grpc_channelz_get_subchannel");
   grpc_channelz_get_socket_import = (grpc_channelz_get_socket_type) GetProcAddress(library, "grpc_channelz_get_socket");
+  grpc_authorization_policy_provider_arg_vtable_import = (grpc_authorization_policy_provider_arg_vtable_type) GetProcAddress(library, "grpc_authorization_policy_provider_arg_vtable");
   grpc_insecure_channel_create_from_fd_import = (grpc_insecure_channel_create_from_fd_type) GetProcAddress(library, "grpc_insecure_channel_create_from_fd");
   grpc_server_add_insecure_channel_from_fd_import = (grpc_server_add_insecure_channel_from_fd_type) GetProcAddress(library, "grpc_server_add_insecure_channel_from_fd");
   grpc_auth_property_iterator_next_import = (grpc_auth_property_iterator_next_type) GetProcAddress(library, "grpc_auth_property_iterator_next");

@@ -21,18 +21,8 @@
 
 #include "absl/status/statusor.h"
 
-#include "src/core/lib/gprpp/dual_ref_counted.h"
-#include "src/core/lib/security/authorization/authorization_engine.h"
+#include "src/core/lib/security/authorization/authorization_policy_provider.h"
 #include "src/core/lib/security/authorization/rbac_translator.h"
-
-struct grpc_authorization_policy_provider
-    : public grpc_core::DualRefCounted<grpc_authorization_policy_provider> {
- public:
-  virtual grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine>
-  allow_engine() const = 0;
-  virtual grpc_core::RefCountedPtr<grpc_core::AuthorizationEngine> deny_engine()
-      const = 0;
-};
 
 namespace grpc_core {
 

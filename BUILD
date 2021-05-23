@@ -2062,9 +2062,35 @@ grpc_cc_library(
     ],
 )
 
-# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
 grpc_cc_library(
     name = "grpc_rbac_engine",
+    hdrs = [
+        "src/core/lib/security/authorization/authorization_engine.h",
+        "src/core/lib/security/authorization/evaluate_args.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_authorization_provider",
+    srcs = [
+        "src/core/lib/security/authorization/authorization_policy_provider_vtable.cc",
+    ],
+    hdrs = [
+        "src/core/lib/security/authorization/authorization_policy_provider.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_rbac_engine",
+    ],
+)
+
+# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+grpc_cc_library(
+    name = "grpc_rbac_engine_impl",
     srcs = [
         "src/core/lib/security/authorization/evaluate_args.cc",
         "src/core/lib/security/authorization/grpc_authorization_engine.cc",
@@ -2072,8 +2098,6 @@ grpc_cc_library(
         "src/core/lib/security/authorization/rbac_policy.cc",
     ],
     hdrs = [
-        "src/core/lib/security/authorization/authorization_engine.h",
-        "src/core/lib/security/authorization/evaluate_args.h",
         "src/core/lib/security/authorization/grpc_authorization_engine.h",
         "src/core/lib/security/authorization/matchers.h",
         "src/core/lib/security/authorization/rbac_policy.h",
@@ -2082,13 +2106,14 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_matchers",
+        "grpc_rbac_engine",
         "grpc_secure",
     ],
 )
 
 # This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
 grpc_cc_library(
-    name = "grpc_authorization_provider",
+    name = "grpc_authorization_provider_impl",
     srcs = [
         "src/core/lib/security/authorization/grpc_authorization_policy_provider.cc",
         "src/core/lib/security/authorization/rbac_translator.cc",
@@ -2099,10 +2124,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "grpc_rbac_engine",
+        "grpc_authorization_provider",
+        "grpc_rbac_engine_impl",
     ],
 )
 
+# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
 grpc_cc_library(
     name = "grpc++_authorization_provider",
     srcs = [
@@ -2112,7 +2139,7 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     deps = [
         "grpc++_codegen_base",
-        "grpc_authorization_provider",
+        "grpc_authorization_provider_impl",
     ],
 )
 
@@ -2460,8 +2487,8 @@ grpc_cc_library(
         "grpc",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
+        "grpc_authorization_provider",
         "grpc_health_upb",
-        "grpc++_authorization_provider",
     ],
 )
 
@@ -2478,9 +2505,9 @@ grpc_cc_library(
     deps = [
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
+        "grpc_authorization_provider",
         "grpc_health_upb",
         "grpc_unsecure",
-        "grpc++_authorization_provider",
     ],
 )
 
