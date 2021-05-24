@@ -71,13 +71,16 @@ class XdsClusterResolverLbConfig : public LoadBalancingPolicy::Config {
     };
     DiscoveryMechanismType type;
     std::string eds_service_name;
+    std::string dns_hostname;
 
     bool operator==(const DiscoveryMechanism& other) const {
       return (cluster_name == other.cluster_name &&
               lrs_load_reporting_server_name ==
                   other.lrs_load_reporting_server_name &&
               max_concurrent_requests == other.max_concurrent_requests &&
-              type == other.type && eds_service_name == other.eds_service_name);
+              type == other.type &&
+              eds_service_name == other.eds_service_name &&
+              dns_hostname == other.dns_hostname);
     }
   };
 
@@ -130,17 +133,6 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
     void Orphan() override = 0;
     virtual Json::Array override_child_policy() = 0;
     virtual bool disable_reresolution() = 0;
-
-    // Caller must ensure that config_ is set before calling.
-    absl::string_view GetXdsClusterResolverResourceName() const {
-      if (!parent_->is_xds_uri_) return parent_->server_name_;
-      if (!parent_->config_->discovery_mechanisms()[index_]
-               .eds_service_name.empty()) {
-        return parent_->config_->discovery_mechanisms()[index_]
-            .eds_service_name;
-      }
-      return parent_->config_->discovery_mechanisms()[index_].cluster_name;
-    }
 
     // Returns a pair containing the cluster and eds_service_name
     // to use for LRS load reporting. Caller must ensure that config_ is set
@@ -218,6 +210,18 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
       RefCountedPtr<EdsDiscoveryMechanism> discovery_mechanism_;
     };
 
+    absl::string_view GetEdsResourceName() const {
+      if (!parent()->is_xds_uri_) return parent()->server_name_;
+      if (!parent()
+               ->config_->discovery_mechanisms()[index()]
+               .eds_service_name.empty()) {
+        return parent()
+            ->config_->discovery_mechanisms()[index()]
+            .eds_service_name;
+      }
+      return parent()->config_->discovery_mechanisms()[index()].cluster_name;
+    }
+
     // Note that this is not owned, so this pointer must never be dereferenced.
     EndpointWatcher* watcher_ = nullptr;
   };
@@ -255,9 +259,11 @@ class XdsClusterResolverLb : public LoadBalancingPolicy {
      private:
       RefCountedPtr<LogicalDNSDiscoveryMechanism> discovery_mechanism_;
     };
-    // This is only necessary because of a bug in msvc where nested class cannot
+
+    // This is necessary only because of a bug in msvc where nested class cannot
     // access protected member in base class.
     friend class ResolverResultHandler;
+
     OrphanablePtr<Resolver> resolver_;
   };
 
@@ -389,13 +395,12 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Start() {
     gpr_log(GPR_INFO,
             "[xds_cluster_resolver_lb %p] eds discovery mechanism %" PRIuPTR
             ":%p starting xds watch for %s",
-            parent(), index(), this,
-            std::string(GetXdsClusterResolverResourceName()).c_str());
+            parent(), index(), this, std::string(GetEdsResourceName()).c_str());
   }
   auto watcher = absl::make_unique<EndpointWatcher>(
       Ref(DEBUG_LOCATION, "EdsDiscoveryMechanism"));
   watcher_ = watcher.get();
-  parent()->xds_client_->WatchEndpointData(GetXdsClusterResolverResourceName(),
+  parent()->xds_client_->WatchEndpointData(GetEdsResourceName(),
                                            std::move(watcher));
 }
 
@@ -404,11 +409,10 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::Orphan() {
     gpr_log(GPR_INFO,
             "[xds_cluster_resolver_lb %p] eds discovery mechanism %" PRIuPTR
             ":%p cancelling xds watch for %s",
-            parent(), index(), this,
-            std::string(GetXdsClusterResolverResourceName()).c_str());
+            parent(), index(), this, std::string(GetEdsResourceName()).c_str());
   }
-  parent()->xds_client_->CancelEndpointDataWatch(
-      GetXdsClusterResolverResourceName(), watcher_);
+  parent()->xds_client_->CancelEndpointDataWatch(GetEdsResourceName(),
+                                                 watcher_);
   Unref();
 }
 
@@ -477,7 +481,8 @@ void XdsClusterResolverLb::EdsDiscoveryMechanism::EndpointWatcher::Notifier::
 //
 
 void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
-  std::string target = parent()->server_name_;
+  std::string target =
+      parent()->config_->discovery_mechanisms()[index()].dns_hostname;
   grpc_channel_args* args = nullptr;
   FakeResolverResponseGenerator* fake_resolver_response_generator =
       grpc_channel_args_find_pointer<FakeResolverResponseGenerator>(
@@ -489,6 +494,7 @@ void XdsClusterResolverLb::LogicalDNSDiscoveryMechanism::Start() {
         fake_resolver_response_generator);
     args = grpc_channel_args_copy_and_add(parent()->args_, &new_arg, 1);
   } else {
+    target = absl::StrCat("dns:", target);
     args = grpc_channel_args_copy(parent()->args_);
   }
   resolver_ = ResolverRegistry::CreateResolver(
@@ -1331,23 +1337,31 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
       if (it->second.string_value() == "EDS") {
         discovery_mechanism->type = XdsClusterResolverLbConfig::
             DiscoveryMechanism::DiscoveryMechanismType::EDS;
+        it = json.object_value().find("edsServiceName");
+        if (it != json.object_value().end()) {
+          if (it->second.type() != Json::Type::STRING) {
+            error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                "field:edsServiceName error:type should be string"));
+          } else {
+            discovery_mechanism->eds_service_name = it->second.string_value();
+          }
+        }
       } else if (it->second.string_value() == "LOGICAL_DNS") {
         discovery_mechanism->type = XdsClusterResolverLbConfig::
             DiscoveryMechanism::DiscoveryMechanismType::LOGICAL_DNS;
+        it = json.object_value().find("dnsHostname");
+        if (it == json.object_value().end()) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:dnsHostname error:required field missing"));
+        } else if (it->second.type() != Json::Type::STRING) {
+          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+              "field:dnsHostname error:type should be string"));
+        } else {
+          discovery_mechanism->dns_hostname = it->second.string_value();
+        }
       } else {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "field:type error:invalid type"));
-      }
-    }
-    // EDS service name.
-    it = json.object_value().find("edsServiceName");
-    if (it != json.object_value().end()) {
-      if (it->second.type() != Json::Type::STRING) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "field:xds_cluster_resolverServiceName error:type should be "
-            "string"));
-      } else {
-        discovery_mechanism->eds_service_name = it->second.string_value();
       }
     }
     return error_list;

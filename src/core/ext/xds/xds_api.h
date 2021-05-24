@@ -399,13 +399,22 @@ class XdsApi {
     // The name to use in the EDS request.
     // If empty, the cluster name will be used.
     std::string eds_service_name;
+    // For cluster type LOGICAL_DNS.
+    // The hostname to lookup in DNS.
+    std::string dns_hostname;
+    // For cluster type AGGREGATE.
+    // The prioritized list of cluster names.
+    std::vector<std::string> prioritized_cluster_names;
+
     // Tls Context used by clients
     CommonTlsContext common_tls_context;
+
     // The LRS server to use for load reporting.
     // If not set, load reporting will be disabled.
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
+
     // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
     std::string lb_policy;
     // Used for RING_HASH LB policy only.
@@ -413,20 +422,23 @@ class XdsApi {
     uint64_t max_ring_size = 8388608;
     enum HashFunction { XX_HASH, MURMUR_HASH_2 };
     HashFunction hash_function;
+
     // Maximum number of outstanding requests can be made to the upstream
     // cluster.
     uint32_t max_concurrent_requests = 1024;
-    // For cluster type AGGREGATE.
-    // The prioritized list of cluster names.
-    std::vector<std::string> prioritized_cluster_names;
 
     bool operator==(const CdsUpdate& other) const {
       return cluster_type == other.cluster_type &&
              eds_service_name == other.eds_service_name &&
+             dns_hostname == other.dns_hostname &&
+             prioritized_cluster_names == other.prioritized_cluster_names &&
              common_tls_context == other.common_tls_context &&
              lrs_load_reporting_server_name ==
                  other.lrs_load_reporting_server_name &&
-             prioritized_cluster_names == other.prioritized_cluster_names &&
+             lb_policy == other.lb_policy &&
+             min_ring_size == other.min_ring_size &&
+             max_ring_size == other.max_ring_size &&
+             hash_function == other.hash_function &&
              max_concurrent_requests == other.max_concurrent_requests;
     }
 
