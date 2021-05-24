@@ -26,24 +26,77 @@ changes to this codebase at the moment.
 #### Requirements
 1. Python v3.6+
 2. [Google Cloud SDK](https://cloud.google.com/sdk/docs/install)
-3. A GKE cluster (must enable "Enable VPC-native traffic routing" to use it with
-   the Traffic Director)
-    * Otherwise, you will see error logs when you inspect Kubernetes virtual
-      service
-    * (In `grpc-testing`, you will need a metadata tag
-      `--tags=allow-health-checks` to allow UHC to reach your resources.)
+3. Configured GKE cluster
 
-#### Configure GKE cluster access
+#### Configure GKE cluster
+This is an example outlining minimal requirements to run `tests.baseline_test`.  
+For more details, and for the setup for security tests, see
+["Setting up Traffic Director service security with proxyless gRPC"](https://cloud.google.com/traffic-director/docs/security-proxyless-setup)
+ user guide.
+ 
+Update gloud sdk:
+```
+gcloud -q components update
+```
+
+Pre-populate environment variables for convenience. To find project id, refer to
+[Identifying projects](https://cloud.google.com/resource-manager/docs/creating-managing-projects#identifying_projects).
+```shell
+export PROJECT_ID="your-project-id"
+export PROJECT_NUMBER=$(gcloud projects describe "${PROJECT_ID}" --format="value(projectNumber)")
+
+# The zone name your cluster, f.e. xds-k8s-test-cluster
+export CLUSTER_NAME="xds-k8s-test-cluster"
+# The zone of your cluster, f.e. us-central1-a
+export ZONE="us-central1-a"
+# K8S namespace you'll use to run the cluster, f.e.
+export K8S_NAMESPACE="interop-psm-security" 
+```
+
+##### Create the cluster 
+Minimal requirements: [VPC-native](https://cloud.google.com/traffic-director/docs/security-proxyless-setup)
+cluster with [Workload Identity](https://cloud.google.com/kubernetes-engine/docs/how-to/workload-identity) enabled. 
+```shell
+gcloud beta container clusters create "${CLUSTER_NAME}" \
+ --zone="${ZONE}" \
+ --enable-ip-alias \
+ --workload-pool="${PROJECT_ID}.svc.id.goog" \
+ --workload-metadata=GKE_METADATA \
+ --tags=allow-health-checks
+```
+
+##### Create the firewall rule
+Allow [health checking mechanisms](https://cloud.google.com/traffic-director/docs/set-up-proxyless-gke#creating_the_health_check_firewall_rule_and_backend_service)
+to query the workloads health.  
+This step can be skipped, if the driver is executed with `--ensure_firewall`.
 
 ```shell
-# Update gloud sdk
-gcloud -q components update
+gcloud compute firewall-rules create "${K8S_NAMESPACE}-allow-health-checks" \
+  --network=default --action=allow --direction=INGRESS \
+  --source-ranges="35.191.0.0/16,130.211.0.0/22" \
+  --target-tags=allow-health-checks \
+  --rules=tcp:8080-8100
+```
 
+##### Allow workload identities to talk to Traffic Director APIs
+```shell
+gcloud iam service-accounts add-iam-policy-binding "${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role roles/iam.workloadIdentityUser \
+  --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${K8S_NAMESPACE}/psm-grpc-client]"
+
+gcloud iam service-accounts add-iam-policy-binding "${PROJECT_NUMBER}-compute@developer.gserviceaccount.com" \
+  --role roles/iam.workloadIdentityUser \
+  --member "serviceAccount:${PROJECT_ID}.svc.id.goog[${K8S_NAMESPACE}/psm-grpc-server]"
+``` 
+
+##### Configure GKE cluster access
+
+```shell
 # Configuring GKE cluster access for kubectl
 gcloud container clusters get-credentials "your_gke_cluster_name" --zone "your_gke_cluster_zone"
 
 # Save generated kube context name
-KUBE_CONTEXT="$(kubectl config current-context)"
+export KUBE_CONTEXT="$(kubectl config current-context)"
 ``` 
 
 #### Install python dependencies
