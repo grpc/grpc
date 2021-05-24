@@ -12,8 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cimport cpython
-
 
 cdef int _INTERRUPT_CHECK_PERIOD_MS = 200
 
