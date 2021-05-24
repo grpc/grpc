@@ -1,4 +1,4 @@
-# Copyright 2021 The gRPC Authors
+# Copyright 2021, gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,12 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-py_library(
-    name = "bazel_namespace_package_hack",
-    srcs = ["bazel_namespace_package_hack.py"],
-    visibility = [
-        "//examples/python/errors:__subpackages__",
-        "//src/python/grpcio_tests/tests/interop:__subpackages__",
-        "//src/python/grpcio_tests/tests/status:__subpackages__",
-    ],
-)
+# This should be updated along with build_handwritten.yaml
+
+g_stands_for = "guadalupe_river_park_conservancy"  # @unused
+
+core_version = "16.0.0"  # @unused
+
+version = "1.38.0-dev"  # @unused
