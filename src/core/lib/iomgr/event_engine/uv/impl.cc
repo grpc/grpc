@@ -18,8 +18,8 @@
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
-static void hexdump(const std::string& prefix, const uint8_t* data,
-                    size_t size) {
+static void hexdump(const std::string& prefix, const void* data_, size_t size) {
+  const uint8_t* data = static_cast<const uint8_t*>(data_);
   char ascii[17];
   ascii[16] = 0;
   memset(ascii, ' ', 16);
@@ -47,8 +47,8 @@ static void hexdump(const std::string& prefix, const uint8_t* data,
           line += " ";
         }
       }
-      gpr_log(GPR_DEBUG, "%s %04zX  | %s| %s |", prefix.c_str(), beginning,
-              line.c_str(), ascii);
+      gpr_log(GPR_DEBUG, "%s %p %04zX  | %s| %s |", prefix.c_str(),
+              data + beginning, beginning, line.c_str(), ascii);
     }
   }
 }
@@ -821,26 +821,25 @@ int uvEndpoint::init(uvEngine* engine) {
 void uvEndpoint::Write(
     grpc_event_engine::experimental::EventEngine::Callback on_writable,
     grpc_event_engine::experimental::SliceBuffer* data, absl::Time deadline) {
-  GPR_ASSERT(uvTCP_->write_bufs_ == nullptr);
+  uvTCP* tcp = uvTCP_;
+  GPR_ASSERT(tcp->write_bufs_ == nullptr);
   size_t count = data->count();
-  uvTCP_->write_bufs_ = new uv_buf_t[count];
-  uvTCP_->write_bufs_count_ = count;
-  uvTCP_->on_writable_ = std::move(on_writable);
-  for (size_t i = 0; i < count; i++) {
-    grpc_event_engine::experimental::Slice slice = data->ref(i);
+  tcp->write_bufs_ = new uv_buf_t[count];
+  tcp->write_bufs_count_ = count;
+  tcp->on_writable_ = std::move(on_writable);
+  data->enumerate([this, tcp](uint8_t* base, size_t len, size_t index) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       std::string prefix =
           absl::StrFormat("EE::UV::uvEndpoint::Write@%p", this);
-      hexdump(prefix, slice.begin(), slice.size());
+      hexdump(prefix, base, len);
     }
-    uvTCP_->write_bufs_[i].base =
-        reinterpret_cast<char*>(const_cast<uint8_t*>(slice.begin()));
-    uvTCP_->write_bufs_[i].len = slice.size();
-  }
-  getEngine()->schedule([this, deadline](uvEngine* engine) {
+    tcp->write_bufs_[index].base = reinterpret_cast<char *>(base);
+    tcp->write_bufs_[index].len = len;
+  });
+  getEngine()->schedule([tcp, deadline](uvEngine* engine) {
     absl::Duration timeout = deadline - absl::Now();
     uv_timer_start(
-        &uvTCP_->write_timer_,
+        &tcp->write_timer_,
         [](uv_timer_t* timer) {
           uvTCP* tcp = reinterpret_cast<uvTCP*>(timer->data);
           uv_cancel(reinterpret_cast<uv_req_t*>(&tcp->write_req_));
@@ -849,8 +848,8 @@ void uvEndpoint::Write(
           tcp->on_writable_(absl::CancelledError("deadline"));
         },
         timeout / absl::Milliseconds(1), 0);
-    uv_write(&uvTCP_->write_req_, reinterpret_cast<uv_stream_t*>(&uvTCP_->tcp_),
-             uvTCP_->write_bufs_, uvTCP_->write_bufs_count_,
+    uv_write(&tcp->write_req_, reinterpret_cast<uv_stream_t*>(&tcp->tcp_),
+             tcp->write_bufs_, tcp->write_bufs_count_,
              [](uv_write_t* req, int status) {
                uvTCP* tcp = reinterpret_cast<uvTCP*>(req->data);
                delete[] tcp->write_bufs_;

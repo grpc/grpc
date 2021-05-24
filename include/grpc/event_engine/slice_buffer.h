@@ -30,6 +30,15 @@ class SliceBuffer final {
   SliceBuffer(grpc_slice_buffer* sb) : sb_(sb) {}
   SliceBuffer(const SliceBuffer& other) : sb_(other.sb_) {}
   SliceBuffer(SliceBuffer&& other) : sb_(other.sb_) { other.sb_ = nullptr; }
+  void enumerate(std::function<void(uint8_t*, size_t, size_t)> cb) {
+    const size_t cnt = count();
+    for (size_t i = 0; i < cnt; i++) {
+      auto slice = &sb_->slices[i];
+      auto start = GRPC_SLICE_START_PTR(*slice);
+      auto len = GRPC_SLICE_LENGTH(*slice);
+      cb(start, len, i);
+    }
+  }
   void add(Slice slice) {
     grpc_slice_buffer_add(sb_, slice.slice_);
     slice.slice_ = grpc_empty_slice();
