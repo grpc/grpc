@@ -130,15 +130,15 @@ def message(tag, msg, explanatory_text=None, do_newline=False):
         try:
             if platform_string() == 'windows' or not sys.stdout.isatty():
                 if explanatory_text:
-                    logging.info(explanatory_text)
+                    logging.info(explanatory_text.decode('utf8'))
                 logging.info('%s: %s', tag, msg)
             else:
                 sys.stdout.write(
                     '%s%s%s\x1b[%d;%dm%s\x1b[0m: %s%s' %
                     (_BEGINNING_OF_LINE, _CLEAR_LINE, '\n%s' %
-                     explanatory_text if explanatory_text is not None else '',
-                     _COLORS[_TAG_COLOR[tag]][1], _COLORS[_TAG_COLOR[tag]][0],
-                     tag, msg, '\n'
+                     explanatory_text.decode('utf8') if explanatory_text
+                     is not None else '', _COLORS[_TAG_COLOR[tag]][1],
+                     _COLORS[_TAG_COLOR[tag]][0], tag, msg, '\n'
                      if do_newline or explanatory_text is not None else ''))
             sys.stdout.flush()
             return
@@ -277,7 +277,10 @@ class Job(object):
                 os.makedirs(logfile_dir)
             self._logfile = open(self._spec.logfilename, 'w+')
         else:
-            self._logfile = tempfile.TemporaryFile()
+            # macOS: a series of quick os.unlink invocation might cause OS
+            # error during the creation of temporary file. By using
+            # NamedTemporaryFile, we defer the removal of file and directory.
+            self._logfile = tempfile.NamedTemporaryFile()
         env = dict(os.environ)
         env.update(self._spec.environ)
         env.update(self._add_env)

@@ -176,7 +176,8 @@ We can send RPCs to a server and get responses using `grpc_cli call` command.
     ```
 
     If the proto file is not under the current directory, you can use
-    `--proto_path` to specify a new search root.
+    `--proto_path` to specify new search roots
+    (separated by colon on Mac/Linux/Cygwin or semicolon on Windows).
 
     Note that the tool will always attempt to use the reflection service first,
     falling back to local proto files if the service is not found. Use

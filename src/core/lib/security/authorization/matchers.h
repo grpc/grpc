@@ -18,141 +18,180 @@
 #include <grpc/support/port_platform.h>
 
 #include <memory>
-#include <string>
 
-#include "absl/status/statusor.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
-
-#include "re2/re2.h"
+#include "src/core/lib/matchers/matchers.h"
+#include "src/core/lib/security/authorization/evaluate_args.h"
+#include "src/core/lib/security/authorization/rbac_policy.h"
 
 namespace grpc_core {
 
-class StringMatcher {
+// Describes the rules for matching permission or principal.
+class AuthorizationMatcher {
  public:
-  enum class Type {
-    EXACT,       // value stored in string_matcher_ field
-    PREFIX,      // value stored in string_matcher_ field
-    SUFFIX,      // value stored in string_matcher_ field
-    SAFE_REGEX,  // pattern stored in regex_matcher_ field
-    CONTAINS,    // value stored in string_matcher_ field
-  };
+  virtual ~AuthorizationMatcher() = default;
 
-  // Creates StringMatcher instance. Returns error status on failure.
-  static absl::StatusOr<StringMatcher> Create(Type type,
-                                              const std::string& matcher,
-                                              bool case_sensitive = true);
+  // Returns whether or not the permission/principal matches the rules of the
+  // matcher.
+  virtual bool Matches(const EvaluateArgs& args) const = 0;
 
-  StringMatcher() = default;
-  StringMatcher(const StringMatcher& other);
-  StringMatcher& operator=(const StringMatcher& other);
-  StringMatcher(StringMatcher&& other) noexcept;
-  StringMatcher& operator=(StringMatcher&& other) noexcept;
-  bool operator==(const StringMatcher& other) const;
+  // Creates an instance of a matcher based off the rules defined in Permission
+  // config.
+  static std::unique_ptr<AuthorizationMatcher> Create(
+      Rbac::Permission permission);
 
-  bool Match(absl::string_view value) const;
-
-  std::string ToString() const;
-
-  Type type() const { return type_; }
-
-  // Valid for EXACT, PREFIX, SUFFIX and CONTAINS
-  const std::string& string_matcher() const { return string_matcher_; }
-
-  // Valid for SAFE_REGEX
-  RE2* regex_matcher() const { return regex_matcher_.get(); }
-
-  bool case_sensitive() const { return case_sensitive_; }
-
- private:
-  StringMatcher(Type type, const std::string& matcher, bool case_sensitive);
-  StringMatcher(std::unique_ptr<RE2> regex_matcher, bool case_sensitive);
-
-  Type type_ = Type::EXACT;
-  std::string string_matcher_;
-  std::unique_ptr<RE2> regex_matcher_;
-  bool case_sensitive_ = true;
+  // Creates an instance of a matcher based off the rules defined in Principal
+  // config.
+  static std::unique_ptr<AuthorizationMatcher> Create(
+      Rbac::Principal principal);
 };
 
-class HeaderMatcher {
+class AlwaysAuthorizationMatcher : public AuthorizationMatcher {
  public:
-  enum class Type {
-    EXACT,       // value stored in StringMatcher field
-    PREFIX,      // value stored in StringMatcher field
-    SUFFIX,      // value stored in StringMatcher field
-    SAFE_REGEX,  // value stored in StringMatcher field
-    CONTAINS,    // value stored in StringMatcher field
-    RANGE,       // uses range_start and range_end fields
-    PRESENT,     // uses present_match field
-  };
+  explicit AlwaysAuthorizationMatcher() = default;
 
-  // Make sure that the first five HeaderMatcher::Type enum values match up to
-  // the corresponding StringMatcher::Type enum values, so that it's safe to
-  // convert by casting when delegating to StringMatcher.
-  static_assert(static_cast<StringMatcher::Type>(Type::EXACT) ==
-                    StringMatcher::Type::EXACT,
-                "");
-  static_assert(static_cast<StringMatcher::Type>(Type::PREFIX) ==
-                    StringMatcher::Type::PREFIX,
-                "");
-  static_assert(static_cast<StringMatcher::Type>(Type::SUFFIX) ==
-                    StringMatcher::Type::SUFFIX,
-                "");
-  static_assert(static_cast<StringMatcher::Type>(Type::SAFE_REGEX) ==
-                    StringMatcher::Type::SAFE_REGEX,
-                "");
-  static_assert(static_cast<StringMatcher::Type>(Type::CONTAINS) ==
-                    StringMatcher::Type::CONTAINS,
-                "");
+  bool Matches(const EvaluateArgs&) const override { return true; }
+};
 
-  // Creates HeaderMatcher instance. Returns error status on failure.
-  static absl::StatusOr<HeaderMatcher> Create(
-      const std::string& name, Type type, const std::string& matcher,
-      int64_t range_start = 0, int64_t range_end = 0,
-      bool present_match = false, bool invert_match = false);
+class AndAuthorizationMatcher : public AuthorizationMatcher {
+ public:
+  explicit AndAuthorizationMatcher(
+      std::vector<std::unique_ptr<AuthorizationMatcher>> matchers)
+      : matchers_(std::move(matchers)) {}
 
-  HeaderMatcher() = default;
-  HeaderMatcher(const HeaderMatcher& other);
-  HeaderMatcher& operator=(const HeaderMatcher& other);
-  HeaderMatcher(HeaderMatcher&& other) noexcept;
-  HeaderMatcher& operator=(HeaderMatcher&& other) noexcept;
-  bool operator==(const HeaderMatcher& other) const;
-
-  const std::string& name() const { return name_; }
-
-  Type type() const { return type_; }
-
-  // Valid for EXACT, PREFIX, SUFFIX and CONTAINS
-  const std::string& string_matcher() const {
-    return matcher_.string_matcher();
-  }
-
-  // Valid for SAFE_REGEX
-  RE2* regex_matcher() const { return matcher_.regex_matcher(); }
-
-  bool Match(const absl::optional<absl::string_view>& value) const;
-
-  std::string ToString() const;
+  bool Matches(const EvaluateArgs& args) const override;
 
  private:
-  // For StringMatcher.
-  HeaderMatcher(const std::string& name, Type type, StringMatcher matcher,
-                bool invert_match);
-  // For RangeMatcher.
-  HeaderMatcher(const std::string& name, int64_t range_start, int64_t range_end,
-                bool invert_match);
-  // For PresentMatcher.
-  HeaderMatcher(const std::string& name, bool present_match, bool invert_match);
+  std::vector<std::unique_ptr<AuthorizationMatcher>> matchers_;
+};
 
-  std::string name_;
-  Type type_ = Type::EXACT;
-  StringMatcher matcher_;
-  int64_t range_start_;
-  int64_t range_end_;
-  bool present_match_;
-  bool invert_match_ = false;
+class OrAuthorizationMatcher : public AuthorizationMatcher {
+ public:
+  explicit OrAuthorizationMatcher(
+      std::vector<std::unique_ptr<AuthorizationMatcher>> matchers)
+      : matchers_(std::move(matchers)) {}
+
+  bool Matches(const EvaluateArgs& args) const override;
+
+ private:
+  std::vector<std::unique_ptr<AuthorizationMatcher>> matchers_;
+};
+
+// Negates matching the provided permission/principal.
+class NotAuthorizationMatcher : public AuthorizationMatcher {
+ public:
+  explicit NotAuthorizationMatcher(
+      std::unique_ptr<AuthorizationMatcher> matcher)
+      : matcher_(std::move(matcher)) {}
+
+  bool Matches(const EvaluateArgs& args) const override;
+
+ private:
+  std::unique_ptr<AuthorizationMatcher> matcher_;
+};
+
+// TODO(ashithasantosh): Add matcher implementation for metadata field.
+
+// Perform a match against HTTP headers.
+class HeaderAuthorizationMatcher : public AuthorizationMatcher {
+ public:
+  explicit HeaderAuthorizationMatcher(HeaderMatcher matcher)
+      : matcher_(std::move(matcher)) {}
+
+  bool Matches(const EvaluateArgs& args) const override;
+
+ private:
+  const HeaderMatcher matcher_;
+};
+
+// Perform a match against IP Cidr Range.
+class IpAuthorizationMatcher : public AuthorizationMatcher {
+ public:
+  enum class Type {
+    kDestIp,
+    kSourceIp,
+    kDirectRemoteIp,
+    kRemoteIp,
+  };
+
+  IpAuthorizationMatcher(Type type, Rbac::CidrRange range);
+
+  bool Matches(const EvaluateArgs& args) const override;
+
+ private:
+  const Type type_;
+  // Subnet masked address.
+  grpc_resolved_address subnet_address_;
+  const uint32_t prefix_len_;
+};
+
+// Perform a match against port number of the destination (local) address.
+class PortAuthorizationMatcher : public AuthorizationMatcher {
+ public:
+  explicit PortAuthorizationMatcher(int port) : port_(port) {}
+
+  bool Matches(const EvaluateArgs& args) const override;
+
+ private:
+  const int port_;
+};
+
+// Matches the principal name as described in the peer certificate. Uses URI SAN
+// or DNS SAN in that order, otherwise uses subject field.
+class AuthenticatedAuthorizationMatcher : public AuthorizationMatcher {
+ public:
+  explicit AuthenticatedAuthorizationMatcher(StringMatcher auth)
+      : matcher_(std::move(auth)) {}
+
+  bool Matches(const EvaluateArgs& args) const override;
+
+ private:
+  const StringMatcher matcher_;
+};
+
+// Perform a match against the request server from the client's connection
+// request. This is typically TLS SNI. Currently unsupported.
+class ReqServerNameAuthorizationMatcher : public AuthorizationMatcher {
+ public:
+  explicit ReqServerNameAuthorizationMatcher(
+      StringMatcher requested_server_name)
+      : matcher_(std::move(requested_server_name)) {}
+
+  bool Matches(const EvaluateArgs&) const override;
+
+ private:
+  const StringMatcher matcher_;
+};
+
+// Perform a match against the path header of HTTP request.
+class PathAuthorizationMatcher : public AuthorizationMatcher {
+ public:
+  explicit PathAuthorizationMatcher(StringMatcher path)
+      : matcher_(std::move(path)) {}
+
+  bool Matches(const EvaluateArgs& args) const override;
+
+ private:
+  const StringMatcher matcher_;
+};
+
+// Performs a match for policy field in RBAC, which is a collection of
+// permission and principal matchers. Policy matches iff, we find a match in one
+// of its permissions and a match in one of its principals.
+class PolicyAuthorizationMatcher : public AuthorizationMatcher {
+ public:
+  explicit PolicyAuthorizationMatcher(Rbac::Policy policy)
+      : permissions_(
+            AuthorizationMatcher::Create(std::move(policy.permissions))),
+        principals_(
+            AuthorizationMatcher::Create(std::move(policy.principals))) {}
+
+  bool Matches(const EvaluateArgs& args) const override;
+
+ private:
+  std::unique_ptr<AuthorizationMatcher> permissions_;
+  std::unique_ptr<AuthorizationMatcher> principals_;
 };
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MATCHERS_H */
+#endif  // GRPC_CORE_LIB_SECURITY_AUTHORIZATION_MATCHERS_H

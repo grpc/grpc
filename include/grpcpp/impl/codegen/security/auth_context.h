@@ -42,7 +42,7 @@ class AuthPropertyIterator
   AuthPropertyIterator operator++(int);
   bool operator==(const AuthPropertyIterator& rhs) const;
   bool operator!=(const AuthPropertyIterator& rhs) const;
-  const AuthProperty operator*();
+  AuthProperty operator*();
 
  protected:
   AuthPropertyIterator();

@@ -62,7 +62,8 @@ using grpc::testing::EchoResponse;
   "RequestStream\n"               \
   "ResponseStream\n"              \
   "BidiStream\n"                  \
-  "Unimplemented\n"
+  "Unimplemented\n"               \
+  "UnimplementedBidi\n"
 
 #define ECHO_TEST_SERVICE_DESCRIPTION                                          \
   "filename: src/proto/grpc/testing/echo.proto\n"                              \
@@ -88,6 +89,8 @@ using grpc::testing::EchoResponse;
   "grpc.testing.EchoResponse) {}\n"                                            \
   "  rpc Unimplemented(grpc.testing.EchoRequest) returns "                     \
   "(grpc.testing.EchoResponse) {}\n"                                           \
+  "  rpc UnimplementedBidi(stream grpc.testing.EchoRequest) returns (stream "  \
+  "grpc.testing.EchoResponse) {}\n"                                            \
   "}\n"                                                                        \
   "\n"
 
@@ -150,7 +153,7 @@ class TestCliCredentials final : public grpc::testing::CliCredentials {
     grpc_slice_unref(ca_slice);
     return credential_ptr;
   }
-  const std::string GetCredentialUsage() const override { return ""; }
+  std::string GetCredentialUsage() const override { return ""; }
 
  private:
   const bool secure_;
@@ -284,7 +287,7 @@ class GrpcToolTest : public ::testing::Test {
   // SetUpServer cannot be used with EXPECT_EXIT. grpc_pick_unused_port_or_die()
   // uses atexit() to free chosen ports, and it will spawn a new thread in
   // resolve_address_posix.c:192 at exit time.
-  const std::string SetUpServer(bool secure = false) {
+  std::string SetUpServer(bool secure = false) {
     std::ostringstream server_address;
     int port = grpc_pick_unused_port_or_die();
     server_address << "localhost:" << port;

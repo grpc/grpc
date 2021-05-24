@@ -37,6 +37,7 @@ brew config
 # Add GCP credentials for BQ access
 pip install --user google-api-python-client oauth2client six==1.15.0
 export GOOGLE_APPLICATION_CREDENTIALS=${KOKORO_GFILE_DIR}/GrpcTesting-d0eeee2db331.json
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" >/dev/null 2>&1 && pwd)"
 
 # If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if [ -n "$KOKORO_GITHUB_PULL_REQUEST_NUMBER" ]; then
@@ -45,9 +46,21 @@ fi
 
 if [ "${PREPARE_BUILD_INSTALL_DEPS_RUBY}" == "true" ]
 then
+  # Fetch keys per https://rvm.io/rvm/install
+  # Force use of an IPv4 key server to avoid running into https://github.com/rvm/rvm/issues/4215
+  gpg_recv_keys_success=0
+  for ((i=0;i<5;i++)); do
+    KEYSERVER_IPV4_ADDRESS="$(host pool.sks-keyservers.net | grep 'has address' | head -n1 | awk '{print $4}')"
+    gpg --keyserver "hkp://${KEYSERVER_IPV4_ADDRESS}" --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3 7D2BAF1CF37B13E2069D6956105BD0E739499BDB \
+      && gpg_recv_keys_success=1
+    [[ "$gpg_recv_keys_success" == 1 ]] && break
+    sleep 3
+  done
+  [[ "$gpg_recv_keys_success" == 1 ]] || exit 1
+  rvm get stable # Per https://stackoverflow.com/questions/65477613/rvm-where-is-ruby-3-0-0
   source $HOME/.rvm/scripts/rvm
-  for RUBY_VERSION in 2.5.0 2.7.0; do
-    time rvm install "$RUBY_VERSION"
+  for RUBY_VERSION in 2.5.0 2.7.0 3.0.0; do
+    time rvm install "ruby-${RUBY_VERSION}"
     time gem install bundler -v 1.17.3 --no-document
     time gem install rake-compiler --no-document
   done;
@@ -67,7 +80,7 @@ then
   time git clone --depth 1 https://github.com/CocoaPods/Specs.git ~/.cocoapods/repos/master
 
   # Needed for ios-binary-size
-  time pip install --user pyyaml pyjwt==1.7.1 pyOpenSSL cryptography requests
+  time pip install --user -r $DIR/requirements.macos.txt
 
   # Store intermediate build files of ObjC tests into /tmpfs
   # TODO(jtattermusch): this has likely been done to avoid running
@@ -84,8 +97,8 @@ fi
 if [ "${PREPARE_BUILD_INSTALL_DEPS_PYTHON}" == "true" ]
 then
   # python
-  time pip install --user virtualenv
-  time pip install --user --upgrade Mako tox setuptools==44.1.1 twisted pyyaml pyjwt==1.7.1 pyOpenSSL cryptography requests
+  time pip install --user -r $DIR/requirements.macos.txt
+  time pip install --user --upgrade virtualenv Mako tox setuptools==44.1.1 twisted
 
   # Install Python 3.7 if it doesn't exist
   if [ ! -f "/usr/local/bin/python3.7" ]; then

@@ -27,6 +27,7 @@
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
 #include <grpcpp/impl/codegen/status.h>
+#include <grpcpp/impl/codegen/sync.h>
 
 namespace grpc {
 class Channel;
@@ -110,6 +111,8 @@ class CallbackUnaryCallImpl {
 // Base class for public API classes.
 class ClientReactor {
  public:
+  virtual ~ClientReactor() = default;
+
   /// Called by the library when all operations associated with this RPC have
   /// completed and all Holds have been removed. OnDone provides the RPC status
   /// outcome for both successful and failed RPCs. If it is never called on an
@@ -224,8 +227,6 @@ class ClientCallbackUnary {
 template <class Request, class Response>
 class ClientBidiReactor : public internal::ClientReactor {
  public:
-  virtual ~ClientBidiReactor() {}
-
   /// Activate the RPC and initiate any reads or writes that have been Start'ed
   /// before this call. All streaming RPCs issued by the client MUST have
   /// StartCall invoked on them (even if they are canceled) as this call is the
@@ -362,8 +363,6 @@ class ClientBidiReactor : public internal::ClientReactor {
 template <class Response>
 class ClientReadReactor : public internal::ClientReactor {
  public:
-  virtual ~ClientReadReactor() {}
-
   void StartCall() { reader_->StartCall(); }
   void StartRead(Response* resp) { reader_->Read(resp); }
 
@@ -389,8 +388,6 @@ class ClientReadReactor : public internal::ClientReactor {
 template <class Request>
 class ClientWriteReactor : public internal::ClientReactor {
  public:
-  virtual ~ClientWriteReactor() {}
-
   void StartCall() { writer_->StartCall(); }
   void StartWrite(const Request* req) {
     StartWrite(req, ::grpc::WriteOptions());
@@ -435,8 +432,6 @@ class ClientWriteReactor : public internal::ClientReactor {
 /// initiation API among all the reactor flavors.
 class ClientUnaryReactor : public internal::ClientReactor {
  public:
-  virtual ~ClientUnaryReactor() {}
-
   void StartCall() { call_->StartCall(); }
   void OnDone(const ::grpc::Status& /*s*/) override {}
   virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
@@ -478,7 +473,7 @@ class ClientCallbackReaderWriterImpl
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
-  void StartCall() override {
+  void StartCall() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     // This call initiates two batches, plus any backlog, each with a callback
     // 1. Send initial metadata (unless corked) + recv initial metadata
     // 2. Any read backlog
@@ -527,7 +522,8 @@ class ClientCallbackReaderWriterImpl
     call_.PerformOps(&read_ops_);
   }
 
-  void Write(const Request* msg, ::grpc::WriteOptions options) override {
+  void Write(const Request* msg, ::grpc::WriteOptions options)
+      ABSL_LOCKS_EXCLUDED(start_mu_) override {
     if (options.is_last_message()) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
@@ -550,7 +546,7 @@ class ClientCallbackReaderWriterImpl
     }
     call_.PerformOps(&write_ops_);
   }
-  void WritesDone() override {
+  void WritesDone() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     writes_done_ops_.ClientSendClose();
     writes_done_tag_.Set(
         call_.call(),
@@ -598,7 +594,7 @@ class ClientCallbackReaderWriterImpl
     start_tag_.Set(
         call_.call(),
         [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok);
+          reactor_->OnReadInitialMetadataDone(ok && !context_->trailers_only());
           MaybeFinish(/*from_reaction=*/true);
         },
         &start_ops_, /*can_inline=*/false);
@@ -691,7 +687,7 @@ class ClientCallbackReaderWriterImpl
     bool writes_done_ops = false;
     bool read_ops = false;
   };
-  StartCallBacklog backlog_ /* GUARDED_BY(start_mu_) */;
+  StartCallBacklog backlog_ ABSL_GUARDED_BY(start_mu_);
 
   // Minimum of 3 callbacks to pre-register for start ops, StartCall, and finish
   std::atomic<intptr_t> callbacks_outstanding_{3};
@@ -741,7 +737,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
     start_tag_.Set(
         call_.call(),
         [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok);
+          reactor_->OnReadInitialMetadataDone(ok && !context_->trailers_only());
           MaybeFinish(/*from_reaction=*/true);
         },
         &start_ops_, /*can_inline=*/false);
@@ -849,7 +845,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
   struct StartCallBacklog {
     bool read_ops = false;
   };
-  StartCallBacklog backlog_ /* GUARDED_BY(start_mu_) */;
+  StartCallBacklog backlog_ ABSL_GUARDED_BY(start_mu_);
 
   // Minimum of 2 callbacks to pre-register for start and finish
   std::atomic<intptr_t> callbacks_outstanding_{2};
@@ -890,7 +886,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
   // there are no tests catching the compiler warning.
   static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
-  void StartCall() override {
+  void StartCall() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     // This call initiates two batches, plus any backlog, each with a callback
     // 1. Send initial metadata (unless corked) + recv initial metadata
     // 2. Any backlog
@@ -922,7 +918,8 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
     this->MaybeFinish(/*from_reaction=*/false);
   }
 
-  void Write(const Request* msg, ::grpc::WriteOptions options) override {
+  void Write(const Request* msg, ::grpc::WriteOptions options)
+      ABSL_LOCKS_EXCLUDED(start_mu_) override {
     if (GPR_UNLIKELY(options.is_last_message())) {
       options.set_buffer_hint();
       write_ops_.ClientSendClose();
@@ -947,7 +944,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
     call_.PerformOps(&write_ops_);
   }
 
-  void WritesDone() override {
+  void WritesDone() ABSL_LOCKS_EXCLUDED(start_mu_) override {
     writes_done_ops_.ClientSendClose();
     writes_done_tag_.Set(
         call_.call(),
@@ -998,7 +995,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
     start_tag_.Set(
         call_.call(),
         [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok);
+          reactor_->OnReadInitialMetadataDone(ok && !context_->trailers_only());
           MaybeFinish(/*from_reaction=*/true);
         },
         &start_ops_, /*can_inline=*/false);
@@ -1076,7 +1073,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
     bool write_ops = false;
     bool writes_done_ops = false;
   };
-  StartCallBacklog backlog_ /* GUARDED_BY(start_mu_) */;
+  StartCallBacklog backlog_ ABSL_GUARDED_BY(start_mu_);
 
   // Minimum of 3 callbacks to pre-register for start ops, StartCall, and finish
   std::atomic<intptr_t> callbacks_outstanding_{3};
@@ -1124,7 +1121,7 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
     start_tag_.Set(
         call_.call(),
         [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok);
+          reactor_->OnReadInitialMetadataDone(ok && !context_->trailers_only());
           MaybeFinish();
         },
         &start_ops_, /*can_inline=*/false);

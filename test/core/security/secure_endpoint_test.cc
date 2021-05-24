@@ -166,7 +166,7 @@ static grpc_endpoint_test_config configs[] = {
      clean_up},
 };
 
-static void inc_call_ctr(void* arg, grpc_error* /*error*/) {
+static void inc_call_ctr(void* arg, grpc_error_handle /*error*/) {
   ++*static_cast<int*>(arg);
 }
 
@@ -182,7 +182,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
 
   grpc_slice_buffer_init(&incoming);
   GRPC_CLOSURE_INIT(&done_closure, inc_call_ctr, &n, grpc_schedule_on_exec_ctx);
-  grpc_endpoint_read(f.client_ep, &incoming, &done_closure);
+  grpc_endpoint_read(f.client_ep, &incoming, &done_closure, /*urgent=*/false);
 
   grpc_core::ExecCtx::Get()->Flush();
   GPR_ASSERT(n == 1);
@@ -202,7 +202,7 @@ static void test_leftover(grpc_endpoint_test_config config, size_t slice_size) {
   clean_up();
 }
 
-static void destroy_pollset(void* p, grpc_error* /*error*/) {
+static void destroy_pollset(void* p, grpc_error_handle /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

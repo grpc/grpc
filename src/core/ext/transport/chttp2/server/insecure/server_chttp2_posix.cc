@@ -51,16 +51,16 @@ void grpc_server_add_insecure_channel_from_fd(grpc_server* server,
   grpc_transport* transport = grpc_create_chttp2_transport(
       server_args, server_endpoint, false /* is_client */);
 
-  grpc_error* error =
+  grpc_error_handle error =
       core_server->SetupTransport(transport, nullptr, server_args, nullptr);
   if (error == GRPC_ERROR_NONE) {
     for (grpc_pollset* pollset : core_server->pollsets()) {
       grpc_endpoint_add_to_pollset(server_endpoint, pollset);
     }
-    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+    grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
   } else {
     gpr_log(GPR_ERROR, "Failed to create channel: %s",
-            grpc_error_string(error));
+            grpc_error_std_string(error).c_str());
     GRPC_ERROR_UNREF(error);
     grpc_transport_destroy(transport);
   }

@@ -42,9 +42,9 @@ void grpc_resolved_addresses_destroy(grpc_resolved_addresses* addresses) {
   gpr_free(addresses);
 }
 
-grpc_error* grpc_blocking_resolve_address(const char* name,
-                                          const char* default_port,
-                                          grpc_resolved_addresses** addresses) {
+grpc_error_handle grpc_blocking_resolve_address(
+    const char* name, const char* default_port,
+    grpc_resolved_addresses** addresses) {
   return grpc_resolve_address_impl->blocking_resolve_address(name, default_port,
                                                              addresses);
 }

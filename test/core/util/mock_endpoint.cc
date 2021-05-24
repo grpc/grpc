@@ -45,7 +45,7 @@ typedef struct mock_endpoint {
 } mock_endpoint;
 
 static void me_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                    grpc_closure* cb) {
+                    grpc_closure* cb, bool /*urgent*/) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
   if (m->read_buffer.count > 0) {
@@ -76,7 +76,7 @@ static void me_add_to_pollset_set(grpc_endpoint* /*ep*/,
 static void me_delete_from_pollset_set(grpc_endpoint* /*ep*/,
                                        grpc_pollset_set* /*pollset*/) {}
 
-static void me_shutdown(grpc_endpoint* ep, grpc_error* why) {
+static void me_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   mock_endpoint* m = reinterpret_cast<mock_endpoint*>(ep);
   gpr_mu_lock(&m->mu);
   if (m->on_read) {

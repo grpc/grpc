@@ -51,6 +51,7 @@ class string_ref {
   string_ref() : data_(nullptr), length_(0) {}
   string_ref(const string_ref& other)
       : data_(other.data_), length_(other.length_) {}
+  // NOLINTNEXTLINE(bugprone-unhandled-self-assignment)
   string_ref& operator=(const string_ref& rhs) {
     data_ = rhs.data_;
     length_ = rhs.length_;

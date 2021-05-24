@@ -69,6 +69,9 @@ message ClientConfigureRequest {
   repeated RpcType types = 1;
   // The collection of custom metadata to be attached to RPCs sent by the client.
   repeated Metadata metadata = 2;
+  // The deadline to use, in seconds, for all RPCs.  If unset or zero, the
+  // client will use the default from the command-line.
+  int32 timeout_sec = 3;
 }
 
 message ClientConfigureResponse {}
@@ -81,7 +84,7 @@ service XdsUpdateClientConfigureService {
 
 The test client changes its behavior right after receiving the
 `ClientConfigureRequest`. Currently it only supports configuring the type(s) 
-of RPCs sent by the test client and metadata attached to each type of RPCs.
+of RPCs sent by the test client, metadata attached to each type of RPCs, and the timeout.
 
 ## Test Driver
 
@@ -105,21 +108,42 @@ message LoadBalancerStatsRequest {
 }
 
 message LoadBalancerStatsResponse {
+  message RpcsByPeer {
+    // The number of completed RPCs for each peer.
+    map<string, int32> rpcs_by_peer = 1;
+  }
   // The number of completed RPCs for each peer.
   map<string, int32> rpcs_by_peer = 1;
   // The number of RPCs that failed to record a remote peer.
   int32 num_failures = 2;
+  map<string, RpcsByPeer> rpcs_by_method = 3;
 }
 
 message LoadBalancerAccumulatedStatsRequest {}
 
 message LoadBalancerAccumulatedStatsResponse {
   // The total number of RPCs have ever issued for each type.
-  map<string, int32> num_rpcs_started_by_method = 1;
+  // Deprecated: use stats_per_method.rpcs_started instead.
+  map<string, int32> num_rpcs_started_by_method = 1 [deprecated = true];
   // The total number of RPCs have ever completed successfully for each type.
-  map<string, int32> num_rpcs_succeeded_by_method = 2;
+  // Deprecated: use stats_per_method.result instead.
+  map<string, int32> num_rpcs_succeeded_by_method = 2 [deprecated = true];
   // The total number of RPCs have ever failed for each type.
-  map<string, int32> num_rpcs_failed_by_method = 3;
+  // Deprecated: use stats_per_method.result instead.
+  map<string, int32> num_rpcs_failed_by_method = 3 [deprecated = true];
+
+  message MethodStats {
+    // The number of RPCs that were started for this method.
+    int32 rpcs_started = 1;
+
+    // The number of RPCs that completed with each status for this method.  The
+    // key is the integral value of a google.rpc.Code; the value is the count.
+    map<int32, int32> result = 2;
+  }
+
+  // Per-method RPC statistics.  The key is the RpcType in string form; e.g.
+  // 'EMPTY_CALL' or 'UNARY_CALL'
+  map<string, MethodStats> stats_per_method = 4;
 }
 
 service LoadBalancerStatsService {

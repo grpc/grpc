@@ -326,7 +326,8 @@ def targets():
         CppDistribTest('linux', 'x64', 'stretch',
                        'cmake_module_install_pkgconfig'),
         CppDistribTest('linux', 'x64', 'stretch', 'cmake_pkgconfig'),
-        CppDistribTest('linux', 'x64', 'stretch', 'raspberry_pi'),
+        CppDistribTest('linux', 'x64', 'stretch_aarch64_cross',
+                       'cmake_aarch64_cross'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
         CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
         # C#
@@ -352,6 +353,7 @@ def targets():
         PythonDistribTest('linux', 'x64', 'arch'),
         PythonDistribTest('linux', 'x64', 'ubuntu1604'),
         PythonDistribTest('linux', 'x64', 'ubuntu1804'),
+        PythonDistribTest('linux', 'aarch64', 'python38_buster'),
         PythonDistribTest('linux', 'x64', 'alpine3.7', source=True),
         PythonDistribTest('linux', 'x64', 'jessie', source=True),
         PythonDistribTest('linux', 'x86', 'jessie', source=True),

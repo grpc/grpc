@@ -18,7 +18,7 @@ from __future__ import print_function
 
 import re
 import six
-from subprocess import check_output
+import subprocess
 
 
 class TestSuite:
@@ -87,6 +87,7 @@ _ALLOWLIST_DICT = {
     '^test/distrib/python/': [_PYTHON_TEST_SUITE],
     '^test/distrib/ruby/': [_RUBY_TEST_SUITE],
     '^tools/run_tests/xds_k8s_test_driver/': [],
+    '^tools/internal_ci/linux/grpc_xds_k8s.*': [],
     '^vsprojects/': [_WINDOWS_TEST_SUITE],
     'composer\.json$': [_PHP_TEST_SUITE],
     'config\.m4$': [_PHP_TEST_SUITE],
@@ -126,10 +127,11 @@ def _get_changed_files(base_branch):
   """
     # Get file changes between branch and merge-base of specified branch
     # Not combined to be Windows friendly
-    base_commit = check_output(["git", "merge-base", base_branch,
-                                "HEAD"]).rstrip()
-    return check_output(["git", "diff", base_commit, "--name-only",
-                         "HEAD"]).splitlines()
+    base_commit = subprocess.check_output(
+        ["git", "merge-base", base_branch, "HEAD"]).decode("UTF-8").rstrip()
+    return subprocess.check_output(
+        ["git", "diff", base_commit, "--name-only",
+         "HEAD"]).decode("UTF-8").splitlines()
 
 
 def _can_skip_tests(file_names, triggers):

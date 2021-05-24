@@ -29,7 +29,10 @@ grpc_cc_library(
     srcs = ["endpoint_tests.cc"],
     hdrs = ["endpoint_tests.h"],
     language = "C++",
-    visibility = ["//test:__subpackages__"],
+    visibility = [
+        "//test:__subpackages__",
+        "@grpc:endpoint_tests",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -234,17 +237,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "sockaddr_utils_test",
-    srcs = ["sockaddr_utils_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "socket_utils_test",
     srcs = ["socket_utils_test.cc"],
     language = "C++",
@@ -383,30 +375,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//test/core/end2end:cq_verifier",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "parse_address_test",
-    srcs = ["parse_address_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
-    name = "parse_address_with_named_scope_id_test",
-    srcs = ["parse_address_with_named_scope_id_test.cc"],
-    language = "C++",
-    tags = ["no_windows"],
-    uses_polling = False,
-    deps = [
-        "//:gpr",
-        "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )

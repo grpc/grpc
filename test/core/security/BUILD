@@ -73,13 +73,14 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "authorization_engine_test",
-    srcs = ["authorization_engine_test.cc"],
+    name = "cel_authorization_engine_test",
+    srcs = ["cel_authorization_engine_test.cc"],
     external_deps = ["gtest"],
     language = "C++",
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_cel_engine",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -116,6 +117,7 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_rbac_engine",
         "//test/core/util:grpc_test_util",
         "//test/core/util:grpc_test_util_base",
     ],
@@ -399,6 +401,46 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
+        "//:grpc_secure",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "rbac_translator_test",
+    srcs = ["rbac_translator_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_authorization_provider",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "authorization_matchers_test",
+    srcs = ["authorization_matchers_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_rbac_engine",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "grpc_authorization_engine_test",
+    srcs = ["grpc_authorization_engine_test.cc"],
+    external_deps = ["gtest"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_rbac_engine",
         "//test/core/util:grpc_test_util",
     ],
 )

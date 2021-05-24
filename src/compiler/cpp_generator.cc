@@ -633,12 +633,12 @@ void PrintHeaderClientMethodCallbackInterfaces(
     printer->Print(*vars,
                    "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
                    "virtual void $Method$(::grpc::ClientContext* context, "
-                   "$Request$* request, "
+                   "const $Request$* request, "
                    "::grpc::ClientReadReactor< $Response$>* "
                    "reactor) = 0;\n"
                    "#else\n"
                    "virtual void $Method$(::grpc::ClientContext* context, "
-                   "$Request$* request, "
+                   "const $Request$* request, "
                    "::grpc::experimental::ClientReadReactor< $Response$>* "
                    "reactor) = 0;\n"
                    "#endif\n");
@@ -730,12 +730,12 @@ void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
     printer->Print(*vars,
                    "#ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL\n"
                    "void $Method$(::grpc::ClientContext* context, "
-                   "$Request$* request, "
+                   "const $Request$* request, "
                    "::grpc::ClientReadReactor< $Response$>* "
                    "reactor) override;\n"
                    "#else\n"
                    "void $Method$(::grpc::ClientContext* context, "
-                   "$Request$* request, "
+                   "const $Request$* request, "
                    "::grpc::experimental::ClientReadReactor< $Response$>* "
                    "reactor) override;\n"
                    "#endif\n");
@@ -1557,7 +1557,8 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   printer->Indent();
   printer->Print(
       "Stub(const std::shared_ptr< ::grpc::ChannelInterface>& "
-      "channel);\n");
+      "channel, const ::grpc::StubOptions& options = "
+      "::grpc::StubOptions());\n");
   for (int i = 0; i < service->method_count(); ++i) {
     PrintHeaderClientMethod(printer, service->method(i).get(), vars, true);
   }
@@ -2005,7 +2006,7 @@ void PrintSourceClientMethod(grpc_generator::Printer* printer,
         *vars,
         "void $ns$$Service$::Stub::experimental_async::$Method$(::grpc::"
         "ClientContext* context, "
-        "$Request$* request, "
+        "const $Request$* request, "
         "::grpc::experimental::ClientReadReactor< $Response$>* reactor) {\n");
     printer->Print(*vars,
                    "  ::grpc::internal::ClientCallbackReaderFactory< "
@@ -2163,12 +2164,13 @@ void PrintSourceService(grpc_generator::Printer* printer,
                  "const ::grpc::StubOptions& options) {\n"
                  "  (void)options;\n"
                  "  std::unique_ptr< $ns$$Service$::Stub> stub(new "
-                 "$ns$$Service$::Stub(channel));\n"
+                 "$ns$$Service$::Stub(channel, options));\n"
                  "  return stub;\n"
                  "}\n\n");
   printer->Print(*vars,
                  "$ns$$Service$::Stub::Stub(const std::shared_ptr< "
-                 "::grpc::ChannelInterface>& channel)\n");
+                 "::grpc::ChannelInterface>& channel, const "
+                 "::grpc::StubOptions& options)\n");
   printer->Indent();
   printer->Print(": channel_(channel)");
   for (int i = 0; i < service->method_count(); ++i) {
@@ -2187,12 +2189,13 @@ void PrintSourceService(grpc_generator::Printer* printer,
     } else {
       (*vars)["StreamingType"] = "BIDI_STREAMING";
     }
-    printer->Print(*vars,
-                   ", rpcmethod_$Method$_("
-                   "$prefix$$Service$_method_names[$Idx$], "
-                   "::grpc::internal::RpcMethod::$StreamingType$, "
-                   "channel"
-                   ")\n");
+    printer->Print(
+        *vars,
+        ", rpcmethod_$Method$_("
+        "$prefix$$Service$_method_names[$Idx$], options.suffix_for_stats(),"
+        "::grpc::internal::RpcMethod::$StreamingType$, "
+        "channel"
+        ")\n");
   }
   printer->Print("{}\n\n");
   printer->Outdent();

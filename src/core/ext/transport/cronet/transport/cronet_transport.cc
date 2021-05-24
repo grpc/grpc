@@ -165,7 +165,7 @@ struct op_state {
   /* User requested RECV_TRAILING_METADATA */
   bool pending_recv_trailing_metadata = false;
   cronet_net_error_code net_error = OK;
-  grpc_error* cancel_error = GRPC_ERROR_NONE;
+  grpc_error_handle cancel_error = GRPC_ERROR_NONE;
   /* data structure for storing data coming from server */
   struct read_state rs;
   /* data structure for storing data going to the server */
@@ -306,13 +306,13 @@ static void read_grpc_header(stream_obj* s) {
                             s->state.rs.remaining_bytes);
 }
 
-static grpc_error* make_error_with_desc(int error_code,
-                                        int cronet_internal_error_code,
-                                        const char* desc) {
+static grpc_error_handle make_error_with_desc(int error_code,
+                                              int cronet_internal_error_code,
+                                              const char* desc) {
   std::string error_message =
       absl::StrFormat("Cronet error code:%d, Cronet error detail:%s",
                       cronet_internal_error_code, desc);
-  grpc_error* error =
+  grpc_error_handle error =
       GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_message.c_str());
   error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS, error_code);
   return error;
@@ -1200,7 +1200,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
-    } else if (stream_state->rs.read_stream_closed == true) {
+    } else if (stream_state->rs.read_stream_closed) {
       /* No more data will be received */
       CRONET_LOG(GPR_DEBUG, "read stream closed");
       grpc_core::ExecCtx::Run(
@@ -1217,7 +1217,7 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       stream_state->state_op_done[OP_RECV_MESSAGE] = true;
       oas->state.state_op_done[OP_RECV_MESSAGE] = true;
       result = ACTION_TAKEN_NO_CALLBACK;
-    } else if (stream_state->rs.length_field_received == false) {
+    } else if (!stream_state->rs.length_field_received) {
       if (stream_state->rs.received_bytes == GRPC_HEADER_SIZE_IN_BYTES &&
           stream_state->rs.remaining_bytes == 0) {
         /* Start a read operation for data */
@@ -1317,13 +1317,15 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
              op_can_be_run(stream_op, s, &oas->state,
                            OP_RECV_TRAILING_METADATA)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_RECV_TRAILING_METADATA", oas);
-    grpc_error* error = GRPC_ERROR_NONE;
+    grpc_error_handle error = GRPC_ERROR_NONE;
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
       error = GRPC_ERROR_REF(stream_state->cancel_error);
     } else if (stream_state->state_callback_received[OP_FAILED]) {
+      grpc_status_code grpc_error_code =
+          cronet_net_error_to_grpc_error(stream_state->net_error);
       const char* desc = cronet_net_error_as_string(stream_state->net_error);
-      error = make_error_with_desc(GRPC_STATUS_UNAVAILABLE,
-                                   stream_state->net_error, desc);
+      error =
+          make_error_with_desc(grpc_error_code, stream_state->net_error, desc);
     } else if (oas->s->state.rs.trailing_metadata_valid) {
       grpc_chttp2_incoming_metadata_buffer_publish(
           &oas->s->state.rs.trailing_metadata,
@@ -1362,10 +1364,12 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       if (stream_op->on_complete) {
         const char* error_message =
             cronet_net_error_as_string(stream_state->net_error);
+        grpc_status_code grpc_error_code =
+            cronet_net_error_to_grpc_error(stream_state->net_error);
         grpc_core::ExecCtx::Run(
             DEBUG_LOCATION, stream_op->on_complete,
-            make_error_with_desc(GRPC_STATUS_UNAVAILABLE,
-                                 stream_state->net_error, error_message));
+            make_error_with_desc(grpc_error_code, stream_state->net_error,
+                                 error_message));
       }
     } else {
       /* All actions in this stream_op are complete. Call the on_complete

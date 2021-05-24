@@ -67,6 +67,15 @@ namespace {
 // max-threads set) to the server builder.
 #define DEFAULT_MAX_SYNC_SERVER_THREADS INT_MAX
 
+// Give a useful status error message if the resource is exhausted specifically
+// because the server threadpool is full.
+const char* kServerThreadpoolExhausted = "Server Threadpool Exhausted";
+
+// Although we might like to give a useful status error message on unimplemented
+// RPCs, it's not always possible since that also would need to be added across
+// languages and isn't actually required by the spec.
+const char* kUnknownRpcMethod = "";
+
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
   ~DefaultGlobalCallbacks() override {}
@@ -356,17 +365,18 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
   }
 
   ~SyncRequest() override {
+    // The destructor should only cleanup those objects created in the
+    // constructor, since some paths may or may not actually go through the
+    // Run stage where other objects are allocated.
     if (has_request_payload_ && request_payload_) {
       grpc_byte_buffer_destroy(request_payload_);
     }
-    wrapped_call_.Destroy();
-    ctx_.Destroy();
-
     if (call_details_ != nullptr) {
       grpc_call_details_destroy(call_details_);
       delete call_details_;
     }
     grpc_metadata_array_destroy(&request_metadata_);
+    server_->UnrefWithPossibleNotify();
   }
 
   bool FinalizeResult(void** /*tag*/, bool* status) override {
@@ -407,7 +417,9 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
                                  : server_->resource_exhausted_handler_.get();
       deserialized_request_ = handler->Deserialize(call_, request_payload_,
                                                    &request_status_, nullptr);
-
+      if (!request_status_.ok()) {
+        gpr_log(GPR_DEBUG, "Failed to deserialize message.");
+      }
       request_payload_ = nullptr;
       interceptor_methods_.AddInterceptionHookPoint(
           grpc::experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
@@ -424,26 +436,35 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
   }
 
   void ContinueRunAfterInterception() {
-    {
-      ctx_->ctx.BeginCompletionOp(&*wrapped_call_, nullptr, nullptr);
-      global_callbacks_->PreSynchronousRequest(&ctx_->ctx);
-      auto* handler = resources_ ? method_->handler()
-                                 : server_->resource_exhausted_handler_.get();
-      handler->RunHandler(grpc::internal::MethodHandler::HandlerParameter(
-          &*wrapped_call_, &ctx_->ctx, deserialized_request_, request_status_,
-          nullptr, nullptr));
-      global_callbacks_->PostSynchronousRequest(&ctx_->ctx);
+    ctx_->ctx.BeginCompletionOp(&*wrapped_call_, nullptr, nullptr);
+    global_callbacks_->PreSynchronousRequest(&ctx_->ctx);
+    auto* handler = resources_ ? method_->handler()
+                               : server_->resource_exhausted_handler_.get();
+    handler->RunHandler(grpc::internal::MethodHandler::HandlerParameter(
+        &*wrapped_call_, &ctx_->ctx, deserialized_request_, request_status_,
+        nullptr, nullptr));
+    global_callbacks_->PostSynchronousRequest(&ctx_->ctx);
 
-      cq_.Shutdown();
+    cq_.Shutdown();
 
-      grpc::internal::CompletionQueueTag* op_tag =
-          ctx_->ctx.GetCompletionOpTag();
-      cq_.TryPluck(op_tag, gpr_inf_future(GPR_CLOCK_REALTIME));
+    grpc::internal::CompletionQueueTag* op_tag = ctx_->ctx.GetCompletionOpTag();
+    cq_.TryPluck(op_tag, gpr_inf_future(GPR_CLOCK_REALTIME));
 
-      /* Ensure the cq_ is shutdown */
-      grpc::PhonyTag ignored_tag;
-      GPR_ASSERT(cq_.Pluck(&ignored_tag) == false);
-    }
+    // Ensure the cq_ is shutdown
+    grpc::PhonyTag ignored_tag;
+    GPR_ASSERT(cq_.Pluck(&ignored_tag) == false);
+
+    // Cleanup structures allocated during Run/ContinueRunAfterInterception
+    wrapped_call_.Destroy();
+    ctx_.Destroy();
+
+    delete this;
+  }
+
+  // For requests that must be only cleaned up but not actually Run
+  void Cleanup() {
+    cq_.Shutdown();
+    grpc_call_unref(call_);
     delete this;
   }
 
@@ -459,6 +480,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
 
   template <class CallAllocation>
   void CommonSetup(CallAllocation* data) {
+    server_->Ref();
     grpc_metadata_array_init(&request_metadata_);
     data->tag = static_cast<void*>(this);
     data->call = &call_;
@@ -473,7 +495,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
   grpc_call_details* call_details_ = nullptr;
   gpr_timespec deadline_;
   grpc_metadata_array request_metadata_;
-  grpc_byte_buffer* request_payload_;
+  grpc_byte_buffer* request_payload_ = nullptr;
   grpc::CompletionQueue cq_;
   grpc::Status request_status_;
   std::shared_ptr<GlobalCallbacks> global_callbacks_;
@@ -637,6 +659,9 @@ class Server::CallbackRequest final
         req_->request_ = req_->method_->handler()->Deserialize(
             req_->call_, req_->request_payload_, &req_->request_status_,
             &req_->handler_data_);
+        if (!(req_->request_status_.ok())) {
+          gpr_log(GPR_DEBUG, "Failed to deserialize message.");
+        }
         req_->request_payload_ = nullptr;
         req_->interceptor_methods_.AddInterceptionHookPoint(
             grpc::experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
@@ -791,7 +816,7 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
     if (has_sync_method_) {
       unknown_method_ = absl::make_unique<grpc::internal::RpcServiceMethod>(
           "unknown", grpc::internal::RpcMethod::BIDI_STREAMING,
-          new grpc::internal::UnknownMethodHandler);
+          new grpc::internal::UnknownMethodHandler(kUnknownRpcMethod));
       server_->server()->core_server->SetBatchMethodAllocator(
           server_cq_->cq(), [this] {
             grpc_core::Server::BatchCallAllocation result;
@@ -812,9 +837,9 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
     void* tag;
     bool ok;
     while (server_cq_->Next(&tag, &ok)) {
-      // Drain the item and don't do any work on it. It is possible to see this
-      // if there is an explicit call to Wait that is not part of the actual
-      // Shutdown.
+      // This problem can arise if the server CQ gets a request queued to it
+      // before it gets shutdown but then pulls it after shutdown.
+      static_cast<SyncRequest*>(tag)->Cleanup();
     }
   }
 
@@ -919,14 +944,16 @@ Server::~Server() {
       for (const auto& value : sync_req_mgrs_) {
         value->Shutdown();
       }
-      if (callback_cq_ != nullptr) {
+      CompletionQueue* callback_cq =
+          callback_cq_.load(std::memory_order_relaxed);
+      if (callback_cq != nullptr) {
         if (grpc_iomgr_run_in_background()) {
           // gRPC-core provides the backing needed for the preferred CQ type
-          callback_cq_->Shutdown();
+          callback_cq->Shutdown();
         } else {
-          CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq_);
+          CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq);
         }
-        callback_cq_ = nullptr;
+        callback_cq_.store(nullptr, std::memory_order_release);
       }
     }
   }
@@ -1093,8 +1120,9 @@ void Server::UnrefAndWaitLocked() {
     shutdown_done_ = true;
     return;  // no need to wait on CV since done condition already set
   }
-  grpc::internal::WaitUntil(&shutdown_done_cv_, &mu_,
-                            [this] { return shutdown_done_; });
+  grpc::internal::WaitUntil(
+      &shutdown_done_cv_, &mu_,
+      [this]() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) { return shutdown_done_; });
 }
 
 void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
@@ -1180,7 +1208,8 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   // to deal with the case of thread exhaustion
   if (sync_server_cqs_ != nullptr && !sync_server_cqs_->empty()) {
     resource_exhausted_handler_ =
-        absl::make_unique<grpc::internal::ResourceExhaustedHandler>();
+        absl::make_unique<grpc::internal::ResourceExhaustedHandler>(
+            kServerThreadpoolExhausted);
   }
 
   for (const auto& value : sync_req_mgrs_) {
@@ -1228,6 +1257,9 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
   // Else in case of SHUTDOWN or GOT_EVENT, it means that the server has
   // successfully shutdown
 
+  // Drop the shutdown ref and wait for all other refs to drop as well.
+  UnrefAndWaitLocked();
+
   // Shutdown all ThreadManagers. This will try to gracefully stop all the
   // threads in the ThreadManagers (once they process any inflight requests)
   for (const auto& value : sync_req_mgrs_) {
@@ -1239,19 +1271,17 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
     value->Wait();
   }
 
-  // Drop the shutdown ref and wait for all other refs to drop as well.
-  UnrefAndWaitLocked();
-
   // Shutdown the callback CQ. The CQ is owned by its own shutdown tag, so it
   // will delete itself at true shutdown.
-  if (callback_cq_ != nullptr) {
+  CompletionQueue* callback_cq = callback_cq_.load(std::memory_order_relaxed);
+  if (callback_cq != nullptr) {
     if (grpc_iomgr_run_in_background()) {
       // gRPC-core provides the backing needed for the preferred CQ type
-      callback_cq_->Shutdown();
+      callback_cq->Shutdown();
     } else {
-      CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq_);
+      CompletionQueue::ReleaseCallbackAlternativeCQ(callback_cq);
     }
-    callback_cq_ = nullptr;
+    callback_cq_.store(nullptr, std::memory_order_release);
   }
 
   // Drain the shutdown queue (if the previous call to AsyncNext() timed out
@@ -1306,8 +1336,9 @@ bool Server::UnimplementedAsyncRequest::FinalizeResult(void** tag,
 Server::UnimplementedAsyncResponse::UnimplementedAsyncResponse(
     UnimplementedAsyncRequest* request)
     : request_(request) {
-  grpc::Status status(grpc::StatusCode::UNIMPLEMENTED, "");
-  grpc::internal::UnknownMethodHandler::FillOps(request_->context(), this);
+  grpc::Status status(grpc::StatusCode::UNIMPLEMENTED, kUnknownRpcMethod);
+  grpc::internal::UnknownMethodHandler::FillOps(request_->context(),
+                                                kUnknownRpcMethod, this);
   request_->stream()->call_.PerformOps(this);
 }
 
@@ -1318,25 +1349,33 @@ grpc::ServerInitializer* Server::initializer() {
 grpc::CompletionQueue* Server::CallbackCQ() {
   // TODO(vjpai): Consider using a single global CQ for the default CQ
   // if there is no explicit per-server CQ registered
+  CompletionQueue* callback_cq = callback_cq_.load(std::memory_order_acquire);
+  if (callback_cq != nullptr) {
+    return callback_cq;
+  }
+  // The callback_cq_ wasn't already set, so grab a lock and set it up exactly
+  // once for this server.
   grpc::internal::MutexLock l(&mu_);
-  if (callback_cq_ != nullptr) {
-    return callback_cq_;
+  callback_cq = callback_cq_.load(std::memory_order_relaxed);
+  if (callback_cq != nullptr) {
+    return callback_cq;
   }
   if (grpc_iomgr_run_in_background()) {
     // gRPC-core provides the backing needed for the preferred CQ type
     auto* shutdown_callback = new grpc::ShutdownCallback;
-    callback_cq_ = new grpc::CompletionQueue(grpc_completion_queue_attributes{
+    callback_cq = new grpc::CompletionQueue(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
         shutdown_callback});
 
     // Transfer ownership of the new cq to its own shutdown callback
-    shutdown_callback->TakeCQ(callback_cq_);
+    shutdown_callback->TakeCQ(callback_cq);
   } else {
     // Otherwise we need to use the alternative CQ variant
-    callback_cq_ = CompletionQueue::CallbackAlternativeCQ();
+    callback_cq = CompletionQueue::CallbackAlternativeCQ();
   }
 
-  return callback_cq_;
+  callback_cq_.store(callback_cq, std::memory_order_release);
+  return callback_cq;
 }
 
 }  // namespace grpc

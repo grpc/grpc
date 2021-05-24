@@ -57,7 +57,7 @@ static void thd_func(void* arg) {
 }
 
 /* Sets the done_write event */
-static void set_done_write(void* arg, grpc_error* /*error*/) {
+static void set_done_write(void* arg, grpc_error_handle /*error*/) {
   gpr_event* done_write = static_cast<gpr_event*>(arg);
   gpr_event_set(done_write, reinterpret_cast<void*>(1));
 }
@@ -70,7 +70,7 @@ static void server_setup_transport(void* ts, grpc_transport* transport) {
 }
 
 /* Sets the read_done event */
-static void set_read_done(void* arg, grpc_error* /*error*/) {
+static void set_read_done(void* arg, grpc_error_handle /*error*/) {
   gpr_event* read_done = static_cast<gpr_event*>(arg);
   gpr_event_set(read_done, reinterpret_cast<void*>(1));
 }
@@ -143,7 +143,8 @@ void grpc_run_client_side_validator(grpc_bad_client_arg* arg, uint32_t flags,
         grpc_closure read_done_closure;
         GRPC_CLOSURE_INIT(&read_done_closure, set_read_done, &read_done_event,
                           grpc_schedule_on_exec_ctx);
-        grpc_endpoint_read(sfd->client, &incoming, &read_done_closure);
+        grpc_endpoint_read(sfd->client, &incoming, &read_done_closure,
+                           /*urgent=*/true);
         grpc_core::ExecCtx::Get()->Flush();
         do {
           GPR_ASSERT(gpr_time_cmp(deadline, gpr_now(deadline.clock_type)) > 0);
@@ -211,7 +212,7 @@ void grpc_run_bad_client_test(
   grpc_server_start(a.server);
   transport = grpc_create_chttp2_transport(nullptr, sfd.server, false);
   server_setup_transport(&a, transport);
-  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr);
+  grpc_chttp2_transport_start_reading(transport, nullptr, nullptr, nullptr);
 
   /* Bind fds to pollsets */
   grpc_endpoint_add_to_pollset(sfd.client, grpc_cq_pollset(client_cq));
@@ -262,10 +263,7 @@ bool client_connection_preface_validator(grpc_slice_buffer* incoming,
   }
   const uint8_t* p = GRPC_SLICE_START_PTR(slice);
   /* Check the frame type (SETTINGS) */
-  if (*(p + 3) != 4) {
-    return false;
-  }
-  return true;
+  return *(p + 3) == 4;
 }
 
 /* connection preface and settings frame to be sent by the client */

@@ -42,6 +42,7 @@ namespace testing {
 const int kServerDefaultResponseStreamsToSend = 3;
 const char* const kServerResponseStreamsToSend = "server_responses_to_send";
 const char* const kServerTryCancelRequest = "server_try_cancel";
+const char* const kClientTryCancelRequest = "client_try_cancel";
 const char* const kDebugInfoTrailerKey = "debug-info-bin";
 const char* const kServerFinishAfterNReads = "server_finish_after_n_reads";
 const char* const kServerUseCoalescingApi = "server_use_coalescing_api";

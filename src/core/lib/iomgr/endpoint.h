@@ -37,13 +37,14 @@ typedef struct grpc_endpoint grpc_endpoint;
 typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
 
 struct grpc_endpoint_vtable {
-  void (*read)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb);
+  void (*read)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+               bool urgent);
   void (*write)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
                 void* arg);
   void (*add_to_pollset)(grpc_endpoint* ep, grpc_pollset* pollset);
   void (*add_to_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
   void (*delete_from_pollset_set)(grpc_endpoint* ep, grpc_pollset_set* pollset);
-  void (*shutdown)(grpc_endpoint* ep, grpc_error* why);
+  void (*shutdown)(grpc_endpoint* ep, grpc_error_handle why);
   void (*destroy)(grpc_endpoint* ep);
   grpc_resource_user* (*get_resource_user)(grpc_endpoint* ep);
   absl::string_view (*get_peer)(grpc_endpoint* ep);
@@ -58,7 +59,7 @@ struct grpc_endpoint_vtable {
    Valid slices may be placed into \a slices even when the callback is
    invoked with error != GRPC_ERROR_NONE. */
 void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                        grpc_closure* cb);
+                        grpc_closure* cb, bool urgent);
 
 absl::string_view grpc_endpoint_get_peer(grpc_endpoint* ep);
 
@@ -85,7 +86,7 @@ void grpc_endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
 
 /* Causes any pending and future read/write callbacks to run immediately with
    success==0 */
-void grpc_endpoint_shutdown(grpc_endpoint* ep, grpc_error* why);
+void grpc_endpoint_shutdown(grpc_endpoint* ep, grpc_error_handle why);
 void grpc_endpoint_destroy(grpc_endpoint* ep);
 
 /* Add an endpoint to a pollset or pollset_set, so that when the pollset is

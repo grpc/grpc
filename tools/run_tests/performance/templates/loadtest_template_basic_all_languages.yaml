@@ -1,0 +1,259 @@
+# Template generated from load test configurations by loadtest_template.py.
+#
+# Configuration templates contain client and server configurations for multiple
+# languages, and may contain template substitution keys. These templates are
+# used to generate load test configurations by selecting clients and servers for
+# the required languages. The source files for template generation may be load
+# test configurations or load test configuration templates. Load test
+# configuration generation is performed by loadtest_config.py. See documentation
+# below:
+# https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md
+apiVersion: e2etest.grpc.io/v1
+kind: LoadTest
+metadata:
+  name: basic_all_languages
+spec:
+  clients:
+    - build:
+        command:
+          - bash
+          - /build_scripts/build_qps_worker.sh
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc.git
+      language: csharp
+      pool: ${client_pool}
+      run:
+        args:
+          - exec
+          - qps_worker/Grpc.IntegrationTesting.QpsWorker.dll
+        command:
+          - dotnet
+    - build:
+        args:
+          - build
+          - //test/cpp/qps:qps_worker
+        command:
+          - bazel
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc.git
+      language: cxx
+      pool: ${client_pool}
+      run:
+        command:
+          - bazel-bin/test/cpp/qps/qps_worker
+    - build:
+        args:
+          - build
+          - -o
+          - /src/workspace/bin/worker
+          - ./benchmark/worker
+        command:
+          - go
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc-go.git
+      language: go
+      pool: ${client_pool}
+      run:
+        command:
+          - /src/workspace/bin/worker
+    - build:
+        args:
+          - -PskipAndroid=true
+          - -PskipCodegen=true
+          - :grpc-benchmarks:installDist
+        command:
+          - gradle
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc-java.git
+      language: java
+      pool: ${client_pool}
+      run:
+        command:
+          - benchmarks/build/install/grpc-benchmarks/bin/benchmark_worker
+    - build:
+        command:
+          - bash
+          - /build_scripts/build_qps_worker.sh
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc-node.git
+      language: node
+      pool: ${client_pool}
+      run:
+        args:
+          - -r
+          - ./test/fixtures/native_native.js
+          - test/performance/worker.js
+          - --benchmark_impl=grpc
+        command:
+          - node
+    - build:
+        command:
+          - bash
+          - /build_scripts/build_qps_worker.sh
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc.git
+      language: php
+      pool: ${client_pool}
+      run:
+        command:
+          - bash
+          - /run_scripts/run_worker.sh
+    - build:
+        args:
+          - build
+          - //src/python/grpcio_tests/tests/qps:qps_worker
+        command:
+          - bazel
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc.git
+      language: python
+      pool: ${client_pool}
+      run:
+        command:
+          - bazel-bin/src/python/grpcio_tests/tests/qps/qps_worker
+    - build:
+        command:
+          - bash
+          - /build_scripts/build_qps_worker.sh
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc
+      language: ruby
+      pool: ${client_pool}
+      run:
+        args:
+          - src/ruby/qps/worker.rb
+        command:
+          - ruby
+  results:
+    bigQueryTable: ${big_query_table}
+  servers:
+    - build:
+        command:
+          - bash
+          - /build_scripts/build_qps_worker.sh
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc.git
+      language: csharp
+      pool: ${server_pool}
+      run:
+        args:
+          - exec
+          - qps_worker/Grpc.IntegrationTesting.QpsWorker.dll
+        command:
+          - dotnet
+    - build:
+        args:
+          - build
+          - //test/cpp/qps:qps_worker
+        command:
+          - bazel
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc.git
+      language: cxx
+      pool: ${server_pool}
+      run:
+        args:
+          - --server_port=10010
+        command:
+          - bazel-bin/test/cpp/qps/qps_worker
+    - build:
+        args:
+          - build
+          - -o
+          - /src/workspace/bin/worker
+          - ./benchmark/worker
+        command:
+          - go
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc-go.git
+      language: go
+      pool: ${server_pool}
+      run:
+        command:
+          - /src/workspace/bin/worker
+    - build:
+        args:
+          - -PskipAndroid=true
+          - -PskipCodegen=true
+          - :grpc-benchmarks:installDist
+        command:
+          - gradle
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc-java.git
+      language: java
+      pool: ${server_pool}
+      run:
+        command:
+          - benchmarks/build/install/grpc-benchmarks/bin/benchmark_worker
+    - build:
+        command:
+          - bash
+          - /build_scripts/build_qps_worker.sh
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc-node.git
+      language: node
+      pool: ${server_pool}
+      run:
+        args:
+          - -r
+          - ./test/fixtures/native_native.js
+          - test/performance/worker.js
+          - --benchmark_impl=grpc
+        command:
+          - node
+    - build:
+        command:
+          - bash
+          - /build_scripts/build_qps_worker.sh
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc.git
+      language: php
+      pool: ${server_pool}
+      run:
+        command:
+          - bash
+          - /run_scripts/run_worker.sh
+    - build:
+        args:
+          - build
+          - //src/python/grpcio_tests/tests/qps:qps_worker
+        command:
+          - bazel
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc.git
+      language: python
+      pool: ${server_pool}
+      run:
+        command:
+          - bazel-bin/src/python/grpcio_tests/tests/qps/qps_worker
+    - build:
+        command:
+          - bash
+          - /build_scripts/build_qps_worker.sh
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc
+      language: ruby
+      pool: ${server_pool}
+      run:
+        args:
+          - src/ruby/qps/worker.rb
+        command:
+          - ruby
+  timeoutSeconds: ${timeout_seconds}
+  ttlSeconds: 86400

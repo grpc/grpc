@@ -77,8 +77,8 @@ void UnaryRunHandlerHelper(const MethodHandler::HandlerParameter& param,
 /// A helper function with reduced templating to do deserializing.
 
 template <class RequestType>
-void* UnaryDeserializeHelper(grpc_call* call, grpc_byte_buffer* req,
-                             ::grpc::Status* status, RequestType* request) {
+void* UnaryDeserializeHelper(grpc_byte_buffer* req, ::grpc::Status* status,
+                             RequestType* request) {
   ::grpc::ByteBuffer buf;
   buf.set_buffer(req);
   *status = ::grpc::SerializationTraits<RequestType>::Deserialize(
@@ -123,7 +123,7 @@ class RpcMethodHandler : public ::grpc::internal::MethodHandler {
     auto* request =
         new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
             call, sizeof(RequestType))) RequestType;
-    return UnaryDeserializeHelper(call, req, status,
+    return UnaryDeserializeHelper(req, status,
                                   static_cast<BaseRequestType*>(request));
   }
 
@@ -357,9 +357,12 @@ class SplitServerStreamingHandler
 template <::grpc::StatusCode code>
 class ErrorMethodHandler : public ::grpc::internal::MethodHandler {
  public:
+  explicit ErrorMethodHandler(const std::string& message) : message_(message) {}
+
   template <class T>
-  static void FillOps(::grpc::ServerContextBase* context, T* ops) {
-    ::grpc::Status status(code, "");
+  static void FillOps(::grpc::ServerContextBase* context,
+                      const std::string& message, T* ops) {
+    ::grpc::Status status(code, message);
     if (!context->sent_initial_metadata_) {
       ops->SendInitialMetadata(&context->initial_metadata_,
                                context->initial_metadata_flags());
@@ -375,7 +378,7 @@ class ErrorMethodHandler : public ::grpc::internal::MethodHandler {
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                                 ::grpc::internal::CallOpServerSendStatus>
         ops;
-    FillOps(param.server_context, &ops);
+    FillOps(param.server_context, message_, &ops);
     param.call->PerformOps(&ops);
     param.call->cq()->Pluck(&ops);
   }
@@ -388,6 +391,9 @@ class ErrorMethodHandler : public ::grpc::internal::MethodHandler {
     }
     return nullptr;
   }
+
+ private:
+  const std::string message_;
 };
 
 typedef ErrorMethodHandler<::grpc::StatusCode::UNIMPLEMENTED>

@@ -243,7 +243,13 @@ $ cmake ../.. -DCMAKE_TOOLCHAIN_FILE=path/to/file
 $ make
 ```
 
-[Cross-compile example](test/distrib/cpp/run_distrib_test_raspberry_pi.sh)
+[Cross-compile example](test/distrib/cpp/run_distrib_test_cmake_aarch64_cross.sh)
+
+### A note on SONAME and its ABI compatibility implications in the cmake build
+
+Best efforts are made to bump the SONAME revision during ABI breaches. While a
+change in the SONAME clearly indicates an ABI incompatibility, no hard guarantees
+can be made about any sort of ABI stability across the same SONAME version.
 
 ## Building with make on UNIX systems (deprecated)
 

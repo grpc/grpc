@@ -464,12 +464,13 @@ class ClientContext {
                 const std::shared_ptr<::grpc::Channel>& channel);
 
   grpc::experimental::ClientRpcInfo* set_client_rpc_info(
-      const char* method, grpc::internal::RpcMethod::RpcType type,
-      grpc::ChannelInterface* channel,
+      const char* method, const char* suffix_for_stats,
+      grpc::internal::RpcMethod::RpcType type, grpc::ChannelInterface* channel,
       const std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>& creators,
       size_t interceptor_pos) {
-    rpc_info_ = grpc::experimental::ClientRpcInfo(this, type, method, channel);
+    rpc_info_ = grpc::experimental::ClientRpcInfo(this, type, method,
+                                                  suffix_for_stats, channel);
     rpc_info_.RegisterInterceptors(creators, interceptor_pos);
     return &rpc_info_;
   }
@@ -491,6 +492,8 @@ class ClientContext {
   static std::unique_ptr<ClientContext> FromInternalServerContext(
       const grpc::ServerContextBase& server_context,
       PropagationOptions options);
+
+  bool trailers_only() const;
 
   bool initial_metadata_received_;
   bool wait_for_ready_;

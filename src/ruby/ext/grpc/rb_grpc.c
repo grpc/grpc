@@ -40,6 +40,8 @@
 #include "rb_loader.h"
 #include "rb_server.h"
 #include "rb_server_credentials.h"
+#include "rb_xds_channel_credentials.h"
+#include "rb_xds_server_credentials.h"
 
 static VALUE grpc_rb_cTimeVal = Qnil;
 
@@ -321,8 +323,10 @@ void Init_grpc_c() {
   Init_grpc_call();
   Init_grpc_call_credentials();
   Init_grpc_channel_credentials();
+  Init_grpc_xds_channel_credentials();
   Init_grpc_server();
   Init_grpc_server_credentials();
+  Init_grpc_xds_server_credentials();
   Init_grpc_time_consts();
   Init_grpc_compression_options();
 }

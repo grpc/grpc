@@ -30,7 +30,6 @@ def create_docker_jobspec(name,
                           flake_retries=0,
                           timeout_retries=0,
                           timeout_seconds=30 * 60,
-                          docker_base_image=None,
                           extra_docker_args=None,
                           verbose_success=False):
     """Creates jobspec for a task running under docker."""
@@ -46,9 +45,6 @@ def create_docker_jobspec(name,
         'DOCKER_RUN_SCRIPT': 'tools/run_tests/dockerize/docker_run.sh',
         'OUTPUT_DIR': 'artifacts'
     }
-
-    if docker_base_image is not None:
-        docker_env['DOCKER_BASE_IMAGE'] = docker_base_image
     if extra_docker_args is not None:
         docker_env['EXTRA_DOCKER_ARGS'] = extra_docker_args
     jobspec = jobset.JobSpec(
@@ -118,24 +114,27 @@ class PythonArtifact:
     def build_jobspec(self):
         environ = {}
         if self.platform == 'linux_extra':
-            # Raspberry Pi build
-            environ['PYTHON'] = '/usr/local/bin/python{}'.format(
+            # Crosscompilation build for armv7 (e.g. Raspberry Pi)
+            environ['PYTHON'] = '/opt/python/{}/bin/python3'.format(
                 self.py_version)
-            environ['PIP'] = '/usr/local/bin/pip{}'.format(self.py_version)
-            # https://github.com/resin-io-projects/armv7hf-debian-qemu/issues/9
-            # A QEMU bug causes submodule update to freeze, so we copy directly
-            environ['RELATIVE_COPY_PATH'] = '.'
-            # Parallel builds are counterproductive in emulated environment
-            environ['GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS'] = '1'
-            extra_args = ' --entrypoint=/usr/bin/qemu-arm-static '
+            environ['PIP'] = '/opt/python/{}/bin/pip3'.format(self.py_version)
+            environ['GRPC_SKIP_PIP_CYTHON_UPGRADE'] = 'TRUE'
+            environ['GRPC_SKIP_TWINE_CHECK'] = 'TRUE'
+            # when crosscompiling, we need to force statically linking libstdc++
+            # otherwise libstdc++ symbols would be too new and the resulting
+            # wheel wouldn't pass the auditwheel check.
+            # This is needed because C core won't build with GCC 4.8 that's
+            # included in the default dockcross toolchain and we needed
+            # to opt into using a slighly newer version of GCC.
+            environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
+
             return create_docker_jobspec(
                 self.name,
-                'tools/dockerfile/grpc_artifact_linux_{}'.format(self.arch),
+                'tools/dockerfile/grpc_artifact_python_linux_{}'.format(
+                    self.arch),
                 'tools/run_tests/artifacts/build_artifact_python.sh',
                 environ=environ,
-                timeout_seconds=60 * 60 * 5,
-                docker_base_image='quay.io/grpc/raspbian_{}'.format(self.arch),
-                extra_docker_args=extra_args)
+                timeout_seconds=60 * 60)
         elif 'manylinux' in self.platform:
             if self.arch == 'x86':
                 environ['SETARCH_CMD'] = 'linux32'
@@ -144,17 +143,32 @@ class PythonArtifact:
             environ['PYTHON'] = '/opt/python/{}/bin/python'.format(
                 self.py_version)
             environ['PIP'] = '/opt/python/{}/bin/pip'.format(self.py_version)
-            environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
-            environ['GRPC_BUILD_MANYLINUX_WHEEL'] = 'TRUE'
+            environ['GRPC_SKIP_PIP_CYTHON_UPGRADE'] = 'TRUE'
+            if self.arch == 'aarch64':
+                environ['GRPC_SKIP_TWINE_CHECK'] = 'TRUE'
+                # when crosscompiling, we need to force statically linking libstdc++
+                # otherwise libstdc++ symbols would be too new and the resulting
+                # wheel wouldn't pass the auditwheel check.
+                # This is needed because C core won't build with GCC 4.8 that's
+                # included in the default dockcross toolchain and we needed
+                # to opt into using a slighly newer version of GCC.
+                environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
+
+            else:
+                # only run auditwheel if we're not crosscompiling
+                environ['GRPC_RUN_AUDITWHEEL_REPAIR'] = 'TRUE'
+                # only build the packages that depend on grpcio-tools
+                # if we're not crosscompiling.
+                # - they require protoc to run on current architecture
+                # - they only have sdist packages anyway, so it's useless to build them again
+                environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
             return create_docker_jobspec(
                 self.name,
-                # NOTE(rbellevi): Do *not* update this without also ensuring the
-                # base_docker_image attribute is accurate.
                 'tools/dockerfile/grpc_artifact_python_%s_%s' %
                 (self.platform, self.arch),
                 'tools/run_tests/artifacts/build_artifact_python.sh',
                 environ=environ,
-                timeout_seconds=60 * 60)
+                timeout_seconds=60 * 60 * 2)
         elif self.platform == 'windows':
             if 'Python27' in self.py_version:
                 environ['EXT_COMPILER'] = 'mingw32'
@@ -233,39 +247,31 @@ class CSharpExtArtifact:
             return create_jobspec(
                 self.name,
                 ['tools/run_tests/artifacts/build_artifact_csharp_ios.sh'],
-                timeout_seconds=45 * 60,
+                timeout_seconds=60 * 60,
                 use_workspace=True)
         elif self.platform == 'windows':
             return create_jobspec(self.name, [
                 'tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
                 self.arch
             ],
+                                  timeout_seconds=45 * 60,
                                   use_workspace=True)
         else:
             if self.platform == 'linux':
-                cmake_arch_option = ''  # x64 is the default architecture
-                if self.arch == 'x86':
-                    # TODO(jtattermusch): more work needed to enable
-                    # boringssl assembly optimizations for 32-bit linux.
-                    # Problem: currently we are building the artifact under
-                    # 32-bit docker image, but CMAKE_SYSTEM_PROCESSOR is still
-                    # set to x86_64, so the resulting boringssl binary
-                    # would have undefined symbols.
-                    cmake_arch_option = '-DOPENSSL_NO_ASM=ON'
+                dockerfile_dir = 'tools/dockerfile/grpc_artifact_centos6_{}'.format(
+                    self.arch)
+                if self.arch == 'aarch64':
+                    # for aarch64, use a dockcross manylinux image that will
+                    # give us both ready to use crosscompiler and sufficient backward compatibility
+                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
                 return create_docker_jobspec(
-                    self.name,
-                    'tools/dockerfile/grpc_artifact_centos6_{}'.format(
-                        self.arch),
-                    'tools/run_tests/artifacts/build_artifact_csharp.sh',
-                    environ={'CMAKE_ARCH_OPTION': cmake_arch_option})
+                    self.name, dockerfile_dir,
+                    'tools/run_tests/artifacts/build_artifact_csharp.sh')
             else:
-                cmake_arch_option = ''  # x64 is the default architecture
-                if self.arch == 'x86':
-                    cmake_arch_option = '-DCMAKE_OSX_ARCHITECTURES=i386'
                 return create_jobspec(
                     self.name,
                     ['tools/run_tests/artifacts/build_artifact_csharp.sh'],
-                    environ={'CMAKE_ARCH_OPTION': cmake_arch_option},
+                    timeout_seconds=45 * 60,
                     use_workspace=True)
 
     def __str__(self):
@@ -307,11 +313,16 @@ class ProtocArtifact:
         if self.platform != 'windows':
             environ = {'CXXFLAGS': '', 'LDFLAGS': ''}
             if self.platform == 'linux':
+                dockerfile_dir = 'tools/dockerfile/grpc_artifact_centos6_{}'.format(
+                    self.arch)
+                if self.arch == 'aarch64':
+                    # for aarch64, use a dockcross manylinux image that will
+                    # give us both ready to use crosscompiler and sufficient backward compatibility
+                    dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
                 environ['LDFLAGS'] += ' -static-libgcc -static-libstdc++ -s'
                 return create_docker_jobspec(
                     self.name,
-                    'tools/dockerfile/grpc_artifact_centos6_{}'.format(
-                        self.arch),
+                    dockerfile_dir,
                     'tools/run_tests/artifacts/build_artifact_protoc.sh',
                     environ=environ)
             else:
@@ -340,10 +351,12 @@ def targets():
     return [
         ProtocArtifact('linux', 'x64'),
         ProtocArtifact('linux', 'x86'),
+        ProtocArtifact('linux', 'aarch64'),
         ProtocArtifact('macos', 'x64'),
         ProtocArtifact('windows', 'x64'),
         ProtocArtifact('windows', 'x86'),
         CSharpExtArtifact('linux', 'x64'),
+        CSharpExtArtifact('linux', 'aarch64'),
         CSharpExtArtifact('macos', 'x64'),
         CSharpExtArtifact('windows', 'x64'),
         CSharpExtArtifact('windows', 'x86'),
@@ -375,12 +388,14 @@ def targets():
         PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x86', 'cp39-cp39'),
-        PythonArtifact('linux_extra', 'armv7', '2.7'),
-        PythonArtifact('linux_extra', 'armv7', '3.5'),
-        PythonArtifact('linux_extra', 'armv7', '3.6'),
-        PythonArtifact('linux_extra', 'armv6', '2.7'),
-        PythonArtifact('linux_extra', 'armv6', '3.5'),
-        PythonArtifact('linux_extra', 'armv6', '3.6'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp36-cp36m'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp37-cp37m'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp38-cp38'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp39-cp39'),
+        PythonArtifact('linux_extra', 'armv7', 'cp36-cp36m'),
+        PythonArtifact('linux_extra', 'armv7', 'cp37-cp37m'),
+        PythonArtifact('linux_extra', 'armv7', 'cp38-cp38'),
+        PythonArtifact('linux_extra', 'armv7', 'cp39-cp39'),
         PythonArtifact('macos', 'x64', 'python2.7'),
         PythonArtifact('macos', 'x64', 'python3.5'),
         PythonArtifact('macos', 'x64', 'python3.6'),
