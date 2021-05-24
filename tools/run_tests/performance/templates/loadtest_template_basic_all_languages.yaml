@@ -98,7 +98,7 @@ spec:
       clone:
         gitRef: master
         repo: https://github.com/grpc/grpc.git
-      language: php
+      language: php7
       pool: ${client_pool}
       run:
         command:
@@ -119,6 +119,20 @@ spec:
         command:
           - bazel-bin/src/python/grpcio_tests/tests/qps/qps_worker
     - build:
+        args:
+          - build
+          - //src/python/grpcio_tests/tests_aio/benchmark:worker
+        command:
+          - bazel
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc.git
+      language: python_asyncio
+      pool: ${client_pool}
+      run:
+        command:
+          - bazel-bin/src/python/grpcio_tests/tests_aio/benchmark/worker
+    - build:
         command:
           - bash
           - /build_scripts/build_qps_worker.sh
@@ -132,6 +146,9 @@ spec:
           - src/ruby/qps/worker.rb
         command:
           - ruby
+  drivers:
+    - language: cxx
+      pool: ${driver_pool}
   results:
     bigQueryTable: ${big_query_table}
   servers:
@@ -221,7 +238,7 @@ spec:
       clone:
         gitRef: master
         repo: https://github.com/grpc/grpc.git
-      language: php
+      language: php7
       pool: ${server_pool}
       run:
         command:
@@ -241,6 +258,20 @@ spec:
       run:
         command:
           - bazel-bin/src/python/grpcio_tests/tests/qps/qps_worker
+    - build:
+        args:
+          - build
+          - //src/python/grpcio_tests/tests_aio/benchmark:worker
+        command:
+          - bazel
+      clone:
+        gitRef: master
+        repo: https://github.com/grpc/grpc.git
+      language: python_asyncio
+      pool: ${server_pool}
+      run:
+        command:
+          - bazel-bin/src/python/grpcio_tests/tests_aio/benchmark/worker
     - build:
         command:
           - bash

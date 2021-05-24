@@ -48,7 +48,7 @@ spec:
           - /execute/worker-linux
           - --benchmark_impl=grpc
         image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
-    - language: php
+    - language: php7
       pool: ${client_pool}
       run:
         command:
@@ -75,12 +75,12 @@ spec:
         command:
           - ruby
         image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
+  drivers:
+    - image: ${driver_image}
+      language: cxx
+      pool: ${driver_pool}
   results:
     bigQueryTable: ${big_query_table}
-  drivers:
-    - language: cxx
-      image: ${driver_image}
-      pool: ${driver_pool}
   servers:
     - language: csharp
       pool: ${server_pool}
@@ -118,7 +118,7 @@ spec:
           - /execute/worker-linux
           - --benchmark_impl=grpc
         image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
-    - language: php
+    - language: php7
       pool: ${server_pool}
       run:
         command:

@@ -52,6 +52,8 @@ def loadtest_template(
         input_file_names: Iterable[str],
         metadata: Mapping[str, Any],
         inject_client_pool: bool,
+        inject_driver_image: bool,
+        inject_driver_pool: bool,
         inject_server_pool: bool,
         inject_big_query_table: bool,
         inject_timeout_seconds: bool,
@@ -107,6 +109,14 @@ def loadtest_template(
         'clients': clients,
         'servers': servers,
     })
+
+    if inject_driver_image or inject_driver_pool:
+        driver = dict({"language": "cxx"})
+        if inject_driver_image:
+            driver['image'] = "${driver_image}"
+        if inject_driver_pool:
+            driver['pool'] = "${driver_pool}"
+        spec['drivers'] = [driver]
 
     if inject_big_query_table:
         if 'results' not in spec:
@@ -164,6 +174,14 @@ def main() -> None:
         action='store_true',
         help='Set spec.client(s).pool values to \'${client_pool}\'.')
     argp.add_argument(
+        '--inject_driver_image',
+        action='store_true',
+        help='Set spec.driver(s).image values to \'${driver_image}\'.')
+    argp.add_argument(
+        '--inject_driver_pool',
+        action='store_true',
+        help='Set spec.driver(s).pool values to \'${driver_pool}\'.')
+    argp.add_argument(
         '--inject_server_pool',
         action='store_true',
         help='Set spec.server(s).pool values to \'${server_pool}\'.')
@@ -200,6 +218,8 @@ def main() -> None:
         input_file_names=args.inputs,
         metadata=metadata,
         inject_client_pool=args.inject_client_pool,
+        inject_driver_image=args.inject_driver_image,
+        inject_driver_pool=args.inject_driver_pool,
         inject_server_pool=args.inject_server_pool,
         inject_big_query_table=args.inject_big_query_table,
         inject_timeout_seconds=args.inject_timeout_seconds,

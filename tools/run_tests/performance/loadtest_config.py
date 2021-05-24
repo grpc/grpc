@@ -22,6 +22,7 @@
 # https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md#grpc-oss-benchmarks
 
 import argparse
+import collections
 import copy
 import datetime
 import itertools
@@ -44,28 +45,11 @@ CONFIGURATION_FILE_HEADER_COMMENT = """
 # https://github.com/grpc/grpc/blob/master/tools/run_tests/performance/README.md#grpc-oss-benchmarks
 """
 
-# TODO(paulosjca): Merge label_language and image_language into one function.
-# These functions are necessary because 'c++' is not allowed as a label value in
-# kubernetes, and because languages share images in the existing templates. Once
-# the templates are reorganized and most image mapping is removed, the two
-# functions can be merged into one.
-
 
 def label_language(language: str) -> str:
     """Convert scenario language to place in a resource label."""
     return {
         'c++': 'cxx',
-    }.get(language, language)
-
-
-def image_language(language: str) -> str:
-    """Convert scenario languages to image languages."""
-    return {
-        'c++': 'cxx',
-        'node_purejs': 'node',
-        'php7': 'php',
-        'php7_protobuf_c': 'php',
-        'python_asyncio': 'python',
     }.get(language, language)
 
 
@@ -109,6 +93,11 @@ def loadtest_name(prefix: str, scenario_name: str,
     return name
 
 
+def component_name(elements: Iterable[str]) -> str:
+    """Constructs a component name from possibly empty elements."""
+    return '-'.join((e for e in elements if e))
+
+
 def validate_annotations(annotations: Dict[str, str]) -> None:
     """Validates that annotations do not contain reserved names.
 
@@ -139,6 +128,7 @@ def gen_loadtest_configs(
         loadtest_name_prefix: str,
         uniquifier_elements: Iterable[str],
         annotations: Mapping[str, str],
+        instances_per_client: int = 1,
         runs_per_test: int = 1) -> Iterable[Dict[str, Any]]:
     """Generates LoadTest configurations for a given language config.
 
@@ -146,9 +136,9 @@ def gen_loadtest_configs(
     """
     validate_annotations(annotations)
     prefix = loadtest_name_prefix or default_prefix()
-    cl = image_language(language_config.client_language or
+    cl = label_language(language_config.client_language or
                         language_config.language)
-    sl = image_language(language_config.server_language or
+    sl = label_language(language_config.server_language or
                         language_config.language)
     scenario_filter = scenario_config_exporter.scenario_filter(
         scenario_name_regex=scenario_name_regex,
@@ -186,22 +176,59 @@ def gen_loadtest_configs(
             spec = config['spec']
 
             # Select clients with the required language.
-            spec['clients'] = [
+            clients = [
                 client for client in base_config_clients
                 if client['language'] == cl
             ]
-            if not spec['clients']:
+            if not clients:
                 raise IndexError('Client language not found in template: %s' %
                                  cl)
 
+            # Validate config for additional client instances.
+            if instances_per_client > 1:
+                c = collections.Counter(
+                    (client.get('name', '') for client in clients))
+                if max(c.values()) > 1:
+                    raise ValueError(
+                        ('Multiple instances of multiple clients requires '
+                         'unique names, name counts for language %s: %s') %
+                        (cl, c.most_common()))
+
+            # Name client instances with an index starting from 0.
+            client_instances = []
+            for i in range(instances_per_client):
+                client_instances.extend(copy.deepcopy(clients))
+                for client in client_instances[-len(clients):]:
+                    client['name'] = component_name((client.get('name',
+                                                                ''), str(i)))
+
+            # Set clients to named instances.
+            spec['clients'] = client_instances
+
             # Select servers with the required language.
-            spec['servers'] = [
+            servers = copy.deepcopy([
                 server for server in base_config_servers
                 if server['language'] == sl
-            ]
-            if not spec['servers']:
+            ])
+            if not servers:
                 raise IndexError('Server language not found in template: %s' %
                                  sl)
+
+            # Name servers with an index for consistency with clients.
+            for i, server in enumerate(servers):
+                server['name'] = component_name((server.get('name',
+                                                            ''), str(i)))
+
+            # Set servers to named instances.
+            spec['servers'] = servers
+
+            # Name driver(s) with an index for consistency with workers.
+            if 'drivers' not in spec:
+                spec['drivers'] = [dict()]
+            for i, driver in enumerate(spec['drivers']):
+                driver['language'] = 'cxx'
+                driver['name'] = component_name((driver.get('name',
+                                                            ''), str(i)))
 
             spec['scenariosJSON'] = scenario_str
 
@@ -219,6 +246,35 @@ def parse_key_value_args(args: Optional[Iterable[str]]) -> Dict[str, str]:
             raise ValueError('Expected key=value: ' + value)
         d[key] = value
     return d
+
+
+def clear_empty_fields(config: Dict[str, Any]) -> None:
+    """Clears fields set to empty values by string substitution."""
+    spec = config['spec']
+    if 'clients' in spec:
+        for client in spec['clients']:
+            if 'pool' in client and not client['pool']:
+                del client['pool']
+    if 'servers' in spec:
+        for server in spec['servers']:
+            if 'pool' in server and not server['pool']:
+                del server['pool']
+    if 'drivers' in spec:
+        drivers = []
+        for driver in spec['drivers']:
+            if 'image' in driver and not driver['image']:
+                del driver['image']
+            if 'pool' in driver and not driver['pool']:
+                del driver['pool']
+            if 'image' in driver or 'pool' in driver:
+                drivers.append(driver)
+        if drivers:
+            spec['drivers'] = drivers
+        else:
+            del spec['drivers']
+    if 'results' in spec and not ('bigQueryTable' in spec['results'] and
+                                  spec['results']['bigQueryTable']):
+        del spec['results']
 
 
 def config_dumper(header_comment: str) -> Type[yaml.SafeDumper]:
@@ -321,6 +377,10 @@ def main() -> None:
         default=[],
         help='Allow cross-language scenarios with this server language.',
         dest='allow_server_languages')
+    argp.add_argument('--instances_per_client',
+                      default=1,
+                      type=int,
+                      help="Number of instances to generate for each client.")
     argp.add_argument('--runs_per_test',
                       default=1,
                       type=int,
@@ -330,6 +390,12 @@ def main() -> None:
                       type=str,
                       help='Output file name. Output to stdout if not set.')
     args = argp.parse_args()
+
+    if args.instances_per_client < 1:
+        argp.error('instances_per_client must be greater than zero.')
+
+    if args.runs_per_test < 1:
+        argp.error('runs_per_test must be greater than zero.')
 
     substitutions = parse_key_value_args(args.substitutions)
 
@@ -342,6 +408,8 @@ def main() -> None:
     with open(args.template) as f:
         base_config = yaml.safe_load(
             string.Template(f.read()).substitute(substitutions))
+
+    clear_empty_fields(base_config)
 
     spec = base_config['spec']
     base_config_clients = spec['clients']
@@ -368,6 +436,7 @@ def main() -> None:
                                  loadtest_name_prefix=args.prefix,
                                  uniquifier_elements=uniquifier_elements,
                                  annotations=annotations,
+                                 instances_per_client=args.instances_per_client,
                                  runs_per_test=args.runs_per_test))
     configs = (config for config in itertools.chain(*config_generators))
 
