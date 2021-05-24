@@ -6492,6 +6492,12 @@ if(gRPC_BUILD_TESTS)
 
 add_executable(public_headers_must_be_c89
   src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
+  src/core/lib/security/authorization/evaluate_args.cc
+  src/core/lib/security/authorization/grpc_authorization_engine.cc
+  src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  src/core/lib/security/authorization/matchers.cc
+  src/core/lib/security/authorization/rbac_policy.cc
+  src/core/lib/security/authorization/rbac_translator.cc
   test/core/surface/public_headers_must_be_c89.c
 )
 
