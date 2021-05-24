@@ -635,7 +635,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/profiling/timers.h',
                       'src/core/lib/security/authorization/authorization_engine.h',
                       'src/core/lib/security/authorization/authorization_policy_provider.h',
-                      'src/core/lib/security/authorization/authorization_policy_provider_vtable.cc',
                       'src/core/lib/security/authorization/evaluate_args.h',
                       'src/core/lib/security/context/security_context.h',
                       'src/core/lib/security/credentials/alts/alts_credentials.h',

@@ -1470,6 +1470,7 @@ LIBGRPC_SRC = \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/matchers/matchers.cc \
+    src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
     src/core/lib/security/credentials/alts/check_gcp_environment.cc \
@@ -1940,6 +1941,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/json/json_reader.cc \
     src/core/lib/json/json_util.cc \
     src/core/lib/json/json_writer.cc \
+    src/core/lib/security/authorization/authorization_policy_provider_vtable.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
     src/core/lib/slice/slice.cc \

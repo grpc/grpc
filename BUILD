@@ -1121,6 +1121,7 @@ grpc_cc_library(
         "grpc_fault_injection_filter",
         "grpc_workaround_cronet_compression_filter",
         "grpc_server_backward_compatibility",
+        "grpc_authorization_provider",
     ],
 )
 
@@ -2133,7 +2134,10 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc++_authorization_provider",
     srcs = [
-        "src/cpp/server/authorization_policy_provider.cc",
+        "src/cpp/server/authorization_policy_provider_impl.cc",
+    ],
+    hdrs = [
+        "src/cpp/server/authorization_policy_provider_impl.h",
     ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
@@ -2487,7 +2491,6 @@ grpc_cc_library(
         "grpc",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
-        "grpc_authorization_provider",
         "grpc_health_upb",
     ],
 )
@@ -2505,7 +2508,6 @@ grpc_cc_library(
     deps = [
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
-        "grpc_authorization_provider",
         "grpc_health_upb",
         "grpc_unsecure",
     ],

@@ -797,6 +797,9 @@ libs:
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
   - src/core/lib/matchers/matchers.h
+  - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/authorization_policy_provider.h
+  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/context/security_context.h
   - src/core/lib/security/credentials/alts/alts_credentials.h
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
@@ -1327,6 +1330,7 @@ libs:
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
   - src/core/lib/matchers/matchers.cc
+  - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/context/security_context.cc
   - src/core/lib/security/credentials/alts/alts_credentials.cc
   - src/core/lib/security/credentials/alts/check_gcp_environment.cc
@@ -1794,6 +1798,9 @@ libs:
   - src/core/lib/iomgr/work_serializer.h
   - src/core/lib/json/json.h
   - src/core/lib/json/json_util.h
+  - src/core/lib/security/authorization/authorization_engine.h
+  - src/core/lib/security/authorization/authorization_policy_provider.h
+  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/slice/b64.h
   - src/core/lib/slice/percent_encoding.h
   - src/core/lib/slice/slice_internal.h
@@ -2059,6 +2066,7 @@ libs:
   - src/core/lib/json/json_reader.cc
   - src/core/lib/json/json_util.cc
   - src/core/lib/json/json_writer.cc
+  - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/slice/b64.cc
   - src/core/lib/slice/percent_encoding.cc
   - src/core/lib/slice/slice.cc
@@ -2319,9 +2327,6 @@ libs:
   - include/grpcpp/support/validate_service_config.h
   - include/grpcpp/xds_server_builder.h
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/authorization_policy_provider.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/channel_filter.h
@@ -2334,7 +2339,6 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
-  - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -2667,9 +2671,6 @@ libs:
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/authorization_policy_provider.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/cpp/client/create_channel_internal.h
   - src/cpp/common/channel_filter.h
   - src/cpp/server/dynamic_thread_pool.h
@@ -2678,7 +2679,6 @@ libs:
   - src/cpp/server/thread_pool_interface.h
   - src/cpp/thread_manager/thread_manager.h
   src:
-  - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/cpp/client/channel_cc.cc
   - src/cpp/client/client_callback.cc
   - src/cpp/client/client_context.cc
@@ -3689,16 +3689,12 @@ targets:
   build: test
   language: c
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/authorization_policy_provider.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   src:
-  - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
@@ -4254,8 +4250,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
@@ -4277,6 +4271,7 @@ targets:
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
+  - src/cpp/server/authorization_policy_provider_impl.h
   src:
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
@@ -4284,7 +4279,7 @@ targets:
   - src/core/lib/security/authorization/matchers.cc
   - src/core/lib/security/authorization/rbac_policy.cc
   - src/core/lib/security/authorization/rbac_translator.cc
-  - src/cpp/server/authorization_policy_provider.cc
+  - src/cpp/server/authorization_policy_provider_impl.cc
   - test/cpp/server/authorization_policy_provider_test.cc
   deps:
   - grpc++
@@ -4698,9 +4693,7 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/cel_authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/mock_cel/activation.h
@@ -5102,8 +5095,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
@@ -5231,8 +5222,6 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
@@ -5249,16 +5238,12 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/authorization_policy_provider.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   src:
-  - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
@@ -6029,16 +6014,12 @@ targets:
   build: test
   language: c++
   headers:
-  - src/core/lib/security/authorization/authorization_engine.h
-  - src/core/lib/security/authorization/authorization_policy_provider.h
-  - src/core/lib/security/authorization/evaluate_args.h
   - src/core/lib/security/authorization/grpc_authorization_engine.h
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
   - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/rbac_policy.h
   - src/core/lib/security/authorization/rbac_translator.h
   src:
-  - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
   - src/core/lib/security/authorization/evaluate_args.cc
   - src/core/lib/security/authorization/grpc_authorization_engine.cc
   - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
