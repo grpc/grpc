@@ -129,6 +129,7 @@ class HttpProxyMapper : public ProxyMapperInterface {
     *name_to_resolve = GetHttpProxyServer(args, &user_cred);
     if (*name_to_resolve == nullptr) return false;
     char* no_proxy_str = nullptr;
+    std::string server_target;
     absl::StatusOr<URI> uri = URI::Parse(server_uri);
     if (!uri.ok() || uri->path().empty()) {
       gpr_log(GPR_ERROR,
@@ -184,11 +185,12 @@ class HttpProxyMapper : public ProxyMapperInterface {
         if (!use_proxy) goto no_use_proxy;
       }
     }
+    server_target =
+        MaybeAddDefaultPort(absl::StripPrefix(uri->path(), "/")).c_str();
     grpc_arg args_to_add[2];
     args_to_add[0] = grpc_channel_arg_string_create(
         const_cast<char*>(GRPC_ARG_HTTP_CONNECT_SERVER),
-        const_cast<char*>(
-            MaybeAddDefaultPort(absl::StripPrefix(uri->path(), "/")).c_str()));
+        const_cast<char*>(server_target.c_str()));
     if (user_cred != nullptr) {
       /* Use base64 encoding for user credentials as stated in RFC 7617 */
       char* encoded_user_cred =
