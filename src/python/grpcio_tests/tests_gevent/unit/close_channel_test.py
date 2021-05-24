@@ -51,8 +51,7 @@ class CloseChannelTest(unittest.TestCase):
         gevent.sleep()
         self._channel.close()
         group.killone(greenlet)
-        self.assertFalse(self._unhandled_exception,
-                         "Unhandled GreenletExit")
+        self.assertFalse(self._unhandled_exception, "Unhandled GreenletExit")
         try:
             greenlet.get()
         except Exception as e:  # pylint: disable=broad-except
