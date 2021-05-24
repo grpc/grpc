@@ -557,7 +557,7 @@ GRPCAPI char* grpc_channelz_get_socket(intptr_t socket_id);
 
 /**
  * EXPERIMENTAL - Subject to change.
- * Fetch a vtable for a grpc_channel_arg that points to a
+ * Fetch a vtable for grpc_channel_arg that points to
  * grpc_authorization_policy_provider.
  */
 GRPCAPI const grpc_arg_pointer_vtable*

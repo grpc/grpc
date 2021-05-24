@@ -2161,7 +2161,7 @@ grpc_cc_library(
         "google_api_upb",
         "grpc_base",
         "grpc_mock_cel",
-        "grpc_rbac_engine",
+        "grpc_rbac_engine_impl",
     ],
 )
 

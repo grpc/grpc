@@ -4245,7 +4245,14 @@ targets:
   headers:
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/grpc_authorization_engine.h
+  - src/core/lib/security/authorization/matchers.h
+  - src/core/lib/security/authorization/rbac_policy.h
   src:
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/grpc_authorization_engine.cc
+  - src/core/lib/security/authorization/matchers.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/authorization_matchers_test.cc
   deps:
   - grpc_test_util
@@ -4683,14 +4690,21 @@ targets:
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/cel_authorization_engine.h
   - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/grpc_authorization_engine.h
+  - src/core/lib/security/authorization/matchers.h
   - src/core/lib/security/authorization/mock_cel/activation.h
   - src/core/lib/security/authorization/mock_cel/cel_expr_builder_factory.h
   - src/core/lib/security/authorization/mock_cel/cel_expression.h
   - src/core/lib/security/authorization/mock_cel/cel_value.h
   - src/core/lib/security/authorization/mock_cel/evaluator_core.h
   - src/core/lib/security/authorization/mock_cel/flat_expr_builder.h
+  - src/core/lib/security/authorization/rbac_policy.h
   src:
   - src/core/lib/security/authorization/cel_authorization_engine.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/grpc_authorization_engine.cc
+  - src/core/lib/security/authorization/matchers.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
   - test/core/security/cel_authorization_engine_test.cc
   deps:
   - absl/container:flat_hash_set
@@ -6007,8 +6021,19 @@ targets:
   - src/core/lib/security/authorization/authorization_engine.h
   - src/core/lib/security/authorization/authorization_policy_provider.h
   - src/core/lib/security/authorization/evaluate_args.h
+  - src/core/lib/security/authorization/grpc_authorization_engine.h
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.h
+  - src/core/lib/security/authorization/matchers.h
+  - src/core/lib/security/authorization/rbac_policy.h
+  - src/core/lib/security/authorization/rbac_translator.h
   src:
   - src/core/lib/security/authorization/authorization_policy_provider_vtable.cc
+  - src/core/lib/security/authorization/evaluate_args.cc
+  - src/core/lib/security/authorization/grpc_authorization_engine.cc
+  - src/core/lib/security/authorization/grpc_authorization_policy_provider.cc
+  - src/core/lib/security/authorization/matchers.cc
+  - src/core/lib/security/authorization/rbac_policy.cc
+  - src/core/lib/security/authorization/rbac_translator.cc
   - test/core/security/rbac_translator_test.cc
   deps:
   - grpc_test_util

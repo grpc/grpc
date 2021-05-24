@@ -17,8 +17,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/grpc_security.h>
-
 #include <map>
 
 #include "absl/types/optional.h"
@@ -26,6 +24,8 @@
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/transport/metadata_batch.h"
+
+typedef struct grpc_auth_context grpc_auth_context;
 
 namespace grpc_core {
 
