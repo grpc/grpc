@@ -26,7 +26,7 @@ Typical usage examples:
     python -m bin.run_channelz --flagfile=config/local-dev.cfg --security=mtls_error
 
     # More information and usage options
-    python -m bin.run_channelz --helpful
+    python -m bin.run_channelz --helpfull
 """
 import hashlib
 import logging
