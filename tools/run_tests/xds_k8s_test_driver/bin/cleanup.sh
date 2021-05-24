@@ -19,8 +19,8 @@ display_usage() {
   cat <<EOF >/dev/stderr
 Performs full TD and K8S resource cleanup
 
-USAGE: $0 [--secure] [arguments]
-   --secure: Perform TD resource cleanup specific for PSM Security setup
+USAGE: $0 [--nosecure] [arguments]
+   --nosecure: Skip cleanup for the resources specific for PSM Security
    arguments ...: additional arguments passed to ./run.sh
 
 ENVIRONMENT:
@@ -46,13 +46,13 @@ readonly XDS_K8S_DRIVER_DIR="${SCRIPT_DIR}/.."
 
 cd "${XDS_K8S_DRIVER_DIR}"
 
-if [[ "$1" == "--secure" ]]; then
+if [[ "$1" == "--nosecure" ]]; then
   shift
-  ./run.sh bin/run_td_setup.py --cmd=cleanup --security=mtls "$@" && \
-  ./run.sh bin/run_test_client.py --cmd=cleanup --secure "$@" && \
-  ./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace --secure "$@"
-else
   ./run.sh bin/run_td_setup.py --cmd=cleanup "$@" && \
   ./run.sh bin/run_test_client.py --cmd=cleanup "$@" && \
   ./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace "$@"
+else
+  ./run.sh bin/run_td_setup.py --cmd=cleanup --security=mtls "$@" && \
+  ./run.sh bin/run_test_client.py --cmd=cleanup --secure "$@" && \
+  ./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace --secure "$@"
 fi

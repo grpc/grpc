@@ -35,7 +35,7 @@ For more details, and for the setup for security tests, see
  user guide.
  
 Update gloud sdk:
-```
+```shell
 gcloud -q components update
 ```
 
@@ -69,7 +69,6 @@ gcloud beta container clusters create "${CLUSTER_NAME}" \
 Allow [health checking mechanisms](https://cloud.google.com/traffic-director/docs/set-up-proxyless-gke#creating_the_health_check_firewall_rule_and_backend_service)
 to query the workloads health.  
 This step can be skipped, if the driver is executed with `--ensure_firewall`.
-
 ```shell
 gcloud compute firewall-rules create "${K8S_NAMESPACE}-allow-health-checks" \
   --network=default --action=allow --direction=INGRESS \
@@ -90,7 +89,6 @@ gcloud iam service-accounts add-iam-policy-binding "${PROJECT_NUMBER}-compute@de
 ``` 
 
 ##### Configure GKE cluster access
-
 ```shell
 # Configuring GKE cluster access for kubectl
 gcloud container clusters get-credentials "your_gke_cluster_name" --zone "your_gke_cluster_zone"
@@ -319,9 +317,14 @@ grpcurl --plaintext -d '{"num_rpcs": 10, "timeout_sec": 30}' 127.0.0.1:8079 \
 ```
 
 ### Cleanup
-First, make sure to stop port forwarding, if any.
+* First, make sure to stop port forwarding, if any
+* Run `./bin/cleanup.sh`
 
-#### Regular cleanup
+##### Partial cleanup
+You can run commands below to stop/start, create/delete resources however you want.  
+Generally, it's better to remove resources in the opposite order of their creation.
+
+Cleanup regular resources:
 ```shell
 # Cleanup TD resources
 ./run.sh bin/run_td_setup.py --cmd=cleanup
@@ -329,12 +332,9 @@ First, make sure to stop port forwarding, if any.
 ./run.sh bin/run_test_client.py --cmd=cleanup
 # Stop test server, and remove the namespace
 ./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace
-
-# Full cleanup (run all commands above)
-./bin/cleanup.sh
 ```
 
-#### Security cleanup
+Cleanup regular and security-specific resources:
 ```shell
 # Cleanup TD resources, with security
 ./run.sh bin/run_td_setup.py --cmd=cleanup --security=mtls
@@ -342,17 +342,9 @@ First, make sure to stop port forwarding, if any.
 ./run.sh bin/run_test_client.py --cmd=cleanup --secure
 # Stop test server (secure), and remove the namespace
 ./run.sh bin/run_test_server.py --cmd=cleanup --cleanup_namespace --secure
-
-# Full security-specific cleanup (run all commands above)
-./bin/cleanup.sh --secure
 ```
 
-#### Partial cleanup
-You can run commands above to stop/start, create/delete resources however you want.
-Generally, it's better to remove resources in the opposite order of their creation.
-
 In addition, here's some other helpful partial cleanup commands:
-
 ```shell
 # Remove all backends from the backend services
 ./run.sh bin/run_td_setup.py --cmd=backends-cleanup
