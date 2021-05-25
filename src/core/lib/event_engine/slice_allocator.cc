@@ -52,6 +52,7 @@ absl::Status SliceAllocator::Allocate(size_t size, SliceBuffer* dest,
   (void)size;
   (void)dest;
   (void)cb;
+  abort();
   return absl::OkStatus();
 };
 
