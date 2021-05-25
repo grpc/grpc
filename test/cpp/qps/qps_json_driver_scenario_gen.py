@@ -33,6 +33,7 @@ COPYRIGHT = """
 # limitations under the License.
 """
 
+
 def generate_args():
     all_scenario_set = gen.generate_yaml()
     all_scenario_set = all_scenario_set['tests']
