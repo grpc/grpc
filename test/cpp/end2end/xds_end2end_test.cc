@@ -2097,7 +2097,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   std::string CreateMetadataValueThatHashesToBackendPort(int port) {
-    return absl::StrCat(ipv6_only_ ? "::1" : "127.0.0.1", ":", port, "_0");
+    return absl::StrCat(ipv6_only_ ? "[::1]" : "127.0.0.1", ":", port, "_0");
   }
 
   std::string CreateMetadataValueThatHashesToBackend(int index) {

@@ -298,13 +298,6 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
     AddressWeight address_weight;
     address_weight.address =
         grpc_sockaddr_to_string(&sd->address().address(), false);
-    // Remove [] from ipv6 address
-    address_weight.address.erase(std::remove(address_weight.address.begin(),
-                                             address_weight.address.end(), '['),
-                                 address_weight.address.end());
-    address_weight.address.erase(std::remove(address_weight.address.begin(),
-                                             address_weight.address.end(), ']'),
-                                 address_weight.address.end());
     if (weight_attribute != nullptr) {
       GPR_ASSERT(weight_attribute->weight() != 0);
       address_weight.weight = weight_attribute->weight();
