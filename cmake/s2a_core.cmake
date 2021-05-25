@@ -12,7 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set(S2A_CORE_UPB_LIBRARY "${CMAKE_CURRENT_BINARY_DIR}/third_party/upb")
+set(S2A_CORE_ABSL_DIR ${ABSL_ROOT_DIR})
+set(S2A_CORE_SSL_DIR ${_gRPC_SSL_INCLUDE_DIR})
+set(S2A_CORE_UPB_LIBRARY ${_gRPC_UPB_INCLUDE_DIR})
 if(gRPC_S2A_CORE_PROVIDER STREQUAL "module")
   if(NOT S2A_CORE_ROOT_DIR)
     set(S2A_CORE_ROOT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/s2a_core")
