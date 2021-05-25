@@ -594,7 +594,7 @@ class ClientCallbackReaderWriterImpl
     start_tag_.Set(
         call_.call(),
         [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok && !context_->trailers_only());
+          reactor_->OnReadInitialMetadataDone(ok);
           MaybeFinish(/*from_reaction=*/true);
         },
         &start_ops_, /*can_inline=*/false);
@@ -737,7 +737,7 @@ class ClientCallbackReaderImpl : public ClientCallbackReader<Response> {
     start_tag_.Set(
         call_.call(),
         [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok && !context_->trailers_only());
+          reactor_->OnReadInitialMetadataDone(ok);
           MaybeFinish(/*from_reaction=*/true);
         },
         &start_ops_, /*can_inline=*/false);
@@ -995,7 +995,7 @@ class ClientCallbackWriterImpl : public ClientCallbackWriter<Request> {
     start_tag_.Set(
         call_.call(),
         [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok && !context_->trailers_only());
+          reactor_->OnReadInitialMetadataDone(ok);
           MaybeFinish(/*from_reaction=*/true);
         },
         &start_ops_, /*can_inline=*/false);
@@ -1121,7 +1121,7 @@ class ClientCallbackUnaryImpl final : public ClientCallbackUnary {
     start_tag_.Set(
         call_.call(),
         [this](bool ok) {
-          reactor_->OnReadInitialMetadataDone(ok && !context_->trailers_only());
+          reactor_->OnReadInitialMetadataDone(ok);
           MaybeFinish();
         },
         &start_ops_, /*can_inline=*/false);
