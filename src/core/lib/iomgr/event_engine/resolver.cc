@@ -13,6 +13,8 @@
 // limitations under the License.
 #if defined(GRPC_EVENT_ENGINE_TEST)
 
+#include <future>
+
 #include <grpc/support/port_platform.h>
 
 #include <grpc/event_engine/event_engine.h>
@@ -23,12 +25,12 @@
 #include "src/core/lib/iomgr/event_engine/resolved_address_internal.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/work_serializer.h"
+#include "src/core/lib/surface/init.h"
 #include "src/core/lib/transport/error_utils.h"
 
 namespace {
 using ::grpc_event_engine::experimental::CreateGRPCResolvedAddress;
 using ::grpc_event_engine::experimental::EventEngine;
-using ::grpc_event_engine::experimental::GetDefaultEventEngine;
 
 /// A fire-and-forget class representing an individual DNS request.
 ///
@@ -76,8 +78,7 @@ void resolve_address(const char* addr, const char* default_port,
                      grpc_pollset_set* /* interested_parties */,
                      grpc_closure* on_done,
                      grpc_resolved_addresses** addresses) {
-  std::shared_ptr<EventEngine> event_engine = GetDefaultEventEngine();
-  auto dns_resolver = event_engine->GetDNSResolver();
+  auto dns_resolver = g_event_engine->GetDNSResolver();
   if (!dns_resolver.ok()) {
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done,
                             absl_status_to_grpc_error(dns_resolver.status()));
@@ -88,19 +89,17 @@ void resolve_address(const char* addr, const char* default_port,
 }
 
 void blocking_handle_async_resolve_done(void* arg, grpc_error_handle error) {
-  gpr_event_set(static_cast<gpr_event*>(arg), error);
+  static_cast<std::promise<grpc_error*>*>(arg)->set_value(error);
 }
 
 grpc_error* blocking_resolve_address(const char* name, const char* default_port,
                                      grpc_resolved_addresses** addresses) {
   grpc_closure on_done;
-  gpr_event evt;
-  gpr_event_init(&evt);
+  std::promise<grpc_error*> evt;
   GRPC_CLOSURE_INIT(&on_done, blocking_handle_async_resolve_done, &evt,
                     grpc_schedule_on_exec_ctx);
   resolve_address(name, default_port, nullptr, &on_done, addresses);
-  gpr_event_wait(&evt, gpr_inf_future(GPR_CLOCK_REALTIME));
-  return static_cast<grpc_error*>(gpr_event_get(&evt));
+  return evt.get_future().get();
 }
 
 }  // namespace

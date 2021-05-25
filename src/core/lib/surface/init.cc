@@ -23,6 +23,8 @@
 #include <limits.h>
 #include <memory.h>
 
+#include <future>
+
 #include <grpc/fork.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
@@ -125,8 +127,9 @@ void grpc_register_plugin(void (*init)(void), void (*destroy)(void)) {
   g_number_of_plugins++;
 }
 
+std::shared_ptr<grpc_event_engine::experimental::EventEngine> g_event_engine;
+
 void grpc_init(void) {
-  int i;
   gpr_once_init(&g_basic_init, do_basic_init);
 
   grpc_core::MutexLock lock(g_init_mu);
@@ -146,11 +149,13 @@ void grpc_init(void) {
     grpc_security_pre_init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_core::ExecCtx::GlobalInit();
+    g_event_engine =
+        grpc_event_engine::experimental::DefaultEventEngineFactory();
     grpc_iomgr_init();
     gpr_timers_global_init();
     grpc_core::HandshakerRegistry::Init();
     grpc_security_init();
-    for (i = 0; i < g_number_of_plugins; i++) {
+    for (int i = 0; i < g_number_of_plugins; i++) {
       if (g_all_of_the_plugins[i].init != nullptr) {
         g_all_of_the_plugins[i].init();
       }
@@ -182,6 +187,12 @@ void grpc_shutdown_internal_locked(void) {
       }
     }
     grpc_iomgr_shutdown();
+    std::promise<absl::Status> shutdown_status_promise;
+    g_event_engine->Shutdown([&shutdown_status_promise](absl::Status status) {
+      shutdown_status_promise.set_value(status);
+    });
+    auto shutdown_status = shutdown_status_promise.get_future().get();
+    GPR_ASSERT(shutdown_status.ok());
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_mdctx_global_shutdown();

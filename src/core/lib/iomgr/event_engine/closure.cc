@@ -18,6 +18,8 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/transport/error_utils.h"
 
+void pollset_ee_broadcast_event();
+
 namespace grpc_event_engine {
 namespace experimental {
 
@@ -26,6 +28,8 @@ EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Closure::Run(DEBUG_LOCATION, closure,
                             absl_status_to_grpc_error(status));
+    exec_ctx.Flush();
+    pollset_ee_broadcast_event();
   };
 }
 

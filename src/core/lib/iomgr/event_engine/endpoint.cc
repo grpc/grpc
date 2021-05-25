@@ -33,6 +33,8 @@
 #include "src/core/lib/iomgr/resource_quota.h"
 #include "src/core/lib/transport/error_utils.h"
 
+void pollset_ee_broadcast_event();
+
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
 namespace {
@@ -59,6 +61,8 @@ void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
         grpc_core::ExecCtx exec_ctx;
         grpc_core::Closure::Run(DEBUG_LOCATION, cb,
                                 absl_status_to_grpc_error(status));
+        exec_ctx.Flush();
+        pollset_ee_broadcast_event();
       },
       read_buffer, absl::InfiniteFuture());
 }
@@ -84,11 +88,15 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
         grpc_core::ExecCtx exec_ctx;
         grpc_core::Closure::Run(DEBUG_LOCATION, cb,
                                 absl_status_to_grpc_error(status));
+        exec_ctx.Flush();
+        pollset_ee_broadcast_event();
       },
       write_buffer, absl::InfiniteFuture());
 }
 void endpoint_add_to_pollset(grpc_endpoint* /* ep */,
-                             grpc_pollset* /* pollset */) {}
+                             grpc_pollset* /* pollset */) {
+  abort();
+}
 void endpoint_add_to_pollset_set(grpc_endpoint* /* ep */,
                                  grpc_pollset_set* /* pollset */) {}
 void endpoint_delete_from_pollset_set(grpc_endpoint* /* ep */,

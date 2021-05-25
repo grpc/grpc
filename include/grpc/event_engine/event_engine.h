@@ -95,12 +95,14 @@ class EventEngine {
     static constexpr socklen_t MAX_SIZE_BYTES = 128;
 
     ResolvedAddress(const sockaddr* address, socklen_t size);
+    ResolvedAddress() = default;
+    ResolvedAddress(const ResolvedAddress&) = default;
     const struct sockaddr* address() const;
     socklen_t size() const;
 
    private:
     char address_[MAX_SIZE_BYTES];
-    socklen_t size_;
+    socklen_t size_ = 0;
   };
 
   /// An Endpoint represents one end of a connection between a gRPC client and
@@ -322,11 +324,7 @@ class EventEngine {
   virtual void Shutdown(Callback on_shutdown_complete) = 0;
 };
 
-/// Lazily instantiate and return a default global EventEngine instance if no
-/// custom instance is provided. If a custom EventEngine is provided for every
-/// channel/server via ChannelArgs, this method should never be called, and the
-/// default instance will never be instantiated.
-std::shared_ptr<EventEngine> GetDefaultEventEngine();
+std::shared_ptr<EventEngine> DefaultEventEngineFactory();
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
