@@ -376,10 +376,6 @@ RingHash::Picker::Picker(RefCountedPtr<RingHash> parent,
             "[RH %p picker %p] created picker from subchannel_list=%p "
             "with %" PRIuPTR " ring entries",
             parent_.get(), this, subchannel_list, ring_.size());
-    // for (const auto& r : ring_) {
-    // gpr_log(GPR_INFO, "donn ring hash: %" PRIx64 " subchannel: %p state: %d",
-    //         r.hash, r.subchannel.get(), r.connectivity_state);
-    //}
   }
 }
 
