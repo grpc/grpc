@@ -653,10 +653,8 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
         case XdsApi::Route::HashPolicy::CHANNEL_ID: {
-          std::string address_str = absl::StrFormat(
-              "%" PRIu64,
-              static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver)));
-          new_hash = XXH64(address_str.c_str(), address_str.length(), 0);
+          new_hash =
+              static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
           break;
         }
         default:
