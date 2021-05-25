@@ -697,10 +697,24 @@ std::string XdsApi::LdsUpdate::ToString() const {
 //
 
 std::string XdsApi::CdsUpdate::ToString() const {
-  absl::InlinedVector<std::string, 4> contents;
-  if (!eds_service_name.empty()) {
-    contents.push_back(
-        absl::StrFormat("eds_service_name=%s", eds_service_name));
+  absl::InlinedVector<std::string, 8> contents;
+  switch (cluster_type) {
+    case EDS:
+      contents.push_back("cluster_type=EDS");
+      if (!eds_service_name.empty()) {
+        contents.push_back(
+            absl::StrFormat("eds_service_name=%s", eds_service_name));
+      }
+      break;
+    case LOGICAL_DNS:
+      contents.push_back("cluster_type=LOGICAL_DNS");
+      contents.push_back(absl::StrFormat("dns_hostname=%s", dns_hostname));
+      break;
+    case AGGREGATE:
+      contents.push_back("cluster_type=AGGREGATE");
+      contents.push_back(
+          absl::StrFormat("prioritized_cluster_names=[%s]",
+                          absl::StrJoin(prioritized_cluster_names, ", ")));
   }
   if (!common_tls_context.Empty()) {
     contents.push_back(absl::StrFormat("common_tls_context=%s",
@@ -709,6 +723,14 @@ std::string XdsApi::CdsUpdate::ToString() const {
   if (lrs_load_reporting_server_name.has_value()) {
     contents.push_back(absl::StrFormat("lrs_load_reporting_server_name=%s",
                                        lrs_load_reporting_server_name.value()));
+  }
+  contents.push_back(absl::StrCat("lb_policy=", lb_policy));
+  if (lb_policy == "RING_HASH") {
+    contents.push_back(absl::StrCat("min_ring_size=", min_ring_size));
+    contents.push_back(absl::StrCat("max_ring_size=", max_ring_size));
+    contents.push_back(absl::StrCat("hash_function=", hash_function == XX_HASH
+                                                          ? "XX_HASH"
+                                                          : "MURMUR_HASH_2"));
   }
   contents.push_back(
       absl::StrFormat("max_concurrent_requests=%d", max_concurrent_requests));
@@ -2707,10 +2729,11 @@ grpc_error_handle CdsResponseParse(
       resource_names_failed->insert(cluster_name);
       continue;
     }
-    // Serialize into JSON and store it in the CdsUpdateMap
+    // Add the cluster to cds_update_map.
     XdsApi::CdsResourceData& cds_resource_data =
         (*cds_update_map)[cluster_name];
     XdsApi::CdsUpdate& cds_update = cds_resource_data.resource;
+    // Store serialized proto.
     cds_resource_data.serialized_proto = UpbStringToStdString(encoded_cluster);
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster) &&
@@ -2752,6 +2775,102 @@ grpc_error_handle CdsResponseParse(
     } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
                envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
       cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS;
+      const auto* load_assignment =
+          envoy_config_cluster_v3_Cluster_load_assignment(cluster);
+      if (load_assignment == nullptr) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(
+                cluster_name,
+                ": load_assignment not present for LOGICAL_DNS cluster")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      size_t num_localities;
+      const auto* const* localities =
+          envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
+              load_assignment, &num_localities);
+      if (num_localities != 1) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name,
+                         ": load_assignment for LOGICAL_DNS cluster must have "
+                         "exactly one locality, found ",
+                         num_localities)
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      size_t num_endpoints;
+      const auto* const* endpoints =
+          envoy_config_endpoint_v3_LocalityLbEndpoints_lb_endpoints(
+              localities[0], &num_endpoints);
+      if (num_endpoints != 1) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name,
+                         ": locality for LOGICAL_DNS cluster must have "
+                         "exactly one endpoint, found ",
+                         num_endpoints)
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      const auto* endpoint =
+          envoy_config_endpoint_v3_LbEndpoint_endpoint(endpoints[0]);
+      if (endpoint == nullptr) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name, ": LbEndpoint endpoint field not set")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      const auto* address = envoy_config_endpoint_v3_Endpoint_address(endpoint);
+      if (address == nullptr) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name, ": Endpoint address field not set")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      const auto* socket_address =
+          envoy_config_core_v3_Address_socket_address(address);
+      if (socket_address == nullptr) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name, ": Address socket_address field not set")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      if (envoy_config_core_v3_SocketAddress_resolver_name(socket_address)
+              .size != 0) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(
+                cluster_name,
+                ": LOGICAL_DNS clusters must NOT have a custom resolver "
+                "name set")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      absl::string_view address_str = UpbStringToAbsl(
+          envoy_config_core_v3_SocketAddress_address(socket_address));
+      if (address_str.empty()) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name, ": SocketAddress address field not set")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      if (!envoy_config_core_v3_SocketAddress_has_port_value(socket_address)) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name,
+                         ": SocketAddress port_value field not set")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      cds_update.dns_hostname = JoinHostPort(
+          address_str,
+          envoy_config_core_v3_SocketAddress_port_value(socket_address));
     } else {
       if (envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
         const envoy_config_cluster_v3_Cluster_CustomClusterType*
