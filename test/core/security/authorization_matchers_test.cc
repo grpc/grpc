@@ -372,11 +372,14 @@ TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherFailedUriSanMatches) {
 TEST_F(AuthorizationMatchersTest, AuthenticatedMatcherSuccessfulDnsSanMatches) {
   args_.AddPropertyToAuthContext(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
                                  GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+  args_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME,
+                                 "spiffe://bar.abc");
   args_.AddPropertyToAuthContext(GRPC_PEER_DNS_PROPERTY_NAME,
                                  "foo.test.domain.com");
   args_.AddPropertyToAuthContext(GRPC_PEER_DNS_PROPERTY_NAME,
                                  "bar.test.domain.com");
   EvaluateArgs args = args_.MakeEvaluateArgs();
+  // No match found in URI SANs, finds match in DNS SANs.
   AuthenticatedAuthorizationMatcher matcher(
       StringMatcher::Create(StringMatcher::Type::kExact,
                             /*matcher=*/"bar.test.domain.com",
