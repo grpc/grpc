@@ -31,6 +31,11 @@ namespace grpc_core {
 // this engine.
 class GrpcAuthorizationEngine : public AuthorizationEngine {
  public:
+  struct Policy {
+    std::string name;
+    std::unique_ptr<AuthorizationMatcher> matcher;
+  };
+
   // Builds GrpcAuthorizationEngine without any policies.
   explicit GrpcAuthorizationEngine(Rbac::Action action) : action_(action) {}
   // Builds GrpcAuthorizationEngine with allow/deny RBAC policy.
@@ -38,16 +43,14 @@ class GrpcAuthorizationEngine : public AuthorizationEngine {
 
   Rbac::Action action() { return action_; }
 
+  // AuthorizationMatcher* policy() { return policies_[0].matcher.get(); }
+  bool IsEmpty() { return policies_.empty(); }
+
   // Evaluates incoming request against RBAC policy and makes a decision to
   // whether allow/deny this request.
   Decision Evaluate(const EvaluateArgs& args) const override;
 
  private:
-  struct Policy {
-    std::string name;
-    std::unique_ptr<AuthorizationMatcher> matcher;
-  };
-
   Rbac::Action action_;
   std::vector<Policy> policies_;
 };

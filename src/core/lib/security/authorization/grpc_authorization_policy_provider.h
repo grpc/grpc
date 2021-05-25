@@ -21,6 +21,8 @@
 
 #include "absl/status/statusor.h"
 
+#include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/authorization/authorization_policy_provider.h"
 #include "src/core/lib/security/authorization/rbac_translator.h"
 
@@ -52,8 +54,43 @@ class StaticDataAuthorizationPolicyProvider
   RefCountedPtr<AuthorizationEngine> deny_engine_;
 };
 
-// TODO(ashithasantosh): Add implementation for file watcher authorization
-// policy provider.
+class FileWatcherAuthorizationPolicyProvider
+    : public grpc_authorization_policy_provider {
+ public:
+  static absl::StatusOr<RefCountedPtr<grpc_authorization_policy_provider>>
+  Create(absl::string_view authz_policy_path,
+         unsigned int refresh_interval_sec);
+
+  explicit FileWatcherAuthorizationPolicyProvider(
+      absl::string_view authz_policy_path, unsigned int refresh_interval_sec,
+      std::string policy, RbacPolicies policies);
+
+  ~FileWatcherAuthorizationPolicyProvider() override;
+
+  RefCountedPtr<AuthorizationEngine> allow_engine() const override {
+    return allow_engine_;
+  }
+  RefCountedPtr<AuthorizationEngine> deny_engine() const override {
+    return deny_engine_;
+  }
+
+  void Orphan() override {}
+
+ private:
+  // Force an update from the file system regardless of the interval.
+  void ForceUpdate();
+
+  std::string path_;
+  unsigned int refresh_interval_sec_ = 0;
+  std::string authz_policy_;
+
+  Thread refresh_thread_;
+  gpr_event shutdown_event_;
+
+  Mutex mu_;
+  RefCountedPtr<AuthorizationEngine> allow_engine_;
+  RefCountedPtr<AuthorizationEngine> deny_engine_;
+};
 
 }  // namespace grpc_core
 

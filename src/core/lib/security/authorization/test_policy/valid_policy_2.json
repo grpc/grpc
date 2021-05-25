@@ -1,0 +1,31 @@
+{
+      "name": "authz",
+      "deny_rules": 
+      [
+      {
+            "name": "deny_policy",
+            "source": {},
+            "request": 
+            {
+                  "paths": 
+                  [
+                        "*"
+                  ]
+            }
+      }
+      ],
+      "allow_rules": 
+      [
+      {
+            "name": "allow_policy",
+            "source": {},
+            "request": 
+            {
+                  "paths": 
+                  [
+                        "*"
+                  ]
+            }
+      }
+      ]
+}

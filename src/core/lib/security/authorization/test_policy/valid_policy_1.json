@@ -1,0 +1,17 @@
+{
+      "name": "authz",
+      "allow_rules": 
+      [
+      {
+            "name": "allow_policy",
+            "source": {},
+            "request": 
+            {
+                  "paths": 
+                  [
+                        "*"
+                  ]
+            }
+      }
+      ]
+}
