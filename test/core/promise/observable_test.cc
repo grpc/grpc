@@ -15,12 +15,40 @@
 #include "src/core/lib/promise/observable.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 
 using testing::MockFunction;
 using testing::StrictMock;
 
 namespace grpc_core {
+
+// A simple Barrier type: stalls progress until it is 'cleared'.
+class Barrier {
+ public:
+  struct Result {};
+
+  Promise<Result> Wait() {
+    return [this]() -> Poll<Result> {
+      absl::MutexLock lock(wait_set_.mu());
+      if (cleared_) {
+        return ready(Result{});
+      } else {
+        return wait_set_.pending();
+      }
+    };
+  }
+
+  void Clear() {
+    wait_set_.mu()->Lock();
+    cleared_ = true;
+    wait_set_.WakeAllAndUnlock();
+  }
+
+ private:
+  WaitSet wait_set_;
+  bool cleared_ GUARDED_BY(wait_set_.mu()) = false;
+};
 
 TEST(ObservableTest, CanPushAndGet) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
@@ -61,6 +89,33 @@ TEST(ObservableTest, CanNext) {
   observable.Push(42);
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   observable.Push(1);
+}
+
+TEST(ObservableTest, CanWatch) {
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  Observable<int> observable;
+  Barrier barrier;
+  auto activity = ActivityFromPromiseFactory(
+      [&observable, &barrier]() {
+        return observable.Watch(
+            [&barrier](int x,
+                       WatchCommitter* committer) -> Promise<absl::Status> {
+              if (x == 3) {
+                committer->Commit();
+                return Seq(barrier.Wait(), Immediate(absl::OkStatus()));
+              } else {
+                return Never<absl::Status>();
+              }
+            });
+      },
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      nullptr);
+  observable.Push(1);
+  observable.Push(2);
+  observable.Push(3);
+  observable.Push(4);
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  barrier.Clear();
 }
 
 }  // namespace grpc_core

@@ -38,6 +38,31 @@ auto NowOrNever(Promise promise)
   return {};
 }
 
+// A promise that never completes.
+template <typename T>
+struct Never {
+  Poll<T> operator()() { return kPending; }
+};
+
+namespace promise_detail {
+// A promise that immediately completes.
+template <typename T>
+class Immediate {
+ public:
+  Immediate(T value) : value_(std::move(value)) {}
+
+  Poll<T> operator()() { return ready(std::move(value_)); }
+
+ private:
+  T value_;
+};
+}  // namespace promise_detail
+
+template <typename T>
+promise_detail::Immediate<T> Immediate(T value) {
+  return promise_detail::Immediate<T>(std::move(value));
+}
+
 }  // namespace grpc_core
 
 #endif  // GRPC_CORE_LIB_PROMISE_PROMISE_H

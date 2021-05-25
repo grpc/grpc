@@ -18,19 +18,19 @@
 namespace grpc_core {
 
 TEST(VisitorTest, Visit1) {
-  EXPECT_EQ(Visitor([](int) { return ready(1); },
-                    [](double) { return ready(2); })(
-                absl::variant<int, double>(1))()
-                .take(),
-            1);
+  EXPECT_EQ(
+      Visitor([](int) { return ready(1); },
+              [](double) { return ready(2); })(absl::variant<int, double>(1))()
+          .take(),
+      1);
 }
 
 TEST(VisitorTest, Visit2) {
-  EXPECT_EQ(Visitor([](int) { return ready(1); },
-                    [](double) { return ready(2); })(
-                absl::variant<int, double>(1.0))()
-                .take(),
-            2);
+  EXPECT_EQ(
+      Visitor([](int) { return ready(1); }, [](double) { return ready(2); })(
+          absl::variant<int, double>(1.0))()
+          .take(),
+      2);
 }
 
 TEST(VisitorTest, VisitFactory1) {

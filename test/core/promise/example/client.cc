@@ -132,4 +132,3 @@ class Config {
  private:
   Observable<LBPicker> lb_picker_;
 };
-
