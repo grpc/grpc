@@ -170,8 +170,6 @@ struct grpc_call {
   bool destroy_called = false;
   /** flag indicating that cancellation is inherited */
   bool cancellation_is_inherited = false;
-  // Trailers-only response status
-  bool is_trailers_only = false;
   /** which ops are in-flight */
   bool sent_initial_metadata = false;
   bool sending_message = false;
@@ -1827,10 +1825,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
             &call->metadata_batch[1 /* is_receiving */][0 /* is_trailing */];
         stream_op_payload->recv_initial_metadata.recv_initial_metadata_ready =
             &call->receiving_initial_metadata_ready;
-        if (call->is_client) {
-          stream_op_payload->recv_initial_metadata.trailing_metadata_available =
-              &call->is_trailers_only;
-        } else {
+        if (!call->is_client) {
           stream_op_payload->recv_initial_metadata.peer_string =
               &call->peer_string;
         }
@@ -2020,10 +2015,6 @@ grpc_compression_algorithm grpc_call_compression_for_level(
   grpc_compression_algorithm algo =
       compression_algorithm_for_level_locked(call, level);
   return algo;
-}
-
-bool grpc_call_is_trailers_only(const grpc_call* call) {
-  return call->is_trailers_only;
 }
 
 bool grpc_call_failed_before_recv_message(const grpc_call* c) {
