@@ -1403,6 +1403,47 @@ TEST_P(ClientCallbackEnd2endTest, UnimplementedRpc) {
   }
 }
 
+TEST_P(ClientCallbackEnd2endTest, TestTrailersOnlyOnError) {
+  // Note that trailers-only is an HTTP/2 concept so we shouldn't do this test
+  // for any other transport such as inproc.
+  if (GetParam().protocol != Protocol::TCP) {
+    return;
+  }
+
+  ResetStub();
+  class Reactor : public grpc::experimental::ClientBidiReactor<EchoRequest,
+                                                               EchoResponse> {
+   public:
+    explicit Reactor(grpc::testing::EchoTestService::Stub* stub) {
+      stub->experimental_async()->UnimplementedBidi(&context_, this);
+      StartCall();
+    }
+    void Await() {
+      std::unique_lock<std::mutex> l(mu_);
+      while (!done_) {
+        done_cv_.wait(l);
+      }
+    }
+
+   private:
+    void OnReadInitialMetadataDone(bool ok) override { EXPECT_FALSE(ok); }
+    void OnDone(const Status& s) override {
+      EXPECT_EQ(s.error_code(), grpc::StatusCode::UNIMPLEMENTED);
+      EXPECT_EQ(s.error_message(), "");
+      std::unique_lock<std::mutex> l(mu_);
+      done_ = true;
+      done_cv_.notify_one();
+    }
+
+    ClientContext context_;
+    std::mutex mu_;
+    std::condition_variable done_cv_;
+    bool done_ = false;
+  } client(stub_.get());
+
+  client.Await();
+}
+
 TEST_P(ClientCallbackEnd2endTest,
        ResponseStreamExtraReactionFlowReadsUntilDone) {
   ResetStub();

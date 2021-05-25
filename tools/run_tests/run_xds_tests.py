@@ -84,6 +84,7 @@ _TEST_CASES = [
     'traffic_splitting',
     'path_matching',
     'header_matching',
+    'api_listener',
     'forwarding_rule_port_match',
     'forwarding_rule_default_port',
     'metadata_filter',
@@ -98,7 +99,6 @@ _ADDITIONAL_TEST_CASES = [
     'timeout',
     'fault_injection',
     'csds',
-    'api_listener',  # TODO(b/187352987) Relieve quota pressure
 ]
 
 # Test cases that require the V3 API.  Skipped in older runs.
@@ -724,50 +724,46 @@ def test_load_report_based_failover(gcp, backend_service,
                                     primary_instance_group,
                                     secondary_instance_group):
     logger.info('Running test_load_report_based_failover')
-    try:
-        patch_backend_service(
-            gcp, backend_service,
-            [primary_instance_group, secondary_instance_group])
-        primary_instance_names = get_instance_names(gcp, primary_instance_group)
-        secondary_instance_names = get_instance_names(gcp,
-                                                      secondary_instance_group)
-        wait_for_healthy_backends(gcp, backend_service, primary_instance_group)
-        wait_for_healthy_backends(gcp, backend_service,
-                                  secondary_instance_group)
-        wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
-                                                 _WAIT_FOR_STATS_SEC)
-        # Set primary locality's balance mode to RATE, and RPS to 20% of the
-        # client's QPS. The secondary locality will be used.
-        max_rate = int(args.qps * 1 / 5)
-        logger.info('Patching backend service to RATE with %d max_rate',
-                    max_rate)
-        patch_backend_service(
-            gcp,
-            backend_service, [primary_instance_group, secondary_instance_group],
-            balancing_mode='RATE',
-            max_rate=max_rate)
-        wait_until_all_rpcs_go_to_given_backends(
-            primary_instance_names + secondary_instance_names,
-            _WAIT_FOR_BACKEND_SEC)
+    patch_backend_service(gcp, backend_service,
+                          [primary_instance_group, secondary_instance_group])
+    primary_instance_names = get_instance_names(gcp, primary_instance_group)
+    secondary_instance_names = get_instance_names(gcp, secondary_instance_group)
+    wait_for_healthy_backends(gcp, backend_service, primary_instance_group)
+    wait_for_healthy_backends(gcp, backend_service, secondary_instance_group)
+    wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
+                                             _WAIT_FOR_STATS_SEC)
+    # Set primary locality's balance mode to RATE, and RPS to 20% of the
+    # client's QPS. The secondary locality will be used.
+    max_rate = int(args.qps * 1 / 5)
+    logger.info('Patching backend service to RATE with %d max_rate', max_rate)
+    patch_backend_service(gcp,
+                          backend_service,
+                          [primary_instance_group, secondary_instance_group],
+                          balancing_mode='RATE',
+                          max_rate=max_rate)
+    wait_until_all_rpcs_go_to_given_backends(
+        primary_instance_names + secondary_instance_names,
+        _WAIT_FOR_BACKEND_SEC)
 
-        # Set primary locality's balance mode to RATE, and RPS to 120% of the
-        # client's QPS. Only the primary locality will be used.
-        max_rate = int(args.qps * 6 / 5)
-        logger.info('Patching backend service to RATE with %d max_rate',
-                    max_rate)
-        patch_backend_service(
-            gcp,
-            backend_service, [primary_instance_group, secondary_instance_group],
-            balancing_mode='RATE',
-            max_rate=max_rate)
-        wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
-                                                 _WAIT_FOR_BACKEND_SEC)
-        logger.info("success")
-    finally:
-        patch_backend_service(gcp, backend_service, [primary_instance_group])
-        instance_names = get_instance_names(gcp, primary_instance_group)
-        wait_until_all_rpcs_go_to_given_backends(instance_names,
-                                                 _WAIT_FOR_BACKEND_SEC)
+    # Set primary locality's balance mode to RATE, and RPS to 120% of the
+    # client's QPS. Only the primary locality will be used.
+    max_rate = int(args.qps * 6 / 5)
+    logger.info('Patching backend service to RATE with %d max_rate', max_rate)
+    patch_backend_service(gcp,
+                          backend_service,
+                          [primary_instance_group, secondary_instance_group],
+                          balancing_mode='RATE',
+                          max_rate=max_rate)
+    wait_until_all_rpcs_go_to_given_backends(primary_instance_names,
+                                             _WAIT_FOR_BACKEND_SEC)
+    logger.info("success")
+
+    # TODO(b/181361235) Move cleanup to a finally block once failure has been
+    # reproduced.
+    patch_backend_service(gcp, backend_service, [primary_instance_group])
+    instance_names = get_instance_names(gcp, primary_instance_group)
+    wait_until_all_rpcs_go_to_given_backends(instance_names,
+                                             _WAIT_FOR_BACKEND_SEC)
 
 
 def test_ping_pong(gcp, backend_service, instance_group):
@@ -2969,6 +2965,9 @@ else:
         alpha_compute = googleapiclient.discovery.build('compute', 'alpha')
 
 try:
+    skip_cleanup_to_debug_failure = False
+    test_results = {}
+    failed_tests = []
     gcp = GcpState(compute, alpha_compute, args.project_id, args.project_num)
     gcp_suffix = args.gcp_suffix
     health_check_name = _BASE_HEALTH_CHECK_NAME + gcp_suffix
@@ -3090,8 +3089,6 @@ try:
         client_env['GRPC_XDS_EXPERIMENTAL_CIRCUIT_BREAKING'] = 'true'
         client_env['GRPC_XDS_EXPERIMENTAL_ENABLE_TIMEOUT'] = 'true'
         client_env['GRPC_XDS_EXPERIMENTAL_FAULT_INJECTION'] = 'true'
-        test_results = {}
-        failed_tests = []
         for test_case in args.test_case:
             if test_case in _V3_TEST_CASES and not args.xds_v3_support:
                 logger.info('skipping test %s due to missing v3 support',
@@ -3182,9 +3179,16 @@ try:
                     test_gentle_failover(gcp, backend_service, instance_group,
                                          secondary_zone_instance_group)
                 elif test_case == 'load_report_based_failover':
-                    test_load_report_based_failover(
-                        gcp, backend_service, instance_group,
-                        secondary_zone_instance_group)
+                    try:
+                        test_load_report_based_failover(
+                            gcp, backend_service, instance_group,
+                            secondary_zone_instance_group)
+                    except:
+                        # TODO(b/181361235) Temporarily preserve resources after
+                        # failure
+                        logger.exception('Aborting test suite (b/181361235)')
+                        skip_cleanup_to_debug_failure = True
+                        sys.exit(1)
                 elif test_case == 'ping_pong':
                     test_ping_pong(gcp, backend_service, instance_group)
                 elif test_case == 'remove_instance_group':
@@ -3266,18 +3270,22 @@ try:
                     logger.info('Client output:')
                     with open(test_log_filename, 'r') as client_output:
                         logger.info(client_output.read())
-        if not os.path.exists(_TEST_LOG_BASE_DIR):
-            os.makedirs(_TEST_LOG_BASE_DIR)
-        report_utils.render_junit_xml_report(test_results,
-                                             os.path.join(
-                                                 _TEST_LOG_BASE_DIR,
-                                                 _SPONGE_XML_NAME),
-                                             suite_name='xds_tests',
-                                             multi_target=True)
+
         if failed_tests:
             logger.error('Test case(s) %s failed', failed_tests)
             sys.exit(1)
 finally:
+    if not os.path.exists(_TEST_LOG_BASE_DIR):
+        os.makedirs(_TEST_LOG_BASE_DIR)
+    report_utils.render_junit_xml_report(test_results,
+                                         os.path.join(_TEST_LOG_BASE_DIR,
+                                                      _SPONGE_XML_NAME),
+                                         suite_name='xds_tests',
+                                         multi_target=True)
     if not args.keep_gcp_resources:
-        logger.info('Cleaning up GCP resources. This may take some time.')
-        clean_up(gcp)
+        if skip_cleanup_to_debug_failure:
+            # TODO(b/181361235) Temporarily preserve resources after failure
+            logger.info('Skipping clean up due to b/181361235')
+        else:
+            logger.info('Cleaning up GCP resources. This may take some time.')
+            clean_up(gcp)

@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2021 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,14 +13,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/linux/grpc_e2e_performance_v2.sh"
-timeout_mins: 720
-action {
-  define_artifacts {
-    regex: "**/*sponge_log.*"
-    regex: "**/perf_reports/**"
-  }
-}
+echo "BEGIN Listing leftover tests."
+
+# Find tests that have running pods and are in Errored state.
+kubectl get pods --no-headers -o jsonpath='{range .items[*]}{.metadata.ownerReferences[0].name}{" "}{.status.phase}{"\n"}{end}' \
+    | grep Running \
+    | cut -f1 -d' ' \
+    | sort -u \
+    | xargs -r kubectl get loadtest --no-headers -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.state}{" "}{.metadata.annotations.pool}{" "}{.metadata.annotations.scenario}{"\n"}{end}' \
+    | grep Errored
+
+echo "END Listing leftover tests."
