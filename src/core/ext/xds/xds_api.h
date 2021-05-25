@@ -420,9 +420,6 @@ class XdsApi {
     // Used for RING_HASH LB policy only.
     uint64_t min_ring_size = 1024;
     uint64_t max_ring_size = 8388608;
-    enum HashFunction { XX_HASH, MURMUR_HASH_2 };
-    HashFunction hash_function;
-
     // Maximum number of outstanding requests can be made to the upstream
     // cluster.
     uint32_t max_concurrent_requests = 1024;
@@ -438,7 +435,6 @@ class XdsApi {
              lb_policy == other.lb_policy &&
              min_ring_size == other.min_ring_size &&
              max_ring_size == other.max_ring_size &&
-             hash_function == other.hash_function &&
              max_concurrent_requests == other.max_concurrent_requests;
     }
 
