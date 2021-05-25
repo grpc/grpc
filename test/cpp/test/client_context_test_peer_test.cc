@@ -72,7 +72,6 @@ TEST(ClientContextTestPeerTest, GetSendInitialMetadata) {
   ASSERT_EQ(metadata, peer.GetSendInitialMetadata());
 }
 
-
 }  // namespace testing
 }  // namespace grpc
 
