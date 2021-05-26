@@ -32,7 +32,7 @@ TEST(ForEachTest, SendThriceWithPipe) {
   int num_received = 0;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  ActivityFromPromiseFactory(
+  MakeActivity(
       [&pipe, &num_received] {
         return Map(Join(Seq(
                             pipe.sender.Push(1),

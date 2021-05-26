@@ -91,7 +91,7 @@ class SingleBarrier {
 TEST(ActivityTest, ImmediatelyCompleteWithSuccess) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  ActivityFromPromiseFactory(
+  MakeActivity(
       [] { return [] { return ready(absl::OkStatus()); }; },
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
       nullptr);
@@ -100,7 +100,7 @@ TEST(ActivityTest, ImmediatelyCompleteWithSuccess) {
 TEST(ActivityTest, ImmediatelyCompleteWithFailure) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::CancelledError()));
-  ActivityFromPromiseFactory(
+  MakeActivity(
       [] { return [] { return ready(absl::CancelledError()); }; },
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
       nullptr);
@@ -109,7 +109,7 @@ TEST(ActivityTest, ImmediatelyCompleteWithFailure) {
 TEST(ActivityTest, DropImmediately) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::CancelledError()));
-  ActivityFromPromiseFactory(
+  MakeActivity(
       [] { return []() -> Poll<absl::Status> { return kPending; }; },
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
       nullptr);
@@ -117,7 +117,7 @@ TEST(ActivityTest, DropImmediately) {
 
 TEST(ActivityTest, Cancel) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
-  auto activity = ActivityFromPromiseFactory(
+  auto activity = MakeActivity(
       [] { return []() -> Poll<absl::Status> { return kPending; }; },
       [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
       nullptr);
@@ -139,7 +139,7 @@ TYPED_TEST_SUITE(BarrierTest, BarrierTestTypes);
 TYPED_TEST(BarrierTest, Barrier) {
   typename TestFixture::Type b;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
-  auto activity = ActivityFromPromiseFactory(
+  auto activity = MakeActivity(
       [&b] {
         return Seq(b.Wait(), [](typename TestFixture::Type::Result) {
           return ready(absl::OkStatus());
@@ -158,7 +158,7 @@ TYPED_TEST(BarrierTest, BarrierPing) {
   StrictMock<MockFunction<void(absl::Status)>> on_done1;
   StrictMock<MockFunction<void(absl::Status)>> on_done2;
   MockCallbackScheduler scheduler;
-  auto activity1 = ActivityFromPromiseFactory(
+  auto activity1 = MakeActivity(
       [&b1, &b2] {
         return Seq(b1.Wait(), [&b2](typename TestFixture::Type::Result) {
           // Clear the barrier whilst executing an activity
@@ -168,7 +168,7 @@ TYPED_TEST(BarrierTest, BarrierPing) {
       },
       [&on_done1](absl::Status status) { on_done1.Call(std::move(status)); },
       &scheduler);
-  auto activity2 = ActivityFromPromiseFactory(
+  auto activity2 = MakeActivity(
       [&b2] {
         return Seq(b2.Wait(), [](typename TestFixture::Type::Result) {
           return ready(absl::OkStatus());
@@ -191,7 +191,7 @@ TYPED_TEST(BarrierTest, WakeSelf) {
   typename TestFixture::Type b;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  ActivityFromPromiseFactory(
+  MakeActivity(
       [&b] {
         return Seq(Join(b.Wait(),
                         [&b] {
@@ -211,7 +211,7 @@ TYPED_TEST(BarrierTest, WakeAfterDestruction) {
   {
     StrictMock<MockFunction<void(absl::Status)>> on_done;
     EXPECT_CALL(on_done, Call(absl::CancelledError()));
-    ActivityFromPromiseFactory(
+    MakeActivity(
         [&b] {
           return Seq(b.Wait(), [](typename TestFixture::Type::Result) {
             return ready(absl::OkStatus());

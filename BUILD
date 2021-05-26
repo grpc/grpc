@@ -738,6 +738,7 @@ grpc_cc_library(
         "src/core/lib/promise/if.h",
         "src/core/lib/promise/join.h",
         "src/core/lib/promise/poll.h",
+        "src/core/lib/promise/context.h",
         "src/core/lib/promise/promise.h",
         "src/core/lib/promise/for_each.h",
         "src/core/lib/promise/race.h",

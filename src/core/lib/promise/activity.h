@@ -195,7 +195,7 @@ class PromiseActivity final : public Activity {
 // Given a functor that returns a promise (a promise factory), a callback for
 // completion, and a callback scheduler, construct an activity.
 template <typename Factory>
-ActivityPtr ActivityFromPromiseFactory(
+ActivityPtr MakeActivity(
     Factory promise_factory, std::function<void(absl::Status)> on_done,
     CallbackScheduler* callback_scheduler) {
   return ActivityPtr(new PromiseActivity<Factory>(

@@ -54,7 +54,7 @@ TEST(ObservableTest, CanPushAndGet) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   Observable<int> observable;
   auto observer = observable.MakeObserver();
-  auto activity = ActivityFromPromiseFactory(
+  auto activity = MakeActivity(
       [&observer]() {
         return Seq(observer.Get(), [](absl::optional<int> i) {
           return ready(i == 42 ? absl::OkStatus()
@@ -71,7 +71,7 @@ TEST(ObservableTest, CanNext) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   Observable<int> observable;
   auto observer = observable.MakeObserver();
-  auto activity = ActivityFromPromiseFactory(
+  auto activity = MakeActivity(
       [&observer]() {
         return Seq(
             observer.Get(),
@@ -95,7 +95,7 @@ TEST(ObservableTest, CanWatch) {
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   Observable<int> observable;
   Barrier barrier;
-  auto activity = ActivityFromPromiseFactory(
+  auto activity = MakeActivity(
       [&observable, &barrier]() {
         return observable.Watch(
             [&barrier](int x,

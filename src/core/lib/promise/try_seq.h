@@ -119,7 +119,7 @@ class State<F, Next, Nexts...> final {
             },
             nexts_);
       }
-      return r;
+      return ready(StatusFrom<typename FinalState::Result>(result));
     }
     return kPending;
   }

@@ -120,7 +120,7 @@ static void unary(
 
 static void BM_ActivityStack_Passthrough3_Unary(benchmark::State& state) {
   unary(state, [](std::function<void(absl::Status)> on_done) {
-    return ActivityFromPromiseFactory(
+    return MakeActivity(
         []() {
           auto one = []() { return ready(absl::OkStatus()); };
           return TrySeq(one, one, one);
@@ -132,7 +132,7 @@ BENCHMARK(BM_ActivityStack_Passthrough3_Unary);
 
 static void BM_ActivityStack_Passthrough10_Unary(benchmark::State& state) {
   unary(state, [](std::function<void(absl::Status)> on_done) {
-    return ActivityFromPromiseFactory(
+    return MakeActivity(
         []() {
           auto one = []() { return ready(absl::OkStatus()); };
           return TrySeq(one, one, one, one, one, one, one, one, one, one);

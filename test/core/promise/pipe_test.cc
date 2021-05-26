@@ -29,7 +29,7 @@ TEST(PipeTest, CanSendAndReceive) {
   Pipe<int> pipe;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  ActivityFromPromiseFactory(
+  MakeActivity(
       [&pipe] {
         return Seq(Join(pipe.sender.Push(42), pipe.receiver.Next()),
                    [](std::tuple<bool, absl::optional<int>> result) {
@@ -46,7 +46,7 @@ TEST(PipeTest, CanReceiveAndSend) {
   Pipe<int> pipe;
   StrictMock<MockFunction<void(absl::Status)>> on_done;
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  ActivityFromPromiseFactory(
+  MakeActivity(
       [&pipe] {
         return Seq(Join(pipe.receiver.Next(), pipe.sender.Push(42)),
                    [](std::tuple<absl::optional<int>, bool> result) {
@@ -67,7 +67,7 @@ TEST(PipeTest, CanSeeClosedOnSend) {
       absl::make_unique<PipeReceiver<int>>(std::move(pipe.receiver));
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
   EXPECT_TRUE(NowOrNever(sender.Push(42)).has_value());
-  ActivityFromPromiseFactory(
+  MakeActivity(
       [&sender, &receiver] {
         return Seq(Join(sender.Push(43),
                         [&receiver] {
@@ -90,7 +90,7 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
   auto sender = absl::make_unique<PipeSender<int>>(std::move(pipe.sender));
   auto receiver = std::move(pipe.receiver);
   EXPECT_CALL(on_done, Call(absl::OkStatus()));
-  ActivityFromPromiseFactory(
+  MakeActivity(
       [&sender, &receiver] {
         return Seq(Join(receiver.Next(),
                         [&sender] {
