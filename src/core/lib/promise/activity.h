@@ -155,17 +155,15 @@ class ContextHolder<Context*> {
 template <typename... Contexts>
 class EnterContexts : public context_detail::Context<Contexts>... {
  public:
-  template <typename Activity>
-  explicit EnterContexts(Activity* activity)
-      : context_detail::Context<Contexts>(
-            static_cast<ContextHolder<Contexts>*>(activity)->GetContext())... {}
+  explicit EnterContexts(Contexts*... contexts)
+      : context_detail::Context<Contexts>(contexts)... {}
 };
 
 // Implementation details for an Activity of an arbitrary type of promise.
 template <class Factory, typename... Contexts>
 class PromiseActivity final
     : public Activity,
-      public activity_detail::ContextHolder<Contexts>... {
+      private activity_detail::ContextHolder<Contexts>... {
  public:
   PromiseActivity(Factory promise_factory,
                   std::function<void(absl::Status)> on_done,
@@ -180,7 +178,8 @@ class PromiseActivity final
 
  private:
   Poll<absl::Status> Run() final EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    EnterContexts<Contexts...> contexts(this);
+    EnterContexts<Contexts...> contexts(
+        static_cast<ContextHolder<Contexts>*>(this)->GetContext()...);
     return absl::visit(RunState{this}, state_);
   }
 
