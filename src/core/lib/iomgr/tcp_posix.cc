@@ -510,7 +510,7 @@ static void drop_uncovered(grpc_tcp* /*tcp*/) {
 static void cover_self(grpc_tcp* tcp) {
   backup_poller* p;
   gpr_atm old_count =
-      gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, 2);
+      gpr_atm_full_fetch_add(&g_uncovered_notifications_pending, 2);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "BACKUP_POLLER: cover cnt %d->%d",
             static_cast<int>(old_count), 2 + static_cast<int>(old_count));
