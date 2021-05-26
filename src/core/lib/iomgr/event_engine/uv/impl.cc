@@ -279,8 +279,13 @@ struct schedulingRequest : grpc_core::MultiProducerSingleConsumerQueue::Node {
 
 class uvEngine final : public grpc_event_engine::experimental::EventEngine {
  public:
+  std::thread::id worker_thread_id_;
   void schedule(schedulingRequest::functor&& f) {
     schedulingRequest* request = new schedulingRequest(std::move(f));
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_ERROR, "EE::UV::uvEngine@%p::schedule, created %p", this,
+              request);
+    }
     queue_.Push(request);
     uv_async_send(&kicker_);
   }
@@ -292,13 +297,21 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
           reinterpret_cast<schedulingRequest*>(queue_.PopAndCheckEnd(&empty));
       if (!node) continue;
       schedulingRequest::functor f = std::move(node->f_);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        gpr_log(GPR_ERROR, "EE::UV::uvEngine@%p::kicker, got %p", this, node);
+      }
       delete node;
       f(this);
     }
   }
 
+  virtual bool IsWorkerThread() {
+    return worker_thread_id_ == std::this_thread::get_id();
+  }
+
   void thread() {
     int r = 0;
+    worker_thread_id_ = std::this_thread::get_id();
     r = uv_loop_init(&loop_);
     loop_.data = this;
     r |= uv_async_init(&loop_, &kicker_, [](uv_async_t* async) {
@@ -316,6 +329,11 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     ready_.set_value(true);
     grpc_core::ExecCtx ctx;
     while (uv_run(&loop_, UV_RUN_ONCE) != 0) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        gpr_log(GPR_ERROR,
+                "EE::UV::uvEngine@%p::thread, uv_run requests a context flush",
+                this);
+      }
       ctx.Flush();
     }
     shutdown_ = true;
@@ -373,7 +391,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     return e->Connect(this, std::move(on_connect), addr);
   }
 
-  virtual ~uvEngine() override final { GPR_ASSERT(shutdown_); }
+  virtual ~uvEngine() override final {}
 
   virtual absl::StatusOr<std::unique_ptr<
       grpc_event_engine::experimental::EventEngine::DNSResolver>>
@@ -392,7 +410,25 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     }
     on_shutdown_complete_ = on_shutdown_complete;
     schedule([](uvEngine* engine) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        gpr_log(GPR_DEBUG,
+                "EE::UV::uvEngine@%p shutting down, unreferencing kicker now",
+                engine);
+      }
       uv_unref(reinterpret_cast<uv_handle_t*>(&engine->kicker_));
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        uv_walk(
+            &engine->loop_,
+            [](uv_handle_t* handle, void* arg) {
+              uv_handle_type type = uv_handle_get_type(handle);
+              const char* name = uv_handle_type_name(type);
+              gpr_log(
+                  GPR_DEBUG,
+                  "EE::UV::in shutdown, handle %p type %s has references: %s",
+                  handle, name, uv_has_ref(handle) ? "yes" : "no");
+            },
+            nullptr);
+      }
     });
   }
 

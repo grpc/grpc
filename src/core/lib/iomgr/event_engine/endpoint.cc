@@ -94,9 +94,7 @@ void endpoint_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
       write_buffer, absl::InfiniteFuture());
 }
 void endpoint_add_to_pollset(grpc_endpoint* /* ep */,
-                             grpc_pollset* /* pollset */) {
-  abort();
-}
+                             grpc_pollset* /* pollset */) {}
 void endpoint_add_to_pollset_set(grpc_endpoint* /* ep */,
                                  grpc_pollset_set* /* pollset */) {}
 void endpoint_delete_from_pollset_set(grpc_endpoint* /* ep */,
