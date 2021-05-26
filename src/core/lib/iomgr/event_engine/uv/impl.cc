@@ -98,7 +98,7 @@ class uvTCPlistener final : public uvTCPbase {
       gpr_log(GPR_DEBUG, "EE::UV::uvTCPlistener:%p created", this);
     }
   }
-  virtual ~uvTCPlistener() = default;
+  virtual ~uvTCPlistener() { on_shutdown_(absl::OkStatus()); };
   grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
       on_accept_;
   grpc_event_engine::experimental::EventEngine::Callback on_shutdown_;
