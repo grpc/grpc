@@ -23,9 +23,10 @@
 #include <grpc/event_engine/slice_buffer.h>
 
 // forward-declaring an internal struct, not used publicly.
+struct grpc_error;
 struct grpc_resource_quota;
 struct grpc_resource_user;
-struct grpc_slice_buffer;
+struct grpc_resource_user_slice_allocator;
 
 namespace grpc_event_engine {
 namespace experimental {
@@ -44,16 +45,31 @@ class SliceAllocator {
 
   void* GetResourceUser() { return resource_user_; }
 
-  using AllocateCallback =
-      std::function<void(absl::Status, SliceBuffer* buffer)>;
-  // TODO(hork): explain what happens under resource exhaustion.
+  using AllocateCallback = std::function<void(absl::Status)>;
   /// Requests \a size bytes from gRPC, and populates \a dest with the allocated
-  /// slices. Ownership of the \a SliceBuffer is not transferred.
-  absl::Status Allocate(size_t size, SliceBuffer* dest,
+  /// slices.
+  ///
+  /// Slice allocation may be done synchronously or asynchronously. If the
+  /// allocation can be done inline, then the callback \a cb will be
+  /// executed immediately in the same thread, and this method will return OK.
+  /// If the \a ResourceQuota system determines that memory needs to be
+  /// reclaimed before allocation is done, then this method returns
+  /// RESOURCE_EXHAUSTED, meaning that the callback \a cb will be called once
+  /// the slices have been allocated.
+  ///
+  /// Ownership of the \a SliceBuffer is not transferred.
+  absl::Status Allocate(size_t size, size_t count, SliceBuffer* dest,
                         SliceAllocator::AllocateCallback cb);
 
  private:
+  static void OnAllocated(void* arg, grpc_error* error);
+
   grpc_resource_user* resource_user_;
+  grpc_resource_user_slice_allocator* slice_allocator_;
+  // True if there are async allocations in progress.
+  // TODO(hork): this may need to be atomic, given async allocation.
+  bool allocations_in_flight_ = false;
+  AllocateCallback cb_;
 };
 
 class SliceAllocatorFactory {
