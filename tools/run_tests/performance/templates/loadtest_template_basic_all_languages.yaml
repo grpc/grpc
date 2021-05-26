@@ -146,9 +146,9 @@ spec:
           - src/ruby/qps/worker.rb
         command:
           - ruby
-  drivers:
-    - language: cxx
-      pool: ${driver_pool}
+  driver:
+    language: cxx
+    pool: ${driver_pool}
   results:
     bigQueryTable: ${big_query_table}
   servers:

@@ -58,7 +58,7 @@ LATEST_TEST_INFRA_RELEASE="$(curl -s https://api.github.com/repos/grpc/test-infr
 if [[ -z "${LATEST_TEST_INFRA_RELEASE}" ]]; then
     exit 1
 fi
-DRIVER_IMAGE="gcr.io/grpc-testing/e2etest/driver:${LATEST_TEST_INFRA_RELEASE}"
+DRIVER_IMAGE="gcr.io/grpc-testing/e2etest/runtime/driver:${LATEST_TEST_INFRA_RELEASE}"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-8core-ci

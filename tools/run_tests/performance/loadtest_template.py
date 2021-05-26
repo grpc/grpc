@@ -111,12 +111,12 @@ def loadtest_template(
     })
 
     if inject_driver_image or inject_driver_pool:
-        driver = dict({"language": "cxx"})
+        driver = {'language': 'cxx'}
         if inject_driver_image:
-            driver['image'] = "${driver_image}"
+            driver['run'] = {'image': '${driver_image}'}
         if inject_driver_pool:
-            driver['pool'] = "${driver_pool}"
-        spec['drivers'] = [driver]
+            driver['pool'] = '${driver_pool}'
+        spec['driver'] = driver
 
     if inject_big_query_table:
         if 'results' not in spec:
