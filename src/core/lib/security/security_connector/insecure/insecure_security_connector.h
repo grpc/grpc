@@ -47,10 +47,10 @@ class InsecureChannelSecurityConnector
 
   bool check_call_host(absl::string_view host, grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
-                       grpc_error** error) override;
+                       grpc_error_handle* error) override;
 
   void cancel_check_call_host(grpc_closure* on_call_host_checked,
-                              grpc_error* error) override;
+                              grpc_error_handle error) override;
 
   void add_handshakers(const grpc_channel_args* args,
                        grpc_pollset_set* /* interested_parties */,
@@ -59,6 +59,11 @@ class InsecureChannelSecurityConnector
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
+
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
+  }
 
   int cmp(const grpc_security_connector* other_sc) const override;
 };
@@ -77,6 +82,11 @@ class InsecureServerSecurityConnector : public grpc_server_security_connector {
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override;
+
+  void cancel_check_peer(grpc_closure* /*on_peer_checked*/,
+                         grpc_error_handle error) override {
+    GRPC_ERROR_UNREF(error);
+  }
 
   int cmp(const grpc_security_connector* other) const override;
 };

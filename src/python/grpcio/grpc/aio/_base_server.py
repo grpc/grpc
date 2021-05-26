@@ -193,7 +193,7 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
         """
 
     @abc.abstractmethod
-    async def set_trailing_metadata(self, trailing_metadata: Metadata) -> None:
+    def set_trailing_metadata(self, trailing_metadata: Metadata) -> None:
         """Sends the trailing metadata for the RPC.
 
         This method need not be called by implementations if they have no
@@ -304,3 +304,33 @@ class ServicerContext(Generic[RequestType, ResponseType], abc.ABC):
           remaining for the RPC to complete before it is considered to have
           timed out, or None if no deadline was specified for the RPC.
         """
+
+    def trailing_metadata(self):
+        """Access value to be used as trailing metadata upon RPC completion.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          The trailing :term:`metadata` for the RPC.
+        """
+        raise NotImplementedError()
+
+    def code(self):
+        """Accesses the value to be used as status code upon RPC completion.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          The StatusCode value for the RPC.
+        """
+        raise NotImplementedError()
+
+    def details(self):
+        """Accesses the value to be used as detail string upon RPC completion.
+
+        This is an EXPERIMENTAL API.
+
+        Returns:
+          The details string of the RPC.
+        """
+        raise NotImplementedError()

@@ -34,6 +34,7 @@
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
+#include "src/core/ext/filters/client_channel/retry_service_config.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
 #include "src/core/ext/filters/client_channel/service_config_parser.h"
 #include "src/core/lib/surface/channel_init.h"
@@ -46,6 +47,7 @@ static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
 void grpc_client_channel_init(void) {
   grpc_core::ServiceConfigParser::Init();
   grpc_core::internal::ClientChannelServiceConfigParser::Register();
+  grpc_core::internal::RetryServiceConfigParser::Register();
   grpc_core::LoadBalancingPolicyRegistry::Builder::InitRegistry();
   grpc_core::ResolverRegistry::Builder::InitRegistry();
   grpc_core::internal::ServerRetryThrottleMap::Init();
@@ -54,7 +56,8 @@ void grpc_client_channel_init(void) {
   grpc_core::GlobalSubchannelPool::Init();
   grpc_channel_init_register_stage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
-      const_cast<grpc_channel_filter*>(&grpc_client_channel_filter));
+      const_cast<grpc_channel_filter*>(
+          &grpc_core::ClientChannel::kFilterVtable));
   grpc_http_connect_register_handshaker_factory();
   grpc_client_channel_global_init_backup_polling();
 }

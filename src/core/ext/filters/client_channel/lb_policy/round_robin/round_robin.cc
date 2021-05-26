@@ -34,11 +34,11 @@
 #include "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/subchannel.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -331,7 +331,7 @@ void RoundRobin::RoundRobinSubchannelList::
         absl::make_unique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
-    grpc_error* error =
+    grpc_error_handle error =
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                "connections to all backends failing"),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
@@ -449,7 +449,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
   if (latest_pending_subchannel_list_->num_subchannels() == 0) {
     // If the new list is empty, immediately promote the new list to the
     // current list and transition to TRANSIENT_FAILURE.
-    grpc_error* error =
+    grpc_error_handle error =
         grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty update"),
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
@@ -487,7 +487,7 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kRoundRobin; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const Json& /*json*/, grpc_error** /*error*/) const override {
+      const Json& /*json*/, grpc_error_handle* /*error*/) const override {
     return MakeRefCounted<RoundRobinConfig>();
   }
 };

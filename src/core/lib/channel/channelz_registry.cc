@@ -181,18 +181,24 @@ void ChannelzRegistry::InternalLogAllEntities() {
 }  // namespace grpc_core
 
 char* grpc_channelz_get_top_channels(intptr_t start_channel_id) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   return gpr_strdup(
       grpc_core::channelz::ChannelzRegistry::GetTopChannels(start_channel_id)
           .c_str());
 }
 
 char* grpc_channelz_get_servers(intptr_t start_server_id) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   return gpr_strdup(
       grpc_core::channelz::ChannelzRegistry::GetServers(start_server_id)
           .c_str());
 }
 
 char* grpc_channelz_get_server(intptr_t server_id) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> server_node =
       grpc_core::channelz::ChannelzRegistry::Get(server_id);
   if (server_node == nullptr ||
@@ -209,6 +215,8 @@ char* grpc_channelz_get_server(intptr_t server_id) {
 char* grpc_channelz_get_server_sockets(intptr_t server_id,
                                        intptr_t start_socket_id,
                                        intptr_t max_results) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   // Validate inputs before handing them of to the renderer.
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> base_node =
       grpc_core::channelz::ChannelzRegistry::Get(server_id);
@@ -226,6 +234,8 @@ char* grpc_channelz_get_server_sockets(intptr_t server_id,
 }
 
 char* grpc_channelz_get_channel(intptr_t channel_id) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> channel_node =
       grpc_core::channelz::ChannelzRegistry::Get(channel_id);
   if (channel_node == nullptr ||
@@ -242,6 +252,8 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
 }
 
 char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> subchannel_node =
       grpc_core::channelz::ChannelzRegistry::Get(subchannel_id);
   if (subchannel_node == nullptr ||
@@ -256,6 +268,8 @@ char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
 }
 
 char* grpc_channelz_get_socket(intptr_t socket_id) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
+  grpc_core::ExecCtx exec_ctx;
   grpc_core::RefCountedPtr<grpc_core::channelz::BaseNode> socket_node =
       grpc_core::channelz::ChannelzRegistry::Get(socket_id);
   if (socket_node == nullptr ||

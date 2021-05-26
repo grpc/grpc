@@ -128,27 +128,29 @@ static void test_retry_exceeds_buffer_size_in_subsequent_batch(
   int was_cancelled = 2;
   char* peer;
 
-  grpc_arg args[2];
-  args[0].type = GRPC_ARG_STRING;
-  args[0].key = const_cast<char*>(GRPC_ARG_SERVICE_CONFIG);
-  args[0].value.string = const_cast<char*>(
-      "{\n"
-      "  \"methodConfig\": [ {\n"
-      "    \"name\": [\n"
-      "      { \"service\": \"service\", \"method\": \"method\" }\n"
-      "    ],\n"
-      "    \"retryPolicy\": {\n"
-      "      \"maxAttempts\": 2,\n"
-      "      \"initialBackoff\": \"1s\",\n"
-      "      \"maxBackoff\": \"120s\",\n"
-      "      \"backoffMultiplier\": 1.6,\n"
-      "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
-      "    }\n"
-      "  } ]\n"
-      "}");
-  args[1].type = GRPC_ARG_INTEGER;
-  args[1].key = const_cast<char*>(GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE);
-  args[1].value.integer = 102400;
+  grpc_arg args[] = {
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_ENABLE_RETRIES), 1),
+      grpc_channel_arg_string_create(
+          const_cast<char*>(GRPC_ARG_SERVICE_CONFIG),
+          const_cast<char*>(
+              "{\n"
+              "  \"methodConfig\": [ {\n"
+              "    \"name\": [\n"
+              "      { \"service\": \"service\", \"method\": \"method\" }\n"
+              "    ],\n"
+              "    \"retryPolicy\": {\n"
+              "      \"maxAttempts\": 2,\n"
+              "      \"initialBackoff\": \"1s\",\n"
+              "      \"maxBackoff\": \"120s\",\n"
+              "      \"backoffMultiplier\": 1.6,\n"
+              "      \"retryableStatusCodes\": [ \"ABORTED\" ]\n"
+              "    }\n"
+              "  } ]\n"
+              "}")),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE), 102400),
+  };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
   grpc_end2end_test_fixture f =
       begin_test(config, "retry_exceeds_buffer_size_in_subsequent_batch",

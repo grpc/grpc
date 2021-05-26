@@ -33,6 +33,7 @@
 
 #include <netinet/in.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/cfstream_handle.h"
@@ -40,7 +41,6 @@
 #include "src/core/lib/iomgr/endpoint_cfstream.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/error_cfstream.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/timer.h"
 
@@ -78,7 +78,7 @@ static void CFStreamConnectCleanup(CFStreamConnect* connect) {
   delete connect;
 }
 
-static void OnAlarm(void* arg, grpc_error* error) {
+static void OnAlarm(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnAlarm, error:%p", connect, error);
@@ -93,13 +93,13 @@ static void OnAlarm(void* arg, grpc_error* error) {
   if (done) {
     CFStreamConnectCleanup(connect);
   } else {
-    grpc_error* error =
+    grpc_error_handle error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out");
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
   }
 }
 
-static void OnOpen(void* arg, grpc_error* error) {
+static void OnOpen(void* arg, grpc_error_handle error) {
   CFStreamConnect* connect = static_cast<CFStreamConnect*>(arg);
   if (grpc_tcp_trace.enabled()) {
     gpr_log(GPR_DEBUG, "CLIENT_CONNECT :%p OnOpen, error:%p", connect, error);

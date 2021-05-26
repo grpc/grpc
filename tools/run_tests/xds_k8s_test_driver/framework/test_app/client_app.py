@@ -26,6 +26,7 @@ from framework.helpers import retryers
 from framework.infrastructure import k8s
 import framework.rpc
 from framework.rpc import grpc_channelz
+from framework.rpc import grpc_csds
 from framework.rpc import grpc_testing
 from framework.test_app import base_runner
 
@@ -39,6 +40,7 @@ _ChannelzChannel = grpc_channelz.Channel
 _ChannelzChannelState = grpc_channelz.ChannelState
 _ChannelzSubchannel = grpc_channelz.Subchannel
 _ChannelzSocket = grpc_channelz.Socket
+_CsdsClient = grpc_csds.CsdsClient
 
 
 class XdsTestClient(framework.rpc.grpc.GrpcApp):
@@ -70,6 +72,11 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
     @functools.lru_cache(None)
     def channelz(self) -> _ChannelzServiceClient:
         return _ChannelzServiceClient(self._make_channel(self.maintenance_port))
+
+    @property
+    @functools.lru_cache(None)
+    def csds(self) -> _CsdsClient:
+        return _CsdsClient(self._make_channel(self.maintenance_port))
 
     def get_load_balancer_stats(
         self,

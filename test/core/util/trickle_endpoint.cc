@@ -41,7 +41,7 @@ typedef struct {
   gpr_mu mu;
   grpc_slice_buffer write_buffer;
   grpc_slice_buffer writing_buffer;
-  grpc_error* error;
+  grpc_error_handle error;
   bool writing;
   grpc_closure* write_cb;
 } trickle_endpoint;
@@ -96,7 +96,7 @@ static void te_delete_from_pollset_set(grpc_endpoint* ep,
   grpc_endpoint_delete_from_pollset_set(te->wrapped, pollset_set);
 }
 
-static void te_shutdown(grpc_endpoint* ep, grpc_error* why) {
+static void te_shutdown(grpc_endpoint* ep, grpc_error_handle why) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   gpr_mu_lock(&te->mu);
   if (te->error == GRPC_ERROR_NONE) {
@@ -139,7 +139,7 @@ static int te_get_fd(grpc_endpoint* ep) {
 
 static bool te_can_track_err(grpc_endpoint* /*ep*/) { return false; }
 
-static void te_finish_write(void* arg, grpc_error* /*error*/) {
+static void te_finish_write(void* arg, grpc_error_handle /*error*/) {
   trickle_endpoint* te = static_cast<trickle_endpoint*>(arg);
   gpr_mu_lock(&te->mu);
   te->writing = false;

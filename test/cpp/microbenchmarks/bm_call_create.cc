@@ -312,9 +312,11 @@ static void BM_LameChannelCallCreateCoreSeparateBatch(benchmark::State& state) {
 }
 BENCHMARK(BM_LameChannelCallCreateCoreSeparateBatch);
 
-static void FilterDestroy(void* arg, grpc_error* /*error*/) { gpr_free(arg); }
+static void FilterDestroy(void* arg, grpc_error_handle /*error*/) {
+  gpr_free(arg);
+}
 
-static void DoNothing(void* /*arg*/, grpc_error* /*error*/) {}
+static void DoNothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
  public:
@@ -351,8 +353,8 @@ static void StartTransportStreamOp(grpc_call_element* /*elem*/,
 static void StartTransportOp(grpc_channel_element* /*elem*/,
                              grpc_transport_op* /*op*/) {}
 
-static grpc_error* InitCallElem(grpc_call_element* /*elem*/,
-                                const grpc_call_element_args* /*args*/) {
+static grpc_error_handle InitCallElem(grpc_call_element* /*elem*/,
+                                      const grpc_call_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -363,8 +365,8 @@ static void DestroyCallElem(grpc_call_element* /*elem*/,
                             const grpc_call_final_info* /*final_info*/,
                             grpc_closure* /*then_sched_closure*/) {}
 
-grpc_error* InitChannelElem(grpc_channel_element* /*elem*/,
-                            grpc_channel_element_args* /*args*/) {
+grpc_error_handle InitChannelElem(grpc_channel_element* /*elem*/,
+                                  grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
@@ -568,7 +570,8 @@ BENCHMARK_TEMPLATE(BM_IsolatedFilter, NoFilter, NoOp);
 typedef Fixture<&phony_filter::phony_filter, 0> PhonyFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, PhonyFilter, NoOp);
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, PhonyFilter, SendEmptyMetadata);
-typedef Fixture<&grpc_client_channel_filter, 0> ClientChannelFilter;
+typedef Fixture<&grpc_core::ClientChannel::kFilterVtable, 0>
+    ClientChannelFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, ClientChannelFilter, NoOp);
 typedef Fixture<&grpc_message_compress_filter, CHECKS_NOT_LAST> CompressFilter;
 BENCHMARK_TEMPLATE(BM_IsolatedFilter, CompressFilter, NoOp);
@@ -641,8 +644,8 @@ static void StartTransportOp(grpc_channel_element* /*elem*/,
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
 }
 
-static grpc_error* InitCallElem(grpc_call_element* elem,
-                                const grpc_call_element_args* args) {
+static grpc_error_handle InitCallElem(grpc_call_element* elem,
+                                      const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
   return GRPC_ERROR_NONE;
@@ -657,8 +660,8 @@ static void DestroyCallElem(grpc_call_element* /*elem*/,
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, then_sched_closure, GRPC_ERROR_NONE);
 }
 
-grpc_error* InitChannelElem(grpc_channel_element* /*elem*/,
-                            grpc_channel_element_args* /*args*/) {
+grpc_error_handle InitChannelElem(grpc_channel_element* /*elem*/,
+                                  grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 

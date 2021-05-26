@@ -231,6 +231,9 @@ class TestGevent(setuptools.Command):
         # TODO(https://github.com/grpc/grpc/pull/15411) enable this test
         'unit._server_test.ServerTest.test_failed_port_binding_exception',
     )
+    BANNED_MACOS_TESTS = (
+        # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
+        'unit._dynamic_stubs_test.DynamicStubTest',)
     description = 'run tests with gevent.  Assumes grpc/gevent are installed'
     user_options = []
 
@@ -254,10 +257,12 @@ class TestGevent(setuptools.Command):
 
         import tests
         loader = tests.Loader()
-        loader.loadTestsFromNames(['tests'])
+        loader.loadTestsFromNames(['tests', 'tests_gevent'])
         runner = tests.Runner()
         if sys.platform == 'win32':
             runner.skip_tests(self.BANNED_TESTS + self.BANNED_WINDOWS_TESTS)
+        elif sys.platform == 'darwin':
+            runner.skip_tests(self.BANNED_TESTS + self.BANNED_MACOS_TESTS)
         else:
             runner.skip_tests(self.BANNED_TESTS)
         result = gevent.spawn(runner.run, loader.suite)

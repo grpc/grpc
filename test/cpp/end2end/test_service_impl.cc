@@ -542,6 +542,8 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
           kServerTryCancelRequest, ctx->client_metadata(), DO_NOT_CANCEL);
       server_write_last_ = internal::GetIntValueFromMetadata(
           kServerFinishAfterNReads, ctx->client_metadata(), 0);
+      client_try_cancel_ = static_cast<bool>(internal::GetIntValueFromMetadata(
+          kClientTryCancelRequest, ctx->client_metadata(), 0));
       if (server_try_cancel_ == CANCEL_BEFORE_PROCESSING) {
         internal::ServerTryCancelNonblocking(ctx);
       } else {
@@ -580,6 +582,8 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
             return;
           }
         }
+      } else if (client_try_cancel_) {
+        EXPECT_TRUE(ctx_->IsCancelled());
       }
 
       if (server_try_cancel_ == CANCEL_DURING_PROCESSING) {
@@ -620,6 +624,7 @@ CallbackTestServiceImpl::BidiStream(CallbackServerContext* context) {
     bool finished_{false};
     bool setup_done_{false};
     std::thread finish_thread_;
+    bool client_try_cancel_ = false;
   };
 
   return new Reactor(context);

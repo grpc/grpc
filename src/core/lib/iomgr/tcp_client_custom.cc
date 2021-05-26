@@ -25,9 +25,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/iomgr_custom.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_custom.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -59,14 +59,13 @@ static void custom_tcp_connect_cleanup(grpc_custom_tcp_connect* connect) {
 
 static void custom_close_callback(grpc_custom_socket* /*socket*/) {}
 
-static void on_alarm(void* acp, grpc_error* error) {
+static void on_alarm(void* acp, grpc_error_handle error) {
   int done;
   grpc_custom_socket* socket = static_cast<grpc_custom_socket*>(acp);
   grpc_custom_tcp_connect* connect = socket->connector;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    const char* str = grpc_error_string(error);
     gpr_log(GPR_INFO, "CLIENT_CONNECT: %s: on_alarm: error=%s",
-            connect->addr_name.c_str(), str);
+            connect->addr_name.c_str(), grpc_error_std_string(error).c_str());
   }
   if (error == GRPC_ERROR_NONE) {
     /* error == NONE implies that the timer ran out, and wasn't cancelled. If
@@ -81,7 +80,7 @@ static void on_alarm(void* acp, grpc_error* error) {
 }
 
 static void custom_connect_callback_internal(grpc_custom_socket* socket,
-                                             grpc_error* error) {
+                                             grpc_error_handle error) {
   grpc_custom_tcp_connect* connect = socket->connector;
   int done;
   grpc_closure* closure = connect->closure;
@@ -99,7 +98,7 @@ static void custom_connect_callback_internal(grpc_custom_socket* socket,
 }
 
 static void custom_connect_callback(grpc_custom_socket* socket,
-                                    grpc_error* error) {
+                                    grpc_error_handle error) {
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   if (grpc_core::ExecCtx::Get() == nullptr) {
     /* If we are being run on a thread which does not have an exec_ctx created

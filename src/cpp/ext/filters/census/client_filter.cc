@@ -53,8 +53,8 @@ void FilterTrailingMetadata(grpc_metadata_batch* b, uint64_t* elapsed_time) {
 
 }  // namespace
 
-void CensusClientCallData::OnDoneRecvTrailingMetadataCb(void* user_data,
-                                                        grpc_error* error) {
+void CensusClientCallData::OnDoneRecvTrailingMetadataCb(
+    void* user_data, grpc_error_handle error) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
   CensusClientCallData* calld =
       reinterpret_cast<CensusClientCallData*>(elem->call_data);
@@ -70,7 +70,7 @@ void CensusClientCallData::OnDoneRecvTrailingMetadataCb(void* user_data,
 }
 
 void CensusClientCallData::OnDoneRecvMessageCb(void* user_data,
-                                               grpc_error* error) {
+                                               grpc_error_handle error) {
   grpc_call_element* elem = reinterpret_cast<grpc_call_element*>(user_data);
   CensusClientCallData* calld =
       reinterpret_cast<CensusClientCallData*>(elem->call_data);
@@ -138,8 +138,8 @@ void CensusClientCallData::StartTransportStreamOpBatch(
   grpc_call_next_op(elem, op->op());
 }
 
-grpc_error* CensusClientCallData::Init(grpc_call_element* elem,
-                                       const grpc_call_element_args* args) {
+grpc_error_handle CensusClientCallData::Init(
+    grpc_call_element* elem, const grpc_call_element_args* args) {
   path_ = grpc_slice_ref_internal(args->path);
   start_time_ = absl::Now();
   method_ = GetMethod(&path_);

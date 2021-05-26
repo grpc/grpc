@@ -253,13 +253,13 @@ void check_server0_peer(tsi_peer* peer) {
   tsi_peer_destruct(peer);
 }
 
-static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
+static bool check_property(tsi_peer* peer, const char* property_name,
+                           const char* property_value) {
   for (size_t i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
-    if (strcmp(prop->name, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) ==
-        0) {
-      if (strlen(name) == prop->value.length &&
-          memcmp(prop->value.data, name, prop->value.length) == 0) {
+    if (strcmp(prop->name, property_name) == 0) {
+      if (strlen(property_value) == prop->value.length &&
+          memcmp(prop->value.data, property_value, prop->value.length) == 0) {
         return true;
       }
     }
@@ -267,17 +267,25 @@ static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
   return false;
 }
 
+static bool check_subject_alt_name(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY,
+                        name);
+}
+
+static bool check_dns(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_DNS_PEER_PROPERTY, name);
+}
+
 static bool check_uri(tsi_peer* peer, const char* name) {
-  for (size_t i = 0; i < peer->property_count; i++) {
-    const tsi_peer_property* prop = &peer->properties[i];
-    if (strcmp(prop->name, TSI_X509_URI_PEER_PROPERTY) == 0) {
-      if (strlen(name) == prop->value.length &&
-          memcmp(prop->value.data, name, prop->value.length) == 0) {
-        return true;
-      }
-    }
-  }
-  return false;
+  return check_property(peer, TSI_X509_URI_PEER_PROPERTY, name);
+}
+
+static bool check_email(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_EMAIL_PEER_PROPERTY, name);
+}
+
+static bool check_ip(tsi_peer* peer, const char* name) {
+  return check_property(peer, TSI_X509_IP_PEER_PROPERTY, name);
 }
 
 void check_server1_peer(tsi_peer* peer) {
@@ -329,12 +337,20 @@ static void ssl_test_check_handshaker_peers(tsi_test_fixture* fixture) {
   // and send an alert to the client as the first application data message. In
   // TLS 1.2, the client-side handshake will fail if the client sends a bad
   // certificate.
+  //
+  // For OpenSSL versions < 1.1, TLS 1.3 is not supported, so the client-side
+  // handshake should succeed precisely when the server-side handshake
+  // succeeds.
   bool expect_server_success =
       !(key_cert_lib->use_bad_server_cert ||
         (key_cert_lib->use_bad_client_cert && ssl_fixture->force_client_auth));
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
   bool expect_client_success = test_tls_version == tsi_tls_version::TSI_TLS1_2
                                    ? expect_server_success
                                    : !key_cert_lib->use_bad_server_cert;
+#else
+  bool expect_client_success = expect_server_success;
+#endif
   if (expect_client_success) {
     GPR_ASSERT(tsi_handshaker_result_extract_peer(
                    ssl_fixture->base.client_result, &peer) == TSI_OK);
@@ -693,7 +709,7 @@ static bool is_slow_build() {
 #if defined(GPR_ARCH_32) || defined(__APPLE__)
   return true;
 #else
-  return BuiltUnderMsan();
+  return BuiltUnderMsan() || BuiltUnderTsan();
 #endif
 }
 
@@ -701,11 +717,11 @@ void ssl_tsi_test_do_round_trip_odd_buffer_size() {
   gpr_log(GPR_INFO, "ssl_tsi_test_do_round_trip_odd_buffer_size");
   const size_t odd_sizes[] = {1025, 2051, 4103, 8207, 16409};
   size_t size = sizeof(odd_sizes) / sizeof(size_t);
-  // 1. avoid test being extremely slow under MSAN
-  // 2. on 32-bit, the test is much slower (probably due to lack of boringssl
-  // asm optimizations) so we only run a subset of tests to avoid timeout
-  // 3. on Mac OS, we have slower testing machines so we only run a subset
-  // of tests to avoid timeout
+  // 1. This test is extremely slow under MSAN and TSAN.
+  // 2. On 32-bit, the test is much slower (probably due to lack of boringssl
+  // asm optimizations) so we only run a subset of tests to avoid timeout.
+  // 3. On Mac OS, we have slower testing machines so we only run a subset
+  // of tests to avoid timeout.
   if (is_slow_build()) {
     size = 1;
   }
@@ -902,8 +918,9 @@ void ssl_tsi_test_extract_x509_subject_names() {
   GPR_ASSERT(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer) ==
              TSI_OK);
   // tsi_peer should include one common name, one certificate, one security
-  // level, seven SAN fields, three URI fields.
-  size_t expected_property_count = 12;
+  // level, ten SAN fields, two DNS SAN fields, three URI fields, two email
+  // addresses and two IP addresses.
+  size_t expected_property_count = 21;
   GPR_ASSERT(peer.property_count == expected_property_count);
   // Check common name
   const char* expected_cn = "xpigors";
@@ -919,6 +936,8 @@ void ssl_tsi_test_extract_x509_subject_names() {
   // Check DNS
   GPR_ASSERT(check_subject_alt_name(&peer, "foo.test.domain.com") == 1);
   GPR_ASSERT(check_subject_alt_name(&peer, "bar.test.domain.com") == 1);
+  GPR_ASSERT(check_dns(&peer, "foo.test.domain.com") == 1);
+  GPR_ASSERT(check_dns(&peer, "bar.test.domain.com") == 1);
   // Check URI
   // Note that a valid SPIFFE certificate should only have one URI.
   GPR_ASSERT(check_subject_alt_name(&peer, "spiffe://foo.com/bar/baz") == 1);
@@ -932,6 +951,15 @@ void ssl_tsi_test_extract_x509_subject_names() {
   // Check email address
   GPR_ASSERT(check_subject_alt_name(&peer, "foo@test.domain.com") == 1);
   GPR_ASSERT(check_subject_alt_name(&peer, "bar@test.domain.com") == 1);
+  GPR_ASSERT(check_email(&peer, "foo@test.domain.com") == 1);
+  GPR_ASSERT(check_email(&peer, "bar@test.domain.com") == 1);
+  // Check ip address
+  GPR_ASSERT(check_subject_alt_name(&peer, "192.168.7.1") == 1);
+  GPR_ASSERT(check_subject_alt_name(&peer, "13::17") == 1);
+  GPR_ASSERT(check_ip(&peer, "192.168.7.1") == 1);
+  GPR_ASSERT(check_ip(&peer, "13::17") == 1);
+  // Check other fields
+  GPR_ASSERT(check_subject_alt_name(&peer, "other types of SAN") == 1);
   // Free memory
   gpr_free(cert);
   tsi_peer_destruct(&peer);
@@ -956,7 +984,11 @@ void ssl_tsi_test_extract_cert_chain() {
     X509_INFO* certInfo = sk_X509_INFO_value(certInfos, i);
     if (certInfo->x509 != nullptr) {
       GPR_ASSERT(sk_X509_push(cert_chain, certInfo->x509) != 0);
+#if OPENSSL_VERSION_NUMBER >= 0x10100000
       X509_up_ref(certInfo->x509);
+#else
+      certInfo->x509->references += 1;
+#endif
     }
   }
   tsi_peer_property chain_property;

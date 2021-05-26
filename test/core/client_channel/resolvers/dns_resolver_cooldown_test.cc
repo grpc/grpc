@@ -24,9 +24,9 @@
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/work_serializer.h"
 #include "test/core/util/test_config.h"
 
@@ -86,7 +86,7 @@ static void test_resolve_address_impl(const char* name,
   grpc_core::ExecCtx::Get()->InvalidateNow();
 }
 
-static grpc_error* test_blocking_resolve_address_impl(
+static grpc_error_handle test_blocking_resolve_address_impl(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
   return default_resolve_address->blocking_resolve_address(name, default_port,
@@ -136,7 +136,7 @@ static gpr_timespec test_deadline(void) {
   return grpc_timeout_seconds_to_deadline(100);
 }
 
-static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
+static void do_nothing(void* /*arg*/, grpc_error_handle /*error*/) {}
 
 static void iomgr_args_init(iomgr_args* args) {
   gpr_event_init(&args->ev);
@@ -212,8 +212,9 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     cb(state);
   }
 
-  void ReturnError(grpc_error* error) override {
-    gpr_log(GPR_ERROR, "resolver returned error: %s", grpc_error_string(error));
+  void ReturnError(grpc_error_handle error) override {
+    gpr_log(GPR_ERROR, "resolver returned error: %s",
+            grpc_error_std_string(error).c_str());
     GPR_ASSERT(false);
   }
 

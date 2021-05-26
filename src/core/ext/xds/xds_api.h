@@ -33,6 +33,7 @@
 
 #include <grpc/slice_buffer.h>
 
+#include "envoy/admin/v3/config_dump.upb.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/xds/xds_bootstrap.h"
 #include "src/core/ext/xds/xds_client_stats.h"
@@ -45,10 +46,6 @@ namespace grpc_core {
 // removed once this feature is fully integration-tested and enabled by
 // default.
 bool XdsSecurityEnabled();
-
-// TODO(lidiz): This will be removed once the fault injection feature is
-// fully integration-tested and enabled by default.
-bool XdsFaultInjectionEnabled();
 
 class XdsClient;
 
@@ -276,86 +273,124 @@ class XdsApi {
       std::string ToString() const;
     };
 
-    struct FilterChain {
-      struct FilterChainMatch {
-        uint32_t destination_port = 0;
-
-        struct CidrRange {
-          std::string address_prefix;
-          uint32_t prefix_len;
-
-          bool operator==(const CidrRange& other) const {
-            return address_prefix == other.address_prefix &&
-                   prefix_len == other.prefix_len;
-          }
-
-          std::string ToString() const;
-        };
-
-        std::vector<CidrRange> prefix_ranges;
-
-        enum class ConnectionSourceType {
-          kAny = 0,
-          kSameIpOrLoopback,
-          kExternal
-        } source_type = ConnectionSourceType::kAny;
-
-        std::vector<CidrRange> source_prefix_ranges;
-        std::vector<uint32_t> source_ports;
-        std::vector<std::string> server_names;
-        std::string transport_protocol;
-        std::vector<std::string> application_protocols;
-
-        bool operator==(const FilterChainMatch& other) const {
-          return destination_port == other.destination_port &&
-                 prefix_ranges == other.prefix_ranges &&
-                 source_type == other.source_type &&
-                 source_prefix_ranges == other.source_prefix_ranges &&
-                 source_ports == other.source_ports &&
-                 server_names == other.server_names &&
-                 transport_protocol == other.transport_protocol &&
-                 application_protocols == other.application_protocols;
-        }
-
-        std::string ToString() const;
-      } filter_chain_match;
-
-      DownstreamTlsContext downstream_tls_context;
-
-      // This is in principle the filter list.
-      // We currently require exactly one filter, which is the HCM.
-      HttpConnectionManager http_connection_manager;
-
-      bool operator==(const FilterChain& other) const {
-        return filter_chain_match == other.filter_chain_match &&
-               downstream_tls_context == other.downstream_tls_context &&
-               http_connection_manager == other.http_connection_manager;
-      }
-
-      std::string ToString() const;
-    };
-
     // Populated for type=kHttpApiListener.
     HttpConnectionManager http_connection_manager;
 
     // Populated for type=kTcpListener.
     // host:port listening_address set when type is kTcpListener
     std::string address;
-    std::vector<FilterChain> filter_chains;
-    absl::optional<FilterChain> default_filter_chain;
+
+    struct FilterChainData {
+      DownstreamTlsContext downstream_tls_context;
+      // This is in principle the filter list.
+      // We currently require exactly one filter, which is the HCM.
+      HttpConnectionManager http_connection_manager;
+
+      bool operator==(const FilterChainData& other) const {
+        return downstream_tls_context == other.downstream_tls_context &&
+               http_connection_manager == other.http_connection_manager;
+      }
+
+      std::string ToString() const;
+    } filter_chain_data;
+
+    // A multi-level map used to determine which filter chain to use for a given
+    // incoming connection. Determining the right filter chain for a given
+    // connection checks the following properties, in order:
+    // - destination port (never matched, so not present in map)
+    // - destination IP address
+    // - server name (never matched, so not present in map)
+    // - transport protocol (allows only "raw_buffer" or unset, prefers the
+    //   former, so only one of those two types is present in map)
+    // - application protocol (never matched, so not present in map)
+    // - connection source type (any, local or external)
+    // - source IP address
+    // - source port
+    // https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/listener/v3/listener_components.proto#config-listener-v3-filterchainmatch
+    // for more details
+    struct FilterChainMap {
+      struct FilterChainDataSharedPtr {
+        std::shared_ptr<FilterChainData> data;
+        bool operator==(const FilterChainDataSharedPtr& other) const {
+          return *data == *other.data;
+        }
+      };
+      struct CidrRange {
+        grpc_resolved_address address;
+        uint32_t prefix_len;
+
+        bool operator==(const CidrRange& other) const {
+          return memcmp(&address, &other.address, sizeof(address)) == 0 &&
+                 prefix_len == other.prefix_len;
+        }
+
+        std::string ToString() const;
+      };
+      using SourcePortsMap = std::map<uint16_t, FilterChainDataSharedPtr>;
+      struct SourceIp {
+        absl::optional<CidrRange> prefix_range;
+        SourcePortsMap ports_map;
+
+        bool operator==(const SourceIp& other) const {
+          return prefix_range == other.prefix_range &&
+                 ports_map == other.ports_map;
+        }
+      };
+      using SourceIpVector = std::vector<SourceIp>;
+      enum class ConnectionSourceType {
+        kAny = 0,
+        kSameIpOrLoopback,
+        kExternal
+      };
+      using ConnectionSourceTypesArray = std::array<SourceIpVector, 3>;
+      struct DestinationIp {
+        absl::optional<CidrRange> prefix_range;
+        // We always fail match on server name, so those filter chains are not
+        // included here.
+        ConnectionSourceTypesArray source_types_array;
+
+        bool operator==(const DestinationIp& other) const {
+          return prefix_range == other.prefix_range &&
+                 source_types_array == other.source_types_array;
+        }
+      };
+      // We always fail match on destination ports map
+      using DestinationIpVector = std::vector<DestinationIp>;
+      DestinationIpVector destination_ip_vector;
+
+      bool operator==(const FilterChainMap& other) const {
+        return destination_ip_vector == other.destination_ip_vector;
+      }
+
+      std::string ToString() const;
+    } filter_chain_map;
+
+    absl::optional<FilterChainData> default_filter_chain;
 
     bool operator==(const LdsUpdate& other) const {
       return http_connection_manager == other.http_connection_manager &&
-             address == other.address && filter_chains == other.filter_chains &&
+             address == other.address &&
+             filter_chain_map == other.filter_chain_map &&
              default_filter_chain == other.default_filter_chain;
     }
 
     std::string ToString() const;
   };
 
-  using LdsUpdateMap = std::map<std::string /*server_name*/, LdsUpdate>;
+  struct LdsResourceData {
+    LdsUpdate resource;
+    std::string serialized_proto;
+  };
 
-  using RdsUpdateMap = std::map<std::string /*route_config_name*/, RdsUpdate>;
+  using LdsUpdateMap = std::map<std::string /*server_name*/, LdsResourceData>;
+
+  struct RdsResourceData {
+    RdsUpdate resource;
+    std::string serialized_proto;
+  };
+
+  using RdsUpdateMap =
+      std::map<std::string /*route_config_name*/, RdsResourceData>;
 
   struct CdsUpdate {
     enum ClusterType { EDS, LOGICAL_DNS, AGGREGATE };
@@ -364,41 +399,54 @@ class XdsApi {
     // The name to use in the EDS request.
     // If empty, the cluster name will be used.
     std::string eds_service_name;
+    // For cluster type LOGICAL_DNS.
+    // The hostname to lookup in DNS.
+    std::string dns_hostname;
+    // For cluster type AGGREGATE.
+    // The prioritized list of cluster names.
+    std::vector<std::string> prioritized_cluster_names;
+
     // Tls Context used by clients
     CommonTlsContext common_tls_context;
+
     // The LRS server to use for load reporting.
     // If not set, load reporting will be disabled.
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
+
     // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
     std::string lb_policy;
     // Used for RING_HASH LB policy only.
     uint64_t min_ring_size = 1024;
     uint64_t max_ring_size = 8388608;
-    enum HashFunction { XX_HASH, MURMUR_HASH_2 };
-    HashFunction hash_function;
     // Maximum number of outstanding requests can be made to the upstream
     // cluster.
     uint32_t max_concurrent_requests = 1024;
-    // For cluster type AGGREGATE.
-    // The prioritized list of cluster names.
-    std::vector<std::string> prioritized_cluster_names;
 
     bool operator==(const CdsUpdate& other) const {
       return cluster_type == other.cluster_type &&
              eds_service_name == other.eds_service_name &&
+             dns_hostname == other.dns_hostname &&
+             prioritized_cluster_names == other.prioritized_cluster_names &&
              common_tls_context == other.common_tls_context &&
              lrs_load_reporting_server_name ==
                  other.lrs_load_reporting_server_name &&
-             prioritized_cluster_names == other.prioritized_cluster_names &&
+             lb_policy == other.lb_policy &&
+             min_ring_size == other.min_ring_size &&
+             max_ring_size == other.max_ring_size &&
              max_concurrent_requests == other.max_concurrent_requests;
     }
 
     std::string ToString() const;
   };
 
-  using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsUpdate>;
+  struct CdsResourceData {
+    CdsUpdate resource;
+    std::string serialized_proto;
+  };
+
+  using CdsUpdateMap = std::map<std::string /*cluster_name*/, CdsResourceData>;
 
   struct EdsUpdate {
     struct Priority {
@@ -482,7 +530,13 @@ class XdsApi {
     std::string ToString() const;
   };
 
-  using EdsUpdateMap = std::map<std::string /*eds_service_name*/, EdsUpdate>;
+  struct EdsResourceData {
+    EdsUpdate resource;
+    std::string serialized_proto;
+  };
+
+  using EdsUpdateMap =
+      std::map<std::string /*eds_service_name*/, EdsResourceData>;
 
   struct ClusterLoadReport {
     XdsClusterDropStats::Snapshot dropped_requests;
@@ -495,18 +549,66 @@ class XdsApi {
       std::pair<std::string /*cluster_name*/, std::string /*eds_service_name*/>,
       ClusterLoadReport>;
 
-  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
+  // The metadata of the xDS resource; used by the xDS config dump.
+  struct ResourceMetadata {
+    // Resource status from the view of a xDS client, which tells the
+    // synchronization status between the xDS client and the xDS server.
+    enum ClientResourceStatus {
+      // Client requested this resource but hasn't received any update from
+      // management server. The client will not fail requests, but will queue
+      // them
+      // until update arrives or the client times out waiting for the resource.
+      REQUESTED = 1,
+      // This resource has been requested by the client but has either not been
+      // delivered by the server or was previously delivered by the server and
+      // then subsequently removed from resources provided by the server.
+      DOES_NOT_EXIST,
+      // Client received this resource and replied with ACK.
+      ACKED,
+      // Client received this resource and replied with NACK.
+      NACKED
+    };
 
-  // Creates an ADS request.
-  // Takes ownership of \a error.
-  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
-                              const std::string& type_url,
-                              const std::set<absl::string_view>& resource_names,
-                              const std::string& version,
-                              const std::string& nonce, grpc_error* error,
-                              bool populate_node);
+    // The client status of this resource.
+    ClientResourceStatus client_status = REQUESTED;
+    // The serialized bytes of the last successfully updated raw xDS resource.
+    std::string serialized_proto;
+    // The timestamp when the resource was last successfully updated.
+    grpc_millis update_time = 0;
+    // The last successfully updated version of the resource.
+    std::string version;
+    // The rejected version string of the last failed update attempt.
+    std::string failed_version;
+    // Details about the last failed update attempt.
+    std::string failed_details;
+    // Timestamp of the last failed update attempt.
+    grpc_millis failed_update_time = 0;
+  };
+  using ResourceMetadataMap =
+      std::map<absl::string_view /*resource_name*/, const ResourceMetadata*>;
+  struct ResourceTypeMetadata {
+    absl::string_view version;
+    ResourceMetadataMap resource_metadata_map;
+  };
+  using ResourceTypeMetadataMap =
+      std::map<absl::string_view /*type_url*/, ResourceTypeMetadata>;
+  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
+                    envoy_admin_v3_REQUESTED) ==
+                    ResourceMetadata::ClientResourceStatus::REQUESTED,
+                "");
+  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
+                    envoy_admin_v3_DOES_NOT_EXIST) ==
+                    ResourceMetadata::ClientResourceStatus::DOES_NOT_EXIST,
+                "");
+  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
+                    envoy_admin_v3_ACKED) ==
+                    ResourceMetadata::ClientResourceStatus::ACKED,
+                "");
+  static_assert(static_cast<ResourceMetadata::ClientResourceStatus>(
+                    envoy_admin_v3_NACKED) ==
+                    ResourceMetadata::ClientResourceStatus::NACKED,
+                "");
 
-  // Parses an ADS response.
   // If the response can't be parsed at the top level, the resulting
   // type_url will be empty.
   // If there is any other type of validation error, the parse_error
@@ -515,7 +617,7 @@ class XdsApi {
   // Otherwise, one of the *_update_map fields will be populated, based
   // on the type_url field.
   struct AdsParseResult {
-    grpc_error* parse_error = GRPC_ERROR_NONE;
+    grpc_error_handle parse_error = GRPC_ERROR_NONE;
     std::string version;
     std::string nonce;
     std::string type_url;
@@ -525,6 +627,19 @@ class XdsApi {
     EdsUpdateMap eds_update_map;
     std::set<std::string> resource_names_failed;
   };
+
+  XdsApi(XdsClient* client, TraceFlag* tracer, const XdsBootstrap::Node* node);
+
+  // Creates an ADS request.
+  // Takes ownership of \a error.
+  grpc_slice CreateAdsRequest(const XdsBootstrap::XdsServer& server,
+                              const std::string& type_url,
+                              const std::set<absl::string_view>& resource_names,
+                              const std::string& version,
+                              const std::string& nonce, grpc_error_handle error,
+                              bool populate_node);
+
+  // Parses an ADS response.
   AdsParseResult ParseAdsResponse(
       const XdsBootstrap::XdsServer& server, const grpc_slice& encoded_response,
       const std::set<absl::string_view>& expected_listener_names,
@@ -541,10 +656,14 @@ class XdsApi {
   // Parses the LRS response and returns \a
   // load_reporting_interval for client-side load reporting. If there is any
   // error, the output config is invalid.
-  grpc_error* ParseLrsResponse(const grpc_slice& encoded_response,
-                               bool* send_all_clusters,
-                               std::set<std::string>* cluster_names,
-                               grpc_millis* load_reporting_interval);
+  grpc_error_handle ParseLrsResponse(const grpc_slice& encoded_response,
+                                     bool* send_all_clusters,
+                                     std::set<std::string>* cluster_names,
+                                     grpc_millis* load_reporting_interval);
+
+  // Assemble the client config proto message and return the serialized result.
+  std::string AssembleClientConfig(
+      const ResourceTypeMetadataMap& resource_type_metadata_map);
 
  private:
   XdsClient* client_;

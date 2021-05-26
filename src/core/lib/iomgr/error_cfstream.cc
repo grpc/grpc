@@ -31,8 +31,9 @@
 
 #define MAX_ERROR_DESCRIPTION 256
 
-grpc_error* grpc_error_create_from_cferror(const char* file, int line,
-                                           void* arg, const char* custom_desc) {
+grpc_error_handle grpc_error_create_from_cferror(const char* file, int line,
+                                                 void* arg,
+                                                 const char* custom_desc) {
   CFErrorRef error = static_cast<CFErrorRef>(arg);
   char buf_domain[MAX_ERROR_DESCRIPTION];
   char buf_desc[MAX_ERROR_DESCRIPTION];

@@ -254,6 +254,7 @@ class CSharpExtArtifact:
                 'tools\\run_tests\\artifacts\\build_artifact_csharp.bat',
                 self.arch
             ],
+                                  timeout_seconds=45 * 60,
                                   use_workspace=True)
         else:
             if self.platform == 'linux':
@@ -387,6 +388,7 @@ def targets():
         PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
         PythonArtifact('manylinux2010', 'x86', 'cp39-cp39'),
+        PythonArtifact('manylinux2014', 'aarch64', 'cp36-cp36m'),
         PythonArtifact('manylinux2014', 'aarch64', 'cp37-cp37m'),
         PythonArtifact('manylinux2014', 'aarch64', 'cp38-cp38'),
         PythonArtifact('manylinux2014', 'aarch64', 'cp39-cp39'),
