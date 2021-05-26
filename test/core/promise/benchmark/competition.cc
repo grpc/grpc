@@ -80,7 +80,7 @@ static void unary(benchmark::State& state,
 
 static void BM_FilterStack_Passthrough3_Unary(benchmark::State& state) {
   unary(state, {&passthrough_filter, &passthrough_filter, &passthrough_filter,
-                 &end_filter});
+                &end_filter});
 }
 BENCHMARK(BM_FilterStack_Passthrough3_Unary);
 

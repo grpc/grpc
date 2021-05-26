@@ -17,9 +17,12 @@
 
 namespace grpc_core {
 
-struct TestContext { bool done= false;};
+struct TestContext {
+  bool done = false;
+};
 
-template <> struct ContextType<TestContext> {};
+template <>
+struct ContextType<TestContext> {};
 
 TEST(Context, WithContext) {
   EXPECT_EQ(GetContext<TestContext>(), nullptr);

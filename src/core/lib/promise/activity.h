@@ -20,6 +20,7 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
+#include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
@@ -129,14 +130,49 @@ class Activity {
 // Owned pointer to one Activity.
 using ActivityPtr = std::unique_ptr<Activity, Activity::Deleter>;
 
+namespace activity_detail {
+
+template <typename Context>
+class ContextHolder {
+ public:
+  ContextHolder(Context value) : value_(std::move(value)) {}
+  Context* GetContext() { return &value_; }
+
+ private:
+  Context value_;
+};
+
+template <typename Context>
+class ContextHolder<Context*> {
+ public:
+  ContextHolder(Context* value) : value_(value) {}
+  Context* GetContext() { return value_; }
+
+ private:
+  Context* value_;
+};
+
+template <typename... Contexts>
+class EnterContexts : public context_detail::Context<Contexts>... {
+ public:
+  template <typename Activity>
+  explicit EnterContexts(Activity* activity)
+      : context_detail::Context<Contexts>(
+            static_cast<ContextHolder<Contexts>*>(activity)->GetContext())... {}
+};
+
 // Implementation details for an Activity of an arbitrary type of promise.
-template <class Factory>
-class PromiseActivity final : public Activity {
+template <class Factory, typename... Contexts>
+class PromiseActivity final
+    : public Activity,
+      public activity_detail::ContextHolder<Contexts>... {
  public:
   PromiseActivity(Factory promise_factory,
                   std::function<void(absl::Status)> on_done,
-                  CallbackScheduler* callback_scheduler)
-      : Activity(callback_scheduler), state_(std::move(promise_factory)) {
+                  CallbackScheduler* callback_scheduler, Contexts... contexts)
+      : Activity(callback_scheduler),
+        ContextHolder<Contexts>(std::move(contexts))...,
+        state_(std::move(promise_factory)) {
     Start(std::move(on_done));
   }
 
@@ -144,6 +180,7 @@ class PromiseActivity final : public Activity {
 
  private:
   Poll<absl::Status> Run() final EXCLUSIVE_LOCKS_REQUIRED(mu()) {
+    EnterContexts<Contexts...> contexts(this);
     return absl::visit(RunState{this}, state_);
   }
 
@@ -192,14 +229,18 @@ class PromiseActivity final : public Activity {
   };
 };
 
+}  // namespace activity_detail
+
 // Given a functor that returns a promise (a promise factory), a callback for
 // completion, and a callback scheduler, construct an activity.
-template <typename Factory>
-ActivityPtr MakeActivity(
-    Factory promise_factory, std::function<void(absl::Status)> on_done,
-    CallbackScheduler* callback_scheduler) {
-  return ActivityPtr(new PromiseActivity<Factory>(
-      std::move(promise_factory), std::move(on_done), callback_scheduler));
+template <typename Factory, typename... Contexts>
+ActivityPtr MakeActivity(Factory promise_factory,
+                         std::function<void(absl::Status)> on_done,
+                         CallbackScheduler* callback_scheduler,
+                         Contexts... contexts) {
+  return ActivityPtr(new activity_detail::PromiseActivity<Factory, Contexts...>(
+      std::move(promise_factory), std::move(on_done), callback_scheduler,
+      std::move(contexts)...));
 }
 
 // Helper type that can be used to enqueue many Activities waiting for some

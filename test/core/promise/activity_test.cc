@@ -223,6 +223,26 @@ TYPED_TEST(BarrierTest, WakeAfterDestruction) {
   b.Clear();
 }
 
+struct TestContext {
+  bool* done;
+};
+template <>
+struct ContextType<TestContext> {};
+
+TEST(ActivityTest, WithContext) {
+  bool done = false;
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  MakeActivity(
+      [] {
+        *GetContext<TestContext>()->done = true;
+        return Immediate(absl::OkStatus());
+      },
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      nullptr, TestContext{&done});
+  EXPECT_TRUE(done);
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

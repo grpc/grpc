@@ -19,25 +19,23 @@
 
 namespace grpc_core {
 
-template <typename T> struct ContextType;
+// To avoid accidentally creating context types, we require an explicit
+// specialization of this template per context type. The specialization need
+// not contain any members.
+template <typename T>
+struct ContextType;
 
 namespace context_detail {
 
 template <typename T>
 class Context : public ContextType<T> {
  public:
-  explicit Context(T* p) : old_(current_) {
-    current_ = p;
-  }
-  ~Context() {
-    current_ = old_;
-  }
+  explicit Context(T* p) : old_(current_) { current_ = p; }
+  ~Context() { current_ = old_; }
   Context(const Context&) = delete;
   Context& operator=(const Context&) = delete;
 
-  static T* get() {
-    return current_;
-  }
+  static T* get() { return current_; }
 
  private:
   static thread_local T* current_;
@@ -65,7 +63,8 @@ class WithContext {
 }  // namespace context_detail
 
 // Retrieve the current value of a context.
-template <typename T> T* GetContext() {
+template <typename T>
+T* GetContext() {
   return context_detail::Context<T>::get();
 }
 
