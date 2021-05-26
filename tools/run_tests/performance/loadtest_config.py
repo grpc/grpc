@@ -222,13 +222,12 @@ def gen_loadtest_configs(
             # Set servers to named instances.
             spec['servers'] = servers
 
-            # Name driver(s) with an index for consistency with workers.
-            if 'drivers' not in spec:
-                spec['drivers'] = [dict()]
-            for i, driver in enumerate(spec['drivers']):
-                driver['language'] = 'cxx'
-                driver['name'] = component_name((driver.get('name',
-                                                            ''), str(i)))
+            # Name driver with an index for consistency with workers.
+            if 'driver' not in spec:
+                spec['driver'] = dict()
+            driver = spec['driver']
+            driver['language'] = 'cxx'
+            driver['name'] = component_name((driver.get('name', ''), str(i)))
 
             spec['scenariosJSON'] = scenario_str
 
@@ -259,19 +258,16 @@ def clear_empty_fields(config: Dict[str, Any]) -> None:
         for server in spec['servers']:
             if 'pool' in server and not server['pool']:
                 del server['pool']
-    if 'drivers' in spec:
-        drivers = []
-        for driver in spec['drivers']:
-            if 'image' in driver and not driver['image']:
-                del driver['image']
-            if 'pool' in driver and not driver['pool']:
-                del driver['pool']
-            if 'image' in driver or 'pool' in driver:
-                drivers.append(driver)
-        if drivers:
-            spec['drivers'] = drivers
+    if 'driver' in spec:
+        driver = spec['driver']
+        if 'pool' in driver and not driver['pool']:
+            del driver['pool']
+        if 'run' in driver and 'image' not in driver['run']:
+            del driver['run']
+        if not set(driver).difference({'language'}):
+            del spec['driver']
         else:
-            del spec['drivers']
+            spec['driver'] = driver
     if 'results' in spec and not ('bigQueryTable' in spec['results'] and
                                   spec['results']['bigQueryTable']):
         del spec['results']
