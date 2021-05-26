@@ -826,6 +826,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx client_channel_stress_test)
   endif()
+  add_dependencies(buildtests_cxx client_context_test_peer_test)
   add_dependencies(buildtests_cxx client_interceptors_end2end_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx client_lb_end2end_test)
@@ -3261,6 +3262,7 @@ foreach(_hdr
   include/grpc++/test/mock_stream.h
   include/grpc++/test/server_context_test_spouse.h
   include/grpcpp/test/channel_test_peer.h
+  include/grpcpp/test/client_context_test_peer.h
   include/grpcpp/test/default_reactor_test_peer.h
   include/grpcpp/test/mock_stream.h
   include/grpcpp/test/server_context_test_spouse.h
@@ -9687,6 +9689,42 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 
 
 endif()
+endif()
+if(gRPC_BUILD_TESTS)
+
+add_executable(client_context_test_peer_test
+  test/cpp/test/client_context_test_peer_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(client_context_test_peer_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_context_test_peer_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test
+  grpc++_test_util
+)
+
+
 endif()
 if(gRPC_BUILD_TESTS)
 
