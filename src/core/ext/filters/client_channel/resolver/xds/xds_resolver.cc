@@ -652,11 +652,10 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
         case XdsApi::Route::HashPolicy::HEADER:
           new_hash = HeaderHashHelper(hash_policy, args.initial_metadata);
           break;
-        case XdsApi::Route::HashPolicy::CHANNEL_ID: {
+        case XdsApi::Route::HashPolicy::CHANNEL_ID:
           new_hash =
               static_cast<uint64_t>(reinterpret_cast<uintptr_t>(resolver));
           break;
-        }
         default:
           GPR_ASSERT(0);
       }
