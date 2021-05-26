@@ -181,6 +181,9 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                 }],
             })
 
+    def create_url_map_with_content(self, url_map: Any) -> GcpResource:
+        return self._insert_resource(self.api.urlMaps(), url_map)
+
     def delete_url_map(self, name):
         self._delete_resource(self.api.urlMaps(), 'urlMap', name)
 

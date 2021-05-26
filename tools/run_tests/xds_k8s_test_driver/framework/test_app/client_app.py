@@ -20,7 +20,7 @@ modules.
 import datetime
 import functools
 import logging
-from typing import Iterator, Optional
+from typing import Iterable, Optional, Tuple
 
 from framework.helpers import retryers
 from framework.infrastructure import k8s
@@ -35,6 +35,7 @@ logger = logging.getLogger(__name__)
 # Type aliases
 _timedelta = datetime.timedelta
 _LoadBalancerStatsServiceClient = grpc_testing.LoadBalancerStatsServiceClient
+_XdsUpdateClientConfigureServiceClient = grpc_testing.XdsUpdateClientConfigureServiceClient
 _ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
 _ChannelzChannel = grpc_channelz.Channel
 _ChannelzChannelState = grpc_channelz.ChannelState
@@ -51,12 +52,14 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
     def __init__(self,
                  *,
+                 name: str,
                  ip: str,
                  rpc_port: int,
                  server_target: str,
                  rpc_host: Optional[str] = None,
                  maintenance_port: Optional[int] = None):
         super().__init__(rpc_host=(rpc_host or ip))
+        self.name = name
         self.ip = ip
         self.rpc_port = rpc_port
         self.server_target = server_target
@@ -67,6 +70,12 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
     def load_balancer_stats(self) -> _LoadBalancerStatsServiceClient:
         return _LoadBalancerStatsServiceClient(self._make_channel(
             self.rpc_port))
+
+    @property
+    @functools.lru_cache(None)
+    def update_client_config_client(self):
+        return _XdsUpdateClientConfigureServiceClient(
+            self._make_channel(self.rpc_port))
 
     @property
     @functools.lru_cache(None)
@@ -180,7 +189,7 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
             f'Client has no {_ChannelzChannelState.Name(state)} channel with '
             'the server')
 
-    def get_server_channels(self, **kwargs) -> Iterator[_ChannelzChannel]:
+    def get_server_channels(self, **kwargs) -> Iterable[_ChannelzChannel]:
         return self.channelz.find_channels_for_target(self.server_target,
                                                       **kwargs)
 
@@ -195,6 +204,16 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         raise self.NotFound(
             f'Not found a {_ChannelzChannelState.Name(state)} '
             f'subchannel for channel_id {channel.ref.channel_id}')
+
+    def update_client_config(self,
+                             *,
+                             rpc_types: Iterable[str],
+                             metadata: Optional[Iterable[Tuple[str, str,
+                                                               str]]] = None,
+                             **kwargs) -> None:
+        self.update_client_config_client.configure(rpc_types=rpc_types,
+                                                   metadata=metadata,
+                                                   **kwargs)
 
 
 class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
@@ -286,7 +305,8 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                 pod, remote_port=self.stats_port)
             rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
 
-        return XdsTestClient(ip=pod_ip,
+        return XdsTestClient(name=pod.metadata.name,
+                             ip=pod_ip,
                              rpc_port=self.stats_port,
                              server_target=server_target,
                              rpc_host=rpc_host)

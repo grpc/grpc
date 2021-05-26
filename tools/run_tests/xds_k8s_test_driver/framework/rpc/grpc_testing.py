@@ -16,11 +16,11 @@ This contains helpers for gRPC services defined in
 https://github.com/grpc/grpc/blob/master/src/proto/grpc/testing/test.proto
 """
 import logging
-from typing import Optional
+from typing import Optional, Iterable, Tuple
 
 import grpc
 
-import framework.rpc
+from framework.rpc.grpc import GrpcClientHelper
 from src.proto.grpc.testing import test_pb2_grpc
 from src.proto.grpc.testing import messages_pb2
 
@@ -29,7 +29,7 @@ _LoadBalancerStatsRequest = messages_pb2.LoadBalancerStatsRequest
 LoadBalancerStatsResponse = messages_pb2.LoadBalancerStatsResponse
 
 
-class LoadBalancerStatsServiceClient(framework.rpc.grpc.GrpcClientHelper):
+class LoadBalancerStatsServiceClient(GrpcClientHelper):
     stub: test_pb2_grpc.LoadBalancerStatsServiceStub
     STATS_PARTIAL_RESULTS_TIMEOUT_SEC = 1200
 
@@ -49,5 +49,40 @@ class LoadBalancerStatsServiceClient(framework.rpc.grpc.GrpcClientHelper):
                                              req=_LoadBalancerStatsRequest(
                                                  num_rpcs=num_rpcs,
                                                  timeout_sec=timeout_sec),
+                                             deadline_sec=timeout_sec,
+                                             log_level=logging.INFO)
+
+
+class XdsUpdateClientConfigureServiceClient(GrpcClientHelper):
+    stub: test_pb2_grpc.XdsUpdateClientConfigureServiceStub
+    CONFIGURE_TIMEOUT_SEC: int = 5
+    STATS_PARTIAL_RESULTS_TIMEOUT_SEC = 1200
+
+    def __init__(self, channel: grpc.Channel):
+        super().__init__(channel,
+                         test_pb2_grpc.XdsUpdateClientConfigureServiceStub)
+
+    def configure(
+        self,
+        *,
+        rpc_types: Iterable[str],
+        metadata: Optional[Iterable[Tuple[str, str, str]]] = None,
+        timeout_sec: int = CONFIGURE_TIMEOUT_SEC,
+    ) -> LoadBalancerStatsResponse:
+        request = messages_pb2.ClientConfigureRequest()
+        for rpc_type in rpc_types:
+            request.types.append(
+                messages_pb2.ClientConfigureRequest.RpcType.Value(rpc_type))
+        if metadata:
+            for entry in metadata:
+                request.metadata.append(
+                    messages_pb2.ClientConfigureRequest.Metadata(
+                        type=messages_pb2.ClientConfigureRequest.RpcType.Value(
+                            entry[0]),
+                        key=entry[1],
+                        value=entry[2],
+                    ))
+        return self.call_unary_with_deadline(rpc='Configure',
+                                             req=request,
                                              deadline_sec=timeout_sec,
                                              log_level=logging.INFO)
