@@ -43,7 +43,7 @@ static void hexdump(const std::string& prefix, const void* data_, size_t size) {
           line += "   ";
           ascii[p] = ' ';
         }
-        if (n <= 8) {
+        if ((n <= 8) && (n != 0)) {
           line += " ";
         }
       }
@@ -98,7 +98,7 @@ class uvTCPlistener final : public uvTCPbase {
       gpr_log(GPR_DEBUG, "EE::UV::uvTCPlistener:%p created", this);
     }
   }
-  virtual ~uvTCPlistener() = default;
+  virtual ~uvTCPlistener() { on_shutdown_(absl::OkStatus()); };
   grpc_event_engine::experimental::EventEngine::Listener::AcceptCallback
       on_accept_;
   grpc_event_engine::experimental::EventEngine::Callback on_shutdown_;
@@ -112,7 +112,10 @@ class uvTCP final : public uvTCPbase {
   uvTCP(const grpc_event_engine::experimental::ChannelArgs& args,
         grpc_event_engine::experimental::SliceAllocator slice_allocator)
       : args_(args), slice_allocator_(std::move(slice_allocator)) {}
-  virtual ~uvTCP() = default;
+  virtual ~uvTCP() {
+    GPR_ASSERT(write_bufs_ == nullptr);
+    GPR_ASSERT(on_read_ == nullptr);
+  };
 
   int init(uvEngine* engine);
   uv_timer_t write_timer_;
@@ -512,7 +515,7 @@ absl::StatusOr<int> uvListener::Bind(
                   "EE::UV::uvListener@%p::Bind, uv_tcp_bind failed: %i", uvTCP_,
                   r);
         }
-        p.set_value(absl::InvalidArgumentError(
+        p.set_value(absl::UnknownError(
             "uv_tcp_bind returned an error code we don't know about"));
         return;
     }
@@ -585,8 +588,8 @@ absl::Status uvListener::Start() {
           if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
             gpr_log(
                 GPR_DEBUG,
-                "EE::UV::uvListener@%p::Start, accepting new connection: %i",
-                l, r);
+                "EE::UV::uvListener@%p::Start, accepting new connection: %i", l,
+                r);
           }
           if (r == 0) {
             e->populateAddressesUnsafe();
@@ -628,6 +631,7 @@ class uvTask {
     timer_.data = this;
   }
   grpc_event_engine::experimental::EventEngine::Callback fn_;
+  bool triggered_ = false;
   uv_timer_t timer_;
   const intptr_t key_;
   void cancel() {
@@ -649,11 +653,17 @@ uvEngine::TaskHandle uvEngine::RunAt(absl::Time when, Callback fn,
                                      RunOptions opts) {
   uvTask* task = new uvTask(this);
   task->fn_ = std::move(fn);
-  schedule([task, when](uvEngine* engine) {
+  uint64_t timeout = (when - absl::Now()) / absl::Milliseconds(1);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_DEBUG,
+            "EE::UV::uvTask@%p::RunAt, scheduled, timeout=%" PRIu64
+            ", key = %" PRIiPTR,
+            task, timeout, task->key_);
+  }
+  schedule([task, timeout](uvEngine* engine) {
     intptr_t key = task->key_;
     engine->taskMap_[key] = task;
     uv_timer_init(&engine->loop_, &task->timer_);
-    absl::Duration timeout = when - absl::Now();
     uv_timer_start(
         &task->timer_,
         [](uv_timer_t* timer) {
@@ -663,9 +673,10 @@ uvEngine::TaskHandle uvEngine::RunAt(absl::Time when, Callback fn,
                     task, task->key_);
           }
           task->cancel();
+          task->triggered_ = true;
           task->fn_(absl::OkStatus());
         },
-        timeout / absl::Milliseconds(1), 0);
+        timeout, 0);
   });
 
   return {task->key_};
@@ -678,13 +689,21 @@ void uvEngine::TryCancel(TaskHandle handle) {
       gpr_log(GPR_DEBUG, "EE::UV::uvTask@%p, cancelled: key = %" PRIiPTR,
               it->second, it->second->key_);
     }
-    it->second->cancel();
+    auto* task = it->second;
+    task->cancel();
+    if (!task->triggered_) {
+      task->fn_(absl::CancelledError());
+    }
   });
 }
 
 class uvLookupTask {
  public:
   uvLookupTask(uvEngine* engine) : key_(engine->lookupTaskKey_.fetch_add(1)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG, "EE::UV::uvLookupTask@%p, created: key = %" PRIiPTR,
+              this, key_);
+    }
     req_.data = this;
     timer_.data = this;
   }
@@ -692,49 +711,50 @@ class uvLookupTask {
   std::string default_port_;
   uv_getaddrinfo_t req_;
   uv_timer_t timer_;
-  bool cancelled_ = false;
+  bool deadline_exceeded_ = false;
   const intptr_t key_;
   grpc_event_engine::experimental::EventEngine::DNSResolver::
       LookupHostnameCallback on_resolve_;
-  static void uvResolverCallbackTrampoline(uv_getaddrinfo_t* req, int status,
-                                           struct addrinfo* res) {
-    uvLookupTask* task = reinterpret_cast<uvLookupTask*>(req->data);
-    task->uvResolverCallback(status, res);
-  }
   void uvResolverCallback(int status, struct addrinfo* res) {
-    uvEngine* engine = reinterpret_cast<uvEngine*>(req_.loop->data);
     uv_timer_stop(&timer_);
-    if (cancelled_ == 1) {
-      uv_freeaddrinfo(res);
-      engine->eraseLookupTask(key_);
-      return;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_DEBUG,
+              "EE::UV::LookupHostname for %s:%s completed with status = %i",
+              address_.c_str(), default_port_.c_str(), status);
     }
-    struct addrinfo* p;
-    std::vector<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
-        ret;
-
-    for (p = res; p != nullptr; p = p->ai_next) {
-      ret.emplace_back(p->ai_addr, p->ai_addrlen);
-    }
-
-    uv_freeaddrinfo(res);
     uv_close(reinterpret_cast<uv_handle_t*>(&timer_), [](uv_handle_t* timer) {
       uvLookupTask* task = reinterpret_cast<uvLookupTask*>(timer->data);
       uvEngine* engine = reinterpret_cast<uvEngine*>(timer->loop->data);
       engine->eraseLookupTask(task->key_);
     });
     if (status == UV_ECANCELED) {
-      on_resolve_(absl::CancelledError("Cancelled"));
+      if (deadline_exceeded_) {
+        on_resolve_(absl::DeadlineExceededError("Deadline exceeded"));
+      } else {
+        on_resolve_(absl::CancelledError());
+      }
+    } else if (status != 0) {
+      on_resolve_(
+          absl::UnknownError("uv_getaddrinfo failed with an unknown error"));
     } else {
+      struct addrinfo* p;
+      std::vector<grpc_event_engine::experimental::EventEngine::ResolvedAddress>
+          ret;
+
+      for (p = res; p != nullptr; p = p->ai_next) {
+        ret.emplace_back(p->ai_addr, p->ai_addrlen);
+      }
+
+      uv_freeaddrinfo(res);
       on_resolve_(std::move(ret));
     }
   }
   static void uvTimerCallback(uv_timer_t* timer) {
     uvLookupTask* task = reinterpret_cast<uvLookupTask*>(timer->data);
-    task->cancelled_ = true;
+    task->deadline_exceeded_ = true;
+    uv_cancel(reinterpret_cast<uv_req_t*>(&task->req_));
   }
   void cancel(uvEngine* engine) {
-    cancelled_ = true;
     uv_timer_stop(&timer_);
     uv_cancel(reinterpret_cast<uv_req_t*>(&req_));
   }
@@ -752,18 +772,31 @@ uvDNSResolver::LookupHostname(LookupHostnameCallback on_resolve,
     task->address_ = std::string(address);
     task->default_port_ = std::string(default_port);
   }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_DEBUG, "EE::UV::LookupHostname for %s:%s scheduled",
+            task->address_.c_str(), task->default_port_.c_str());
+  }
   engine_->schedule([task, deadline](uvEngine* engine) {
     intptr_t key = task->key_;
     engine->lookupTaskMap_[key] = task;
     const char* ccaddress = task->address_.c_str();
     const char* ccdefault_port = task->default_port_.c_str();
-    int r = uv_getaddrinfo(&engine->loop_, &task->req_,
-                           uvLookupTask::uvResolverCallbackTrampoline,
-                           ccaddress, ccdefault_port, nullptr);
+    int r = uv_getaddrinfo(
+        &engine->loop_, &task->req_,
+        [](uv_getaddrinfo_t* req, int status, struct addrinfo* res) {
+          uvLookupTask* task = reinterpret_cast<uvLookupTask*>(req->data);
+          task->uvResolverCallback(status, res);
+        },
+        ccaddress, ccdefault_port, nullptr);
     if (r != 0) {
       auto on_resolve = std::move(task->on_resolve_);
       engine->eraseLookupTask(key);
-      on_resolve(absl::UnknownError("blah"));
+      on_resolve(absl::UnknownError("Resolution error"));
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+        gpr_log(GPR_DEBUG,
+                "EE::UV::LookupHostname for %s:%s failed early with %i",
+                task->address_.c_str(), task->default_port_.c_str(), r);
+      }
       return;
     }
     uv_timer_init(&engine->loop_, &task->timer_);
@@ -800,13 +833,16 @@ void uvEngine::eraseLookupTask(intptr_t taskKey) {
 }
 
 uvEndpoint::~uvEndpoint() {
-  GPR_ASSERT(uvTCP_->write_bufs_ == nullptr);
-  GPR_ASSERT(uvTCP_->on_read_ == nullptr);
   uvTCP* tcp = uvTCP_;
   getEngine()->schedule([tcp](uvEngine* engine) {
     tcp->to_close_ = 3;
     uvTCPbase* base = tcp;
     tcp->tcp_.data = base;
+    if (tcp->on_read_) {
+      uv_read_stop(reinterpret_cast<uv_stream_t*>(&tcp->tcp_));
+      auto cb = std::move(tcp->on_read_);
+      cb(absl::CancelledError());
+    }
     uv_close(reinterpret_cast<uv_handle_t*>(&tcp->tcp_), uvTCPbase::uvCloseCB);
     uv_close(reinterpret_cast<uv_handle_t*>(&tcp->write_timer_),
              uvTCPbase::uvCloseCB);
@@ -846,24 +882,33 @@ void uvEndpoint::Write(
           uv_cancel(reinterpret_cast<uv_req_t*>(&tcp->write_req_));
           delete[] tcp->write_bufs_;
           tcp->write_bufs_ = nullptr;
-          tcp->on_writable_(absl::CancelledError("deadline"));
+          tcp->on_writable_(absl::DeadlineExceededError("Deadline exceeded"));
         },
         timeout / absl::Milliseconds(1), 0);
-    uv_write(
-        &tcp->write_req_, reinterpret_cast<uv_stream_t*>(&tcp->tcp_),
-        tcp->write_bufs_, tcp->write_bufs_count_,
-        [](uv_write_t* req, int status) {
-          uvTCP* tcp = reinterpret_cast<uvTCP*>(req->data);
-          delete[] tcp->write_bufs_;
-          tcp->write_bufs_ = nullptr;
-          uv_timer_stop(&tcp->write_timer_);
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-            gpr_log(GPR_DEBUG, "EE::UV::uvEndpoint@%p::Write completed", tcp);
-          }
-          tcp->on_writable_(
-              status == 0 ? absl::OkStatus()
-                          : absl::UnknownError("uv_write gave us an error"));
-        });
+    uv_write(&tcp->write_req_, reinterpret_cast<uv_stream_t*>(&tcp->tcp_),
+             tcp->write_bufs_, tcp->write_bufs_count_,
+             [](uv_write_t* req, int status) {
+               uvTCP* tcp = reinterpret_cast<uvTCP*>(req->data);
+               delete[] tcp->write_bufs_;
+               tcp->write_bufs_ = nullptr;
+               uv_timer_stop(&tcp->write_timer_);
+               if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+                 gpr_log(GPR_DEBUG, "EE::UV::uvEndpoint@%p::Write completed",
+                         tcp);
+               }
+               switch (status) {
+                 case 0:
+                   tcp->on_writable_(absl::OkStatus());
+                   break;
+                 case UV_ECANCELED:
+                   tcp->on_writable_(absl::CancelledError());
+                   break;
+                 default:
+                   tcp->on_writable_(
+                       absl::UnknownError("uv_write gave us an error"));
+                   break;
+               };
+             });
   });
 }
 
@@ -884,7 +929,7 @@ void uvEndpoint::Read(
         [](uv_timer_t* timer) {
           uvTCP* tcp = reinterpret_cast<uvTCP*>(timer->data);
           uv_read_stop(reinterpret_cast<uv_stream_t*>(&tcp->tcp_));
-          tcp->on_read_(absl::CancelledError("deadline"));
+          tcp->on_read_(absl::DeadlineExceededError("Deadline exceeded"));
         },
         timeout / absl::Milliseconds(1), 0);
     uv_read_start(
