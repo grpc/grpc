@@ -60,6 +60,8 @@ class Activity {
     }
   };
 
+  virtual size_t Size() = 0;
+
  protected:
   explicit Activity(CallbackScheduler* scheduler);
   virtual ~Activity();
@@ -137,6 +139,8 @@ class PromiseActivity final : public Activity {
       : Activity(callback_scheduler), state_(std::move(promise_factory)) {
     Start(std::move(on_done));
   }
+
+  size_t Size() { return sizeof(*this); }
 
  private:
   Poll<absl::Status> Run() final EXCLUSIVE_LOCKS_REQUIRED(mu()) {

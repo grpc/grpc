@@ -43,7 +43,10 @@ class State<F> {
   using FinalState = State<F>;
   using StatesList = List<FinalState>;
 
-  Poll<Result> operator()() { return f_(); }
+  template <typename StateVariant>
+  Poll<Result> Run(StateVariant*) {
+    return f_();
+  }
 
  private:
   F f_;
@@ -85,7 +88,7 @@ Result StatusFrom(absl::StatusOr<T>* status) {
 }
 
 template <typename F, typename Next, typename... Nexts>
-class State<F, Next, Nexts...> {
+class State<F, Next, Nexts...> final {
  public:
   State(F f, Next next, Nexts... nexts)
       : f_(std::move(f)), next_(std::move(next)), nexts_(std::move(nexts)...) {}
@@ -101,18 +104,22 @@ class State<F, Next, Nexts...> {
       typename NextState::StatesList::template Append<State<F, Next, Nexts...>>;
   using PollResult = absl::StatusOr<NextState>;
 
-  Poll<PollResult> operator()() {
+  template <typename StateVariant>
+  Poll<typename FinalState::Result> Run(StateVariant* state_variant) {
     auto r = f_();
-    if (auto result = r.get_ready()) {
+    if (auto* result = r.get_ready()) {
       if (result->ok()) {
         auto next = &next_;
-        return ready(PollResult(absl::apply(
-            [result, next](Nexts&... nexts) {
-              return NextState(CallNext(next, result), std::move(nexts)...);
+        return absl::apply(
+            [result, next, state_variant](Nexts&... nexts) {
+              return state_variant
+                  ->template emplace<NextState>(CallNext(next, result),
+                                                std::move(nexts)...)
+                  .Run(state_variant);
             },
-            nexts_)));
+            nexts_);
       }
-      return ready(StatusFrom<PollResult>(result));
+      return r;
     }
     return kPending;
   }
@@ -132,7 +139,6 @@ class TrySeq {
   using Result = typename FinalState::Result;
   StatesVariant state_;
 
-  template <bool kSetState>
   struct CallPoll {
     TrySeq* seq;
     // CallPoll on a non-final state moves to the next state if it completes.
@@ -144,32 +150,7 @@ class TrySeq {
     // immediately to avoid unnecessary potential copies.
     template <typename State>
     Poll<Result> operator()(State& state) {
-      auto r = state();
-      if (auto* p = r.get_ready()) {
-        if (p->ok()) {
-          return CallPoll<true>{seq}(**p);
-        } else {
-          return ready(Result(std::move(p->status())));
-        }
-      } else {
-        if (kSetState) {
-          seq->state_.template emplace<State>(std::move(state));
-        }
-        return kPending;
-      }
-    }
-
-    // CallPoll on the final state produces the result if it completes.
-    Poll<Result> operator()(FinalState& final_state) {
-      auto r = final_state();
-      if (r.ready()) {
-        return ready(r.take());
-      } else {
-        if (kSetState) {
-          seq->state_.template emplace<FinalState>(std::move(final_state));
-        }
-        return kPending;
-      }
+      return state.Run(&seq->state_);
     }
   };
 
@@ -177,9 +158,7 @@ class TrySeq {
   explicit TrySeq(Functors... functors)
       : state_(InitialState(std::move(functors)...)) {}
 
-  Poll<Result> operator()() {
-    return absl::visit(CallPoll<false>{this}, state_);
-  }
+  Poll<Result> operator()() { return absl::visit(CallPoll{this}, state_); }
 };
 
 }  // namespace try_seq_detail
