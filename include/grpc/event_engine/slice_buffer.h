@@ -85,6 +85,7 @@ class SliceBuffer final {
     if (index >= count()) return Slice();
     return Slice(sb_->slices[index], Slice::ADD_REF);
   }
+  size_t length() { return sb_->length; }
   grpc_slice_buffer* raw_slice_buffer() { return sb_; }
 
  private:

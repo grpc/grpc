@@ -46,11 +46,10 @@ SliceAllocator::~SliceAllocator() {
 SliceAllocator::SliceAllocator(SliceAllocator&& other) noexcept
     : resource_user_(other.resource_user_) {
   GPR_ASSERT(!other.allocations_in_flight_);
+  grpc_resource_user_ref(resource_user_);
   slice_allocator_ = new grpc_resource_user_slice_allocator;
   grpc_resource_user_slice_allocator_init(slice_allocator_, resource_user_,
                                           OnAllocated, this);
-  other.resource_user_ = nullptr;
-  delete other.slice_allocator_;
 }
 
 SliceAllocator& SliceAllocator::operator=(SliceAllocator&& other) noexcept {
@@ -67,17 +66,17 @@ SliceAllocator& SliceAllocator::operator=(SliceAllocator&& other) noexcept {
   }
   delete slice_allocator_;
   resource_user_ = other.resource_user_;
+  grpc_resource_user_ref(resource_user_);
   slice_allocator_ = new grpc_resource_user_slice_allocator;
   grpc_resource_user_slice_allocator_init(slice_allocator_, resource_user_,
                                           OnAllocated, this);
-  other.resource_user_ = nullptr;
-  delete other.slice_allocator_;
   return *this;
 }
 
 absl::Status SliceAllocator::Allocate(size_t size, size_t count,
                                       SliceBuffer* dest, AllocateCallback cb) {
   cb_ = cb;
+  dest->clear();
   if (grpc_resource_user_alloc_slices(slice_allocator_, size, count,
                                       dest->raw_slice_buffer())) {
     // allocated inline
