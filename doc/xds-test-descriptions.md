@@ -635,7 +635,7 @@ Client parameters:
 
 Load balancer configuration:
 
-1.  One MIG with each having two backends.
+1.  One MIG with two backends.
 
 Assert:
 
@@ -652,7 +652,7 @@ to reach the designated hosts.
 ### metadata_filter
 This test case verifies that metadata filter configurations in URL map match 
 rule are effective at Traffic Director for routing selection against downstream
- node metadata.
+node metadata.
 
 Client parameters:
 
@@ -672,7 +672,7 @@ There are four test sub-cases:
 Assert:
 
 At each test sub-case described above, the test driver configures
- and verifies:
+and verifies:
 
 1. Set default URL map, and verify traffic goes to the original backend hosts. 
 1. Then patch URL map to update the match rule with metadata filter 
@@ -693,11 +693,11 @@ Client parameters:
 
 Load balancer configuration:
 
-1.  One MIG with each having two backends.
+1.  One MIG with two backends.
 
 Assert:
 1. The test driver configures matching port in the forwarding rule and in the
- request server uri, then verifies traffic reaches backend service instances.
+request server uri, then verifies traffic reaches backend service instances.
 1. The test driver updates the forwarding rule to use a different port, then 
 verifies that the traffic stops going to those backend service instances.
 
@@ -715,7 +715,7 @@ Client parameters:
 
 Load balancer configuration:
 
-1.  One MIG with each having two backends.
+1.  One MIG with two backends.
 
 Assert:
 
@@ -725,6 +725,6 @@ Test driver configures and verifies:
 host rule `myservice::x`.
 1. Traffic goes to backends when configuring the target URI `xds:///myservice`, 
 the forwarding rule port `80` and the URL map host rule `myservice`.
-1. Not traffic goes to backends when configuring the target URI 
+1. No traffic goes to backends when configuring the target URI
 `xds:///myservice`, the forwarding rule port `80` and the host rule 
 `myservice::80`.
