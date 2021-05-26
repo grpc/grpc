@@ -43,7 +43,7 @@ static void hexdump(const std::string& prefix, const void* data_, size_t size) {
           line += "   ";
           ascii[p] = ' ';
         }
-        if (n <= 8) {
+        if ((n <= 8) && (n != 0)) {
           line += " ";
         }
       }
