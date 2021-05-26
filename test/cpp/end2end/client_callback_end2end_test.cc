@@ -861,8 +861,7 @@ TEST_P(ClientCallbackEnd2endTest, GenericUnaryReactor) {
       send_buf_ = SerializeToByteBuffer(&request_);
 
       StubOptions options(suffix_for_stats);
-	  stub->PrepareUnaryCall(&cli_ctx_, method_name, options,
-				 send_buf_.get(),
+      stub->PrepareUnaryCall(&cli_ctx_, method_name, options, send_buf_.get(),
                              &recv_buf_, this);
       StartCall();
     }
