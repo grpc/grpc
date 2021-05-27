@@ -23,11 +23,11 @@ namespace adaptor_detail {
 
 template <typename T>
 struct IsPoll {
-  static constexpr bool value = false;
+  static constexpr bool value() { return false; }
 };
 template <typename T>
 struct IsPoll<Poll<T>> {
-  static constexpr bool value = true;
+  static constexpr bool value() { return true; }
 };
 
 template <typename Arg, typename F, typename Ignored = void>
@@ -36,7 +36,7 @@ class Factory;
 template <typename Arg, typename F>
 class Factory<Arg, F,
               typename std::enable_if<IsPoll<decltype(
-                  std::declval<F>()(std::declval<Arg>()))>::value>::type> {
+                  std::declval<F>()(std::declval<Arg>()))>::value()>::type> {
  public:
   class Promise {
    public:
@@ -63,7 +63,7 @@ class Factory<Arg, F,
 template <typename Arg, typename F>
 class Factory<Arg, F,
               typename std::enable_if<
-                  IsPoll<decltype(std::declval<F>()())>::value>::type> {
+                  IsPoll<decltype(std::declval<F>()())>::value()>::type> {
  public:
   using Promise = F;
   Promise Once(Arg arg) { return std::move(f_); }
@@ -77,7 +77,7 @@ class Factory<Arg, F,
 template <typename F>
 class Factory<void, F,
               typename std::enable_if<
-                  IsPoll<decltype(std::declval<F>()())>::value>::type> {
+                  IsPoll<decltype(std::declval<F>()())>::value()>::type> {
  public:
   using Promise = F;
   Promise Once() { return std::move(f_); }
@@ -91,7 +91,7 @@ class Factory<void, F,
 template <typename Arg, typename F>
 class Factory<Arg, F,
               typename std::enable_if<IsPoll<decltype(
-                  std::declval<F>()(std::declval<Arg>())())>::value>::type> {
+                  std::declval<F>()(std::declval<Arg>())())>::value()>::type> {
  public:
   using Promise = decltype(std::declval<F>()(std::declval<Arg>()));
   Promise Once(Arg arg) { return f_(std::move(arg)); }
@@ -105,7 +105,7 @@ class Factory<Arg, F,
 template <typename Arg, typename F>
 class Factory<Arg, F,
               typename std::enable_if<
-                  IsPoll<decltype(std::declval<F>()()())>::value>::type> {
+                  IsPoll<decltype(std::declval<F>()()())>::value()>::type> {
  public:
   using Promise = decltype(std::declval<F>()());
   Promise Once(Arg arg) { return f_(); }
@@ -119,7 +119,7 @@ class Factory<Arg, F,
 template <typename F>
 class Factory<void, F,
               typename std::enable_if<
-                  IsPoll<decltype(std::declval<F>()()())>::value>::type> {
+                  IsPoll<decltype(std::declval<F>()()())>::value()>::type> {
  public:
   using Promise = decltype(std::declval<F>()());
   Promise Once() { return f_(); }
@@ -130,7 +130,36 @@ class Factory<void, F,
   F f_;
 };
 
+template <typename F, typename... Captures>
+class Capture {
+ public:
+  explicit Capture(F f, Captures... captures)
+      : f_(std::move(f)), captures_(std::move(captures)...) {}
+
+  template <typename... Args>
+  decltype(std::declval<F>()(static_cast<Captures*>(nullptr)...,
+                             std::declval<Args>()...))
+  operator()(Args... args) {
+    auto f = &f_;
+    return absl::apply(
+        [f, &args...](Captures&... captures) {
+          return (*f)(&captures..., std::move(args)...);
+        },
+        captures_);
+  }
+
+ private:
+  F f_;
+  std::tuple<Captures...> captures_;
+};
+
 }  // namespace adaptor_detail
+
+template <typename F, typename... Captures>
+adaptor_detail::Capture<F, Captures...> Capture(F f, Captures... captures) {
+  return adaptor_detail::Capture<F, Captures...>(std::move(f),
+                                                 std::move(captures)...);
+}
 
 }  // namespace grpc_core
 

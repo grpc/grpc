@@ -314,6 +314,8 @@ struct Pipe {
   Pipe() : sender(&receiver), receiver(&sender) {}
   Pipe(const Pipe&) = delete;
   Pipe& operator=(const Pipe&) = delete;
+  Pipe(Pipe&&) = default;
+  Pipe& operator=(Pipe&&) = default;
 
   PipeSender<T> sender;
   PipeReceiver<T> receiver;

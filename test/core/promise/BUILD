@@ -69,6 +69,16 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "adaptor_test",
+    srcs = ["adaptor_test.cc"],
+    language = "c++",
+    uses_polling = False,
+    deps = ["//:promise"],
+    external_deps = ["gtest",         "absl/functional:bind_front",
+],
+)
+
+grpc_cc_test(
     name = "context_test",
     srcs = ["context_test.cc"],
     language = "c++",

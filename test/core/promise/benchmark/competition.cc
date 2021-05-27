@@ -17,7 +17,12 @@
 #include <benchmark/benchmark.h>
 #include "absl/synchronization/mutex.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/context.h"
+#include "src/core/lib/promise/for_each.h"
+#include "src/core/lib/promise/join.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
+#include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "test/core/promise/benchmark/filter_stack.h"
 
@@ -102,9 +107,18 @@ BENCHMARK(BM_FilterStack_Interject10_Unary);
 
 }  // namespace filter_stack
 
-namespace activity_stack {
+namespace grpc_core {
 
-using namespace grpc_core;
+namespace activity_stack {
+struct RPCIO {
+  Pipe<int> recv_pipe;
+};
+}  // namespace activity_stack
+
+template <>
+struct ContextType<activity_stack::RPCIO> {};
+
+namespace activity_stack {
 
 static void unary(
     benchmark::State& state,
@@ -142,7 +156,37 @@ static void BM_ActivityStack_Passthrough10_Unary(benchmark::State& state) {
 }
 BENCHMARK(BM_ActivityStack_Passthrough10_Unary);
 
+static void BM_ActivityStack_Interject10_Unary(benchmark::State& state) {
+  unary(state, [](std::function<void(absl::Status)> on_done) {
+    RPCIO rpcio;
+    return MakeActivity(
+        []() {
+          auto one = []() {
+            auto* io = GetContext<RPCIO>();
+            Pipe<int> interjection;
+            std::swap(interjection.sender, io->recv_pipe.sender);
+            return ForEach(std::move(interjection.receiver),
+                           Capture(
+                               [](PipeSender<int>* sender, int i) {
+                                 return Seq(sender->Push(i), []() {
+                                   return ready(absl::OkStatus());
+                                 });
+                               },
+                               std::move(interjection.sender)));
+          };
+          return Seq(
+              Join(GetContext<RPCIO>()->recv_pipe.receiver.Next(), one(), one(),
+                   one(), one(), one(), one(), one(), one(), one(), one(),
+                   GetContext<RPCIO>()->recv_pipe.sender.Push(42)),
+              []() { return ready(absl::OkStatus()); });
+        },
+        std::move(on_done), nullptr, std::move(rpcio));
+  });
+}
+BENCHMARK(BM_ActivityStack_Interject10_Unary);
+
 }  // namespace activity_stack
+}  // namespace grpc_core
 
 // Some distros have RunSpecifiedBenchmarks under the benchmark namespace,
 // and others do not. This allows us to support both modes.
