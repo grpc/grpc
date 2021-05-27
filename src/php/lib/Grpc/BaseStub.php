@@ -292,10 +292,10 @@ class BaseStub
             $metadata = $this->_validate_and_normalize_metadata(
                 $metadata
             );
-            if (is_callable($options["async_callback"])) {
-                $call->callAsync(
+            if (is_array($options["async_callbacks"])) {
+                $call->startAsync(
+                    $options["async_callbacks"],
                     $argument,
-                    $options["async_callback"],
                     $metadata,
                     $options
                 );
@@ -410,7 +410,11 @@ class BaseStub
             $metadata = $this->_validate_and_normalize_metadata(
                 $metadata
             );
-            $call->start($metadata);
+            if (is_array($options["async_callbacks"])) {
+                $call->startAsync($options["async_callbacks"], $metadata);
+            } else {
+                $call->start($metadata);
+            }
 
             return $call;
         };

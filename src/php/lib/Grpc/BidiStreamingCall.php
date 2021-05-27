@@ -39,12 +39,94 @@ class BidiStreamingCall extends AbstractCall
     }
 
     /**
+     * Start the call asynchronously.
+     *
+     * @param array $async_callbacks array of callbacks.
+     *  'onMetadata' => function ($initial_metadata) { },
+     *  'onData' => function ($response) { },
+     *  'onStatus' => function ($status) { },
+     * @param array $metadata Metadata to send with the call, if applicable
+     *                        (optional)
+     */
+    public function startAsync(array $async_callbacks, array $metadata = [])
+    {
+        $this->async_callbacks_ = $async_callbacks;
+
+        $this->call->startBatchAsync([
+            OP_SEND_INITIAL_METADATA => $metadata,
+        ], function ($error, $event = null) {
+        });
+
+        // receive initial metadata
+        $this->call->startBatchAsync([
+            OP_RECV_INITIAL_METADATA => true,
+        ], function ($error, $event = null) {
+            if (!$error) {
+                if (is_callable($this->async_callbacks_['onMetadata'])) {
+                    $this->async_callbacks_['onMetadata']($event->metadata);
+                }
+                $this->metadata = $event->metadata;
+            }
+        });
+
+        // start async reading
+        $receiveMessageCallback = function ($error, $event = null)
+        use (&$receiveMessageCallback) {
+            if ($error) {
+                if (is_callable($this->async_callbacks_['onStatus'])) {
+                    $this->async_callbacks_['onStatus'](
+                        (object)Status::status(STATUS_UNKNOWN, $error)
+                    );
+                }
+                return;
+            }
+            if ($event->message === null) {
+                if (is_callable($this->async_callbacks_['onData'])) {
+                    $this->async_callbacks_['onData'](null);
+                }
+                // server stream done, get status
+                $this->call->startBatchAsync([
+                    OP_RECV_STATUS_ON_CLIENT => true,
+                ], function ($error, $event = null) {
+                    if ($error) {
+                        if (is_callable($this->async_callbacks_['onStatus'])) {
+                            $this->async_callbacks_['onStatus'](
+                                (object)Status::status(STATUS_UNKNOWN, $error)
+                            );
+                        }
+                        return;
+                    }
+                    if (is_callable($this->async_callbacks_['onStatus'])) {
+                        $this->async_callbacks_['onStatus']($event->status);
+                    }
+                });
+                return;
+            }
+            $response = $this->_deserializeResponse($event->message);
+            if (is_callable($this->async_callbacks_['onData'])) {
+                $this->async_callbacks_['onData']($response);
+            }
+
+            // read next streaming messages
+            $this->call->startBatchAsync([
+                OP_RECV_MESSAGE => true,
+            ], $receiveMessageCallback);
+        };
+        $this->call->startBatchAsync([
+            OP_RECV_MESSAGE => true,
+        ], $receiveMessageCallback);
+    }
+
+    /**
      * Reads the next value from the server.
      *
      * @return mixed The next value from the server, or null if there is none
      */
     public function read()
     {
+        if ($this->async_callbacks_) {
+            return;
+        }
         $batch = [OP_RECV_MESSAGE => true];
         if ($this->metadata === null) {
             $batch[OP_RECV_INITIAL_METADATA] = true;
@@ -71,9 +153,16 @@ class BidiStreamingCall extends AbstractCall
         if (array_key_exists('flags', $options)) {
             $message_array['flags'] = $options['flags'];
         }
-        $this->call->startBatch([
-            OP_SEND_MESSAGE => $message_array,
-        ]);
+        if ($this->async_callbacks_ === null) {
+            $this->call->startBatch([
+                OP_SEND_MESSAGE => $message_array,
+            ]);
+        } else {
+            $this->call->startBatchAsync([
+                OP_SEND_MESSAGE => $message_array,
+            ], function ($error, $event = null) {
+            });
+        }
     }
 
     /**
@@ -81,9 +170,16 @@ class BidiStreamingCall extends AbstractCall
      */
     public function writesDone()
     {
-        $this->call->startBatch([
-            OP_SEND_CLOSE_FROM_CLIENT => true,
-        ]);
+        if ($this->async_callbacks_ === null) {
+            $this->call->startBatch([
+                OP_SEND_CLOSE_FROM_CLIENT => true,
+            ]);
+        } else {
+            $this->call->startBatchAsync([
+                OP_SEND_CLOSE_FROM_CLIENT => true,
+            ], function ($error, $event = null) {
+            });
+        }
     }
 
     /**
@@ -94,6 +190,9 @@ class BidiStreamingCall extends AbstractCall
      */
     public function getStatus()
     {
+        if ($this->async_callbacks_) {
+            return;
+        }
         $status_event = $this->call->startBatch([
             OP_RECV_STATUS_ON_CLIENT => true,
         ]);
@@ -102,4 +201,6 @@ class BidiStreamingCall extends AbstractCall
 
         return $status_event->status;
     }
+
+    private $async_callbacks_;
 }
