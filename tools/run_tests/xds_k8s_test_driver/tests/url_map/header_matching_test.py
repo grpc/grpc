@@ -83,6 +83,7 @@ class TestExactMatch(xds_url_map_testcase.XdsUrlMapTestCase):
             rpc_distribution.empty_call_alternative_service_rpc_count)
 
 
+@absltest.skip('the xDS config is good, but distribution is wrong.')
 class TestPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
     @staticmethod

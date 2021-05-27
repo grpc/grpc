@@ -83,7 +83,6 @@ def _ensure_k8s_namespace_removed(namespace: k8s.KubernetesNamespace):
     except Exception as e:
         # Maybe the namespace doesn't exist at all, that's okay
         logging.info('Namespace deletion failed with %s: %s', type(e), e)
-
     # The namespace enters Terminating state, which lasts minutes.
     deadline = time.time() + _K8S_NAMESPACE_DELETE_DEADLINE_SEC
     while time.time() < deadline:
