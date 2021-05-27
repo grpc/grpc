@@ -1,10 +1,9 @@
 
 class ClientChannel {
  public:
-  ActivityPtr RunRPC(Context* context,
+  ActivityPtr RunRPC(RpcContext* context,
                      std::function<void(absl::Status)> on_done) {
-    return ActivityFromPromiseFactory(WithContext(
-        context,
+    return MakeActivity(
         [this]() {
           return Seq(
               Timeout(
@@ -26,7 +25,7 @@ class ClientChannel {
               // Finally execute any post request extension points in order.
               &post_request_ops_);
         },
-        std::move(on_done), callback_scheduler_));
+        std::move(on_done), callback_scheduler_, context);
   }
 
  private:
