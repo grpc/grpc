@@ -18,6 +18,10 @@
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
+#ifdef GRPC_EVENT_ENGINE_TEST
+grpc_core::DebugOnlyTraceFlag grpc_polling_trace(false, "polling");
+#endif
+
 namespace {
 static void hexdump(const std::string& prefix, const void* data_, size_t size) {
   const uint8_t* data = static_cast<const uint8_t*>(data_);
