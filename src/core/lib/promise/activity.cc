@@ -79,35 +79,8 @@ class Activity::Handle {
   Activity* activity_ GUARDED_BY(mu_);
 };
 
-// Set the current activity at construction, clean it up at destruction.
-class Activity::ScopedActivity {
- public:
-  explicit ScopedActivity(Activity* activity) {
-    assert(g_current_activity_ == nullptr);
-    g_current_activity_ = activity;
-  }
-  ~ScopedActivity() { g_current_activity_ = nullptr; }
-  ScopedActivity(const ScopedActivity&) = delete;
-  ScopedActivity& operator=(const ScopedActivity&) = delete;
-};
-
 ///////////////////////////////////////////////////////////////////////////////
 // ACTIVITY IMPLEMENTATION
-
-Activity::Activity(CallbackScheduler* scheduler)
-    : callback_scheduler_(scheduler) {}
-
-Activity::~Activity() {
-  if (handle_) {
-    handle_->DropActivity();
-  }
-}
-
-void Activity::Start(std::function<void(absl::Status)> on_done) {
-  assert(!on_done_);
-  on_done_ = std::move(on_done);
-  Wakeup();
-}
 
 bool Activity::RefIfNonZero() {
   auto value = refs_.load(std::memory_order_acquire);
@@ -132,76 +105,9 @@ Activity::Handle* Activity::RefHandle() {
   }
 }
 
-void Activity::Wakeup() {
-  // If there's no active activity, we can just run inline.
-  if (g_current_activity_ == nullptr) {
-    Step();
-    return;
-  }
-  // If there is an active activity, but hey it's us, flag that and we'll loop
-  // in RunLoop (that's calling from above here!).
-  if (g_current_activity_ == this) {
-    mu_.AssertHeld();
-    got_wakeup_during_run_ = true;
-    return;
-  }
-  // Can't safely run, so ask to run later.
-  callback_scheduler_->Schedule([this]() { this->Step(); });
-}
-
-void Activity::Step() {
-  Poll<absl::Status> result = kPending;
-  {
-    // Poll the promise until things settle out under a lock.
-    absl::MutexLock lock(&mu_);
-    result = RunLoop();
-  }
-  // If we completed, call on_done.
-  // No need to lock here since we guarantee this edge only occurs once.
-  if (auto* status = result.get_ready()) {
-    on_done_(std::move(*status));
-    on_done_ = std::function<void(absl::Status)>();
-  }
-}
-
-Poll<absl::Status> Activity::RunLoop() {
-  if (done_) {
-    // We might get some spurious wakeups after finishing.
-    return kPending;
-  }
-  // Set g_current_activity_ until we return.
-  ScopedActivity scoped_activity(this);
-  do {
-    // Clear continuation flag - this might get set if Wakeup is called
-    // down-stack.
-    got_wakeup_during_run_ = false;
-    // Run the promise.
-    Poll<absl::Status> r = Run();
-    if (auto* status = r.get_ready()) {
-      // If complete, destroy the promise, flag done, and exit this loop.
-      Stop();
-      done_ = true;
-      return std::move(*status);
-    }
-    // Continue looping til no wakeups occur.
-  } while (got_wakeup_during_run_);
-  return kPending;
-}
-
-void Activity::Cancel() {
-  bool was_done;
-  {
-    absl::MutexLock lock(&mu_);
-    // Drop the promise if it exists.
-    Stop();
-    // Check if we were done, and flag done.
-    was_done = done_;
-    done_ = true;
-  }
-  // If we were not done, then call the on_done callback.
-  if (!was_done) {
-    on_done_(absl::CancelledError());
-  }
+void Activity::DropHandle() {
+  handle_->DropActivity();
+  handle_ = nullptr;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -216,7 +122,6 @@ WaitSet::~WaitSet() {
 }
 
 Pending WaitSet::pending() {
-  Activity::g_current_activity_->mu_.AssertHeld();
   // Get a reffed handle to the current activity.
   Activity::Handle* h = Activity::g_current_activity_->RefHandle();
   // Insert it into our pending list.
@@ -248,7 +153,6 @@ SingleWaiter::~SingleWaiter() { Wakeup(waiter_); }
 
 Pending SingleWaiter::pending() {
   assert(Activity::g_current_activity_);
-  Activity::g_current_activity_->mu_.AssertHeld();
   if (waiter_ == Activity::g_current_activity_) {
     return kPending;
   }

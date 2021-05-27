@@ -29,7 +29,7 @@
 namespace filter_stack {
 
 Filter passthrough_filter = {
-    CallNextOp, NoCallData, NoChannelData, 0, 0,
+    CallNextOp, NoCallData, NoCallData, NoChannelData, NoChannelData, 0, 0,
 };
 
 struct Interject {
@@ -47,6 +47,8 @@ struct Interject {
     i->c.p = i;
   }
 
+  static void Destroy(CallElem* elem) {}
+
   static void StartOp(CallElem* elem, Op* op) {
     auto* i = static_cast<Interject*>(elem->call_data);
     if (op->recv_initial_metadata) {
@@ -56,12 +58,19 @@ struct Interject {
 };
 
 Filter interject_filter = {
-    Interject::StartOp, Interject::Init, NoChannelData, sizeof(Interject), 0,
+    Interject::StartOp,
+    Interject::Init,
+    Interject::Destroy,
+    NoChannelData,
+    NoChannelData,
+    sizeof(Interject),
+    0,
 };
 
 void EndOp(CallElem* elem, Op* op) { op->on_complete->Run(absl::OkStatus()); }
 
-Filter end_filter = {EndOp, NoCallData, NoChannelData, 0, 0};
+Filter end_filter = {EndOp,         NoCallData, NoCallData, NoChannelData,
+                     NoChannelData, 0,          0};
 
 static void unary(benchmark::State& state,
                   std::initializer_list<Filter*> filters) {
@@ -120,44 +129,46 @@ struct ContextType<activity_stack::RPCIO> {};
 
 namespace activity_stack {
 
-static void unary(
-    benchmark::State& state,
-    std::function<ActivityPtr(std::function<void(absl::Status)>)> make_call) {
-  printf("activity stack size: %d\n",
-         static_cast<int>(make_call([](absl::Status) {})->Size()));
+template <typename MakeCall>
+static void unary(benchmark::State& state, MakeCall make_call) {
+  printf("activity stack size: %d\n", static_cast<int>(make_call()->Size()));
   for (auto _ : state) {
-    make_call([](absl::Status status) {
-      if (!status.ok()) abort();
-    });
+    make_call();
   }
 }
 
 static void BM_ActivityStack_Passthrough3_Unary(benchmark::State& state) {
-  unary(state, [](std::function<void(absl::Status)> on_done) {
+  unary(state, []() {
     return MakeActivity(
         []() {
           auto one = []() { return ready(absl::OkStatus()); };
           return TrySeq(one, one, one);
         },
-        std::move(on_done), nullptr);
+        [](absl::Status status) {
+          if (!status.ok()) abort();
+        },
+        nullptr);
   });
 }
 BENCHMARK(BM_ActivityStack_Passthrough3_Unary);
 
 static void BM_ActivityStack_Passthrough10_Unary(benchmark::State& state) {
-  unary(state, [](std::function<void(absl::Status)> on_done) {
+  unary(state, []() {
     return MakeActivity(
         []() {
           auto one = []() { return ready(absl::OkStatus()); };
           return TrySeq(one, one, one, one, one, one, one, one, one, one);
         },
-        std::move(on_done), nullptr);
+        [](absl::Status status) {
+          if (!status.ok()) abort();
+        },
+        nullptr);
   });
 }
 BENCHMARK(BM_ActivityStack_Passthrough10_Unary);
 
 static void BM_ActivityStack_Interject10_Unary(benchmark::State& state) {
-  unary(state, [](std::function<void(absl::Status)> on_done) {
+  unary(state, []() {
     RPCIO rpcio;
     return MakeActivity(
         []() {
@@ -172,7 +183,10 @@ static void BM_ActivityStack_Interject10_Unary(benchmark::State& state) {
                           }),
                      []() { return ready(absl::OkStatus()); });
         },
-        std::move(on_done), nullptr, std::move(rpcio));
+        [](absl::Status status) {
+          if (!status.ok()) abort();
+        },
+        nullptr, std::move(rpcio));
   });
 }
 BENCHMARK(BM_ActivityStack_Interject10_Unary);

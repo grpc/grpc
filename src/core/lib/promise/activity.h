@@ -51,7 +51,7 @@ class IntraActivityWaiter;
 class Activity {
  public:
   // Cancel execution of the underlying promise.
-  void Cancel() LOCKS_EXCLUDED(mu_);
+  virtual void Cancel() LOCKS_EXCLUDED(mu_) = 0;
 
   // Destroy the Activity - used for the type alias ActivityPtr.
   struct Deleter {
@@ -64,19 +64,41 @@ class Activity {
   virtual size_t Size() = 0;
 
  protected:
-  explicit Activity(CallbackScheduler* scheduler);
-  virtual ~Activity();
+  explicit Activity(CallbackScheduler* scheduler)
+      : callback_scheduler_(scheduler) {}
+  inline virtual ~Activity() {
+    if (handle_) {
+      DropHandle();
+    }
+  }
 
-  // Start execution of the underlying promise - effectively finalizes
-  // initialization.
-  void Start(std::function<void(absl::Status)> on_done);
-  absl::Mutex* mu() LOCK_RETURNED(mu_) { return &mu_; }
+  // All promise execution occurs under this mutex.
+  absl::Mutex mu_;
+  // Scheduler of callbacks.
+  CallbackScheduler* const callback_scheduler_;
+  // Set during RunLoop to the Activity that's executing.
+  // Being set implies that mu_ is held.
+  static thread_local Activity* g_current_activity_;
+  // If wakeup is called during Promise polling, we raise this flag and repoll
+  // until things settle out.
+  bool got_wakeup_during_run_ GUARDED_BY(mu_) = false;
+
+  // Set the current activity at construction, clean it up at destruction.
+  class ScopedActivity {
+   public:
+    explicit ScopedActivity(Activity* activity) {
+      assert(g_current_activity_ == nullptr);
+      g_current_activity_ = activity;
+    }
+    ~ScopedActivity() { g_current_activity_ = nullptr; }
+    ScopedActivity(const ScopedActivity&) = delete;
+    ScopedActivity& operator=(const ScopedActivity&) = delete;
+  };
 
  private:
   friend class WaitSet;
   friend class SingleWaiter;
   friend class IntraActivityWaiter;
-  class ScopedActivity;
   class Handle;
 
   void Ref() { refs_.fetch_add(1, std::memory_order_relaxed); }
@@ -87,44 +109,21 @@ class Activity {
   }
 
   // Arrange to wake the activity and poll the underlying promise once again.
-  void Wakeup();
-  // In response to Wakeup, run the Promise state machine again until it
-  // settles. Then check for completion, and if we have completed, call on_done.
-  void Step() LOCKS_EXCLUDED(mu_);
-  // Run an activity until it's either finished, or pending without waking
-  // itself up.
-  Poll<absl::Status> RunLoop() EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  // Poll the promise once.
-  virtual Poll<absl::Status> Run() EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
-  // Notification that we're no longer executing - it's ok to destruct the
-  // promise.
-  virtual void Stop() EXCLUSIVE_LOCKS_REQUIRED(mu_) = 0;
+  virtual void Wakeup() = 0;
   // Return a Handle instance with a ref so that it can be stored waiting for
   // some wakeup.
   Handle* RefHandle() EXCLUSIVE_LOCKS_REQUIRED(mu_);
   // If our refcount is non-zero, ref and return true.
   // Otherwise, return false.
   bool RefIfNonZero();
+  // Drop the (proved existing) wait handle.
+  void DropHandle();
 
   // Current refcount.
   std::atomic<uint64_t> refs_{1};
-  // Scheduler of callbacks.
-  CallbackScheduler* const callback_scheduler_;
-  // Callback on completion of the promise.
-  std::function<void(absl::Status)> on_done_;
-  // All promise execution occurs under this mutex.
-  absl::Mutex mu_;
   // Handle for long waits. Allows a very small weak pointer type object to
   // queue for wakeups while Activity may be deleted earlier.
   Handle* handle_ GUARDED_BY(mu_) = nullptr;
-  // If wakeup is called during Promise polling, we raise this flag and repoll
-  // until things settle out.
-  bool got_wakeup_during_run_ GUARDED_BY(mu_) = false;
-  // Has execution completed?
-  bool done_ GUARDED_BY(mu_) = false;
-  // Set during RunLoop to the Activity that's executing.
-  // Being set implies that mu_ is held.
-  static thread_local Activity* g_current_activity_;
 };
 
 // Owned pointer to one Activity.
@@ -160,34 +159,94 @@ class EnterContexts : public context_detail::Context<Contexts>... {
 };
 
 // Implementation details for an Activity of an arbitrary type of promise.
-template <class Factory, typename... Contexts>
+template <class Factory, class OnDone, typename... Contexts>
 class PromiseActivity final
     : public Activity,
       private activity_detail::ContextHolder<Contexts>... {
  public:
-  PromiseActivity(Factory promise_factory,
-                  std::function<void(absl::Status)> on_done,
+  PromiseActivity(Factory promise_factory, OnDone on_done,
                   CallbackScheduler* callback_scheduler, Contexts... contexts)
       : Activity(callback_scheduler),
         ContextHolder<Contexts>(std::move(contexts))...,
-        state_(std::move(promise_factory)) {
-    Start(std::move(on_done));
+        state_(std::move(promise_factory)),
+        on_done_(std::move(on_done)) {
+    Step();
   }
 
   size_t Size() override { return sizeof(*this); }
 
- private:
-  Poll<absl::Status> Run() final EXCLUSIVE_LOCKS_REQUIRED(mu()) {
-    EnterContexts<Contexts...> contexts(
-        static_cast<ContextHolder<Contexts>*>(this)->GetContext()...);
-    return absl::visit(RunState{this}, state_);
+  void Cancel() final {
+    bool was_done;
+    {
+      absl::MutexLock lock(&mu_);
+      // Drop the promise if it exists.
+      Stop();
+      // Check if we were done, and flag done.
+      was_done = done_;
+      done_ = true;
+    }
+    // If we were not done, then call the on_done callback.
+    if (!was_done) {
+      on_done_(absl::CancelledError());
+    }
   }
 
-  void Stop() final EXCLUSIVE_LOCKS_REQUIRED(mu()) {
+ private:
+  void Wakeup() final {
+    // If there's no active activity, we can just run inline.
+    if (g_current_activity_ == nullptr) {
+      Step();
+      return;
+    }
+    // If there is an active activity, but hey it's us, flag that and we'll loop
+    // in RunLoop (that's calling from above here!).
+    if (g_current_activity_ == this) {
+      got_wakeup_during_run_ = true;
+      return;
+    }
+    // Can't safely run, so ask to run later.
+    callback_scheduler_->Schedule([this]() { this->Step(); });
+  }
+
+  // Notification that we're no longer executing - it's ok to destruct the
+  // promise.
+  void Stop() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     state_.template emplace<Stopped>();
   }
 
- private:
+  // In response to Wakeup, run the Promise state machine again until it
+  // settles. Then check for completion, and if we have completed, call on_done.
+  void Step() LOCKS_EXCLUDED(mu_) {
+    // Poll the promise until things settle out under a lock.
+    mu_.Lock();
+    if (done_) {
+      // We might get some spurious wakeups after finishing.
+      mu_.Unlock();
+      return;
+    }
+    // Set g_current_activity_ until we return.
+    ScopedActivity scoped_activity(this);
+    EnterContexts<Contexts...> contexts(
+        static_cast<ContextHolder<Contexts>*>(this)->GetContext()...);
+    do {
+      // Clear continuation flag - this might get set if Wakeup is called
+      // down-stack.
+      got_wakeup_during_run_ = false;
+      // Run the promise.
+      Poll<absl::Status> r = absl::visit(RunState{this}, state_);
+      if (auto* status = r.get_ready()) {
+        // If complete, destroy the promise, flag done, and exit this loop.
+        Stop();
+        done_ = true;
+        mu_.Unlock();
+        on_done_(std::move(*status));
+        return;
+      }
+      // Continue looping til no wakeups occur.
+    } while (got_wakeup_during_run_);
+    mu_.Unlock();
+  }
+
   using Promise = decltype(std::declval<Factory>()());
   struct Stopped {};
   // We can be in one of three states:
@@ -197,14 +256,17 @@ class PromiseActivity final
   // - Promise => we've started, and are polling for completion.
   // - Stopped => execution has completed. A state by itself to ensure we can
   //              run destructors on Promise.
-  absl::variant<Factory, Promise, Stopped> state_ GUARDED_BY(mu());
+  absl::variant<Factory, Promise, Stopped> state_ GUARDED_BY(mu_);
+  // Callback on completion of the promise.
+  OnDone on_done_;
+  // Has execution completed?
+  bool done_ GUARDED_BY(mu_) = false;
 
   // Functor to advance the state machine.
   struct RunState {
     PromiseActivity* self;
 
     Poll<absl::Status> operator()(Factory& factory) {
-      self->mu()->AssertHeld();
       // Construct the promise from the initial promise factory.
       auto promise = factory();
       // Poll the promise once.
@@ -218,7 +280,6 @@ class PromiseActivity final
     }
 
     Poll<absl::Status> operator()(Promise& promise) {
-      self->mu()->AssertHeld();
       // Normal execution: just poll.
       return promise();
     }
@@ -232,19 +293,19 @@ class PromiseActivity final
 
 // Given a functor that returns a promise (a promise factory), a callback for
 // completion, and a callback scheduler, construct an activity.
-template <typename Factory, typename... Contexts>
-ActivityPtr MakeActivity(Factory promise_factory,
-                         std::function<void(absl::Status)> on_done,
+template <typename Factory, typename OnDone, typename... Contexts>
+ActivityPtr MakeActivity(Factory promise_factory, OnDone on_done,
                          CallbackScheduler* callback_scheduler,
                          Contexts... contexts) {
-  return ActivityPtr(new activity_detail::PromiseActivity<Factory, Contexts...>(
-      std::move(promise_factory), std::move(on_done), callback_scheduler,
-      std::move(contexts)...));
+  return ActivityPtr(
+      new activity_detail::PromiseActivity<Factory, OnDone, Contexts...>(
+          std::move(promise_factory), std::move(on_done), callback_scheduler,
+          std::move(contexts)...));
 }
 
 // Helper type that can be used to enqueue many Activities waiting for some
 // external state.
-// Typically the external state should be guarded by mu(), and a call to
+// Typically the external state should be guarded by mu_, and a call to
 // WakeAllAndUnlock should be made when the state changes.
 // Promises should bottom out polling inside pending(), which will register for
 // wakeup and return kPending.
@@ -310,7 +371,6 @@ class IntraActivityWaiter {
   void Wake() {
     if (waiting_) {
       waiting_ = false;
-      Activity::g_current_activity_->mu_.AssertHeld();
       Activity::g_current_activity_->got_wakeup_during_run_ = true;
     }
   }
