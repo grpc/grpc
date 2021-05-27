@@ -150,9 +150,8 @@ static void test_retry_exceeds_buffer_size_in_delay(
           const_cast<char*>(GRPC_ARG_PER_RPC_RETRY_BUFFER_SIZE), 102400),
   };
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(args), args};
-  grpc_end2end_test_fixture f =
-      begin_test(config, "retry_exceeds_buffer_size_in_delay",
-                 &client_args, nullptr);
+  grpc_end2end_test_fixture f = begin_test(
+      config, "retry_exceeds_buffer_size_in_delay", &client_args, nullptr);
 
   cq_verifier* cqv = cq_verifier_create(f.cq);
 
@@ -312,8 +311,7 @@ static void test_retry_exceeds_buffer_size_in_delay(
   gpr_free(buf);
 }
 
-void retry_exceeds_buffer_size_in_delay(
-    grpc_end2end_test_config config) {
+void retry_exceeds_buffer_size_in_delay(grpc_end2end_test_config config) {
   GPR_ASSERT(config.feature_mask & FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL);
   test_retry_exceeds_buffer_size_in_delay(config);
 }
