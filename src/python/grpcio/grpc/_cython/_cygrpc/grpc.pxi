@@ -699,3 +699,7 @@ cdef extern from "grpc/grpc_security_constants.h":
   ctypedef enum grpc_local_connect_type:
     UDS
     LOCAL_TCP
+
+
+cdef extern from "src/core/lib/iomgr/error.h":
+  const grpc_error* GRPC_ERROR_CANCELLED

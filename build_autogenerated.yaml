@@ -1618,6 +1618,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h
+  - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
   - src/core/ext/filters/client_channel/lb_policy_factory.h
   - src/core/ext/filters/client_channel/lb_policy_registry.h
@@ -1828,6 +1829,7 @@ libs:
   - src/core/lib/transport/transport.h
   - src/core/lib/transport/transport_impl.h
   - src/core/lib/uri/uri_parser.h
+  - third_party/xxhash/xxhash.h
   src:
   - src/core/ext/filters/census/grpc_context.cc
   - src/core/ext/filters/client_channel/backend_metric.cc
@@ -1854,6 +1856,7 @@ libs:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   - src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
+  - src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   - src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   - src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   - src/core/ext/filters/client_channel/lb_policy_registry.cc
@@ -2428,6 +2431,7 @@ libs:
   - include/grpc++/test/mock_stream.h
   - include/grpc++/test/server_context_test_spouse.h
   - include/grpcpp/test/channel_test_peer.h
+  - include/grpcpp/test/client_context_test_peer.h
   - include/grpcpp/test/default_reactor_test_peer.h
   - include/grpcpp/test/mock_stream.h
   - include/grpcpp/test/server_context_test_spouse.h
@@ -4843,6 +4847,16 @@ targets:
   - linux
   - posix
   - mac
+- name: client_context_test_peer_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/cpp/test/client_context_test_peer_test.cc
+  deps:
+  - grpc++_test
+  - grpc++_test_util
 - name: client_fuzzer
   build: fuzzer
   language: c++

@@ -568,6 +568,9 @@ absl::optional<uint64_t> HeaderHashHelper(
   std::string value_buffer;
   absl::optional<absl::string_view> header_value =
       GetHeaderValue(initial_metadata, policy.header_name, &value_buffer);
+  if (!header_value.has_value()) {
+    return absl::nullopt;
+  }
   if (policy.regex != nullptr) {
     // If GetHeaderValue() did not already store the value in
     // value_buffer, copy it there now, so we can modify it.
@@ -671,7 +674,12 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
     }
     if (!hash.has_value()) {
       // If there is no hash, we just choose a random value as a default.
-      hash = rand();
+      // We cannot directly use the result of rand() as the hash value,
+      // since it is a 32-bit number and not a 64-bit number and will
+      // therefore not be evenly distributed.
+      uint32_t upper = rand();
+      uint32_t lower = rand();
+      hash = (static_cast<uint64_t>(upper) << 32) | lower;
     }
     CallConfig call_config;
     if (method_config != nullptr) {
@@ -680,8 +688,12 @@ ConfigSelector::CallConfig XdsResolver::XdsConfigSelector::GetCallConfig(
       call_config.service_config = std::move(method_config);
     }
     call_config.call_attributes[kXdsClusterAttribute] = it->first;
-    call_config.call_attributes[kRequestRingHashAttribute] =
-        absl::StrFormat("%" PRIu64, hash.value());
+    std::string hash_string = absl::StrCat(hash.value());
+    char* hash_value =
+        static_cast<char*>(args.arena->Alloc(hash_string.size() + 1));
+    memcpy(hash_value, hash_string.c_str(), hash_string.size());
+    hash_value[hash_string.size()] = '\0';
+    call_config.call_attributes[kRequestRingHashAttribute] = hash_value;
     call_config.on_call_committed = [resolver, cluster_state]() {
       cluster_state->Unref();
       ExecCtx::Run(

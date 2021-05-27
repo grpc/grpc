@@ -826,6 +826,7 @@ if(gRPC_BUILD_TESTS)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx client_channel_stress_test)
   endif()
+  add_dependencies(buildtests_cxx client_context_test_peer_test)
   add_dependencies(buildtests_cxx client_interceptors_end2end_test)
   if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
     add_dependencies(buildtests_cxx client_lb_end2end_test)
@@ -2326,6 +2327,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/priority/priority.cc
+  src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/lb_policy/weighted_target/weighted_target.cc
   src/core/ext/filters/client_channel/lb_policy_registry.cc
@@ -3261,6 +3263,7 @@ foreach(_hdr
   include/grpc++/test/mock_stream.h
   include/grpc++/test/server_context_test_spouse.h
   include/grpcpp/test/channel_test_peer.h
+  include/grpcpp/test/client_context_test_peer.h
   include/grpcpp/test/default_reactor_test_peer.h
   include/grpcpp/test/mock_stream.h
   include/grpcpp/test/server_context_test_spouse.h
@@ -3722,7 +3725,7 @@ foreach(_hdr
 endforeach()
 
 
-if(gRPC_INSTALL)
+if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
   install(TARGETS grpc_plugin_support EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -9690,6 +9693,42 @@ endif()
 endif()
 if(gRPC_BUILD_TESTS)
 
+add_executable(client_context_test_peer_test
+  test/cpp/test/client_context_test_peer_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(client_context_test_peer_test
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_RE2_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_XXHASH_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+    third_party/googletest/googletest/include
+    third_party/googletest/googletest
+    third_party/googletest/googlemock/include
+    third_party/googletest/googlemock
+    ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(client_context_test_peer_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test
+  grpc++_test_util
+)
+
+
+endif()
+if(gRPC_BUILD_TESTS)
+
 add_executable(client_interceptors_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
@@ -10843,7 +10882,7 @@ target_link_libraries(grpc_cpp_plugin
 
 
 
-if(gRPC_INSTALL)
+if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
   install(TARGETS grpc_cpp_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -10882,7 +10921,7 @@ target_link_libraries(grpc_csharp_plugin
 
 
 
-if(gRPC_INSTALL)
+if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
   install(TARGETS grpc_csharp_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -10921,7 +10960,7 @@ target_link_libraries(grpc_node_plugin
 
 
 
-if(gRPC_INSTALL)
+if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
   install(TARGETS grpc_node_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -10960,7 +10999,7 @@ target_link_libraries(grpc_objective_c_plugin
 
 
 
-if(gRPC_INSTALL)
+if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
   install(TARGETS grpc_objective_c_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -10999,7 +11038,7 @@ target_link_libraries(grpc_php_plugin
 
 
 
-if(gRPC_INSTALL)
+if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
   install(TARGETS grpc_php_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11038,7 +11077,7 @@ target_link_libraries(grpc_python_plugin
 
 
 
-if(gRPC_INSTALL)
+if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
   install(TARGETS grpc_python_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
@@ -11077,7 +11116,7 @@ target_link_libraries(grpc_ruby_plugin
 
 
 
-if(gRPC_INSTALL)
+if(gRPC_INSTALL AND NOT CMAKE_CROSSCOMPILING)
   install(TARGETS grpc_ruby_plugin EXPORT gRPCTargets
     RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
     LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
