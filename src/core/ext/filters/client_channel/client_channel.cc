@@ -2121,7 +2121,7 @@ void ClientChannel::CallData::PendingBatchesResume(grpc_call_element* elem) {
       GRPC_CLOSURE_INIT(&batch->handler_private.closure,
                         ResumePendingBatchInCallCombiner, batch, nullptr);
       closures.Add(&batch->handler_private.closure, GRPC_ERROR_NONE,
-                   "PendingBatchesResume");
+                   "resuming pending batch from client channel call");
       batch = nullptr;
     }
   }
@@ -2670,7 +2670,7 @@ void ClientChannel::LoadBalancedCall::PendingBatchesResume() {
                         ResumePendingBatchInCallCombiner, batch,
                         grpc_schedule_on_exec_ctx);
       closures.Add(&batch->handler_private.closure, GRPC_ERROR_NONE,
-                   "PendingBatchesResume");
+                   "resuming pending batch from LB call");
       batch = nullptr;
     }
   }
