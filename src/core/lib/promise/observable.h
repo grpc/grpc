@@ -21,17 +21,23 @@
 
 namespace grpc_core {
 
-class WatchCommitter {
- public:
-  virtual void Commit() = 0;
-};
-
 namespace observable_detail {
 
 using Version = uint64_t;
-
 static constexpr Version kTombstoneVersion =
     std::numeric_limits<Version>::max();
+
+}  // namespace observable_detail
+
+class WatchCommitter {
+ public:
+  void Commit() { version_seen_ = observable_detail::kTombstoneVersion; }
+
+ protected:
+  observable_detail::Version version_seen_ = 0;
+};
+
+namespace observable_detail {
 
 // Shared state between Observable and Observer.
 template <typename T>
@@ -152,8 +158,8 @@ class Watch final : private WatchCommitter {
       : state_(std::move(state)), factory_(std::move(factory)) {}
   Watch(const Watch&) = delete;
   Watch& operator=(const Watch&) = delete;
-  Watch(Watch&&) = default;
-  Watch& operator=(Watch&&) = default;
+  Watch(Watch&&) noexcept = default;
+  Watch& operator=(Watch&&) noexcept = default;
 
   Poll<Result> operator()() {
     auto r = state_->PollWatch(&version_seen_);
@@ -172,10 +178,7 @@ class Watch final : private WatchCommitter {
   }
 
  private:
-  void Commit() { version_seen_ = kTombstoneVersion; }
-
   std::shared_ptr<ObservableState<T>> state_;
-  Version version_seen_ = 0;
   absl::optional<Promise> promise_;
   F factory_;
 };

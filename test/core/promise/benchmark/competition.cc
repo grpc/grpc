@@ -20,7 +20,7 @@
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/join.h"
-#include "src/core/lib/promise/pipe.h"
+#include "src/core/lib/promise/latch.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -49,7 +49,7 @@ struct Interject {
 
   static void StartOp(CallElem* elem, Op* op) {
     auto* i = static_cast<Interject*>(elem->call_data);
-    if (op->send_initial_metadata) {
+    if (op->recv_initial_metadata) {
       i->next = op->on_complete;
     }
   }
@@ -71,7 +71,7 @@ static void unary(benchmark::State& state,
     auto* call = MakeCall(channel);
     Op op;
     Op::Payload payload;
-    op.send_initial_metadata = true;
+    op.recv_initial_metadata = true;
     op.payload = &payload;
     Closure done = {call, +[](void* p, absl::Status status) {
                       if (!status.ok()) abort();
@@ -111,7 +111,7 @@ namespace grpc_core {
 
 namespace activity_stack {
 struct RPCIO {
-  Pipe<int> recv_pipe;
+  Latch<int> recv_initial_metadata;
 };
 }  // namespace activity_stack
 
@@ -124,7 +124,7 @@ static void unary(
     benchmark::State& state,
     std::function<ActivityPtr(std::function<void(absl::Status)>)> make_call) {
   printf("activity stack size: %d\n",
-         (int)make_call([](absl::Status) {})->Size());
+         static_cast<int>(make_call([](absl::Status) {})->Size()));
   for (auto _ : state) {
     make_call([](absl::Status status) {
       if (!status.ok()) abort();
@@ -162,23 +162,15 @@ static void BM_ActivityStack_Interject10_Unary(benchmark::State& state) {
     return MakeActivity(
         []() {
           auto one = []() {
-            auto* io = GetContext<RPCIO>();
-            Pipe<int> interjection;
-            std::swap(interjection.sender, io->recv_pipe.sender);
-            return ForEach(std::move(interjection.receiver),
-                           Capture(
-                               [](PipeSender<int>* sender, int i) {
-                                 return Seq(sender->Push(i), []() {
-                                   return ready(absl::OkStatus());
-                                 });
-                               },
-                               std::move(interjection.sender)));
+            return GetContext<RPCIO>()->recv_initial_metadata.Wait();
           };
-          return Seq(
-              Join(GetContext<RPCIO>()->recv_pipe.receiver.Next(), one(), one(),
-                   one(), one(), one(), one(), one(), one(), one(), one(),
-                   GetContext<RPCIO>()->recv_pipe.sender.Push(42)),
-              []() { return ready(absl::OkStatus()); });
+          return Seq(Join(one(), one(), one(), one(), one(), one(), one(),
+                          one(), one(), one(),
+                          []() {
+                            GetContext<RPCIO>()->recv_initial_metadata.Set(42);
+                            return ready(true);
+                          }),
+                     []() { return ready(absl::OkStatus()); });
         },
         std::move(on_done), nullptr, std::move(rpcio));
   });

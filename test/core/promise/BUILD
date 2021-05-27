@@ -158,3 +158,12 @@ grpc_cc_test(
     deps = ["//:promise"],
     external_deps = ["gtest"],
 )
+
+grpc_cc_test(
+    name = "latch_test",
+    srcs = ["latch_test.cc"],
+    language = "c++",
+    uses_polling = False,
+    deps = ["//:promise"],
+    external_deps = ["gtest"],
+)

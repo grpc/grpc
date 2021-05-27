@@ -73,7 +73,7 @@ class OverloadFactory {
   template <typename T>
   using AdaptorFactory = adaptor_detail::Factory<T, Overload<Cases...>>;
 
-  OverloadFactory(Cases... cases) : overload_(std::move(cases)...) {}
+  explicit OverloadFactory(Cases... cases) : overload_(std::move(cases)...) {}
 
   template <typename T>
   auto operator()(T value)

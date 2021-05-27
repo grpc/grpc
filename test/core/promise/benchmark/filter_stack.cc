@@ -34,7 +34,7 @@ ChannelStack* MakeChannel(Filter** filters, size_t num_filters) {
     data += sizeof(ChannelElem);
     user_data += filters[i]->sizeof_channel_data;
   }
-  printf("CALL STACK SIZE: %d\n", (int)call_size);
+  printf("CALL STACK SIZE: %d\n", static_cast<int>(call_size));
   return stk;
 }
 

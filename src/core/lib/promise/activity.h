@@ -135,7 +135,7 @@ namespace activity_detail {
 template <typename Context>
 class ContextHolder {
  public:
-  ContextHolder(Context value) : value_(std::move(value)) {}
+  explicit ContextHolder(Context value) : value_(std::move(value)) {}
   Context* GetContext() { return &value_; }
 
  private:
@@ -145,7 +145,7 @@ class ContextHolder {
 template <typename Context>
 class ContextHolder<Context*> {
  public:
-  ContextHolder(Context* value) : value_(value) {}
+  explicit ContextHolder(Context* value) : value_(value) {}
   Context* GetContext() { return value_; }
 
  private:
@@ -174,7 +174,7 @@ class PromiseActivity final
     Start(std::move(on_done));
   }
 
-  size_t Size() { return sizeof(*this); }
+  size_t Size() override { return sizeof(*this); }
 
  private:
   Poll<absl::Status> Run() final EXCLUSIVE_LOCKS_REQUIRED(mu()) {

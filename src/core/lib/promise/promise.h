@@ -49,7 +49,7 @@ namespace promise_detail {
 template <typename T>
 class Immediate {
  public:
-  Immediate(T value) : value_(std::move(value)) {}
+  explicit Immediate(T value) : value_(std::move(value)) {}
 
   Poll<T> operator()() { return ready(std::move(value_)); }
 
