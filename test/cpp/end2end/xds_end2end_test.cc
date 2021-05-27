@@ -2046,7 +2046,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   std::tuple<int, int, int> WaitForAllBackends(
       size_t start_index = 0, size_t stop_index = 0,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
-      const RpcOptions& rpc_options = RpcOptions()) {
+      const RpcOptions& rpc_options = RpcOptions().set_timeout_ms(2000)) {
     int num_ok = 0;
     int num_failure = 0;
     int num_drops = 0;
@@ -2067,7 +2067,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   void WaitForBackend(
       size_t backend_idx,
       const WaitForBackendOptions& wait_options = WaitForBackendOptions(),
-      const RpcOptions& rpc_options = RpcOptions()) {
+      const RpcOptions& rpc_options = RpcOptions().set_timeout_ms(2000)) {
     gpr_log(GPR_INFO, "========= WAITING FOR BACKEND %lu ==========",
             static_cast<unsigned long>(backend_idx));
     do {
