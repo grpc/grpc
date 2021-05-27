@@ -1945,7 +1945,7 @@ void RetryFilter::CallData::FreeCachedSendMessage(size_t idx) {
 
 void RetryFilter::CallData::FreeCachedSendTrailingMetadata() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(GPR_INFO, "chand_=%p calld=%p: destroying send_trailing_metadata",
+    gpr_log(GPR_INFO, "chand=%p calld=%p: destroying send_trailing_metadata",
             chand_, this);
   }
   grpc_metadata_batch_destroy(&send_trailing_metadata_);
@@ -1984,7 +1984,7 @@ RetryFilter::CallData::PendingBatch* RetryFilter::CallData::PendingBatchesAdd(
   const size_t idx = GetBatchIndex(batch);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
     gpr_log(GPR_INFO,
-            "chand_=%p calld=%p: adding pending batch at index %" PRIuPTR,
+            "chand=%p calld=%p: adding pending batch at index %" PRIuPTR,
             chand_, this, idx);
   }
   PendingBatch* pending = &pending_batches_[idx];
