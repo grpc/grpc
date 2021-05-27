@@ -333,7 +333,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
     }
     ready_.set_value(true);
     grpc_core::ExecCtx ctx;
-    while (uv_run(&loop_, UV_RUN_ONCE) != 0) {
+    while (uv_run(&loop_, UV_RUN_ONCE) != 0 && !shutdown_) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
         gpr_log(GPR_ERROR,
                 "EE::UV::uvEngine@%p::thread, uv_run requests a context flush",
@@ -341,7 +341,6 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
       }
       ctx.Flush();
     }
-    shutdown_ = true;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_DEBUG, "EE::UV::uvEngine@%p::thread, shutting down", this);
     }
@@ -414,6 +413,7 @@ class uvEngine final : public grpc_event_engine::experimental::EventEngine {
       gpr_log(GPR_DEBUG, "EE::UV::uvEngine@%p::Shutdown", this);
     }
     on_shutdown_complete_ = on_shutdown_complete;
+    shutdown_ = true;
     schedule([](uvEngine* engine) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
         gpr_log(GPR_DEBUG,
@@ -1025,5 +1025,3 @@ void uvEndpoint::Read(
         });
       });
 }
-
-grpc_core::DebugOnlyTraceFlag grpc_polling_trace(false, "polling");
