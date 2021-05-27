@@ -17,7 +17,7 @@ class ClientChannel {
                       compression_filter_->RunRPC([this]() {
                         // Fetch the service config, and use it to add
                         // configuration and control to this request.
-                        return TrySeq(config_.MakeObserver().Watch(
+                        return TrySeq(config_.Watch(
                             [](ConfigPtr config, WatchCommitter committer) {
                               config->RunRPC(std::move(committer));
                             }));
