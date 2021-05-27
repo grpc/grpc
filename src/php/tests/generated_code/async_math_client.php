@@ -34,11 +34,10 @@ $client = new Math\MathClient('localhost:50052', [
 $call_count = 1000;
 $completed_count = 0;
 
-function outputDivResult($dividend, $divisor, $quotient, $remainder, $status)
+function outputDivResult($dividend, $divisor, $quotient, $remainder)
 {
     echo "== " . $dividend . " / " . $divisor . ' = ' .
-        $quotient . ' R ' . $remainder .
-        '. status detail = ' . $status->details . PHP_EOL;
+        $quotient . ' R ' . $remainder . PHP_EOL;
 }
 
 function callDivAsync($client, $dividend, $divisor)
@@ -50,25 +49,27 @@ function callDivAsync($client, $dividend, $divisor)
         ]),
         [] /* metadata */,
         [
-            "async_callback" => function (
-                $error,
-                $event
-            ) use ($dividend, $divisor) {
-                if ($error) {
-                    echo "== " . $dividend . " / " . $divisor .
-                        ": error: " . $error . PHP_EOL;
-                } else {
-                    outputDivResult(
-                        $dividend,
-                        $divisor,
-                        $event->response->getQuotient(),
-                        $event->response->getRemainder(),
-                        $event->status
-                    );
-                }
-                global $completed_count;
-                $completed_count++;
-            },
+            "async_callbacks" => [
+                "onData" => function ($response) use ($dividend, $divisor) {
+                    if ($response) {
+                        outputDivResult(
+                            $dividend,
+                            $divisor,
+                            $response->getQuotient(),
+                            $response->getRemainder(),
+                        );
+                    }
+                },
+                "onStatus" => function ($status) use ($dividend, $divisor) {
+                    if ($status->code != Grpc\STATUS_OK) {
+                        echo "== " . $dividend . " / " . $divisor .
+                            " = ERROR: " . $status->code .
+                            ": " . $status->details . PHP_EOL;
+                    }
+                    global $completed_count;
+                    $completed_count++;
+                },
+            ],
         ]
     );
 }
@@ -81,17 +82,22 @@ function callDivSync($client, $dividend, $divisor)
             'divisor' => $divisor,
         ])
     )->wait();
-    outputDivResult(
-        $dividend,
-        $divisor,
-        $response->getQuotient(),
-        $response->getRemainder(),
-        $status
-    );
+    if ($response) {
+        outputDivResult(
+            $dividend,
+            $divisor,
+            $response->getQuotient(),
+            $response->getRemainder(),
+        );
+    } else {
+        echo "== " . $dividend . " / " . $divisor .
+            " = ERROR: " . $status->code .
+            ": " . $status->details . PHP_EOL;
+    }
 }
 
 // periodicaly drain completed events until all calls completed
-$w = new EvPeriodic(0., 0.05, NULL, function ($w, $revents) {
+$w = new EvTimer(0., 0.05, function ($w, $revents) {
     drainCompletionEvents();
     global $completed_count;
     global $call_count;
@@ -104,7 +110,7 @@ $w = new EvPeriodic(0., 0.05, NULL, function ($w, $revents) {
 echo "==== callDivAsync start " . PHP_EOL;
 $now = microtime(true /* float */);
 for ($i = 1; $i <= $call_count; $i++) {
-    callDivAsync($client, 100, $i);
+    callDivAsync($client, 1000, $i % $call_count);
 }
 Ev::run();
 echo "==== callDivAsync end, " . $call_count . " calls elapsed: " .
@@ -114,7 +120,7 @@ echo "==== callDivAsync end, " . $call_count . " calls elapsed: " .
 echo "==== callDivSync start " . PHP_EOL;
 $now = microtime(true /* float */);
 for ($i = 1; $i <= 10; $i++) {
-    callDivSync($client, 100, $i);
+    callDivSync($client, 100, $i % 10);
 }
 echo "==== callDivSync end, 10 calls elapsed: " .
     (microtime(true /* float */) - $now) . PHP_EOL;
