@@ -41,7 +41,7 @@ from src.proto.grpc.testing import empty_pb2
 #  It currently only implements enough functionality to pass the xDS security
 #  tests.
 
-_LISTEN_HOST = "[::]"
+_LISTEN_HOST = "0.0.0.0"
 
 _THREAD_POOL_SIZE = 256
 

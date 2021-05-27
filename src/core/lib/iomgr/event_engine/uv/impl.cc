@@ -18,6 +18,7 @@
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
 
+namespace {
 static void hexdump(const std::string& prefix, const void* data_, size_t size) {
   const uint8_t* data = static_cast<const uint8_t*>(data_);
   char ascii[17];
@@ -53,6 +54,8 @@ static void hexdump(const std::string& prefix, const void* data_, size_t size) {
   }
 }
 
+constexpr size_t DEFAULT_BUFFER_SIZE = 4096;
+}  // namespace
 class uvEngine;
 class uvTask;
 class uvLookupTask;
@@ -125,8 +128,6 @@ class uvTCP final : public uvTCPbase {
   uv_write_t write_req_;
   uv_buf_t* write_bufs_ = nullptr;
   size_t write_bufs_count_ = 0;
-  // temporary until the slice allocator is complete
-  uint8_t read_buf_[4096];
   grpc_event_engine::experimental::SliceBuffer* read_sb_;
   grpc_event_engine::experimental::EventEngine::Callback on_writable_;
   grpc_event_engine::experimental::EventEngine::Callback on_read_;
@@ -958,44 +959,67 @@ void uvEndpoint::Read(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_DEBUG, "EE::UV::uvEndpoint@%p::Read scheduled", tcp);
   }
-  getEngine()->schedule([tcp, deadline](uvEngine* engine) {
-    absl::Duration timeout = deadline - absl::Now();
-    uv_timer_start(
-        &tcp->read_timer_,
-        [](uv_timer_t* timer) {
-          uvTCP* tcp = reinterpret_cast<uvTCP*>(timer->data);
-          uv_read_stop(reinterpret_cast<uv_stream_t*>(&tcp->tcp_));
-          tcp->on_read_(absl::DeadlineExceededError("Deadline exceeded"));
-        },
-        timeout / absl::Milliseconds(1), 0);
-    uv_read_start(
-        reinterpret_cast<uv_stream_t*>(&tcp->tcp_),
-        [](uv_handle_t* handle, size_t suggested_size, uv_buf_t* buf) {
-          uvTCP* tcp = reinterpret_cast<uvTCP*>(handle->data);
-          buf->base = reinterpret_cast<char*>(tcp->read_buf_);
-          buf->len = sizeof(tcp->read_buf_);
-        },
-        [](uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
-          if (nread == 0) return;
-          uvTCP* tcp = reinterpret_cast<uvTCP*>(stream->data);
-          uv_timer_stop(&tcp->read_timer_);
-          uv_read_stop(stream);
-          auto on_read = std::move(tcp->on_read_);
-          if (nread < 0) {
-            on_read(absl::UnknownError("uv_read_start gave us an error"));
-            return;
-          }
-          grpc_event_engine::experimental::Slice slice(tcp->read_buf_, nread);
-          if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-            std::string prefix =
-                absl::StrFormat("EE::UV::uvEndpoint@%p::Read", tcp);
-            hexdump(prefix, slice.begin(), slice.size());
-          }
-          tcp->read_sb_->add(slice);
-          on_read(absl::OkStatus());
-          memset(tcp->read_buf_, 0, buf->len);
+  tcp->slice_allocator_.Allocate(
+      DEFAULT_BUFFER_SIZE, 1, tcp->read_sb_,
+      [this, tcp, deadline](absl::Status status) {
+        gpr_log(GPR_DEBUG, "allocate cb status: %s", status.ToString().c_str());
+        this->getEngine()->schedule([tcp, deadline](uvEngine* engine) {
+          absl::Duration timeout = deadline - absl::Now();
+          uv_timer_start(
+              &tcp->read_timer_,
+              [](uv_timer_t* timer) {
+                uvTCP* tcp = reinterpret_cast<uvTCP*>(timer->data);
+                uv_read_stop(reinterpret_cast<uv_stream_t*>(&tcp->tcp_));
+                tcp->on_read_(absl::CancelledError("deadline"));
+              },
+              timeout / absl::Milliseconds(1), 0);
+          uv_read_start(
+              reinterpret_cast<uv_stream_t*>(&tcp->tcp_),
+              [](uv_handle_t* handle, size_t /* suggested_size */,
+                 uv_buf_t* buf) {
+                uvTCP* tcp = reinterpret_cast<uvTCP*>(handle->data);
+                // TODO(nnoble): seems like we should have a way to get
+                // individual Slices. discuss.
+                tcp->read_sb_->enumerate(
+                    [buf](uint8_t* start, size_t len, size_t idx) {
+                      if (idx == 0) {
+                        buf->base = reinterpret_cast<char*>(start);
+                        buf->len = len;
+                      }
+                    });
+              },
+              [](uv_stream_t* stream, ssize_t nread, const uv_buf_t* buf) {
+                uvTCP* tcp = reinterpret_cast<uvTCP*>(stream->data);
+                uv_timer_stop(&tcp->read_timer_);
+                uv_read_stop(stream);
+                auto on_read = std::move(tcp->on_read_);
+                if (nread < 0 && nread != UV_EOF) {
+                  on_read(absl::UnknownError(absl::StrFormat(
+                      "uv_read_start gave us an error: %i", nread)));
+                  return;
+                }
+                if (nread == UV_EOF) {
+                  tcp->read_sb_->trim_end(tcp->read_sb_->length());
+                  // this is unfortunate, but returning OK means there's more to
+                  // read and gets us into an infinite loop.
+                  on_read(absl::ResourceExhaustedError("EOF"));
+                  return;
+                };
+                if (nread < tcp->read_sb_->length()) {
+                  tcp->read_sb_->trim_end(tcp->read_sb_->length() - nread);
+                }
+                if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+                  std::string prefix =
+                      absl::StrFormat("EE::UV::uvEndpoint@%p::Read", tcp);
+                  tcp->read_sb_->enumerate(
+                      [nread](uint8_t* start, size_t len, size_t idx) {
+                        hexdump("arst", start, nread);
+                      });
+                }
+                on_read(absl::OkStatus());
+              });
         });
-  });
+      });
 }
 
 grpc_core::DebugOnlyTraceFlag grpc_polling_trace(false, "polling");

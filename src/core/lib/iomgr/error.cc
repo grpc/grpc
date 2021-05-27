@@ -59,7 +59,7 @@ absl::Status grpc_status_create(absl::StatusCode code, absl::string_view msg,
   absl::Status s = StatusCreate(code, msg, location, {});
   for (size_t i = 0; i < children_count; ++i) {
     if (!children[i].ok()) {
-      StatusAddChild(&s, children[i]);
+      grpc_core::StatusAddChild(&s, children[i]);
     }
   }
   return s;
@@ -73,10 +73,11 @@ absl::Status grpc_os_error(const grpc_core::DebugLocation& location, int err,
                            const char* call_name) {
   absl::Status s =
       StatusCreate(absl::StatusCode::kUnknown, "OS Error", location, {});
-  grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::ERRNO, err);
-  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::OS_ERROR,
+  grpc_core::StatusSetInt(&s, grpc_core::StatusIntProperty::kErrorNo, err);
+  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kOsError,
                           strerror(err));
-  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::SYSCALL, call_name);
+  grpc_core::StatusSetStr(&s, grpc_core::StatusStrProperty::kSyscall,
+                          call_name);
   return s;
 }
 

@@ -94,7 +94,6 @@ void grpc_iomgr_shutdown() {
   {
     grpc_timer_manager_shutdown();
     grpc_iomgr_platform_flush();
-    grpc_core::Executor::ShutdownAll();
 
     gpr_mu_lock(&g_mu);
     g_shutdown = 1;
@@ -149,6 +148,7 @@ void grpc_iomgr_shutdown() {
     gpr_mu_unlock(&g_mu);
     grpc_timer_list_shutdown();
     grpc_core::ExecCtx::Get()->Flush();
+    grpc_core::Executor::ShutdownAll();
   }
 
   /* ensure all threads have left g_mu */

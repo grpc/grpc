@@ -564,7 +564,7 @@ static void close_transport_locked(grpc_chttp2_transport* t,
                                  GRPC_STATUS_UNAVAILABLE);
     }
     if (t->write_state != GRPC_CHTTP2_WRITE_STATE_IDLE) {
-      if (t->close_transport_on_writes_finished == nullptr) {
+      if (t->close_transport_on_writes_finished == GRPC_ERROR_NONE) {
         t->close_transport_on_writes_finished =
             GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "Delayed close due to in-progress write");
@@ -821,9 +821,9 @@ static void set_write_state(grpc_chttp2_transport* t,
   // from peer while we had some pending writes)
   if (st == GRPC_CHTTP2_WRITE_STATE_IDLE) {
     grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &t->run_after_write);
-    if (t->close_transport_on_writes_finished != nullptr) {
+    if (t->close_transport_on_writes_finished != GRPC_ERROR_NONE) {
       grpc_error_handle err = t->close_transport_on_writes_finished;
-      t->close_transport_on_writes_finished = nullptr;
+      t->close_transport_on_writes_finished = GRPC_ERROR_NONE;
       close_transport_locked(t, err);
     }
   }
@@ -1582,6 +1582,8 @@ static void perform_stream_op_locked(void* stream_op,
     GPR_ASSERT(!s->pending_byte_stream);
     s->recv_message_ready = op_payload->recv_message.recv_message_ready;
     s->recv_message = op_payload->recv_message.recv_message;
+    s->call_failed_before_recv_message =
+        op_payload->recv_message.call_failed_before_recv_message;
     if (s->id != 0) {
       if (!s->read_closed) {
         before = s->frame_storage.length +
@@ -1795,7 +1797,7 @@ static void perform_transport_op_locked(void* stream_op,
   grpc_chttp2_transport* t =
       static_cast<grpc_chttp2_transport*>(op->handler_private.extra_arg);
 
-  if (op->goaway_error) {
+  if (op->goaway_error != GRPC_ERROR_NONE) {
     send_goaway(t, op->goaway_error);
   }
 
@@ -1947,6 +1949,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* /*t*/,
       null_then_sched_closure(&s->recv_message_ready);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
       *s->recv_message = nullptr;
+      if (s->call_failed_before_recv_message != nullptr) {
+        *s->call_failed_before_recv_message =
+            (s->published_metadata[1] != GRPC_METADATA_PUBLISHED_AT_CLOSE);
+      }
       null_then_sched_closure(&s->recv_message_ready);
     }
     GRPC_ERROR_UNREF(error);

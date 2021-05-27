@@ -384,6 +384,9 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
       read_tag_.Set(
           call_.call(),
           [this, reactor](bool ok) {
+            if (GPR_UNLIKELY(!ok)) {
+              ctx_->MaybeMarkCancelledOnRead();
+            }
             reactor->OnReadDone(ok);
             this->MaybeDone(/*inlineable_ondone=*/true);
           },
@@ -831,6 +834,9 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
       read_tag_.Set(
           call_.call(),
           [this, reactor](bool ok) {
+            if (GPR_UNLIKELY(!ok)) {
+              ctx_->MaybeMarkCancelledOnRead();
+            }
             reactor->OnReadDone(ok);
             this->MaybeDone(/*inlineable_ondone=*/true);
           },
