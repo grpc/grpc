@@ -114,11 +114,11 @@ class ByteBuffer final {
     return *this;
   }
 
-  // If this cord's representation is a single flat slice, returns a
+  // If this ByteBuffer's representation is a single flat slice, returns a
   // slice referencing that array.
   Status TrySingleSlice(Slice* slice) const;
 
-  /// Dump (read) the buffer contents into \a slices.
+  /// Dump (read) the buffer contents into \a slics.
   Status DumpToSingleSlice(Slice* slice) const;
 
   /// Dump (read) the buffer contents into \a slices.

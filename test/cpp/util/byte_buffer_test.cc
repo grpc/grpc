@@ -133,7 +133,7 @@ TEST_F(ByteBufferTest, TrySingleSliceWithSingleSlice) {
   EXPECT_EQ(memcmp(slice.begin(), slices[0].begin(), slice.size()), 0);
 }
 
-TEST_F(ByteBufferTest, TrySingleSliceWithMultiplelices) {
+TEST_F(ByteBufferTest, TrySingleSliceWithMultipleSlices) {
   std::vector<Slice> slices;
   slices.emplace_back(kContent1);
   slices.emplace_back(kContent2);
