@@ -191,9 +191,21 @@ class TrafficDirectorManager:
             logger.info('Loaded NEG "%s" in zone %s', backend.name,
                         backend.zone)
             self.backends[bs_name].add(backend)
-        self.backend_service_add_backends(bs_name)
+        self.backend_service_patch_backends(bs_name)
 
-    def backend_service_add_backends(self, bs_name: str = BACKEND_SERVICE_NAME):
+    def backend_service_remove_neg_backends(self, name, zones,
+        bs_name: Optional[str]):
+        if bs_name is None:
+            bs_name = self.BACKEND_SERVICE_NAME
+        logger.info('Waiting for Network Endpoint Groups to load endpoints.')
+        for zone in zones:
+            backend = self.compute.wait_for_network_endpoint_group(name, zone)
+            logger.info('Loaded NEG "%s" in zone %s', backend.name,
+                        backend.zone)
+            self.backends[bs_name].remove(backend)
+        self.backend_service_patch_backends(bs_name)
+
+    def backend_service_patch_backends(self, bs_name: str = BACKEND_SERVICE_NAME):
         logging.info('Adding backends to Backend Service %s: %r',
                      self.backend_services[bs_name].name,
                      self.backends[bs_name])

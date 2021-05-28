@@ -158,6 +158,17 @@ class XdsKubernetesTestCase(absltest.TestCase):
         if wait_for_healthy_status:
             self.td.wait_for_backends_healthy_status(bs_name=bs_name)
 
+    def removeServerBackends(self, *, server_runner=None, bs_name=None):
+        if server_runner is None:
+            server_runner = self.server_runners['default']
+        # Load Backends
+        neg_name, neg_zones = server_runner.k8s_namespace.get_service_neg(
+            server_runner.service_name, self.server_port)
+
+        # Remove backends from the Backend Service
+        self.td.backend_service_remove_neg_backends(neg_name, neg_zones,
+                                                 bs_name=bs_name)
+
     def assertSuccessfulRpcs(self,
                              test_client: XdsTestClient,
                              num_rpcs: int = 100):

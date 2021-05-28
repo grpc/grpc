@@ -80,6 +80,6 @@ class HealthClient(framework.rpc.grpc.GrpcClientHelper):
         super().__init__(channel, health_pb2_grpc.HealthStub)
 
     def check_health(self):
-        self.call_unary_with_deadline(rpc='Check',
-                                      req=health_pb2.HealthCheckRequest(),
-                                      log_level=logging.INFO)
+        return self.call_unary_with_deadline(rpc='Check',
+                                             req=health_pb2.HealthCheckRequest(),
+                                             log_level=logging.INFO)
