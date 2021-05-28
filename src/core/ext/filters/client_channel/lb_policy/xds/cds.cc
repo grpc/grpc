@@ -451,22 +451,9 @@ void CdsLb::OnClusterChanged(const std::string& name,
     // Construct config for child policy.
     Json::Object xds_lb_policy;
     if (cluster_data.lb_policy == "RING_HASH") {
-      std::string hash_function;
-      switch (cluster_data.hash_function) {
-        case XdsApi::CdsUpdate::HashFunction::XX_HASH:
-          hash_function = "XX_HASH";
-          break;
-        case XdsApi::CdsUpdate::HashFunction::MURMUR_HASH_2:
-          hash_function = "MURMUR_HASH_2";
-          break;
-        default:
-          GPR_ASSERT(0);
-          break;
-      }
       xds_lb_policy["RING_HASH"] = Json::Object{
           {"min_ring_size", cluster_data.min_ring_size},
           {"max_ring_size", cluster_data.max_ring_size},
-          {"hash_function", hash_function},
       };
     } else {
       xds_lb_policy["ROUND_ROBIN"] = Json::Object();

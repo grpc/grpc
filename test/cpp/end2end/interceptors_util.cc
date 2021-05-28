@@ -165,14 +165,13 @@ void MakeCallbackCall(const std::shared_ptr<Channel>& channel) {
   ctx.AddMetadata("testkey", "testvalue");
   req.set_message("Hello");
   EchoResponse resp;
-  stub->experimental_async()->Echo(&ctx, &req, &resp,
-                                   [&resp, &mu, &done, &cv](Status s) {
-                                     EXPECT_EQ(s.ok(), true);
-                                     EXPECT_EQ(resp.message(), "Hello");
-                                     std::lock_guard<std::mutex> l(mu);
-                                     done = true;
-                                     cv.notify_one();
-                                   });
+  stub->async()->Echo(&ctx, &req, &resp, [&resp, &mu, &done, &cv](Status s) {
+    EXPECT_EQ(s.ok(), true);
+    EXPECT_EQ(resp.message(), "Hello");
+    std::lock_guard<std::mutex> l(mu);
+    done = true;
+    cv.notify_one();
+  });
   std::unique_lock<std::mutex> l(mu);
   while (!done) {
     cv.wait(l);

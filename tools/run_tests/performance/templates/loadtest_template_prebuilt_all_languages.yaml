@@ -75,10 +75,11 @@ spec:
         command:
           - ruby
         image: ${prebuilt_image_prefix}/ruby:${prebuilt_image_tag}
-  drivers:
-    - image: ${driver_image}
-      language: cxx
-      pool: ${driver_pool}
+  driver:
+    language: cxx
+    pool: ${driver_pool}
+    run:
+      image: ${driver_image}
   results:
     bigQueryTable: ${big_query_table}
   servers:

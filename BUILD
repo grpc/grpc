@@ -1116,6 +1116,7 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_priority",
+        "grpc_lb_policy_ring_hash",
         "grpc_lb_policy_round_robin",
         "grpc_lb_policy_weighted_target",
         "grpc_client_idle_filter",
@@ -1555,6 +1556,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
+        "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
         "grpc_resolver_fake",
@@ -1646,6 +1648,10 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "xxhash",
     ],
     language = "c++",
     deps = [
