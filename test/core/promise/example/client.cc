@@ -11,17 +11,17 @@ class ClientChannel {
                   TrySeq(
                       // First execute pre request extension points in order.
                       &pre_request_ops_,
-                      // Next check for compression requirements... we create a
-                      // new pipe and add a Join to execute compress/decompress
-                      // alongside the main control path.
-                      compression_filter_->RunRPC([this]() {
-                        // Fetch the service config, and use it to add
-                        // configuration and control to this request.
-                        return config_.Watch(
-                            [](ConfigPtr config, WatchCommitter committer) {
-                              config->RunRPC(std::move(committer));
-                            });
-                      }))),
+                      TryJoin(
+                          // Kick off the compression filter - it's going to
+                          // keep a few things going concurrently to mutate
+                          // messages as they come through.
+                          compression_filter_->RunRPC(),
+                          // And concurrently, continue the RPC by retrieving a
+                          // service config and using it.
+                          Seq(config_.Next(),
+                              [](ConfigPtr config) {
+                                return config->RunRPC();
+                              })))),
               // Finally execute any post request extension points in order.
               &post_request_ops_);
         },
@@ -54,8 +54,6 @@ class CompressionFilter {
     context()->SwapSendReceiver(&compress.receiver);
     context()->SwapRecvSender(&decompress.sender);
     return TryJoin(
-        // Keep running down the stack
-        std::move(and_then),
         // Inject a loop to copy capsules (comrpessing along the way)
         // C++14 for brevity
         [compress = std::move(compress)]() {
@@ -111,20 +109,15 @@ class CompressionFilter {
 
 class Config {
  public:
-  Promise<absl::Status> RunRPC(WatchCommitter committer) {
+  Promise<absl::Status> RunRPC() {
     // Apply the config's deadline.
-    return Timeout(config.Deadline(), [this, committer]() {
+    return Timeout(config.Deadline(), [this]() {
       // Use the config to follow load balancing and
       // choose a subchannel.
       auto lb_picker = lb_picker_.MakeObserver();
       return Seq(While(Seq(lb_picker.Next(),
                            [](LBPickerPtr picker) { return picker->Pick(); })),
-                 [committer](SubchannelPtr subchannel) {
-                   // Stop watching service config, we're
-                   // committing to this subchannel.
-                   committer.Commit();
-                   return subchannel->RunRPC();
-                 });
+                 [](SubchannelPtr subchannel) { return subchannel->RunRPC(); });
     });
   }
 
