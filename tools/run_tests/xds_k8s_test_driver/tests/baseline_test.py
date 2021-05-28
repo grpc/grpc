@@ -149,32 +149,24 @@ class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest(
             '1_test_secondary_locality_receives_no_requests_on_partial_primary_failure'):
-            self._default_test_servers[
-                0].update_health_service_client.set_not_serving()
-            self._default_test_servers[0].health_client.check_health()
+            self._default_test_servers[0].set_not_serving()
             client_rpc_stats = self.getClientRpcStats(self._test_client,
                                                       NUM_RPCS)
 
         with self.subTest('2_test_gentle_failover'):
-            self._default_test_servers[
-                1].update_health_service_client.set_not_serving()
-            self._default_test_servers[1].health_client.check_health()
+            self._default_test_servers[1].set_not_serving()
             client_rpc_stats = self.getClientRpcStats(self._test_client,
                                                       NUM_RPCS)
 
         with self.subTest(
             '3_test_secondary_locality_receives_requests_on_primary_failure'):
-            self._default_test_servers[
-                2].update_health_service_client.set_not_serving()
-            self._default_test_servers[2].health_client.check_health()
+            self._default_test_servers[2].set_not_serving()
             client_rpc_stats = self.getClientRpcStats(self._test_client,
                                                       NUM_RPCS)
 
         with self.subTest('4_test_traffic_resumes_to_healthy_backends'):
             for i in range(REPLICA_COUNT):
-                self._default_test_servers[
-                    i].update_health_service_client.set_not_serving()
-                self._default_test_servers[i].health_client.check_health()
+                self._default_test_servers[i].set_serving()
             client_rpc_stats = self.getClientRpcStats(self._test_client,
                                                       NUM_RPCS)
 

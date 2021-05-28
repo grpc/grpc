@@ -76,6 +76,16 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
         return _HealthClient(self._make_channel(
             self.maintenance_port))
 
+    def set_serving(self):
+        logger.info('Setting health status to serving')
+        self.update_health_service_client.set_serving()
+        logger.info('Server reports %s', self.health_client.check_health())
+
+    def set_not_serving(self):
+        logger.info('Setting health status to not serving')
+        self.update_health_service_client.set_not_serving()
+        logger.info('Server reports %s', self.health_client.check_health())
+
     def set_xds_address(self, xds_host, xds_port: Optional[int] = None):
         self.xds_host, self.xds_port = xds_host, xds_port
 
