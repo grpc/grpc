@@ -88,14 +88,12 @@ class RemoveNegTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.assertSuccessfulRpcs(self._test_client)
 
         with self.subTest('10_remove_neg'):
-            NUM_RPCS = 300
-            for i in range(5):
-                self.getClientRpcStats(self._test_client, NUM_RPCS)
+            self.assertRpcsEventuallyGoToGivenServers(self._test_client,
+                                                      self._default_test_servers + self._same_zone_test_servers)
             self.removeServerBackends(
                 server_runner=self.server_runners['secondary'])
-            for i in range(5):
-                self.getClientRpcStats(self._test_client, NUM_RPCS)
-
+            self.assertRpcsEventuallyGoToGivenServers(self._test_client,
+                                                      self._default_test_servers)
 
 
 if __name__ == '__main__':

@@ -92,10 +92,10 @@ class ChangeBackendServiceTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.assertSuccessfulRpcs(self._test_client)
 
         with self.subTest('10_change_backend_service'):
-            NUM_RPCS = 300
             self.td.patch_url_map(self.server_xds_host, self.server_xds_port,
                                   self.ALTERNATE_BACKEND_SERVICE_NAME)
-            self.getClientRpcStats(self._test_client, NUM_RPCS)
+            self.assertRpcsEventuallyGoToGivenServers(self._test_client,
+                                                      self._same_zone_test_servers)
 
 
 if __name__ == '__main__':
