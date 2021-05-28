@@ -182,7 +182,7 @@ class TrafficDirectorManager:
             self.backend_services[name] = None
 
     def backend_service_add_neg_backends(self, name, zones,
-        bs_name: Optional[str]):
+        bs_name: Optional[str], maxRatePerEndpoint: Optional[int] = None):
         if bs_name is None:
             bs_name = self.BACKEND_SERVICE_NAME
         logger.info('Waiting for Network Endpoint Groups to load endpoints.')
@@ -191,7 +191,7 @@ class TrafficDirectorManager:
             logger.info('Loaded NEG "%s" in zone %s', backend.name,
                         backend.zone)
             self.backends[bs_name].add(backend)
-        self.backend_service_patch_backends(bs_name)
+        self.backend_service_patch_backends(bs_name, maxRatePerEndpoint)
 
     def backend_service_remove_neg_backends(self, name, zones,
         bs_name: Optional[str]):
@@ -205,13 +205,15 @@ class TrafficDirectorManager:
             self.backends[bs_name].remove(backend)
         self.backend_service_patch_backends(bs_name)
 
-    def backend_service_patch_backends(self, bs_name: str = BACKEND_SERVICE_NAME):
+    def backend_service_patch_backends(self,
+        bs_name: str = BACKEND_SERVICE_NAME,
+        maxRatePerEndpoint: Optional[int] = None):
         logging.info('Adding backends to Backend Service %s: %r',
                      self.backend_services[bs_name].name,
                      self.backends[bs_name])
         self.compute.backend_service_add_backends(
             self.backend_services[bs_name],
-            self.backends[bs_name])
+            self.backends[bs_name], maxRatePerEndpoint)
 
     def backend_service_remove_all_backends(self,
         bs_name: str = BACKEND_SERVICE_NAME):

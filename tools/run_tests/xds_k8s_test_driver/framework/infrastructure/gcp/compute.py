@@ -135,12 +135,14 @@ class ComputeV1(gcp.api.GcpProjectApiResource):
                              body=body,
                              **kwargs)
 
-    def backend_service_add_backends(self, backend_service, backends):
+    def backend_service_add_backends(self, backend_service, backends,
+        maxRatePerEndpoint: Optional[int]):
+        if maxRatePerEndpoint is None:
+            maxRatePerEndpoint = 5
         backend_list = [{
             'group': backend.url,
             'balancingMode': 'RATE',
-            # TODO(ericgribkoff) maxRate must be a param for failover tests
-            'maxRatePerEndpoint': 5,
+            'maxRatePerEndpoint': maxRatePerEndpoint,
         } for backend in backends]
 
         self._patch_resource(collection=self.api.backendServices(),

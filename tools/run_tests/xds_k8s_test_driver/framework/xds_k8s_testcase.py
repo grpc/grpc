@@ -149,7 +149,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
                                health_check_port=self.server_maintenance_port)
 
     def setupServerBackends(self, *, server_runner=None, bs_name=None,
-        wait_for_healthy_status=True):
+        wait_for_healthy_status=True, maxRatePerEndpoint: Optional[int] = None):
         if server_runner is None:
             server_runner = self.server_runners['default']
         # Load Backends
@@ -158,7 +158,8 @@ class XdsKubernetesTestCase(absltest.TestCase):
 
         # Add backends to the Backend Service
         self.td.backend_service_add_neg_backends(neg_name, neg_zones,
-                                                 bs_name=bs_name)
+                                                 bs_name=bs_name,
+                                                 maxRatePerEndpoint=maxRatePerEndpoint)
         if wait_for_healthy_status:
             self.td.wait_for_backends_healthy_status(bs_name=bs_name)
 
@@ -186,6 +187,7 @@ class XdsKubernetesTestCase(absltest.TestCase):
 
     @tenacity.retry(stop=tenacity.stop_after_delay(TD_CONFIG_MAX_WAIT_SEC),
                     before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
+                    wait=tenacity.wait_fixed(2),
                     reraise=True)
     def assertRpcsEventuallyGoToGivenServers(self,
         test_client: XdsTestClient,

@@ -75,9 +75,10 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 replica_count=1)
 
         with self.subTest('06_add_server_backends_to_backend_services'):
-            self.setupServerBackends()
+            self.setupServerBackends(maxRatePerEndpoint=100)
             self.setupServerBackends(
-                server_runner=self.server_runners['alternate'])
+                server_runner=self.server_runners['alternate'],
+                maxRatePerEndpoint=100)
 
         with self.subTest('07_start_test_client'):
             self._test_client: _XdsTestClient = self.startTestClient(
