@@ -64,7 +64,7 @@ class BaselineTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
                 _XdsTestServer] = self.startTestServer(
                 server_runner=self.server_runners['default'],
                 replica_count=primary_replica_count)
-            if use_secondary_neg:
+            if use_secondary_neg or setup_alternate_backend_service:
                 self.server_runners[
                     'secondary'] = server_app.KubernetesServerRunner(
                     k8s.KubernetesNamespace(self.k8s_api_manager,

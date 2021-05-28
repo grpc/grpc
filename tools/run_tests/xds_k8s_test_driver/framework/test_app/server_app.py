@@ -19,6 +19,7 @@ modules.
 """
 import functools
 import logging
+import threading
 from typing import Iterator, Optional
 
 from framework.infrastructure import k8s
@@ -33,9 +34,6 @@ logger = logging.getLogger(__name__)
 _ChannelzServiceClient = grpc_channelz.ChannelzServiceClient
 _XdsUpdateHealthServiceClient = grpc_testing.XdsUpdateHealthServiceClient
 _HealthClient = grpc_testing.HealthClient
-
-# TODO(ericgribkoff) Ahem, fix this
-_FEARSOME_SERVER_PORT_OFFSET = 0
 
 class XdsTestServer(framework.rpc.grpc.GrpcApp):
     """
@@ -146,6 +144,9 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
     DEFAULT_TEST_PORT = 8080
     DEFAULT_MAINTENANCE_PORT = 8080
     DEFAULT_SECURE_MODE_MAINTENANCE_PORT = 8081
+
+    _lock = threading.Lock()
+    _server_port_forwarding_offset = 0
 
     def __init__(self,
                  k8s_namespace,
@@ -275,11 +276,12 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
             # Experimental, for local debugging.
             local_port = maintenance_port
             if self.debug_use_port_forwarding:
-                global _FEARSOME_SERVER_PORT_OFFSET
-                local_port = maintenance_port + _FEARSOME_SERVER_PORT_OFFSET
-                _FEARSOME_SERVER_PORT_OFFSET += 1
-                logger.info('LOCAL DEV MODE: Enabling port forwarding to %s:%s using local port %s',
-                            pod_ip, maintenance_port, local_port)
+                with KubernetesServerRunner._lock:
+                    local_port = maintenance_port + KubernetesServerRunner._server_port_forwarding_offset
+                    KubernetesServerRunner._server_port_forwarding_offset += 1
+                logger.info(
+                    'LOCAL DEV MODE: Enabling port forwarding to %s:%s using local port %s',
+                    pod_ip, maintenance_port, local_port)
                 self.port_forwarders.append(self.k8s_namespace.port_forward_pod(
                     pod, remote_port=maintenance_port, local_port=local_port))
                 rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
