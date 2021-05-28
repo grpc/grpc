@@ -18,6 +18,8 @@ import logging
 import time
 from typing import List
 from typing import Optional, Tuple
+
+import tenacity
 from google.protobuf import json_format
 from typing import Iterable, Optional, Tuple
 
@@ -63,6 +65,8 @@ class XdsKubernetesTestCase(absltest.TestCase):
     k8s_api_manager: k8s.KubernetesApiManager
     secondary_k8s_api_manager: k8s.KubernetesApiManager
     gcp_api_manager: gcp.api.GcpApiManager
+
+    TD_CONFIG_MAX_WAIT_SEC = 600
 
     @classmethod
     def setUpClass(cls):
@@ -180,6 +184,28 @@ class XdsKubernetesTestCase(absltest.TestCase):
             0,
             msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
 
+    @tenacity.retry(stop=tenacity.stop_after_delay(TD_CONFIG_MAX_WAIT_SEC),
+                    before_sleep=tenacity.before_sleep_log(logger, logging.INFO),
+                    reraise=True)
+    def assertRpcsEventuallyGoToGivenServers(self,
+        test_client: XdsTestClient,
+        servers: List[XdsTestServer],
+        num_rpcs: int = 100):
+        server_names = [server.pod_name for server in servers]
+        logger.info(f'Verifying RPCs go to {server_names}')
+        lb_stats = self.getClientRpcStats(test_client, num_rpcs)
+        failed = int(lb_stats.num_failures)
+        self.assertLessEqual(
+            failed,
+            0,
+            msg=f'Expected all RPCs to succeed: {failed} of {num_rpcs} failed')
+        for server_name in server_names:
+            self.assertIn(server_name, lb_stats.rpcs_by_peer,
+                          f'{server_name} did not receive RPCs')
+        for peer in lb_stats.rpcs_by_peer.keys():
+            self.assertIn(peer, server_names,
+                          f'Unexpected server {peer} received RPCs')
+
     def assertXdsConfigExists(self, test_client: XdsTestClient):
         config = test_client.csds.fetch_client_status(log_level=logging.INFO)
         self.assertIsNotNone(config)
@@ -225,7 +251,6 @@ class XdsKubernetesTestCase(absltest.TestCase):
 
 
 class RegularXdsKubernetesTestCase(XdsKubernetesTestCase):
-
     @classmethod
     def setUpClass(cls):
         super().setUpClass()

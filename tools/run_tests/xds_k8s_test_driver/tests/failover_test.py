@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 import logging
-from typing import Optional
 
 from absl import flags
 from absl.testing import absltest
-from typing import List
 
 from typing import List
 
@@ -88,31 +86,34 @@ class FailoverTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
         with self.subTest('08_test_client_xds_config_exists'):
             self.assertXdsConfigExists(self._test_client)
 
-        with self.subTest('09_test_server_received_rpcs_from_test_client'):
-            self.assertSuccessfulRpcs(self._test_client)
+        with self.subTest('09_primary_locality_receives_requests'):
+            self.assertRpcsEventuallyGoToGivenServers(self._test_client,
+                                                      self._default_test_servers)
 
         with self.subTest(
             '10_secondary_locality_receives_no_requests_on_partial_primary_failure'):
             self._default_test_servers[0].set_not_serving()
-            client_rpc_stats = self.getClientRpcStats(self._test_client,
-                                                      NUM_RPCS)
+            self.assertRpcsEventuallyGoToGivenServers(self._test_client,
+                                                      self._default_test_servers[
+                                                      1:])
 
         with self.subTest('11_gentle_failover'):
             self._default_test_servers[1].set_not_serving()
-            client_rpc_stats = self.getClientRpcStats(self._test_client,
-                                                      NUM_RPCS)
+            self.assertRpcsEventuallyGoToGivenServers(self._test_client,
+                                                      self._default_test_servers[
+                                                      2:] + self._alternate_test_servers)
 
         with self.subTest(
             '12_secondary_locality_receives_requests_on_primary_failure'):
             self._default_test_servers[2].set_not_serving()
-            client_rpc_stats = self.getClientRpcStats(self._test_client,
-                                                      NUM_RPCS)
+            self.assertRpcsEventuallyGoToGivenServers(self._test_client,
+                                                      self._alternate_test_servers)
 
         with self.subTest('13_traffic_resumes_to_healthy_backends'):
             for i in range(REPLICA_COUNT):
                 self._default_test_servers[i].set_serving()
-            client_rpc_stats = self.getClientRpcStats(self._test_client,
-                                                      NUM_RPCS)
+            self.assertRpcsEventuallyGoToGivenServers(self._test_client,
+                                                      self._default_test_servers)
 
 if __name__ == '__main__':
     absltest.main(failfast=True)

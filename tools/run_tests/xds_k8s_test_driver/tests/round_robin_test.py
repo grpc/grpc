@@ -36,8 +36,6 @@ class RoundRobinTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
     def test_round_robin(self) -> None:
         REPLICA_COUNT = 2
-        NUM_RPCS = 100
-        expected_rpcs_per_replica = NUM_RPCS / REPLICA_COUNT
 
         with self.subTest('00_create_health_check'):
             self.td.create_health_check()
@@ -56,7 +54,7 @@ class RoundRobinTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.td.create_forwarding_rule(self.server_xds_port)
 
         with self.subTest('05_start_test_servers'):
-            self._default_test_servers: List[
+            self._test_servers: List[
                 _XdsTestServer] = self.startTestServer(
                 server_runner=self.server_runners['default'],
                 replica_count=REPLICA_COUNT)
@@ -66,7 +64,7 @@ class RoundRobinTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
 
         with self.subTest('07_start_test_client'):
             self._test_client: _XdsTestClient = self.startTestClient(
-                self._default_test_servers[0])
+                self._test_servers[0])
 
         with self.subTest('08_test_client_xds_config_exists'):
             self.assertXdsConfigExists(self._test_client)
@@ -75,18 +73,27 @@ class RoundRobinTest(xds_k8s_testcase.RegularXdsKubernetesTestCase):
             self.assertSuccessfulRpcs(self._test_client)
 
         with self.subTest('10_round_robin'):
-            rpcs_by_peer = self.getClientRpcStats(self._test_client,
-                                                  NUM_RPCS).rpcs_by_peer
-            total_requests_received = sum(rpcs_by_peer[x] for x in rpcs_by_peer)
 
-            self.assertEqual(total_requests_received, NUM_RPCS,
+            self.assertRpcsEventuallyGoToGivenServers(self._test_client,
+                                                      self._test_servers)
+
+            self.assertRpcsEventuallyGoToGivenServers(self._test_client,
+                                                      self._test_servers[0])
+            num_rpcs = 100
+            expected_rpcs_per_replica = num_rpcs / REPLICA_COUNT
+
+            rpcs_by_peer = self.getClientRpcStats(self._test_client,
+                                                  num_rpcs).rpcs_by_peer
+            total_requests_received = sum(rpcs_by_peer[x] for x in rpcs_by_peer)
+            self.assertEqual(total_requests_received, num_rpcs,
                              'Wrong number of RPCS')
-            self.assertEqual(len(rpcs_by_peer), REPLICA_COUNT,
-                             'Not all replicas received RPCs')
-            for peer in rpcs_by_peer:
-                self.assertTrue(
-                    abs(rpcs_by_peer[peer] - expected_rpcs_per_replica) <= 1,
-                    f'Wrong number of RPCs for {peer}')
+            for server in self._test_servers:
+                pod_name = server.pod_name
+                self.assertIn(pod_name, rpcs_by_peer,
+                              f'pod {pod_name} did not receive RPCs')
+                self.assertLessEqual(
+                    abs(rpcs_by_peer[pod_name] - expected_rpcs_per_replica), 1,
+                    f'Wrong number of RPCs for {pod_name}')
 
 
 if __name__ == '__main__':

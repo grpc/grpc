@@ -50,7 +50,8 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
                  server_id: Optional[str] = None,
                  xds_host: Optional[str] = None,
                  xds_port: Optional[int] = None,
-                 rpc_host: Optional[str] = None):
+                 rpc_host: Optional[str] = None,
+                 pod_name: Optional[str] = None):
         super().__init__(rpc_host=(rpc_host or ip))
         self.ip = ip
         self.rpc_port = rpc_port
@@ -58,6 +59,7 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
         self.secure_mode = secure_mode
         self.server_id = server_id
         self.xds_host, self.xds_port = xds_host, xds_port
+        self.pod_name = pod_name
 
     @property
     @functools.lru_cache(None)
@@ -279,7 +281,8 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
 
         servers = []
         for pod in pods:
-            self._wait_pod_started(pod.metadata.name)
+            pod_name = pod.metadata.name
+            self._wait_pod_started(pod_name)
 
             pod_ip = pod.status.pod_ip
             rpc_host = None
@@ -301,7 +304,8 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                                  maintenance_port=local_port,
                                  secure_mode=secure_mode,
                                  server_id=server_id,
-                                 rpc_host=rpc_host))
+                                 rpc_host=rpc_host,
+                                 pod_name=pod_name))
         return servers
 
     def cleanup(self, *, force=False, force_namespace=False):
