@@ -15,7 +15,7 @@
 set -ex
 
 # Enter the gRPC repo root.
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 
@@ -73,8 +73,8 @@ popd
 
 # Build test configurations.
 buildConfigs() {
-    local pool="$1"
-    local table="$2"
+    local -r pool="$1"
+    local -r table="$2"
     shift 2
     tools/run_tests/performance/loadtest_config.py "$@" \
         -t ./tools/run_tests/performance/templates/loadtest_template_prebuilt_all_languages.yaml \
