@@ -67,9 +67,7 @@ WORKER_POOL_32CORE=workers-32core-ci
 pushd ..
 git clone --recursive https://github.com/grpc/test-infra.git
 cd test-infra
-go build -o bin/runner cmd/runner/main.go
-go build -o bin/prepare_prebuilt_workers tools/prepare_prebuilt_workers/prepare_prebuilt_workers.go
-go build -o bin/delete_prebuilt_workers tools/delete_prebuilt_workers/delete_prebuilt_workers.go
+make all-tools
 popd
 
 # Build test configurations.
