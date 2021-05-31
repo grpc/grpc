@@ -69,6 +69,15 @@ class ClientAsyncResponseReaderInterface {
   /// \param[out] status To be updated with the operation status.
   /// \param[out] msg To be filled in with the server's response message.
   virtual void Finish(R* msg, ::grpc::Status* status, void* tag) = 0;
+
+  /// Destroy the reader, in whatever manner is appropriate for this
+  /// implementation.
+  ///
+  /// Most users shouldn't need to touch this method, since it is called
+  /// automatically by std::unique_ptr. Subclasses also shouldn't override this
+  /// unless they have very specific needs; it exists only for historical
+  /// reasons. See the note on the std::default_delete specialization below.
+  virtual void Destroy() { delete this; }
 };
 
 namespace internal {
@@ -261,6 +270,19 @@ class ClientAsyncResponseReader final
             static_cast<void*>(msg), status, tag);
   }
 
+  void Destroy() override {
+    // Don't free our backing memory. ClientAsyncResponseReaderHelper::Create
+    // allocated us on an arena, and it's up to the arena owner to free our
+    // backing memory.
+    //
+    // NOTE(jacobsa): we also don't run the destructor (which we could do
+    // explicitly using `this->~ClientAsyncResponseReader()`) only for
+    // historical reasons, preserving exactly the behavior of the code as it
+    // existed before the commit that added this note. This winds up being okay
+    // only because our destructor doesn't currently have important side
+    // effects.
+  }
+
  private:
   friend class internal::ClientAsyncResponseReaderHelper;
   ::grpc::ClientContext* const context_;
@@ -396,16 +418,38 @@ class ServerAsyncResponseWriter final
 }  // namespace grpc
 
 namespace std {
-template <class R>
-class default_delete<::grpc::ClientAsyncResponseReader<R>> {
- public:
-  void operator()(void* /*p*/) {}
-};
+
+// Tell std::unique_ptr<grpc::ClientAsyncResponseReaderInterface<R>> not to use
+// `operator delete` to destroy the reader, instead letting the object's Destroy
+// method do so. This allows subclasses like ClientAsyncResponseReader to avoid
+// freeing their backing storage, since they expect to be allocated only on
+// arenas.
+//
+// NOTE(jacobsa): this API is not ideal. For example, it doesn't cover the case
+// of the object being deleted some other way: if the user has a unique_ptr `p`,
+// then it seems reasonable that they should be able to do `delete p.release()`
+// and get the same effect. Instead it would be better to use some API with
+// actual type erasure for the deleter, like std::shared_ptr, to hide this
+// detail. But the assumption that readers are returned from stubs using
+// std::unique_ptr is probably impractical to change at this point.
 template <class R>
 class default_delete<::grpc::ClientAsyncResponseReaderInterface<R>> {
  public:
-  void operator()(void* /*p*/) {}
+  void operator()(::grpc::ClientAsyncResponseReaderInterface<R>* const reader) {
+    reader->Destroy();
+  }
 };
+
+// As above, but for the case where the user has a unique_ptr to the important
+// subclass in hand, rather than the interface.
+template <class R>
+class default_delete<::grpc::ClientAsyncResponseReader<R>> {
+ public:
+  void operator()(::grpc::ClientAsyncResponseReader<R>* const reader) {
+    reader->Destroy();
+  }
+};
+
 }  // namespace std
 
 #endif  // GRPCPP_IMPL_CODEGEN_ASYNC_UNARY_CALL_H
