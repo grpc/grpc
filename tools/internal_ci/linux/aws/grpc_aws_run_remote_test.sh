@@ -122,10 +122,24 @@ SSH_COMMAND='uname -a; rm -f /tmp/aws_build.log /tmp/aws_build.exitcode /tmp/aws
 REMOTE_SCRIPT_EXITCODE=0
 time ssh -i ~/.ssh/temp_client_key ubuntu@$IP "${SSH_COMMAND}" || REMOTE_SCRIPT_EXITCODE=$?
 
+echo "Copying artifacts from the remote instance..."
+ARTIFACT_RSYNC_PATTERN="**/*sponge_log.*"
+# NOTE: the include "*/" rule and --prune-empty-dirs are important for not
+# excluding parent directories that contain artifacts before they have
+# get a chance to be examined (see man rsync)
+COPY_ARTIFACTS_EXITCODE=0
+time rsync -av -e "ssh -i ~/.ssh/temp_client_key" --include="${ARTIFACT_RSYNC_PATTERN}" --include="*/" --exclude="*" --prune-empty-dirs ubuntu@$IP:~/workspace/grpc github || COPY_ARTIFACTS_EXITCODE=$?
+
 # Regardless of the remote script's result (success or failure), initiate shutdown of AWS instance a minute from now.
 # The small delay is useful to make sure the ssh session doesn't hang up on us if shutdown happens too quickly.
 echo "Shutting down instance $ID."
 ssh -i ~/.ssh/temp_client_key ubuntu@$IP "sudo shutdown +1" || echo "WARNING: Failed to initiate AWS instance shutdown."
+
+if [ "$REMOTE_SCRIPT_EXITCODE" == "0" ] && [ "$COPY_ARTIFACTS_EXITCODE" != "0" ]
+then
+  echo "Exiting with exitcode $COPY_ARTIFACTS_EXITCODE since remote script has passed, but copying artifacts has failed."
+  exit $COPY_ARTIFACTS_EXITCODE
+fi
 
 # Match exitcode
 echo "Exiting with exitcode $REMOTE_SCRIPT_EXITCODE based on remote script output."
