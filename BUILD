@@ -1153,6 +1153,7 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_priority",
+        "grpc_lb_policy_ring_hash",
         "grpc_lb_policy_round_robin",
         "grpc_lb_policy_weighted_target",
         "grpc_client_idle_filter",
@@ -1592,6 +1593,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
+        "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
         "grpc_resolver_fake",
@@ -1683,6 +1685,10 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "xxhash",
     ],
     language = "c++",
     deps = [
@@ -2743,6 +2749,7 @@ grpc_cc_library(
         "include/grpc++/test/mock_stream.h",
         "include/grpc++/test/server_context_test_spouse.h",
         "include/grpcpp/test/channel_test_peer.h",
+        "include/grpcpp/test/client_context_test_peer.h",
         "include/grpcpp/test/default_reactor_test_peer.h",
         "include/grpcpp/test/mock_stream.h",
         "include/grpcpp/test/server_context_test_spouse.h",

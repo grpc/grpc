@@ -697,10 +697,24 @@ std::string XdsApi::LdsUpdate::ToString() const {
 //
 
 std::string XdsApi::CdsUpdate::ToString() const {
-  absl::InlinedVector<std::string, 4> contents;
-  if (!eds_service_name.empty()) {
-    contents.push_back(
-        absl::StrFormat("eds_service_name=%s", eds_service_name));
+  absl::InlinedVector<std::string, 8> contents;
+  switch (cluster_type) {
+    case EDS:
+      contents.push_back("cluster_type=EDS");
+      if (!eds_service_name.empty()) {
+        contents.push_back(
+            absl::StrFormat("eds_service_name=%s", eds_service_name));
+      }
+      break;
+    case LOGICAL_DNS:
+      contents.push_back("cluster_type=LOGICAL_DNS");
+      contents.push_back(absl::StrFormat("dns_hostname=%s", dns_hostname));
+      break;
+    case AGGREGATE:
+      contents.push_back("cluster_type=AGGREGATE");
+      contents.push_back(
+          absl::StrFormat("prioritized_cluster_names=[%s]",
+                          absl::StrJoin(prioritized_cluster_names, ", ")));
   }
   if (!common_tls_context.Empty()) {
     contents.push_back(absl::StrFormat("common_tls_context=%s",
@@ -709,6 +723,11 @@ std::string XdsApi::CdsUpdate::ToString() const {
   if (lrs_load_reporting_server_name.has_value()) {
     contents.push_back(absl::StrFormat("lrs_load_reporting_server_name=%s",
                                        lrs_load_reporting_server_name.value()));
+  }
+  contents.push_back(absl::StrCat("lb_policy=", lb_policy));
+  if (lb_policy == "RING_HASH") {
+    contents.push_back(absl::StrCat("min_ring_size=", min_ring_size));
+    contents.push_back(absl::StrCat("max_ring_size=", max_ring_size));
   }
   contents.push_back(
       absl::StrFormat("max_concurrent_requests=%d", max_concurrent_requests));
@@ -1605,40 +1624,35 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
             regex_rewrite =
                 envoy_config_route_v3_RouteAction_HashPolicy_Header_regex_rewrite(
                     header);
-        if (regex_rewrite == nullptr) {
-          gpr_log(
-              GPR_DEBUG,
-              "RouteAction HashPolicy contains policy specifier Header with "
-              "RegexMatchAndSubstitution but Regex is missing");
-          continue;
+        if (regex_rewrite != nullptr) {
+          const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
+              envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
+                  regex_rewrite);
+          if (regex_matcher == nullptr) {
+            gpr_log(
+                GPR_DEBUG,
+                "RouteAction HashPolicy contains policy specifier Header with "
+                "RegexMatchAndSubstitution but RegexMatcher pattern is "
+                "missing");
+            continue;
+          }
+          RE2::Options options;
+          policy.regex = absl::make_unique<RE2>(
+              UpbStringToStdString(
+                  envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
+              options);
+          if (!policy.regex->ok()) {
+            gpr_log(
+                GPR_DEBUG,
+                "RouteAction HashPolicy contains policy specifier Header with "
+                "RegexMatchAndSubstitution but RegexMatcher pattern does not "
+                "compile");
+            continue;
+          }
+          policy.regex_substitution = UpbStringToStdString(
+              envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
+                  regex_rewrite));
         }
-        const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
-            envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
-                regex_rewrite);
-        if (regex_matcher == nullptr) {
-          gpr_log(
-              GPR_DEBUG,
-              "RouteAction HashPolicy contains policy specifier Header with "
-              "RegexMatchAndSubstitution but RegexMatcher pattern is "
-              "missing");
-          continue;
-        }
-        RE2::Options options;
-        policy.regex = absl::make_unique<RE2>(
-            UpbStringToStdString(
-                envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
-            options);
-        if (!policy.regex->ok()) {
-          gpr_log(
-              GPR_DEBUG,
-              "RouteAction HashPolicy contains policy specifier Header with "
-              "RegexMatchAndSubstitution but RegexMatcher pattern does not "
-              "compile");
-          continue;
-        }
-        policy.regex_substitution = UpbStringToStdString(
-            envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
-                regex_rewrite));
       } else if ((filter_state =
                       envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
                           hash_policy)) != nullptr) {
@@ -2707,10 +2721,11 @@ grpc_error_handle CdsResponseParse(
       resource_names_failed->insert(cluster_name);
       continue;
     }
-    // Serialize into JSON and store it in the CdsUpdateMap
+    // Add the cluster to cds_update_map.
     XdsApi::CdsResourceData& cds_resource_data =
         (*cds_update_map)[cluster_name];
     XdsApi::CdsUpdate& cds_update = cds_resource_data.resource;
+    // Store serialized proto.
     cds_resource_data.serialized_proto = UpbStringToStdString(encoded_cluster);
     // Check the cluster_discovery_type.
     if (!envoy_config_cluster_v3_Cluster_has_type(cluster) &&
@@ -2752,6 +2767,102 @@ grpc_error_handle CdsResponseParse(
     } else if (envoy_config_cluster_v3_Cluster_type(cluster) ==
                envoy_config_cluster_v3_Cluster_LOGICAL_DNS) {
       cds_update.cluster_type = XdsApi::CdsUpdate::ClusterType::LOGICAL_DNS;
+      const auto* load_assignment =
+          envoy_config_cluster_v3_Cluster_load_assignment(cluster);
+      if (load_assignment == nullptr) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(
+                cluster_name,
+                ": load_assignment not present for LOGICAL_DNS cluster")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      size_t num_localities;
+      const auto* const* localities =
+          envoy_config_endpoint_v3_ClusterLoadAssignment_endpoints(
+              load_assignment, &num_localities);
+      if (num_localities != 1) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name,
+                         ": load_assignment for LOGICAL_DNS cluster must have "
+                         "exactly one locality, found ",
+                         num_localities)
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      size_t num_endpoints;
+      const auto* const* endpoints =
+          envoy_config_endpoint_v3_LocalityLbEndpoints_lb_endpoints(
+              localities[0], &num_endpoints);
+      if (num_endpoints != 1) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name,
+                         ": locality for LOGICAL_DNS cluster must have "
+                         "exactly one endpoint, found ",
+                         num_endpoints)
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      const auto* endpoint =
+          envoy_config_endpoint_v3_LbEndpoint_endpoint(endpoints[0]);
+      if (endpoint == nullptr) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name, ": LbEndpoint endpoint field not set")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      const auto* address = envoy_config_endpoint_v3_Endpoint_address(endpoint);
+      if (address == nullptr) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name, ": Endpoint address field not set")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      const auto* socket_address =
+          envoy_config_core_v3_Address_socket_address(address);
+      if (socket_address == nullptr) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name, ": Address socket_address field not set")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      if (envoy_config_core_v3_SocketAddress_resolver_name(socket_address)
+              .size != 0) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(
+                cluster_name,
+                ": LOGICAL_DNS clusters must NOT have a custom resolver "
+                "name set")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      absl::string_view address_str = UpbStringToAbsl(
+          envoy_config_core_v3_SocketAddress_address(socket_address));
+      if (address_str.empty()) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name, ": SocketAddress address field not set")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      if (!envoy_config_core_v3_SocketAddress_has_port_value(socket_address)) {
+        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+            absl::StrCat(cluster_name,
+                         ": SocketAddress port_value field not set")
+                .c_str()));
+        resource_names_failed->insert(cluster_name);
+        continue;
+      }
+      cds_update.dns_hostname = JoinHostPort(
+          address_str,
+          envoy_config_core_v3_SocketAddress_port_value(socket_address));
     } else {
       if (envoy_config_cluster_v3_Cluster_has_cluster_type(cluster)) {
         const envoy_config_cluster_v3_Cluster_CustomClusterType*
@@ -2815,74 +2926,60 @@ grpc_error_handle CdsResponseParse(
       // Record ring hash lb config
       auto* ring_hash_config =
           envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
-      if (ring_hash_config == nullptr) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name,
-                         ": ring hash lb config required but not present.")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      const google_protobuf_UInt64Value* max_ring_size =
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
-              ring_hash_config);
-      if (max_ring_size != nullptr) {
-        cds_update.max_ring_size =
-            google_protobuf_UInt64Value_value(max_ring_size);
-        if (cds_update.max_ring_size > 8388608 ||
-            cds_update.max_ring_size == 0) {
+      if (ring_hash_config != nullptr) {
+        const google_protobuf_UInt64Value* max_ring_size =
+            envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
+                ring_hash_config);
+        if (max_ring_size != nullptr) {
+          cds_update.max_ring_size =
+              google_protobuf_UInt64Value_value(max_ring_size);
+          if (cds_update.max_ring_size > 8388608 ||
+              cds_update.max_ring_size == 0) {
+            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat(
+                    cluster_name,
+                    ": max_ring_size is not in the range of 1 to 8388608.")
+                    .c_str()));
+            resource_names_failed->insert(cluster_name);
+            continue;
+          }
+        }
+        const google_protobuf_UInt64Value* min_ring_size =
+            envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
+                ring_hash_config);
+        if (min_ring_size != nullptr) {
+          cds_update.min_ring_size =
+              google_protobuf_UInt64Value_value(min_ring_size);
+          if (cds_update.min_ring_size > 8388608 ||
+              cds_update.min_ring_size == 0) {
+            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat(
+                    cluster_name,
+                    ": min_ring_size is not in the range of 1 to 8388608.")
+                    .c_str()));
+            resource_names_failed->insert(cluster_name);
+            continue;
+          }
+          if (cds_update.min_ring_size > cds_update.max_ring_size) {
+            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat(
+                    cluster_name,
+                    ": min_ring_size cannot be greater than max_ring_size.")
+                    .c_str()));
+            resource_names_failed->insert(cluster_name);
+            continue;
+          }
+        }
+        if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
+                ring_hash_config) !=
+            envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
           errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(
-                  cluster_name,
-                  ": max_ring_size is not in the range of 1 to 8388608.")
+              absl::StrCat(cluster_name,
+                           ": ring hash lb config has invalid hash function.")
                   .c_str()));
           resource_names_failed->insert(cluster_name);
           continue;
         }
-      }
-      const google_protobuf_UInt64Value* min_ring_size =
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
-              ring_hash_config);
-      if (min_ring_size != nullptr) {
-        cds_update.min_ring_size =
-            google_protobuf_UInt64Value_value(min_ring_size);
-        if (cds_update.min_ring_size > 8388608 ||
-            cds_update.min_ring_size == 0) {
-          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(
-                  cluster_name,
-                  ": min_ring_size is not in the range of 1 to 8388608.")
-                  .c_str()));
-          resource_names_failed->insert(cluster_name);
-          continue;
-        }
-        if (cds_update.min_ring_size > cds_update.max_ring_size) {
-          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(
-                  cluster_name,
-                  ": min_ring_size cannot be greater than max_ring_size.")
-                  .c_str()));
-          resource_names_failed->insert(cluster_name);
-          continue;
-        }
-      }
-      if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
-              ring_hash_config) ==
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
-        cds_update.hash_function = XdsApi::CdsUpdate::HashFunction::XX_HASH;
-      } else if (
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
-              ring_hash_config) ==
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_MURMUR_HASH_2) {
-        cds_update.hash_function =
-            XdsApi::CdsUpdate::HashFunction::MURMUR_HASH_2;
-      } else {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name,
-                         ": ring hash lb config has invalid hash function.")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
       }
     } else {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -3014,13 +3111,28 @@ grpc_error_handle ServerAddressParseAndAppend(
   if (GPR_UNLIKELY(port >> 16) != 0) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port.");
   }
+  // Find load_balancing_weight for the endpoint.
+  const google_protobuf_UInt32Value* load_balancing_weight =
+      envoy_config_endpoint_v3_LbEndpoint_load_balancing_weight(lb_endpoint);
+  const int32_t weight =
+      load_balancing_weight != nullptr
+          ? google_protobuf_UInt32Value_value(load_balancing_weight)
+          : 500;
+  if (weight == 0) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid endpoint weight of 0.");
+  }
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
   grpc_error_handle error =
       grpc_string_to_sockaddr(&addr, address_str.c_str(), port);
   if (error != GRPC_ERROR_NONE) return error;
   // Append the address to the list.
-  list->emplace_back(addr, nullptr);
+  std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
+      attributes;
+  attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
+      absl::make_unique<ServerAddressWeightAttribute>(weight);
+  list->emplace_back(addr, nullptr, std::move(attributes));
   return GRPC_ERROR_NONE;
 }
 

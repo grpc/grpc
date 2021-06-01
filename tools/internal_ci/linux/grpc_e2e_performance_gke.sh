@@ -29,8 +29,9 @@ gcloud config set project grpc-testing
 gcloud container clusters get-credentials benchmarks-prod \
     --zone us-central1-b --project grpc-testing
 
-# List pods that may be left over from a previous run.
-kubectl get pods | grep -v Completed
+# List tests that have running pods and are in errored state.
+# This is an unexpected condition, and it is logged here for monitoring.
+source tools/internal_ci/helper_scripts/list_leftover_loadtests.sh
 
 # Set up environment variables.
 LOAD_TEST_PREFIX="${KOKORO_BUILD_INITIATOR}"
@@ -56,7 +57,7 @@ LATEST_TEST_INFRA_RELEASE="$(curl -s https://api.github.com/repos/grpc/test-infr
 if [[ -z "${LATEST_TEST_INFRA_RELEASE}" ]]; then
     exit 1
 fi
-DRIVER_IMAGE="gcr.io/grpc-testing/e2etest/driver:${LATEST_TEST_INFRA_RELEASE}"
+DRIVER_IMAGE="gcr.io/grpc-testing/e2etest/runtime/driver:${LATEST_TEST_INFRA_RELEASE}"
 # Kokoro jobs run on dedicated pools.
 DRIVER_POOL=drivers-ci
 WORKER_POOL_8CORE=workers-8core-ci
@@ -66,9 +67,7 @@ WORKER_POOL_32CORE=workers-32core-ci
 pushd ..
 git clone --recursive https://github.com/grpc/test-infra.git
 cd test-infra
-go build -o bin/runner cmd/runner/main.go
-go build -o bin/prepare_prebuilt_workers tools/prepare_prebuilt_workers/prepare_prebuilt_workers.go
-go build -o bin/delete_prebuilt_workers tools/delete_prebuilt_workers/delete_prebuilt_workers.go
+make all-tools
 popd
 
 # Build test configurations.
