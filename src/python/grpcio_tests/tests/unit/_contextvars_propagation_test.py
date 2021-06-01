@@ -131,7 +131,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
 
             def _run_on_thread(exception_queue):
                 try:
-                    for i in range(_THREAD_COUNT):
+                    for i in range(_RPC_COUNT):
                         with grpc.secure_channel(
                                 target, composite_credentials) as channel:
                             if i == 0:
