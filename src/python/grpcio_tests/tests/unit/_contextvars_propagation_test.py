@@ -138,7 +138,7 @@ class ContextVarsPropagationTest(unittest.TestCase):
                             stub = channel.unary_unary(_UNARY_UNARY)
                             response = stub(_REQUEST, wait_for_ready=True)
                             self.assertEqual(_REQUEST, response)
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     exception_queue.put(e)
 
             threads = []
