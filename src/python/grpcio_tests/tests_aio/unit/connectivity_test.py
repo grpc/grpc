@@ -37,6 +37,8 @@ class TestConnectivityState(AioTestBase):
     async def tearDown(self):
         await self._server.stop(None)
 
+    @unittest.skipIf('aarch64' in platform.machine(),
+                     'The transient failure propagation is slower on aarch64')
     async def test_unavailable_backend(self):
         async with aio.insecure_channel(UNREACHABLE_TARGET) as channel:
             self.assertEqual(grpc.ChannelConnectivity.IDLE,
