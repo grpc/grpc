@@ -228,20 +228,6 @@ spec:
       - --benchmark_impl=grpc
       command:
       - node
-  # php7 server added by hand – not used in existing scenarios.
-  - build:
-      command:
-      - bash
-      - /build_scripts/build_qps_worker.sh
-    clone:
-      gitRef: master
-      repo: https://github.com/grpc/grpc.git
-    language: php7
-    pool: ${server_pool}
-    run:
-      command:
-      - bash
-      - /run_scripts/run_worker.sh
   - build:
       args:
       - build

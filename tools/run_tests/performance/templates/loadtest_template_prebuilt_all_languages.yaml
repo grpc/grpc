@@ -119,14 +119,6 @@ spec:
       - /execute/worker-linux
       - --benchmark_impl=grpc
       image: ${prebuilt_image_prefix}/node:${prebuilt_image_tag}
-  # php7 server added by hand - not used in existing scenarios.
-  - language: php7
-    pool: ${server_pool}
-    run:
-      command:
-      - bash
-      - /run_scripts/run_worker.sh
-      image: ${prebuilt_image_prefix}/php:${prebuilt_image_tag}
   - language: python
     pool: ${server_pool}
     run:
