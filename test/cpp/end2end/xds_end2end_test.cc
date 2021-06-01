@@ -1623,20 +1623,20 @@ grpc_millis NowFromCycleCounter() {
 //
 // For normal distribution, we can easily look up how many standard deviation we
 // need to reach 99.99%. Based on Wiki's table
-// https://en.wikipedia.org/wiki/Standard_normal_table, we need 3.89 sigma
-// (standard deviation) to cover the probability area of 99.99%. In another
+// https://en.wikipedia.org/wiki/Standard_normal_table, we need 4.00 sigma
+// (standard deviation) to cover the probability area of 99.995%. In another
 // word, for a sample with size "n" probability "p" error-tolerance "k", we want
-// the error always land within 3.89 sigma. The sigma of binominal distribution
+// the error always land within 4.00 sigma. The sigma of binominal distribution
 // and be computed as sqrt(np(1-p)). Hence, we have the equation:
 //
-//   kn <= 3.89 * sqrt(np(1-p))
+//   kn <= 4.00 * sqrt(np(1-p))
 //
-// E.g., with p=0.5 k=0.1, n >= 378; with p=0.5 k=0.05, n >= 1513; with p=0.5
-// k=0.01, n >= 37830.
+// E.g., with p=0.5 k=0.1, n >= 400; with p=0.5 k=0.05, n >= 1600; with p=0.5
+// k=0.01, n >= 40000.
 size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
   GPR_ASSERT(p >= 0 && p <= 1);
   size_t num_rpcs =
-      ceil(p * (1 - p) * 3.89 * 3.89 / error_tolerance / error_tolerance);
+      ceil(p * (1 - p) * 4.00 * 4.00 / error_tolerance / error_tolerance);
   gpr_log(GPR_INFO,
           "Sending %" PRIuPTR " RPCs for percentage=%.3f error_tolerance=%.3f",
           num_rpcs, p, error_tolerance);
