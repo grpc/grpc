@@ -510,7 +510,10 @@ class RetryFilter::CallData {
   // have the LB call set a value in CallAttempt and then propagate it
   // from CallAttempt to the parent call when we commit.  Otherwise, we
   // may leave this with a value for a peer other than the one we
-  // actually commit to.
+  // actually commit to.  Alternatively, maybe see if there's a way to
+  // change the surface API such that the peer isn't available until
+  // after initial metadata is received?  (Could even change the
+  // transport API to return this with the recv_initial_metadata op.)
   gpr_atm* peer_string_;
   // send_message
   // When we get a send_message op, we replace the original byte stream
@@ -519,6 +522,10 @@ class RetryFilter::CallData {
   // Note: We inline the cache for the first 3 send_message ops and use
   // dynamic allocation after that.  This number was essentially picked
   // at random; it could be changed in the future to tune performance.
+  // TODO(roth): As part of implementing hedging, we may need some
+  // synchronization here, since ByteStreamCache does not provide any
+  // synchronization, so it's not safe to have multiple
+  // CachingByteStreams read from the same ByteStreamCache concurrently.
   absl::InlinedVector<ByteStreamCache*, 3> send_messages_;
   // send_trailing_metadata
   bool seen_send_trailing_metadata_ = false;
@@ -1986,6 +1993,9 @@ RetryFilter::CallData::PendingBatch* RetryFilter::CallData::PendingBatchesAdd(
   if (batch->send_trailing_metadata) {
     pending_send_trailing_metadata_ = true;
   }
+  // TODO(roth): When we implement hedging, if there are currently attempts
+  // in flight, we will need to pick the one on which the max number of send
+  // ops have already been sent, and we commit to that attempt.
   if (GPR_UNLIKELY(bytes_buffered_for_retry_ >
                    chand_->per_rpc_retry_buffer_size_)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
