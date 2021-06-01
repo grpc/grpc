@@ -131,13 +131,12 @@ class ContextVarsPropagationTest(unittest.TestCase):
 
             def _run_on_thread(exception_queue):
                 try:
-                    for i in range(_RPC_COUNT):
-                        with grpc.secure_channel(
-                                target, composite_credentials) as channel:
-                            if i == 0:
-                                wait_group.done()
-                                wait_group.wait()
-                            stub = channel.unary_unary(_UNARY_UNARY)
+                    with grpc.secure_channel(
+                            target, composite_credentials) as channel:
+                        stub = channel.unary_unary(_UNARY_UNARY)
+                        wait_group.done()
+                        wait_group.wait()
+                        for i in range(_RPC_COUNT):
                             response = stub(_REQUEST, wait_for_ready=True)
                             self.assertEqual(_REQUEST, response)
                 except Exception as e:  # pylint: disable=broad-except
