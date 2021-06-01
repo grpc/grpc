@@ -93,6 +93,9 @@ namespace Grpc.Core.Tests
             Assert.AreEqual(CallFlags.WaitForReady, callOptions.WithWaitForReady().Flags);
             Assert.IsTrue(callOptions.WithWaitForReady().IsWaitForReady);
             Assert.IsFalse(callOptions.WithWaitForReady(true).WithWaitForReady(false).IsWaitForReady);
+
+            callOptions = new CallOptions(waitForReady: true);
+            Assert.IsTrue(callOptions.IsWaitForReady);
         }
     }
 }

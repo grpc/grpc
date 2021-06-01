@@ -47,6 +47,26 @@ namespace Grpc.Core
         /// <param name="credentials">Credentials to use for this call.</param>
         public CallOptions(Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken),
                            WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null, CallCredentials credentials = null)
+            : this(waitForReady: false, headers, deadline, cancellationToken, writeOptions, propagationToken, credentials)
+        {
+        }
+
+        /// <summary>
+        /// Creates a new instance of <c>CallOptions</c> struct.
+        /// </summary>
+        /// <param name="headers">Headers to be sent with the call.</param>
+        /// <param name="deadline">Deadline for the call to finish. null means no deadline.</param>
+        /// <param name="cancellationToken">Can be used to request cancellation of the call.</param>
+        /// <param name="writeOptions">Write options that will be used for this call.</param>
+        /// <param name="propagationToken">Context propagation token obtained from <see cref="ServerCallContext"/>.</param>
+        /// <param name="credentials">Credentials to use for this call.</param>
+        /// <param name="waitForReady">
+        /// If <c>true</c> and channel is in <c>ChannelState.TransientFailure</c>, the call will attempt waiting for the channel to recover
+        /// instead of failing immediately (which is the default "FailFast" semantics).
+        /// Note: experimental API that can change or be removed without any prior notice.
+        /// </param>
+        public CallOptions(bool waitForReady, Metadata headers = null, DateTime? deadline = null, CancellationToken cancellationToken = default(CancellationToken),
+                           WriteOptions writeOptions = null, ContextPropagationToken propagationToken = null, CallCredentials credentials = null)
         {
             this.headers = headers;
             this.deadline = deadline;
@@ -54,7 +74,7 @@ namespace Grpc.Core
             this.writeOptions = writeOptions;
             this.propagationToken = propagationToken;
             this.credentials = credentials;
-            this.flags = default(CallFlags);
+            this.flags = waitForReady ? CallFlags.WaitForReady : default(CallFlags);
         }
 
         /// <summary>
