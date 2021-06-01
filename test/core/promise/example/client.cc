@@ -6,22 +6,21 @@ class ClientChannel {
     return MakeActivity(
         [this]() {
           return Seq(
-              Timeout(
-                  context()->Deadline(),
-                  TrySeq(
-                      // First execute pre request extension points in order.
-                      &pre_request_ops_,
-                      TryJoin(
-                          // Kick off the compression filter - it's going to
-                          // keep a few things going concurrently to mutate
-                          // messages as they come through.
-                          compression_filter_->RunRPC(),
-                          // And concurrently, continue the RPC by retrieving a
-                          // service config and using it.
-                          Seq(config_.Next(),
-                              [](ConfigPtr config) {
-                                return config->RunRPC();
-                              })))),
+              Race(Timeout(context()->Deadline()),
+                   TrySeq(
+                       // First execute pre request extension points in order.
+                       &pre_request_ops_,
+                       TryJoin(
+                           // Kick off the compression filter - it's going to
+                           // keep a few things going concurrently to mutate
+                           // messages as they come through.
+                           compression_filter_->RunRPC(),
+                           // And concurrently, continue the RPC by retrieving a
+                           // service config and using it.
+                           Seq(config_.Next(),
+                               [](ConfigPtr config) {
+                                 return config->RunRPC();
+                               })))),
               // Finally execute any post request extension points in order.
               &post_request_ops_);
         },
@@ -111,7 +110,7 @@ class Config {
  public:
   Promise<absl::Status> RunRPC() {
     // Apply the config's deadline.
-    return Timeout(config.Deadline(), [this]() {
+    return Race(Timeout(config.Deadline()), [this]() {
       // Use the config to follow load balancing and
       // choose a subchannel.
       auto lb_picker = lb_picker_.MakeObserver();
