@@ -48,10 +48,13 @@ TEMPLATE_FILE_HEADER_COMMENT = """
 """
 
 
-def insert_worker(worker: Dict[str, Any], workers: List[Dict[str, Any]]) -> None:
+def insert_worker(worker: Dict[str, Any], workers: List[Dict[str,
+                                                             Any]]) -> None:
     """Inserts client or server into a list, without inserting duplicates."""
+
     def dump(w):
         return yaml.dump(w, Dumper=yaml.SafeDumper, default_flow_style=False)
+
     worker_str = dump(worker)
     if any((worker_str == dump(w) for w in workers)):
         return
@@ -123,17 +126,31 @@ def loadtest_template(
     uniquify_workers(servermap)
 
     spec.update({
-        'clients': sum((clientmap[language] for language in sorted(clientmap)), start=[]),
-        'servers': sum((servermap[language] for language in sorted(servermap)), start=[]),
+        'clients':
+            sum((clientmap[language] for language in sorted(clientmap)),
+                start=[]),
+        'servers':
+            sum((servermap[language] for language in sorted(servermap)),
+                start=[]),
     })
 
-    if inject_driver_image or inject_driver_pool:
-        driver = {'language': 'cxx'}
-        if inject_driver_image:
-            driver['run'] = {'image': '${driver_image}'}
+    if 'driver' not in spec:
+        spec['driver'] = {'language': 'cxx'}
+
+    driver = spec['driver']
+    if 'name' in driver:
+        del driver['name']
+    if inject_driver_image:
+        if 'run' not in driver:
+            driver['run'] = {}
+        driver['run']['image'] = '${driver_image}'
+    if inject_driver_pool:
+        driver['pool'] = '${driver_pool}'
+
+    if 'run' not in driver:
         if inject_driver_pool:
-            driver['pool'] = '${driver_pool}'
-        spec['driver'] = driver
+            raise ValueError('Cannot inject driver.pool: missing driver.run.')
+        del spec['driver']
 
     if inject_big_query_table:
         if 'results' not in spec:

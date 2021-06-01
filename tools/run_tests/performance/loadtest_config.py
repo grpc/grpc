@@ -218,11 +218,12 @@ def gen_loadtest_configs(
             spec['servers'] = servers
 
             # Name driver with an index for consistency with workers.
-            if 'driver' not in spec:
-                spec['driver'] = dict()
-            driver = spec['driver']
-            driver['language'] = safe_name('c++')
-            driver['name'] = component_name((driver.get('name', ''), str(i)))
+            if 'driver' in spec and 'run' in spec['driver']:
+                driver = spec['driver']
+                if 'language' not in driver:
+                    driver['language'] = safe_name('c++')
+                if 'name' not in driver or not driver['name']:
+                    driver['name'] = '0'
 
             spec['scenariosJSON'] = scenario_str
 

@@ -78,7 +78,7 @@ basic_example() {
     ${LOADTEST_CONFIG} \
         -l "${language}" \
         -t ./tools/run_tests/performance/templates/loadtest_template_basic_all_languages.yaml \
-        -s driver_pool= -s client_pool= -s server_pool= -s big_query_table= \
+        -s client_pool= -s server_pool= -s big_query_table= \
         -s timeout_seconds=900 --prefix=examples -u basic -r "^${scenario}$" \
         --allow_client_language=c++ --allow_server_language=c++ \
         --allow_server_language=node \

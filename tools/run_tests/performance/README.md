@@ -361,7 +361,7 @@ was generated from the example configurations in
 ```
 $ ./tools/run_tests/performance/loadtest_template.py \
     -i ../test-infra/config/samples/*_example_loadtest.yaml \
-    --inject_client_pool --inject_driver_pool --inject_server_pool \
+    --inject_client_pool --inject_server_pool \
     --inject_big_query_table --inject_timeout_seconds \
     -o ./tools/run_tests/performance/templates/loadtest_template_basic_all_languages.yaml \
     --name basic_all_languages
