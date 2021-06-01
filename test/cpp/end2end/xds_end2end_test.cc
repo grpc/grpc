@@ -1615,14 +1615,14 @@ grpc_millis NowFromCycleCounter() {
   return grpc_cycle_counter_to_millis_round_up(now);
 }
 
-// Returns the number of RPCs needed to pass error_tolerance at 99.99% chance.
+// Returns the number of RPCs needed to pass error_tolerance at 99.995% chance.
 // Rolling dices in drop/fault-injection generates a binomial distribution (if
 // our code is not horribly wrong). Let's make "n" the number of samples, "p"
 // the probabilty. If we have np>5 & n(1-p)>5, we can approximately treat the
 // binomial distribution as a normal distribution.
 //
 // For normal distribution, we can easily look up how many standard deviation we
-// need to reach 99.99%. Based on Wiki's table
+// need to reach 99.995%. Based on Wiki's table
 // https://en.wikipedia.org/wiki/Standard_normal_table, we need 4.00 sigma
 // (standard deviation) to cover the probability area of 99.995%. In another
 // word, for a sample with size "n" probability "p" error-tolerance "k", we want
