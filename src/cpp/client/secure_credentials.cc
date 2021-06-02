@@ -106,7 +106,6 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
     const grpc::string& user_provided_audience) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
-
   return internal::WrapChannelCredentials(
       grpc_google_default_credentials_create(
           nullptr, user_provided_audience.empty()
