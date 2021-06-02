@@ -226,6 +226,11 @@ static void server_thread(void* arg) {
     gpr_log(GPR_ERROR, "Couldn't set server cipher list.");
     abort();
   }
+  if (!SSL_CTX_set_ecdh_auto(ctx, /*onoff=*/1)) {
+    ERR_print_errors_fp(stderr);
+    gpr_log(GPR_ERROR, "Couldn't set automatic curve selection.");
+    abort();
+  }
 
   // Register the ALPN selection callback.
   SSL_CTX_set_alpn_select_cb(ctx, alpn_select_cb, args->alpn_preferred);
