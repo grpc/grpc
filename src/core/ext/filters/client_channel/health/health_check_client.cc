@@ -266,16 +266,11 @@ HealthCheckClient::CallState::~CallState() {
       context_[i].destroy(context_[i].value);
     }
   }
-  // Unset the call combiner cancellation closure.  This has the
-  // effect of scheduling the previously set cancellation closure, if
-  // any, so that it can release any internal references it may be
-  // holding to the call stack.
-  call_combiner_.SetNotifyOnCancel(nullptr);
   arena_->Destroy();
 }
 
 void HealthCheckClient::CallState::Orphan() {
-  call_combiner_.Cancel(GRPC_ERROR_CANCELLED);
+  call_->PreCancel(GRPC_ERROR_CANCELLED);
   Cancel();
 }
 

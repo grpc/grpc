@@ -345,6 +345,10 @@ struct Fixture {
   const uint32_t flags = kFlags;
 };
 
+static void PreCancelCallNoOp(grpc_call_element* /*elem*/, grpc_error* error) {
+  GRPC_ERROR_UNREF(error);
+}
+
 namespace phony_filter {
 
 static void StartTransportStreamOp(grpc_call_element* /*elem*/,
@@ -381,6 +385,7 @@ static const grpc_channel_filter phony_filter = {StartTransportStreamOp,
                                                  InitCallElem,
                                                  SetPollsetOrPollsetSet,
                                                  DestroyCallElem,
+                                                 PreCancelCallNoOp,
                                                  0,
                                                  InitChannelElem,
                                                  DestroyChannelElem,
@@ -671,17 +676,12 @@ void GetChannelInfo(grpc_channel_element* /*elem*/,
                     const grpc_channel_info* /*channel_info*/) {}
 
 static const grpc_channel_filter isolated_call_filter = {
-    StartTransportStreamOp,
-    StartTransportOp,
-    sizeof(call_data),
-    InitCallElem,
-    SetPollsetOrPollsetSet,
-    DestroyCallElem,
-    0,
-    InitChannelElem,
-    DestroyChannelElem,
-    GetChannelInfo,
-    "isolated_call_filter"};
+    StartTransportStreamOp, StartTransportOp,
+    sizeof(call_data),      InitCallElem,
+    SetPollsetOrPollsetSet, DestroyCallElem,
+    PreCancelCallNoOp,      0,
+    InitChannelElem,        DestroyChannelElem,
+    GetChannelInfo,         "isolated_call_filter"};
 }  // namespace isolated_call_filter
 
 class IsolatedCallFixture : public TrackCounters {

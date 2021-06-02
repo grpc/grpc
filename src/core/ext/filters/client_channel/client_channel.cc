@@ -102,6 +102,7 @@ class ClientChannel::CallData {
                       grpc_closure* then_schedule_closure);
   static void StartTransportStreamOpBatch(
       grpc_call_element* elem, grpc_transport_stream_op_batch* batch);
+  static void PreCancel(grpc_call_element* elem, grpc_error_handle error);
   static void SetPollent(grpc_call_element* elem, grpc_polling_entity* pollent);
 
   // Invoked by channel for queued calls when name resolution is completed.
@@ -119,8 +120,6 @@ class ClientChannel::CallData {
   void AsyncResolutionDone(grpc_call_element* elem, grpc_error_handle error);
 
  private:
-  class ResolverQueuedCallCanceller;
-
   CallData(grpc_call_element* elem, const ClientChannel& chand,
            const grpc_call_element_args& args);
   ~CallData();
@@ -193,7 +192,6 @@ class ClientChannel::CallData {
   gpr_cycle_counter call_start_time_;
   grpc_millis deadline_;
   Arena* arena_;
-  grpc_call_stack* owning_call_;
   CallCombiner* call_combiner_;
   grpc_call_context_element* call_context_;
 
@@ -208,8 +206,6 @@ class ClientChannel::CallData {
       ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = false;
   ClientChannel::ResolverQueuedCall resolver_queued_call_
       ABSL_GUARDED_BY(&ClientChannel::resolution_mu_);
-  ResolverQueuedCallCanceller* resolver_call_canceller_
-      ABSL_GUARDED_BY(&ClientChannel::resolution_mu_) = nullptr;
 
   std::function<void()> on_call_committed_;
 
@@ -218,6 +214,21 @@ class ClientChannel::CallData {
 
   RefCountedPtr<DynamicFilters> dynamic_filters_;
   RefCountedPtr<DynamicFilters::Call> dynamic_call_;
+
+  // Mutex guarding dynamic call creation.
+  //
+  // Note that dynamic_call_ itself is not guarded by this mutex, because we
+  // only need to guard the *creation* of the dynamic call.  If PreCancel()
+  // runs before dynamic_call_ is set, then dynamic_call_pre_cancelled_ will
+  // be true, in which case dynamic_call_ will not be created; if PreCancel()
+  // runs after dynamic_call_ is set, it will propagate the pre-cancellation
+  // down to dynamic_call_.
+  //
+  // This mutex should not cause contention *except* when a cancellation
+  // is occurring.
+  Mutex dynamic_call_creation_mu_;
+  bool dynamic_call_pre_cancelled_ ABSL_GUARDED_BY(dynamic_call_creation_mu_) =
+      false;
 
   // Batches are added to this list when received from above.
   // They are removed when we are done handling the batch (i.e., when
@@ -241,6 +252,7 @@ const grpc_channel_filter ClientChannel::kFilterVtable = {
     ClientChannel::CallData::Init,
     ClientChannel::CallData::SetPollent,
     ClientChannel::CallData::Destroy,
+    ClientChannel::CallData::PreCancel,
     sizeof(ClientChannel),
     ClientChannel::Init,
     ClientChannel::Destroy,
@@ -340,6 +352,11 @@ class DynamicTerminationFilter::CallData {
     calld->lb_call_->StartTransportStreamOpBatch(batch);
   }
 
+  static void PreCancel(grpc_call_element* elem, grpc_error_handle error) {
+    auto* calld = static_cast<CallData*>(elem->call_data);
+    calld->lb_call_->PreCancel(error);
+  }
+
   static void SetPollent(grpc_call_element* elem,
                          grpc_polling_entity* pollent) {
     auto* calld = static_cast<CallData*>(elem->call_data);
@@ -389,6 +406,7 @@ const grpc_channel_filter DynamicTerminationFilter::kFilterVtable = {
     DynamicTerminationFilter::CallData::Init,
     DynamicTerminationFilter::CallData::SetPollent,
     DynamicTerminationFilter::CallData::Destroy,
+    DynamicTerminationFilter::CallData::PreCancel,
     sizeof(DynamicTerminationFilter),
     DynamicTerminationFilter::Init,
     DynamicTerminationFilter::Destroy,
@@ -1872,7 +1890,6 @@ ClientChannel::CallData::CallData(grpc_call_element* elem,
       call_start_time_(args.start_time),
       deadline_(args.deadline),
       arena_(args.arena),
-      owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       call_context_(args.context) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -1908,6 +1925,41 @@ void ClientChannel::CallData::Destroy(
   } else {
     // TODO(yashkt) : This can potentially be a Closure::Run
     ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
+  }
+}
+
+void ClientChannel::CallData::PreCancel(grpc_call_element* elem,
+                                        grpc_error_handle error) {
+  auto* calld = static_cast<CallData*>(elem->call_data);
+  auto* chand = static_cast<ClientChannel*>(elem->channel_data);
+  // Check if we're queued pending a resolver result.
+  {
+    MutexLock lock(&chand->resolution_mu_);
+    if (calld->queued_pending_resolver_result_) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p calld=%p: cancelling resolver queued pick: %s", chand,
+                calld, grpc_error_std_string(error).c_str());
+      }
+      // Remove pick from list of queued picks.
+      calld->MaybeRemoveCallFromResolverQueuedCallsLocked(elem);
+      // Fail pending batches on the call.
+      calld->PendingBatchesFail(elem, error,
+                                YieldCallCombinerIfPendingBatchesFound);
+      return;
+    }
+  }
+  // Not pending resolver result, so check if we have a dynamic call.
+  bool dynamic_call_exists = false;
+  {
+    MutexLock lock(&calld->dynamic_call_creation_mu_);
+    calld->dynamic_call_pre_cancelled_ = true;
+    if (calld->dynamic_call_ != nullptr) dynamic_call_exists = true;
+  }
+  if (dynamic_call_exists) {
+    calld->dynamic_call_->PreCancel(error);
+  } else {
+    GRPC_ERROR_UNREF(error);
   }
 }
 
@@ -2133,48 +2185,6 @@ void ClientChannel::CallData::PendingBatchesResume(grpc_call_element* elem) {
 // name resolution
 //
 
-// A class to handle the call combiner cancellation callback for a
-// queued pick.
-class ClientChannel::CallData::ResolverQueuedCallCanceller {
- public:
-  explicit ResolverQueuedCallCanceller(grpc_call_element* elem) : elem_(elem) {
-    auto* calld = static_cast<CallData*>(elem->call_data);
-    GRPC_CALL_STACK_REF(calld->owning_call_, "ResolverQueuedCallCanceller");
-    GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this,
-                      grpc_schedule_on_exec_ctx);
-    calld->call_combiner_->SetNotifyOnCancel(&closure_);
-  }
-
- private:
-  static void CancelLocked(void* arg, grpc_error_handle error) {
-    auto* self = static_cast<ResolverQueuedCallCanceller*>(arg);
-    auto* chand = static_cast<ClientChannel*>(self->elem_->channel_data);
-    auto* calld = static_cast<CallData*>(self->elem_->call_data);
-    {
-      MutexLock lock(&chand->resolution_mu_);
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-        gpr_log(GPR_INFO,
-                "chand=%p calld=%p: cancelling resolver queued pick: "
-                "error=%s self=%p calld->resolver_pick_canceller=%p",
-                chand, calld, grpc_error_std_string(error).c_str(), self,
-                calld->resolver_call_canceller_);
-      }
-      if (calld->resolver_call_canceller_ == self && error != GRPC_ERROR_NONE) {
-        // Remove pick from list of queued picks.
-        calld->MaybeRemoveCallFromResolverQueuedCallsLocked(self->elem_);
-        // Fail pending batches on the call.
-        calld->PendingBatchesFail(self->elem_, GRPC_ERROR_REF(error),
-                                  YieldCallCombinerIfPendingBatchesFound);
-      }
-    }
-    GRPC_CALL_STACK_UNREF(calld->owning_call_, "ResolvingQueuedCallCanceller");
-    delete self;
-  }
-
-  grpc_call_element* elem_;
-  grpc_closure closure_;
-};
-
 void ClientChannel::CallData::MaybeRemoveCallFromResolverQueuedCallsLocked(
     grpc_call_element* elem) {
   if (!queued_pending_resolver_result_) return;
@@ -2186,8 +2196,6 @@ void ClientChannel::CallData::MaybeRemoveCallFromResolverQueuedCallsLocked(
   }
   chand->RemoveResolverQueuedCall(&resolver_queued_call_, pollent_);
   queued_pending_resolver_result_ = false;
-  // Lame the call combiner canceller.
-  resolver_call_canceller_ = nullptr;
 }
 
 void ClientChannel::CallData::MaybeAddCallToResolverQueuedCallsLocked(
@@ -2201,8 +2209,6 @@ void ClientChannel::CallData::MaybeAddCallToResolverQueuedCallsLocked(
   queued_pending_resolver_result_ = true;
   resolver_queued_call_.elem = elem;
   chand->AddResolverQueuedCall(&resolver_queued_call_, pollent_);
-  // Register call combiner cancellation callback.
-  resolver_call_canceller_ = new ResolverQueuedCallCanceller(elem);
 }
 
 grpc_error_handle ClientChannel::CallData::ApplyServiceConfigToCallLocked(
@@ -2410,7 +2416,17 @@ void ClientChannel::CallData::CreateDynamicCall(grpc_call_element* elem) {
         "chand=%p calld=%p: creating dynamic call stack on channel_stack=%p",
         chand, this, channel_stack);
   }
-  dynamic_call_ = channel_stack->CreateCall(std::move(args), &error);
+  {
+    MutexLock lock(&dynamic_call_creation_mu_);
+    if (dynamic_call_pre_cancelled_) {
+      // If the call was already pre-cancelled, then yield the call
+      // combiner without doing anything.  Any pending batches will be
+      // failed when we see the cancel_stream op.
+      GRPC_CALL_COMBINER_STOP(call_combiner_, "call pre_cancel seen");
+      return;
+    }
+    dynamic_call_ = channel_stack->CreateCall(std::move(args), &error);
+  }
   if (error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
@@ -2541,7 +2557,6 @@ ClientChannel::LoadBalancedCall::LoadBalancedCall(
       call_start_time_(args.start_time),
       deadline_(args.deadline),
       arena_(args.arena),
-      owning_call_(args.call_stack),
       call_combiner_(args.call_combiner),
       call_context_(args.context),
       pollent_(pollent),
@@ -2759,6 +2774,36 @@ void ClientChannel::LoadBalancedCall::StartTransportStreamOpBatch(
   }
 }
 
+void ClientChannel::LoadBalancedCall::PreCancel(grpc_error_handle error) {
+  // Check if we're queued pending an LB pick.
+  {
+    MutexLock lock(&chand_->data_plane_mu_);
+    if (queued_pending_lb_pick_) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+        gpr_log(GPR_INFO, "chand=%p lb_call=%p: cancelling queued pick: %s",
+                chand_, this, grpc_error_std_string(error).c_str());
+      }
+      // Remove pick from list of queued picks.
+      MaybeRemoveCallFromLbQueuedCallsLocked();
+      // Fail pending batches on the call.
+      PendingBatchesFail(error, YieldCallCombinerIfPendingBatchesFound);
+      return;
+    }
+  }
+  // Check if we have a subchannel call.
+  bool subchannel_call_exists = false;
+  {
+    MutexLock lock(&subchannel_call_creation_mu_);
+    subchannel_call_pre_cancelled_ = true;
+    if (subchannel_call_ != nullptr) subchannel_call_exists = true;
+  }
+  if (subchannel_call_exists) {
+    subchannel_call_->PreCancel(error);
+  } else {
+    GRPC_ERROR_UNREF(error);
+  }
+}
+
 void ClientChannel::LoadBalancedCall::
     RecvTrailingMetadataReadyForLoadBalancingPolicy(void* arg,
                                                     grpc_error_handle error) {
@@ -2825,7 +2870,18 @@ void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
       // need to use a separate call context for each subchannel call.
       call_context_, call_combiner_};
   grpc_error_handle error = GRPC_ERROR_NONE;
-  subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
+  {
+    MutexLock lock(&subchannel_call_creation_mu_);
+    // If we were already pre-cancelled, yield the call combiner to
+    // allow the cancel_stream op to be started, and then return.  Any
+    // pending batches will be failed with the right error when the
+    // cancel_stream op comes down.
+    if (subchannel_call_pre_cancelled_) {
+      GRPC_CALL_COMBINER_STOP(call_combiner_, "LoadBalancedCall pre-cancelled");
+      return;
+    }
+    subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO,
             "chand=%p lb_call=%p: create subchannel_call=%p: error=%s", chand_,
@@ -2842,52 +2898,6 @@ void ClientChannel::LoadBalancedCall::CreateSubchannelCall() {
   }
 }
 
-// A class to handle the call combiner cancellation callback for a
-// queued pick.
-// TODO(roth): When we implement hedging support, we won't be able to
-// register a call combiner cancellation closure for each LB pick,
-// because there may be multiple LB picks happening in parallel.
-// Instead, we will probably need to maintain a list in the CallData
-// object of pending LB picks to be cancelled when the closure runs.
-class ClientChannel::LoadBalancedCall::LbQueuedCallCanceller {
- public:
-  explicit LbQueuedCallCanceller(RefCountedPtr<LoadBalancedCall> lb_call)
-      : lb_call_(std::move(lb_call)) {
-    GRPC_CALL_STACK_REF(lb_call_->owning_call_, "LbQueuedCallCanceller");
-    GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this, nullptr);
-    lb_call_->call_combiner_->SetNotifyOnCancel(&closure_);
-  }
-
- private:
-  static void CancelLocked(void* arg, grpc_error_handle error) {
-    auto* self = static_cast<LbQueuedCallCanceller*>(arg);
-    auto* lb_call = self->lb_call_.get();
-    auto* chand = lb_call->chand_;
-    {
-      MutexLock lock(&chand->data_plane_mu_);
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-        gpr_log(GPR_INFO,
-                "chand=%p lb_call=%p: cancelling queued pick: "
-                "error=%s self=%p calld->pick_canceller=%p",
-                chand, lb_call, grpc_error_std_string(error).c_str(), self,
-                lb_call->lb_call_canceller_);
-      }
-      if (lb_call->lb_call_canceller_ == self && error != GRPC_ERROR_NONE) {
-        // Remove pick from list of queued picks.
-        lb_call->MaybeRemoveCallFromLbQueuedCallsLocked();
-        // Fail pending batches on the call.
-        lb_call->PendingBatchesFail(GRPC_ERROR_REF(error),
-                                    YieldCallCombinerIfPendingBatchesFound);
-      }
-    }
-    GRPC_CALL_STACK_UNREF(lb_call->owning_call_, "LbQueuedCallCanceller");
-    delete self;
-  }
-
-  RefCountedPtr<LoadBalancedCall> lb_call_;
-  grpc_closure closure_;
-};
-
 void ClientChannel::LoadBalancedCall::MaybeRemoveCallFromLbQueuedCallsLocked() {
   if (!queued_pending_lb_pick_) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
@@ -2896,8 +2906,6 @@ void ClientChannel::LoadBalancedCall::MaybeRemoveCallFromLbQueuedCallsLocked() {
   }
   chand_->RemoveLbQueuedCall(&queued_call_, pollent_);
   queued_pending_lb_pick_ = false;
-  // Lame the call combiner canceller.
-  lb_call_canceller_ = nullptr;
 }
 
 void ClientChannel::LoadBalancedCall::MaybeAddCallToLbQueuedCallsLocked() {
@@ -2909,8 +2917,6 @@ void ClientChannel::LoadBalancedCall::MaybeAddCallToLbQueuedCallsLocked() {
   queued_pending_lb_pick_ = true;
   queued_call_.lb_call = this;
   chand_->AddLbQueuedCall(&queued_call_, pollent_);
-  // Register call combiner cancellation callback.
-  lb_call_canceller_ = new LbQueuedCallCanceller(Ref());
 }
 
 void ClientChannel::LoadBalancedCall::AsyncPickDone(grpc_error_handle error) {

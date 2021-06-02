@@ -30,6 +30,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel_init.h"
 
 namespace grpc_core {
@@ -49,28 +50,6 @@ class TimerState {
   void Cancel() { grpc_timer_cancel(&timer_); }
 
  private:
-  // The on_complete callback used when sending a cancel_error batch down the
-  // filter stack.  Yields the call combiner when the batch returns.
-  static void YieldCallCombiner(void* arg, grpc_error_handle /*ignored*/) {
-    TimerState* self = static_cast<TimerState*>(arg);
-    grpc_deadline_state* deadline_state =
-        static_cast<grpc_deadline_state*>(self->elem_->call_data);
-    GRPC_CALL_COMBINER_STOP(deadline_state->call_combiner,
-                            "got on_complete from cancel_stream batch");
-    GRPC_CALL_STACK_UNREF(deadline_state->call_stack, "DeadlineTimerState");
-  }
-
-  // This is called via the call combiner, so access to deadline_state is
-  // synchronized.
-  static void SendCancelOpInCallCombiner(void* arg, grpc_error_handle error) {
-    TimerState* self = static_cast<TimerState*>(arg);
-    grpc_transport_stream_op_batch* batch = grpc_make_transport_stream_op(
-        GRPC_CLOSURE_INIT(&self->closure_, YieldCallCombiner, self, nullptr));
-    batch->cancel_stream = true;
-    batch->payload->cancel_stream.cancel_error = GRPC_ERROR_REF(error);
-    self->elem_->filter->start_transport_stream_op_batch(self->elem_, batch);
-  }
-
   // Timer callback.
   static void TimerCallback(void* arg, grpc_error_handle error) {
     TimerState* self = static_cast<TimerState*>(arg);
@@ -80,15 +59,10 @@ class TimerState {
       error = grpc_error_set_int(
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Deadline Exceeded"),
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_DEADLINE_EXCEEDED);
-      deadline_state->call_combiner->Cancel(GRPC_ERROR_REF(error));
-      GRPC_CLOSURE_INIT(&self->closure_, SendCancelOpInCallCombiner, self,
-                        nullptr);
-      GRPC_CALL_COMBINER_START(deadline_state->call_combiner, &self->closure_,
-                               error,
-                               "deadline exceeded -- sending cancel_stream op");
-    } else {
-      GRPC_CALL_STACK_UNREF(deadline_state->call_stack, "DeadlineTimerState");
+      grpc_call* call = grpc_call_from_call_stack(deadline_state->call_stack);
+      grpc_call_cancel_with_error_internal(call, error);
     }
+    GRPC_CALL_STACK_UNREF(deadline_state->call_stack, "DeadlineTimerState");
   }
 
   // NOTE: This object's dtor is never called, so do not add any data
@@ -343,6 +317,7 @@ const grpc_channel_filter grpc_client_deadline_filter = {
     deadline_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     deadline_destroy_call_elem,
+    grpc_call_pre_cancel_next_filter,
     0,  // sizeof(channel_data)
     deadline_init_channel_elem,
     deadline_destroy_channel_elem,
@@ -357,6 +332,7 @@ const grpc_channel_filter grpc_server_deadline_filter = {
     deadline_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     deadline_destroy_call_elem,
+    grpc_call_pre_cancel_next_filter,
     0,  // sizeof(channel_data)
     deadline_init_channel_elem,
     deadline_destroy_channel_elem,

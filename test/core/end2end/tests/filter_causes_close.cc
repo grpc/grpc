@@ -241,6 +241,7 @@ static const grpc_channel_filter test_filter = {
     init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
     destroy_call_elem,
+    grpc_call_pre_cancel_next_filter,
     sizeof(channel_data),
     init_channel_elem,
     destroy_channel_elem,
