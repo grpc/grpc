@@ -22,6 +22,7 @@
 
 #include <limits.h>
 #include <string.h>
+#include <iostream>
 
 /* TODO(jboeuf): refactor inet_ntop into a portability header. */
 /* Note: for whomever reads this and tries to refactor this, this
@@ -1405,6 +1406,11 @@ static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(
     }
   }
   *bytes_size = static_cast<size_t>(bytes_read_from_ssl);
+  std::cout << "Bytes to send to peer: ";
+  for (size_t i = 0; i < *bytes_size; i++) {
+    std::cout << std::hex << static_cast<int>(bytes[i]) << std::endl;
+  }
+  std::cout << "...end..." << std::endl;
   return BIO_pending(impl->network_io) == 0 ? TSI_OK : TSI_INCOMPLETE_DATA;
 }
 
