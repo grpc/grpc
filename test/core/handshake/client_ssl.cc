@@ -49,7 +49,7 @@
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
 
-grpc_core::TraceFlag tsi_tracing_enabled(false, "tsi");
+grpc_core::TraceFlag client_ssl_tsi_tracing_enabled(false, "tsi");
 
 class SslLibraryInfo {
  public:
@@ -163,7 +163,7 @@ static int alpn_select_cb(SSL* /*ssl*/, const uint8_t** out, uint8_t* out_len,
 
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
                                const char* msg) {
-  if ((where & flag) && GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
+  if ((where & flag) && GRPC_TRACE_FLAG_ENABLED(client_ssl_tsi_tracing_enabled)) {
     gpr_log(GPR_INFO, "%20.20s - %30.30s  - %5.10s", msg,
             SSL_state_string_long(ssl), SSL_state_string(ssl));
   }
