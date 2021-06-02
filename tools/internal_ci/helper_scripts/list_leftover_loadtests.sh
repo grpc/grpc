@@ -22,7 +22,7 @@ kubectl get pods --no-headers -o jsonpath='{range .items[*]}{.metadata.ownerRefe
     | grep Running \
     | cut -f1 -d' ' \
     | sort -u \
-    | xargs -r kubectl get loadtest --no-headers -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.status.state}{" "}{.metadata.annotations.pool}{" "}{.metadata.annotations.scenario}{"\n"}{end}' \
-    | grep Errored
+    | xargs -r kubectl get loadtest --no-headers -o jsonpath='{range .items[*]}{.metadata.name}{" "}{.metadata.annotations.pool}{" "}{.metadata.annotations.scenario}{" "}{.status}{"\n"}{end}' \
+    | grep '"state":"Errored"' || true
 
 echo "END Listing leftover tests."

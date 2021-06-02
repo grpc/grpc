@@ -19,11 +19,15 @@
 #ifndef GRPC_CORE_LIB_IOMGR_POLLSET_UV_H
 #define GRPC_CORE_LIB_IOMGR_POLLSET_UV_H
 
+#include <grpc/support/port_platform.h>
+
+#include "src/core/lib/iomgr/error.h"
+
 extern int grpc_pollset_work_run_loop;
 
 typedef struct grpc_custom_poller_vtable {
   void (*init)(void);
-  void (*run_loop)(int blocking);
+  grpc_error* (*run_loop)(int blocking);
 } grpc_custom_poller_vtable;
 
 void grpc_custom_pollset_global_init(grpc_custom_poller_vtable* vtable);
