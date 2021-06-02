@@ -131,8 +131,8 @@ class ContextVarsPropagationTest(unittest.TestCase):
 
             def _run_on_thread(exception_queue):
                 try:
-                    with grpc.secure_channel(
-                            target, composite_credentials) as channel:
+                    with grpc.secure_channel(target,
+                                             composite_credentials) as channel:
                         stub = channel.unary_unary(_UNARY_UNARY)
                         wait_group.done()
                         wait_group.wait()
