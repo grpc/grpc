@@ -20,12 +20,19 @@ from absl import flags
 from absl.testing import absltest
 
 from framework import xds_url_map_testcase
-from framework.xds_url_map_testcase import HostRule, PathMatcher, GcpResourceManager, DumpedXdsConfig, RpcTypeUnaryCall, RpcTypeEmptyCall
-from framework.test_app.client_app import XdsTestClient
+from framework.test_app import client_app
 from google.protobuf import json_format
 
+# Type aliases
+HostRule = xds_url_map_testcase.HostRule
+PathMatcher = xds_url_map_testcase.PathMatcher
+GcpResourceManager = xds_url_map_testcase.GcpResourceManager
+DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
+RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
+RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
+XdsTestClient = client_app.XdsTestClient
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 flags.adopt_module_key_flags(xds_url_map_testcase)
 
 _NUM_RPCS = 150
@@ -213,8 +220,11 @@ class TestCaseInsensitiveMatch(xds_url_map_testcase.XdsUrlMapTestCase):
 
 
 def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
-    return xds_url_map_testcase.load_tests(loader, sys.modules[__name__])
+    return xds_url_map_testcase.load_tests(
+        loader,
+        sys.modules[__name__],
+        module_name_override='path_matching_test')
 
 
 if __name__ == '__main__':
-    absltest.main(verbosity=2, failfast=True)
+    absltest.main(failfast=True)

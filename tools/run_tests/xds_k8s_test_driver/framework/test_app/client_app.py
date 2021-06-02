@@ -52,14 +52,12 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
 
     def __init__(self,
                  *,
-                 name: str,
                  ip: str,
                  rpc_port: int,
                  server_target: str,
                  rpc_host: Optional[str] = None,
                  maintenance_port: Optional[int] = None):
         super().__init__(rpc_host=(rpc_host or ip))
-        self.name = name
         self.ip = ip
         self.rpc_port = rpc_port
         self.server_target = server_target
@@ -98,6 +96,15 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
         """
         return self.load_balancer_stats.get_client_stats(
             num_rpcs=num_rpcs, timeout_sec=timeout_sec)
+
+    def get_load_balancer_accumulated_stats(
+        self,
+        *,
+        timeout_sec: Optional[int] = None,
+    ) -> grpc_testing.LoadBalancerAccumulatedStatsResponse:
+        """Shortcut to LoadBalancerStatsServiceClient.get_client_accumulated_stats()"""
+        return self.load_balancer_stats.get_client_accumulated_stats(
+            timeout_sec=timeout_sec)
 
     def wait_for_active_server_channel(self) -> _ChannelzChannel:
         """Wait for the channel to the server to transition to READY.
@@ -210,9 +217,11 @@ class XdsTestClient(framework.rpc.grpc.GrpcApp):
                              rpc_types: Iterable[str],
                              metadata: Optional[Iterable[Tuple[str, str,
                                                                str]]] = None,
+                             app_timeout: Optional[int] = None,
                              **kwargs) -> None:
         self.update_client_config_client.configure(rpc_types=rpc_types,
                                                    metadata=metadata,
+                                                   app_timeout=app_timeout,
                                                    **kwargs)
 
 
@@ -305,8 +314,7 @@ class KubernetesClientRunner(base_runner.KubernetesBaseRunner):
                 pod, remote_port=self.stats_port)
             rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
 
-        return XdsTestClient(name=pod.metadata.name,
-                             ip=pod_ip,
+        return XdsTestClient(ip=pod_ip,
                              rpc_port=self.stats_port,
                              server_target=server_target,
                              rpc_host=rpc_host)

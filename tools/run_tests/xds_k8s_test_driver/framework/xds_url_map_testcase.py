@@ -35,12 +35,11 @@ from absl import logging
 from absl.testing import absltest
 from google.protobuf import json_format
 import googleapiclient
-from kubernetes.utils.create_from_yaml import FailToCreateError
 
-logging.set_verbosity(logging.DEBUG)
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
+QPS = flags.DEFINE_integer('qps', default=25, help='The QPS client is sending')
 _STRATEGY = flags.DEFINE_enum('strategy',
                               default='create',
                               enum_values=['create', 'keep', 'reuse'],
@@ -83,19 +82,7 @@ def _ensure_k8s_namespace_removed(namespace: k8s.KubernetesNamespace):
     except Exception as e:
         # Maybe the namespace doesn't exist at all, that's okay
         logging.info('Namespace deletion failed with %s: %s', type(e), e)
-    # The namespace enters Terminating state, which lasts minutes.
-    deadline = time.time() + _K8S_NAMESPACE_DELETE_DEADLINE_SEC
-    while time.time() < deadline:
-        if namespace.get() is None:
-            break
-        logging.info('K8s namespace "%s" still exists',
-                     xds_flags.NAMESPACE.value)
-        time.sleep(_K8S_NAMESPACE_DELETE_CHECK_INTERVAL_SEC)
-    # Deletion failed with timeout
-    if time.time() >= deadline:
-        raise RuntimeError(
-            'failed to delete K8s namespace "%s" within %s seconds',
-            xds_flags.NAMESPACE.value, _K8S_NAMESPACE_DELETE_DEADLINE_SEC)
+    namespace.wait_for_namespace_deleted()
     # Deletion succeed!
     logging.info('K8s namespace "%s" deleted', xds_flags.NAMESPACE.value)
 
@@ -161,7 +148,15 @@ class GcpResourceManager:
         return f'https://www.googleapis.com/compute/v1/projects/{xds_flags.PROJECT.value}/global/backendServices/{xds_flags.NAMESPACE.value}-{traffic_director.TrafficDirectorManager.ALTERNATIVE_BACKEND_SERVICE_NAME}'
 
     def _create_reusable_resources(self) -> None:
-        """The resources reuseable across test cases and multiple runs."""
+        """Create the reuseable resources.
+        
+        The GCP resources including:
+        - 2 K8s deployment (backends, alternative backends)
+        - Full suite of TD configuration
+        - Merged gigantic urlMap
+
+        These resources is intended to be used across test cases and multiple runs.
+        """
         # Firewall
         if xds_flags.ENSURE_FIREWALL.value:
             self.td.create_firewall_rule(
@@ -218,6 +213,7 @@ class GcpResourceManager:
         self.td.wait_for_alternative_backends_healthy_status()
 
     def ensure_setup(self):
+        """A thread-safe method to ensure the GCP resources are up."""
         with self.lock:
             self.ref_count += 1
             if self.setup_finished:
@@ -229,6 +225,7 @@ class GcpResourceManager:
             self.setup_finished = True
 
     def maybe_tear_down(self):
+        """A thread-safe method to remove resources when refcount reaches 0."""
         with self.lock:
             self.ref_count -= 1
             if self.ref_count == 0:
@@ -427,7 +424,7 @@ class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
         cls.test_client = cls.resource.test_client_runner.run(
             server_target=f'xds:///{cls.hostname()}',
             rpc='UnaryCall,EmptyCall',
-            qps=25,
+            qps=QPS.value,
             print_response=True)
 
     @classmethod
@@ -446,7 +443,7 @@ class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
             result = self.configure_and_send(
                 self.test_client,
                 rpc_types=[RpcTypeUnaryCall, RpcTypeEmptyCall],
-                num_rpcs=25)
+                num_rpcs=QPS.value)
             if result.num_oks:
                 break
         if time.time() >= deadline:
@@ -489,8 +486,11 @@ class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
                            rpc_types: Iterable[str],
                            metadata: Optional[Iterable[Tuple[str, str,
                                                              str]]] = None,
+                           app_timeout: Optional[int] = None,
                            num_rpcs: int) -> RpcDistributionStats:
-        test_client.update_client_config(rpc_types=rpc_types, metadata=metadata)
+        test_client.update_client_config(rpc_types=rpc_types,
+                                         metadata=metadata,
+                                         app_timeout=app_timeout)
         json_lb_stats = json_format.MessageToDict(
             test_client.get_load_balancer_stats(num_rpcs=num_rpcs))
         logging.info(
@@ -541,8 +541,10 @@ class UrlMapChangeAggregator:
         self._map["pathMatchers"].append(path_matcher)
 
 
-def load_tests(loader: absltest.TestLoader,
-               *modules: 'Module') -> unittest.TestSuite:
+def load_tests(
+        loader: absltest.TestLoader,
+        *modules: 'Module',
+        module_name_override: Optional[str] = None) -> unittest.TestSuite:
     """The implementation of the load_tests protocol of unittest.
 
     TODO(lidiz) parallelize the test case run. After the resource creation, each
@@ -555,17 +557,24 @@ def load_tests(loader: absltest.TestLoader,
           case classes, then build TestSuite instances.
         modules: A list of Python modules for this function to search for test
           case classes.
+        module_name_override: A temporary solution to get consistent module name
+          instead of "__main__" if a test is invoked directly.
 
     Returns:
         A TestSuite instances which contains all test cases, and controls how
         they will be executed.
     """
+    # Prepares global variables for merging resources
     global _gcp_resource_manager
     global _url_map_change_aggregator
     if _gcp_resource_manager is None:
         _gcp_resource_manager = GcpResourceManager()
     if _url_map_change_aggregator is None:
         _url_map_change_aggregator = UrlMapChangeAggregator()
+    # Validates input arguments
+    if module_name_override is not None:
+        assert len(modules) == 1
+    # Crafting test cases
     suite = unittest.TestSuite()
     for module in modules:
         for key, value in inspect.getmembers(module):
@@ -576,14 +585,20 @@ def load_tests(loader: absltest.TestLoader,
             if not isinstance(test_class, type):
                 # This is not a class
                 continue
+            if module_name_override is not None:
+                module_name = module_name_override
+            else:
+                module_name = module.__name__
+            # Prepares global states.
+            # NOTE(lidiz) We want this to happen before skipping tests, so the
+            # created resources can be reused widely.
+            test_class.set_module_name(module_name)
+            _url_map_change_aggregator.apply_change(test_class)
             # Skip unwanted test cases if test filter is given
             if _TEST_FILTER.value != '':
-                if _TEST_FILTER.value not in (module.__name__ + '.' +
+                if _TEST_FILTER.value not in (module_name + '.' +
                                               test_class.__name__):
                     continue
-            # Prepares global states
-            test_class.set_module_name(module.__name__)
-            _url_map_change_aggregator.apply_change(test_class)
             # Load tests from the given test case class
             tests = loader.loadTestsFromTestCase(test_class)
             suite.addTests(tests)

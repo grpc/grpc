@@ -40,7 +40,6 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
 
     def __init__(self,
                  *,
-                 name: str,
                  ip: str,
                  rpc_port: int,
                  maintenance_port: Optional[int] = None,
@@ -50,7 +49,6 @@ class XdsTestServer(framework.rpc.grpc.GrpcApp):
                  xds_port: Optional[int] = None,
                  rpc_host: Optional[str] = None):
         super().__init__(rpc_host=(rpc_host or ip))
-        self.name = name
         self.ip = ip
         self.rpc_port = rpc_port
         self.maintenance_port = maintenance_port or rpc_port
@@ -268,8 +266,7 @@ class KubernetesServerRunner(base_runner.KubernetesBaseRunner):
                 pod, remote_port=maintenance_port)
             rpc_host = self.k8s_namespace.PORT_FORWARD_LOCAL_ADDRESS
 
-        return XdsTestServer(name=pod.metadata.name,
-                             ip=pod_ip,
+        return XdsTestServer(ip=pod_ip,
                              rpc_port=test_port,
                              maintenance_port=maintenance_port,
                              secure_mode=secure_mode,

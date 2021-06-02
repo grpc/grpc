@@ -359,8 +359,3 @@ class KubernetesNamespace:
         return (deployment is not None and
                 deployment.status.available_replicas is not None and
                 deployment.status.available_replicas >= count)
-
-    # TODO(lidiz) dump the client and server log after failed runs.
-    def fetch_pod_log(self, name) -> str:
-        logger.info('Fetching namespaced pod log for pod %s', name)
-        return self.api.core.read_namespaced_pod_log(name, self.name)

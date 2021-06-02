@@ -20,18 +20,21 @@ from typing import Optional, Iterable, Tuple
 
 import grpc
 
-from framework.rpc.grpc import GrpcClientHelper
+import framework.rpc
 from src.proto.grpc.testing import test_pb2_grpc
 from src.proto.grpc.testing import messages_pb2
 
 # Type aliases
 _LoadBalancerStatsRequest = messages_pb2.LoadBalancerStatsRequest
 LoadBalancerStatsResponse = messages_pb2.LoadBalancerStatsResponse
+_LoadBalancerAccumulatedStatsRequest = messages_pb2.LoadBalancerAccumulatedStatsRequest
+LoadBalancerAccumulatedStatsResponse = messages_pb2.LoadBalancerAccumulatedStatsResponse
 
 
-class LoadBalancerStatsServiceClient(GrpcClientHelper):
+class LoadBalancerStatsServiceClient(framework.rpc.grpc.GrpcClientHelper):
     stub: test_pb2_grpc.LoadBalancerStatsServiceStub
     STATS_PARTIAL_RESULTS_TIMEOUT_SEC = 1200
+    STATS_ACCUMULATED_RESULTS_TIMEOUT_SEC = 600
 
     def __init__(self, channel: grpc.Channel):
         super().__init__(channel, test_pb2_grpc.LoadBalancerStatsServiceStub)
@@ -52,11 +55,25 @@ class LoadBalancerStatsServiceClient(GrpcClientHelper):
                                              deadline_sec=timeout_sec,
                                              log_level=logging.INFO)
 
+    def get_client_accumulated_stats(
+        self,
+        *,
+        timeout_sec: Optional[int] = None
+    ) -> LoadBalancerAccumulatedStatsResponse:
+        if timeout_sec is None:
+            timeout_sec = self.STATS_ACCUMULATED_RESULTS_TIMEOUT_SEC
 
-class XdsUpdateClientConfigureServiceClient(GrpcClientHelper):
+        return self.call_unary_with_deadline(
+            rpc='GetClientAccumulatedStats',
+            req=_LoadBalancerAccumulatedStatsRequest(),
+            deadline_sec=timeout_sec,
+            log_level=logging.INFO)
+
+
+class XdsUpdateClientConfigureServiceClient(framework.rpc.grpc.GrpcClientHelper
+                                           ):
     stub: test_pb2_grpc.XdsUpdateClientConfigureServiceStub
     CONFIGURE_TIMEOUT_SEC: int = 5
-    STATS_PARTIAL_RESULTS_TIMEOUT_SEC = 1200
 
     def __init__(self, channel: grpc.Channel):
         super().__init__(channel,
@@ -67,8 +84,9 @@ class XdsUpdateClientConfigureServiceClient(GrpcClientHelper):
         *,
         rpc_types: Iterable[str],
         metadata: Optional[Iterable[Tuple[str, str, str]]] = None,
+        app_timeout: Optional[int] = None,
         timeout_sec: int = CONFIGURE_TIMEOUT_SEC,
-    ) -> LoadBalancerStatsResponse:
+    ) -> None:
         request = messages_pb2.ClientConfigureRequest()
         for rpc_type in rpc_types:
             request.types.append(
@@ -82,7 +100,10 @@ class XdsUpdateClientConfigureServiceClient(GrpcClientHelper):
                         key=entry[1],
                         value=entry[2],
                     ))
-        return self.call_unary_with_deadline(rpc='Configure',
-                                             req=request,
-                                             deadline_sec=timeout_sec,
-                                             log_level=logging.INFO)
+        if app_timeout:
+            request.timeout_sec = app_timeout
+        # Configure's response is empty
+        self.call_unary_with_deadline(rpc='Configure',
+                                      req=request,
+                                      deadline_sec=timeout_sec,
+                                      log_level=logging.INFO)
