@@ -280,6 +280,8 @@ class EventEngine {
 
   virtual ~EventEngine() = default;
 
+  virtual bool IsWorkerThread() = 0;
+
   // TODO(hork): define return status codes
   /// Retrieves an instance of a DNSResolver.
   virtual absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver() = 0;

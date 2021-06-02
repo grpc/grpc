@@ -22,6 +22,7 @@
 #include "src/core/lib/iomgr/tcp_client.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/surface/init.h"
 
 extern grpc_tcp_client_vtable grpc_event_engine_tcp_client_vtable;
 extern grpc_tcp_server_vtable grpc_event_engine_tcp_server_vtable;
@@ -32,8 +33,6 @@ extern grpc_address_resolver_vtable grpc_event_engine_resolver_vtable;
 
 namespace {
 
-// The default EventEngine is lazily instantiated via
-// `grpc_event_engine::experimental::GetDefaultEventEngine()`
 void iomgr_platform_init(void) {}
 
 void iomgr_platform_flush(void) {
@@ -44,7 +43,9 @@ void iomgr_platform_shutdown(void) {}
 
 void iomgr_platform_shutdown_background_closure(void) {}
 
-bool iomgr_platform_is_any_background_poller_thread(void) { return false; }
+bool iomgr_platform_is_any_background_poller_thread(void) {
+  return g_event_engine->IsWorkerThread();
+}
 
 bool iomgr_platform_add_closure_to_background_poller(
     grpc_closure* /* closure */, grpc_error* /* error */) {
