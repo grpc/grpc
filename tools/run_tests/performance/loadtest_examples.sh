@@ -70,6 +70,9 @@ scenarios=(
     "ruby_protobuf_sync_streaming_ping_pong"
 )
 
+# Basic examples are intended to be runnable _as is_, so substitution keys
+# are stripped. Fields can be inserted manually following the pattern of the
+# prebuilt examples.
 basic_example() {
     local -r scenario="${1}"
     local -r outputdir="${2}"
@@ -86,6 +89,8 @@ basic_example() {
     echo "Created example: ${outputfile}"
 }
 
+# Prebuilt examples contain substitution keys, so must be processed before
+# running.
 prebuilt_example() {
     local -r scenario="${1}"
     local -r outputdir="${2}"
