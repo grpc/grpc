@@ -92,6 +92,7 @@ class ClientAsyncResponseReader;
 
 namespace testing {
 class InteropClientContextInspector;
+class ClientContextTestPeer;
 }  // namespace testing
 
 namespace internal {
@@ -205,7 +206,7 @@ class ClientContext {
   /// \return A newly constructed \a ClientContext instance based on \a
   /// server_context, with traits propagated (copied) according to \a options.
   static std::unique_ptr<ClientContext> FromServerContext(
-      const grpc::ServerContext& server_context,
+      const grpc::ServerContextBase& server_context,
       PropagationOptions options = PropagationOptions());
   static std::unique_ptr<ClientContext> FromCallbackServerContext(
       const grpc::CallbackServerContext& server_context,
@@ -423,6 +424,7 @@ class ClientContext {
   ClientContext& operator=(const ClientContext&);
 
   friend class ::grpc::testing::InteropClientContextInspector;
+  friend class ::grpc::testing::ClientContextTestPeer;
   friend class ::grpc::internal::CallOpClientRecvStatus;
   friend class ::grpc::internal::CallOpRecvInitialMetadata;
   friend class ::grpc::Channel;
@@ -464,12 +466,13 @@ class ClientContext {
                 const std::shared_ptr<::grpc::Channel>& channel);
 
   grpc::experimental::ClientRpcInfo* set_client_rpc_info(
-      const char* method, grpc::internal::RpcMethod::RpcType type,
-      grpc::ChannelInterface* channel,
+      const char* method, const char* suffix_for_stats,
+      grpc::internal::RpcMethod::RpcType type, grpc::ChannelInterface* channel,
       const std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>& creators,
       size_t interceptor_pos) {
-    rpc_info_ = grpc::experimental::ClientRpcInfo(this, type, method, channel);
+    rpc_info_ = grpc::experimental::ClientRpcInfo(this, type, method,
+                                                  suffix_for_stats, channel);
     rpc_info_.RegisterInterceptors(creators, interceptor_pos);
     return &rpc_info_;
   }

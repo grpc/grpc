@@ -22,7 +22,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  version = '1.38.0-dev'
+  version = '1.39.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
@@ -488,6 +488,8 @@ Pod::Spec.new do |s|
                       'src/core/ext/xds/xds_client_stats.h',
                       'src/core/ext/xds/xds_http_fault_filter.h',
                       'src/core/ext/xds/xds_http_filters.h',
+                      'src/core/lib/address_utils/parse_address.h',
+                      'src/core/lib/address_utils/sockaddr_utils.h',
                       'src/core/lib/avl/avl.h',
                       'src/core/lib/backoff/backoff.h',
                       'src/core/lib/channel/channel_args.h',
@@ -545,6 +547,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/ref_counted.h',
                       'src/core/lib/gprpp/ref_counted_ptr.h',
                       'src/core/lib/gprpp/stat.h',
+                      'src/core/lib/gprpp/status_helper.h',
                       'src/core/lib/gprpp/sync.h',
                       'src/core/lib/gprpp/thd.h',
                       'src/core/lib/gprpp/time_util.h',
@@ -584,8 +587,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/load_file.h',
                       'src/core/lib/iomgr/lockfree_event.h',
                       'src/core/lib/iomgr/nameser.h',
-                      'src/core/lib/iomgr/parse_address.h',
-                      'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                       'src/core/lib/iomgr/polling_entity.h',
                       'src/core/lib/iomgr/pollset.h',
                       'src/core/lib/iomgr/pollset_custom.h',
@@ -602,7 +603,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/sockaddr.h',
                       'src/core/lib/iomgr/sockaddr_custom.h',
                       'src/core/lib/iomgr/sockaddr_posix.h',
-                      'src/core/lib/iomgr/sockaddr_utils.h',
                       'src/core/lib/iomgr/sockaddr_windows.h',
                       'src/core/lib/iomgr/socket_factory_posix.h',
                       'src/core/lib/iomgr/socket_mutator.h',
@@ -1129,6 +1129,8 @@ Pod::Spec.new do |s|
                               'src/core/ext/xds/xds_client_stats.h',
                               'src/core/ext/xds/xds_http_fault_filter.h',
                               'src/core/ext/xds/xds_http_filters.h',
+                              'src/core/lib/address_utils/parse_address.h',
+                              'src/core/lib/address_utils/sockaddr_utils.h',
                               'src/core/lib/avl/avl.h',
                               'src/core/lib/backoff/backoff.h',
                               'src/core/lib/channel/channel_args.h',
@@ -1186,6 +1188,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
                               'src/core/lib/gprpp/stat.h',
+                              'src/core/lib/gprpp/status_helper.h',
                               'src/core/lib/gprpp/sync.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/gprpp/time_util.h',
@@ -1225,8 +1228,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/load_file.h',
                               'src/core/lib/iomgr/lockfree_event.h',
                               'src/core/lib/iomgr/nameser.h',
-                              'src/core/lib/iomgr/parse_address.h',
-                              'src/core/lib/iomgr/poller/eventmanager_libuv.h',
                               'src/core/lib/iomgr/polling_entity.h',
                               'src/core/lib/iomgr/pollset.h',
                               'src/core/lib/iomgr/pollset_custom.h',
@@ -1243,7 +1244,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/sockaddr.h',
                               'src/core/lib/iomgr/sockaddr_custom.h',
                               'src/core/lib/iomgr/sockaddr_posix.h',
-                              'src/core/lib/iomgr/sockaddr_utils.h',
                               'src/core/lib/iomgr/sockaddr_windows.h',
                               'src/core/lib/iomgr/socket_factory_posix.h',
                               'src/core/lib/iomgr/socket_mutator.h',

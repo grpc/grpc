@@ -114,8 +114,8 @@ void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
   tbl->max_bytes = max_bytes;
 }
 
-grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
-                                                     uint32_t bytes) {
+grpc_error_handle grpc_chttp2_hptbl_set_current_table_size(
+    grpc_chttp2_hptbl* tbl, uint32_t bytes) {
   if (tbl->current_table_bytes == bytes) {
     return GRPC_ERROR_NONE;
   }
@@ -145,7 +145,8 @@ grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl, grpc_mdelem md) {
+grpc_error_handle grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl,
+                                        grpc_mdelem md) {
   /* determine how many bytes of buffer this entry represents */
   size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(md)) +
                       GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)) +

@@ -48,9 +48,12 @@ class GuardValidator(object):
         self.endif_re = re.compile(r'#endif  // ([A-Z][A-Z_1-9]*)')
         self.failed = False
 
+    def _is_c_core_header(self, fpath):
+        return 'include' in fpath and not ('grpc++' in fpath or 'grpcpp'
+                                           in fpath or 'event_engine' in fpath)
+
     def fail(self, fpath, regexp, fcontents, match_txt, correct, fix):
-        c_core_header = 'include' in fpath and not ('grpc++' in fpath or
-                                                    'grpcpp' in fpath)
+        c_core_header = self._is_c_core_header(fpath)
         self.failed = True
         invalid_guards_msg_template = (
             '{0}: Missing preprocessor guards (RE {1}). '
@@ -81,8 +84,7 @@ class GuardValidator(object):
         return fcontents
 
     def check(self, fpath, fix):
-        c_core_header = 'include' in fpath and not ('grpc++' in fpath or
-                                                    'grpcpp' in fpath)
+        c_core_header = self._is_c_core_header(fpath)
         valid_guard = build_valid_guard(fpath)
 
         fcontents = load(fpath)

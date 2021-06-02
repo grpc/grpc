@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 16.0.0
+PROJECT_NUMBER         = 17.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -811,6 +811,10 @@ include/grpc/byte_buffer.h \
 include/grpc/byte_buffer_reader.h \
 include/grpc/census.h \
 include/grpc/compression.h \
+include/grpc/event_engine/channel_args.h \
+include/grpc/event_engine/event_engine.h \
+include/grpc/event_engine/port.h \
+include/grpc/event_engine/slice_allocator.h \
 include/grpc/fork.h \
 include/grpc/grpc.h \
 include/grpc/grpc_posix.h \
@@ -1470,6 +1474,10 @@ src/core/ext/xds/xds_http_filters.cc \
 src/core/ext/xds/xds_http_filters.h \
 src/core/ext/xds/xds_server_config_fetcher.cc \
 src/core/lib/README.md \
+src/core/lib/address_utils/parse_address.cc \
+src/core/lib/address_utils/parse_address.h \
+src/core/lib/address_utils/sockaddr_utils.cc \
+src/core/lib/address_utils/sockaddr_utils.h \
 src/core/lib/avl/avl.cc \
 src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.cc \
@@ -1517,6 +1525,8 @@ src/core/lib/debug/stats_data.cc \
 src/core/lib/debug/stats_data.h \
 src/core/lib/debug/trace.cc \
 src/core/lib/debug/trace.h \
+src/core/lib/event_engine/slice_allocator.cc \
+src/core/lib/event_engine/sockaddr.cc \
 src/core/lib/gpr/README.md \
 src/core/lib/gpr/alloc.cc \
 src/core/lib/gpr/alloc.h \
@@ -1592,6 +1602,8 @@ src/core/lib/gprpp/ref_counted_ptr.h \
 src/core/lib/gprpp/stat.h \
 src/core/lib/gprpp/stat_posix.cc \
 src/core/lib/gprpp/stat_windows.cc \
+src/core/lib/gprpp/status_helper.cc \
+src/core/lib/gprpp/status_helper.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
@@ -1680,10 +1692,6 @@ src/core/lib/iomgr/load_file.h \
 src/core/lib/iomgr/lockfree_event.cc \
 src/core/lib/iomgr/lockfree_event.h \
 src/core/lib/iomgr/nameser.h \
-src/core/lib/iomgr/parse_address.cc \
-src/core/lib/iomgr/parse_address.h \
-src/core/lib/iomgr/poller/eventmanager_libuv.cc \
-src/core/lib/iomgr/poller/eventmanager_libuv.h \
 src/core/lib/iomgr/polling_entity.cc \
 src/core/lib/iomgr/polling_entity.h \
 src/core/lib/iomgr/pollset.cc \
@@ -1713,8 +1721,6 @@ src/core/lib/iomgr/resource_quota.h \
 src/core/lib/iomgr/sockaddr.h \
 src/core/lib/iomgr/sockaddr_custom.h \
 src/core/lib/iomgr/sockaddr_posix.h \
-src/core/lib/iomgr/sockaddr_utils.cc \
-src/core/lib/iomgr/sockaddr_utils.h \
 src/core/lib/iomgr/sockaddr_windows.h \
 src/core/lib/iomgr/socket_factory_posix.cc \
 src/core/lib/iomgr/socket_factory_posix.h \

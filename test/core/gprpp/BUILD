@@ -194,6 +194,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "status_helper_test",
+    srcs = ["status_helper_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    uses_polling = False,
+    deps = [
+        "//:gpr",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "time_util_test",
     srcs = ["time_util_test.cc"],
     external_deps = [

@@ -28,9 +28,9 @@
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/transport/chttp2/client/chttp2_connector.h"
+#include "src/core/lib/address_utils/sockaddr_utils.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -129,7 +129,7 @@ class Chttp2SecureClientChannelFactory : public ClientChannelFactory {
 namespace {
 
 grpc_channel* CreateChannel(const char* target, const grpc_channel_args* args,
-                            grpc_error** error) {
+                            grpc_error_handle* error) {
   if (target == nullptr) {
     gpr_log(GPR_ERROR, "cannot create channel with NULL target name");
     if (error != nullptr) {
@@ -181,7 +181,7 @@ grpc_channel* grpc_secure_channel_create(grpc_channel_credentials* creds,
       4, ((void*)creds, target, (void*)args, (void*)reserved));
   GPR_ASSERT(reserved == nullptr);
   grpc_channel* channel = nullptr;
-  grpc_error* error = GRPC_ERROR_NONE;
+  grpc_error_handle error = GRPC_ERROR_NONE;
   if (creds != nullptr) {
     // Add channel args containing the client channel factory and channel
     // credentials.

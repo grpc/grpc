@@ -229,6 +229,8 @@ grpc_cc_binary(
     ],
     deps = [
         "//:grpc++",
+        "//:grpc++_reflection",
+        "//:grpcpp_admin",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",
@@ -248,6 +250,8 @@ grpc_cc_binary(
     ],
     deps = [
         "//:grpc++",
+        "//:grpc++_reflection",
+        "//:grpcpp_admin",
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",
         "//src/proto/grpc/testing:test_proto",

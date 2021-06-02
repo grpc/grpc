@@ -89,8 +89,8 @@ struct grpc_chttp2_hptbl {
 void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl* tbl);
 void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
                                      uint32_t max_bytes);
-grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
-                                                     uint32_t bytes);
+grpc_error_handle grpc_chttp2_hptbl_set_current_table_size(
+    grpc_chttp2_hptbl* tbl, uint32_t bytes);
 
 /* lookup a table entry based on its hpack index */
 grpc_mdelem grpc_chttp2_hptbl_lookup_dynamic_index(const grpc_chttp2_hptbl* tbl,
@@ -117,8 +117,8 @@ inline grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
   }
 }
 /* add a table entry to the index */
-grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl,
-                                  grpc_mdelem md) GRPC_MUST_USE_RESULT;
+grpc_error_handle grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl,
+                                        grpc_mdelem md) GRPC_MUST_USE_RESULT;
 
 size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
                                            bool use_true_binary_metadata);

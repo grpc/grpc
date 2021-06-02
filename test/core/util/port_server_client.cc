@@ -40,14 +40,14 @@ typedef struct freereq {
   int done = 0;
 } freereq;
 
-static void destroy_pops_and_shutdown(void* p, grpc_error* /*error*/) {
+static void destroy_pops_and_shutdown(void* p, grpc_error_handle /*error*/) {
   grpc_pollset* pollset =
       grpc_polling_entity_pollset(static_cast<grpc_polling_entity*>(p));
   grpc_pollset_destroy(pollset);
   gpr_free(pollset);
 }
 
-static void freed_port_from_server(void* arg, grpc_error* /*error*/) {
+static void freed_port_from_server(void* arg, grpc_error_handle /*error*/) {
   freereq* pr = static_cast<freereq*>(arg);
   gpr_mu_lock(pr->mu);
   pr->done = 1;
@@ -127,7 +127,7 @@ typedef struct portreq {
   grpc_httpcli_response response = {};
 } portreq;
 
-static void got_port_from_server(void* arg, grpc_error* error) {
+static void got_port_from_server(void* arg, grpc_error_handle error) {
   size_t i;
   int port = 0;
   portreq* pr = static_cast<portreq*>(arg);
@@ -136,9 +136,8 @@ static void got_port_from_server(void* arg, grpc_error* error) {
 
   if (error != GRPC_ERROR_NONE) {
     failed = 1;
-    const char* msg = grpc_error_string(error);
-    gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]", msg);
-
+    gpr_log(GPR_DEBUG, "failed port pick from server: retrying [%s]",
+            grpc_error_std_string(error).c_str());
   } else if (response->status != 200) {
     failed = 1;
     gpr_log(GPR_DEBUG, "failed port pick from server: status=%d",

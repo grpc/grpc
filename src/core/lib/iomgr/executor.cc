@@ -57,27 +57,27 @@ GPR_TLS_DECL(g_this_thread_state);
 
 Executor* executors[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)];
 
-void default_enqueue_short(grpc_closure* closure, grpc_error* error) {
+void default_enqueue_short(grpc_closure* closure, grpc_error_handle error) {
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->Enqueue(
       closure, error, true /* is_short */);
 }
 
-void default_enqueue_long(grpc_closure* closure, grpc_error* error) {
+void default_enqueue_long(grpc_closure* closure, grpc_error_handle error) {
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->Enqueue(
       closure, error, false /* is_short */);
 }
 
-void resolver_enqueue_short(grpc_closure* closure, grpc_error* error) {
+void resolver_enqueue_short(grpc_closure* closure, grpc_error_handle error) {
   executors[static_cast<size_t>(ExecutorType::RESOLVER)]->Enqueue(
       closure, error, true /* is_short */);
 }
 
-void resolver_enqueue_long(grpc_closure* closure, grpc_error* error) {
+void resolver_enqueue_long(grpc_closure* closure, grpc_error_handle error) {
   executors[static_cast<size_t>(ExecutorType::RESOLVER)]->Enqueue(
       closure, error, false /* is_short */);
 }
 
-using EnqueueFunc = void (*)(grpc_closure* closure, grpc_error* error);
+using EnqueueFunc = void (*)(grpc_closure* closure, grpc_error_handle error);
 
 const EnqueueFunc
     executor_enqueue_fns_[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)]
@@ -115,7 +115,7 @@ size_t Executor::RunClosures(const char* executor_name,
   grpc_closure* c = list.head;
   while (c != nullptr) {
     grpc_closure* next = c->next_data.next;
-    grpc_error* error = c->error_data.error;
+    grpc_error_handle error = c->error_data.error;
 #ifndef NDEBUG
     EXECUTOR_TRACE("(%s) run %p [created by %s:%d]", executor_name, c,
                    c->file_created, c->line_created);
@@ -251,7 +251,7 @@ void Executor::ThreadMain(void* arg) {
   gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(nullptr));
 }
 
-void Executor::Enqueue(grpc_closure* closure, grpc_error* error,
+void Executor::Enqueue(grpc_closure* closure, grpc_error_handle error,
                        bool is_short) {
   bool retry_push;
   if (is_short) {
@@ -404,7 +404,7 @@ void Executor::InitAll() {
   EXECUTOR_TRACE0("Executor::InitAll() done");
 }
 
-void Executor::Run(grpc_closure* closure, grpc_error* error,
+void Executor::Run(grpc_closure* closure, grpc_error_handle error,
                    ExecutorType executor_type, ExecutorJobType job_type) {
   executor_enqueue_fns_[static_cast<size_t>(executor_type)]
                        [static_cast<size_t>(job_type)](closure, error);

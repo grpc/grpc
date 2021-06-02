@@ -70,24 +70,24 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     void Cancel();
 
     void StartBatch(grpc_transport_stream_op_batch* batch);
-    static void StartBatchInCallCombiner(void* arg, grpc_error* error);
+    static void StartBatchInCallCombiner(void* arg, grpc_error_handle error);
 
     void CallEndedLocked(bool retry)
         ABSL_EXCLUSIVE_LOCKS_REQUIRED(health_check_client_->mu_);
 
-    static void OnComplete(void* arg, grpc_error* error);
-    static void RecvInitialMetadataReady(void* arg, grpc_error* error);
-    static void RecvMessageReady(void* arg, grpc_error* error);
-    static void RecvTrailingMetadataReady(void* arg, grpc_error* error);
-    static void StartCancel(void* arg, grpc_error* error);
-    static void OnCancelComplete(void* arg, grpc_error* error);
+    static void OnComplete(void* arg, grpc_error_handle error);
+    static void RecvInitialMetadataReady(void* arg, grpc_error_handle error);
+    static void RecvMessageReady(void* arg, grpc_error_handle error);
+    static void RecvTrailingMetadataReady(void* arg, grpc_error_handle error);
+    static void StartCancel(void* arg, grpc_error_handle error);
+    static void OnCancelComplete(void* arg, grpc_error_handle error);
 
-    static void OnByteStreamNext(void* arg, grpc_error* error);
+    static void OnByteStreamNext(void* arg, grpc_error_handle error);
     void ContinueReadingRecvMessage();
-    grpc_error* PullSliceFromRecvMessage();
-    void DoneReadingRecvMessage(grpc_error* error);
+    grpc_error_handle PullSliceFromRecvMessage();
+    void DoneReadingRecvMessage(grpc_error_handle error);
 
-    static void AfterCallStackDestruction(void* arg, grpc_error* error);
+    static void AfterCallStackDestruction(void* arg, grpc_error_handle error);
 
     RefCountedPtr<HealthCheckClient> health_check_client_;
     grpc_polling_entity pollent_;
@@ -128,13 +128,13 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     grpc_slice_buffer recv_message_buffer_;
     Atomic<bool> seen_response_{false};
 
+    // True if the cancel_stream batch has been started.
+    Atomic<bool> cancelled_{false};
+
     // recv_trailing_metadata
     grpc_metadata_batch recv_trailing_metadata_;
     grpc_transport_stream_stats collect_stats_;
     grpc_closure recv_trailing_metadata_ready_;
-
-    // True if the cancel_stream batch has been started.
-    Atomic<bool> cancelled_{false};
 
     // Closure for call stack destruction.
     grpc_closure after_call_stack_destruction_;
@@ -144,7 +144,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   void StartCallLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   void StartRetryTimerLocked() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-  static void OnRetryTimer(void* arg, grpc_error* error);
+  static void OnRetryTimer(void* arg, grpc_error_handle error);
 
   void SetHealthStatus(grpc_connectivity_state state, const char* reason);
   void SetHealthStatusLocked(grpc_connectivity_state state, const char* reason)

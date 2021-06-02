@@ -1,3 +1,16 @@
+# Copyright 2021 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
 """Load dependencies needed to compile and test the grpc library as a 3rd-party consumer."""
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
@@ -122,6 +135,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "opencensus-trace-propagation",
+        actual = "@io_opencensus_cpp//opencensus/trace:grpc_trace_bin",
+    )
+
+    native.bind(
         name = "opencensus-stats",
         actual = "@io_opencensus_cpp//opencensus/stats:stats",
     )
@@ -151,11 +169,11 @@ def grpc_deps():
             name = "boringssl",
             # Use github mirror instead of https://boringssl.googlesource.com/boringssl
             # to obtain a boringssl archive with consistent sha256
-            sha256 = "269c89eb60d3f3fcd5a0a755d1e28ffa65d423bc3c0e9562e2d666f5464680d2",
-            strip_prefix = "boringssl-1a7359455220f7010def8c63f7c7e041ce6707c6",
+            sha256 = "f8616dff15cb8aad6705af53c7caf7a5f1103b6aaf59c76b55995e179d47f89c",
+            strip_prefix = "boringssl-688fc5cf5428868679d2ae1072cad81055752068",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/1a7359455220f7010def8c63f7c7e041ce6707c6.tar.gz",
-                "https://github.com/google/boringssl/archive/1a7359455220f7010def8c63f7c7e041ce6707c6.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/boringssl/archive/688fc5cf5428868679d2ae1072cad81055752068.tar.gz",
+                "https://github.com/google/boringssl/archive/688fc5cf5428868679d2ae1072cad81055752068.tar.gz",
             ],
         )
 
@@ -174,11 +192,11 @@ def grpc_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            sha256 = "09709ea1a25dc2f02e281e11f559dd979139ba2a1ddb24c489ea6bea9e3ad8bc",
-            strip_prefix = "protobuf-d7e943b8d2bc444a8c770644e73d090b486f8b37",
+            sha256 = "cf63d46ef743f4c30b0e36a562caf83cabed3f10e6ca49eb476913c4655394d5",
+            strip_prefix = "protobuf-436bd7880e458532901c58f4d9d1ea23fa7edd52",
             urls = [
-                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/protobuf/archive/d7e943b8d2bc444a8c770644e73d090b486f8b37.tar.gz",
-                "https://github.com/google/protobuf/archive/d7e943b8d2bc444a8c770644e73d090b486f8b37.tar.gz",
+                "https://storage.googleapis.com/grpc-bazel-mirror/github.com/google/protobuf/archive/436bd7880e458532901c58f4d9d1ea23fa7edd52.tar.gz",
+                "https://github.com/google/protobuf/archive/436bd7880e458532901c58f4d9d1ea23fa7edd52.tar.gz",
             ],
             patches = ["@com_github_grpc_grpc//third_party:protobuf.patch"],
             patch_args = ["-p1"],

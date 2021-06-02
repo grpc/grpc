@@ -109,10 +109,16 @@ ServerBuilder& ServerBuilder::RegisterCallbackGenericService(
     gpr_log(GPR_ERROR,
             "Adding multiple generic services is unsupported for now. "
             "Dropping the service %p",
-            (void*)service);
+            service);
   } else {
     callback_generic_service_ = service;
   }
+  return *this;
+}
+
+ServerBuilder& ServerBuilder::SetContextAllocator(
+    std::unique_ptr<grpc::ContextAllocator> context_allocator) {
+  context_allocator_ = std::move(context_allocator);
   return *this;
 }
 #else
@@ -128,13 +134,13 @@ ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
   }
   return *builder_;
 }
-#endif
 
 ServerBuilder& ServerBuilder::experimental_type::SetContextAllocator(
     std::unique_ptr<grpc::ContextAllocator> context_allocator) {
   builder_->context_allocator_ = std::move(context_allocator);
   return *builder_;
 }
+#endif
 
 std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
 ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
@@ -223,8 +229,8 @@ ServerBuilder& ServerBuilder::AddListeningPort(
   return *this;
 }
 
-std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
-  grpc::ChannelArguments args;
+ChannelArguments ServerBuilder::BuildChannelArgs() {
+  ChannelArguments args;
   if (max_receive_message_size_ >= -1) {
     args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, max_receive_message_size_);
   }
@@ -245,16 +251,19 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     args.SetInt(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM,
                 maybe_default_compression_algorithm_.algorithm);
   }
-
   if (resource_quota_ != nullptr) {
     args.SetPointerWithVtable(GRPC_ARG_RESOURCE_QUOTA, resource_quota_,
                               grpc_resource_quota_arg_vtable());
   }
-
   for (const auto& plugin : plugins_) {
     plugin->UpdateServerBuilder(this);
     plugin->UpdateChannelArguments(&args);
   }
+  return args;
+}
+
+std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
+  ChannelArguments args = BuildChannelArgs();
 
   // == Determine if the server has any syncrhonous methods ==
   bool has_sync_methods = false;

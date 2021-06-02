@@ -225,8 +225,8 @@ struct call_data {
   grpc_call_context_element* context;
 };
 
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error_handle init_call_elem(grpc_call_element* elem,
+                                        const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->context = args->context;
   gpr_log(GPR_INFO, "init_call_elem(): context=%p", args->context);
@@ -251,8 +251,8 @@ static void destroy_call_elem(grpc_call_element* /*elem*/,
                               const grpc_call_final_info* /*final_info*/,
                               grpc_closure* /*ignored*/) {}
 
-static grpc_error* init_channel_elem(grpc_channel_element* /*elem*/,
-                                     grpc_channel_element_args* /*args*/) {
+static grpc_error_handle init_channel_elem(
+    grpc_channel_element* /*elem*/, grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 

@@ -399,34 +399,42 @@ class XdsApi {
     // The name to use in the EDS request.
     // If empty, the cluster name will be used.
     std::string eds_service_name;
+    // For cluster type LOGICAL_DNS.
+    // The hostname to lookup in DNS.
+    std::string dns_hostname;
+    // For cluster type AGGREGATE.
+    // The prioritized list of cluster names.
+    std::vector<std::string> prioritized_cluster_names;
+
     // Tls Context used by clients
     CommonTlsContext common_tls_context;
+
     // The LRS server to use for load reporting.
     // If not set, load reporting will be disabled.
     // If set to the empty string, will use the same server we obtained the CDS
     // data from.
     absl::optional<std::string> lrs_load_reporting_server_name;
+
     // The LB policy to use (e.g., "ROUND_ROBIN" or "RING_HASH").
     std::string lb_policy;
     // Used for RING_HASH LB policy only.
     uint64_t min_ring_size = 1024;
     uint64_t max_ring_size = 8388608;
-    enum HashFunction { XX_HASH, MURMUR_HASH_2 };
-    HashFunction hash_function;
     // Maximum number of outstanding requests can be made to the upstream
     // cluster.
     uint32_t max_concurrent_requests = 1024;
-    // For cluster type AGGREGATE.
-    // The prioritized list of cluster names.
-    std::vector<std::string> prioritized_cluster_names;
 
     bool operator==(const CdsUpdate& other) const {
       return cluster_type == other.cluster_type &&
              eds_service_name == other.eds_service_name &&
+             dns_hostname == other.dns_hostname &&
+             prioritized_cluster_names == other.prioritized_cluster_names &&
              common_tls_context == other.common_tls_context &&
              lrs_load_reporting_server_name ==
                  other.lrs_load_reporting_server_name &&
-             prioritized_cluster_names == other.prioritized_cluster_names &&
+             lb_policy == other.lb_policy &&
+             min_ring_size == other.min_ring_size &&
+             max_ring_size == other.max_ring_size &&
              max_concurrent_requests == other.max_concurrent_requests;
     }
 
@@ -609,7 +617,7 @@ class XdsApi {
   // Otherwise, one of the *_update_map fields will be populated, based
   // on the type_url field.
   struct AdsParseResult {
-    grpc_error* parse_error = GRPC_ERROR_NONE;
+    grpc_error_handle parse_error = GRPC_ERROR_NONE;
     std::string version;
     std::string nonce;
     std::string type_url;
@@ -628,7 +636,7 @@ class XdsApi {
                               const std::string& type_url,
                               const std::set<absl::string_view>& resource_names,
                               const std::string& version,
-                              const std::string& nonce, grpc_error* error,
+                              const std::string& nonce, grpc_error_handle error,
                               bool populate_node);
 
   // Parses an ADS response.
@@ -648,10 +656,10 @@ class XdsApi {
   // Parses the LRS response and returns \a
   // load_reporting_interval for client-side load reporting. If there is any
   // error, the output config is invalid.
-  grpc_error* ParseLrsResponse(const grpc_slice& encoded_response,
-                               bool* send_all_clusters,
-                               std::set<std::string>* cluster_names,
-                               grpc_millis* load_reporting_interval);
+  grpc_error_handle ParseLrsResponse(const grpc_slice& encoded_response,
+                                     bool* send_all_clusters,
+                                     std::set<std::string>* cluster_names,
+                                     grpc_millis* load_reporting_interval);
 
   // Assemble the client config proto message and return the serialized result.
   std::string AssembleClientConfig(

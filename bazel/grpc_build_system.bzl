@@ -64,6 +64,29 @@ def _get_external_deps(external_deps):
             ret += ["//external:" + dep]
     return ret
 
+def _update_visibility(visibility):
+    if visibility == None:
+        return None
+
+    # Visibility rules prefixed with '@grpc_' are used to flag different visibility rule
+    # classes upstream.
+    VISIBILITY_TARGETS = {
+        "alt_grpc_legacy": [],
+        "alt_grpc++_legacy": [],
+        "endpoint_tests": [],
+        "grpc_opencensus_plugin": ["//visibility:public"],
+        "grpc_resolver_fake": [],
+        "public": ["//visibility:public"],
+    }
+    final_visibility = []
+    for rule in visibility:
+        if rule.startswith("@grpc:"):
+            for replacement in VISIBILITY_TARGETS[rule[6:]]:
+                final_visibility.append(replacement)
+        else:
+            final_visibility.append(rule)
+    return [x for x in final_visibility]
+
 def grpc_cc_library(
         name,
         srcs = [],
@@ -82,6 +105,7 @@ def grpc_cc_library(
         use_cfstream = False,
         tags = [],
         linkstatic = False):
+    visibility = _update_visibility(visibility)
     copts = []
     if use_cfstream:
         copts = if_mac(["-DGRPC_CFSTREAM"])
@@ -127,12 +151,6 @@ def grpc_cc_library(
         tags = tags,
         linkstatic = linkstatic,
     )
-
-# TODO(lidiz) remove this rule once we can depend on the xDS protos internally
-def grpc_cc_library_xds(
-        *args,
-        **kwargs):
-    grpc_cc_library(*args, **kwargs)
 
 def grpc_proto_plugin(name, srcs = [], deps = []):
     native.cc_binary(
@@ -247,10 +265,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         tags = tags,
         **args
     )
-
-# TODO(lidiz) remove this rule once we can depend on the xDS protos internally
-def grpc_cc_test_xds(*args, **kwargs):
-    grpc_cc_test(*args, **kwargs)
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = [], features = []):
     copts = []
