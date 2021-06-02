@@ -313,6 +313,7 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
     standalone = True,
+    visibility = ["@grpc:public"],
     deps = [
         "grpc_common",
         "grpc_lb_policy_grpclb",
@@ -344,6 +345,10 @@ grpc_cc_library(
         ],
     },
     standalone = True,
+    visibility = [
+        "@grpc:alt_grpc_legacy",
+        "@grpc:public",
+    ],
     deps = [
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
@@ -360,6 +365,7 @@ grpc_cc_library(
         "absl/synchronization",
         "protobuf_headers",
     ],
+    visibility = ["@grpc:public"],
 )
 
 grpc_cc_library(
@@ -381,6 +387,10 @@ grpc_cc_library(
         ],
     },
     standalone = True,
+    visibility = [
+        "@grpc:alt_grpc++_legacy",
+        "@grpc:public",
+    ],
     deps = [
         "grpc++_internals",
     ],
@@ -464,6 +474,7 @@ grpc_cc_library(
     ],
     language = "c++",
     standalone = True,
+    visibility = ["@grpc:public"],
     deps = [
         "gpr",
         "grpc++_base_unsecure",
@@ -1105,6 +1116,7 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_priority",
+        "grpc_lb_policy_ring_hash",
         "grpc_lb_policy_round_robin",
         "grpc_lb_policy_weighted_target",
         "grpc_client_idle_filter",
@@ -1544,6 +1556,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
+        "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
         "grpc_resolver_fake",
@@ -1635,6 +1648,10 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "xxhash",
     ],
     language = "c++",
     deps = [
@@ -1876,7 +1893,10 @@ grpc_cc_library(
     srcs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc"],
     hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
     language = "c++",
-    visibility = ["//test:__subpackages__"],
+    visibility = [
+        "//test:__subpackages__",
+        "@grpc:grpc_resolver_fake",
+    ],
     deps = [
         "grpc_base",
         "grpc_client_channel",
@@ -2017,6 +2037,7 @@ grpc_cc_library(
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
+    visibility = ["@grpc:public"],
     deps = [
         "alts_util",
         "grpc_base",
@@ -2691,6 +2712,7 @@ grpc_cc_library(
         "include/grpc++/test/mock_stream.h",
         "include/grpc++/test/server_context_test_spouse.h",
         "include/grpcpp/test/channel_test_peer.h",
+        "include/grpcpp/test/client_context_test_peer.h",
         "include/grpcpp/test/default_reactor_test_peer.h",
         "include/grpcpp/test/mock_stream.h",
         "include/grpcpp/test/server_context_test_spouse.h",
@@ -2761,6 +2783,7 @@ grpc_cc_library(
         "opencensus-context",
     ],
     language = "c++",
+    visibility = ["@grpc:grpc_opencensus_plugin"],
     deps = [
         ":census",
         ":grpc++",

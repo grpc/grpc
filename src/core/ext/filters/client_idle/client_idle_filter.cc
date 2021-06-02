@@ -187,7 +187,7 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
                                    grpc_transport_op* op) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   // Catch the disconnect_with_error transport op.
-  if (op->disconnect_with_error != nullptr) {
+  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
     // IncreaseCallCount() introduces a phony call and prevent the timer from
     // being reset by other threads.
     chand->IncreaseCallCount();

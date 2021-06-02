@@ -121,8 +121,8 @@ class ServerBuilder {
   /// \param addr_uri The address to try to bind to the server in URI form. If
   /// the scheme name is omitted, "dns:///" is assumed. To bind to any address,
   /// please use IPv6 any, i.e., [::]:<port>, which also accepts IPv4
-  /// connections.  Valid values include dns:///localhost:1234, /
-  /// 192.168.1.1:31416, dns:///[::1]:27182, etc.).
+  /// connections.  Valid values include dns:///localhost:1234,
+  /// 192.168.1.1:31416, dns:///[::1]:27182, etc.
   /// \param creds The credentials associated with the server.
   /// \param[out] selected_port If not `nullptr`, gets populated with the port
   /// number bound to the \a grpc::Server for the corresponding endpoint after
@@ -269,12 +269,12 @@ class ServerBuilder {
       builder_->interceptor_creators_ = std::move(interceptor_creators);
     }
 
+#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
     /// Set the allocator for creating and releasing callback server context.
     /// Takes the owndership of the allocator.
     ServerBuilder& SetContextAllocator(
         std::unique_ptr<grpc::ContextAllocator> context_allocator);
 
-#ifndef GRPC_CALLBACK_API_NONEXPERIMENTAL
     /// Register a generic service that uses the callback API.
     /// Matches requests with any :authority
     /// This is mostly useful for writing generic gRPC Proxies where the exact
@@ -300,6 +300,11 @@ class ServerBuilder {
   };
 
 #ifdef GRPC_CALLBACK_API_NONEXPERIMENTAL
+  /// Set the allocator for creating and releasing callback server context.
+  /// Takes the owndership of the allocator.
+  ServerBuilder& SetContextAllocator(
+      std::unique_ptr<grpc::ContextAllocator> context_allocator);
+
   /// Register a generic service that uses the callback API.
   /// Matches requests with any :authority
   /// This is mostly useful for writing generic gRPC Proxies where the exact
