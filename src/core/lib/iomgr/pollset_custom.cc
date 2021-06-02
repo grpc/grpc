@@ -77,14 +77,14 @@ static grpc_error_handle pollset_work(grpc_pollset* pollset,
   // control back to the application
   grpc_core::ExecCtx* curr = grpc_core::ExecCtx::Get();
   grpc_core::ExecCtx::Set(nullptr);
-  poller_vtable->poll(static_cast<size_t>(timeout));
+  grpc_error* err = poller_vtable->poll(static_cast<size_t>(timeout));
   grpc_core::ExecCtx::Set(curr);
   grpc_core::ExecCtx::Get()->InvalidateNow();
   if (grpc_core::ExecCtx::Get()->HasWork()) {
     grpc_core::ExecCtx::Get()->Flush();
   }
   gpr_mu_lock(&pollset->mu);
-  return GRPC_ERROR_NONE;
+  return err;
 }
 
 static grpc_error_handle pollset_kick(

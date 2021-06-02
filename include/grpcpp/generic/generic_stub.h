@@ -91,6 +91,17 @@ class TemplatedGenericStub final {
   /// Setup and start a unary call to a named method \a method using
   /// \a context and specifying the \a request and \a response buffers.
   void UnaryCall(ClientContext* context, const std::string& method,
+                 StubOptions options, const RequestType* request,
+                 ResponseType* response,
+                 std::function<void(grpc::Status)> on_completion) {
+    UnaryCallInternal(context, method, options, request, response,
+                      std::move(on_completion));
+  }
+
+  /// NOTE: THE FOLLOWING VERSION IS NOT API. It is present only to
+  /// breakage of some existing codes that were de-experimentalized
+  /// before gRFC L67 completed. This will be removed soon.
+  void UnaryCall(ClientContext* context, const std::string& method,
                  const RequestType* request, ResponseType* response,
                  std::function<void(grpc::Status)> on_completion) {
     UnaryCallInternal(context, method, /*options=*/{}, request, response,
@@ -102,15 +113,24 @@ class TemplatedGenericStub final {
   /// Like any other reactor-based RPC, it will not be activated until
   /// StartCall is invoked on its reactor.
   void PrepareUnaryCall(ClientContext* context, const std::string& method,
-                        const RequestType* request, ResponseType* response,
-                        ClientUnaryReactor* reactor) {
-    PrepareUnaryCallInternal(context, method, /*options=*/{}, request, response,
+                        StubOptions options, const RequestType* request,
+                        ResponseType* response, ClientUnaryReactor* reactor) {
+    PrepareUnaryCallInternal(context, method, options, request, response,
                              reactor);
   }
 
   /// Setup a call to a named method \a method using \a context and tied to
   /// \a reactor . Like any other bidi streaming RPC, it will not be activated
   /// until StartCall is invoked on its reactor.
+  void PrepareBidiStreamingCall(
+      ClientContext* context, const std::string& method, StubOptions options,
+      ClientBidiReactor<RequestType, ResponseType>* reactor) {
+    PrepareBidiStreamingCallInternal(context, method, options, reactor);
+  }
+
+  /// NOTE: THE FOLLOWING VERSION IS NOT API. It is present only to
+  /// breakage of some existing codes that were de-experimentalized
+  /// before gRFC L67 completed. This will be removed soon.
   void PrepareBidiStreamingCall(
       ClientContext* context, const std::string& method,
       ClientBidiReactor<RequestType, ResponseType>* reactor) {

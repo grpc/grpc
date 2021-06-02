@@ -669,4 +669,6 @@ typedef unsigned __int64 uint64_t;
 #define GRPC_ARES 0
 #endif  // GRPC_EVENT_ENGINE_TEST
 
+#define GRPC_CALLBACK_API_NONEXPERIMENTAL
+
 #endif /* GRPC_IMPL_CODEGEN_PORT_PLATFORM_H */

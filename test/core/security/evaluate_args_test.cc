@@ -100,6 +100,7 @@ TEST_F(EvaluateArgsTest, EmptyAuthContext) {
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_TRUE(args.GetTransportSecurityType().empty());
   EXPECT_TRUE(args.GetSpiffeId().empty());
+  EXPECT_TRUE(args.GetUriSans().empty());
   EXPECT_TRUE(args.GetDnsSans().empty());
   EXPECT_TRUE(args.GetCommonName().empty());
 }
@@ -131,6 +132,13 @@ TEST_F(EvaluateArgsTest, GetSpiffeIdFailDuplicateProperty) {
   util_.AddPropertyToAuthContext(GRPC_PEER_SPIFFE_ID_PROPERTY_NAME, "id456");
   EvaluateArgs args = util_.MakeEvaluateArgs();
   EXPECT_TRUE(args.GetSpiffeId().empty());
+}
+
+TEST_F(EvaluateArgsTest, GetUriSanSuccessMultipleProperties) {
+  util_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME, "foo");
+  util_.AddPropertyToAuthContext(GRPC_PEER_URI_PROPERTY_NAME, "bar");
+  EvaluateArgs args = util_.MakeEvaluateArgs();
+  EXPECT_THAT(args.GetUriSans(), ::testing::ElementsAre("foo", "bar"));
 }
 
 TEST_F(EvaluateArgsTest, GetDnsSanSuccessMultipleProperties) {
