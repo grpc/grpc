@@ -76,6 +76,11 @@ gRPC Exceptions
 .. autoexception:: InternalError
 .. autoexception:: AioRpcError
 
+gRPC Metadata
+^^^^^^^^^^^^^
+
+.. autoclass:: Metadata
+
 
 Shared Context
 ^^^^^^^^^^^^^^^^^^^^

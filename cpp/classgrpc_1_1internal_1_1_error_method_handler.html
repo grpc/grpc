@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.37.0</span>
+   &#160;<span id="projectnumber">1.38.0</span>
    </div>
   </td>
  </tr>
@@ -81,6 +81,8 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
+<tr class="memitem:a4c0623fda48073be38517d6bd148e98b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#a4c0623fda48073be38517d6bd148e98b">ErrorMethodHandler</a> (const std::string &amp;message)</td></tr>
+<tr class="separator:a4c0623fda48073be38517d6bd148e98b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9b33799ed0523968ae533c0d26acc688"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#a9b33799ed0523968ae533c0d26acc688">RunHandler</a> (const HandlerParameter &amp;param) final</td></tr>
 <tr class="separator:a9b33799ed0523968ae533c0d26acc688"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a963b2d9bb7972a657673bbdc7c4dd2c0"><td class="memItemLeft" align="right" valign="top">void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#a963b2d9bb7972a657673bbdc7c4dd2c0">Deserialize</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *, <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *req, ::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> *, void **) final</td></tr>
@@ -88,16 +90,45 @@ Public Member Functions</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-static-methods"></a>
 Static Public Member Functions</h2></td></tr>
-<tr class="memitem:af63801ab1c796ba7a2f31d3996636257"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
-<tr class="memitem:af63801ab1c796ba7a2f31d3996636257"><td class="memTemplItemLeft" align="right" valign="top">static void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#af63801ab1c796ba7a2f31d3996636257">FillOps</a> (::<a class="el" href="classgrpc_1_1_server_context_base.html">grpc::ServerContextBase</a> *context, T *ops)</td></tr>
-<tr class="separator:af63801ab1c796ba7a2f31d3996636257"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a483b83dc542d44722407516f8e87343f"><td class="memTemplParams" colspan="2">template&lt;class T &gt; </td></tr>
+<tr class="memitem:a483b83dc542d44722407516f8e87343f"><td class="memTemplItemLeft" align="right" valign="top">static void&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#a483b83dc542d44722407516f8e87343f">FillOps</a> (::<a class="el" href="classgrpc_1_1_server_context_base.html">grpc::ServerContextBase</a> *context, const std::string &amp;message, T *ops)</td></tr>
+<tr class="separator:a483b83dc542d44722407516f8e87343f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><h3>template&lt;::grpc::StatusCode code&gt;<br />
 class grpc::internal::ErrorMethodHandler&lt; code &gt;</h3>
 
 <p>General method handler class for errors that prevent real method use e.g., handle unknown method by returning UNIMPLEMENTED error. </p>
-</div><h2 class="groupheader">Member Function Documentation</h2>
+</div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
+<a id="a4c0623fda48073be38517d6bd148e98b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a4c0623fda48073be38517d6bd148e98b">&#9670;&nbsp;</a></span>ErrorMethodHandler()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;::grpc::StatusCode code&gt; </div>
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html">grpc::internal::ErrorMethodHandler</a>&lt; code &gt;::<a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html">ErrorMethodHandler</a> </td>
+          <td>(</td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>message</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">explicit</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<h2 class="groupheader">Member Function Documentation</h2>
 <a id="a963b2d9bb7972a657673bbdc7c4dd2c0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a963b2d9bb7972a657673bbdc7c4dd2c0">&#9670;&nbsp;</a></span>Deserialize()</h2>
 
@@ -148,8 +179,8 @@ template&lt;::grpc::StatusCode code&gt; </div>
 
 </div>
 </div>
-<a id="af63801ab1c796ba7a2f31d3996636257"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#af63801ab1c796ba7a2f31d3996636257">&#9670;&nbsp;</a></span>FillOps()</h2>
+<a id="a483b83dc542d44722407516f8e87343f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a483b83dc542d44722407516f8e87343f">&#9670;&nbsp;</a></span>FillOps()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -166,6 +197,12 @@ template&lt;class T &gt; </div>
           <td>(</td>
           <td class="paramtype">::<a class="el" href="classgrpc_1_1_server_context_base.html">grpc::ServerContextBase</a> *&#160;</td>
           <td class="paramname"><em>context</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">const std::string &amp;&#160;</td>
+          <td class="paramname"><em>message</em>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -223,7 +260,7 @@ template&lt;::grpc::StatusCode code&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>
