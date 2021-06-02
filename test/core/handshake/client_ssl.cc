@@ -163,7 +163,8 @@ static int alpn_select_cb(SSL* /*ssl*/, const uint8_t** out, uint8_t* out_len,
 
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
                                const char* msg) {
-  if ((where & flag) && GRPC_TRACE_FLAG_ENABLED(client_ssl_tsi_tracing_enabled)) {
+  if ((where & flag) &&
+      GRPC_TRACE_FLAG_ENABLED(client_ssl_tsi_tracing_enabled)) {
     gpr_log(GPR_INFO, "%20.20s - %30.30s  - %5.10s", msg,
             SSL_state_string_long(ssl), SSL_state_string(ssl));
   }
@@ -176,8 +177,10 @@ static void ssl_server_info_callback(const SSL* ssl, int where, int ret) {
   }
 
   ssl_log_where_info(ssl, where, SSL_CB_LOOP, "Server: LOOP");
-  ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_START, "Server: HANDSHAKE START");
-  ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_DONE, "Server: HANDSHAKE DONE");
+  ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_START,
+                     "Server: HANDSHAKE START");
+  ssl_log_where_info(ssl, where, SSL_CB_HANDSHAKE_DONE,
+                     "Server: HANDSHAKE DONE");
 }
 
 // Minimal TLS server. This is largely based on the example at
@@ -215,7 +218,6 @@ static void server_thread(void* arg) {
     abort();
   }
 
-
   // Set the cipher list to match the one expressed in
   // src/core/tsi/ssl_transport_security.cc.
   const char* cipher_list =
@@ -226,6 +228,9 @@ static void server_thread(void* arg) {
     gpr_log(GPR_ERROR, "Couldn't set server cipher list.");
     abort();
   }
+
+  // Enable automatic curve selection. This is a NO-OP when using OpenSSL
+  // versions > 1.0.2.
   if (!SSL_CTX_set_ecdh_auto(ctx, /*onoff=*/1)) {
     ERR_print_errors_fp(stderr);
     gpr_log(GPR_ERROR, "Couldn't set automatic curve selection.");
@@ -272,7 +277,6 @@ static void server_thread(void* arg) {
   close(client);
   close(sock);
   SSL_CTX_free(ctx);
-  // EVP_cleanup();
 }
 
 // This test launches a minimal TLS server on a separate thread and then
@@ -388,6 +392,8 @@ int main(int argc, char* argv[]) {
   // preference. This validates the client is correctly validating ALPN returns
   // and sanity checks the client_ssl_test.
   GPR_ASSERT(!client_ssl_test(const_cast<char*>("foo")));
+  // Clean up the SSL libraries.
+  EVP_cleanup();
   return 0;
 }
 

@@ -22,7 +22,6 @@
 
 #include <limits.h>
 #include <string.h>
-#include <iostream>
 
 /* TODO(jboeuf): refactor inet_ntop into a portability header. */
 /* Note: for whomever reads this and tries to refactor this, this
@@ -1406,11 +1405,6 @@ static tsi_result ssl_handshaker_get_bytes_to_send_to_peer(
     }
   }
   *bytes_size = static_cast<size_t>(bytes_read_from_ssl);
-  std::cout << "Bytes to send to peer: ";
-  for (size_t i = 0; i < *bytes_size; i++) {
-    std::cout << std::hex << static_cast<int>(bytes[i]) << std::endl;
-  }
-  std::cout << "...end..." << std::endl;
   return BIO_pending(impl->network_io) == 0 ? TSI_OK : TSI_INCOMPLETE_DATA;
 }
 
@@ -1914,9 +1908,7 @@ tsi_result tsi_create_ssl_client_handshaker_factory_with_options(
 
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
   ssl_context = SSL_CTX_new(TLS_method());
-  gpr_log(GPR_INFO, "using TLS_method in client handshaker factory...");
 #else
-  gpr_log(GPR_INFO, "using TLSv1_2_method in client handshaker factory...");
   ssl_context = SSL_CTX_new(TLSv1_2_method());
 #endif
   if (ssl_context == nullptr) {
@@ -2084,10 +2076,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
   for (i = 0; i < options->num_key_cert_pairs; i++) {
     do {
 #if OPENSSL_VERSION_NUMBER >= 0x10100000
-      gpr_log(GPR_INFO, "using TLS_method in server handshaker factory...");
       impl->ssl_contexts[i] = SSL_CTX_new(TLS_method());
 #else
-      gpr_log(GPR_INFO, "using TLSv1_2_method in server handshaker factory...");
       impl->ssl_contexts[i] = SSL_CTX_new(TLSv1_2_method());
 #endif
       if (impl->ssl_contexts[i] == nullptr) {
