@@ -319,7 +319,13 @@ class ProtocArtifact:
                     # for aarch64, use a dockcross manylinux image that will
                     # give us both ready to use crosscompiler and sufficient backward compatibility
                     dockerfile_dir = 'tools/dockerfile/grpc_artifact_python_manylinux2014_aarch64'
-                environ['LDFLAGS'] += ' -static-libgcc -static-libstdc++ -s'
+                    # Workaround https://github.com/grpc/grpc/issues/26032 by omitting
+                    # -static-libstdc++
+                    # TODO(jtattermusch): get rid of the workaround since it might be affecting
+                    # portability of the resulting artifacts
+                    environ['LDFLAGS'] += ' -static-libgcc -s'
+                else:
+                   environ['LDFLAGS'] += ' -static-libgcc -static-libstdc++ -s'
                 return create_docker_jobspec(
                     self.name,
                     dockerfile_dir,
