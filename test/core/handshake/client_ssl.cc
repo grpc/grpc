@@ -207,7 +207,7 @@ static void server_thread(void* arg) {
     abort();
   }
   if (SSL_CTX_check_private_key(ctx) != 1) {
-    perror
+    perror("Check private key failed.");
     ERR_print_errors_fp(stderr);
     abort();
   }
