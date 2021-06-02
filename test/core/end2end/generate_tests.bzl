@@ -327,6 +327,10 @@ END2END_TESTS = {
         needs_client_channel = True,
         proxyable = False,
     ),
+    "retry_send_op_fails": _test_options(
+        needs_client_channel = True,
+        proxyable = False,
+    ),
     "retry_server_pushback_delay": _test_options(
         needs_client_channel = True,
         proxyable = False,
