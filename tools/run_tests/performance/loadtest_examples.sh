@@ -18,12 +18,12 @@
 LOADTEST_CONFIG=tools/run_tests/performance/loadtest_config.py
 
 if (( $# < 1 )); then
-    echo "Usage: ${0} <output directory>"
+    echo "Usage: ${0} <output directory>" >&2
     exit 1
 fi
 
 if [[ ! -x "${LOADTEST_CONFIG}" ]]; then
-    echo "${LOADTEST_CONFIG} not found."
+    echo "${LOADTEST_CONFIG} not found." >&2
     exit 1
 fi
 
