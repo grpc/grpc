@@ -189,7 +189,7 @@ def gen_loadtest_configs(
                          'unique names, name counts for language %s: %s') %
                         (cl, c.most_common()))
 
-            # Name client instances with an index starting from 0.
+            # Name client instances with an index starting from zero.
             client_instances = []
             for i in range(instances_per_client):
                 client_instances.extend(copy.deepcopy(clients))
@@ -217,7 +217,8 @@ def gen_loadtest_configs(
             # Set servers to named instances.
             spec['servers'] = servers
 
-            # Name driver with an index for consistency with workers.
+            # Name the driver with an index for consistency with workers.
+            # There is only one driver, so the index is zero.
             if 'driver' in spec and 'run' in spec['driver']:
                 driver = spec['driver']
                 if 'language' not in driver:
