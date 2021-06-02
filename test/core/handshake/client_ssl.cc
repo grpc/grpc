@@ -44,8 +44,8 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
-#define SSL_CERT_PATH "src/core/tsi/test_creds/server0.pem"
-#define SSL_KEY_PATH "src/core/tsi/test_creds/server0.key"
+#define SSL_CERT_PATH "src/core/tsi/test_creds/server1.pem"
+#define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
 
 class SslLibraryInfo {
@@ -193,9 +193,9 @@ static void server_thread(void* arg) {
 
   // Set the cipher list to match the one expressed in
   // src/core/tsi/ssl_transport_security.cc.
-  const char* cipher_list =
-      "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
-      "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
+  const char* cipher_list = "ALL";
+  //    "ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-"
+  //    "SHA384:ECDHE-RSA-AES256-GCM-SHA384";
   if (!SSL_CTX_set_cipher_list(ctx, cipher_list)) {
     ERR_print_errors_fp(stderr);
     gpr_log(GPR_ERROR, "Couldn't set server cipher list.");
