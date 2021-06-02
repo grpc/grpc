@@ -49,6 +49,8 @@
 #define SSL_KEY_PATH "src/core/tsi/test_creds/server1.key"
 #define SSL_CA_PATH "src/core/tsi/test_creds/ca.pem"
 
+grpc_core::TraceFlag tsi_tracing_enabled(false, "tsi");
+
 class SslLibraryInfo {
  public:
   SslLibraryInfo() {}
