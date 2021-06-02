@@ -19,6 +19,10 @@ import sys
 import glob
 import yaml
 
+_SOURCE_FILES_TO_IGNORE = {
+    'third_party/s2a_core/src/token_manager/fake_access_token_manager.cc',
+}
+
 os.chdir(os.path.dirname(sys.argv[0]) + '/../..')
 
 out = {}
@@ -36,7 +40,8 @@ out['libs'] = [{
         sorted([
             src_file
             for src_file in glob.glob('third_party/s2a_core/src/**/*.cc')
-            if not os.path.basename(src_file).endswith('_test.cc')
+            if ((not os.path.basename(src_file).endswith('_test.cc')) and
+                (src_file not in _SOURCE_FILES_TO_IGNORE))
         ] + glob.glob('third_party/s2a_core/src/proto/upb-generated/proto/*.c')
               ),
     'headers':

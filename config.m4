@@ -1046,7 +1046,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/s2a_core/src/record_protocol/s2a_crypter_util.cc \
     third_party/s2a_core/src/record_protocol/s2a_half_connection.cc \
     third_party/s2a_core/src/record_protocol/s2a_upb_ticket_sender.cc \
-    third_party/s2a_core/src/token_manager/fake_access_token_manager.cc \
     third_party/s2a_core/src/token_manager/single_token_access_token_manager.cc \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/decode_fast.c \

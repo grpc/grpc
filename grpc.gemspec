@@ -2148,7 +2148,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/s2a_core/src/record_protocol/s2a_upb_ticket_sender.cc )
   s.files += %w( third_party/s2a_core/src/test_util/s2a_test_data.h )
   s.files += %w( third_party/s2a_core/src/test_util/s2a_test_util.h )
-  s.files += %w( third_party/s2a_core/src/token_manager/fake_access_token_manager.cc )
   s.files += %w( third_party/s2a_core/src/token_manager/fake_access_token_manager.h )
   s.files += %w( third_party/s2a_core/src/token_manager/single_token_access_token_manager.cc )
   s.files += %w( third_party/s2a_core/src/token_manager/single_token_access_token_manager.h )
