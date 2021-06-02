@@ -106,9 +106,12 @@ std::shared_ptr<CallCredentials> WrapCallCredentials(
 std::shared_ptr<ChannelCredentials> GoogleDefaultCredentials(
     const grpc::string& user_provided_audience) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
+
   return internal::WrapChannelCredentials(
-      grpc_google_default_credentials_create(nullptr,
-                                             user_provided_audience.c_str()));
+      grpc_google_default_credentials_create(
+          nullptr, user_provided_audience.empty()
+                       ? nullptr
+                       : user_provided_audience.c_str()));
 }
 
 std::shared_ptr<CallCredentials> ExternalAccountCredentials(
@@ -333,7 +336,9 @@ std::shared_ptr<CallCredentials> ServiceAccountJWTAccessCredentials(
   gpr_timespec lifetime =
       gpr_time_from_seconds(token_lifetime_seconds, GPR_TIMESPAN);
   return WrapCallCredentials(grpc_service_account_jwt_access_credentials_create(
-      json_key.c_str(), lifetime, user_provided_audience.c_str()));
+      json_key.c_str(), lifetime,
+      user_provided_audience.empty() ? nullptr
+                                     : user_provided_audience.c_str()));
 }
 
 // Builds refresh token credentials.

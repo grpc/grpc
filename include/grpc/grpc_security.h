@@ -161,7 +161,7 @@ GRPCAPI void grpc_channel_credentials_release(grpc_channel_credentials* creds);
    mechanism.
 
    user_provided_audience is an optional field for user to override the
-   audience in the JWT token if used. If user_provided_audience is empty,
+   audience in the JWT token if used. If user_provided_audience is nullptr,
    the service URL will be used as the audience. Note that
    user_provided_audience will only be used if a service account JWT access
    credential is created by the application default credentials mechanism. Also
@@ -335,7 +335,7 @@ GRPCAPI gpr_timespec grpc_max_auth_token_lifetime(void);
      this credentials.  It should not exceed grpc_max_auth_token_lifetime or
      will be cropped to this value.
    - user_provided_audience is an optional field for user to override the
-     auidence in the JWT token. If user_provided_audience is empty, the
+     auidence in the JWT token. If user_provided_audience is nullptr, the
      service URL will be used as the audience.  */
 GRPCAPI grpc_call_credentials*
 grpc_service_account_jwt_access_credentials_create(

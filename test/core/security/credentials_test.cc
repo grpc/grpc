@@ -1340,7 +1340,7 @@ static void test_jwt_creds_lifetime(void) {
   // Max lifetime.
   grpc_call_credentials* jwt_creds =
       grpc_service_account_jwt_access_credentials_create(
-          json_key_string, grpc_max_auth_token_lifetime(), "");
+          json_key_string, grpc_max_auth_token_lifetime(), nullptr);
   GPR_ASSERT(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
                           grpc_max_auth_token_lifetime()) == 0);
   /* Check security level. */
@@ -1354,7 +1354,7 @@ static void test_jwt_creds_lifetime(void) {
   gpr_timespec token_lifetime = {10, 0, GPR_TIMESPAN};
   GPR_ASSERT(gpr_time_cmp(grpc_max_auth_token_lifetime(), token_lifetime) > 0);
   jwt_creds = grpc_service_account_jwt_access_credentials_create(
-      json_key_string, token_lifetime, "");
+      json_key_string, token_lifetime, nullptr);
   GPR_ASSERT(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
                           token_lifetime) == 0);
   GPR_ASSERT(strncmp(expected_creds_debug_string_prefix,
@@ -1366,7 +1366,7 @@ static void test_jwt_creds_lifetime(void) {
   gpr_timespec add_to_max = {10, 0, GPR_TIMESPAN};
   token_lifetime = gpr_time_add(grpc_max_auth_token_lifetime(), add_to_max);
   jwt_creds = grpc_service_account_jwt_access_credentials_create(
-      json_key_string, token_lifetime, "");
+      json_key_string, token_lifetime, nullptr);
   GPR_ASSERT(gpr_time_cmp(creds_as_jwt(jwt_creds)->jwt_lifetime(),
                           grpc_max_auth_token_lifetime()) == 0);
   GPR_ASSERT(strncmp(expected_creds_debug_string_prefix,
@@ -1389,7 +1389,7 @@ static void test_jwt_creds_success(void) {
   expected_md emd[] = {{"authorization", expected_md_value.c_str()}};
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
-          json_key_string, grpc_max_auth_token_lifetime(), "");
+          json_key_string, grpc_max_auth_token_lifetime(), nullptr);
 
   /* First request: jwt_encode_and_sign should be called. */
   request_metadata_state* state =
@@ -1485,7 +1485,7 @@ static void test_jwt_creds_signing_failure(void) {
       0);
   grpc_call_credentials* creds =
       grpc_service_account_jwt_access_credentials_create(
-          json_key_string, grpc_max_auth_token_lifetime(), "");
+          json_key_string, grpc_max_auth_token_lifetime(), nullptr);
 
   grpc_jwt_encode_and_sign_set_override(encode_and_sign_jwt_failure);
   run_request_metadata_test(creds, auth_md_ctx, state);
@@ -1529,7 +1529,7 @@ static void test_google_default_creds_auth_key(void) {
       "json_key_google_default_creds", json_key);
   gpr_free(json_key);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create(nullptr, ""));
+      grpc_google_default_credentials_create(nullptr, nullptr));
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
@@ -1553,7 +1553,7 @@ static void test_google_default_creds_refresh_token(void) {
   set_google_default_creds_env_var_with_file_contents(
       "refresh_token_google_default_creds", test_refresh_token_str);
   creds = reinterpret_cast<grpc_composite_channel_credentials*>(
-      grpc_google_default_credentials_create(nullptr, ""));
+      grpc_google_default_credentials_create(nullptr, nullptr));
   auto* default_creds =
       reinterpret_cast<const grpc_google_default_channel_credentials*>(
           creds->inner_creds());
@@ -1604,7 +1604,7 @@ static void test_google_default_creds_gce(void) {
   /* Simulate a successful detection of GCE. */
   grpc_composite_channel_credentials* creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(nullptr, ""));
+          grpc_google_default_credentials_create(nullptr, nullptr));
 
   /* Verify that the default creds actually embeds a GCE creds. */
   GPR_ASSERT(creds != nullptr);
@@ -1686,7 +1686,7 @@ static void test_google_default_creds_non_gce(void) {
       httpcli_post_should_not_be_called);
   grpc_composite_channel_credentials* creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(nullptr, ""));
+          grpc_google_default_credentials_create(nullptr, nullptr));
   /* Verify that the default creds actually embeds a GCE creds. */
   GPR_ASSERT(creds != nullptr);
   GPR_ASSERT(creds->call_creds() != nullptr);
@@ -1724,10 +1724,12 @@ static void test_no_google_default_creds(void) {
       default_creds_gce_detection_httpcli_get_failure_override,
       httpcli_post_should_not_be_called);
   /* Simulate a successful detection of GCE. */
-  GPR_ASSERT(grpc_google_default_credentials_create(nullptr, "") == nullptr);
+  GPR_ASSERT(grpc_google_default_credentials_create(nullptr, nullptr) ==
+             nullptr);
   /* Try a second one. GCE detection should occur again. */
   g_test_gce_tenancy_checker_called = false;
-  GPR_ASSERT(grpc_google_default_credentials_create(nullptr, "") == nullptr);
+  GPR_ASSERT(grpc_google_default_credentials_create(nullptr, nullptr) ==
+             nullptr);
   GPR_ASSERT(g_test_gce_tenancy_checker_called == true);
   /* Cleanup. */
   grpc_override_well_known_credentials_path_getter(nullptr);
@@ -1753,7 +1755,7 @@ static void test_google_default_creds_call_creds_specified(void) {
       httpcli_post_should_not_be_called);
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(call_creds, ""));
+          grpc_google_default_credentials_create(call_creds, nullptr));
   GPR_ASSERT(g_test_gce_tenancy_checker_called == false);
   GPR_ASSERT(channel_creds != nullptr);
   GPR_ASSERT(channel_creds->call_creds() != nullptr);
@@ -1812,7 +1814,8 @@ static void test_google_default_creds_not_default(void) {
       httpcli_post_should_not_be_called);
   grpc_composite_channel_credentials* channel_creds =
       reinterpret_cast<grpc_composite_channel_credentials*>(
-          grpc_google_default_credentials_create(call_creds.release(), ""));
+          grpc_google_default_credentials_create(call_creds.release(),
+                                                 nullptr));
   GPR_ASSERT(g_test_gce_tenancy_checker_called == false);
   GPR_ASSERT(channel_creds != nullptr);
   GPR_ASSERT(channel_creds->call_creds() != nullptr);

@@ -66,6 +66,7 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
   grpc_mdelem jwt_md = GRPC_MDNULL;
   {
     gpr_mu_lock(&cache_mu_);
+
     if (!cached_.audience.empty() && cached_.audience == audience &&
         !GRPC_MDISNULL(cached_.jwt_md) &&
         (gpr_time_cmp(
@@ -139,7 +140,7 @@ grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
     return nullptr;
   }
   return grpc_core::MakeRefCounted<grpc_service_account_jwt_access_credentials>(
-      key, token_lifetime, user_provided_audience);
+      key, token_lifetime, std::move(user_provided_audience));
 }
 
 static char* redact_private_key(const char* json_key) {
@@ -172,8 +173,9 @@ grpc_call_credentials* grpc_service_account_jwt_access_credentials_create(
   }
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
+  if (user_provided_audience == nullptr) user_provided_audience = "";
   return grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
              grpc_auth_json_key_create_from_string(json_key), token_lifetime,
-             std::string(user_provided_audience))
+             user_provided_audience)
       .release();
 }

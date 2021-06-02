@@ -250,6 +250,7 @@ static grpc_error_handle create_default_creds_from_path(
   /* First, try an auth json key. */
   key = grpc_auth_json_key_create_from_json(json);
   if (grpc_auth_json_key_is_valid(&key)) {
+    if (user_provided_audience == nullptr) user_provided_audience = "";
     result =
         grpc_service_account_jwt_access_credentials_create_from_auth_json_key(
             key, grpc_max_auth_token_lifetime(), user_provided_audience);
