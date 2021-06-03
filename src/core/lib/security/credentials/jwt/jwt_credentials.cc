@@ -59,14 +59,15 @@ bool grpc_service_account_jwt_access_credentials::get_request_metadata(
     grpc_closure* /*on_request_metadata*/, grpc_error_handle* error) {
   gpr_timespec refresh_threshold = gpr_time_from_seconds(
       GRPC_SECURE_TOKEN_REFRESH_THRESHOLD_SECS, GPR_TIMESPAN);
-  absl::string_view audience = user_provided_audience_.empty()
-                                   ? context.service_url
-                                   : user_provided_audience_;
+  absl::string_view audience =
+      user_provided_audience_.empty()
+          ? absl::string_view(context.service_url, strlen(context.service_url))
+          : user_provided_audience_;
   /* See if we can return a cached jwt. */
   grpc_mdelem jwt_md = GRPC_MDNULL;
   {
     gpr_mu_lock(&cache_mu_);
-    if (!cached_.audience.empty() && audience == cached_.audience &&
+    if (!cached_.audience.empty() && cached_.audience == audience &&
         !GRPC_MDISNULL(cached_.jwt_md) &&
         (gpr_time_cmp(
              gpr_time_sub(cached_.jwt_expiration, gpr_now(GPR_CLOCK_REALTIME)),
