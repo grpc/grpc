@@ -18,7 +18,9 @@ import unittest
 import json
 import time
 import inspect
+import collections
 import threading
+from dataclasses import dataclass
 import functools
 from typing import Any, Union, Tuple, Mapping, Iterable, Optional
 
@@ -30,33 +32,38 @@ from framework.infrastructure import traffic_director
 from framework.test_app import client_app
 from framework.test_app import server_app
 
+import grpc
 from absl import flags
 from absl import logging
 from absl.testing import absltest
 from google.protobuf import json_format
 import googleapiclient
+from framework.rpc import grpc_testing
 
+# Load existing flags
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
 
+# Define urlMap specific flags
 QPS = flags.DEFINE_integer('qps', default=25, help='The QPS client is sending')
 _STRATEGY = flags.DEFINE_enum('strategy',
                               default='create',
                               enum_values=['create', 'keep', 'reuse'],
                               help='Strategy of GCP resources management')
-# TODO(lidiz) find a better way to filter test cases
+# TODO(lidiz) find a better way to filter test cases; e.g., Bazel
 _TEST_FILTER = flags.DEFINE_string(
     'test_filter',
     default='',
     help='Only run test case which match the given substring')
 
+# Test configs
 _URL_MAP_PROPAGATE_TIMEOUT_SEC = 600
 _URL_MAP_PROPAGATE_CHECK_INTERVAL_SEC = 2
 _K8S_NAMESPACE_DELETE_DEADLINE_SEC = 600
 _K8S_NAMESPACE_DELETE_CHECK_INTERVAL_SEC = 10
-
 _RPC_DISTRIBUTION_READY_TIMEOUT_SEC = 600
 
+# Global states of this module
 _url_map_change_aggregator = None
 _gcp_resource_manager = None
 
@@ -64,7 +71,10 @@ _gcp_resource_manager = None
 JsonType = Any
 HostRule = JsonType
 PathMatcher = JsonType
+LoadBalancerAccumulatedStatsResponse = grpc_testing.LoadBalancerAccumulatedStatsResponse
+XdsTestClient = client_app.XdsTestClient
 
+# ProtoBuf translatable RpcType enums
 RpcTypeUnaryCall = 'UNARY_CALL'
 RpcTypeEmptyCall = 'EMPTY_CALL'
 
@@ -152,10 +162,10 @@ class GcpResourceManager:
         
         The GCP resources including:
         - 2 K8s deployment (backends, alternative backends)
-        - Full suite of TD configuration
-        - Merged gigantic urlMap
+        - Full set of the Traffic Director ritual
+        - Merged gigantic urlMap from all imported test cases
 
-        These resources is intended to be used across test cases and multiple runs.
+        These resources are intended to be used across test cases and multiple runs.
         """
         # Firewall
         if xds_flags.ENSURE_FIREWALL.value:
@@ -248,7 +258,10 @@ class GcpResourceManager:
 
 
 class DumpedXdsConfig(dict):
-    """A convenience class to check xDS config."""
+    """A convenience class to check xDS config.
+
+    Feel free to add more pre-compute fields.
+    """
 
     def __init__(self, json_config: JsonType):
         super().__init__(json_config)
@@ -296,7 +309,10 @@ class DumpedXdsConfig(dict):
 
 
 class RpcDistributionStats:
-    """A convenience class to check RPC distribution."""
+    """A convenience class to check RPC distribution.
+
+    Feel free to add more pre-compute fields.
+    """
     num_failures: int
     num_oks: int
     default_service_rpc_count: int
@@ -338,6 +354,14 @@ class RpcDistributionStats:
                         else:
                             self.empty_call_default_service_rpc_count = count
                             self.default_service_rpc_count += count
+
+
+@dataclass
+class ExpectedResult:
+    """Describes the expected result of assertRpcStatusCode method below."""
+    rpc_type: str = RpcTypeUnaryCall
+    status_code: grpc.StatusCode = grpc.StatusCode.OK
+    ratio: float = 1
 
 
 class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
@@ -497,6 +521,35 @@ class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
             'Received LoadBalancerStatsResponse from test client %s:\n%s',
             test_client.ip, json.dumps(json_lb_stats, indent=2))
         return RpcDistributionStats(json_lb_stats)
+
+    def assertRpcStatusCode(self, test_client: XdsTestClient, *,
+                            expected: Iterable[ExpectedResult], length: int,
+                            tolerance: float) -> None:
+        """Assert the distribution of RPC statuses over a period of time."""
+        # Sending with pre-set QPS for a period of time
+        before_stats = test_client.get_load_balancer_accumulated_stats()
+        logging.info(
+            'Received LoadBalancerAccumulatedStatsResponse from test client %s: before:\n%s',
+            test_client.ip, before_stats)
+        time.sleep(length)
+        after_stats = test_client.get_load_balancer_accumulated_stats()
+        logging.info(
+            'Received LoadBalancerAccumulatedStatsResponse from test client %s: after: \n%s',
+            test_client.ip, after_stats)
+        # Validate the diff
+        total = length * QPS.value
+        for expected_result in expected:
+            rpc = expected_result.rpc_type
+            status = expected_result.status_code.value[0]
+            seen = after_stats.stats_per_method.get(rpc, {}).result.get(
+                status, 0) - before_stats.stats_per_method.get(
+                    rpc, {}).result.get(status, 0)
+            want = total * expected_result.ratio
+            self.assertLessEqual(
+                abs(seen - want) / want, tolerance,
+                'Expect rpc [%s] to return [%s] at %.2f ratio: seen=%d want=%d diff_ratio=%.4f > %.2f'
+                % (rpc, expected_result.status_code, expected_result.ratio,
+                   seen, want, abs(seen - want) / want, tolerance))
 
 
 class UrlMapChangeAggregator:

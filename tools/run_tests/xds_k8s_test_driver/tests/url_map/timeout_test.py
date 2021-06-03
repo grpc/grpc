@@ -23,7 +23,6 @@ import grpc
 from absl import flags
 from absl.testing import absltest
 from framework import xds_url_map_testcase
-from framework.rpc import grpc_testing
 from framework.test_app import client_app
 from google.protobuf import json_format
 
@@ -34,6 +33,7 @@ GcpResourceManager = xds_url_map_testcase.GcpResourceManager
 DumpedXdsConfig = xds_url_map_testcase.DumpedXdsConfig
 RpcTypeUnaryCall = xds_url_map_testcase.RpcTypeUnaryCall
 RpcTypeEmptyCall = xds_url_map_testcase.RpcTypeEmptyCall
+ExpectedResult = xds_url_map_testcase.ExpectedResult
 XdsTestClient = client_app.XdsTestClient
 
 logger = logging.getLogger(__name__)
@@ -42,30 +42,11 @@ flags.adopt_module_key_flags(xds_url_map_testcase)
 # The first batch of RPCs don't count towards the result of test case. They are
 # meant to prove the communication between driver and client is fine.
 _NUM_RPCS = 25
+_LENGTH_OF_RPC_SENDING_SEC = 10
 _ERROR_TOLERANCE = 0.1
-
-LoadBalancerAccumulatedStatsResponse = grpc_testing.LoadBalancerAccumulatedStatsResponse
-
-
-def _get_diff(before: LoadBalancerAccumulatedStatsResponse,
-              after: LoadBalancerAccumulatedStatsResponse, rpc: str,
-              status: int) -> int:
-    return after.stats_per_method[rpc].result[status] - before.stats_per_method[
-        rpc].result[status]
-
-
-def _equal_with_error(seen: int,
-                      want: int,
-                      tolerance: float = _ERROR_TOLERANCE):
-    return abs((seen - want) / want) <= tolerance
-
-
-_ExpectedResult = collections.namedtuple('_ExpectedResult',
-                                         ['rpc_type', 'status_code'])
 
 
 class _BaseXdsTimeOutTestCase(xds_url_map_testcase.XdsUrlMapTestCase):
-    _LENGTH_OF_RPC_SENDING_SEC: int = 10
 
     @staticmethod
     def url_map_change(
@@ -97,35 +78,6 @@ class _BaseXdsTimeOutTestCase(xds_url_map_testcase.XdsUrlMapTestCase):
     def rpc_distribution_validate(self, unused_test_client):
         raise NotImplementedError()
 
-    def assertRpcStatusCode(self,
-                            test_client: XdsTestClient,
-                            *,
-                            expected: Iterable[_ExpectedResult],
-                            length: int = _LENGTH_OF_RPC_SENDING_SEC) -> None:
-        # Sending with pre-set QPS for a period of time
-        before_stats = test_client.get_load_balancer_accumulated_stats()
-        time.sleep(length)
-        after_stats = test_client.get_load_balancer_accumulated_stats()
-        logging.info(
-            'Received LoadBalancerAccumulatedStatsResponse from test client %s: before:\n%s',
-            test_client.ip, before_stats)
-        logging.info(
-            'Received LoadBalancerAccumulatedStatsResponse from test client %s: after: \n%s',
-            test_client.ip, after_stats)
-        # Validate the diff
-        want = length * xds_url_map_testcase.QPS.value
-        for expected_result in expected:
-            self.assertTrue(
-                _equal_with_error(
-                    _get_diff(
-                        before_stats,
-                        after_stats,
-                        expected_result.rpc_type,
-                        expected_result.status_code.value[0],
-                    ),
-                    want,
-                ))
-
 
 class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
 
@@ -143,11 +95,13 @@ class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
         self.assertRpcStatusCode(
             test_client,
             expected=(
-                _ExpectedResult(rpc_type=RpcTypeUnaryCall,
-                                status_code=grpc.StatusCode.DEADLINE_EXCEEDED),
-                _ExpectedResult(rpc_type=RpcTypeEmptyCall,
-                                status_code=grpc.StatusCode.OK),
-            ))
+                ExpectedResult(rpc_type=RpcTypeUnaryCall,
+                               status_code=grpc.StatusCode.DEADLINE_EXCEEDED),
+                ExpectedResult(rpc_type=RpcTypeEmptyCall,
+                               status_code=grpc.StatusCode.OK),
+            ),
+            length=_LENGTH_OF_RPC_SENDING_SEC,
+            tolerance=_ERROR_TOLERANCE)
 
 
 class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
@@ -162,9 +116,11 @@ class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
             num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(
             test_client,
-            expected=(_ExpectedResult(
+            expected=(ExpectedResult(
                 rpc_type=RpcTypeUnaryCall,
-                status_code=grpc.StatusCode.DEADLINE_EXCEEDED),))
+                status_code=grpc.StatusCode.DEADLINE_EXCEEDED),),
+            length=_LENGTH_OF_RPC_SENDING_SEC,
+            tolerance=_ERROR_TOLERANCE)
 
 
 class TestTimeoutNotExceeded(_BaseXdsTimeOutTestCase):
@@ -176,9 +132,11 @@ class TestTimeoutNotExceeded(_BaseXdsTimeOutTestCase):
             rpc_types=[RpcTypeUnaryCall],
             num_rpcs=_NUM_RPCS)
         self.assertRpcStatusCode(test_client,
-                                 expected=(_ExpectedResult(
+                                 expected=(ExpectedResult(
                                      rpc_type=RpcTypeUnaryCall,
-                                     status_code=grpc.StatusCode.OK),))
+                                     status_code=grpc.StatusCode.OK),),
+                                 length=_LENGTH_OF_RPC_SENDING_SEC,
+                                 tolerance=_ERROR_TOLERANCE)
 
 
 def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
