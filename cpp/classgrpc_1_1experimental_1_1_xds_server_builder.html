@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.37.0</span>
+   &#160;<span id="projectnumber">1.38.0</span>
    </div>
   </td>
  </tr>
@@ -79,14 +79,14 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a410029ffafc7be61aee43258d2160665"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_xds_server_builder.html#a410029ffafc7be61aee43258d2160665">set_status_notifier</a> (<a class="el" href="classgrpc_1_1experimental_1_1_xds_server_serving_status_notifier_interface.html">XdsServerServingStatusNotifierInterface</a> *notifier)</td></tr>
 <tr class="separator:a410029ffafc7be61aee43258d2160665"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a349ffe284566eec46bd1c04912daef3f"><td class="memItemLeft" align="right" valign="top">std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server.html">Server</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_xds_server_builder.html#a349ffe284566eec46bd1c04912daef3f">BuildAndStart</a> () override</td></tr>
-<tr class="memdesc:a349ffe284566eec46bd1c04912daef3f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a running server which is ready for processing calls.  <a href="classgrpc_1_1experimental_1_1_xds_server_builder.html#a349ffe284566eec46bd1c04912daef3f">More...</a><br /></td></tr>
-<tr class="separator:a349ffe284566eec46bd1c04912daef3f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="inherit_header pub_methods_classgrpc_1_1_server_builder"><td colspan="2" onclick="javascript:toggleInherit('pub_methods_classgrpc_1_1_server_builder')"><img src="closed.png" alt="-"/>&#160;Public Member Functions inherited from <a class="el" href="classgrpc_1_1_server_builder.html">grpc::ServerBuilder</a></td></tr>
 <tr class="memitem:a208346e343cd01351492f0cace59b242 inherit pub_methods_classgrpc_1_1_server_builder"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a208346e343cd01351492f0cace59b242">ServerBuilder</a> ()</td></tr>
 <tr class="separator:a208346e343cd01351492f0cace59b242 inherit pub_methods_classgrpc_1_1_server_builder"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0bf5d1d50d4e5522ba90bc0efcf91b19 inherit pub_methods_classgrpc_1_1_server_builder"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a0bf5d1d50d4e5522ba90bc0efcf91b19">~ServerBuilder</a> ()</td></tr>
 <tr class="separator:a0bf5d1d50d4e5522ba90bc0efcf91b19 inherit pub_methods_classgrpc_1_1_server_builder"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ad1429e6575de79f8f17dad383fbc04 inherit pub_methods_classgrpc_1_1_server_builder"><td class="memItemLeft" align="right" valign="top">virtual std::unique_ptr&lt; <a class="el" href="classgrpc_1_1_server.html">grpc::Server</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a3ad1429e6575de79f8f17dad383fbc04">BuildAndStart</a> ()</td></tr>
+<tr class="memdesc:a3ad1429e6575de79f8f17dad383fbc04 inherit pub_methods_classgrpc_1_1_server_builder"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a running server which is ready for processing calls.  <a href="classgrpc_1_1_server_builder.html#a3ad1429e6575de79f8f17dad383fbc04">More...</a><br /></td></tr>
+<tr class="separator:a3ad1429e6575de79f8f17dad383fbc04 inherit pub_methods_classgrpc_1_1_server_builder"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4f62f6efaa8d47ffbcffc314cff6b1e4 inherit pub_methods_classgrpc_1_1_server_builder"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_server_builder.html">ServerBuilder</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder.html#a4f62f6efaa8d47ffbcffc314cff6b1e4">RegisterService</a> (<a class="el" href="classgrpc_1_1_service.html">grpc::Service</a> *service)</td></tr>
 <tr class="memdesc:a4f62f6efaa8d47ffbcffc314cff6b1e4 inherit pub_methods_classgrpc_1_1_server_builder"><td class="mdescLeft">&#160;</td><td class="mdescRight">Register a service.  <a href="classgrpc_1_1_server_builder.html#a4f62f6efaa8d47ffbcffc314cff6b1e4">More...</a><br /></td></tr>
 <tr class="separator:a4f62f6efaa8d47ffbcffc314cff6b1e4 inherit pub_methods_classgrpc_1_1_server_builder"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -171,41 +171,6 @@ Additional Inherited Members</h2></td></tr>
 <tr class="separator:af46ad1e5cd9880e9e7ba5eb187f4d37f inherit pro_methods_classgrpc_1_1_server_builder"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a349ffe284566eec46bd1c04912daef3f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a349ffe284566eec46bd1c04912daef3f">&#9670;&nbsp;</a></span>BuildAndStart()</h2>
-
-<div class="memitem">
-<div class="memproto">
-<table class="mlabels">
-  <tr>
-  <td class="mlabels-left">
-      <table class="memname">
-        <tr>
-          <td class="memname">std::unique_ptr&lt;<a class="el" href="classgrpc_1_1_server.html">Server</a>&gt; grpc::experimental::XdsServerBuilder::BuildAndStart </td>
-          <td>(</td>
-          <td class="paramname"></td><td>)</td>
-          <td></td>
-        </tr>
-      </table>
-  </td>
-  <td class="mlabels-right">
-<span class="mlabels"><span class="mlabel">inline</span><span class="mlabel">override</span><span class="mlabel">virtual</span></span>  </td>
-  </tr>
-</table>
-</div><div class="memdoc">
-
-<p>Return a running server which is ready for processing calls. </p>
-<p>Before calling, one typically needs to ensure that:</p><ol type="1">
-<li>a service is registered - so that the server knows what to serve (via RegisterService, or RegisterAsyncGenericService)</li>
-<li>a listening port has been added - so the server knows where to receive traffic (via AddListeningPort)</li>
-<li>[for async api only] completion queues have been added via AddCompletionQueue</li>
-</ol>
-<p>Will return a nullptr on errors. </p>
-
-<p>Reimplemented from <a class="el" href="classgrpc_1_1_server_builder.html#a3ad1429e6575de79f8f17dad383fbc04">grpc::ServerBuilder</a>.</p>
-
-</div>
-</div>
 <a id="a410029ffafc7be61aee43258d2160665"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a410029ffafc7be61aee43258d2160665">&#9670;&nbsp;</a></span>set_status_notifier()</h2>
 
@@ -238,7 +203,7 @@ Additional Inherited Members</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

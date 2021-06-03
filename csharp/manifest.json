@@ -1170,7 +1170,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.VersionInfo.html",
-          "hash": "JRMucA5rqlU6dfVIM7Y+xA=="
+          "hash": "vOB/6kMtYBp+uO5KeND6Fw=="
         }
       },
       "is_incremental": false,
@@ -1372,8 +1372,7 @@
   "incremental_info": [
     {
       "status": {
-        "can_incremental": false,
-        "details": "Cannot build incrementally because last build info is missing.",
+        "can_incremental": true,
         "incrementalPhase": "build"
       },
       "processors": {
@@ -1383,7 +1382,7 @@
           "incrementalPhase": "build"
         },
         "ManagedReferenceDocumentProcessor": {
-          "can_incremental": false,
+          "can_incremental": true,
           "incrementalPhase": "build"
         }
       }

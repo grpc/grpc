@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC PHP
-   &#160;<span id="projectnumber">1.37.0</span>
+   &#160;<span id="projectnumber">1.38.0</span>
    </div>
   </td>
  </tr>
@@ -78,22 +78,22 @@ $(function() {
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:a2c8b0d8ff1ecfcdf279a41ee1ef155a8"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_server_call_writer.html#a2c8b0d8ff1ecfcdf279a41ee1ef155a8">__construct</a> ($call)</td></tr>
-<tr class="separator:a2c8b0d8ff1ecfcdf279a41ee1ef155a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aacde64139bd966d7e998cd928e30af02"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_server_call_writer.html#aacde64139bd966d7e998cd928e30af02">start</a> (array $initialMetadata, $data=null, array $options=[])</td></tr>
-<tr class="separator:aacde64139bd966d7e998cd928e30af02"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a51402659959ff87d18df2176ae290d17"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_server_call_writer.html#a51402659959ff87d18df2176ae290d17">write</a> ( $data, array $options=[], array $initialMetadata=null)</td></tr>
-<tr class="separator:a51402659959ff87d18df2176ae290d17"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4cc3cd42c5cbe37d6b41508f188e0795"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_server_call_writer.html#a4cc3cd42c5cbe37d6b41508f188e0795">finish</a> (array $status=null, array $initialMetadata=null, $data=null, array $options=[])</td></tr>
-<tr class="separator:a4cc3cd42c5cbe37d6b41508f188e0795"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a6f0b3a715895e585ce8036f939691f45"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_server_call_writer.html#a6f0b3a715895e585ce8036f939691f45">__construct</a> ($call, $serverContext)</td></tr>
+<tr class="separator:a6f0b3a715895e585ce8036f939691f45"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ad88753d5ef94718b34d83defa1738e95"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_server_call_writer.html#ad88753d5ef94718b34d83defa1738e95">start</a> ( $data=null, array $options=[])</td></tr>
+<tr class="separator:ad88753d5ef94718b34d83defa1738e95"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a37204bb624c6c5097b28309e709d28ea"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_server_call_writer.html#a37204bb624c6c5097b28309e709d28ea">write</a> ( $data, array $options=[])</td></tr>
+<tr class="separator:a37204bb624c6c5097b28309e709d28ea"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1530edc8fb42451ca959e21770b4ba57"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="class_grpc_1_1_server_call_writer.html#a1530edc8fb42451ca959e21770b4ba57">finish</a> ( $data=null, array $options=[])</td></tr>
+<tr class="separator:a1530edc8fb42451ca959e21770b4ba57"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>This is an experimental and incomplete implementation of gRPC server for PHP. </p>
 <p>APIs are <em>definitely</em> going to be changed.</p>
 <p>DO NOT USE in production. </p>
 </div><h2 class="groupheader">Constructor &amp; Destructor Documentation</h2>
-<a id="a2c8b0d8ff1ecfcdf279a41ee1ef155a8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a2c8b0d8ff1ecfcdf279a41ee1ef155a8">&#9670;&nbsp;</a></span>__construct()</h2>
+<a id="a6f0b3a715895e585ce8036f939691f45"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a6f0b3a715895e585ce8036f939691f45">&#9670;&nbsp;</a></span>__construct()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -102,8 +102,18 @@ Public Member Functions</h2></td></tr>
           <td class="memname">Grpc\ServerCallWriter::__construct </td>
           <td>(</td>
           <td class="paramtype">&#160;</td>
-          <td class="paramname"><em>$call</em></td><td>)</td>
+          <td class="paramname"><em>$call</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
           <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname"><em>$serverContext</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -111,8 +121,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a4cc3cd42c5cbe37d6b41508f188e0795"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4cc3cd42c5cbe37d6b41508f188e0795">&#9670;&nbsp;</a></span>finish()</h2>
+<a id="a1530edc8fb42451ca959e21770b4ba57"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1530edc8fb42451ca959e21770b4ba57">&#9670;&nbsp;</a></span>finish()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -120,18 +130,6 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">Grpc\ServerCallWriter::finish </td>
           <td>(</td>
-          <td class="paramtype">array&#160;</td>
-          <td class="paramname"><em>$status</em> = <code>null</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">array&#160;</td>
-          <td class="paramname"><em>$initialMetadata</em> = <code>null</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>$data</em> = <code>null</code>, </td>
         </tr>
@@ -151,8 +149,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="aacde64139bd966d7e998cd928e30af02"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aacde64139bd966d7e998cd928e30af02">&#9670;&nbsp;</a></span>start()</h2>
+<a id="ad88753d5ef94718b34d83defa1738e95"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad88753d5ef94718b34d83defa1738e95">&#9670;&nbsp;</a></span>start()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -160,12 +158,6 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">Grpc\ServerCallWriter::start </td>
           <td>(</td>
-          <td class="paramtype">array&#160;</td>
-          <td class="paramname"><em>$initialMetadata</em>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
           <td class="paramtype">&#160;</td>
           <td class="paramname"><em>$data</em> = <code>null</code>, </td>
         </tr>
@@ -185,8 +177,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a51402659959ff87d18df2176ae290d17"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a51402659959ff87d18df2176ae290d17">&#9670;&nbsp;</a></span>write()</h2>
+<a id="a37204bb624c6c5097b28309e709d28ea"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a37204bb624c6c5097b28309e709d28ea">&#9670;&nbsp;</a></span>write()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -201,13 +193,7 @@ Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">array&#160;</td>
-          <td class="paramname"><em>$options</em> = <code>[]</code>, </td>
-        </tr>
-        <tr>
-          <td class="paramkey"></td>
-          <td></td>
-          <td class="paramtype">array&#160;</td>
-          <td class="paramname"><em>$initialMetadata</em> = <code>null</code>&#160;</td>
+          <td class="paramname"><em>$options</em> = <code>[]</code>&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -225,7 +211,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 7 2021 20:19:43 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jun 2 2021 06:58:21 for GRPC PHP by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

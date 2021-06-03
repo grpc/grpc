@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Objective-C
-   &#160;<span id="projectnumber">1.37.0</span>
+   &#160;<span id="projectnumber">1.38.0</span>
    </div>
   </td>
  </tr>
@@ -129,6 +129,9 @@ XdsUpdateClientConfigureService</h2>
 <div class="line">  repeated RpcType types = 1;</div>
 <div class="line">  // The collection of custom metadata to be attached to RPCs sent by the client.</div>
 <div class="line">  repeated Metadata metadata = 2;</div>
+<div class="line">  // The deadline to use, in seconds, for all RPCs.  If unset or zero, the</div>
+<div class="line">  // client will use the default from the command-line.</div>
+<div class="line">  int32 timeout_sec = 3;</div>
 <div class="line">}</div>
 <div class="line"> </div>
 <div class="line">message ClientConfigureResponse {}</div>
@@ -137,7 +140,7 @@ XdsUpdateClientConfigureService</h2>
 <div class="line">  // Update the tes client&#39;s configuration.</div>
 <div class="line">  rpc Configure(ClientConfigureRequest) returns (ClientConfigureResponse);</div>
 <div class="line">}</div>
-</div><!-- fragment --><p>The test client changes its behavior right after receiving the <code>ClientConfigureRequest</code>. Currently it only supports configuring the type(s) of RPCs sent by the test client and metadata attached to each type of RPCs.</p>
+</div><!-- fragment --><p>The test client changes its behavior right after receiving the <code>ClientConfigureRequest</code>. Currently it only supports configuring the type(s) of RPCs sent by the test client, metadata attached to each type of RPCs, and the timeout.</p>
 <h1><a class="anchor" id="autotoc_md240"></a>
 Test Driver</h1>
 <p>Note that, unlike our other interop tests, neither the client nor the server has any notion of which of the following test scenarios is under test. Instead, a separate test driver is responsible for configuring the load balancer and the server backends, running the client, and then querying the client's <code>LoadBalancerStatsService</code> to validate load balancer behavior for each of the tests described below.</p>
@@ -152,21 +155,42 @@ LoadBalancerStatsService</h1>
 <div class="line">}</div>
 <div class="line"> </div>
 <div class="line">message LoadBalancerStatsResponse {</div>
+<div class="line">  message RpcsByPeer {</div>
+<div class="line">    // The number of completed RPCs for each peer.</div>
+<div class="line">    map&lt;string, int32&gt; rpcs_by_peer = 1;</div>
+<div class="line">  }</div>
 <div class="line">  // The number of completed RPCs for each peer.</div>
 <div class="line">  map&lt;string, int32&gt; rpcs_by_peer = 1;</div>
 <div class="line">  // The number of RPCs that failed to record a remote peer.</div>
 <div class="line">  int32 num_failures = 2;</div>
+<div class="line">  map&lt;string, RpcsByPeer&gt; rpcs_by_method = 3;</div>
 <div class="line">}</div>
 <div class="line"> </div>
 <div class="line">message LoadBalancerAccumulatedStatsRequest {}</div>
 <div class="line"> </div>
 <div class="line">message LoadBalancerAccumulatedStatsResponse {</div>
 <div class="line">  // The total number of RPCs have ever issued for each type.</div>
-<div class="line">  map&lt;string, int32&gt; num_rpcs_started_by_method = 1;</div>
+<div class="line">  // Deprecated: use stats_per_method.rpcs_started instead.</div>
+<div class="line">  map&lt;string, int32&gt; num_rpcs_started_by_method = 1 [deprecated = true];</div>
 <div class="line">  // The total number of RPCs have ever completed successfully for each type.</div>
-<div class="line">  map&lt;string, int32&gt; num_rpcs_succeeded_by_method = 2;</div>
+<div class="line">  // Deprecated: use stats_per_method.result instead.</div>
+<div class="line">  map&lt;string, int32&gt; num_rpcs_succeeded_by_method = 2 [deprecated = true];</div>
 <div class="line">  // The total number of RPCs have ever failed for each type.</div>
-<div class="line">  map&lt;string, int32&gt; num_rpcs_failed_by_method = 3;</div>
+<div class="line">  // Deprecated: use stats_per_method.result instead.</div>
+<div class="line">  map&lt;string, int32&gt; num_rpcs_failed_by_method = 3 [deprecated = true];</div>
+<div class="line"> </div>
+<div class="line">  message MethodStats {</div>
+<div class="line">    // The number of RPCs that were started for this method.</div>
+<div class="line">    int32 rpcs_started = 1;</div>
+<div class="line"> </div>
+<div class="line">    // The number of RPCs that completed with each status for this method.  The</div>
+<div class="line">    // key is the integral value of a google.rpc.Code; the value is the count.</div>
+<div class="line">    map&lt;int32, int32&gt; result = 2;</div>
+<div class="line">  }</div>
+<div class="line"> </div>
+<div class="line">  // Per-method RPC statistics.  The key is the RpcType in string form; e.g.</div>
+<div class="line">  // &#39;EMPTY_CALL&#39; or &#39;UNARY_CALL&#39;</div>
+<div class="line">  map&lt;string, MethodStats&gt; stats_per_method = 4;</div>
 <div class="line">}</div>
 <div class="line"> </div>
 <div class="line">service LoadBalancerStatsService {</div>
@@ -701,7 +725,7 @@ timeout</h2>
 </div><!-- PageDoc -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 7 2021 20:19:42 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jun 2 2021 06:58:19 for GRPC Objective-C by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

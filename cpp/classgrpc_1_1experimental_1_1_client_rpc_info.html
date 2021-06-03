@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.37.0</span>
+   &#160;<span id="projectnumber">1.38.0</span>
    </div>
   </td>
  </tr>
@@ -102,6 +102,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a9a4ae8b85a692a5baf72f6aafae2e097"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a9a4ae8b85a692a5baf72f6aafae2e097">method</a> () const</td></tr>
 <tr class="memdesc:a9a4ae8b85a692a5baf72f6aafae2e097"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return the fully-specified method name.  <a href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a9a4ae8b85a692a5baf72f6aafae2e097">More...</a><br /></td></tr>
 <tr class="separator:a9a4ae8b85a692a5baf72f6aafae2e097"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a38316a1ac18a7599eff42f28d093b58b"><td class="memItemLeft" align="right" valign="top">const char *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a38316a1ac18a7599eff42f28d093b58b">suffix_for_stats</a> () const</td></tr>
+<tr class="memdesc:a38316a1ac18a7599eff42f28d093b58b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return an identifying suffix for the client stub, or nullptr if one wasn't specified.  <a href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a38316a1ac18a7599eff42f28d093b58b">More...</a><br /></td></tr>
+<tr class="separator:a38316a1ac18a7599eff42f28d093b58b"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a7eb6bb8ce31c8f9be44b8dab1d1a6d27"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_channel_interface.html">ChannelInterface</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a7eb6bb8ce31c8f9be44b8dab1d1a6d27">channel</a> ()</td></tr>
 <tr class="memdesc:a7eb6bb8ce31c8f9be44b8dab1d1a6d27"><td class="mdescLeft">&#160;</td><td class="mdescRight">Return a pointer to the channel on which the RPC is being sent.  <a href="classgrpc_1_1experimental_1_1_client_rpc_info.html#a7eb6bb8ce31c8f9be44b8dab1d1a6d27">More...</a><br /></td></tr>
 <tr class="separator:a7eb6bb8ce31c8f9be44b8dab1d1a6d27"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -311,6 +314,33 @@ Friends</h2></td></tr>
 
 </div>
 </div>
+<a id="a38316a1ac18a7599eff42f28d093b58b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a38316a1ac18a7599eff42f28d093b58b">&#9670;&nbsp;</a></span>suffix_for_stats()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname">const char* grpc::experimental::ClientRpcInfo::suffix_for_stats </td>
+          <td>(</td>
+          <td class="paramname"></td><td>)</td>
+          <td> const</td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+
+<p>Return an identifying suffix for the client stub, or nullptr if one wasn't specified. </p>
+
+</div>
+</div>
 <a id="a6d97a409fc9d22ec20ede8e1b9bc11c9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a6d97a409fc9d22ec20ede8e1b9bc11c9">&#9670;&nbsp;</a></span>type()</h2>
 
@@ -389,7 +419,7 @@ Friends</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Apr 7 2021 20:19:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Wed Jun 2 2021 06:57:49 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.17
 </small></address>

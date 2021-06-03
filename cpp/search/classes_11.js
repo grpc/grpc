@@ -1,5 +1,6 @@
 var searchData=
 [
-  ['xdsserverbuilder_2357',['XdsServerBuilder',['../classgrpc_1_1experimental_1_1_xds_server_builder.html',1,'grpc::experimental']]],
-  ['xdsserverservingstatusnotifierinterface_2358',['XdsServerServingStatusNotifierInterface',['../classgrpc_1_1experimental_1_1_xds_server_serving_status_notifier_interface.html',1,'grpc::experimental']]]
+  ['writeoptions_2421',['WriteOptions',['../classgrpc_1_1_write_options.html',1,'grpc']]],
+  ['writerinterface_2422',['WriterInterface',['../classgrpc_1_1internal_1_1_writer_interface.html',1,'grpc::internal']]],
+  ['writerinterface_3c_20responsetype_20_3e_2423',['WriterInterface&lt; ResponseType &gt;',['../classgrpc_1_1internal_1_1_writer_interface.html',1,'grpc::internal']]]
 ];
