@@ -7225,7 +7225,7 @@ TEST_P(CdsTest, RingHashNoHashPolicy) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs = 2000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -7288,7 +7288,7 @@ TEST_P(CdsTest, RingHashOnHeaderThatIsNotPresent) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs = 2000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -7331,7 +7331,7 @@ TEST_P(CdsTest, RingHashUnsupportedHashPolicyDefaultToRandomHashing) {
   gpr_setenv("GRPC_XDS_EXPERIMENTAL_ENABLE_RING_HASH", "true");
   const double kDistribution50Percent = 0.5;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs = 2000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kDistribution50Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -7380,7 +7380,7 @@ TEST_P(CdsTest, RingHashRandomHashingDistributionAccordingToEndpointWeight) {
   const double kWeight33Percent = static_cast<double>(kWeight1) / kWeightTotal;
   const double kWeight66Percent = static_cast<double>(kWeight2) / kWeightTotal;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs = 2000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kWeight33Percent, kErrorTolerance);
   auto cluster = default_cluster_;
@@ -7423,7 +7423,7 @@ TEST_P(CdsTest,
   const double kWeight20Percent = static_cast<double>(kWeight1) / kWeightTotal;
   const double kWeight80Percent = static_cast<double>(kWeight2) / kWeightTotal;
   const double kErrorTolerance = 0.05;
-  const uint32_t kRpcTimeoutMs = 10000;
+  const uint32_t kRpcTimeoutMs = 2000;
   const size_t kNumRpcs =
       ComputeIdealNumRpcs(kWeight20Percent, kErrorTolerance);
   auto cluster = default_cluster_;
