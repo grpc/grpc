@@ -351,6 +351,7 @@ CORE_SOURCE_FILES = [
     'src/core/lib/debug/stats.cc',
     'src/core/lib/debug/stats_data.cc',
     'src/core/lib/debug/trace.cc',
+    'src/core/lib/event_engine/endpoint_config.cc',
     'src/core/lib/event_engine/event_engine.cc',
     'src/core/lib/event_engine/slice_allocator.cc',
     'src/core/lib/event_engine/sockaddr.cc',

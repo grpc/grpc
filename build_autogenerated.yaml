@@ -398,7 +398,7 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
-  - include/grpc/event_engine/channel_args.h
+  - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/port.h
   - include/grpc/event_engine/slice_allocator.h
@@ -1232,6 +1232,7 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/slice_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
@@ -1601,7 +1602,7 @@ libs:
   - include/grpc/byte_buffer_reader.h
   - include/grpc/census.h
   - include/grpc/compression.h
-  - include/grpc/event_engine/channel_args.h
+  - include/grpc/event_engine/endpoint_config.h
   - include/grpc/event_engine/event_engine.h
   - include/grpc/event_engine/port.h
   - include/grpc/event_engine/slice_allocator.h
@@ -1985,6 +1986,7 @@ libs:
   - src/core/lib/debug/stats.cc
   - src/core/lib/debug/stats_data.cc
   - src/core/lib/debug/trace.cc
+  - src/core/lib/event_engine/endpoint_config.cc
   - src/core/lib/event_engine/event_engine.cc
   - src/core/lib/event_engine/slice_allocator.cc
   - src/core/lib/event_engine/sockaddr.cc
@@ -5078,6 +5080,15 @@ targets:
   deps:
   - grpc++_test
   - grpc++_test_util
+- name: endpoint_config_test
+  gtest: true
+  build: test
+  language: c++
+  headers: []
+  src:
+  - test/core/event_engine/endpoint_config_test.cc
+  deps:
+  - grpc_test_util
 - name: error_details_test
   gtest: true
   build: test
