@@ -9378,7 +9378,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
     std::shared_ptr<Channel> channel;
     std::unique_ptr<grpc::testing::EchoTestService::Stub> stub;
     ClientContext context;
-    std::unique_ptr<ClientWriter<EchoRequest>> writer;
+    std::unique_ptr<ClientReaderWriter<EchoRequest, EchoResponse>> stream;
   } streaming_rpcs[kNumChannels];
   EchoRequest request;
   EchoResponse response;
@@ -9388,9 +9388,11 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
     streaming_rpcs[i].stub =
         grpc::testing::EchoTestService::NewStub(streaming_rpcs[i].channel);
     streaming_rpcs[i].context.set_wait_for_ready(true);
-    streaming_rpcs[i].writer = streaming_rpcs[i].stub->RequestStream(
-        &streaming_rpcs[i].context, &response);
-    EXPECT_TRUE(streaming_rpcs[i].writer->Write(request));
+    streaming_rpcs[i].stream =
+        streaming_rpcs[i].stub->BidiStream(&streaming_rpcs[i].context);
+    EXPECT_TRUE(streaming_rpcs[i].stream->Write(request));
+    streaming_rpcs[i].stream->Read(&response);
+    EXPECT_EQ(request.message(), response.message());
   }
   // Deleting the resource will make the server start rejecting connections
   UnsetLdsUpdate();
@@ -9400,9 +9402,14 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           true /* test_expects_failure */);
   for (int i = 0; i < kNumChannels; i++) {
-    EXPECT_TRUE(streaming_rpcs[i].writer->Write(request));
-    EXPECT_TRUE(streaming_rpcs[i].writer->WritesDone());
-    EXPECT_TRUE(streaming_rpcs[i].writer->Finish().ok());
+    EXPECT_TRUE(streaming_rpcs[i].stream->Write(request));
+    streaming_rpcs[i].stream->Read(&response);
+    EXPECT_EQ(request.message(), response.message());
+    EXPECT_TRUE(streaming_rpcs[i].stream->WritesDone());
+    auto status = streaming_rpcs[i].stream->Finish();
+    EXPECT_TRUE(status.ok())
+        << status.error_message() << ", " << status.error_details() << ", "
+        << streaming_rpcs[i].context.debug_error_string();
     // New RPCs on the existing channels should fail.
     ClientContext new_context;
     new_context.set_deadline(grpc_timeout_milliseconds_to_deadline(1000));

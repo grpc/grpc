@@ -46,11 +46,9 @@ CONFIGURATION_FILE_HEADER_COMMENT = """
 """
 
 
-def label_language(language: str) -> str:
-    """Convert scenario language to place in a resource label."""
-    return {
-        'c++': 'cxx',
-    }.get(language, language)
+def safe_name(language: str) -> str:
+    """Returns a name that is safe to use in labels and file names."""
+    return scenario_config.LANGUAGES[language].safename
 
 
 def default_prefix() -> str:
@@ -136,10 +134,8 @@ def gen_loadtest_configs(
     """
     validate_annotations(annotations)
     prefix = loadtest_name_prefix or default_prefix()
-    cl = label_language(language_config.client_language or
-                        language_config.language)
-    sl = label_language(language_config.server_language or
-                        language_config.language)
+    cl = safe_name(language_config.client_language or language_config.language)
+    sl = safe_name(language_config.server_language or language_config.language)
     scenario_filter = scenario_config_exporter.scenario_filter(
         scenario_name_regex=scenario_name_regex,
         category=language_config.category,
@@ -162,8 +158,7 @@ def gen_loadtest_configs(
             metadata['name'] = name
             if 'labels' not in metadata:
                 metadata['labels'] = dict()
-            metadata['labels']['language'] = label_language(
-                language_config.language)
+            metadata['labels']['language'] = safe_name(language_config.language)
             metadata['labels']['prefix'] = prefix
             if 'annotations' not in metadata:
                 metadata['annotations'] = dict()
@@ -194,7 +189,7 @@ def gen_loadtest_configs(
                          'unique names, name counts for language %s: %s') %
                         (cl, c.most_common()))
 
-            # Name client instances with an index starting from 0.
+            # Name client instances with an index starting from zero.
             client_instances = []
             for i in range(instances_per_client):
                 client_instances.extend(copy.deepcopy(clients))
@@ -222,12 +217,14 @@ def gen_loadtest_configs(
             # Set servers to named instances.
             spec['servers'] = servers
 
-            # Name driver with an index for consistency with workers.
-            if 'driver' not in spec:
-                spec['driver'] = dict()
-            driver = spec['driver']
-            driver['language'] = 'cxx'
-            driver['name'] = component_name((driver.get('name', ''), str(i)))
+            # Name the driver with an index for consistency with workers.
+            # There is only one driver, so the index is zero.
+            if 'driver' in spec and 'run' in spec['driver']:
+                driver = spec['driver']
+                if 'language' not in driver:
+                    driver['language'] = safe_name('c++')
+                if 'name' not in driver or not driver['name']:
+                    driver['name'] = '0'
 
             spec['scenariosJSON'] = scenario_str
 
@@ -283,15 +280,6 @@ def config_dumper(header_comment: str) -> Type[yaml.SafeDumper]:
             if isinstance(self.event, yaml.StreamStartEvent):
                 self.write_indent()
                 self.write_indicator(header_comment, need_whitespace=False)
-
-        def expect_block_sequence(self):
-            super().expect_block_sequence()
-            self.increase_indent()
-
-        def expect_block_sequence_item(self, first=False):
-            if isinstance(self.event, yaml.SequenceEndEvent):
-                self.indent = self.indents.pop()
-            super().expect_block_sequence_item(first)
 
     def str_presenter(dumper, data):
         if '\n' in data:
