@@ -595,8 +595,8 @@ class RetryFilter::CallData::CallStackDestructionBarrier
 //
 
 RetryFilter::CallData::CallAttempt::CallAttempt(CallData* calld)
-    : RefCounted(
-          GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace) ? "CallAttempt" : nullptr),
+    : RefCounted(GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace) ? "CallAttempt"
+                                                           : nullptr),
       calld_(calld),
       batch_payload_(calld->call_context_),
       started_send_initial_metadata_(false),
@@ -952,8 +952,7 @@ RetryFilter::CallData::CallAttempt::BatchData::BatchData(
           refcount),
       call_attempt_(std::move(attempt)) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p attempt=%p: creating batch %p",
+    gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: creating batch %p",
             call_attempt_->calld_->chand_, call_attempt_->calld_,
             call_attempt_.get(), this);
   }
@@ -975,8 +974,7 @@ RetryFilter::CallData::CallAttempt::BatchData::BatchData(
 
 RetryFilter::CallData::CallAttempt::BatchData::~BatchData() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_retry_trace)) {
-    gpr_log(GPR_INFO,
-            "chand=%p calld=%p attempt=%p: destroying batch %p",
+    gpr_log(GPR_INFO, "chand=%p calld=%p attempt=%p: destroying batch %p",
             call_attempt_->calld_->chand_, call_attempt_->calld_,
             call_attempt_.get(), this);
   }
