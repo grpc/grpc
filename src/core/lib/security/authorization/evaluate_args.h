@@ -23,9 +23,8 @@
 
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
+#include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/transport/metadata_batch.h"
-
-typedef struct grpc_auth_context grpc_auth_context;
 
 namespace grpc_core {
 

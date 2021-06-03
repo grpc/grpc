@@ -1026,6 +1026,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/security/authorization/authorization_engine.h )
   s.files += %w( src/core/lib/security/authorization/authorization_policy_provider.h )
   s.files += %w( src/core/lib/security/authorization/authorization_policy_provider_vtable.cc )
+  s.files += %w( src/core/lib/security/authorization/evaluate_args.cc )
   s.files += %w( src/core/lib/security/authorization/evaluate_args.h )
   s.files += %w( src/core/lib/security/context/security_context.cc )
   s.files += %w( src/core/lib/security/context/security_context.h )

@@ -16,8 +16,6 @@
 #include <grpc/support/alloc.h>
 #include <grpcpp/security/authorization_policy_provider.h>
 
-#include "src/cpp/server/authorization_policy_provider_impl.h"
-
 namespace grpc {
 namespace experimental {
 

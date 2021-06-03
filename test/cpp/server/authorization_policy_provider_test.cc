@@ -12,9 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#include <grpcpp/security/authorization_policy_provider.h>
 #include <gtest/gtest.h>
 
-#include "src/cpp/server/authorization_policy_provider_impl.h"
 #include "test/core/util/test_config.h"
 
 namespace grpc {
