@@ -1329,6 +1329,7 @@
         'src/core/lib/json/json_reader.cc',
         'src/core/lib/json/json_util.cc',
         'src/core/lib/json/json_writer.cc',
+        'src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc',
         'src/core/lib/slice/b64.cc',
         'src/core/lib/slice/percent_encoding.cc',
         'src/core/lib/slice/slice.cc',

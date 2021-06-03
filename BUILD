@@ -310,6 +310,7 @@ grpc_cc_library(
         "src/core/lib/surface/init.cc",
         "src/core/lib/surface/init_unsecure.cc",
         "src/core/plugin_registry/grpc_unsecure_plugin_registry.cc",
+        "src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
