@@ -1367,8 +1367,7 @@ void RetryFilter::CallData::CallAttempt::BatchData::
                     "resuming recv_message_ready");
     }
     // Add closure for deferred on_complete.
-    if (GPR_UNLIKELY(call_attempt_->on_complete_deferred_batch_ !=
-                     nullptr)) {
+    if (GPR_UNLIKELY(call_attempt_->on_complete_deferred_batch_ != nullptr)) {
       closures->Add(&call_attempt_->on_complete_deferred_batch_->on_complete_,
                     call_attempt_->on_complete_error_, "resuming on_complete");
       call_attempt_->on_complete_deferred_batch_.release();

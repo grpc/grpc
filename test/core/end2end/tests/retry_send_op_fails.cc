@@ -289,8 +289,8 @@ class FailFirstSendOpFilter {
  public:
   class CallData {
    public:
-    static grpc_error_handle Init(
-        grpc_call_element* elem, const grpc_call_element_args* args) {
+    static grpc_error_handle Init(grpc_call_element* elem,
+                                  const grpc_call_element_args* args) {
       new (elem->call_data) CallData(args);
       return GRPC_ERROR_NONE;
     }
@@ -313,10 +313,9 @@ class FailFirstSendOpFilter {
       if (calld->fail_) {
         grpc_transport_stream_op_batch_finish_with_failure(
             batch,
-            grpc_error_set_int(
-                GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                    "FailFirstSendOpFilter failing batch"),
-                GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_ABORTED),
+            grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                   "FailFirstSendOpFilter failing batch"),
+                               GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_ABORTED),
             calld->call_combiner_);
         return;
       }
