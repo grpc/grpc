@@ -280,6 +280,9 @@ END2END_TESTS = {
         needs_client_channel = True,
     ),
     "retry_disabled": _test_options(needs_client_channel = True),
+    "retry_exceeds_buffer_size_in_delay": _test_options(
+        needs_client_channel = True,
+    ),
     "retry_exceeds_buffer_size_in_initial_batch": _test_options(
         needs_client_channel = True,
         # TODO(jtattermusch): too long bazel test name makes the test flaky on Windows RBE

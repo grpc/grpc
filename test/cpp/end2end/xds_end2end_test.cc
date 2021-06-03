@@ -1615,28 +1615,28 @@ grpc_millis NowFromCycleCounter() {
   return grpc_cycle_counter_to_millis_round_up(now);
 }
 
-// Returns the number of RPCs needed to pass error_tolerance at 99.99% chance.
+// Returns the number of RPCs needed to pass error_tolerance at 99.995% chance.
 // Rolling dices in drop/fault-injection generates a binomial distribution (if
 // our code is not horribly wrong). Let's make "n" the number of samples, "p"
 // the probabilty. If we have np>5 & n(1-p)>5, we can approximately treat the
 // binomial distribution as a normal distribution.
 //
 // For normal distribution, we can easily look up how many standard deviation we
-// need to reach 99.99%. Based on Wiki's table
-// https://en.wikipedia.org/wiki/Standard_normal_table, we need 3.89 sigma
-// (standard deviation) to cover the probability area of 99.99%. In another
+// need to reach 99.995%. Based on Wiki's table
+// https://en.wikipedia.org/wiki/Standard_normal_table, we need 4.00 sigma
+// (standard deviation) to cover the probability area of 99.995%. In another
 // word, for a sample with size "n" probability "p" error-tolerance "k", we want
-// the error always land within 3.89 sigma. The sigma of binominal distribution
+// the error always land within 4.00 sigma. The sigma of binominal distribution
 // and be computed as sqrt(np(1-p)). Hence, we have the equation:
 //
-//   kn <= 3.89 * sqrt(np(1-p))
+//   kn <= 4.00 * sqrt(np(1-p))
 //
-// E.g., with p=0.5 k=0.1, n >= 378; with p=0.5 k=0.05, n >= 1513; with p=0.5
-// k=0.01, n >= 37830.
+// E.g., with p=0.5 k=0.1, n >= 400; with p=0.5 k=0.05, n >= 1600; with p=0.5
+// k=0.01, n >= 40000.
 size_t ComputeIdealNumRpcs(double p, double error_tolerance) {
   GPR_ASSERT(p >= 0 && p <= 1);
   size_t num_rpcs =
-      ceil(p * (1 - p) * 3.89 * 3.89 / error_tolerance / error_tolerance);
+      ceil(p * (1 - p) * 4.00 * 4.00 / error_tolerance / error_tolerance);
   gpr_log(GPR_INFO,
           "Sending %" PRIuPTR " RPCs for percentage=%.3f error_tolerance=%.3f",
           num_rpcs, p, error_tolerance);
@@ -9378,7 +9378,7 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
     std::shared_ptr<Channel> channel;
     std::unique_ptr<grpc::testing::EchoTestService::Stub> stub;
     ClientContext context;
-    std::unique_ptr<ClientWriter<EchoRequest>> writer;
+    std::unique_ptr<ClientReaderWriter<EchoRequest, EchoResponse>> stream;
   } streaming_rpcs[kNumChannels];
   EchoRequest request;
   EchoResponse response;
@@ -9388,9 +9388,11 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
     streaming_rpcs[i].stub =
         grpc::testing::EchoTestService::NewStub(streaming_rpcs[i].channel);
     streaming_rpcs[i].context.set_wait_for_ready(true);
-    streaming_rpcs[i].writer = streaming_rpcs[i].stub->RequestStream(
-        &streaming_rpcs[i].context, &response);
-    EXPECT_TRUE(streaming_rpcs[i].writer->Write(request));
+    streaming_rpcs[i].stream =
+        streaming_rpcs[i].stub->BidiStream(&streaming_rpcs[i].context);
+    EXPECT_TRUE(streaming_rpcs[i].stream->Write(request));
+    streaming_rpcs[i].stream->Read(&response);
+    EXPECT_EQ(request.message(), response.message());
   }
   // Deleting the resource will make the server start rejecting connections
   UnsetLdsUpdate();
@@ -9400,9 +9402,14 @@ TEST_P(XdsEnabledServerStatusNotificationTest, ExistingRpcsOnResourceDeletion) {
   SendRpc([this]() { return CreateInsecureChannel(); }, {}, {},
           true /* test_expects_failure */);
   for (int i = 0; i < kNumChannels; i++) {
-    EXPECT_TRUE(streaming_rpcs[i].writer->Write(request));
-    EXPECT_TRUE(streaming_rpcs[i].writer->WritesDone());
-    EXPECT_TRUE(streaming_rpcs[i].writer->Finish().ok());
+    EXPECT_TRUE(streaming_rpcs[i].stream->Write(request));
+    streaming_rpcs[i].stream->Read(&response);
+    EXPECT_EQ(request.message(), response.message());
+    EXPECT_TRUE(streaming_rpcs[i].stream->WritesDone());
+    auto status = streaming_rpcs[i].stream->Finish();
+    EXPECT_TRUE(status.ok())
+        << status.error_message() << ", " << status.error_details() << ", "
+        << streaming_rpcs[i].context.debug_error_string();
     // New RPCs on the existing channels should fail.
     ClientContext new_context;
     new_context.set_deadline(grpc_timeout_milliseconds_to_deadline(1000));

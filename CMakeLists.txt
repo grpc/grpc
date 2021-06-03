@@ -1116,6 +1116,7 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/retry_cancel_during_delay.cc
   test/core/end2end/tests/retry_cancellation.cc
   test/core/end2end/tests/retry_disabled.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
   test/core/end2end/tests/retry_lb_drop.cc
@@ -1250,6 +1251,7 @@ add_library(end2end_tests
   test/core/end2end/tests/retry_cancel_during_delay.cc
   test/core/end2end/tests/retry_cancellation.cc
   test/core/end2end/tests/retry_disabled.cc
+  test/core/end2end/tests/retry_exceeds_buffer_size_in_delay.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_initial_batch.cc
   test/core/end2end/tests/retry_exceeds_buffer_size_in_subsequent_batch.cc
   test/core/end2end/tests/retry_lb_drop.cc
