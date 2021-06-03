@@ -243,6 +243,12 @@ class Subchannel : public DualRefCounted<Subchannel> {
       const absl::optional<std::string>& health_check_service_name,
       ConnectivityStateWatcherInterface* watcher) ABSL_LOCKS_EXCLUDED(mu_);
 
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel()
+      ABSL_LOCKS_EXCLUDED(mu_) {
+    MutexLock lock(&mu_);
+    return connected_subchannel_;
+  }
+
   // Attempt to connect to the backend.  Has no effect if already connected.
   void AttemptToConnect() ABSL_LOCKS_EXCLUDED(mu_);
 

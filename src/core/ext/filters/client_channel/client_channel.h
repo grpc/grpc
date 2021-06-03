@@ -265,9 +265,6 @@ class ClientChannel {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
   void RemoveLbQueuedCall(LbQueuedCall* to_remove, grpc_polling_entity* pollent)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
-  RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannelInDataPlane(
-      SubchannelInterface* subchannel) const
-      ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
 
   //
   // Fields set at construction and never modified.
@@ -335,11 +332,6 @@ class ClientChannel {
   // work_serializer when the SubchannelWrappers are created and destroyed.
   std::set<SubchannelWrapper*> subchannel_wrappers_
       ABSL_GUARDED_BY(work_serializer_);
-  // Pending ConnectedSubchannel updates for each SubchannelWrapper.
-  // Updates are queued here in the control plane work_serializer and then
-  // applied in the data plane mutex when the picker is updated.
-  std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>>
-      pending_subchannel_updates_ ABSL_GUARDED_BY(work_serializer_);
   int keepalive_time_ ABSL_GUARDED_BY(work_serializer_) = -1;
 
   //
