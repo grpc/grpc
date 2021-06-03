@@ -103,6 +103,13 @@ TEST(EndpointConfigTest, ContainsWorksAsExpected) {
   EXPECT_TRUE(config.contains("arst"));
 }
 
+TEST(EndpointConfigTest, AtCanRetrieveSettingsFromConstConfig) {
+  EndpointConfig config;
+  config["arst"] = EndpointConfig::IntType(99);
+  const EndpointConfig& ccfg = config;
+  EXPECT_EQ(absl::get<EndpointConfig::IntType>(ccfg.at("arst")).val(), 99);
+}
+
 int main(int argc, char** argv) {
   testing::InitGoogleTest(&argc, argv);
   auto result = RUN_ALL_TESTS();

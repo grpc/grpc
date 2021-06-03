@@ -13,9 +13,14 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#include <grpc/event_engine/endpoint_config.h>
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/event_engine/port.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
+
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_format.h"
 
 #include "src/core/lib/event_engine/sockaddr.h"
 
@@ -39,6 +44,39 @@ std::shared_ptr<grpc_event_engine::experimental::EventEngine>
 DefaultEventEngineFactory() {
   // TODO(nnoble): delete when uv-ee is merged
   abort();
+}
+
+absl::Status EventEngine::IsValidEndpointConfig(const EndpointConfig& config) {
+  std::vector<std::string> errors;
+  if (config.contains(GRPC_ARG_TCP_READ_CHUNK_SIZE) &&
+      !absl::holds_alternative<EndpointConfig::IntType>(
+          config.at(GRPC_ARG_TCP_READ_CHUNK_SIZE))) {
+    errors.push_back(absl::StrFormat("'%s' must be an integer.",
+                                     GRPC_ARG_TCP_READ_CHUNK_SIZE));
+  }
+  if (config.contains(GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE) &&
+      !absl::holds_alternative<EndpointConfig::IntType>(
+          config.at(GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE))) {
+    errors.push_back(absl::StrFormat("'%s' must be an integer.",
+                                     GRPC_ARG_TCP_MIN_READ_CHUNK_SIZE));
+  }
+  if (config.contains(GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE) &&
+      !absl::holds_alternative<EndpointConfig::IntType>(
+          config.at(GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE))) {
+    errors.push_back(absl::StrFormat("'%s' must be an integer.",
+                                     GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE));
+  }
+  if (config.contains(GRPC_ARG_EXPAND_WILDCARD_ADDRS) &&
+      !absl::holds_alternative<EndpointConfig::BoolType>(
+          config.at(GRPC_ARG_EXPAND_WILDCARD_ADDRS))) {
+    errors.push_back(absl::StrFormat("'%s' must be boolean.",
+                                     GRPC_ARG_EXPAND_WILDCARD_ADDRS));
+  }
+
+  if (!errors.empty()) {
+    return absl::InvalidArgumentError(absl::StrJoin(errors, " "));
+  }
+  return absl::OkStatus();
 }
 
 }  // namespace experimental

@@ -22,7 +22,6 @@
 namespace grpc_event_engine {
 namespace experimental {
 
-// TODO(hork): iron out the default suggested/required values
 /// An unordered map of key-value pairs representing Endpoint configuration
 /// options.
 ///
@@ -33,26 +32,29 @@ class EndpointConfig {
   class Type {
    public:
     explicit Type(T t) : val_(t){};
-    T val() { return val_; }
+    T val() const { return val_; }
 
    private:
     T val_;
   };
   using IntType = Type<int>;
+  using BoolType = Type<bool>;
   using StrType = Type<std::string>;
   using PtrType = Type<void*>;
-  using Setting = absl::variant<absl::monostate, IntType, StrType, PtrType>;
+  using Setting =
+      absl::variant<absl::monostate, IntType, BoolType, StrType, PtrType>;
   EndpointConfig() = default;
-  // TODO(hork): ensure variant does not require special handling
   ~EndpointConfig() = default;
   Setting& operator[](const std::string& key);
   Setting& operator[](std::string&& key);
+  const Setting& at(const std::string& key) const;
   /// Execute a callback \a cb for every Setting in the EndpointConfig. The
   /// callback may return false to stop enumeration.
-  void enumerate(std::function<bool(absl::string_view, const Setting&)> cb);
+  void enumerate(
+      std::function<bool(absl::string_view, const Setting&)> cb) const;
   void clear();
-  size_t size();
-  bool contains(absl::string_view key);
+  size_t size() const;
+  bool contains(absl::string_view key) const;
 
  private:
   absl::flat_hash_map<std::string, Setting> map_;

@@ -282,6 +282,15 @@ class EventEngine {
 
   virtual bool IsWorkerThread() = 0;
 
+  /// Verifies that all expected config settings are correct.
+  ///
+  /// It is fine if the \a EndpointConfig contains settings that the EventEngine
+  /// does not need. This method should verify that all expected settings are of
+  /// the correct type, that all required settings are present, and perform any
+  /// other verifications required. If any setting is invalid, this method
+  /// should return an INVALID_ARGUMENT error.
+  virtual absl::Status IsValidEndpointConfig(const EndpointConfig& config);
+
   // TODO(hork): define return status codes
   /// Retrieves an instance of a DNSResolver.
   virtual absl::StatusOr<std::unique_ptr<DNSResolver>> GetDNSResolver() = 0;

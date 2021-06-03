@@ -26,23 +26,28 @@ EndpointConfig::Setting& EndpointConfig::operator[](const std::string& key) {
 }
 
 EndpointConfig::Setting& EndpointConfig::operator[](std::string&& key) {
-  return map_[key];
+  return map_[std::move(key)];
+}
+
+const EndpointConfig::Setting& EndpointConfig::at(
+    const std::string& key) const {
+  return map_.at(key);
 }
 
 void EndpointConfig::enumerate(
-    std::function<bool(absl::string_view, const Setting&)> cb) {
+    std::function<bool(absl::string_view, const Setting&)> cb) const {
   for (const auto& item : map_) {
-    if (!cb(item.first, item.second)) {
-      return;
+      if (!cb(item.first, item.second)) {
+        return;
+      }
     }
-  }
 }
 
 void EndpointConfig::clear() { map_.clear(); }
 
-size_t EndpointConfig::size() { return map_.size(); }
+size_t EndpointConfig::size() const { return map_.size(); }
 
-bool EndpointConfig::contains(absl::string_view key) {
+bool EndpointConfig::contains(absl::string_view key) const {
   return map_.contains(key);
 }
 
