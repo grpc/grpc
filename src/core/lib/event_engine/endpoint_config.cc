@@ -17,9 +17,6 @@
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/types/variant.h"
-#include "src/core/lib/debug/trace.h"
-grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
-    false, "polling"); /* Disabled by default */
 
 namespace grpc_event_engine {
 namespace experimental {

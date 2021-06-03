@@ -29,7 +29,19 @@ namespace experimental {
 /// This class does not take ownership of any raw pointers passed to it.
 class EndpointConfig {
  public:
-  using Setting = absl::variant<int, std::string, intptr_t>;
+  template <typename T>
+  class Type {
+   public:
+    explicit Type(T t) : val_(t){};
+    T val() { return val_; }
+
+   private:
+    T val_;
+  };
+  using IntType = Type<int>;
+  using StrType = Type<std::string>;
+  using PtrType = Type<void*>;
+  using Setting = absl::variant<absl::monostate, IntType, StrType, PtrType>;
   EndpointConfig() = default;
   // TODO(hork): ensure variant does not require special handling
   ~EndpointConfig() = default;
