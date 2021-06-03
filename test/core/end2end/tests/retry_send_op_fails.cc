@@ -310,7 +310,7 @@ class FailFirstSendOpFilter {
         chand->seen_first_ = true;
         calld->fail_ = true;
       }
-      if (calld->fail_) {
+      if (calld->fail_ && !batch->cancel_stream) {
         grpc_transport_stream_op_batch_finish_with_failure(
             batch,
             grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
