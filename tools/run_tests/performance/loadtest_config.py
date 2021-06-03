@@ -65,6 +65,9 @@ def now_string() -> str:
 
 def validate_loadtest_name(name: str) -> None:
     """Validates that a LoadTest name is in the expected format."""
+    if len(name) > 253:
+        raise ValueError(
+            'LoadTest name must be less than 253 characters long: %s' % name)
     if not all((s.isalnum() for s in name.split('-'))):
         raise ValueError('Invalid elements in LoadTest name: %s' % name)
 
