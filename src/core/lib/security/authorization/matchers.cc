@@ -180,9 +180,13 @@ bool AuthenticatedAuthorizationMatcher::Matches(
     // Allows any authenticated user.
     return true;
   }
-  absl::string_view spiffe_id = args.GetSpiffeId();
-  if (!spiffe_id.empty()) {
-    return matcher_.Match(spiffe_id);
+  std::vector<absl::string_view> uri_sans = args.GetUriSans();
+  if (!uri_sans.empty()) {
+    for (const auto& uri : uri_sans) {
+      if (matcher_.Match(uri)) {
+        return true;
+      }
+    }
   }
   std::vector<absl::string_view> dns_sans = args.GetDnsSans();
   if (!dns_sans.empty()) {
