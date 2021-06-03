@@ -153,7 +153,6 @@ class Subchannel : public DualRefCounted<Subchannel> {
     struct ConnectivityStateChange {
       grpc_connectivity_state state;
       absl::Status status;
-      RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     };
 
     ~ConnectivityStateWatcherInterface() override = default;
@@ -217,10 +216,8 @@ class Subchannel : public DualRefCounted<Subchannel> {
   // If health_check_service_name is non-null, the returned connectivity
   // state will be based on the state reported by the backend for that
   // service name.
-  // If the return value is GRPC_CHANNEL_READY, also sets *connected_subchannel.
   grpc_connectivity_state CheckConnectivityState(
-      const absl::optional<std::string>& health_check_service_name,
-      RefCountedPtr<ConnectedSubchannel>* connected_subchannel)
+      const absl::optional<std::string>& health_check_service_name)
       ABSL_LOCKS_EXCLUDED(mu_);
 
   // Starts watching the subchannel's connectivity state.

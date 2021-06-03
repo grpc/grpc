@@ -493,8 +493,7 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
 
   grpc_connectivity_state CheckConnectivityState() override
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(chand_->work_serializer_) {
-    return subchannel_->CheckConnectivityState(health_check_service_name_,
-                                               nullptr);
+    return subchannel_->CheckConnectivityState(health_check_service_name_);
   }
 
   void WatchConnectivityState(

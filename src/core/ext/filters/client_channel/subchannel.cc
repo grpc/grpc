@@ -366,12 +366,7 @@ class Subchannel::AsyncWatcherNotifierLocked {
       Subchannel* subchannel, grpc_connectivity_state state,
       const absl::Status& status)
       : watcher_(std::move(watcher)) {
-    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
-    if (state == GRPC_CHANNEL_READY) {
-      connected_subchannel = subchannel->connected_subchannel_;
-    }
-    watcher_->PushConnectivityStateChange(
-        {state, status, std::move(connected_subchannel)});
+    watcher_->PushConnectivityStateChange({state, status});
     ExecCtx::Run(DEBUG_LOCATION,
                  GRPC_CLOSURE_INIT(
                      &closure_,
@@ -763,20 +758,13 @@ channelz::SubchannelNode* Subchannel::channelz_node() {
 }
 
 grpc_connectivity_state Subchannel::CheckConnectivityState(
-    const absl::optional<std::string>& health_check_service_name,
-    RefCountedPtr<ConnectedSubchannel>* connected_subchannel) {
+    const absl::optional<std::string>& health_check_service_name) {
   MutexLock lock(&mu_);
-  grpc_connectivity_state state;
-  if (!health_check_service_name.has_value()) {
-    state = state_;
-  } else {
-    state = health_watcher_map_.CheckConnectivityStateLocked(
+  if (health_check_service_name.has_value()) {
+    return health_watcher_map_.CheckConnectivityStateLocked(
         this, *health_check_service_name);
   }
-  if (connected_subchannel != nullptr && state == GRPC_CHANNEL_READY) {
-    *connected_subchannel = connected_subchannel_;
-  }
-  return state;
+  return state_;
 }
 
 void Subchannel::WatchConnectivityState(
