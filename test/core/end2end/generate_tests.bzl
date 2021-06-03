@@ -334,6 +334,8 @@ END2END_TESTS = {
     ),
     "retry_too_many_attempts": _test_options(
         needs_client_channel = True,
+        # TODO(markdroth): Make this test proxyable
+        proxyable = False,
     ),
     "server_finishes_request": _test_options(),
     "server_streaming": _test_options(needs_http2 = True),
