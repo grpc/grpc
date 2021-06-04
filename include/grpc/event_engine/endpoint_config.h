@@ -11,8 +11,8 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#ifndef GRPC_EVENT_ENGINE_CHANNEL_ARGS_H
-#define GRPC_EVENT_ENGINE_CHANNEL_ARGS_H
+#ifndef GRPC_EVENT_ENGINE_ENDPOINT_CONFIG_H
+#define GRPC_EVENT_ENGINE_ENDPOINT_CONFIG_H
 
 #include <grpc/support/port_platform.h>
 
@@ -63,4 +63,4 @@ class EndpointConfig {
 }  // namespace experimental
 }  // namespace grpc_event_engine
 
-#endif  // GRPC_EVENT_ENGINE_CHANNEL_ARGS_H
+#endif  // GRPC_EVENT_ENGINE_ENDPOINT_CONFIG_H

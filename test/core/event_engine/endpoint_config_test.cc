@@ -75,9 +75,10 @@ TEST(EndpointConfigTest, CanStopEnumerationViaCallbackReturnValue) {
   config["questionable"] = EndpointConfig::PtrType(&config);
   EXPECT_EQ(config.size(), 3);
   int cnt = 0;
-  config.enumerate([&cnt](absl::string_view, const EndpointConfig::Setting&) {
-    return ++cnt != N;
-  });
+  config.enumerate(
+      [&cnt, N](absl::string_view, const EndpointConfig::Setting&) {
+        return ++cnt != N;
+      });
   EXPECT_EQ(cnt, N);
 }
 
