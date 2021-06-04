@@ -14,10 +14,9 @@
 #ifndef GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H
 #define GRPC_CORE_LIB_EVENT_ENGINE_SOCKADDR_H
 
-#ifdef GRPC_EVENT_ENGINE_TEST
-
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/port.h>
 
 // TODO(hork): much of this can be removed when we migrate fully to EventEngine

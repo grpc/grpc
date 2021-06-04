@@ -14,7 +14,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
-#if GRPC_ARES == 1 && defined(GRPC_EVENT_ENGINE_TEST)
+#if GRPC_ARES == 1 && defined(GRPC_USE_EVENT_ENGINE)
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -28,4 +28,4 @@ std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
 
 }  // namespace grpc_core
 
-#endif /* GRPC_ARES == 1 && defined(GRPC_EVENT_ENGINE_TEST) */
+#endif /* GRPC_ARES == 1 && defined(GRPC_USE_EVENT_ENGINE) */

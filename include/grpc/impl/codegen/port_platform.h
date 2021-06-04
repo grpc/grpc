@@ -664,10 +664,18 @@ typedef unsigned __int64 uint64_t;
 #define __STDC_FORMAT_MACROS
 #endif
 
-#ifdef GRPC_EVENT_ENGINE_TEST
+// Selectively enable EventEngine on specific platforms. This default can be
+// overridden using the GRPC_USE_EVENT_ENGINE compiler flag.
+#ifndef GRPC_USE_EVENT_ENGINE
+// Not enabled by default on any platforms yet. (2021.06)
+#elif GRPC_USE_EVENT_ENGINE != 1
+#undef GRPC_USE_EVENT_ENGINE
+#endif /* GRPC_USE_EVENT_ENGINE */
+
+#ifdef GRPC_USE_EVENT_ENGINE
 #undef GPR_SUPPORT_CHANNELS_FROM_FD
 #define GRPC_ARES 0
-#endif  // GRPC_EVENT_ENGINE_TEST
+#endif  // GRPC_USE_EVENT_ENGINE
 
 #define GRPC_CALLBACK_API_NONEXPERIMENTAL
 

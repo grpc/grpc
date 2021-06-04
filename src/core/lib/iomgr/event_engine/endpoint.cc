@@ -11,10 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include "src/core/lib/iomgr/event_engine/endpoint.h"
 
 #include <grpc/event_engine/event_engine.h>
@@ -203,4 +202,4 @@ grpc_endpoint* grpc_tcp_create(const grpc_channel_args* channel_args,
   return &endpoint->base;
 }
 
-#endif
+#endif  // GRPC_USE_EVENT_ENGINE

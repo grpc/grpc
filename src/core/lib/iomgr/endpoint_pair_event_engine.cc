@@ -13,9 +13,8 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include "src/core/lib/iomgr/port.h"
-
-#ifdef GRPC_EVENT_ENGINE_TEST
 
 #include <stdlib.h>
 
@@ -31,4 +30,4 @@ grpc_endpoint_pair grpc_iomgr_create_endpoint_pair(
       "grpc_iomgr_create_endpoint_pair is not suppoted with event_engine");
 }
 
-#endif  // GRPC_EVENT_ENGINE_TEST
+#endif  // GRPC_USE_EVENT_ENGINE

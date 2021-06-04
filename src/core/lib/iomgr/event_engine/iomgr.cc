@@ -11,10 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/debug/trace.h"
@@ -78,4 +77,4 @@ void grpc_set_default_iomgr_platform() {
 
 bool grpc_iomgr_run_in_background() { return false; }
 
-#endif
+#endif  // GRPC_USE_EVENT_ENGINE

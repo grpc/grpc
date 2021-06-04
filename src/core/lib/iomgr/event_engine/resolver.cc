@@ -11,11 +11,10 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
-#include <future>
-
 #include <grpc/support/port_platform.h>
+
+#ifdef GRPC_USE_EVENT_ENGINE
+#include <future>
 
 #include <grpc/event_engine/event_engine.h>
 #include "absl/functional/bind_front.h"
@@ -107,4 +106,4 @@ grpc_error* blocking_resolve_address(const char* name, const char* default_port,
 grpc_address_resolver_vtable grpc_event_engine_resolver_vtable{
     resolve_address, blocking_resolve_address};
 
-#endif  // GRPC_EVENT_ENGINE_TEST
+#endif  // GRPC_USE_EVENT_ENGINE

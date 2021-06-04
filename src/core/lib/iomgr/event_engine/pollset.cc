@@ -11,10 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/iomgr_internal.h"
@@ -84,4 +83,4 @@ grpc_pollset_set_vtable grpc_event_engine_pollset_set_vtable = {
     pollset_set_add_pollset,     pollset_set_del_pollset,
     pollset_set_add_pollset_set, pollset_set_del_pollset_set};
 
-#endif  // GRPC_EVENT_ENGINE_TEST
+#endif  // GRPC_USE_EVENT_ENGINE

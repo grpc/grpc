@@ -14,10 +14,9 @@
 #ifndef GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H
 #define GRPC_CORE_LIB_IOMGR_EVENT_ENGINE_ENDPOINT_H
 
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
 #include "absl/strings/string_view.h"
 

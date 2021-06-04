@@ -11,10 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/event_engine/closure.h"
@@ -57,4 +56,4 @@ grpc_timer_vtable grpc_event_engine_timer_vtable = {
     timer_init,      timer_cancel,        timer_check,
     timer_list_init, timer_list_shutdown, timer_consume_kick};
 
-#endif  // GRPC_EVENT_ENGINE_TEST
+#endif  // GRPC_USE_EVENT_ENGINE

@@ -11,10 +11,9 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-#if defined(GRPC_EVENT_ENGINE_TEST)
-
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/address_utils/sockaddr_utils.h"
@@ -246,4 +245,4 @@ grpc_endpoint* grpc_tcp_client_create_from_fd(
   return nullptr;
 }
 
-#endif
+#endif  // GRPC_USE_EVENT_ENGINE
