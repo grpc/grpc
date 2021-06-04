@@ -126,7 +126,11 @@ class PythonArtifact:
             # This is needed because C core won't build with GCC 4.8 that's
             # included in the default dockcross toolchain and we needed
             # to opt into using a slighly newer version of GCC.
-            environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
+            # TODO(jtattermusch): Due to https://github.com/grpc/grpc/issues/26279
+            # we can't enable static linking libstdc++. Because of that,
+            # the resulting wheel will be compatible with fewer platforms
+            # but at least it will work.
+            # environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
 
             return create_docker_jobspec(
                 self.name,
@@ -152,8 +156,11 @@ class PythonArtifact:
                 # This is needed because C core won't build with GCC 4.8 that's
                 # included in the default dockcross toolchain and we needed
                 # to opt into using a slighly newer version of GCC.
-                environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
-
+                # TODO(jtattermusch): Due to https://github.com/grpc/grpc/issues/26279
+                # we can't enable static linking libstdc++. Because of that,
+                # the resulting wheel will be compatible with fewer platforms
+                # but at least it will work.
+                # environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
             else:
                 # only run auditwheel if we're not crosscompiling
                 environ['GRPC_RUN_AUDITWHEEL_REPAIR'] = 'TRUE'
