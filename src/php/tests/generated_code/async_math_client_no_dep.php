@@ -22,6 +22,9 @@
 # were being autoloaded via composer.
 
 require_once(dirname(__FILE__) . '/../../lib/Grpc/AbstractCall.php');
+require_once(dirname(__FILE__) . '/../../lib/Grpc/BidiStreamingCall.php');
+require_once(dirname(__FILE__) . '/../../lib/Grpc/ServerStreamingCall.php');
+require_once(dirname(__FILE__) . '/../../lib/Grpc/ClientStreamingCall.php');
 require_once(dirname(__FILE__) . '/../../lib/Grpc/UnaryCall.php');
 require_once(dirname(__FILE__) . '/../../lib/Grpc/BaseStub.php');
 
@@ -32,14 +35,8 @@ $client = new Math\MathClient('localhost:50052', [
     'credentials' => Grpc\ChannelCredentials::createInsecure(),
 ]);
 
-$call_count = 1000;
+$call_count = 0;
 $completed_count = 0;
-
-function outputDivResult($dividend, $divisor, $quotient, $remainder)
-{
-    echo "== " . $dividend . " / " . $divisor . ' = ' .
-        $quotient . ' R ' . $remainder . PHP_EOL;
-}
 
 function callDivAsync($client, $dividend, $divisor)
 {
@@ -53,12 +50,9 @@ function callDivAsync($client, $dividend, $divisor)
             "async_callbacks" => [
                 "onData" => function ($response) use ($dividend, $divisor) {
                     if ($response) {
-                        outputDivResult(
-                            $dividend,
-                            $divisor,
-                            $response->getQuotient(),
-                            $response->getRemainder(),
-                        );
+                        echo "== " . $dividend . " / " . $divisor .
+                            ' = ' . $response->getQuotient() .
+                            ' R ' . $response->getRemainder() . PHP_EOL;
                     }
                 },
                 "onStatus" => function ($status) use ($dividend, $divisor) {
@@ -75,15 +69,103 @@ function callDivAsync($client, $dividend, $divisor)
     );
 }
 
-echo "==== callDivAsync start " . PHP_EOL;
+function callFibAsync($client, $limit)
+{
+    $client->Fib(
+        new Math\FibArgs(['limit' => $limit]),
+        [] /* metadata */,
+        [
+            "async_callbacks" => [
+                "onData" => function ($response) use ($limit) {
+                    if ($response) {
+                        echo "== Fib(" . $limit . ")" .
+                            ": " . $response->getNum() . PHP_EOL;
+                    }
+                },
+                "onStatus" => function ($status) use ($limit) {
+                    if ($status->code != Grpc\STATUS_OK) {
+                        echo "== Fib(" . $limit . ")" .
+                            " = ERROR: " . $status->code .
+                            ": " . $status->details . PHP_EOL;
+                    }
+                    global $completed_count;
+                    $completed_count++;
+                },
+            ]
+        ]
+    );
+}
 
-$now = microtime(true /* float */);
-for ($i = 1; $i <= $call_count; $i++) {
-    callDivAsync($client, 1000, $i % $call_count);
-
-    // process completion evens if any 
+function callSumAsync($client, ...$nums)
+{
+    $call = $client->Sum([]/* metadata */, [
+        "async_callbacks" => [
+            "onData" => function ($response) use ($nums) {
+                if ($response) {
+                    echo "== Sum(";
+                    foreach ($nums as $num) {
+                        echo $num . ",";
+                    }
+                    echo ") = " . $response->getNum() . PHP_EOL;
+                }
+            },
+            "onStatus" => function ($status) use ($limit) {
+                if ($status->code != Grpc\STATUS_OK) {
+                    echo "== Sum(...) = ERROR: " . $status->code .
+                        ": " . $status->details . PHP_EOL;
+                }
+                global $completed_count;
+                $completed_count++;
+            },
+        ]
+    ]);
+    foreach ($nums as $num) {
+        $call->write(new Math\Num(['num' => $num]));
+        drainCompletionEvents();
+    }
+    $call->writesDone();
     drainCompletionEvents();
 }
+
+function callDivManyAsync($client, ...$divArgs)
+{
+    $call = $client->DivMany([] /* metadata */, [
+        'async_callbacks' => [
+            'onData' => function ($response) {
+                if ($response) {
+                    echo "== DivMany(...) = " . $response->getQuotient() .
+                        " R " . $response->getRemainder() . PHP_EOL;
+                }
+            },
+            'onStatus' => function ($status) {
+                if ($status->code != Grpc\STATUS_OK) {
+                    echo "== DivMany(...) = ERROR: " . $status->code .
+                        ": " . $status->details . PHP_EOL;
+                }
+                global $completed_count;
+                $completed_count++;
+            },
+        ],
+    ]);
+
+    foreach ($divArgs as $divArg) {
+        $call->write(new Math\DivArgs([
+            'dividend' => $divArg[0],
+            'divisor' => $divArg[1],
+        ]));
+        drainCompletionEvents();
+    }
+    $call->writesDone();
+    drainCompletionEvents();
+}
+
+
+$call_count = 4;
+callDivAsync($client, 1000, 33);
+callSumAsync($client, 1, 3, 5, 7, 9);
+callFibAsync($client, 7);
+callDivManyAsync($client, [10, 1], [10, 2], [10, 3]);
+
 
 // wait for all async call to complete
 for (;;) {
@@ -95,6 +177,3 @@ for (;;) {
     }
     usleep(10000);
 }
-
-echo "==== callDivAsync end, " . $call_count . " calls elapsed: " .
-    (microtime(true /* float */) - $now) . PHP_EOL;
