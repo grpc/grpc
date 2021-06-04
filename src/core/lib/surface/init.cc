@@ -149,8 +149,10 @@ void grpc_init(void) {
     grpc_security_pre_init();
     grpc_core::ApplicationCallbackExecCtx::GlobalInit();
     grpc_core::ExecCtx::GlobalInit();
+#ifdef GRPC_USE_EVENT_ENGINE
     g_event_engine =
         grpc_event_engine::experimental::DefaultEventEngineFactory();
+#endif
     grpc_iomgr_init();
     gpr_timers_global_init();
     grpc_core::HandshakerRegistry::Init();
@@ -187,12 +189,14 @@ void grpc_shutdown_internal_locked(void) {
       }
     }
     grpc_iomgr_shutdown();
+#ifdef GRPC_USE_EVENT_ENGINE
     std::promise<absl::Status> shutdown_status_promise;
     g_event_engine->Shutdown([&shutdown_status_promise](absl::Status status) {
       shutdown_status_promise.set_value(status);
     });
     auto shutdown_status = shutdown_status_promise.get_future().get();
     GPR_ASSERT(shutdown_status.ok());
+#endif
     gpr_timers_global_destroy();
     grpc_tracer_shutdown();
     grpc_mdctx_global_shutdown();

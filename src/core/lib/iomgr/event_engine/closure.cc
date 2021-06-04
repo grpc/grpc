@@ -13,6 +13,7 @@
 // limitations under the License.
 #include <grpc/support/port_platform.h>
 
+#ifdef GRPC_USE_EVENT_ENGINE
 #include <grpc/event_engine/event_engine.h>
 
 #include "src/core/lib/iomgr/closure.h"
@@ -35,3 +36,4 @@ EventEngine::Callback GrpcClosureToCallback(grpc_closure* closure) {
 
 }  // namespace experimental
 }  // namespace grpc_event_engine
+#endif  // GRPC_USE_EVENT_ENGINE

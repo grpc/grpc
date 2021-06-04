@@ -21,8 +21,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/port_platform.h>
 
-void pollset_ee_broadcast_event();
-
 grpc_address_resolver_vtable* grpc_resolve_address_impl;
 
 void grpc_set_resolver_impl(grpc_address_resolver_vtable* vtable) {
