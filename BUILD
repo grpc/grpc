@@ -2133,6 +2133,10 @@ grpc_cc_library(
     srcs = [
         "src/cpp/server/authorization_policy_provider.cc",
     ],
+    external_deps = [
+        "absl/synchronization",
+        "protobuf_headers",
+    ],
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
     deps = [
