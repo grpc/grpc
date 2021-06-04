@@ -37,10 +37,10 @@ const EndpointConfig::Setting& EndpointConfig::at(
 void EndpointConfig::enumerate(
     std::function<bool(absl::string_view, const Setting&)> cb) const {
   for (const auto& item : map_) {
-      if (!cb(item.first, item.second)) {
-        return;
-      }
+    if (!cb(item.first, item.second)) {
+      return;
     }
+  }
 }
 
 void EndpointConfig::clear() { map_.clear(); }

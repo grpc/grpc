@@ -19,8 +19,8 @@
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/log.h>
 
-#include "absl/strings/str_join.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
 
 #include "src/core/lib/event_engine/sockaddr.h"
 

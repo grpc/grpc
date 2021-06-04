@@ -22,7 +22,9 @@
 #include "test/core/util/test_config.h"
 
 using ::grpc_event_engine::experimental::EndpointConfig;
-using namespace ::testing;
+using ::testing::_;
+using ::testing::MockFunction;
+using ::testing::Return;
 
 TEST(EndpointConfigTest, InsertsDefaultOnOperatorAtAccess) {
   // See https://en.cppreference.com/w/cpp/container/map/operator_at for map
@@ -73,11 +75,9 @@ TEST(EndpointConfigTest, CanStopEnumerationViaCallbackReturnValue) {
   config["questionable"] = EndpointConfig::PtrType(&config);
   EXPECT_EQ(config.size(), 3);
   int cnt = 0;
-  config.enumerate(
-      [&cnt](absl::string_view key, const EndpointConfig::Setting& setting) {
-        // printf("DO NOT SUBMIT: visited %s\n", key.data());
-        return ++cnt != N;
-      });
+  config.enumerate([&cnt](absl::string_view, const EndpointConfig::Setting&) {
+    return ++cnt != N;
+  });
   EXPECT_EQ(cnt, N);
 }
 
