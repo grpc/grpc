@@ -363,8 +363,7 @@ class Subchannel::AsyncWatcherNotifierLocked {
  public:
   AsyncWatcherNotifierLocked(
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher,
-      Subchannel* subchannel, grpc_connectivity_state state,
-      const absl::Status& status)
+      grpc_connectivity_state state, const absl::Status& status)
       : watcher_(std::move(watcher)) {
     watcher_->PushConnectivityStateChange({state, status});
     ExecCtx::Run(DEBUG_LOCATION,
@@ -403,7 +402,7 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
     Subchannel* subchannel, grpc_connectivity_state state,
     const absl::Status& status) {
   for (const auto& p : watchers_) {
-    new AsyncWatcherNotifierLocked(p.second, subchannel, state, status);
+    new AsyncWatcherNotifierLocked(p.second, state, status);
   }
 }
 
@@ -441,8 +440,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
       grpc_connectivity_state initial_state,
       RefCountedPtr<Subchannel::ConnectivityStateWatcherInterface> watcher) {
     if (state_ != initial_state) {
-      new AsyncWatcherNotifierLocked(watcher, subchannel_.get(), state_,
-                                     status_);
+      new AsyncWatcherNotifierLocked(watcher, state_, status_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   }
@@ -778,7 +776,7 @@ void Subchannel::WatchConnectivityState(
   }
   if (!health_check_service_name.has_value()) {
     if (state_ != initial_state) {
-      new AsyncWatcherNotifierLocked(watcher, this, state_, status_);
+      new AsyncWatcherNotifierLocked(watcher, state_, status_);
     }
     watcher_list_.AddWatcherLocked(std::move(watcher));
   } else {
