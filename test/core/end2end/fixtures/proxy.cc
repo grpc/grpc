@@ -107,8 +107,8 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
   grpc_channel_args* proxy_client_args =
       grpc_channel_args_copy_and_add_and_remove(client_args, &arg_to_remove, 1,
                                                 &arg_to_add, 1);
-  proxy->client = def->create_client(proxy->server_port.c_str(),
-                                     proxy_client_args);
+  proxy->client =
+      def->create_client(proxy->server_port.c_str(), proxy_client_args);
   grpc_channel_args_destroy(proxy_client_args);
 
   grpc_server_register_completion_queue(proxy->server, proxy->cq, nullptr);
