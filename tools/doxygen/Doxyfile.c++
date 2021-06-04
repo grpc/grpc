@@ -1013,6 +1013,7 @@ include/grpcpp/impl/service_type.h \
 include/grpcpp/resource_quota.h \
 include/grpcpp/security/auth_context.h \
 include/grpcpp/security/auth_metadata_processor.h \
+include/grpcpp/security/authorization_policy_provider.h \
 include/grpcpp/security/credentials.h \
 include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/tls_certificate_provider.h \
