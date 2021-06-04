@@ -14,4 +14,4 @@ commonName_default = testca
 
 [v3_req]
 basicConstraints = CA:true
-keyUsage = critical, keyCertSign
+keyUsage = critical, keyCertSign, cRLSign

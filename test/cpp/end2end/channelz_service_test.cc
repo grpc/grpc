@@ -178,6 +178,7 @@ std::shared_ptr<grpc::ServerCredentials> GetServerCredentials(
   options.watch_root_certs();
   options.watch_identity_key_cert_pairs();
   options.set_cert_request_type(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+  options.set_crl_directory("src/core/tsi/test_creds");
   return grpc::experimental::TlsServerCredentials(options);
 }
 

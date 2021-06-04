@@ -63,6 +63,7 @@ grpc_cc_test(
     name = "ssl_transport_security_test",
     srcs = ["ssl_transport_security_test.cc"],
     data = [
+        "//src/core/tsi/test_creds:ab06acdd.r0",
         "//src/core/tsi/test_creds:badclient.key",
         "//src/core/tsi/test_creds:badclient.pem",
         "//src/core/tsi/test_creds:badserver.key",
@@ -72,6 +73,10 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:client.pem",
         "//src/core/tsi/test_creds:multi-domain.key",
         "//src/core/tsi/test_creds:multi-domain.pem",
+        "//src/core/tsi/test_creds:revokedclient.key",
+        "//src/core/tsi/test_creds:revokedclient.pem",
+        "//src/core/tsi/test_creds:revokedserver.key",
+        "//src/core/tsi/test_creds:revokedserver.pem",
         "//src/core/tsi/test_creds:server0.key",
         "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
