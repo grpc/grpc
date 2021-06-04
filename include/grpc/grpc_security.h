@@ -1097,6 +1097,38 @@ GRPCAPI grpc_channel_credentials* grpc_xds_credentials_create(
 GRPCAPI grpc_server_credentials* grpc_xds_server_credentials_create(
     grpc_server_credentials* fallback_credentials);
 
+/**
+ * EXPERIMENTAL - Subject to change.
+ * An opaque type that is responsible for providing authorization policies to
+ * gRPC.
+ */
+typedef struct grpc_authorization_policy_provider
+    grpc_authorization_policy_provider;
+
+/**
+ * EXPERIMENTAL - Subject to change.
+ * Creates a grpc_authorization_policy_provider using SDK authorization policy
+ * from static string.
+ * - authz_policy is the input SDK authorization policy.
+ * - code is the error status code on failure. On success, it equals
+ *   GRPC_STATUS_OK.
+ * - error_details contains details about the error if any. If the
+ *   initialization is successful, it will be null. Caller must use gpr_free to
+ *   destroy this string.
+ */
+GRPCAPI grpc_authorization_policy_provider*
+grpc_authorization_policy_provider_static_data_create(
+    const char* authz_policy, grpc_status_code* code,
+    const char** error_details);
+
+/**
+ * EXPERIMENTAL - Subject to change.
+ * Releases grpc_authorization_policy_provider object. The creator of
+ * grpc_authorization_policy_provider is responsible for its release.
+ */
+GRPCAPI void grpc_authorization_policy_provider_release(
+    grpc_authorization_policy_provider* provider);
+
 #ifdef __cplusplus
 }
 #endif
