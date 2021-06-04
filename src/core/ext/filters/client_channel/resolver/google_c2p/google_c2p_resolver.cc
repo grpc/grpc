@@ -298,7 +298,7 @@ void GoogleCloud2ProdResolver::IPv6QueryDone(bool ipv6_supported) {
 void GoogleCloud2ProdResolver::StartXdsResolver() {
   // Construct bootstrap JSON.
   Json::Object node = {
-      {"id", absl::StrCat("C2P ", rand())},
+      {"id", absl::StrCat("C2P-", rand())},
   };
   if (!zone_->empty()) {
     node["locality"] = Json::Object{
