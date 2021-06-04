@@ -27,7 +27,7 @@ function p($line)
     echo "$line<br/>\n";
 }
 
-$host = 'localhost:50051';
+$host = 'localhost:50052';
 p("Connecting to host: $host");
 $client = new Math\MathClient($host, [
     'credentials' => Grpc\ChannelCredentials::createInsecure(),

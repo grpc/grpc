@@ -158,10 +158,22 @@ class BidiStreamingCall extends AbstractCall
                 OP_SEND_MESSAGE => $message_array,
             ]);
         } else {
-            $this->call->startBatchAsync([
-                OP_SEND_MESSAGE => $message_array,
-            ], function ($error, $event = null) {
-            });
+            $writeFunction = function () use ($message_array) {
+                $this->call->startBatchAsync([
+                    OP_SEND_MESSAGE => $message_array,
+                ], function ($error, $event = null) {
+                    array_shift($this->async_write_queue_);
+                    $nextWrite = reset($this->async_write_queue_);
+                    if ($nextWrite) {
+                        $nextWrite();
+                    }
+                });
+            };
+
+            array_push($this->async_write_queue_, $writeFunction);
+            if (count($this->async_write_queue_) === 1) {
+                $writeFunction();
+            };
         }
     }
 
@@ -175,10 +187,17 @@ class BidiStreamingCall extends AbstractCall
                 OP_SEND_CLOSE_FROM_CLIENT => true,
             ]);
         } else {
-            $this->call->startBatchAsync([
-                OP_SEND_CLOSE_FROM_CLIENT => true,
-            ], function ($error, $event = null) {
-            });
+            $writeFunction = function () {
+                $this->call->startBatchAsync([
+                    OP_SEND_CLOSE_FROM_CLIENT => true,
+                ], function ($error, $event = null) {
+                });
+            };
+
+            array_push($this->async_write_queue_, $writeFunction);
+            if (count($this->async_write_queue_) === 1) {
+                $writeFunction();
+            };
         }
     }
 
@@ -203,4 +222,5 @@ class BidiStreamingCall extends AbstractCall
     }
 
     private $async_callbacks_;
+    private $async_write_queue_ = [];
 }
