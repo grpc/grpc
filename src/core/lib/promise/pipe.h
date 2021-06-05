@@ -56,19 +56,17 @@ template <typename T>
 class FilterInterface {
  public:
   FilterInterface() = default;
-  explicit FilterInterface(PipeReceiver<T>* receiver);
-  ~FilterInterface();
+  explicit FilterInterface(PipeReceiver<T>* receiver) : receiver_(receiver) {}
   FilterInterface(const FilterInterface&) = delete;
   FilterInterface& operator=(const FilterInterface&) = delete;
-  FilterInterface(FilterInterface&& other);
-  FilterInterface& operator=(FilterInterface&& other);
   virtual Promise<T>* Step(T* p, Scratch* scratch_space) = 0;
   virtual void Stop() = 0;
 
- private:
+ protected:
   friend class PipeReceiver<T>;
   PipeReceiver<T>* receiver_ = nullptr;
-  int index_ = -1;
+  void SetReceiverIndex(int idx, FilterInterface* p);
+  char AllocIndex();
 };
 
 template <typename T, typename F>
@@ -413,21 +411,30 @@ class Next {
 template <typename T, typename F>
 class Filter final : private FilterInterface<T> {
  public:
-  Filter(PipeReceiver<T>* reciever, F f)
-      : FilterInterface<T>(reciever),
-        state_(adaptor_detail::Factory<T, F>(std::move(f))){};
+  Filter(PipeReceiver<T>* receiver, F f)
+      : FilterInterface<T>(receiver),
+        state_(adaptor_detail::Factory<T, F>(std::move(f))),
+        index_(this->AllocIndex()) {};
   Filter(absl::Status already_finished) : state_(std::move(already_finished)) {}
+  ~Filter() { this->SetReceiverIndex(index_, nullptr); }
+  Filter(Filter&& other) : FilterInterface<T>(other.receiver_), state_(other.state_), index_(other.index_) {
+    other.receiver_ = nullptr;
+    this->SetReceiverIndex(index_, this);
+  }
+
+  Filter(const Filter&) = delete;
+  Filter& operator=(const Filter&) = delete;
 
   Poll<absl::Status> operator()() {
     if (auto* state = absl::get_if<1>(&state_)) {
       return ready(std::move(*state));
     }
-    return waiter_.pending();
+    return kPending;
   }
 
  private:
   absl::variant<adaptor_detail::Factory<T, F>, absl::Status> state_;
-  IntraActivityWaiter waiter_;
+  const char index_ = -1;
 
   class PromiseImpl final : public ::grpc_core::pipe_detail::Promise<T> {
     using PF = typename adaptor_detail::Factory<T, F>::Promise;
@@ -444,7 +451,7 @@ class Filter final : private FilterInterface<T> {
         } else {
           filter_->state_.template emplace<absl::Status>(
               std::move(p->status()));
-          filter_->waiter_.Wake();
+          Activity::WakeupCurrent();
           return ready(false);
         }
       } else {
@@ -479,31 +486,19 @@ class Filter final : private FilterInterface<T> {
   void Stop() final {
     if (absl::get_if<0>(&state_)) {
       state_.template emplace<absl::Status>(absl::OkStatus());
-      waiter_.Wake();
+      Activity::WakeupCurrent();
     }
   }
 };
 
-template <typename T>
-FilterInterface<T>::FilterInterface(PipeReceiver<T>* receiver)
-    : receiver_(receiver), index_(receiver->filters_.size()) {
-  receiver->filters_.push_back(this);
+template <typename T> void FilterInterface<T>::SetReceiverIndex(int idx, FilterInterface* p) {
+  if (receiver_) receiver_->filters_[idx] = p;
 }
 
-template <typename T>
-FilterInterface<T>::~FilterInterface() {
-  if (receiver_) {
-    receiver_->filters_[index_] = nullptr;
-  }
-}
-
-template <typename T>
-FilterInterface<T>::FilterInterface(FilterInterface&& other)
-    : receiver_(other.receiver_), index_(other.index_) {
-  if (receiver_ != nullptr) {
-    receiver_->filters_[index_] = this;
-    other.receiver_ = nullptr;
-  }
+template <typename T> char FilterInterface<T>::AllocIndex() {
+  auto r = receiver_->filters_.size();
+  receiver_->filters_.push_back(this);
+  return r;
 }
 
 }  // namespace pipe_detail
