@@ -414,10 +414,13 @@ class Filter final : private FilterInterface<T> {
   Filter(PipeReceiver<T>* receiver, F f)
       : FilterInterface<T>(receiver),
         state_(adaptor_detail::Factory<T, F>(std::move(f))),
-        index_(this->AllocIndex()) {};
+        index_(this->AllocIndex()){};
   Filter(absl::Status already_finished) : state_(std::move(already_finished)) {}
   ~Filter() { this->SetReceiverIndex(index_, nullptr); }
-  Filter(Filter&& other) : FilterInterface<T>(other.receiver_), state_(other.state_), index_(other.index_) {
+  Filter(Filter&& other)
+      : FilterInterface<T>(other.receiver_),
+        state_(other.state_),
+        index_(other.index_) {
     other.receiver_ = nullptr;
     this->SetReceiverIndex(index_, this);
   }
@@ -491,11 +494,13 @@ class Filter final : private FilterInterface<T> {
   }
 };
 
-template <typename T> void FilterInterface<T>::SetReceiverIndex(int idx, FilterInterface* p) {
+template <typename T>
+void FilterInterface<T>::SetReceiverIndex(int idx, FilterInterface* p) {
   if (receiver_) receiver_->filters_[idx] = p;
 }
 
-template <typename T> char FilterInterface<T>::AllocIndex() {
+template <typename T>
+char FilterInterface<T>::AllocIndex() {
   auto r = receiver_->filters_.size();
   receiver_->filters_.push_back(this);
   return r;

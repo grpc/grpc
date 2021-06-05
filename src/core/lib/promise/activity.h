@@ -63,7 +63,9 @@ class Activity {
 
   virtual size_t Size() = 0;
 
-  static void WakeupCurrent() { g_current_activity_->got_wakeup_during_run_ = true; }
+  static void WakeupCurrent() {
+    g_current_activity_->got_wakeup_during_run_ = true;
+  }
 
  protected:
   explicit Activity(CallbackScheduler* scheduler)
