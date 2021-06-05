@@ -225,7 +225,7 @@ class PipeReceiver {
   explicit PipeReceiver(PipeSender<T>* sender) : sender_(sender) {}
   PipeSender<T>* sender_;
   pipe_detail::Next<T>* next_ = nullptr;
-  absl::InlinedVector<pipe_detail::FilterInterface<T>*, 6> filters_;
+  absl::InlinedVector<pipe_detail::FilterInterface<T>*, 12> filters_;
   absl::optional<T> pending_;
   IntraActivityWaiter waiting_to_send_;
   IntraActivityWaiter waiting_to_receive_;
