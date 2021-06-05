@@ -15,21 +15,14 @@
 #ifndef GRPC_CORE_LIB_PROMISE_PIPE_H
 #define GRPC_CORE_LIB_PROMISE_PIPE_H
 
+#include "absl/status/status.h"
+#include "absl/status/statusor.h"
 #include "absl/types/optional.h"
 #include "src/core/lib/promise/activity.h"
+#include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
-
-namespace pipe_detail {
-
-template <typename T>
-class Push;
-
-template <typename T>
-class Next;
-
-}  // namespace pipe_detail
 
 template <typename T>
 struct Pipe;
@@ -39,6 +32,49 @@ class PipeSender;
 
 template <typename T>
 class PipeReceiver;
+
+namespace pipe_detail {
+
+template <typename T>
+class Push;
+
+template <typename T>
+class Next;
+
+template <class T>
+class Promise {
+ public:
+  virtual Poll<bool> Step(T* output) = 0;
+  virtual void Stop() = 0;
+};
+
+struct alignas(alignof(void*)) Scratch {
+  uint8_t scratch[32];
+};
+
+template <typename T>
+class FilterInterface {
+ public:
+  FilterInterface() = default;
+  explicit FilterInterface(PipeReceiver<T>* receiver);
+  ~FilterInterface();
+  FilterInterface(const FilterInterface&) = delete;
+  FilterInterface& operator=(const FilterInterface&) = delete;
+  FilterInterface(FilterInterface&& other);
+  FilterInterface& operator=(FilterInterface&& other);
+  virtual Promise<T>* Step(T* p, Scratch* scratch_space) = 0;
+  virtual void Stop() = 0;
+
+ private:
+  friend class PipeReceiver<T>;
+  PipeReceiver<T>* receiver_ = nullptr;
+  int index_ = -1;
+};
+
+template <typename T, typename F>
+class Filter;
+
+}  // namespace pipe_detail
 
 // Send end of a Pipe.
 template <typename T>
@@ -79,8 +115,7 @@ class PipeSender {
 
   ~PipeSender() {
     if (receiver_ != nullptr) {
-      receiver_->waiting_to_receive_.Wake();
-      receiver_->sender_ = nullptr;
+      receiver_->MarkClosed();
     }
     if (push_ != nullptr) {
       push_->sender_ = nullptr;
@@ -92,6 +127,13 @@ class PipeSender {
   // sent, false if it could never be sent. Blocks the promise until the
   // receiver is either closed or able to receive another message.
   pipe_detail::Push<T> Push(T value);
+
+  // Attach a promise factory based filter to this pipe.
+  // The overall promise returned from this will be active until the pipe is
+  // closed. If this promise is cancelled before the pipe is closed, the pipe
+  // will close. The filter will be run _after_ any other registered filters.
+  template <typename F>
+  pipe_detail::Filter<T, F> Filter(F f);
 
  private:
   friend struct Pipe<T>;
@@ -113,6 +155,7 @@ class PipeReceiver {
   PipeReceiver(PipeReceiver&& other) noexcept
       : sender_(other.sender_),
         next_(other.next_),
+        filters_(std::move(other.filters_)),
         pending_(std::move(other.pending_)),
         waiting_to_send_(std::move(other.waiting_to_send_)),
         waiting_to_receive_(other.waiting_to_receive_) {
@@ -124,6 +167,9 @@ class PipeReceiver {
       next_->receiver_ = this;
       other.next_ = nullptr;
     }
+    for (auto filter : filters_) {
+      filter->receiver_ = this;
+    }
   }
   PipeReceiver& operator=(PipeReceiver&& other) noexcept {
     if (sender_ != nullptr) {
@@ -134,6 +180,10 @@ class PipeReceiver {
     }
     sender_ = other.sender_;
     next_ = other.next_;
+    filters_ = std::move(other.filters_);
+    for (auto filter : filters_) {
+      filter->receiver_ = this;
+    }
     pending_ = std::move(other.pending_);
     waiting_to_send_ = std::move(other.waiting_to_send_);
     waiting_to_receive_ = std::move(other.waiting_to_receive_);
@@ -148,10 +198,7 @@ class PipeReceiver {
     return *this;
   }
   ~PipeReceiver() {
-    waiting_to_send_.Wake();
-    if (sender_ != nullptr) {
-      sender_->receiver_ = nullptr;
-    }
+    MarkClosed();
     if (next_ != nullptr) {
       next_->receiver_ = nullptr;
     }
@@ -164,17 +211,42 @@ class PipeReceiver {
   // available.
   pipe_detail::Next<T> Next();
 
+  // Attach a promise factory based filter to this pipe.
+  // The overall promise returned from this will be active until the pipe is
+  // closed. If this promise is cancelled before the pipe is closed, the pipe
+  // will close. The filter will be run _after_ any other registered filters.
+  template <typename F>
+  pipe_detail::Filter<T, F> Filter(F f);
+
  private:
   friend struct Pipe<T>;
   friend class PipeSender<T>;
   friend class pipe_detail::Next<T>;
   friend class pipe_detail::Push<T>;
+  friend class pipe_detail::FilterInterface<T>;
   explicit PipeReceiver(PipeSender<T>* sender) : sender_(sender) {}
   PipeSender<T>* sender_;
   pipe_detail::Next<T>* next_ = nullptr;
+  absl::InlinedVector<pipe_detail::FilterInterface<T>*, 6> filters_;
   absl::optional<T> pending_;
   IntraActivityWaiter waiting_to_send_;
   IntraActivityWaiter waiting_to_receive_;
+
+  void MarkClosed() {
+    if (sender_ == nullptr) {
+      return;
+    }
+
+    sender_->receiver_ = nullptr;
+
+    waiting_to_receive_.Wake();
+    waiting_to_send_.Wake();
+    sender_ = nullptr;
+
+    for (auto* filter : filters_) {
+      filter->Stop();
+    }
+  }
 };
 
 namespace pipe_detail {
@@ -244,17 +316,24 @@ class Next {
  public:
   Next(const Next&) = delete;
   Next& operator=(const Next&) = delete;
-  Next(Next&& other) noexcept : receiver_(other.receiver_) {
+  Next(Next&& other) noexcept
+      : receiver_(other.receiver_),
+        next_filter_(other.next_filter_),
+        current_promise_(nullptr) {
+    assert(other.current_promise_ == nullptr);
     if (receiver_ != nullptr) {
       receiver_->next_ = this;
       other.receiver_ = nullptr;
     }
   }
   Next& operator=(Next&& other) noexcept {
+    assert(current_promise_ == nullptr);
+    assert(other.current_promise_ == nullptr);
     if (receiver_ != nullptr) {
       receiver_->next_ = nullptr;
     }
     receiver_ = other.receiver_;
+    next_filter_ = other.next_filter_;
     if (receiver_ != nullptr) {
       receiver_->next_ = this;
       other.receiver_ = nullptr;
@@ -267,16 +346,51 @@ class Next {
       assert(receiver_->next_ == this);
       receiver_->next_ = nullptr;
     }
+    if (current_promise_ != nullptr) {
+      current_promise_->Stop();
+    }
   }
 
   Poll<absl::optional<T>> operator()() {
     if (receiver_->pending_.has_value()) {
-      auto result = ready(absl::optional<T>(std::move(*receiver_->pending_)));
-      receiver_->pending_.reset();
-      receiver_->waiting_to_send_.Wake();
-      receiver_->next_ = nullptr;
-      receiver_ = nullptr;
-      return result;
+      auto* pending = &*receiver_->pending_;
+      if (current_promise_ != nullptr) {
+        auto r = current_promise_->Step(pending);
+        if (auto* p = r.get_ready()) {
+          current_promise_->Stop();
+          current_promise_ = nullptr;
+          if (!*p) {
+            receiver_->MarkClosed();
+            return ready(absl::optional<T>());
+          }
+        } else {
+          return kPending;
+        }
+      }
+      while (true) {
+        if (next_filter_ >= receiver_->filters_.size()) {
+          auto result = ready(absl::optional<T>(std::move(*pending)));
+          receiver_->pending_.reset();
+          receiver_->waiting_to_send_.Wake();
+          receiver_->next_ = nullptr;
+          receiver_ = nullptr;
+          return result;
+        }
+        current_promise_ =
+            receiver_->filters_[next_filter_]->Step(pending, &scratch_);
+        next_filter_++;
+        if (current_promise_ ==
+            reinterpret_cast<Promise<T>*>(uintptr_t(false))) {
+          current_promise_ = nullptr;
+          receiver_->MarkClosed();
+          return ready(absl::optional<T>());
+        } else if (current_promise_ ==
+                   reinterpret_cast<Promise<T>*>(uintptr_t(true))) {
+          current_promise_ = nullptr;
+        } else {
+          return kPending;
+        }
+      }
     }
     if (receiver_->sender_ == nullptr) {
       return ready(absl::optional<T>());
@@ -291,7 +405,106 @@ class Next {
     receiver_->next_ = this;
   }
   PipeReceiver<T>* receiver_;
+  int next_filter_ = 0;
+  Promise<T>* current_promise_ = nullptr;
+  Scratch scratch_;
 };
+
+template <typename T, typename F>
+class Filter final : private FilterInterface<T> {
+ public:
+  Filter(PipeReceiver<T>* reciever, F f)
+      : FilterInterface<T>(reciever),
+        state_(adaptor_detail::Factory<T, F>(std::move(f))){};
+  Filter(absl::Status already_finished) : state_(std::move(already_finished)) {}
+
+  Poll<absl::Status> operator()() {
+    if (auto* state = absl::get_if<1>(&state_)) {
+      return ready(std::move(*state));
+    }
+    return waiter_.pending();
+  }
+
+ private:
+  absl::variant<adaptor_detail::Factory<T, F>, absl::Status> state_;
+  IntraActivityWaiter waiter_;
+
+  class PromiseImpl final : public ::grpc_core::pipe_detail::Promise<T> {
+    using PF = typename adaptor_detail::Factory<T, F>::Promise;
+
+   public:
+    PromiseImpl(PF f, Filter* filter) : f_(std::move(f)), filter_(filter) {}
+
+    Poll<bool> Step(T* output) final {
+      auto r = f_();
+      if (auto* p = r.get_ready()) {
+        if (p->ok()) {
+          *output = std::move(**p);
+          return ready(true);
+        } else {
+          filter_->state_.template emplace<absl::Status>(
+              std::move(p->status()));
+          filter_->waiter_.Wake();
+          return ready(false);
+        }
+      } else {
+        return kPending;
+      }
+    }
+
+    void Stop() final { this->~PromiseImpl(); }
+
+   private:
+    PF f_;
+    Filter* filter_;
+  };
+
+  Promise<T>* Step(T* p, Scratch* scratch) final {
+    if (auto* factory = absl::get_if<0>(&state_)) {
+      PromiseImpl promise(factory->Repeated(std::move(*p)), this);
+      auto r = promise.Step(p);
+      if (auto* result = r.get_ready()) {
+        return reinterpret_cast<Promise<T>*>(uintptr_t(*result));
+      }
+      static_assert(sizeof(promise) <= sizeof(Scratch),
+                    "scratch size too small");
+      static_assert(alignof(decltype(promise)) <= alignof(Scratch),
+                    "bad alignment");
+      return new (scratch) decltype(promise)(std::move(promise));
+    } else {
+      return nullptr;
+    }
+  }
+
+  void Stop() final {
+    if (absl::get_if<0>(&state_)) {
+      state_.template emplace<absl::Status>(absl::OkStatus());
+      waiter_.Wake();
+    }
+  }
+};
+
+template <typename T>
+FilterInterface<T>::FilterInterface(PipeReceiver<T>* receiver)
+    : receiver_(receiver), index_(receiver->filters_.size()) {
+  receiver->filters_.push_back(this);
+}
+
+template <typename T>
+FilterInterface<T>::~FilterInterface() {
+  if (receiver_) {
+    receiver_->filters_[index_] = nullptr;
+  }
+}
+
+template <typename T>
+FilterInterface<T>::FilterInterface(FilterInterface&& other)
+    : receiver_(other.receiver_), index_(other.index_) {
+  if (receiver_ != nullptr) {
+    receiver_->filters_[index_] = this;
+    other.receiver_ = nullptr;
+  }
+}
 
 }  // namespace pipe_detail
 
@@ -303,6 +516,22 @@ pipe_detail::Push<T> PipeSender<T>::Push(T value) {
 template <typename T>
 pipe_detail::Next<T> PipeReceiver<T>::Next() {
   return pipe_detail::Next<T>(this);
+}
+
+template <typename T>
+template <typename F>
+pipe_detail::Filter<T, F> PipeSender<T>::Filter(F f) {
+  if (receiver_) {
+    return pipe_detail::Filter<T, F>(receiver_, std::move(f));
+  } else {
+    return pipe_detail::Filter<T, F>(absl::OkStatus());
+  }
+}
+
+template <typename T>
+template <typename F>
+pipe_detail::Filter<T, F> PipeReceiver<T>::Filter(F f) {
+  return pipe_detail::Filter<T, F>(this, std::move(f));
 }
 
 // A Pipe is an intra-Activity communications channel that transmits T's from

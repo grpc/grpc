@@ -107,6 +107,35 @@ TEST(PipeTest, CanSeeClosedOnReceive) {
       nullptr);
 }
 
+TEST(PipeTest, CanFilter) {
+  Pipe<int> pipe;
+  StrictMock<MockFunction<void(absl::Status)>> on_done;
+  EXPECT_CALL(on_done, Call(absl::OkStatus()));
+  MakeActivity(
+      [&pipe] {
+        return Seq(
+            Join(pipe.sender.Push(42), pipe.receiver.Filter([](int p) {
+              return ready(absl::StatusOr<int>(p * 2));
+            }),
+                 pipe.sender.Filter(
+                     [](int p) { return ready(absl::StatusOr<int>(p + 1)); }),
+                 Seq(pipe.receiver.Next(),
+                     [&pipe](absl::optional<int> i) {
+                       auto x = std::move(pipe.receiver);
+                       return ready(i);
+                     })),
+            [](std::tuple<bool, absl::Status, absl::Status, absl::optional<int>>
+                   result) {
+              EXPECT_EQ(result, std::make_tuple(true, absl::OkStatus(),
+                                                absl::OkStatus(),
+                                                absl::optional<int>(85)));
+              return ready(absl::OkStatus());
+            });
+      },
+      [&on_done](absl::Status status) { on_done.Call(std::move(status)); },
+      nullptr);
+}
+
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {

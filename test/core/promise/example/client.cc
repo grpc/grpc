@@ -56,52 +56,34 @@ class CompressionFilter {
         // Inject a loop to copy capsules (comrpessing along the way)
         // C++14 for brevity
         [compress = std::move(compress)]() {
-          auto compressor =
-              CompressorFromMetadata(context()->initial_metadata());
+          GetContext<RPC>()->set_compressor(
+              CompressorFromMetadata(context()->initial_metadata()));
           // For each outgoing message, compress that message.
-          return ForEach(compress.receiver,
-                         Seq(Visitor(
-                                 [](Slice slice) {
-                                   // Note this may block! So we could dispatch
-                                   // to a thread pool say to do the
-                                   // compression.
-                                   return compressor->CompressSlice(&slice);
-                                 },
-                                 [](Metadata metadata) {
-                                   return ready(Capsule(metadata));
-                                 }),
-                             [&compress](Capsule c) {
-                               return compress.sender.Push(std::move(c));
-                             }));
+          return compress.receiver.Filter([compressor](Capsule capsule) {
+            return Visitor(
+                [](Slice slice) {
+                  // Note this may block! So we could dispatch
+                  // to a thread pool say to do the
+                  // compression.
+                  return GetContext<RPC>()->compressor()->CompressSlice(&slice);
+                },
+                [](Metadata metadata) { return ready(Capsule(metadata)); });
+          });
         },
         [decompress = std::move(decompress)]() {
           DecompressorPtr decompressor;
-          return TrySeq(
-              // First read returned initial metadata, to ascertain the format
-              // we should be using.
-              Seq(decompress.receiver.Next(),
-                  Visitor(
-                      [](Metadata metadata) {
-                        return ready(DecompressorFromMetadata(&metadata));
-                      },
-                      [](auto x) { return ready(absl::CancelledError()); }),
-                  // Now we can loop over the remaining capsules and decompress
-                  // them as needed.
-                  [&decompress](DecompressorPtr decompressor) {
-                    return ForEach(
-                        decompress.receiver,
-                        Seq(Visitor(
-                                [decompressor =
-                                     std::move(decompressor)](Slice slice) {
-                                  return decompressor->DecompressSlice(slice);
-                                },
-                                [](Metadata metadata) {
-                                  return ready(Capsule(metadata));
-                                }),
-                            [&decompress](Capsule c) {
-                              return decompress.sender.Push(std::move(c));
-                            }));
-                  }))
+          return decompress.sender.Filter([decompressor](Capsule capsule) {
+            return Visitor(
+                [](Metadata metadata) {
+                  GetContext<RPC>()->set_decompressor(
+                      DecompressorFromMetadata(&metadata));
+                  return ready(std::move(metadata));
+                },
+                [](Slice slice) {
+                  return GetContext<RPC>()->decompressor()->DecompressSlice(
+                      &slice);
+                })
+          });
         });
   }
 };

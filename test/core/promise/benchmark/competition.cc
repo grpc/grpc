@@ -21,6 +21,7 @@
 #include "src/core/lib/promise/for_each.h"
 #include "src/core/lib/promise/join.h"
 #include "src/core/lib/promise/latch.h"
+#include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
 #include "src/core/lib/promise/try_seq.h"
@@ -122,10 +123,17 @@ namespace activity_stack {
 struct RPCIO {
   Latch<int> recv_initial_metadata;
 };
+
+struct RPCP {
+  Pipe<int> pipe;
+};
 }  // namespace activity_stack
 
 template <>
 struct ContextType<activity_stack::RPCIO> {};
+
+template <>
+struct ContextType<activity_stack::RPCP> {};
 
 namespace activity_stack {
 
@@ -167,7 +175,7 @@ static void BM_ActivityStack_Passthrough10_Unary(benchmark::State& state) {
 }
 BENCHMARK(BM_ActivityStack_Passthrough10_Unary);
 
-static void BM_ActivityStack_Interject10_Unary(benchmark::State& state) {
+static void BM_ActivityStack_Interject10Latches_Unary(benchmark::State& state) {
   unary(state, []() {
     RPCIO rpcio;
     return MakeActivity(
@@ -189,7 +197,62 @@ static void BM_ActivityStack_Interject10_Unary(benchmark::State& state) {
         nullptr, std::move(rpcio));
   });
 }
-BENCHMARK(BM_ActivityStack_Interject10_Unary);
+BENCHMARK(BM_ActivityStack_Interject10Latches_Unary);
+
+static void BM_ActivityStack_Interject3Filters_Unary(benchmark::State& state) {
+  unary(state, []() {
+    RPCP rpcio;
+    return MakeActivity(
+        []() {
+          auto one = []() {
+            return GetContext<RPCP>()->pipe.sender.Filter(
+                [](int i) { return ready(absl::StatusOr<int>(i)); });
+          };
+          return Seq(Join(one(), one(), one(),
+                          Seq(GetContext<RPCP>()->pipe.sender.Push(42),
+                              []() {
+                                auto x =
+                                    std::move(GetContext<RPCP>()->pipe.sender);
+                                return ready(0);
+                              }),
+                          GetContext<RPCP>()->pipe.receiver.Next()),
+                     []() { return ready(absl::OkStatus()); });
+        },
+        [](absl::Status status) {
+          if (!status.ok()) abort();
+        },
+        nullptr, std::move(rpcio));
+  });
+}
+BENCHMARK(BM_ActivityStack_Interject3Filters_Unary);
+
+static void BM_ActivityStack_Interject10Filters_Unary(benchmark::State& state) {
+  unary(state, []() {
+    RPCP rpcio;
+    return MakeActivity(
+        []() {
+          auto one = []() {
+            return GetContext<RPCP>()->pipe.sender.Filter(
+                [](int i) { return ready(absl::StatusOr<int>(i)); });
+          };
+          return Seq(Join(one(), one(), one(), one(), one(), one(), one(),
+                          one(), one(), one(),
+                          Seq(GetContext<RPCP>()->pipe.sender.Push(42),
+                              []() {
+                                auto x =
+                                    std::move(GetContext<RPCP>()->pipe.sender);
+                                return ready(0);
+                              }),
+                          GetContext<RPCP>()->pipe.receiver.Next()),
+                     []() { return ready(absl::OkStatus()); });
+        },
+        [](absl::Status status) {
+          if (!status.ok()) abort();
+        },
+        nullptr, std::move(rpcio));
+  });
+}
+BENCHMARK(BM_ActivityStack_Interject10Filters_Unary);
 
 }  // namespace activity_stack
 }  // namespace grpc_core
