@@ -933,12 +933,11 @@ GRPCAPI void grpc_tls_credentials_options_set_server_authorization_check_config(
     grpc_tls_server_authorization_check_config* config);
 
 /**
-* If set, gRPC will read all hashed x.509 CRL files in the directory and
-* enforce the CRL files on all TLS handshakes.
-*/
+ * If set, gRPC will read all hashed x.509 CRL files in the directory and
+ * enforce the CRL files on all TLS handshakes.
+ */
 GRPCAPI void grpc_tls_credentials_options_set_crl_directory(
-   grpc_tls_credentials_options* options,
-   const char* crl_directory);
+    grpc_tls_credentials_options* options, const char* crl_directory);
 
 /** --- TLS server authorization check config. ---
  *  It is used for experimental purpose for now and subject to change. */
