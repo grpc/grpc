@@ -374,8 +374,8 @@ class Next {
           receiver_ = nullptr;
           return result;
         }
-        current_promise_ =
-            receiver_->filters_[next_filter_]->Step(pending, &scratch_);
+        auto* filter = receiver_->filters_[next_filter_];
+        current_promise_ = filter ? filter->Step(pending, &scratch_) : nullptr;
         next_filter_++;
         if (current_promise_ ==
             reinterpret_cast<Promise<T>*>(uintptr_t(false))) {
@@ -413,31 +413,47 @@ class Filter final : private FilterInterface<T> {
  public:
   Filter(PipeReceiver<T>* receiver, F f)
       : FilterInterface<T>(receiver),
-        state_(adaptor_detail::Factory<T, F>(std::move(f))),
+        active_(adaptor_detail::Factory<T, F>(std::move(f))),
         index_(this->AllocIndex()){};
-  Filter(absl::Status already_finished) : state_(std::move(already_finished)) {}
-  ~Filter() { this->SetReceiverIndex(index_, nullptr); }
+  Filter(absl::Status already_finished) : done_(std::move(already_finished)) {}
+  ~Filter() {
+    if (index_ != kTombstoneIndex) {
+      this->SetReceiverIndex(index_, nullptr);
+      active_.~Factory();
+    } else {
+      done_.~Status();
+    }
+  }
   Filter(Filter&& other)
-      : FilterInterface<T>(other.receiver_),
-        state_(other.state_),
-        index_(other.index_) {
+      : FilterInterface<T>(other.receiver_), index_(other.index_) {
+    if (index_ != kTombstoneIndex) {
+      new (&active_) adaptor_detail::Factory<T, F>(std::move(other.active_));
+    } else {
+      new (&done_) absl::Status(std::move(other.done_));
+    }
     other.receiver_ = nullptr;
-    this->SetReceiverIndex(index_, this);
+    if (index_ != kTombstoneIndex) {
+      this->SetReceiverIndex(index_, this);
+    }
   }
 
   Filter(const Filter&) = delete;
   Filter& operator=(const Filter&) = delete;
 
   Poll<absl::Status> operator()() {
-    if (auto* state = absl::get_if<1>(&state_)) {
-      return ready(std::move(*state));
+    if (index_ == kTombstoneIndex) {
+      return ready(std::move(done_));
     }
     return kPending;
   }
 
  private:
-  absl::variant<adaptor_detail::Factory<T, F>, absl::Status> state_;
-  const char index_ = -1;
+  static constexpr char kTombstoneIndex = -1;
+  union {
+    adaptor_detail::Factory<T, F> active_;
+    absl::Status done_;
+  };
+  char index_ = kTombstoneIndex;
 
   class PromiseImpl final : public ::grpc_core::pipe_detail::Promise<T> {
     using PF = typename adaptor_detail::Factory<T, F>::Promise;
@@ -452,8 +468,10 @@ class Filter final : private FilterInterface<T> {
           *output = std::move(**p);
           return ready(true);
         } else {
-          filter_->state_.template emplace<absl::Status>(
-              std::move(p->status()));
+          filter_->SetReceiverIndex(filter_->index_, nullptr);
+          filter_->active_.~Factory();
+          filter_->index_ = kTombstoneIndex;
+          new (&filter_->done_) absl::Status(std::move(p->status()));
           Activity::WakeupCurrent();
           return ready(false);
         }
@@ -470,8 +488,8 @@ class Filter final : private FilterInterface<T> {
   };
 
   Promise<T>* Step(T* p, Scratch* scratch) final {
-    if (auto* factory = absl::get_if<0>(&state_)) {
-      PromiseImpl promise(factory->Repeated(std::move(*p)), this);
+    if (index_ != kTombstoneIndex) {
+      PromiseImpl promise(active_.Repeated(std::move(*p)), this);
       auto r = promise.Step(p);
       if (auto* result = r.get_ready()) {
         return reinterpret_cast<Promise<T>*>(uintptr_t(*result));
@@ -487,8 +505,11 @@ class Filter final : private FilterInterface<T> {
   }
 
   void Stop() final {
-    if (absl::get_if<0>(&state_)) {
-      state_.template emplace<absl::Status>(absl::OkStatus());
+    if (index_ != kTombstoneIndex) {
+      this->SetReceiverIndex(index_, nullptr);
+      active_.~Factory();
+      index_ = kTombstoneIndex;
+      new (&done_) absl::Status(absl::OkStatus());
       Activity::WakeupCurrent();
     }
   }
