@@ -726,11 +726,11 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     // Not shutting down, so do the update.
     if (connected_subchannel_ != connected_subchannel) {
       connected_subchannel_ = std::move(connected_subchannel);
-      // Record the new connected subchannel so that it can be updated
-      // in the data plane mutex the next time the picker is updated.
-      chand_->pending_subchannel_updates_[Ref(
-          DEBUG_LOCATION, "ConnectedSubchannelUpdate")] = connected_subchannel_;
     }
+    // Record the new connected subchannel so that it can be updated
+    // in the data plane mutex the next time the picker is updated.
+    chand_->pending_subchannel_updates_[Ref(
+        DEBUG_LOCATION, "ConnectedSubchannelUpdate")] = connected_subchannel_;
   }
 
   ClientChannel* chand_;
@@ -3035,7 +3035,10 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
         // holding the data plane mutex.
         connected_subchannel_ =
             chand_->GetConnectedSubchannelInDataPlane(result.subchannel.get());
-        GPR_ASSERT(connected_subchannel_ != nullptr);
+        if (connected_subchannel_ == nullptr) {
+          MaybeAddCallToLbQueuedCallsLocked();
+          return false;
+        }
       }
       lb_recv_trailing_metadata_ready_ = result.recv_trailing_metadata_ready;
       *error = result.error;
