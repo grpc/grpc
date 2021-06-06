@@ -721,6 +721,7 @@ void RingHash::ShutdownLocked() {
   }
   shutdown_ = true;
   subchannel_list_.reset();
+  ring_.reset(DEBUG_LOCATION, "RingHash");
 }
 
 void RingHash::ResetBackoffLocked() { subchannel_list_->ResetBackoffLocked(); }
