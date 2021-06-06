@@ -724,13 +724,16 @@ class ClientChannel::SubchannelWrapper : public SubchannelInterface {
     grpc_error_handle disconnect_error = chand_->disconnect_error();
     if (disconnect_error != GRPC_ERROR_NONE) return;
     // Not shutting down, so do the update.
+    gpr_log(GPR_INFO, "donna MaybeUpdateConnectedSubchannel %p and %p",
+            connected_subchannel_.get(), connected_subchannel.get());
     if (connected_subchannel_ != connected_subchannel) {
+      gpr_log(GPR_INFO, "donna move and add to pending");
       connected_subchannel_ = std::move(connected_subchannel);
+      // Record the new connected subchannel so that it can be updated
+      // in the data plane mutex the next time the picker is updated.
+      chand_->pending_subchannel_updates_[Ref(
+          DEBUG_LOCATION, "ConnectedSubchannelUpdate")] = connected_subchannel_;
     }
-    // Record the new connected subchannel so that it can be updated
-    // in the data plane mutex the next time the picker is updated.
-    chand_->pending_subchannel_updates_[Ref(
-        DEBUG_LOCATION, "ConnectedSubchannelUpdate")] = connected_subchannel_;
   }
 
   ClientChannel* chand_;
@@ -1639,21 +1642,25 @@ void ClientChannel::UpdateStateAndPickerLocked(
   // that point.  This includes the following:
   // - refs to subchannel wrappers in the keys of pending_subchannel_updates_
   // - ownership of the existing picker in picker_
+  gpr_log(GPR_INFO, "donna before set_connected_subchannel_in_data_plane");
   {
     MutexLock lock(&data_plane_mu_);
     // Handle subchannel updates.
     for (auto& p : pending_subchannel_updates_) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+      //if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
         gpr_log(GPR_INFO,
-                "chand=%p: updating subchannel wrapper %p data plane "
+                "donna chand=%p: updating subchannel wrapper %p data plane "
                 "connected_subchannel to %p",
                 this, p.first.get(), p.second.get());
-      }
+      //}
       // Note: We do not remove the entry from pending_subchannel_updates_
       // here, since this would unref the subchannel wrapper; instead,
       // we wait until we've released the lock to clear the map.
       p.first->set_connected_subchannel_in_data_plane(std::move(p.second));
     }
+    // Need to do this here because the next Picker may add to this update which
+    // we do not wish to clear.
+    pending_subchannel_updates_.clear();
     // Swap out the picker.
     // Note: Original value will be destroyed after the lock is released.
     picker_.swap(picker);
@@ -1666,9 +1673,10 @@ void ClientChannel::UpdateStateAndPickerLocked(
       }
     }
   }
+  gpr_log(GPR_INFO, "donna after set_connected_subchannel_in_data_plane all clear");
   // Clear the pending update map after releasing the lock, to keep the
   // critical section small.
-  pending_subchannel_updates_.clear();
+  // pending_subchannel_updates_.clear();
 }
 
 grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
@@ -3036,8 +3044,11 @@ bool ClientChannel::LoadBalancedCall::PickSubchannelLocked(
         connected_subchannel_ =
             chand_->GetConnectedSubchannelInDataPlane(result.subchannel.get());
         if (connected_subchannel_ == nullptr) {
+          gpr_log(GPR_INFO, "donna assert case for %p", result.subchannel.get());
           MaybeAddCallToLbQueuedCallsLocked();
           return false;
+        } else {
+          gpr_log(GPR_INFO, "donna no assert %p and %p", result.subchannel.get(), connected_subchannel_.get());
         }
       }
       lb_recv_trailing_metadata_ready_ = result.recv_trailing_metadata_ready;
