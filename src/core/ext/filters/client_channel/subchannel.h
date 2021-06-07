@@ -283,7 +283,7 @@ class Subchannel : public DualRefCounted<Subchannel> {
     void RemoveWatcherLocked(ConnectivityStateWatcherInterface* watcher);
 
     // Notifies all watchers in the list about a change to state.
-    void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state,
+    void NotifyLocked(grpc_connectivity_state state,
                       const absl::Status& status);
 
     void Clear() { watchers_.clear(); }

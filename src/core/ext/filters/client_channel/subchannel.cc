@@ -399,8 +399,7 @@ void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
 }
 
 void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
-    Subchannel* subchannel, grpc_connectivity_state state,
-    const absl::Status& status) {
+    grpc_connectivity_state state, const absl::Status& status) {
   for (const auto& p : watchers_) {
     new AsyncWatcherNotifierLocked(p.second, state, status);
   }
@@ -462,14 +461,14 @@ class Subchannel::HealthWatcherMap::HealthWatcher
       if (state_ != GRPC_CHANNEL_CONNECTING) {
         state_ = GRPC_CHANNEL_CONNECTING;
         status_ = status;
-        watcher_list_.NotifyLocked(subchannel_.get(), state_, status);
+        watcher_list_.NotifyLocked(state_, status);
       }
       // If we've become connected, start health checking.
       StartHealthCheckingLocked();
     } else {
       state_ = state;
       status_ = status;
-      watcher_list_.NotifyLocked(subchannel_.get(), state_, status);
+      watcher_list_.NotifyLocked(state_, status);
       // We're not connected, so stop health checking.
       health_check_client_.reset();
     }
@@ -488,7 +487,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
     if (new_state != GRPC_CHANNEL_SHUTDOWN && health_check_client_ != nullptr) {
       state_ = new_state;
       status_ = status;
-      watcher_list_.NotifyLocked(subchannel_.get(), new_state, status);
+      watcher_list_.NotifyLocked(new_state, status);
     }
   }
 
@@ -908,7 +907,7 @@ void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state,
             SubchannelConnectivityStateChangeString(state)));
   }
   // Notify non-health watchers.
-  watcher_list_.NotifyLocked(this, state, status);
+  watcher_list_.NotifyLocked(state, status);
   // Notify health watchers.
   health_watcher_map_.NotifyLocked(state, status);
 }
