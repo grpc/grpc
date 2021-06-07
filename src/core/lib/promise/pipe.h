@@ -242,7 +242,9 @@ class PipeReceiver {
     sender_ = nullptr;
 
     for (auto* filter : filters_) {
-      filter->Stop();
+      if (filter != nullptr){
+        filter->Stop();
+      }
     }
   }
 };
@@ -450,10 +452,10 @@ class Filter final : private FilterInterface<T> {
  private:
   static constexpr char kTombstoneIndex = -1;
   union {
-    adaptor_detail::Factory<T, F> active_;
-    absl::Status done_;
+    [[no_unique_address]] adaptor_detail::Factory<T, F> active_;
+    [[no_unique_address]] absl::Status done_;
   };
-  char index_ = kTombstoneIndex;
+  [[no_unique_address]] char index_ = kTombstoneIndex;
 
   class PromiseImpl final : public ::grpc_core::pipe_detail::Promise<T> {
     using PF = typename adaptor_detail::Factory<T, F>::Promise;
