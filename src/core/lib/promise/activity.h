@@ -22,6 +22,7 @@
 #include "absl/synchronization/mutex.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
+#include "src/core/lib/promise/adaptor.h"
 
 namespace grpc_core {
 
@@ -172,9 +173,22 @@ class PromiseActivity final
                   CallbackScheduler* callback_scheduler, Contexts... contexts)
       : Activity(callback_scheduler),
         ContextHolder<Contexts>(std::move(contexts))...,
-        state_(std::move(promise_factory)),
         on_done_(std::move(on_done)) {
-    Step();
+    // Set g_current_activity_ until we return.
+    ScopedActivity scoped_activity(this);
+    EnterContexts<Contexts...> enter_contexts(
+        static_cast<ContextHolder<Contexts>*>(this)->GetContext()...);
+    Construct(&promise_, promise_factory());
+    auto status = StepInner();
+    if (status.has_value()) {
+      on_done_(std::move(*status));
+    }
+  }
+
+  ~PromiseActivity() {
+    if (!done_) {
+      Destruct(&promise_);
+    }
   }
 
   size_t Size() override { return sizeof(*this); }
@@ -183,11 +197,9 @@ class PromiseActivity final
     bool was_done;
     {
       absl::MutexLock lock(&mu_);
-      // Drop the promise if it exists.
-      Stop();
       // Check if we were done, and flag done.
       was_done = done_;
-      done_ = true;
+      if (!done_) MarkDone();
     }
     // If we were not done, then call the on_done callback.
     if (!was_done) {
@@ -214,8 +226,10 @@ class PromiseActivity final
 
   // Notification that we're no longer executing - it's ok to destruct the
   // promise.
-  void Stop() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
-    state_.template emplace<Stopped>();
+  void MarkDone() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+    assert(!done_);
+    done_ = true;
+    Destruct(&promise_);
   }
 
   // In response to Wakeup, run the Promise state machine again until it
@@ -232,58 +246,37 @@ class PromiseActivity final
     ScopedActivity scoped_activity(this);
     EnterContexts<Contexts...> contexts(
         static_cast<ContextHolder<Contexts>*>(this)->GetContext()...);
+    auto status = StepInner();
+    mu_.Unlock();
+    if (status.has_value()) {
+      on_done_(std::move(*status));
+    }
+  }
+
+  absl::optional<absl::Status> StepInner() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     do {
       // Clear continuation flag - this might get set if Wakeup is called
       // down-stack.
       got_wakeup_during_run_ = false;
       // Run the promise.
-      Poll<absl::Status> r = absl::visit(RunState{this}, state_);
+      assert(!done_);
+      auto r = promise_();
       if (auto* status = r.get_ready()) {
         // If complete, destroy the promise, flag done, and exit this loop.
-        Stop();
-        done_ = true;
-        mu_.Unlock();
-        on_done_(std::move(*status));
-        return;
+        MarkDone();
+        return std::move(*status);
       }
       // Continue looping til no wakeups occur.
     } while (got_wakeup_during_run_);
-    mu_.Unlock();
+    return {};
   }
 
   using Promise = decltype(std::declval<Factory>()());
-  struct Stopped {};
-  // We can be in one of three states:
-  // - Factory => we've never been polled. We delay Promise construction until
-  //              late in construction so that we can schedule wakeups against
-  //              the activity during construction.
-  // - Promise => we've started, and are polling for completion.
-  // - Stopped => execution has completed. A state by itself to ensure we can
-  //              run destructors on Promise.
-  absl::variant<Factory, Promise, Stopped> state_ GUARDED_BY(mu_);
+  union { [[no_unique_address]] Promise promise_ GUARDED_BY(mu_); };
   // Callback on completion of the promise.
-  OnDone on_done_;
+  [[no_unique_address]] OnDone on_done_;
   // Has execution completed?
-  bool done_ GUARDED_BY(mu_) = false;
-
-  // Functor to advance the state machine.
-  struct RunState {
-    PromiseActivity* self;
-
-    Poll<absl::Status> operator()(Factory& factory) {
-      // Construct the promise from the initial promise factory.
-      auto promise = factory();
-      return self->state_.template emplace<Promise>(std::move(promise))();
-    }
-
-    Poll<absl::Status> operator()(Promise& promise) {
-      // Normal execution: just poll.
-      return promise();
-    }
-
-    // Execution has been stopped - ought not be reachable.
-    Poll<absl::Status> operator()(Stopped& stopped) { abort(); }
-  };
+  [[no_unique_address]] bool done_ GUARDED_BY(mu_) = false;
 };
 
 }  // namespace activity_detail
