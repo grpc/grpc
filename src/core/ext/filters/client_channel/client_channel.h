@@ -219,6 +219,7 @@ class ClientChannel {
 
   void CreateOrUpdateLbPolicyLocked(
       RefCountedPtr<LoadBalancingPolicy::Config> lb_policy_config,
+      const absl::optional<std::string>& health_check_service_name,
       Resolver::Result result) ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> CreateLbPolicyLocked(
       const grpc_channel_args& args)
@@ -317,8 +318,6 @@ class ClientChannel {
   RefCountedPtr<ServiceConfig> saved_service_config_
       ABSL_GUARDED_BY(work_serializer_);
   RefCountedPtr<ConfigSelector> saved_config_selector_
-      ABSL_GUARDED_BY(work_serializer_);
-  absl::optional<std::string> health_check_service_name_
       ABSL_GUARDED_BY(work_serializer_);
   OrphanablePtr<LoadBalancingPolicy> lb_policy_
       ABSL_GUARDED_BY(work_serializer_);
