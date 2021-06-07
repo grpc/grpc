@@ -16,48 +16,23 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "absl/container/flat_hash_map.h"
+#include <string>
+
+#include "absl/strings/string_view.h"
+
 #include "absl/types/variant.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-/// An unordered map of key-value pairs representing Endpoint configuration
-/// options.
+/// An map of key-value pairs representing Endpoint configuration options.
 ///
-/// This class does not take ownership of any raw pointers passed to it.
+/// This class does not take ownership of any pointers passed to it.
 class EndpointConfig {
  public:
-  template <typename T>
-  class Type {
-   public:
-    explicit Type(T t) : val_(t){};
-    T val() const { return val_; }
-
-   private:
-    T val_;
-  };
-  using IntType = Type<int>;
-  using BoolType = Type<bool>;
-  using StrType = Type<std::string>;
-  using PtrType = Type<void*>;
-  using Setting =
-      absl::variant<absl::monostate, IntType, BoolType, StrType, PtrType>;
-  EndpointConfig() = default;
-  ~EndpointConfig() = default;
-  Setting& operator[](const std::string& key);
-  Setting& operator[](std::string&& key);
-  const Setting& at(const std::string& key) const;
-  /// Execute a callback \a cb for every Setting in the EndpointConfig. The
-  /// callback may return false to stop enumeration.
-  void enumerate(
-      std::function<bool(absl::string_view, const Setting&)> cb) const;
-  void clear();
-  size_t size() const;
-  bool contains(absl::string_view key) const;
-
- private:
-  absl::flat_hash_map<std::string, Setting> map_;
+  using Setting = absl::variant<absl::monostate, int, std::string, void*>;
+  virtual const Setting Get(absl::string_view key) const = 0;
+  virtual ~EndpointConfig() = default;
 };
 
 }  // namespace experimental

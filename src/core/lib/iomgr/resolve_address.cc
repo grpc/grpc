@@ -17,9 +17,9 @@
  */
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/resolve_address.h"
 #include <grpc/event_engine/event_engine.h>
 #include <grpc/support/alloc.h>
+#include "src/core/lib/iomgr/resolve_address.h"
 
 grpc_address_resolver_vtable* grpc_resolve_address_impl;
 

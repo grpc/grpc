@@ -15,40 +15,34 @@
 
 #include <grpc/event_engine/endpoint_config.h>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/types/variant.h"
+#include <grpc/impl/codegen/grpc_types.h>
+#include <grpc/impl/codegen/log.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/endpoint_config_internal.h"
+#include "src/core/lib/gpr/useful.h"
 
 namespace grpc_event_engine {
 namespace experimental {
 
-EndpointConfig::Setting& EndpointConfig::operator[](const std::string& key) {
-  return map_[key];
-}
-
-EndpointConfig::Setting& EndpointConfig::operator[](std::string&& key) {
-  return map_[std::move(key)];
-}
-
-const EndpointConfig::Setting& EndpointConfig::at(
-    const std::string& key) const {
-  return map_.at(key);
-}
-
-void EndpointConfig::enumerate(
-    std::function<bool(absl::string_view, const Setting&)> cb) const {
-  for (const auto& item : map_) {
-    if (!cb(item.first, item.second)) {
-      return;
-    }
+const EndpointConfig::Setting ChannelArgsEndpointConfig::Get(
+    absl::string_view key) const {
+  // TODO(hork): consider changing the API if string_view -> c_str is expensive.
+  const grpc_arg* arg = grpc_channel_args_find(args_, std::string(key).c_str());
+  if (arg == nullptr) {
+    return absl::monostate();
   }
-}
-
-void EndpointConfig::clear() { map_.clear(); }
-
-size_t EndpointConfig::size() const { return map_.size(); }
-
-bool EndpointConfig::contains(absl::string_view key) const {
-  return map_.contains(key);
+  switch (arg->type) {
+    case GRPC_ARG_STRING:
+      // TODO(hork): consider changing this to char* if the conversion is too
+      // expensive. std::variant cannot hold references.
+      return std::string(arg->value.string);
+    case GRPC_ARG_INTEGER:
+      return arg->value.integer;
+    case GRPC_ARG_POINTER:
+      return arg->value.pointer.p;
+  }
+  GPR_UNREACHABLE_CODE(return absl::monostate());
 }
 
 }  // namespace experimental

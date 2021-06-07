@@ -21,94 +21,28 @@
 
 #include "test/core/util/test_config.h"
 
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/event_engine/endpoint_config_internal.h"
+
+using ::grpc_event_engine::experimental::ChannelArgsEndpointConfig;
 using ::grpc_event_engine::experimental::EndpointConfig;
 using ::testing::_;
 using ::testing::MockFunction;
 using ::testing::Return;
 
-TEST(EndpointConfigTest, InsertsDefaultOnOperatorAtAccess) {
-  // See https://en.cppreference.com/w/cpp/container/map/operator_at for map
-  // operator[] behavior.
-  // See https://en.cppreference.com/w/cpp/utility/variant for variant
-  // default initialization.
-  EndpointConfig config;
-  EXPECT_EQ(config["arst"].index(), 0);
-  EXPECT_TRUE(absl::holds_alternative<absl::monostate>(config["arst"]));
+TEST(EndpointConfigTest, CanSRetrieveValuesFromChannelArgs) {
+  const grpc_arg arg =
+      grpc_channel_arg_integer_create(const_cast<char*>("arst"), 3);
+  grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+  ChannelArgsEndpointConfig config(args);
+  EXPECT_EQ(absl::get<int>(config.Get("arst")), 3);
+  grpc_channel_args_destroy(args);
 }
 
-TEST(EndpointConfigTest, CanStoreAndRetrieveValues) {
-  EndpointConfig config;
-  config["arst"] = EndpointConfig::IntType(1);
-  EXPECT_EQ(absl::get<EndpointConfig::IntType>(config["arst"]).val(), 1);
-}
-
-TEST(EndpointConfigTest, CanClear) {
-  EndpointConfig config;
-  config["arst"] = EndpointConfig::IntType(9);
-  config["qwfp"] = EndpointConfig::StrType("some string");
-  config["questionable"] = EndpointConfig::PtrType(&config);
-  EXPECT_EQ(config.size(), 3);
-  config.clear();
-  EXPECT_EQ(config.size(), 0);
-  auto s = config["arst"];
-  EXPECT_TRUE(absl::holds_alternative<absl::monostate>(s));
-  EXPECT_EQ(config.size(), 1);
-}
-
-TEST(EndpointConfigTest, EnumerationVisitsAllSettings) {
-  EndpointConfig config;
-  config["arst"] = EndpointConfig::IntType(1);
-  config["qwfp"] = EndpointConfig::StrType("two");
-  config["zxcv"] = EndpointConfig::IntType(3);
-  config["oien"] = EndpointConfig::StrType("four");
-  MockFunction<bool(absl::string_view, const EndpointConfig::Setting&)> cb;
-  EXPECT_CALL(cb, Call(_, _)).Times(4).WillRepeatedly(Return(true));
-  config.enumerate(cb.AsStdFunction());
-}
-
-TEST(EndpointConfigTest, CanStopEnumerationViaCallbackReturnValue) {
-  // Only two of the values should be seen before enumeration is halted.
-  const int N = 2;
-  EndpointConfig config;
-  config["arst"] = EndpointConfig::IntType(1);
-  config["qwfp"] = EndpointConfig::StrType("two");
-  config["questionable"] = EndpointConfig::PtrType(&config);
-  EXPECT_EQ(config.size(), 3);
-  int cnt = 0;
-  config.enumerate(
-      [&cnt, N](absl::string_view, const EndpointConfig::Setting&) {
-        return ++cnt != N;
-      });
-  EXPECT_EQ(cnt, N);
-}
-
-TEST(EndpointConfigTest, WillOverwritePreviousValues) {
-  EndpointConfig config;
-  config["arst"] = EndpointConfig::IntType(1);
-  EXPECT_EQ(absl::get<EndpointConfig::IntType>(config["arst"]).val(), 1);
-  config["arst"] = EndpointConfig::StrType("three");
-  EXPECT_TRUE(absl::holds_alternative<EndpointConfig::StrType>(config["arst"]));
-  EXPECT_EQ(absl::get<EndpointConfig::StrType>(config["arst"]).val(), "three");
-}
-
-TEST(EndpointConfigTest, CanCheckIfConfigContainsSettingWithoutAddingIt) {
-  EndpointConfig config;
-  EXPECT_FALSE(config.contains("arst"));
-  EXPECT_EQ(config.size(), 0);
-}
-
-TEST(EndpointConfigTest, ContainsWorksAsExpected) {
-  EndpointConfig config;
-  EXPECT_FALSE(config.contains("arst"));
-  config["arst"] = EndpointConfig::IntType(1);
-  EXPECT_TRUE(config.contains("arst"));
-}
-
-TEST(EndpointConfigTest, AtCanRetrieveSettingsFromConstConfig) {
-  EndpointConfig config;
-  config["arst"] = EndpointConfig::IntType(99);
-  const EndpointConfig& ccfg = config;
-  EXPECT_EQ(absl::get<EndpointConfig::IntType>(ccfg.at("arst")).val(), 99);
+TEST(EndpointConfigTest, ReturnsMonostateForMissingKeys) {
+  ChannelArgsEndpointConfig config(nullptr);
+  EXPECT_TRUE(
+      absl::holds_alternative<absl::monostate>(config.Get("nonexistent")));
 }
 
 int main(int argc, char** argv) {
