@@ -233,9 +233,7 @@ class ClientChannel {
 
   void UpdateServiceConfigInControlPlaneLocked(
       RefCountedPtr<ServiceConfig> service_config,
-      RefCountedPtr<ConfigSelector> config_selector,
-      const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
-      const char* lb_policy_name)
+      RefCountedPtr<ConfigSelector> config_selector, const char* lb_policy_name)
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(work_serializer_);
 
   void UpdateServiceConfigInDataPlaneLocked()

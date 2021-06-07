@@ -1241,7 +1241,7 @@ void ClientChannel::OnResolverResultChangedLocked(Resolver::Result result) {
       // Update service config in control plane.
       UpdateServiceConfigInControlPlaneLocked(
           std::move(service_config), std::move(config_selector),
-          parsed_service_config, lb_policy_config->name());
+          lb_policy_config->name());
     } else if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO, "chand=%p: service config not changed", this);
     }
@@ -1393,7 +1393,6 @@ void ClientChannel::RemoveResolverQueuedCall(ResolverQueuedCall* to_remove,
 void ClientChannel::UpdateServiceConfigInControlPlaneLocked(
     RefCountedPtr<ServiceConfig> service_config,
     RefCountedPtr<ConfigSelector> config_selector,
-    const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
     const char* lb_policy_name) {
   UniquePtr<char> service_config_json(
       gpr_strdup(service_config->json_string().c_str()));
@@ -1459,7 +1458,6 @@ void ClientChannel::UpdateServiceConfigInDataPlaneLocked() {
   //
   // We defer unreffing the old values (and deallocating memory) until
   // after releasing the lock to keep the critical section small.
-  std::set<grpc_call_element*> calls_pending_resolver_result;
   {
     MutexLock lock(&resolution_mu_);
     GRPC_ERROR_UNREF(resolver_transient_failure_error_);
