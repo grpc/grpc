@@ -161,6 +161,15 @@ adaptor_detail::Capture<F, Captures...> Capture(F f, Captures... captures) {
                                                  std::move(captures)...);
 }
 
+
+template <typename T> void Destruct(T* p) {
+  p->~T();
+}
+
+template <typename T> void Construct(T* p, T&& move_from) {
+  new (p) T(std::forward<T>(move_from));
+}
+
 }  // namespace grpc_core
 
 #endif

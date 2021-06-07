@@ -273,14 +273,7 @@ class PromiseActivity final
     Poll<absl::Status> operator()(Factory& factory) {
       // Construct the promise from the initial promise factory.
       auto promise = factory();
-      // Poll the promise once.
-      auto r = promise();
-      if (r.pending()) {
-        // If it doesn't complete immediately, we need to store state for next
-        // time.
-        self->state_.template emplace<Promise>(std::move(promise));
-      }
-      return r;
+      return self->state_.template emplace<Promise>(std::move(promise))();
     }
 
     Poll<absl::Status> operator()(Promise& promise) {
