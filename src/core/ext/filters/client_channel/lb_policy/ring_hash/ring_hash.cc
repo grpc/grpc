@@ -415,7 +415,6 @@ RingHash::PickResult RingHash::Picker::Pick(PickArgs args) {
   // for lowp, highp, and first_index. Do not change them!
   int64_t lowp = 0;
   int64_t highp = ring_->GetRing().size();
-  gpr_log(GPR_INFO, "donna ring size is %" PRIuPTR, highp);
   int64_t first_index = 0;
   while (true) {
     first_index = (lowp + highp) / 2;
