@@ -340,7 +340,6 @@ RingHash::Ring::Ring(RefCountedPtr<RingHash> parent,
       static_cast<double>(max_ring_size));
   // Reserve memory for the entire ring up front.
   const uint64_t ring_size = std::ceil(scale);
-  gpr_log(GPR_INFO, "donna create just once");
   ring_.reserve(ring_size);
   // Populate the hash ring by walking through the (host, weight) pairs in
   // normalized_host_weights, and generating (scale * weight) hashes for each
@@ -359,7 +358,6 @@ RingHash::Ring::Ring(RefCountedPtr<RingHash> parent,
     auto offset_start = hash_key_buffer.end();
     target_hashes += scale * address_weights[i].normalized_weight;
     size_t count = 0;
-    gpr_log(GPR_INFO, "donna for each subhcannel");
     while (current_hashes < target_hashes) {
       const std::string count_str = absl::StrCat(count);
       hash_key_buffer.insert(offset_start, count_str.begin(), count_str.end());
@@ -372,21 +370,18 @@ RingHash::Ring::Ring(RefCountedPtr<RingHash> parent,
       ++current_hashes;
       hash_key_buffer.erase(offset_start, hash_key_buffer.end());
     }
-    gpr_log(GPR_INFO, "donna for each subhcannel for each");
     min_hashes_per_host =
         std::min(static_cast<uint64_t>(i), min_hashes_per_host);
     max_hashes_per_host =
         std::max(static_cast<uint64_t>(i), max_hashes_per_host);
   }
-  gpr_log(GPR_INFO, "donna before sort");
   std::sort(ring_.begin(), ring_.end(),
             [](const RingEntry& lhs, const RingEntry& rhs) -> bool {
               return lhs.hash < rhs.hash;
             });
-  gpr_log(GPR_INFO, "donna after sort");
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_ring_hash_trace)) {
     gpr_log(GPR_INFO,
-            "[RH %p picker %p] donna created picker from subchannel_list=%p "
+            "[RH %p picker %p] created picker from subchannel_list=%p "
             "with %" PRIuPTR " ring entries",
             parent_.get(), this, subchannel_list, ring_.size());
   }

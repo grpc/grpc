@@ -1669,9 +1669,6 @@ void ClientChannel::UpdateStateAndPickerLocked(
       }
     }
   }
-  // Clear the pending update map after releasing the lock, to keep the
-  // critical section small.
-  // pending_subchannel_updates_.clear();
 }
 
 grpc_error_handle ClientChannel::DoPingLocked(grpc_transport_op* op) {
