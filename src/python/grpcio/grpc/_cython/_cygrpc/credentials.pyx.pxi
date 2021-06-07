@@ -59,7 +59,7 @@ cdef int _get_metadata(void *state,
   args = context.service_url, context.method_name, callback,
   plugin = <object>state
   if plugin._stored_ctx is not None:
-    plugin._stored_ctx.run(_spawn_callback_async, plugin, args)
+    plugin._stored_ctx.copy().run(_spawn_callback_async, plugin, args)
   else:
     _spawn_callback_async(<object>state, args)
   return 0  # Asynchronous return
@@ -434,7 +434,7 @@ cdef class ComputeEngineChannelCredentials(ChannelCredentials):
       raise ValueError("Call credentials may not be NULL.")
 
   cdef grpc_channel_credentials *c(self) except *:
-    self._c_creds = grpc_google_default_credentials_create(self._call_creds)
+    self._c_creds = grpc_google_default_credentials_create(self._call_creds, NULL)
     return self._c_creds
 
 
