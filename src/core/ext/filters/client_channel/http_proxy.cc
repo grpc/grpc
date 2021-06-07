@@ -36,6 +36,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/slice/b64.h"
 #include "src/core/lib/uri/uri_parser.h"
 
@@ -107,13 +108,13 @@ done:
   return proxy_name;
 }
 
-// Adds the default port (443) if target does not contain a port.
+// Adds the default port if target does not contain a port.
 std::string MaybeAddDefaultPort(absl::string_view target) {
   absl::string_view host;
   absl::string_view port;
   SplitHostPort(target, &host, &port);
   if (port.empty()) {
-    return JoinHostPort(host, 443);
+    return JoinHostPort(host, kDefaultSecurePortInt);
   }
   return std::string(target);
 }
