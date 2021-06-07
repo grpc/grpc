@@ -26,11 +26,6 @@ exports_files([
     "badserver.pem",
     "badclient.key",
     "badclient.pem",
-    "revokedserver.key",
-    "revokedserver.pem",
-    "revokedclient.key",
-    "revokedclient.pem",
     "multi-domain.key",
     "multi-domain.pem",
-    "ab06acdd.r0",
 ])

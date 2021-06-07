@@ -1,0 +1,51 @@
+The test credentials have been generated with the following
+commands:
+
+
+The ca is self-signed:
+----------------------
+
+$ openssl req -x509 -new -newkey rsa:2048 -nodes -keyout ca.key -out ca.pem \
+  -config ca-openssl.cnf -days 3650 -extensions v3_req
+When prompted for certificate information, everything is default.
+
+revokedclient is issued by CA:
+-----------------------
+
+$ openssl genrsa -out revokedclient.key.rsa 2048
+$ openssl pkcs8 -topk8 -in revokedclient.key.rsa -out revokedclient.key -nocrypt
+$ openssl req -new -key revokedclient.key -out revokedclient.csr
+
+When prompted for certificate information, everything is default except the
+common name which is set to revokedclient.
+
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in revokedclient.csr \
+  -out revokedclient.pem -days 3650
+
+$ openssl ca -revoke revokedclient.pem -keyfile ca.key -cert ca.pem
+
+revokedserver is issued by CA and revoked:
+----------------------------------------------------------------------------
+
+$ openssl genrsa -out revokedserver.key.rsa 2048
+$ openssl pkcs8 -topk8 -in revokedserver.key.rsa -out revokedserver.key -nocrypt
+$ openssl req -new -key revokedserver.key -out revokedserver.csr
+
+When prompted for certificate information, everything is default except the
+common name which is set to revokedserver.
+
+$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in revokedserver.csr \
+  -out revokedserver.pem
+
+$ openssl ca -revoke revokedserver.pem -keyfile ca.key -cert ca.pem
+
+Generate the CRL file:
+----------------------------------------------------------------------------
+$ openssl ca -gencrl -out current.crl -keyfile ca.key -cert ca.pem
+$ openssl rehash ./current.crl
+
+Clean up:
+---------
+$ rm *.rsa
+$ rm *.csr
+$ rm ca.srl

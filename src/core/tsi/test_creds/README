@@ -62,21 +62,6 @@ common name which is set to testclient2.
 $ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in client2.csr \
   -out client2.pem -days 3650
 
-revokedclient is issued by CA:
------------------------
-
-$ openssl genrsa -out revokedclient.key.rsa 2048
-$ openssl pkcs8 -topk8 -in revokedclient.key.rsa -out revokedclient.key -nocrypt
-$ openssl req -new -key revokedclient.key -out revokedclient.csr
-
-When prompted for certificate information, everything is default except the
-common name which is set to revokedclient.
-
-$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in revokedclient.csr \
-  -out revokedclient.pem -days 3650
-
-$ openssl ca -revoke revokedclient.pem -keyfile ca.key -cert ca.pem
-
 server0 is issued by CA:
 ------------------------
 
@@ -101,22 +86,7 @@ When prompted for certificate information, everything is default except the
 common name which is set to *.test.google.com.
 
 $ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in server1.csr \
-  -out server1.pem -extensions v3_req -extfile server1-openssl.cnf -days 3650
-
-revokedserver is issued by CA and revoked:
-----------------------------------------------------------------------------
-
-$ openssl genrsa -out revokedserver.key.rsa 2048
-$ openssl pkcs8 -topk8 -in revokedserver.key.rsa -out revokedserver.key -nocrypt
-$ openssl req -new -key revokedserver.key -out revokedserver.csr
-
-When prompted for certificate information, everything is default except the
-common name which is set to revokedserver.
-
-$ openssl x509 -req -CA ca.pem -CAkey ca.key -CAcreateserial -in revokedserver.csr \
-  -out revokedserver.pem
-
-$ openssl ca -revoke revokedserver.pem -keyfile ca.key -cert ca.pem
+  -out server1.pem -extensions req_ext -extfile server1-openssl.cnf -days 3650
 
 multi-domain is a self-signed certificate having multiple subject alternative
 names:
@@ -128,11 +98,6 @@ $ openssl req -new -key multi-domain.key -out multi-domain.csr -config
 multi-domain-openssl.cnf
 $ openssl req -x509 -new -extensions v3_req -key multi-domain.key -out
 multi-domain.pem -days 3650 -config multi-domain-openssl.cnf
-
-Generate the CRL file:
-----------------------------------------------------------------------------
-$ openssl ca -gencrl -out current.crl -keyfile ca.key -cert ca.pem
-$ openssl rehash ./current.crl
 
 Clean up:
 ---------
@@ -166,4 +131,3 @@ since they are only used in grpc core tests:
 multi-domain.*
 client1.*
 client2.*
-
