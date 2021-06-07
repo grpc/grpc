@@ -120,18 +120,6 @@ class PythonArtifact:
             environ['PIP'] = '/opt/python/{}/bin/pip3'.format(self.py_version)
             environ['GRPC_SKIP_PIP_CYTHON_UPGRADE'] = 'TRUE'
             environ['GRPC_SKIP_TWINE_CHECK'] = 'TRUE'
-            # when crosscompiling, we need to force statically linking libstdc++
-            # otherwise libstdc++ symbols would be too new and the resulting
-            # wheel wouldn't pass the auditwheel check.
-            # This is needed because C core won't build with GCC 4.8 that's
-            # included in the default dockcross toolchain and we needed
-            # to opt into using a slighly newer version of GCC.
-            # TODO(jtattermusch): Due to https://github.com/grpc/grpc/issues/26279
-            # we can't enable static linking libstdc++. Because of that,
-            # the resulting wheel will be compatible with fewer platforms
-            # but at least it will work.
-            # environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
-
             return create_docker_jobspec(
                 self.name,
                 'tools/dockerfile/grpc_artifact_python_linux_{}'.format(
@@ -150,17 +138,6 @@ class PythonArtifact:
             environ['GRPC_SKIP_PIP_CYTHON_UPGRADE'] = 'TRUE'
             if self.arch == 'aarch64':
                 environ['GRPC_SKIP_TWINE_CHECK'] = 'TRUE'
-                # when crosscompiling, we need to force statically linking libstdc++
-                # otherwise libstdc++ symbols would be too new and the resulting
-                # wheel wouldn't pass the auditwheel check.
-                # This is needed because C core won't build with GCC 4.8 that's
-                # included in the default dockcross toolchain and we needed
-                # to opt into using a slighly newer version of GCC.
-                # TODO(jtattermusch): Due to https://github.com/grpc/grpc/issues/26279
-                # we can't enable static linking libstdc++. Because of that,
-                # the resulting wheel will be compatible with fewer platforms
-                # but at least it will work.
-                # environ['GRPC_PYTHON_BUILD_WITH_STATIC_LIBSTDCXX'] = 'TRUE'
             else:
                 # only run auditwheel if we're not crosscompiling
                 environ['GRPC_RUN_AUDITWHEEL_REPAIR'] = 'TRUE'
