@@ -48,8 +48,8 @@ class Factory<Arg, F,
     Result operator()() { return f_(arg_); }
 
    private:
-    F f_;
-    Arg arg_;
+    [[no_unique_address]] F f_;
+    [[no_unique_address]] Arg arg_;
   };
 
   Promise Once(Arg arg) { return Promise(std::move(f_), std::move(arg)); }
@@ -58,7 +58,7 @@ class Factory<Arg, F,
   explicit Factory(F f) : f_(std::move(f)) {}
 
  private:
-  F f_;
+  [[no_unique_address]] F f_;
 };
 
 template <typename Arg, typename F>
@@ -72,7 +72,7 @@ class Factory<Arg, F,
   explicit Factory(F f) : f_(std::move(f)) {}
 
  private:
-  F f_;
+  [[no_unique_address]] F f_;
 };
 
 template <typename F>
@@ -86,7 +86,7 @@ class Factory<void, F,
   explicit Factory(F f) : f_(std::move(f)) {}
 
  private:
-  F f_;
+  [[no_unique_address]] F f_;
 };
 
 template <typename Arg, typename F>
@@ -100,7 +100,7 @@ class Factory<Arg, F,
   explicit Factory(F f) : f_(std::move(f)) {}
 
  private:
-  F f_;
+  [[no_unique_address]] F f_;
 };
 
 template <typename Arg, typename F>
@@ -114,7 +114,7 @@ class Factory<Arg, F,
   explicit Factory(F f) : f_(std::move(f)) {}
 
  private:
-  F f_;
+  [[no_unique_address]] F f_;
 };
 
 template <typename F>
@@ -128,7 +128,7 @@ class Factory<void, F,
   explicit Factory(F f) : f_(std::move(f)) {}
 
  private:
-  F f_;
+  [[no_unique_address]] F f_;
 };
 
 template <typename F, typename... Captures>
@@ -150,8 +150,8 @@ class Capture {
   }
 
  private:
-  F f_;
-  std::tuple<Captures...> captures_;
+  [[no_unique_address]] F f_;
+  [[no_unique_address]] std::tuple<Captures...> captures_;
 };
 
 }  // namespace adaptor_detail

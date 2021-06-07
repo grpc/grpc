@@ -55,18 +55,15 @@ struct alignas(alignof(void*)) Scratch {
 template <typename T>
 class FilterInterface {
  public:
-  FilterInterface() = default;
-  explicit FilterInterface(PipeReceiver<T>* receiver) : receiver_(receiver) {}
+ FilterInterface() = default;
   FilterInterface(const FilterInterface&) = delete;
   FilterInterface& operator=(const FilterInterface&) = delete;
   virtual Promise<T>* Step(T* p, Scratch* scratch_space) = 0;
-  virtual void Stop() = 0;
+  virtual void UpdateReceiver(PipeReceiver<T>* receiver) = 0;
 
  protected:
-  friend class PipeReceiver<T>;
-  PipeReceiver<T>* receiver_ = nullptr;
-  void SetReceiverIndex(int idx, FilterInterface* p);
-  char AllocIndex();
+  static void SetReceiverIndex(PipeReceiver<T>* receiver, int idx, FilterInterface* p);
+  char AllocIndex(PipeReceiver<T>* receiver);
 };
 
 template <typename T, typename F>
@@ -166,7 +163,7 @@ class PipeReceiver {
       other.next_ = nullptr;
     }
     for (auto filter : filters_) {
-      filter->receiver_ = this;
+      filter->UpdateReceiver(this);
     }
   }
   PipeReceiver& operator=(PipeReceiver&& other) noexcept {
@@ -180,7 +177,7 @@ class PipeReceiver {
     next_ = other.next_;
     filters_ = std::move(other.filters_);
     for (auto filter : filters_) {
-      filter->receiver_ = this;
+      filter->UpdateReceiver(this);
     }
     pending_ = std::move(other.pending_);
     waiting_to_send_ = std::move(other.waiting_to_send_);
@@ -243,7 +240,7 @@ class PipeReceiver {
 
     for (auto* filter : filters_) {
       if (filter != nullptr){
-        filter->Stop();
+        filter->UpdateReceiver(nullptr);
       }
     }
   }
@@ -414,28 +411,27 @@ template <typename T, typename F>
 class Filter final : private FilterInterface<T> {
  public:
   Filter(PipeReceiver<T>* receiver, F f)
-      : FilterInterface<T>(receiver),
-        active_(adaptor_detail::Factory<T, F>(std::move(f))),
-        index_(this->AllocIndex()){};
+      : active_{receiver, adaptor_detail::Factory<T, F>(std::move(f))},
+        index_(this->AllocIndex(receiver)){};
   Filter(absl::Status already_finished) : done_(std::move(already_finished)) {}
   ~Filter() {
     if (index_ != kTombstoneIndex) {
-      this->SetReceiverIndex(index_, nullptr);
-      active_.~Factory();
+      this->SetReceiverIndex(active_.receiver, index_, nullptr);
+      active_.~Active();
     } else {
       done_.~Status();
     }
   }
   Filter(Filter&& other)
-      : FilterInterface<T>(other.receiver_), index_(other.index_) {
+      : index_(other.index_) {
     if (index_ != kTombstoneIndex) {
-      new (&active_) adaptor_detail::Factory<T, F>(std::move(other.active_));
+      new (&active_) Active(std::move(other.active_));
+      other.active_.~Active();
+      new (&other.done_) absl::Status(absl::OkStatus());
+      other.index_ = kTombstoneIndex;
+      this->SetReceiverIndex(active_.receiver, index_, this);
     } else {
       new (&done_) absl::Status(std::move(other.done_));
-    }
-    other.receiver_ = nullptr;
-    if (index_ != kTombstoneIndex) {
-      this->SetReceiverIndex(index_, this);
     }
   }
 
@@ -451,11 +447,15 @@ class Filter final : private FilterInterface<T> {
 
  private:
   static constexpr char kTombstoneIndex = -1;
+  struct Active {
+    [[no_unique_address]] PipeReceiver<T>* receiver;
+    [[no_unique_address]] adaptor_detail::Factory<T, F> factory;
+  };
   union {
-    [[no_unique_address]] adaptor_detail::Factory<T, F> active_;
+    [[no_unique_address]] Active active_;
     [[no_unique_address]] absl::Status done_;
   };
-  [[no_unique_address]] char index_ = kTombstoneIndex;
+  [[no_unique_address]] char index_;
 
   class PromiseImpl final : public ::grpc_core::pipe_detail::Promise<T> {
     using PF = typename adaptor_detail::Factory<T, F>::Promise;
@@ -470,8 +470,8 @@ class Filter final : private FilterInterface<T> {
           *output = std::move(**p);
           return ready(true);
         } else {
-          filter_->SetReceiverIndex(filter_->index_, nullptr);
-          filter_->active_.~Factory();
+          filter_->SetReceiverIndex(filter_->active_.receiver, filter_->index_, nullptr);
+          filter_->active_.~Active();
           filter_->index_ = kTombstoneIndex;
           new (&filter_->done_) absl::Status(std::move(p->status()));
           Activity::WakeupCurrent();
@@ -491,7 +491,7 @@ class Filter final : private FilterInterface<T> {
 
   Promise<T>* Step(T* p, Scratch* scratch) final {
     if (index_ != kTombstoneIndex) {
-      PromiseImpl promise(active_.Repeated(std::move(*p)), this);
+      PromiseImpl promise(active_.factory.Repeated(std::move(*p)), this);
       auto r = promise.Step(p);
       if (auto* result = r.get_ready()) {
         return reinterpret_cast<Promise<T>*>(uintptr_t(*result));
@@ -506,26 +506,29 @@ class Filter final : private FilterInterface<T> {
     }
   }
 
-  void Stop() final {
+  void UpdateReceiver(PipeReceiver<T>* receiver) final {
     if (index_ != kTombstoneIndex) {
-      this->SetReceiverIndex(index_, nullptr);
-      active_.~Factory();
-      index_ = kTombstoneIndex;
-      new (&done_) absl::Status(absl::OkStatus());
+      if (receiver == nullptr) {
+        active_.~Active();
+        index_ = kTombstoneIndex;
+        new (&done_) absl::Status(absl::OkStatus());
+      } else {
+        active_.receiver = receiver;
+      }
       Activity::WakeupCurrent();
     }
   }
 };
 
 template <typename T>
-void FilterInterface<T>::SetReceiverIndex(int idx, FilterInterface* p) {
-  if (receiver_) receiver_->filters_[idx] = p;
+void FilterInterface<T>::SetReceiverIndex(PipeReceiver<T>* receiver, int idx, FilterInterface* p) {
+  receiver->filters_[idx] = p;
 }
 
 template <typename T>
-char FilterInterface<T>::AllocIndex() {
-  auto r = receiver_->filters_.size();
-  receiver_->filters_.push_back(this);
+char FilterInterface<T>::AllocIndex(PipeReceiver<T>* receiver) {
+  auto r = receiver->filters_.size();
+  receiver->filters_.push_back(this);
   return r;
 }
 
