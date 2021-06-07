@@ -155,6 +155,12 @@ ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
   return builder_->acceptors_.back()->GetAcceptor();
 }
 
+void ServerBuilder::experimental_type::SetAuthorizationPolicyProvider(
+    std::shared_ptr<experimental::AuthorizationPolicyProviderInterface>
+        provider) {
+  builder_->authorization_provider_ = std::move(provider);
+}
+
 ServerBuilder& ServerBuilder::SetOption(
     std::unique_ptr<ServerBuilderOption> option) {
   options_.push_back(std::move(option));
@@ -258,6 +264,11 @@ ChannelArguments ServerBuilder::BuildChannelArgs() {
   for (const auto& plugin : plugins_) {
     plugin->UpdateServerBuilder(this);
     plugin->UpdateChannelArguments(&args);
+  }
+  if (authorization_provider_ != nullptr) {
+    args.SetPointerWithVtable(GRPC_ARG_AUTHORIZATION_POLICY_PROVIDER,
+                              authorization_provider_->c_provider(),
+                              grpc_authorization_policy_provider_arg_vtable());
   }
   return args;
 }
