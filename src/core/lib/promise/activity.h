@@ -264,7 +264,7 @@ class PromiseActivity final
       if (auto* status = r.get_ready()) {
         // If complete, destroy the promise, flag done, and exit this loop.
         MarkDone();
-        return std::move(*status);
+        return IntoStatus(status);
       }
       // Continue looping til no wakeups occur.
     } while (got_wakeup_during_run_);

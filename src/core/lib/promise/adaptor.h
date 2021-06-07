@@ -16,6 +16,7 @@
 #define GRPC_CORE_LIB_PROMISE_FACTORY_H
 
 #include "src/core/lib/promise/poll.h"
+#include "absl/status/statusor.h"
 
 namespace grpc_core {
 
@@ -169,6 +170,13 @@ template <typename T> void Destruct(T* p) {
 template <typename T> void Construct(T* p, T&& move_from) {
   new (p) T(std::forward<T>(move_from));
 }
+
+template <typename T>
+absl::Status IntoStatus(absl::StatusOr<T>* status) {
+  return std::move(status->status());
+}
+
+inline absl::Status IntoStatus(absl::Status* status) { return std::move(*status); }
 
 }  // namespace grpc_core
 

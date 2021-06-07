@@ -24,6 +24,7 @@
 #include "src/core/lib/promise/pipe.h"
 #include "src/core/lib/promise/promise.h"
 #include "src/core/lib/promise/seq.h"
+#include "src/core/lib/promise/try_join.h"
 #include "src/core/lib/promise/try_seq.h"
 #include "test/core/promise/benchmark/filter_stack.h"
 
@@ -208,15 +209,15 @@ static void BM_ActivityStack_Interject3Filters_Unary(benchmark::State& state) {
             return GetContext<RPCP>()->pipe.sender.Filter(
                 [](int i) { return ready(absl::StatusOr<int>(i)); });
           };
-          return Seq(Join(one(), one(), one(),
-                          Seq(GetContext<RPCP>()->pipe.sender.Push(42),
-                              []() {
-                                auto x =
-                                    std::move(GetContext<RPCP>()->pipe.sender);
-                                return ready(0);
-                              }),
-                          GetContext<RPCP>()->pipe.receiver.Next()),
-                     []() { return ready(absl::OkStatus()); });
+          return TryJoin(one(), one(), one(),
+                         Seq(GetContext<RPCP>()->pipe.sender.Push(42),
+                             []() {
+                               auto x =
+                                   std::move(GetContext<RPCP>()->pipe.sender);
+                               return ready(absl::OkStatus());
+                             }),
+                         Seq(GetContext<RPCP>()->pipe.receiver.Next(),
+                             []() { return ready(absl::OkStatus()); }));
         },
         [](absl::Status status) {
           if (!status.ok()) abort();
@@ -235,16 +236,16 @@ static void BM_ActivityStack_Interject10Filters_Unary(benchmark::State& state) {
             return GetContext<RPCP>()->pipe.sender.Filter(
                 [](int i) { return ready(absl::StatusOr<int>(i)); });
           };
-          return Seq(Join(one(), one(), one(), one(), one(), one(), one(),
-                          one(), one(), one(),
-                          Seq(GetContext<RPCP>()->pipe.sender.Push(42),
-                              []() {
-                                auto x =
-                                    std::move(GetContext<RPCP>()->pipe.sender);
-                                return ready(0);
-                              }),
-                          GetContext<RPCP>()->pipe.receiver.Next()),
-                     []() { return ready(absl::OkStatus()); });
+          return TryJoin(one(), one(), one(), one(), one(), one(), one(), one(),
+                         one(), one(),
+                         Seq(GetContext<RPCP>()->pipe.sender.Push(42),
+                             []() {
+                               auto x =
+                                   std::move(GetContext<RPCP>()->pipe.sender);
+                               return ready(absl::OkStatus());
+                             }),
+                         Seq(GetContext<RPCP>()->pipe.receiver.Next(),
+                             []() { return ready(absl::OkStatus()); }));
         },
         [](absl::Status status) {
           if (!status.ok()) abort();
@@ -263,18 +264,18 @@ static void BM_ActivityStack_Interject30Filters_Unary(benchmark::State& state) {
             return GetContext<RPCP>()->pipe.sender.Filter(
                 [](int i) { return ready(absl::StatusOr<int>(i)); });
           };
-          return Seq(
-              Join(one(), one(), one(), one(), one(), one(), one(), one(),
-                   one(), one(), one(), one(), one(), one(), one(), one(),
-                   one(), one(), one(), one(), one(), one(), one(), one(),
-                   one(), one(), one(), one(), one(), one(),
-                   Seq(GetContext<RPCP>()->pipe.sender.Push(42),
-                       []() {
-                         auto x = std::move(GetContext<RPCP>()->pipe.sender);
-                         return ready(0);
-                       }),
-                   GetContext<RPCP>()->pipe.receiver.Next()),
-              []() { return ready(absl::OkStatus()); });
+          return TryJoin(one(), one(), one(), one(), one(), one(), one(), one(),
+                         one(), one(), one(), one(), one(), one(), one(), one(),
+                         one(), one(), one(), one(), one(), one(), one(), one(),
+                         one(), one(), one(), one(), one(), one(),
+                         Seq(GetContext<RPCP>()->pipe.sender.Push(42),
+                             []() {
+                               auto x =
+                                   std::move(GetContext<RPCP>()->pipe.sender);
+                               return ready(absl::OkStatus());
+                             }),
+                         Seq(GetContext<RPCP>()->pipe.receiver.Next(),
+                             []() { return ready(absl::OkStatus()); }));
         },
         [](absl::Status status) {
           if (!status.ok()) abort();

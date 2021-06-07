@@ -756,6 +756,7 @@ grpc_cc_library(
         "src/core/lib/promise/activity.cc",
         "src/core/lib/promise/seq_switch.h",
         "src/core/lib/promise/join_switch.h",
+        "src/core/lib/promise/try_join_switch.h",
     ],
     external_deps = [
         "absl/status",
