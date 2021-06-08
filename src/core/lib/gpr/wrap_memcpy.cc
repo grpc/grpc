@@ -27,9 +27,9 @@
  */
 
 extern "C" {
-#ifndef __ANDROID__
 #ifdef __linux__
-#if defined(__x86_64__) && !defined(GPR_MUSL_LIBC_COMPAT)
+#if defined(__x86_64__) && !defined(GPR_MUSL_LIBC_COMPAT) && \
+    !defined(__ANDROID__)
 __asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
 void* __wrap_memcpy(void* destination, const void* source, size_t num) {
   return memcpy(destination, source, num);
@@ -38,7 +38,6 @@ void* __wrap_memcpy(void* destination, const void* source, size_t num) {
 void* __wrap_memcpy(void* destination, const void* source, size_t num) {
   return memmove(destination, source, num);
 }
-#endif
 #endif
 #endif
 }
