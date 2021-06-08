@@ -132,6 +132,8 @@ class ClientChannel {
   void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher);
 
+  Promise<absl::Status> CreatePromise();
+
   RefCountedPtr<LoadBalancedCall> CreateLoadBalancedCall(
       const grpc_call_element_args& args, grpc_polling_entity* pollent,
       grpc_closure* on_call_destruction_complete);
@@ -269,6 +271,9 @@ class ClientChannel {
       SubchannelInterface* subchannel) const
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(data_plane_mu_);
 
+  Promise<absl::Status> ApplyServiceConfigPromise(
+      RefCountedPtr<ConfigSelector>> config_selector);
+
   //
   // Fields set at construction and never modified.
   //
@@ -282,6 +287,9 @@ class ClientChannel {
   UniquePtr<char> target_uri_;
   channelz::ChannelNode* channelz_node_;
   grpc_pollset_set* interested_parties_;
+
+  Observable<absl::StatusOr<RefCountedPtr<ConfigSelector>>>
+      config_selector_observable_;
 
   //
   // Fields related to name resolution.  Guarded by resolution_mu_.
