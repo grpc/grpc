@@ -60,7 +60,7 @@ popd
 @rem Install s2a_core
 mkdir third_party\s2a_core\cmake\build
 pushd third_party\s2a_core\cmake\build
-cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
+cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% -DS2A_CORE_ABSL_DIR="third_party/abseil-cpp" ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 

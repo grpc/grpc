@@ -2125,7 +2125,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/s2a_core/src/frame_protector/s2a_frame_protector.cc )
   s.files += %w( third_party/s2a_core/src/handshaker/s2a_context.cc )
   s.files += %w( third_party/s2a_core/src/handshaker/s2a_proxy.cc )
-  s.files += %w( third_party/s2a_core/src/handshaker/s2a_proxy_test_util.cc )
   s.files += %w( third_party/s2a_core/src/handshaker/s2a_proxy_test_util.h )
   s.files += %w( third_party/s2a_core/src/handshaker/s2a_util.cc )
   s.files += %w( third_party/s2a_core/src/handshaker/s2a_util.h )

@@ -1049,7 +1049,6 @@ CORE_SOURCE_FILES = [
     'third_party/s2a_core/src/frame_protector/s2a_frame_protector.cc',
     'third_party/s2a_core/src/handshaker/s2a_context.cc',
     'third_party/s2a_core/src/handshaker/s2a_proxy.cc',
-    'third_party/s2a_core/src/handshaker/s2a_proxy_test_util.cc',
     'third_party/s2a_core/src/handshaker/s2a_util.cc',
     'third_party/s2a_core/src/options/s2a_options.cc',
     'third_party/s2a_core/src/proto/upb-generated/proto/common.upb.c',

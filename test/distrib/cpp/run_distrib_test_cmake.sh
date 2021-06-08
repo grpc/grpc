@@ -47,7 +47,7 @@ popd
 # Install re2
 mkdir -p "third_party/re2/cmake/build"
 pushd "third_party/re2/cmake/build"
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DS2A_CORE_ABSL_DIR="third_party/abseil-cpp" ../..
 make -j4 install
 popd
 

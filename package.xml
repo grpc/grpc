@@ -2050,7 +2050,6 @@
     <file baseinstalldir="/" name="third_party/s2a_core/src/frame_protector/s2a_frame_protector.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/handshaker/s2a_context.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/handshaker/s2a_proxy.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/s2a_core/src/handshaker/s2a_proxy_test_util.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/handshaker/s2a_proxy_test_util.h" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/handshaker/s2a_util.cc" role="src" />
     <file baseinstalldir="/" name="third_party/s2a_core/src/handshaker/s2a_util.h" role="src" />

@@ -20,6 +20,7 @@ import glob
 import yaml
 
 _SOURCE_FILES_TO_IGNORE = {
+    'third_party/s2a_core/src/handshaker/s2a_proxy_test_util.cc',
     'third_party/s2a_core/src/token_manager/fake_access_token_manager.cc',
 }
 

@@ -51,7 +51,7 @@ popd
 # Install s2a_core
 mkdir -p "third_party/s2a_core/cmake/build"
 pushd "third_party/s2a_core/cmake/build"
-cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE ../..
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_POSITION_INDEPENDENT_CODE=TRUE -DS2A_CORE_ABSL_DIR="third_party/abseil-cpp" ../..
 make -j4 install
 popd
 
