@@ -195,7 +195,7 @@ void GoogleCloud2ProdResolver::ZoneQuery::OnDone(
       gpr_log(GPR_ERROR, "could not parse zone from metadata server: %s",
               std::string(body).c_str());
     } else {
-      zone = std::string(body.substr(i));
+      zone = std::string(body.substr(i + 1));
     }
   }
   resolver->ZoneQueryDone(std::move(zone));
