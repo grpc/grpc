@@ -27,7 +27,7 @@
  */
 
 extern "C" {
-#ifndef OS_ANDROID
+#ifndef __ANDROID__
 #ifdef __linux__
 #if defined(__x86_64__) && !defined(GPR_MUSL_LIBC_COMPAT)
 __asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
