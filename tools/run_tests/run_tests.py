@@ -917,7 +917,7 @@ class CSharpLanguage(object):
             self._cmake_arch_option = 'x64'
         else:
             _check_compiler(self.args.compiler, ['default', 'coreclr'])
-            self._docker_distro = 'stretch'
+            self._docker_distro = 'buster'
 
     def test_specs(self):
         with open('src/csharp/tests.json') as f:
