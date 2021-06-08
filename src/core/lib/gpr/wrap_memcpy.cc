@@ -27,6 +27,7 @@
  */
 
 extern "C" {
+#ifndef OS_ANDROID
 #ifdef __linux__
 #if defined(__x86_64__) && !defined(GPR_MUSL_LIBC_COMPAT)
 __asm__(".symver memcpy,memcpy@GLIBC_2.2.5");
@@ -37,6 +38,7 @@ void* __wrap_memcpy(void* destination, const void* source, size_t num) {
 void* __wrap_memcpy(void* destination, const void* source, size_t num) {
   return memmove(destination, source, num);
 }
+#endif
 #endif
 #endif
 }
