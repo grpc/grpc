@@ -264,6 +264,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/credentials.h",
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/tls_certificate_provider.h",
+    "include/grpcpp/security/authorization_policy_provider.h",
     "include/grpcpp/security/tls_credentials_options.h",
     "include/grpcpp/server.h",
     "include/grpcpp/server_builder.h",
@@ -306,6 +307,7 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_unsecure",
     srcs = [
+        "src/core/lib/security/authorization/authorization_policy_provider_null_vtable.cc",
         "src/core/lib/surface/init.cc",
         "src/core/lib/surface/init_unsecure.cc",
         "src/core/plugin_registry/grpc_unsecure_plugin_registry.cc",
@@ -1116,6 +1118,7 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_priority",
+        "grpc_lb_policy_ring_hash",
         "grpc_lb_policy_round_robin",
         "grpc_lb_policy_weighted_target",
         "grpc_client_idle_filter",
@@ -1555,6 +1558,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_lb_address_filtering",
+        "grpc_lb_policy_ring_hash",
         "grpc_lb_xds_channel_args",
         "grpc_lb_xds_common",
         "grpc_resolver_fake",
@@ -1646,6 +1650,10 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h",
+    ],
+    external_deps = [
+        "absl/strings",
+        "xxhash",
     ],
     language = "c++",
     deps = [
@@ -1939,6 +1947,8 @@ grpc_cc_library(
     name = "grpc_secure",
     srcs = [
         "src/core/lib/http/httpcli_security_connector.cc",
+        "src/core/lib/security/authorization/authorization_policy_provider_vtable.cc",
+        "src/core/lib/security/authorization/evaluate_args.cc",
         "src/core/lib/security/context/security_context.cc",
         "src/core/lib/security/credentials/alts/alts_credentials.cc",
         "src/core/lib/security/credentials/composite/composite_credentials.cc",
@@ -1988,6 +1998,9 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
         "src/core/ext/xds/xds_channel_args.h",
+        "src/core/lib/security/authorization/authorization_engine.h",
+        "src/core/lib/security/authorization/authorization_policy_provider.h",
+        "src/core/lib/security/authorization/evaluate_args.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
@@ -2080,14 +2093,11 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_rbac_engine",
     srcs = [
-        "src/core/lib/security/authorization/evaluate_args.cc",
         "src/core/lib/security/authorization/grpc_authorization_engine.cc",
         "src/core/lib/security/authorization/matchers.cc",
         "src/core/lib/security/authorization/rbac_policy.cc",
     ],
     hdrs = [
-        "src/core/lib/security/authorization/authorization_engine.h",
-        "src/core/lib/security/authorization/evaluate_args.h",
         "src/core/lib/security/authorization/grpc_authorization_engine.h",
         "src/core/lib/security/authorization/matchers.h",
         "src/core/lib/security/authorization/rbac_policy.h",
@@ -2104,15 +2114,34 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_authorization_provider",
     srcs = [
+        "src/core/lib/security/authorization/grpc_authorization_policy_provider.cc",
         "src/core/lib/security/authorization/rbac_translator.cc",
     ],
     hdrs = [
+        "src/core/lib/security/authorization/grpc_authorization_policy_provider.h",
         "src/core/lib/security/authorization/rbac_translator.h",
     ],
     language = "c++",
     deps = [
-        "grpc_matchers",
         "grpc_rbac_engine",
+    ],
+)
+
+# This target pulls in a dependency on RE2 and should not be linked into grpc by default for binary-size reasons.
+grpc_cc_library(
+    name = "grpc++_authorization_provider",
+    srcs = [
+        "src/cpp/server/authorization_policy_provider.cc",
+    ],
+    external_deps = [
+        "absl/synchronization",
+        "protobuf_headers",
+    ],
+    language = "c++",
+    public_hdrs = GRPCXX_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
+    deps = [
+        "grpc++_codegen_base",
+        "grpc_authorization_provider",
     ],
 )
 
@@ -2706,6 +2735,7 @@ grpc_cc_library(
         "include/grpc++/test/mock_stream.h",
         "include/grpc++/test/server_context_test_spouse.h",
         "include/grpcpp/test/channel_test_peer.h",
+        "include/grpcpp/test/client_context_test_peer.h",
         "include/grpcpp/test/default_reactor_test_peer.h",
         "include/grpcpp/test/mock_stream.h",
         "include/grpcpp/test/server_context_test_spouse.h",

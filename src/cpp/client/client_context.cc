@@ -98,7 +98,7 @@ std::unique_ptr<ClientContext> ClientContext::FromInternalServerContext(
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromServerContext(
-    const grpc::ServerContext& server_context, PropagationOptions options) {
+    const grpc::ServerContextBase& server_context, PropagationOptions options) {
   return FromInternalServerContext(server_context, options);
 }
 

@@ -133,6 +133,8 @@ extern void retry_cancellation(grpc_end2end_test_config config);
 extern void retry_cancellation_pre_init(void);
 extern void retry_disabled(grpc_end2end_test_config config);
 extern void retry_disabled_pre_init(void);
+extern void retry_exceeds_buffer_size_in_delay(grpc_end2end_test_config config);
+extern void retry_exceeds_buffer_size_in_delay_pre_init(void);
 extern void retry_exceeds_buffer_size_in_initial_batch(grpc_end2end_test_config config);
 extern void retry_exceeds_buffer_size_in_initial_batch_pre_init(void);
 extern void retry_exceeds_buffer_size_in_subsequent_batch(grpc_end2end_test_config config);
@@ -249,6 +251,7 @@ void grpc_end2end_tests_pre_init(void) {
   retry_cancel_during_delay_pre_init();
   retry_cancellation_pre_init();
   retry_disabled_pre_init();
+  retry_exceeds_buffer_size_in_delay_pre_init();
   retry_exceeds_buffer_size_in_initial_batch_pre_init();
   retry_exceeds_buffer_size_in_subsequent_batch_pre_init();
   retry_lb_drop_pre_init();
@@ -340,6 +343,7 @@ void grpc_end2end_tests(int argc, char **argv,
     retry_cancel_during_delay(config);
     retry_cancellation(config);
     retry_disabled(config);
+    retry_exceeds_buffer_size_in_delay(config);
     retry_exceeds_buffer_size_in_initial_batch(config);
     retry_exceeds_buffer_size_in_subsequent_batch(config);
     retry_lb_drop(config);
@@ -580,6 +584,10 @@ void grpc_end2end_tests(int argc, char **argv,
     }
     if (0 == strcmp("retry_disabled", argv[i])) {
       retry_disabled(config);
+      continue;
+    }
+    if (0 == strcmp("retry_exceeds_buffer_size_in_delay", argv[i])) {
+      retry_exceeds_buffer_size_in_delay(config);
       continue;
     }
     if (0 == strcmp("retry_exceeds_buffer_size_in_initial_batch", argv[i])) {

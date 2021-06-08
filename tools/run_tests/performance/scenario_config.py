@@ -24,7 +24,7 @@ SMOKETEST = 'smoketest'
 SCALABLE = 'scalable'
 INPROC = 'inproc'
 SWEEP = 'sweep'
-DEFAULT_CATEGORIES = [SCALABLE, SMOKETEST]
+DEFAULT_CATEGORIES = (SCALABLE, SMOKETEST)
 
 SECURE_SECARGS = {
     'use_test_ca': True,
@@ -127,13 +127,13 @@ def _ping_pong_scenario(name,
                         server_threads_per_cq=0,
                         client_threads_per_cq=0,
                         warmup_seconds=WARMUP_SECONDS,
-                        categories=DEFAULT_CATEGORIES,
+                        categories=None,
                         channels=None,
                         outstanding=None,
                         num_clients=None,
                         resource_quota_size=None,
                         messages_per_stream=None,
-                        excluded_poll_engines=[],
+                        excluded_poll_engines=None,
                         minimal_stack=False,
                         offered_load=None):
     """Creates a basic ping pong scenario."""
@@ -162,7 +162,9 @@ def _ping_pong_scenario(name,
             'channel_args': [],
         },
         'warmup_seconds': warmup_seconds,
-        'benchmark_seconds': BENCHMARK_SECONDS
+        'benchmark_seconds': BENCHMARK_SECONDS,
+        'CATEGORIES': list(DEFAULT_CATEGORIES),
+        'EXCLUDED_POLL_ENGINES': [],
     }
     if resource_quota_size:
         scenario['server_config']['resource_quota_size'] = resource_quota_size
@@ -232,10 +234,18 @@ def _ping_pong_scenario(name,
     return scenario
 
 
-class CXXLanguage:
+class Language(object):
 
-    def __init__(self):
-        self.safename = 'cxx'
+    @property
+    def safename(self):
+        return str(self)
+
+
+class CXXLanguage(Language):
+
+    @property
+    def safename(self):
+        return 'cxx'
 
     def worker_cmdline(self):
         return ['cmake/build/qps_worker']
@@ -619,10 +629,7 @@ class CXXLanguage:
         return 'c++'
 
 
-class CSharpLanguage:
-
-    def __init__(self):
-        self.safename = str(self)
+class CSharpLanguage(Language):
 
     def worker_cmdline(self):
         return ['tools/run_tests/performance/run_worker_csharp.sh']
@@ -747,10 +754,7 @@ class CSharpLanguage:
         return 'csharp'
 
 
-class PythonLanguage:
-
-    def __init__(self):
-        self.safename = 'python'
+class PythonLanguage(Language):
 
     def worker_cmdline(self):
         return ['tools/run_tests/performance/run_worker_python.sh']
@@ -824,10 +828,7 @@ class PythonLanguage:
         return 'python'
 
 
-class PythonAsyncIOLanguage:
-
-    def __init__(self):
-        self.safename = 'python_asyncio'
+class PythonAsyncIOLanguage(Language):
 
     def worker_cmdline(self):
         return ['tools/run_tests/performance/run_worker_python_asyncio.sh']
@@ -972,11 +973,7 @@ class PythonAsyncIOLanguage:
         return 'python_asyncio'
 
 
-class RubyLanguage:
-
-    def __init__(self):
-        pass
-        self.safename = str(self)
+class RubyLanguage(Language):
 
     def worker_cmdline(self):
         return ['tools/run_tests/performance/run_worker_ruby.sh']
@@ -1037,12 +1034,11 @@ class RubyLanguage:
         return 'ruby'
 
 
-class Php7Language:
+class Php7Language(Language):
 
     def __init__(self, php7_protobuf_c=False):
-        pass
+        super().__init__()
         self.php7_protobuf_c = php7_protobuf_c
-        self.safename = str(self)
 
     def worker_cmdline(self):
         if self.php7_protobuf_c:
@@ -1108,11 +1104,7 @@ class Php7Language:
         return 'php7'
 
 
-class JavaLanguage:
-
-    def __init__(self):
-        pass
-        self.safename = str(self)
+class JavaLanguage(Language):
 
     def worker_cmdline(self):
         return ['tools/run_tests/performance/run_worker_java.sh']
@@ -1212,11 +1204,7 @@ class JavaLanguage:
         return 'java'
 
 
-class GoLanguage:
-
-    def __init__(self):
-        pass
-        self.safename = str(self)
+class GoLanguage(Language):
 
     def worker_cmdline(self):
         return ['tools/run_tests/performance/run_worker_go.sh']
@@ -1297,12 +1285,11 @@ class GoLanguage:
         return 'go'
 
 
-class NodeLanguage:
+class NodeLanguage(Language):
 
     def __init__(self, node_purejs=False):
-        pass
+        super().__init__()
         self.node_purejs = node_purejs
-        self.safename = str(self)
 
     def worker_cmdline(self):
         fixture = 'native_js' if self.node_purejs else 'native_native'

@@ -93,7 +93,7 @@ grpc_google_default_channel_credentials::create_security_connector(
   const char* xds_cluster =
       grpc_channel_args_find_string(args, GRPC_ARG_XDS_CLUSTER_NAME);
   const bool is_xds_non_cfe_cluster =
-      xds_cluster != nullptr && absl::StartsWith(xds_cluster, "google_cfe_");
+      xds_cluster != nullptr && !absl::StartsWith(xds_cluster, "google_cfe_");
   const bool use_alts = is_grpclb_load_balancer ||
                         is_backend_from_grpclb_load_balancer ||
                         is_xds_non_cfe_cluster;

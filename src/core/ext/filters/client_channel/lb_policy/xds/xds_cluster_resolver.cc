@@ -28,6 +28,7 @@
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy/address_filtering.h"
 #include "src/core/ext/filters/client_channel/lb_policy/child_policy_handler.h"
+#include "src/core/ext/filters/client_channel/lb_policy/ring_hash/ring_hash.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_args.h"
 #include "src/core/ext/filters/client_channel/lb_policy_factory.h"
@@ -840,6 +841,13 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
       std::vector<std::string> hierarchical_path = {
           priority_child_name, locality_name->AsHumanReadableString()};
       for (const auto& endpoint : locality.endpoints) {
+        const ServerAddressWeightAttribute* weight_attribute = static_cast<
+            const ServerAddressWeightAttribute*>(endpoint.GetAttribute(
+            ServerAddressWeightAttribute::kServerAddressWeightAttributeKey));
+        uint32_t weight = locality.lb_weight;
+        if (weight_attribute != nullptr) {
+          weight = locality.lb_weight * weight_attribute->weight();
+        }
         addresses.emplace_back(
             endpoint
                 .WithAttribute(kHierarchicalPathAttributeKey,
@@ -847,10 +855,10 @@ ServerAddressList XdsClusterResolverLb::CreateChildPolicyAddressesLocked() {
                 .WithAttribute(kXdsLocalityNameAttributeKey,
                                absl::make_unique<XdsLocalityAttribute>(
                                    locality_name->Ref()))
-                .WithAttribute(ServerAddressWeightAttribute::
-                                   kServerAddressWeightAttributeKey,
-                               absl::make_unique<ServerAddressWeightAttribute>(
-                                   locality.lb_weight)));
+                .WithAttribute(
+                    ServerAddressWeightAttribute::
+                        kServerAddressWeightAttributeKey,
+                    absl::make_unique<ServerAddressWeightAttribute>(weight)));
       }
     }
   }
@@ -1207,65 +1215,11 @@ class XdsClusterResolverLbFactory : public LoadBalancingPolicyFactory {
           }
           policy_it = policy.find("RING_HASH");
           if (policy_it != policy.end()) {
-            if (policy_it->second.type() != Json::Type::OBJECT) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:RING_HASH error:type should be object"));
-              continue;
-            }
-            // TODO(donnadionne): Move this to a method in
-            // ring_hash_experimental and call it here.
-            const Json::Object& ring_hash = policy_it->second.object_value();
             xds_lb_policy = array[i];
-            size_t min_ring_size = 1024;
-            size_t max_ring_size = 8388608;
-            auto ring_hash_it = ring_hash.find("min_ring_size");
-            if (ring_hash_it == ring_hash.end()) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:min_ring_size missing"));
-            } else if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:min_ring_size error: should be of "
-                  "number"));
-            } else {
-              min_ring_size = gpr_parse_nonnegative_int(
-                  ring_hash_it->second.string_value().c_str());
-            }
-            ring_hash_it = ring_hash.find("max_ring_size");
-            if (ring_hash_it == ring_hash.end()) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:max_ring_size missing"));
-            } else if (ring_hash_it->second.type() != Json::Type::NUMBER) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:max_ring_size error: should be of "
-                  "number"));
-            } else {
-              max_ring_size = gpr_parse_nonnegative_int(
-                  ring_hash_it->second.string_value().c_str());
-            }
-            if (min_ring_size <= 0 || min_ring_size > 8388608 ||
-                max_ring_size <= 0 || max_ring_size > 8388608 ||
-                min_ring_size > max_ring_size) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:max_ring_size and or min_ring_size error: "
-                  "values need to be in the range of 1 to 8388608 "
-                  "and max_ring_size cannot be smaller than "
-                  "min_ring_size"));
-            }
-            ring_hash_it = ring_hash.find("hash_function");
-            if (ring_hash_it == ring_hash.end()) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:hash_function missing"));
-            } else if (ring_hash_it->second.type() != Json::Type::STRING) {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:hash_function error: should be a "
-                  "string"));
-            } else if (ring_hash_it->second.string_value() != "XX_HASH" &&
-                       ring_hash_it->second.string_value() != "MURMUR_HASH_2") {
-              error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                  "field:hash_function error: unsupported "
-                  "hash_function"));
-            }
-            break;
+            size_t min_ring_size;
+            size_t max_ring_size;
+            ParseRingHashLbConfig(policy_it->second, &min_ring_size,
+                                  &max_ring_size, &error_list);
           }
         }
       }

@@ -728,9 +728,6 @@ std::string XdsApi::CdsUpdate::ToString() const {
   if (lb_policy == "RING_HASH") {
     contents.push_back(absl::StrCat("min_ring_size=", min_ring_size));
     contents.push_back(absl::StrCat("max_ring_size=", max_ring_size));
-    contents.push_back(absl::StrCat("hash_function=", hash_function == XX_HASH
-                                                          ? "XX_HASH"
-                                                          : "MURMUR_HASH_2"));
   }
   contents.push_back(
       absl::StrFormat("max_concurrent_requests=%d", max_concurrent_requests));
@@ -852,14 +849,39 @@ bool IsEds(absl::string_view type_url) {
 
 }  // namespace
 
+// If gRPC is built with -DGRPC_XDS_USER_AGENT_NAME_SUFFIX="...", that string
+// will be appended to the user agent name reported to the xDS server.
+#ifdef GRPC_XDS_USER_AGENT_NAME_SUFFIX
+#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING \
+  " " GRPC_XDS_USER_AGENT_NAME_SUFFIX
+#else
+#define GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING ""
+#endif
+
+// If gRPC is built with -DGRPC_XDS_USER_AGENT_VERSION_SUFFIX="...", that string
+// will be appended to the user agent version reported to the xDS server.
+#ifdef GRPC_XDS_USER_AGENT_VERSION_SUFFIX
+#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING \
+  " " GRPC_XDS_USER_AGENT_VERSION_SUFFIX
+#else
+#define GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING ""
+#endif
+
 XdsApi::XdsApi(XdsClient* client, TraceFlag* tracer,
                const XdsBootstrap::Node* node)
     : client_(client),
       tracer_(tracer),
       node_(node),
       build_version_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING, " ",
-                                  grpc_version_string())),
-      user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING)) {
+                                  grpc_version_string(),
+                                  GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
+                                  GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)),
+      user_agent_name_(absl::StrCat("gRPC C-core ", GPR_PLATFORM_STRING,
+                                    GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING)),
+      user_agent_version_(
+          absl::StrCat("C-core ", grpc_version_string(),
+                       GRPC_XDS_USER_AGENT_NAME_SUFFIX_STRING,
+                       GRPC_XDS_USER_AGENT_VERSION_SUFFIX_STRING)) {
   // Populate upb symtab with xDS proto messages that we want to print
   // properly in logs.
   // Note: This won't actually work properly until upb adds support for
@@ -990,6 +1012,7 @@ void PopulateNode(const EncodingContext& context,
                   const XdsBootstrap::Node* node,
                   const std::string& build_version,
                   const std::string& user_agent_name,
+                  const std::string& user_agent_version,
                   envoy_config_core_v3_Node* node_msg) {
   if (node != nullptr) {
     if (!node->id.empty()) {
@@ -1029,7 +1052,7 @@ void PopulateNode(const EncodingContext& context,
   envoy_config_core_v3_Node_set_user_agent_name(
       node_msg, StdStringToUpbString(user_agent_name));
   envoy_config_core_v3_Node_set_user_agent_version(
-      node_msg, upb_strview_makez(grpc_version_string()));
+      node_msg, StdStringToUpbString(user_agent_version));
   envoy_config_core_v3_Node_add_client_features(
       node_msg, upb_strview_makez("envoy.lb.does_not_support_overprovisioning"),
       context.arena);
@@ -1135,7 +1158,8 @@ grpc_slice XdsApi::CreateAdsRequest(
     envoy_config_core_v3_Node* node_msg =
         envoy_service_discovery_v3_DiscoveryRequest_mutable_node(request,
                                                                  arena.ptr());
-    PopulateNode(context, node_, build_version_, user_agent_name_, node_msg);
+    PopulateNode(context, node_, build_version_, user_agent_name_,
+                 user_agent_version_, node_msg);
   }
   // Add resource_names.
   for (const auto& resource_name : resource_names) {
@@ -1627,40 +1651,35 @@ grpc_error_handle RouteActionParse(const EncodingContext& context,
             regex_rewrite =
                 envoy_config_route_v3_RouteAction_HashPolicy_Header_regex_rewrite(
                     header);
-        if (regex_rewrite == nullptr) {
-          gpr_log(
-              GPR_DEBUG,
-              "RouteAction HashPolicy contains policy specifier Header with "
-              "RegexMatchAndSubstitution but Regex is missing");
-          continue;
+        if (regex_rewrite != nullptr) {
+          const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
+              envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
+                  regex_rewrite);
+          if (regex_matcher == nullptr) {
+            gpr_log(
+                GPR_DEBUG,
+                "RouteAction HashPolicy contains policy specifier Header with "
+                "RegexMatchAndSubstitution but RegexMatcher pattern is "
+                "missing");
+            continue;
+          }
+          RE2::Options options;
+          policy.regex = absl::make_unique<RE2>(
+              UpbStringToStdString(
+                  envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
+              options);
+          if (!policy.regex->ok()) {
+            gpr_log(
+                GPR_DEBUG,
+                "RouteAction HashPolicy contains policy specifier Header with "
+                "RegexMatchAndSubstitution but RegexMatcher pattern does not "
+                "compile");
+            continue;
+          }
+          policy.regex_substitution = UpbStringToStdString(
+              envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
+                  regex_rewrite));
         }
-        const envoy_type_matcher_v3_RegexMatcher* regex_matcher =
-            envoy_type_matcher_v3_RegexMatchAndSubstitute_pattern(
-                regex_rewrite);
-        if (regex_matcher == nullptr) {
-          gpr_log(
-              GPR_DEBUG,
-              "RouteAction HashPolicy contains policy specifier Header with "
-              "RegexMatchAndSubstitution but RegexMatcher pattern is "
-              "missing");
-          continue;
-        }
-        RE2::Options options;
-        policy.regex = absl::make_unique<RE2>(
-            UpbStringToStdString(
-                envoy_type_matcher_v3_RegexMatcher_regex(regex_matcher)),
-            options);
-        if (!policy.regex->ok()) {
-          gpr_log(
-              GPR_DEBUG,
-              "RouteAction HashPolicy contains policy specifier Header with "
-              "RegexMatchAndSubstitution but RegexMatcher pattern does not "
-              "compile");
-          continue;
-        }
-        policy.regex_substitution = UpbStringToStdString(
-            envoy_type_matcher_v3_RegexMatchAndSubstitute_substitution(
-                regex_rewrite));
       } else if ((filter_state =
                       envoy_config_route_v3_RouteAction_HashPolicy_filter_state(
                           hash_policy)) != nullptr) {
@@ -2934,74 +2953,60 @@ grpc_error_handle CdsResponseParse(
       // Record ring hash lb config
       auto* ring_hash_config =
           envoy_config_cluster_v3_Cluster_ring_hash_lb_config(cluster);
-      if (ring_hash_config == nullptr) {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name,
-                         ": ring hash lb config required but not present.")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
-      }
-      const google_protobuf_UInt64Value* max_ring_size =
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
-              ring_hash_config);
-      if (max_ring_size != nullptr) {
-        cds_update.max_ring_size =
-            google_protobuf_UInt64Value_value(max_ring_size);
-        if (cds_update.max_ring_size > 8388608 ||
-            cds_update.max_ring_size == 0) {
+      if (ring_hash_config != nullptr) {
+        const google_protobuf_UInt64Value* max_ring_size =
+            envoy_config_cluster_v3_Cluster_RingHashLbConfig_maximum_ring_size(
+                ring_hash_config);
+        if (max_ring_size != nullptr) {
+          cds_update.max_ring_size =
+              google_protobuf_UInt64Value_value(max_ring_size);
+          if (cds_update.max_ring_size > 8388608 ||
+              cds_update.max_ring_size == 0) {
+            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat(
+                    cluster_name,
+                    ": max_ring_size is not in the range of 1 to 8388608.")
+                    .c_str()));
+            resource_names_failed->insert(cluster_name);
+            continue;
+          }
+        }
+        const google_protobuf_UInt64Value* min_ring_size =
+            envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
+                ring_hash_config);
+        if (min_ring_size != nullptr) {
+          cds_update.min_ring_size =
+              google_protobuf_UInt64Value_value(min_ring_size);
+          if (cds_update.min_ring_size > 8388608 ||
+              cds_update.min_ring_size == 0) {
+            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat(
+                    cluster_name,
+                    ": min_ring_size is not in the range of 1 to 8388608.")
+                    .c_str()));
+            resource_names_failed->insert(cluster_name);
+            continue;
+          }
+          if (cds_update.min_ring_size > cds_update.max_ring_size) {
+            errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
+                absl::StrCat(
+                    cluster_name,
+                    ": min_ring_size cannot be greater than max_ring_size.")
+                    .c_str()));
+            resource_names_failed->insert(cluster_name);
+            continue;
+          }
+        }
+        if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
+                ring_hash_config) !=
+            envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
           errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(
-                  cluster_name,
-                  ": max_ring_size is not in the range of 1 to 8388608.")
+              absl::StrCat(cluster_name,
+                           ": ring hash lb config has invalid hash function.")
                   .c_str()));
           resource_names_failed->insert(cluster_name);
           continue;
         }
-      }
-      const google_protobuf_UInt64Value* min_ring_size =
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_minimum_ring_size(
-              ring_hash_config);
-      if (min_ring_size != nullptr) {
-        cds_update.min_ring_size =
-            google_protobuf_UInt64Value_value(min_ring_size);
-        if (cds_update.min_ring_size > 8388608 ||
-            cds_update.min_ring_size == 0) {
-          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(
-                  cluster_name,
-                  ": min_ring_size is not in the range of 1 to 8388608.")
-                  .c_str()));
-          resource_names_failed->insert(cluster_name);
-          continue;
-        }
-        if (cds_update.min_ring_size > cds_update.max_ring_size) {
-          errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-              absl::StrCat(
-                  cluster_name,
-                  ": min_ring_size cannot be greater than max_ring_size.")
-                  .c_str()));
-          resource_names_failed->insert(cluster_name);
-          continue;
-        }
-      }
-      if (envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
-              ring_hash_config) ==
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_XX_HASH) {
-        cds_update.hash_function = XdsApi::CdsUpdate::HashFunction::XX_HASH;
-      } else if (
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_hash_function(
-              ring_hash_config) ==
-          envoy_config_cluster_v3_Cluster_RingHashLbConfig_MURMUR_HASH_2) {
-        cds_update.hash_function =
-            XdsApi::CdsUpdate::HashFunction::MURMUR_HASH_2;
-      } else {
-        errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
-            absl::StrCat(cluster_name,
-                         ": ring hash lb config has invalid hash function.")
-                .c_str()));
-        resource_names_failed->insert(cluster_name);
-        continue;
       }
     } else {
       errors.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(
@@ -3133,13 +3138,28 @@ grpc_error_handle ServerAddressParseAndAppend(
   if (GPR_UNLIKELY(port >> 16) != 0) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port.");
   }
+  // Find load_balancing_weight for the endpoint.
+  const google_protobuf_UInt32Value* load_balancing_weight =
+      envoy_config_endpoint_v3_LbEndpoint_load_balancing_weight(lb_endpoint);
+  const int32_t weight =
+      load_balancing_weight != nullptr
+          ? google_protobuf_UInt32Value_value(load_balancing_weight)
+          : 500;
+  if (weight == 0) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Invalid endpoint weight of 0.");
+  }
   // Populate grpc_resolved_address.
   grpc_resolved_address addr;
   grpc_error_handle error =
       grpc_string_to_sockaddr(&addr, address_str.c_str(), port);
   if (error != GRPC_ERROR_NONE) return error;
   // Append the address to the list.
-  list->emplace_back(addr, nullptr);
+  std::map<const char*, std::unique_ptr<ServerAddress::AttributeInterface>>
+      attributes;
+  attributes[ServerAddressWeightAttribute::kServerAddressWeightAttributeKey] =
+      absl::make_unique<ServerAddressWeightAttribute>(weight);
+  list->emplace_back(addr, nullptr, std::move(attributes));
   return GRPC_ERROR_NONE;
 }
 
@@ -3481,7 +3501,8 @@ grpc_slice XdsApi::CreateLrsInitialRequest(
   envoy_config_core_v3_Node* node_msg =
       envoy_service_load_stats_v3_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
-  PopulateNode(context, node_, build_version_, user_agent_name_, node_msg);
+  PopulateNode(context, node_, build_version_, user_agent_name_,
+               user_agent_version_, node_msg);
   envoy_config_core_v3_Node_add_client_features(
       node_msg, upb_strview_makez("envoy.lrs.supports_send_all_clusters"),
       arena.ptr());
@@ -3878,7 +3899,8 @@ std::string XdsApi::AssembleClientConfig(
                                                                  arena.ptr());
   const EncodingContext context = {client_, tracer_, symtab_.ptr(), arena.ptr(),
                                    true};
-  PopulateNode(context, node_, build_version_, user_agent_name_, node);
+  PopulateNode(context, node_, build_version_, user_agent_name_,
+               user_agent_version_, node);
   // Dump each xDS-type config into PerXdsConfig
   for (auto& p : resource_type_metadata_map) {
     absl::string_view type_url = p.first;
