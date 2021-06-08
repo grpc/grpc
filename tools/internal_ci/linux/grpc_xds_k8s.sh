@@ -149,7 +149,8 @@ main() {
   run_test url_map_tests \
     --namespace=interop-psm-url-map \
     --server_xds_port=8848 \
-    --gcp_service_account=interop-psm-url-map-sa@grpc-testing.iam.gserviceaccount.com
+    --gcp_service_account=interop-psm-url-map-sa@grpc-testing.iam.gserviceaccount.com \
+    --debug_use_port_forwarding
 }
 
 main "$@"
