@@ -104,7 +104,8 @@ run_test() {
     --client_image="${CLIENT_IMAGE_NAME}:${GIT_COMMIT}" \
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
     --force_cleanup \
-    --nocheck_local_certs
+    --nocheck_local_certs \
+    $@
   set +x
 }
 
@@ -145,7 +146,7 @@ main() {
   # [DO-NOT-MERGE] Test-only
   # run_test baseline_test
   # run_test security_test
-  run_test url_map_tests
+  run_test url_map_tests --namespace=lidiz-dev --server_xds_port=12321
 }
 
 main "$@"
