@@ -52,7 +52,7 @@ run_ignore_exit_code() {
 parse_src_repo_git_info() {
   local src_dir="${SRC_DIR:?SRC_DIR must be set}"
   readonly GIT_ORIGIN_URL=$(git -C "${src_dir}" remote get-url origin)
-  readonly GIT_COMMIT=$(git -C "${src_dir}" rev-parse HEAD)
+  readonly GIT_COMMIT=$(git -C "${src_dir}" rev-parse HEAD)G
   readonly GIT_COMMIT_SHORT=$(git -C "${src_dir}" rev-parse --short HEAD)
 }
 
