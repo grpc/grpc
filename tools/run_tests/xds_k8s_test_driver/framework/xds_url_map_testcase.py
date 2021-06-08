@@ -556,19 +556,24 @@ class XdsUrlMapTestCase(abc.ABC, absltest.TestCase):
             'Received LoadBalancerAccumulatedStatsResponse from test client %s: after: \n%s',
             test_client.ip, after_stats)
         # Validate the diff
-        total = length * QPS.value
+        expected_total = length * QPS.value
         for expected_result in expected:
             rpc = expected_result.rpc_type
             status = expected_result.status_code.value[0]
             seen = after_stats.stats_per_method.get(rpc, {}).result.get(
                 status, 0) - before_stats.stats_per_method.get(
                     rpc, {}).result.get(status, 0)
+            total = sum(x[1]
+                        for x in after_stats.stats_per_method.get(
+                            rpc, {}).result.items()) - sum(
+                                x[1] for x in before_stats.stats_per_method.get(
+                                    rpc, {}).result.items())
             want = total * expected_result.ratio
             self.assertLessEqual(
-                abs(seen - want) / want, tolerance,
-                'Expect rpc [%s] to return [%s] at %.2f ratio: seen=%d want=%d diff_ratio=%.4f > %.2f'
+                abs(seen - want) / total, tolerance,
+                'Expect rpc [%s] to return [%s] at %.2f ratio: seen=%d want=%d total=%d diff_ratio=%.4f > %.2f'
                 % (rpc, expected_result.status_code, expected_result.ratio,
-                   seen, want, abs(seen - want) / want, tolerance))
+                   seen, want, total, abs(seen - want) / total, tolerance))
 
 
 class UrlMapChangeAggregator:

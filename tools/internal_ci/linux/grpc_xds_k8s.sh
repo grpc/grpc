@@ -105,7 +105,7 @@ run_test() {
     --xml_output_file="${TEST_XML_OUTPUT_DIR}/${test_name}/sponge_log.xml" \
     --force_cleanup \
     --nocheck_local_certs \
-    $@
+    ${@:2}
   set +x
 }
 
@@ -146,7 +146,10 @@ main() {
   # [DO-NOT-MERGE] Test-only
   # run_test baseline_test
   # run_test security_test
-  run_test url_map_tests --namespace=lidiz-dev --server_xds_port=12321
+  run_test url_map_tests \
+    --namespace=interop-psm-url-map \
+    --server_xds_port=8848 \
+    --gcp_service_account=interop-psm-url-map-sa@grpc-testing.iam.gserviceaccount.com
 }
 
 main "$@"
