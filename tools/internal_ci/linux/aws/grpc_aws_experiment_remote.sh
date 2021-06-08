@@ -20,10 +20,27 @@ sudo apt update
 sudo apt install -y build-essential autoconf libtool pkg-config cmake python python-pip clang
 sudo pip install six
 
-cd grpc
+# java pre-requisites
+sudo apt-get install -y maven openjdk-11-jdk-headless
+java -version
 
-# without port server running, many tests will fail
-python tools/run_tests/start_port_server.py
+# go pre-requisites
+sudo snap install go --classic
+go version
 
-# build with bazel
-tools/bazel build --config=opt //test/...
+# node pre-requisites
+# TODO(jtattermusch): re-enable once JS benchmarks are enabled again
+# see https://github.com/protocolbuffers/protobuf/issues/8747
+#curl -o- https://raw.githubusercontent.com/creationix/nvm/v0.33.4/install.sh | bash
+#set +ex
+#. ~/.nvm/nvm.sh
+#nvm install 12
+#nvm use 12
+#set -ex
+
+git clone https://github.com/protocolbuffers/protobuf.git
+cd protobuf
+git checkout master
+git submodule update --init
+
+kokoro/linux/benchmark/run.sh
