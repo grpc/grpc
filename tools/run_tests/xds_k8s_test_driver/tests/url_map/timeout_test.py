@@ -22,6 +22,7 @@ from typing import Iterable, Tuple
 import grpc
 from absl import flags
 from absl.testing import absltest
+from framework import xds_k8s_flags
 from framework import xds_url_map_testcase
 from framework.test_app import client_app
 from google.protobuf import json_format
@@ -79,6 +80,10 @@ class _BaseXdsTimeOutTestCase(xds_url_map_testcase.XdsUrlMapTestCase):
         raise NotImplementedError()
 
 
+# TODO(lidiz) either add support for rpc-behavior to other languages, or we
+# should always use Java server as backend.
+@absltest.skipUnless('java-server' in xds_k8s_flags.SERVER_IMAGE.value,
+                     'Only Java server supports the rpc-behavior metadata.')
 class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
@@ -104,6 +109,8 @@ class TestTimeoutInRouteRule(_BaseXdsTimeOutTestCase):
             tolerance=_ERROR_TOLERANCE)
 
 
+@absltest.skipUnless('java-server' in xds_k8s_flags.SERVER_IMAGE.value,
+                     'Only Java server supports the rpc-behavior metadata.')
 class TestTimeoutInApplication(_BaseXdsTimeOutTestCase):
 
     def rpc_distribution_validate(self, test_client: XdsTestClient):
