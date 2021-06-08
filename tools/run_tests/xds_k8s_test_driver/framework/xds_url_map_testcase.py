@@ -26,6 +26,7 @@ from typing import Any, Union, Tuple, Mapping, Iterable, Optional
 
 from framework import xds_flags
 from framework import xds_k8s_flags
+from framework import xds_k8s_testcase
 from framework.infrastructure import gcp
 from framework.infrastructure import k8s
 from framework.infrastructure import traffic_director
@@ -43,11 +44,12 @@ from framework.rpc import grpc_testing
 # Load existing flags
 flags.adopt_module_key_flags(xds_flags)
 flags.adopt_module_key_flags(xds_k8s_flags)
+flags.adopt_module_key_flags(xds_k8s_testcase)
 
 # Define urlMap specific flags
 QPS = flags.DEFINE_integer('qps', default=25, help='The QPS client is sending')
 _STRATEGY = flags.DEFINE_enum('strategy',
-                              default='create',
+                              default='reuse',
                               enum_values=['create', 'keep', 'reuse'],
                               help='Strategy of GCP resources management')
 # TODO(lidiz) find a better way to filter test cases; e.g., Bazel

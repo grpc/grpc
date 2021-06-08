@@ -11,17 +11,28 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from tests.url_map import header_matching_test
-from tests.url_map import path_matching_test
+
+import os
+import importlib
+
 from framework import xds_url_map_testcase
 
+from absl import logging
 from absl.testing import absltest
 
+_TEST_CASE_FOLDER = os.path.join(os.path.dirname(__file__), 'url_map')
 
-# TODO(lidiz) dynamically load modules from "./url_map" directory.
+
 def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
-    return xds_url_map_testcase.load_tests(loader, header_matching_test,
-                                           path_matching_test)
+    test_modules = []
+    for file_name in os.listdir(_TEST_CASE_FOLDER):
+        if not file_name.endswith('_test.py'):
+            continue
+        module_name = 'tests.url_map.' + file_name[:-3]
+        test_modules.append(importlib.import_module(module_name, package=None))
+        logging.info('Loading test module: %s', module_name)
+
+    return xds_url_map_testcase.load_tests(loader, *test_modules)
 
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 config/local-dev.cfg
+config/presubmit.cfg
 src/proto
 venv/
 out/
