@@ -64,6 +64,9 @@ struct Op {
         cancel_stream(false),
         is_traced(false) {}
 
+  Op(const Op&) = delete;
+  Op& operator=(const Op&) = delete;
+
   Payload* payload = nullptr;
 
   Closure* on_complete = nullptr;

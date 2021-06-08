@@ -55,14 +55,15 @@ struct alignas(alignof(void*)) Scratch {
 template <typename T>
 class FilterInterface {
  public:
- FilterInterface() = default;
+  FilterInterface() = default;
   FilterInterface(const FilterInterface&) = delete;
   FilterInterface& operator=(const FilterInterface&) = delete;
   virtual Promise<T>* Step(T* p, Scratch* scratch_space) = 0;
   virtual void UpdateReceiver(PipeReceiver<T>* receiver) = 0;
 
  protected:
-  static void SetReceiverIndex(PipeReceiver<T>* receiver, int idx, FilterInterface* p);
+  static void SetReceiverIndex(PipeReceiver<T>* receiver, int idx,
+                               FilterInterface* p);
   char AllocIndex(PipeReceiver<T>* receiver);
 };
 
@@ -239,7 +240,7 @@ class PipeReceiver {
     sender_ = nullptr;
 
     for (auto* filter : filters_) {
-      if (filter != nullptr){
+      if (filter != nullptr) {
         filter->UpdateReceiver(nullptr);
       }
     }
@@ -422,8 +423,7 @@ class Filter final : private FilterInterface<T> {
       done_.~Status();
     }
   }
-  Filter(Filter&& other)
-      : index_(other.index_) {
+  Filter(Filter&& other) : index_(other.index_) {
     if (index_ != kTombstoneIndex) {
       new (&active_) Active(std::move(other.active_));
       other.active_.~Active();
@@ -470,7 +470,8 @@ class Filter final : private FilterInterface<T> {
           *output = std::move(**p);
           return ready(true);
         } else {
-          filter_->SetReceiverIndex(filter_->active_.receiver, filter_->index_, nullptr);
+          filter_->SetReceiverIndex(filter_->active_.receiver, filter_->index_,
+                                    nullptr);
           filter_->active_.~Active();
           filter_->index_ = kTombstoneIndex;
           new (&filter_->done_) absl::Status(std::move(p->status()));
@@ -521,7 +522,8 @@ class Filter final : private FilterInterface<T> {
 };
 
 template <typename T>
-void FilterInterface<T>::SetReceiverIndex(PipeReceiver<T>* receiver, int idx, FilterInterface* p) {
+void FilterInterface<T>::SetReceiverIndex(PipeReceiver<T>* receiver, int idx,
+                                          FilterInterface* p) {
   receiver->filters_[idx] = p;
 }
 

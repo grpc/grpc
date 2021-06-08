@@ -20,9 +20,9 @@
 #include "absl/container/inlined_vector.h"
 #include "absl/status/status.h"
 #include "absl/synchronization/mutex.h"
+#include "src/core/lib/promise/adaptor.h"
 #include "src/core/lib/promise/context.h"
 #include "src/core/lib/promise/poll.h"
-#include "src/core/lib/promise/adaptor.h"
 
 namespace grpc_core {
 
@@ -272,7 +272,9 @@ class PromiseActivity final
   }
 
   using Promise = decltype(std::declval<Factory>()());
-  union { [[no_unique_address]] Promise promise_ GUARDED_BY(mu_); };
+  union {
+    [[no_unique_address]] Promise promise_ GUARDED_BY(mu_);
+  };
   // Callback on completion of the promise.
   [[no_unique_address]] OnDone on_done_;
   // Has execution completed?

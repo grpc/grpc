@@ -14,6 +14,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import sys
+
 def fs(n):
     return ", ".join("F%d" % i for i in range(0, n+1))
 
@@ -32,86 +34,118 @@ def forwards(n):
 def typenames(n):
     return ", ".join("typename F%d" % i for i in range(0, n+1))
 
-for n in range(1, 10):
-    print "template <%s> class Seq<%s> {" % (typenames(n), fs(n))
-    print " private:"
-    print "  char state_ = 0;"
-    print "  struct State0 {"
-    print "    State0(F0&& f0, F1&& f1) : f(std::forward<F0>(f0)), next(std::forward<F1>(f1)) {}"
-    print "    State0(State0&& other) : f(std::move(other.f)), next(std::move(other.next)) {}"
-    print "    State0(const State0& other) : f(other.f), next(other.next) {}"
-    print "    ~State0() = delete;"
-    print "    using F = F0;"
-    print "    [[no_unique_address]] F0 f;"
-    print "    using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;"
-    print "    using Next = adaptor_detail::Factory<FResult, F1>;"
-    print "    [[no_unique_address]] Next next;"
-    print "  };"
-    for i in range(1, n):
-        print "  struct State%d {" % i
-        print "    State%d(%s) : next(std::forward<F%d>(f%d)) { new (&prior) State%d(%s); }" % (i, fs_refdecls(i+1), i+1, i+1, i-1, forwards(i))
-        print "    State%d(State%d&& other) : prior(std::move(other.prior)), next(std::move(other.next)) {}" % (i, i)
-        print "    State%d(const State%d& other) : prior(other.prior), next(other.next) {}" % (i, i)
-        print "    ~State%d() = delete;" % i
-        print "    using F = typename State%d::Next::Promise;" % (i-1)
-        print "    union {"
-        print "      [[no_unique_address]] State%d prior;" % (i-1)
-        print "      [[no_unique_address]] F f;"
-        print "    };"
-        print "    using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;"
-        print "    using Next = adaptor_detail::Factory<FResult, F%d>;" % (i+1)
-        print "    [[no_unique_address]] Next next;"
-        print "  };"
-    print "  using FLast = typename State%d::Next::Promise;" % (n-1)
-    print "  union {"
-    print "    [[no_unique_address]] State%d prior_;" % (n-1)
-    print "    [[no_unique_address]] FLast f_;"
-    print "  };"
-    print " public:"
-    print "  Seq(%s) : prior_(%s) {}" % (fs_decls(n), moves(n))
-    print "  Seq& operator=(const Seq&) = delete;"
-    print "  Seq(const Seq& other) {"
-    print "    assert(other.state_ == 0);"
-    print "    new (&prior_) State%d(other.prior_);" % (n-1)
-    print "  }"
-    print "  Seq(Seq&& other) {"
-    print "    assert(other.state_ == 0);"
-    print "    new (&prior_) State%d(std::move(other.prior_));" % (n-1)
-    print "  }"
-    print "  ~Seq() {"
-    print "    switch (state_) {"
-    for i in range(0, n):
-        print "     case %d:" % i
-        prior = "prior_" + ".prior" * (n - i - 1)
-        print "      Destruct(&%s.f);" % (prior)
-        print "      goto fin%d;" % i
-    print "     case %d:" % n
-    print "      Destruct(&f_);"
-    print "      return;"
-    print "    }"
-    for i in range(0, n):
-        print "  fin%d:" % i
-        prior = "prior_" + ".prior" * (n - i - 1)
-        print "    Destruct(&%s.next);" % prior
-    print "  }"
-    print "  decltype(std::declval<typename State%d::Next::Promise>()()) operator()() {" % (n-1)
-    print "    switch (state_) {"
-    for i in range(0, n):
-        print "     case %d: {" % i
-        prior = "prior_" + ".prior" * (n - i - 1)
-        next_f = "prior_" + ".prior" * (n - i - 2) + ".f" if i != n - 1 else "f_"
-        print "      auto r = %s.f();" % prior
-        print "      auto* p = r.get_ready();"
-        print "      if (p == nullptr) break;"
-        print "      Destruct(&%s.f);" % prior
-        print "      auto n = %s.next.Once(std::move(*p));" % prior
-        print "      Destruct(&%s.next);" % prior
-        print "      new (&%s) typename State%d::Next::Promise(std::move(n));" % (next_f, i)
-        print "      state_ = %d;" % (i+1)
-        print "     }"
-    print "     case %d:" % n
-    print "      return f_();"
-    print "    }"
-    print "    return kPending;"
-    print "  }"
-    print "};"
+
+# utility: print a big comment block into a set of files
+def put_banner(files, banner):
+    for f in files:
+        print >> f, '/*'
+        for line in banner:
+            print >> f, ' * %s' % line
+        print >> f, ' */'
+        print >> f
+
+
+with open('src/core/lib/promise/seq_switch.h', 'w') as H:
+    # copy-paste copyright notice from this file
+    with open(sys.argv[0]) as my_source:
+        copyright = []
+        for line in my_source:
+            if line[0] != '#':
+                break
+        for line in my_source:
+            if line[0] == '#':
+                copyright.append(line)
+                break
+        for line in my_source:
+            if line[0] != '#':
+                break
+            copyright.append(line)
+        put_banner([H], [line[2:].rstrip() for line in copyright])
+
+    put_banner(
+        [H],
+        ["Automatically generated by %s" % sys.argv[0]])
+
+    for n in range(1, 32):
+        print >>H, "template <%s> class Seq<%s> {" % (typenames(n), fs(n))
+        print >>H, " private:"
+        print >>H, "  char state_ = 0;"
+        print >>H, "  struct State0 {"
+        print >>H, "    State0(F0&& f0, F1&& f1) : f(std::forward<F0>(f0)), next(std::forward<F1>(f1)) {}"
+        print >>H, "    State0(State0&& other) : f(std::move(other.f)), next(std::move(other.next)) {}"
+        print >>H, "    State0(const State0& other) : f(other.f), next(other.next) {}"
+        print >>H, "    ~State0() = delete;"
+        print >>H, "    using F = F0;"
+        print >>H, "    [[no_unique_address]] F0 f;"
+        print >>H, "    using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;"
+        print >>H, "    using Next = adaptor_detail::Factory<FResult, F1>;"
+        print >>H, "    [[no_unique_address]] Next next;"
+        print >>H, "  };"
+        for i in range(1, n):
+            print >>H, "  struct State%d {" % i
+            print >>H, "    State%d(%s) : next(std::forward<F%d>(f%d)) { new (&prior) State%d(%s); }" % (i, fs_refdecls(i+1), i+1, i+1, i-1, forwards(i))
+            print >>H, "    State%d(State%d&& other) : prior(std::move(other.prior)), next(std::move(other.next)) {}" % (i, i)
+            print >>H, "    State%d(const State%d& other) : prior(other.prior), next(other.next) {}" % (i, i)
+            print >>H, "    ~State%d() = delete;" % i
+            print >>H, "    using F = typename State%d::Next::Promise;" % (i-1)
+            print >>H, "    union {"
+            print >>H, "      [[no_unique_address]] State%d prior;" % (i-1)
+            print >>H, "      [[no_unique_address]] F f;"
+            print >>H, "    };"
+            print >>H, "    using FResult = absl::remove_reference_t<decltype(*f().get_ready())>;"
+            print >>H, "    using Next = adaptor_detail::Factory<FResult, F%d>;" % (i+1)
+            print >>H, "    [[no_unique_address]] Next next;"
+            print >>H, "  };"
+        print >>H, "  using FLast = typename State%d::Next::Promise;" % (n-1)
+        print >>H, "  union {"
+        print >>H, "    [[no_unique_address]] State%d prior_;" % (n-1)
+        print >>H, "    [[no_unique_address]] FLast f_;"
+        print >>H, "  };"
+        print >>H, " public:"
+        print >>H, "  Seq(%s) : prior_(%s) {}" % (fs_decls(n), moves(n))
+        print >>H, "  Seq& operator=(const Seq&) = delete;"
+        print >>H, "  Seq(const Seq& other) {"
+        print >>H, "    assert(other.state_ == 0);"
+        print >>H, "    new (&prior_) State%d(other.prior_);" % (n-1)
+        print >>H, "  }"
+        print >>H, "  Seq(Seq&& other) {"
+        print >>H, "    assert(other.state_ == 0);"
+        print >>H, "    new (&prior_) State%d(std::move(other.prior_));" % (n-1)
+        print >>H, "  }"
+        print >>H, "  ~Seq() {"
+        print >>H, "    switch (state_) {"
+        for i in range(0, n):
+            print >>H, "     case %d:" % i
+            prior = "prior_" + ".prior" * (n - i - 1)
+            print >>H, "      Destruct(&%s.f);" % (prior)
+            print >>H, "      goto fin%d;" % i
+        print >>H, "     case %d:" % n
+        print >>H, "      Destruct(&f_);"
+        print >>H, "      return;"
+        print >>H, "    }"
+        for i in range(0, n):
+            print >>H, "  fin%d:" % i
+            prior = "prior_" + ".prior" * (n - i - 1)
+            print >>H, "    Destruct(&%s.next);" % prior
+        print >>H, "  }"
+        print >>H, "  decltype(std::declval<typename State%d::Next::Promise>()()) operator()() {" % (n-1)
+        print >>H, "    switch (state_) {"
+        for i in range(0, n):
+            print >>H, "     case %d: {" % i
+            prior = "prior_" + ".prior" * (n - i - 1)
+            next_f = "prior_" + ".prior" * (n - i - 2) + ".f" if i != n - 1 else "f_"
+            print >>H, "      auto r = %s.f();" % prior
+            print >>H, "      auto* p = r.get_ready();"
+            print >>H, "      if (p == nullptr) break;"
+            print >>H, "      Destruct(&%s.f);" % prior
+            print >>H, "      auto n = %s.next.Once(std::move(*p));" % prior
+            print >>H, "      Destruct(&%s.next);" % prior
+            print >>H, "      new (&%s) typename State%d::Next::Promise(std::move(n));" % (next_f, i)
+            print >>H, "      state_ = %d;" % (i+1)
+            print >>H, "     }"
+        print >>H, "     case %d:" % n
+        print >>H, "      return f_();"
+        print >>H, "    }"
+        print >>H, "    return kPending;"
+        print >>H, "  }"
+        print >>H, "};"

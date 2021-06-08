@@ -55,7 +55,9 @@ struct Interject {
     auto* i = static_cast<Interject*>(elem->call_data);
     if (op->recv_initial_metadata) {
       i->next = op->on_complete;
+      op->on_complete = &i->c;
     }
+    CallNextOp(elem, op);
   }
 };
 
@@ -66,6 +68,69 @@ Filter interject_filter = {
     NoChannelData,
     NoChannelData,
     sizeof(Interject),
+    0,
+};
+
+struct InterjectPipe {
+  Closure c_init_metadata;
+  Closure* next_init_metadata;
+  Closure c_payload;
+  Closure* next_payload;
+  Closure c_trailing_metadata;
+  Closure* next_trailing_metadata;
+
+  static void CallbackInitMetadata(void* p, absl::Status status) {
+    auto* i = static_cast<InterjectPipe*>(p);
+    i->next_init_metadata->Run(std::move(status));
+  }
+
+  static void CallbackPayload(void* p, absl::Status status) {
+    auto* i = static_cast<InterjectPipe*>(p);
+    i->next_payload->Run(std::move(status));
+  }
+
+  static void CallbackTrailingMetadata(void* p, absl::Status status) {
+    auto* i = static_cast<InterjectPipe*>(p);
+    i->next_trailing_metadata->Run(std::move(status));
+  }
+
+  static void Init(CallElem* elem) {
+    auto* i = static_cast<InterjectPipe*>(elem->call_data);
+    i->c_init_metadata.f = CallbackInitMetadata;
+    i->c_init_metadata.p = i;
+    i->c_payload.f = CallbackPayload;
+    i->c_payload.p = i;
+    i->c_trailing_metadata.f = CallbackTrailingMetadata;
+    i->c_trailing_metadata.p = i;
+  }
+
+  static void Destroy(CallElem* elem) {}
+
+  static void StartOp(CallElem* elem, Op* op) {
+    auto* i = static_cast<InterjectPipe*>(elem->call_data);
+    if (op->recv_trailing_metadata) {
+      i->next_trailing_metadata = op->on_complete;
+      op->on_complete = &i->c_trailing_metadata;
+    }
+    if (op->recv_message) {
+      i->next_payload = op->on_complete;
+      op->on_complete = &i->c_payload;
+    }
+    if (op->recv_initial_metadata) {
+      i->next_init_metadata = op->on_complete;
+      op->on_complete = &i->c_init_metadata;
+    }
+    CallNextOp(elem, op);
+  }
+};
+
+Filter interject_pipe = {
+    InterjectPipe::StartOp,
+    InterjectPipe::Init,
+    InterjectPipe::Destroy,
+    NoChannelData,
+    NoChannelData,
+    sizeof(InterjectPipe),
     0,
 };
 
@@ -83,6 +148,8 @@ static void unary(benchmark::State& state,
     Op op;
     Op::Payload payload;
     op.recv_initial_metadata = true;
+    op.recv_message = true;
+    op.recv_trailing_metadata = true;
     op.payload = &payload;
     Closure done = {call, +[](void* p, absl::Status status) {
                       if (!status.ok()) abort();
@@ -108,6 +175,12 @@ static void BM_FilterStack_Passthrough10_Unary(benchmark::State& state) {
 }
 BENCHMARK(BM_FilterStack_Passthrough10_Unary);
 
+static void BM_FilterStack_Interject3_Unary(benchmark::State& state) {
+  unary(state,
+        {&interject_filter, &interject_filter, &interject_filter, &end_filter});
+}
+BENCHMARK(BM_FilterStack_Interject3_Unary);
+
 static void BM_FilterStack_Interject10_Unary(benchmark::State& state) {
   unary(state, {&interject_filter, &interject_filter, &interject_filter,
                 &interject_filter, &interject_filter, &interject_filter,
@@ -115,6 +188,48 @@ static void BM_FilterStack_Interject10_Unary(benchmark::State& state) {
                 &interject_filter, &end_filter});
 }
 BENCHMARK(BM_FilterStack_Interject10_Unary);
+
+static void BM_FilterStack_Interject30_Unary(benchmark::State& state) {
+  unary(state, {&interject_filter, &interject_filter, &interject_filter,
+                &interject_filter, &interject_filter, &interject_filter,
+                &interject_filter, &interject_filter, &interject_filter,
+                &interject_filter, &interject_filter, &interject_filter,
+                &interject_filter, &interject_filter, &interject_filter,
+                &interject_filter, &interject_filter, &interject_filter,
+                &interject_filter, &interject_filter, &interject_filter,
+                &interject_filter, &interject_filter, &interject_filter,
+                &interject_filter, &interject_filter, &interject_filter,
+                &interject_filter, &interject_filter, &interject_filter,
+                &end_filter});
+}
+BENCHMARK(BM_FilterStack_Interject30_Unary);
+
+static void BM_FilterStack_Interject3Pipe_Unary(benchmark::State& state) {
+  unary(state,
+        {&interject_pipe, &interject_pipe, &interject_pipe, &end_filter});
+}
+BENCHMARK(BM_FilterStack_Interject3Pipe_Unary);
+
+static void BM_FilterStack_Interject10Pipe_Unary(benchmark::State& state) {
+  unary(state,
+        {&interject_pipe, &interject_pipe, &interject_pipe, &interject_pipe,
+         &interject_pipe, &interject_pipe, &interject_pipe, &interject_pipe,
+         &interject_pipe, &interject_pipe, &end_filter});
+}
+BENCHMARK(BM_FilterStack_Interject10Pipe_Unary);
+
+static void BM_FilterStack_Interject30Pipe_Unary(benchmark::State& state) {
+  unary(state,
+        {&interject_pipe, &interject_pipe, &interject_pipe, &interject_pipe,
+         &interject_pipe, &interject_pipe, &interject_pipe, &interject_pipe,
+         &interject_pipe, &interject_pipe, &interject_pipe, &interject_pipe,
+         &interject_pipe, &interject_pipe, &interject_pipe, &interject_pipe,
+         &interject_pipe, &interject_pipe, &interject_pipe, &interject_pipe,
+         &interject_pipe, &interject_pipe, &interject_pipe, &interject_pipe,
+         &interject_pipe, &interject_pipe, &interject_pipe, &interject_pipe,
+         &interject_pipe, &interject_pipe, &end_filter});
+}
+BENCHMARK(BM_FilterStack_Interject30Pipe_Unary);
 
 }  // namespace filter_stack
 
@@ -176,6 +291,29 @@ static void BM_ActivityStack_Passthrough10_Unary(benchmark::State& state) {
 }
 BENCHMARK(BM_ActivityStack_Passthrough10_Unary);
 
+static void BM_ActivityStack_Interject3Latches_Unary(benchmark::State& state) {
+  unary(state, []() {
+    RPCIO rpcio;
+    return MakeActivity(
+        []() {
+          auto one = []() {
+            return GetContext<RPCIO>()->recv_initial_metadata.Wait();
+          };
+          return Seq(Join(one(), one(), one(),
+                          []() {
+                            GetContext<RPCIO>()->recv_initial_metadata.Set(42);
+                            return ready(true);
+                          }),
+                     []() { return ready(absl::OkStatus()); });
+        },
+        [](absl::Status status) {
+          if (!status.ok()) abort();
+        },
+        nullptr, std::move(rpcio));
+  });
+}
+BENCHMARK(BM_ActivityStack_Interject3Latches_Unary);
+
 static void BM_ActivityStack_Interject10Latches_Unary(benchmark::State& state) {
   unary(state, []() {
     RPCIO rpcio;
@@ -200,6 +338,33 @@ static void BM_ActivityStack_Interject10Latches_Unary(benchmark::State& state) {
 }
 BENCHMARK(BM_ActivityStack_Interject10Latches_Unary);
 
+static void BM_ActivityStack_Interject30Latches_Unary(benchmark::State& state) {
+  unary(state, []() {
+    RPCIO rpcio;
+    return MakeActivity(
+        []() {
+          auto one = []() {
+            return GetContext<RPCIO>()->recv_initial_metadata.Wait();
+          };
+          return Seq(
+              Join(one(), one(), one(), one(), one(), one(), one(), one(),
+                   one(), one(), one(), one(), one(), one(), one(), one(),
+                   one(), one(), one(), one(), one(), one(), one(), one(),
+                   one(), one(), one(), one(), one(), one(),
+                   []() {
+                     GetContext<RPCIO>()->recv_initial_metadata.Set(42);
+                     return ready(true);
+                   }),
+              []() { return ready(absl::OkStatus()); });
+        },
+        [](absl::Status status) {
+          if (!status.ok()) abort();
+        },
+        nullptr, std::move(rpcio));
+  });
+}
+BENCHMARK(BM_ActivityStack_Interject10Latches_Unary);
+
 static void BM_ActivityStack_Interject3Filters_Unary(benchmark::State& state) {
   unary(state, []() {
     RPCP rpcio;
@@ -209,15 +374,21 @@ static void BM_ActivityStack_Interject3Filters_Unary(benchmark::State& state) {
             return GetContext<RPCP>()->pipe.sender.Filter(
                 [](int i) { return ready(absl::StatusOr<int>(i)); });
           };
-          return TryJoin(one(), one(), one(),
-                         Seq(GetContext<RPCP>()->pipe.sender.Push(42),
-                             []() {
-                               auto x =
-                                   std::move(GetContext<RPCP>()->pipe.sender);
-                               return ready(absl::OkStatus());
-                             }),
-                         Seq(GetContext<RPCP>()->pipe.receiver.Next(),
-                             []() { return ready(absl::OkStatus()); }));
+          return TryJoin(
+              one(), one(), one(),
+              Seq(
+                  GetContext<RPCP>()->pipe.sender.Push(42),
+                  []() { return GetContext<RPCP>()->pipe.sender.Push(43); },
+                  []() { return GetContext<RPCP>()->pipe.sender.Push(44); },
+                  []() {
+                    auto x = std::move(GetContext<RPCP>()->pipe.sender);
+                    return ready(absl::OkStatus());
+                  }),
+              Seq(
+                  GetContext<RPCP>()->pipe.receiver.Next(),
+                  []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
+                  []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
+                  []() { return ready(absl::OkStatus()); }));
         },
         [](absl::Status status) {
           if (!status.ok()) abort();
@@ -236,16 +407,22 @@ static void BM_ActivityStack_Interject10Filters_Unary(benchmark::State& state) {
             return GetContext<RPCP>()->pipe.sender.Filter(
                 [](int i) { return ready(absl::StatusOr<int>(i)); });
           };
-          return TryJoin(one(), one(), one(), one(), one(), one(), one(), one(),
-                         one(), one(),
-                         Seq(GetContext<RPCP>()->pipe.sender.Push(42),
-                             []() {
-                               auto x =
-                                   std::move(GetContext<RPCP>()->pipe.sender);
-                               return ready(absl::OkStatus());
-                             }),
-                         Seq(GetContext<RPCP>()->pipe.receiver.Next(),
-                             []() { return ready(absl::OkStatus()); }));
+          return TryJoin(
+              one(), one(), one(), one(), one(), one(), one(), one(), one(),
+              one(),
+              Seq(
+                  GetContext<RPCP>()->pipe.sender.Push(42),
+                  []() { return GetContext<RPCP>()->pipe.sender.Push(43); },
+                  []() { return GetContext<RPCP>()->pipe.sender.Push(44); },
+                  []() {
+                    auto x = std::move(GetContext<RPCP>()->pipe.sender);
+                    return ready(absl::OkStatus());
+                  }),
+              Seq(
+                  GetContext<RPCP>()->pipe.receiver.Next(),
+                  []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
+                  []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
+                  []() { return ready(absl::OkStatus()); }));
         },
         [](absl::Status status) {
           if (!status.ok()) abort();
@@ -264,18 +441,24 @@ static void BM_ActivityStack_Interject30Filters_Unary(benchmark::State& state) {
             return GetContext<RPCP>()->pipe.sender.Filter(
                 [](int i) { return ready(absl::StatusOr<int>(i)); });
           };
-          return TryJoin(one(), one(), one(), one(), one(), one(), one(), one(),
-                         one(), one(), one(), one(), one(), one(), one(), one(),
-                         one(), one(), one(), one(), one(), one(), one(), one(),
-                         one(), one(), one(), one(), one(), one(),
-                         Seq(GetContext<RPCP>()->pipe.sender.Push(42),
-                             []() {
-                               auto x =
-                                   std::move(GetContext<RPCP>()->pipe.sender);
-                               return ready(absl::OkStatus());
-                             }),
-                         Seq(GetContext<RPCP>()->pipe.receiver.Next(),
-                             []() { return ready(absl::OkStatus()); }));
+          return TryJoin(
+              one(), one(), one(), one(), one(), one(), one(), one(), one(),
+              one(), one(), one(), one(), one(), one(), one(), one(), one(),
+              one(), one(), one(), one(), one(), one(), one(), one(), one(),
+              one(), one(), one(),
+              Seq(
+                  GetContext<RPCP>()->pipe.sender.Push(42),
+                  []() { return GetContext<RPCP>()->pipe.sender.Push(43); },
+                  []() { return GetContext<RPCP>()->pipe.sender.Push(44); },
+                  []() {
+                    auto x = std::move(GetContext<RPCP>()->pipe.sender);
+                    return ready(absl::OkStatus());
+                  }),
+              Seq(
+                  GetContext<RPCP>()->pipe.receiver.Next(),
+                  []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
+                  []() { return GetContext<RPCP>()->pipe.receiver.Next(); },
+                  []() { return ready(absl::OkStatus()); }));
         },
         [](absl::Status status) {
           if (!status.ok()) abort();

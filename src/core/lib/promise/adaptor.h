@@ -15,8 +15,8 @@
 #ifndef GRPC_CORE_LIB_PROMISE_FACTORY_H
 #define GRPC_CORE_LIB_PROMISE_FACTORY_H
 
-#include "src/core/lib/promise/poll.h"
 #include "absl/status/statusor.h"
+#include "src/core/lib/promise/poll.h"
 
 namespace grpc_core {
 
@@ -162,12 +162,13 @@ adaptor_detail::Capture<F, Captures...> Capture(F f, Captures... captures) {
                                                  std::move(captures)...);
 }
 
-
-template <typename T> void Destruct(T* p) {
+template <typename T>
+void Destruct(T* p) {
   p->~T();
 }
 
-template <typename T> void Construct(T* p, T&& move_from) {
+template <typename T>
+void Construct(T* p, T&& move_from) {
   new (p) T(std::forward<T>(move_from));
 }
 
@@ -176,7 +177,9 @@ absl::Status IntoStatus(absl::StatusOr<T>* status) {
   return std::move(status->status());
 }
 
-inline absl::Status IntoStatus(absl::Status* status) { return std::move(*status); }
+inline absl::Status IntoStatus(absl::Status* status) {
+  return std::move(*status);
+}
 
 }  // namespace grpc_core
 
