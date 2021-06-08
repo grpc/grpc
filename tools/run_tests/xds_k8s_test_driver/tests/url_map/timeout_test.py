@@ -67,7 +67,7 @@ class _BaseXdsTimeOutTestCase(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 1)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['route']
             ['maxStreamDuration']['maxStreamDuration'], '3s')

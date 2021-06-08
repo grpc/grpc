@@ -11,18 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from tests.url_map import header_matching_test
-from tests.url_map import path_matching_test
-from framework import xds_url_map_testcase
 
-from absl.testing import absltest
+local_repository(
+    name = "com_github_grpc_grpc",
+    path = "../../..",
+)
 
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
 
-# TODO(lidiz) dynamically load modules from "./url_map" directory.
-def load_tests(loader: absltest.TestLoader, unused_tests, unused_pattern):
-    return xds_url_map_testcase.load_tests(loader, header_matching_test,
-                                           path_matching_test)
+grpc_deps()
 
+load("@io_bazel_rules_python//python:pip.bzl", "pip_import", "pip_repositories")
 
-if __name__ == '__main__':
-    absltest.main(failfast=True)
+pip_import(
+    name = "grpc_python_dependencies",
+    requirements = "@com_github_grpc_grpc//:requirements.txt",
+)
+
+load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
+
+pip_repositories()
+
+pip_install()

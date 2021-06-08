@@ -135,7 +135,7 @@ class TestZeroPercentFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 1)
         filter_config = xds_config.rds['virtualHosts'][0]['routes'][0][
             'typedPerFilterConfig']['envoy.filters.http.fault']
         self.assertEqual('20s', filter_config['delay']['fixedDelay'])
@@ -176,7 +176,7 @@ class TestNonMatchingFaultInjection(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 1)
         # The first route rule for UNARY_CALL is fault injected
         self.assertEqual(
             "/grpc.testing.TestService/UnaryCall",
@@ -225,7 +225,7 @@ class TestAlwaysDelay(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 1)
         filter_config = xds_config.rds['virtualHosts'][0]['routes'][0][
             'typedPerFilterConfig']['envoy.filters.http.fault']
         self.assertEqual('20s', filter_config['delay']['fixedDelay'])
@@ -264,7 +264,7 @@ class TestAlwaysAbort(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 1)
         filter_config = xds_config.rds['virtualHosts'][0]['routes'][0][
             'typedPerFilterConfig']['envoy.filters.http.fault']
         self.assertEqual(401, filter_config['abort']['httpStatus'])
@@ -300,7 +300,7 @@ class TestDelayHalf(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 1)
         filter_config = xds_config.rds['virtualHosts'][0]['routes'][0][
             'typedPerFilterConfig']['envoy.filters.http.fault']
         self.assertEqual('20s', filter_config['delay']['fixedDelay'])
@@ -339,7 +339,7 @@ class TestAbortHalf(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 1)
         filter_config = xds_config.rds['virtualHosts'][0]['routes'][0][
             'typedPerFilterConfig']['envoy.filters.http.fault']
         self.assertEqual(401, filter_config['abort']['httpStatus'])

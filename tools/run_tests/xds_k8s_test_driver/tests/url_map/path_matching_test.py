@@ -55,7 +55,7 @@ class TestFullPathMatchEmptyCall(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['path'],
             "/grpc.testing.TestService/EmptyCall")
@@ -86,7 +86,7 @@ class TestFullPathMatchUnaryCall(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['path'],
             "/grpc.testing.TestService/UnaryCall")
@@ -131,7 +131,7 @@ class TestTwoRoutesAndPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['prefix'],
             "/grpc.testing.TestService/Unary")
@@ -169,7 +169,7 @@ class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['safeRegex']
             ['regex'], '^\/.*\/UnaryCall$')
@@ -202,7 +202,7 @@ class TestCaseInsensitiveMatch(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['path'],
             '/gRpC.tEsTinG.tEstseRvice/empTycaLl')

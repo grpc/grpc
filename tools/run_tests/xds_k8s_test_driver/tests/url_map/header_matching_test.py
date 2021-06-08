@@ -73,7 +73,7 @@ class TestExactMatch(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
             [0]['name'], _TEST_METADATA_KEY)
@@ -115,7 +115,7 @@ class TestPrefixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
             [0]['name'], _TEST_METADATA_KEY)
@@ -156,7 +156,7 @@ class TestSuffixMatch(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
             [0]['name'], _TEST_METADATA_KEY)
@@ -197,7 +197,7 @@ class TestPresentMatch(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
             [0]['name'], _TEST_METADATA_NUMERIC_KEY)
@@ -240,7 +240,7 @@ class TestInvertMatch(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
             [0]['name'], _TEST_METADATA_KEY)
@@ -287,7 +287,7 @@ class TestRangeMatch(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
             [0]['name'], _TEST_METADATA_NUMERIC_KEY)
@@ -337,7 +337,7 @@ class TestRegexMatch(xds_url_map_testcase.XdsUrlMapTestCase):
         return host_rule, path_matcher
 
     def xds_config_validate(self, xds_config: DumpedXdsConfig):
-        self.assertTrue(xds_config.endpoints)
+        self.assertNumEndpoints(xds_config, 2)
         self.assertEqual(
             xds_config.rds['virtualHosts'][0]['routes'][0]['match']['headers']
             [0]['name'], _TEST_METADATA_KEY)
